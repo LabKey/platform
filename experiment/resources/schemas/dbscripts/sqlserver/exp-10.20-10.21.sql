@@ -29,11 +29,15 @@ WHERE
 		Hidden = 0  AND
 		Name <> 'ParticipantID' AND
 		Name <> 'VisitID' AND
-		Name <> 'SequenceNum'
+		Name <> 'SequenceNum' AND
+		Name <> 'RowId'
 GO
 
 
 UPDATE exp.PropertyDescriptor SET
 	Dimension = 1
-WHERE (LookupQuery IS NOT NULL OR Name = 'ParticipantID') AND Hidden = 0
+WHERE LookupQuery IS NOT NULL AND
+    Hidden = 0 AND
+    Name <> 'CreatedBy' AND
+    Name <> 'ModifiedBy'
 GO

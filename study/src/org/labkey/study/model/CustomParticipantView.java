@@ -22,9 +22,19 @@ import org.labkey.api.data.Entity;
  */
 public class CustomParticipantView extends Entity
 {
+    private static int MODULE_PTID_VIEW_ID = -1;
     private Integer _rowId;
     private String _body;
     private boolean _active;
+    
+    public static CustomParticipantView createModulePtidView(String body)
+    {
+        CustomParticipantView view = new CustomParticipantView();
+        view.setRowId(MODULE_PTID_VIEW_ID);
+        view.setActive(true);
+        view.setBody(body);
+        return view;
+    }
 
     public String getBody()
     {
@@ -54,5 +64,10 @@ public class CustomParticipantView extends Entity
     public void setActive(boolean active)
     {
         _active = active;
+    }
+
+    public boolean isModuleParticipantView()
+    {
+        return getRowId() != null && getRowId() == MODULE_PTID_VIEW_ID;
     }
 }

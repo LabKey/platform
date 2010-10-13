@@ -4717,6 +4717,7 @@ public class StudyController extends BaseStudyController
         private String _participantId;
         private boolean _useCustomView;
         private boolean _reshow;
+        private boolean _editable = true;
 
         public String getReturnUrl()
         {
@@ -4726,6 +4727,16 @@ public class StudyController extends BaseStudyController
         public void setReturnUrl(String returnUrl)
         {
             _returnUrl = returnUrl;
+        }
+
+        public boolean isEditable()
+        {
+            return _editable;
+        }
+
+        public void setEditable(boolean editable)
+        {
+            _editable = editable;
         }
 
         public String getCustomScript()
@@ -4789,6 +4800,7 @@ public class StudyController extends BaseStudyController
             {
                 form.setCustomScript(view.getBody());
                 form.setUseCustomView(view.isActive());
+                form.setEditable(!view.isModuleParticipantView());
             }
 
             return new JspView<CustomizeParticipantViewForm>("/org/labkey/study/view/customizeParticipantView.jsp", form);

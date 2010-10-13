@@ -135,13 +135,13 @@ public class SchemaXmlReader implements SchemaReader
                 if (columnXml.isSetMeasure())
                     measure = columnXml.getMeasure();
                 else
-                    measure = ColumnRenderProperties.inferIsMeasure(t.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
+                    measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), t.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
 
                 boolean dimension;
                 if (columnXml.isSetDimension())
                     dimension = columnXml.getDimension();
                 else
-                    dimension = ColumnRenderProperties.inferIsDimension(columnXml.getFk() != null, columnXml.getIsHidden());
+                    dimension = ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden());
 
                 Set<String> importAliases = new LinkedHashSet<String>();
                 if (columnXml.isSetImportAliases())

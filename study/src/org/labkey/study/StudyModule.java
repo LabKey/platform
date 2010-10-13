@@ -117,15 +117,7 @@ import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
-import org.labkey.study.view.AssayBatchesWebPartFactory;
-import org.labkey.study.view.AssayList2WebPartFactory;
-import org.labkey.study.view.AssayListWebPartFactory;
-import org.labkey.study.view.AssayResultsWebPartFactory;
-import org.labkey.study.view.AssayRunsWebPartFactory;
-import org.labkey.study.view.DatasetsWebPartView;
-import org.labkey.study.view.ParticipantWebPartFactory;
-import org.labkey.study.view.StudyListWebPartFactory;
-import org.labkey.study.view.StudySummaryWebPartFactory;
+import org.labkey.study.view.*;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 
 import java.lang.reflect.InvocationTargetException;
@@ -218,7 +210,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
-        return Collections.<ModuleResourceLoader>singleton(new ModuleAssayLoader());
+        Set<ModuleResourceLoader> loaders = new HashSet<ModuleResourceLoader>();
+        loaders.add(new ModuleAssayLoader());
+        loaders.add(new StudyViewLoader());
+        return loaders;
     }
 
     public boolean hasScripts()

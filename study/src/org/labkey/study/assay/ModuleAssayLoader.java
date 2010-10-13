@@ -42,7 +42,6 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 {
     /*package*/ static final String ASSAY_DIR_NAME = "assay";
     /*package*/ static final String DOMAINS_DIR_NAME = "domains";
-    /*package*/ static final String VIEWS_DIR_NAME = "views";
 
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {

@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -60,12 +61,14 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -83,10 +86,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.study.QueryHelper;
@@ -108,6 +108,7 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
+import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -134,6 +135,8 @@ public class StudyManager
     private final QueryHelper<SiteImpl> _siteHelper;
     private final DataSetHelper _dataSetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
+
+    private Map<String, Resource> _moduleParticipantViews = null;
 
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
@@ -2668,6 +2671,30 @@ public class StudyManager
     {
         if (study == null)
             return null;
+
+        if (_moduleParticipantViews != null)
+        {
+            Set<Module> activeModules = study.getContainer().getActiveModules();
+            Set<String> activeModuleNames = new HashSet<String>();
+            for (Module module : activeModules)
+                activeModuleNames.add(module.getName());
+            for (Map.Entry<String, Resource> entry : _moduleParticipantViews.entrySet())
+            {
+                if (activeModuleNames.contains(entry.getKey()) && entry.getValue().exists())
+                {
+                    try
+                    {
+                        String body = IOUtils.toString(entry.getValue().getInputStream());
+                        return CustomParticipantView.createModulePtidView(body);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new RuntimeException("Unable to load participant view from " + entry.getValue().getPath(), e);
+                    }
+                }
+            }
+        }
+
         SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer().getId());
         return Table.selectObject(StudySchema.getInstance().getTableInfoParticipantView(), Table.ALL_COLUMNS,
                 containerFilter, null, CustomParticipantView.class);
@@ -2675,6 +2702,8 @@ public class StudyManager
 
     public CustomParticipantView saveCustomParticipantView(Study study, User user, CustomParticipantView view) throws SQLException
     {
+        if (view.isModuleParticipantView())
+            throw new IllegalArgumentException("Module-defined participant views should not be saved to the database.");
         if (view.getRowId() == null)
         {
             view.beforeInsert(user, study.getContainer().getId());
@@ -2984,6 +3013,12 @@ public class StudyManager
         }
     }
 
+    public void registerParticipantView(Module module, Resource ptidView)
+    {
+        if (_moduleParticipantViews == null)
+            _moduleParticipantViews = new HashMap<String, Resource>();
+        _moduleParticipantViews.put(module.getName(), ptidView);
+    }
 
     // make sure we don't over do it with multiple calls to reindex the same study (see reindex())
     // add a level of indirection

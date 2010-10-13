@@ -2693,6 +2693,7 @@ study/src/org/labkey/study/view/StudyGWTView.java -text
 study/src/org/labkey/study/view/StudyListWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyNavigationView.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
+study/src/org/labkey/study/view/StudyViewLoader.java -text
 study/src/org/labkey/study/view/assayList2.jsp -text
 study/src/org/labkey/study/view/bulkDatasetDelete.jsp -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text

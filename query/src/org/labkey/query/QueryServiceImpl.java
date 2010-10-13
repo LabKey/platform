@@ -247,7 +247,7 @@ public class QueryServiceImpl extends QueryService
     {
         Map<String, QueryDefinition> ret = new LinkedHashMap<String, QueryDefinition>();
 
-        for (QueryDefinition queryDef : getAllQueryDefs(user, container, schema, true, true, true).values())
+        for (QueryDefinition queryDef : getAllQueryDefs(user, container, schema, true, true, false).values())
             ret.put(queryDef.getName(), queryDef);
 
         return ret.get(name);

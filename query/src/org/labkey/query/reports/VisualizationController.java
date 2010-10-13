@@ -585,6 +585,13 @@ public class VisualizationController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class GetVisualizationTypes extends ApiAction
     {
+        Map<String, Object> getBaseTypeProperties()
+        {
+            Map<String, Object> properties = new HashMap<String, Object>();
+            properties.put("subjectColumn", StudyService.get().getSubjectColumnName(getContainer()));
+            return properties;
+        }
+
         @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
@@ -594,14 +601,14 @@ public class VisualizationController extends SpringActionController
             List<Map<String, Object>> types = new ArrayList<Map<String, Object>>();
 
             // motion chart
-            Map<String, Object> motion = new HashMap<String, Object>();
+            Map<String, Object> motion = getBaseTypeProperties();
             motion.put("type", "motion");
             motion.put("label", "Motion Chart");
             motion.put("icon", getViewContext().getContextPath() + "/reports/output_motionchart.jpg");
             types.add(motion);
 
             // line chart
-            Map<String, Object> line = new HashMap<String, Object>();
+            Map<String, Object> line = getBaseTypeProperties();
             line.put("type", "line");
             line.put("label", "Time Chart");
             line.put("icon", getViewContext().getContextPath() + "/reports/output_linechart.jpg");
@@ -615,7 +622,7 @@ public class VisualizationController extends SpringActionController
             types.add(line);
 
             // scatter chart
-            Map<String, Object> scatter = new HashMap<String, Object>();
+            Map<String, Object> scatter = getBaseTypeProperties();
             scatter.put("type", "scatter");
             scatter.put("label", "Scatter Plot");
             scatter.put("icon", getViewContext().getContextPath() + "/reports/output_scatterplot.jpg");
@@ -629,7 +636,7 @@ public class VisualizationController extends SpringActionController
             types.add(scatter);
 
             // data grid
-            Map<String, Object> data = new HashMap<String, Object>();
+            Map<String, Object> data = getBaseTypeProperties();
             data.put("type", "dataGridTime");
             data.put("label", "Data Grid (Time)");
             data.put("icon", getViewContext().getContextPath() + "/reports/output_grid.jpg");
@@ -644,7 +651,7 @@ public class VisualizationController extends SpringActionController
             types.add(data);
 
             // data grid
-            Map<String, Object> dataScatter = new HashMap<String, Object>();
+            Map<String, Object> dataScatter = getBaseTypeProperties();
             dataScatter.put("type", "dataGridScatter");
             dataScatter.put("label", "Data Grid (X/Y)");
             dataScatter.put("icon", getViewContext().getContextPath() + "/reports/output_grid.jpg");
@@ -659,14 +666,14 @@ public class VisualizationController extends SpringActionController
             types.add(dataScatter);
 
             // excel data export
-            Map<String, Object> excel = new HashMap<String, Object>();
+            Map<String, Object> excel = getBaseTypeProperties();
             excel.put("type", "excelExport");
             excel.put("label", "Excel Data Export");
             excel.put("icon", getViewContext().getContextPath() + "/reports/output_excel.jpg");
             types.add(excel);
 
             // TSV data export
-            Map<String, Object> tsv = new HashMap<String, Object>();
+            Map<String, Object> tsv = getBaseTypeProperties();
             tsv.put("type", "tsvExport");
             tsv.put("label", "Tab-delimited Data Export");
             tsv.put("icon", getViewContext().getContextPath() + "/reports/output_text.jpg");
@@ -1329,8 +1336,9 @@ public class VisualizationController extends SpringActionController
             }
 
             Map<String, String> nameRemap = new HashMap<String, String>();
-            nameRemap.put("ParticipantVisit_VisitDate", "ParticipantVisit/VisitDate");
-            nameRemap.put("ParticipantVisit.VisitDate", "ParticipantVisit/VisitDate");
+            String subjectVisitColumn = StudyService.get().getSubjectVisitColumnName(getContainer());
+            nameRemap.put(subjectVisitColumn + "_VisitDate", subjectVisitColumn + "/VisitDate");
+            nameRemap.put(subjectVisitColumn + ".VisitDate", subjectVisitColumn + "/VisitDate");
             // Hack to deal with the fact that crosstabtableinfo returns a less friendly name for the VisitDate column:
             for (Map.Entry<String, String> names : nameRemap.entrySet())
             {

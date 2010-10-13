@@ -118,7 +118,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public CustomView getCustomView(User user, HttpServletRequest request, String name)
     {
-        return getAllCustomViews(user, request, true, true).get(name);
+        return getAllCustomViews(user, request, true, false).get(name);
     }
 
     public CustomView createCustomView(User user, String name)

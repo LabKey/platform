@@ -48,6 +48,10 @@
         <tr class="labkey-wp-header">
             <th><%= h(subjectNoun) %> View Contents</th>
         </tr>
+<%
+    if (bean.isEditable())
+    {
+%>
         <tr>
             <td>
                 <input type="radio" name="useCustomView"
@@ -81,6 +85,24 @@
                 <%= buttonImg("Restore default script", "if (confirm('Restore default script?  You will lose any changes made to this page.')) document.getElementById('customScript').value = DEFAULT_SCRIPT_VALUE; return false;") %>
             </td>
         </tr>
+<%
+    }
+    else
+    {
+%>
+        <tr>
+            <td>
+                This custom participant view is defined in an active module.  It cannot be edited via this interface.
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <textarea rows="30" cols="150" style="width:100%" DISABLED><%= bean.getCustomScript() %></textarea><br>
+            </td>
+        </tr>
+<%
+    }
+%>
     </table>
 </form>
 <%
@@ -89,7 +111,7 @@
 %>
 <table width="100%">
     <tr class="labkey-wp-header">
-        <th><%= h(subjectNoun) %> View Preview (Save to refresh)</th>
+        <th><%= h(subjectNoun) %> View Preview <%= bean.isEditable() ? "(Save to refresh)" : "" %></th>
     </tr>
     <tr>
         <td>

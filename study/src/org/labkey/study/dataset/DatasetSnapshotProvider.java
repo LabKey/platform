@@ -501,19 +501,19 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     DataSet def = _queue.take();
                     if (def != null)
                     {
-                        _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
-                        for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
+                        try
                         {
-                            try
+                            _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
+                            for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
                             {
                                 _log.debug("Updating snapshot definition : " + snapshotDef.getName());
                                 autoUpdateSnapshot(snapshotDef, null);//HttpView.currentContext().getActionURL());
                             }
-                            catch (Throwable e)
-                            {
-                                _log.error(e);
-                                ExceptionUtil.logExceptionToMothership(null, e);
-                            }
+                        }
+                        catch (Throwable e)
+                        {
+                            _log.error(e);
+                            ExceptionUtil.logExceptionToMothership(null, e);
                         }
                     }
                 }

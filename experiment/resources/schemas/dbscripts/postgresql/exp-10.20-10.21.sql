@@ -21,7 +21,11 @@ UPDATE exp.PropertyDescriptor SET Measure =
 		(RangeURI = 'http://www.w3.org/2001/XMLSchema#int' OR RangeURI = 'http://www.w3.org/2001/XMLSchema#double') AND
 		LookupQuery IS NULL AND
 		NOT Hidden AND
+		Name <> 'ParticipantId' AND
 		Name <> 'VisitID' AND
-		Name <> 'SequenceNum',
-	Dimension = (LookupQuery IS NOT NULL OR Name = 'ParticipantID') AND
-		NOT Hidden;
+		Name <> 'SequenceNum' AND
+		Name <> 'RowId',
+	Dimension = LookupQuery IS NOT NULL AND
+	    NOT Hidden AND
+	    Name <> 'CreatedBy' AND
+	    Name <> 'ModifiedBy';
