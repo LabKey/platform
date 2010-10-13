@@ -97,6 +97,7 @@ import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyDomainKind;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
@@ -188,6 +189,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
         PropertyService.get().registerDomainKind(new ContinuousDatasetDomainKind());
+        PropertyService.get().registerDomainKind(new TestDatasetDomainKind());
         PropertyService.get().registerDomainKind(new AssayDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());

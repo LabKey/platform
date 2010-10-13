@@ -569,7 +569,7 @@ public class JunitController extends SpringActionController
                     Throwable t = failure.getException();
                     String message = t.getMessage();
 
-                    if (message.startsWith("<div>"))
+                    if (message != null && message.startsWith("<div>"))
                     {
                         out.println("<br>" + message + "<br>");
                     }

@@ -533,7 +533,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ModuleStaticResolverImpl.TestCase.class,
             PageFlowUtil.TestCase.class,
             ResultSetUtil.TestCase.class
-            //,StorageProvisioner.TestCase.class
+            ,StorageProvisioner.TestCase.class
             //,RateLimiter.TestCase.class
         ));
 
