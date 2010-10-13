@@ -49,7 +49,7 @@
       </ns:column>
       <ns:column columnName="Created">
         <ns:formatString>DateTime</ns:formatString>
-        <ns:displayWidth>120</ns:displayWidth>
+        <ns:displayWidth>160</ns:displayWidth>
         <ns:description>Contains the time at which this job was created</ns:description>
       </ns:column>
       <ns:column columnName="ModifiedBy">
