@@ -481,6 +481,7 @@ public class StorageProvisioner
                     continue;
                 }
                 PropertyColumn.copyAttributes(null, c, p.getPropertyDescriptor());
+                c.setScale(p.getScale());
             }
 
             ti.setTableType(TableInfo.TABLE_TYPE_TABLE);
