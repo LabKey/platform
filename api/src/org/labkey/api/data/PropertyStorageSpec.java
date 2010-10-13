@@ -187,7 +187,7 @@ public class PropertyStorageSpec
         return this.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX;
     }
 
-    public String getMvIndicatorColumnName(String rootName)
+    public static String getMvIndicatorColumnName(String rootName)
     {
         return rootName + "_" + MvColumn.MV_INDICATOR_SUFFIX;
     }

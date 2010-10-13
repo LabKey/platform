@@ -16,33 +16,37 @@
 package org.labkey.api.exp.api;
 
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlDialect;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.JunitUtil;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -59,28 +63,6 @@ import java.util.Map;
 public class StorageProvisioner
 {
     private static final Logger log = Logger.getLogger(StorageProvisioner.class);
-
-
-    public static void create(Domain domain) throws SQLException
-    {
-        DomainKind kind = domain.getDomainKind();
-        if (null == kind)
-            return;
-
-        create(kind, domain);
-    }
-
-
-    public static void create(DomainKind kind, Domain domain) throws SQLException
-    {
-        DbScope scope = kind.getScope();
-        String schemaName = kind.getStorageSchemaName();
-        if (scope == null || schemaName == null)
-            return;
-
-        _create(scope, kind, domain);
-    }
-
     static CPUTimer create = new CPUTimer("StorageProvisioner.create");
 
 
@@ -111,7 +93,7 @@ public class StorageProvisioner
             TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.CreateTable);
 
             CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
-            
+
             for (PropertyStorageSpec spec : kind.getBaseProperties())
             {
                 change.addColumn(spec);
@@ -156,10 +138,6 @@ public class StorageProvisioner
                 scope.commitTransaction();
             return tableName;
         }
-        catch (SQLException x)
-        {
-            throw x;
-        }
         finally
         {
             if (null != conn)
@@ -191,9 +169,6 @@ public class StorageProvisioner
         String schemaName = kind.getStorageSchemaName();
         if (scope == null || schemaName == null)
             return;
-
-        // should be in a trasaction with propertydescriptor changes
-        assert scope.isTransactionActive();
 
         String tableName = domain.getStorageTableName();
         if (null == tableName)
@@ -282,7 +257,7 @@ public class StorageProvisioner
 
     public static void dropMvIndicator(DomainProperty... props) throws SQLException
     {
-        assert(props.length > 0);
+        assert (props.length > 0);
         Domain domain = props[0].getDomain();
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -317,7 +292,7 @@ public class StorageProvisioner
 
     public static void addMvIndicator(DomainProperty... props) throws SQLException
     {
-        assert(props.length > 0);
+        assert (props.length > 0);
         Domain domain = props[0].getDomain();
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -427,13 +402,13 @@ public class StorageProvisioner
 
                 if (base.contains(oldPropName))
                 {
-                    throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);    
+                    throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);
                 }
                 else if (base.contains(prop.getName()))
                 {
                     throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
                 }
-                
+
                 if (prop.isMvEnabled())
                 {
                     renamePropChange.addColumnRename(prop.getMvIndicatorColumnName(oldPropName), prop.getMvIndicatorColumnName(prop.getName()));
@@ -524,57 +499,199 @@ public class StorageProvisioner
 
     public static class TestCase extends Assert
     {
-        @Test
-        public void testVerifyStudyDatasetSchema() throws IOException, SQLException, ServletException
-        {
-            ResultSet rs = null;
-            Connection conn = null;
-            DbScope scope = DbSchema.get("study").getScope();
+        Container container = JunitUtil.getTestContainer();
+        Domain domain;
+        final String notNullPropName = "a_" + System.currentTimeMillis();
+        final String propNameB = "b_" + System.currentTimeMillis();
+        final String propBMvColumnName = PropertyStorageSpec.getMvIndicatorColumnName(propNameB).toLowerCase();
 
+        @Before
+        public void before() throws Exception
+        {
+            String domainName = "testdomain_" + System.currentTimeMillis();
+
+            Lsid lsid = new Lsid("TestDatasetDomainKind", "Folder-" + container.getRowId(), domainName);
+            domain = PropertyService.get().createDomain(container, lsid.toString(), domainName);
+            domain.save(new User());
+            StorageProvisioner.createTableInfo(domain.getDomainKind(), domain, DbSchema.get(domain.getDomainKind().getStorageSchemaName()));
+            domain = PropertyService.get().getDomain(domain.getTypeId());
+        }
+
+        @After
+        public void after() throws Exception
+        {
+            if (domain != null)
+            {
+                StorageProvisioner.drop(domain);
+                OntologyManager.deleteDomain(domain.getTypeURI(), container);
+                domain = null;
+            }
+        }
+
+
+        @Test
+        public void testAddProperty() throws Exception
+        {
+            addPropertyB();
+            Assert.assertNotNull("adding a property added a new column to the hard table",
+                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                            domain.getStorageTableName(), propNameB));
+        }
+
+        @Test
+        public void testDropProperty() throws Exception
+        {
+            addPropertyB();
+            DomainProperty propB = domain.getPropertyByName(propNameB);
+            propB.delete();
+            domain.save(new User());
+            Assert.assertNull("column for dropped property is gone", getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                    domain.getStorageTableName(), propNameB));
+        }
+
+        @Test
+        public void testRenameProperty() throws Exception
+        {
+            addPropertyB();
+            DomainProperty propB = domain.getPropertyByName(propNameB);
+            String newName = "new_" + propNameB;
+            propB.setName(newName);
+            domain.save(new User());
+            Assert.assertNull("renamed column is not present in old name",
+                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                            domain.getStorageTableName(), propNameB));
+            Assert.assertNotNull("renamed column is provisioned in new name",
+                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                            domain.getStorageTableName(), newName));
+        }
+/*
+
+    is it actually a functional requirement that isRequired on a prop makes a not null constraint on its column?
+
+        @Test
+        public void testNotNullableProperty() throws Exception
+        {
+            addNotNullProperty();
+            ColumnMetadata col = getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                            domain.getStorageTableName(), notNullPropName);
+            Assert.assertFalse("required property is NOT NULL in db", col.nullable);
+        }
+*/
+
+        @Test
+        public void testEnableMv() throws Exception
+        {
+            addPropertyB();
+            DomainProperty propB = domain.getPropertyByName(propNameB);
+            propB.setMvEnabled(true);
+            domain.save(new User());
+            ColumnMetadata col = getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                            domain.getStorageTableName(), propBMvColumnName);
+            Assert.assertNotNull("enabled mvindicator causes mvindicator column to be provisioned",
+                    col);
+        }
+
+
+        @Test
+        public void testDisableMv() throws Exception
+        {
+            addPropertyB();
+            DomainProperty propB = domain.getPropertyByName(propNameB);
+            propB.setMvEnabled(true);
+            domain.save(new User());
+            propB = domain.getPropertyByName(propNameB);
+            propB.setMvEnabled(false);
+            domain.save(new User());
+            Assert.assertNull("property with disabled mvindicator has no mvindicator column",
+                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                            domain.getStorageTableName(), propBMvColumnName));
+        }
+
+/*
+
+XXX FIXME UNDONE TODO This is a valid test and it fails because we don't handle
+renaming a property AND toggling mvindicator on in the same change.
+
+        @Test
+        public void testRenameAndEnableMvAtOnce () throws Exception
+        {
+            // should fail, known problem
+            addPropertyB();
+            DomainProperty propB = domain.getPropertyByName(propNameB);
+            String newName = "new_" + propNameB;
+            String newMvName = PropertyStorageSpec.getMvIndicatorColumnName(newName);
+            propB.setName(newName);
+            propB.setMvEnabled(true);
+            domain.save(new User());
+            Assert.assertNull("renamed column is not present in old name",
+                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                            domain.getStorageTableName(), propNameB));
+            Assert.assertNotNull("renamed column is provisioned in new name",
+                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                            domain.getStorageTableName(), newName));
+            Assert.assertNotNull("enabled mvindicator causes mvindicator column to be provisioned",
+                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
+                            domain.getStorageTableName(), newMvName));
+        }
+
+*/
+
+        private void addPropertyB() throws Exception
+        {
+            DomainProperty dp = domain.addProperty();
+            dp.setPropertyURI(propNameB + "#" + propNameB);
+            dp.setName(propNameB);
+            domain.save(new User());
+        }
+
+        private void addNotNullProperty() throws Exception
+        {
+            DomainProperty dp = domain.addProperty();
+            dp.setPropertyURI(notNullPropName + "#" + notNullPropName);
+            dp.setName(notNullPropName);
+            dp.setRequired(true);
+            domain.save(new User());
+        }
+
+
+        private ColumnMetadata getJdbcColumnMetadata(String schema, String table, String column) throws Exception
+        {
+            Connection con = null;
             try
             {
-                scope.beginTransaction();
-                conn = DbSchema.get("study").getScope().getConnection();
+                con = DbScope.getLabkeyScope().getConnection();
+                DatabaseMetaData dbmd = con.getMetaData();
+                ResultSet rs = dbmd.getColumns(null, schema, table, column);
 
-                CaseInsensitiveHashSet domains = new CaseInsensitiveHashSet();
-                rs = Table.executeQuery(DbSchema.get("study"), "SELECT storagetablename FROM exp.domaindescriptor WHERE storagetablename IS NOT NULL and storageschemaname = 'studydataset'", null);
-                while (rs.next())
-                    domains.add(rs.getString(1));
-                ResultSetUtil.close(rs);
-                rs = null;
+                if (!rs.next())
+                    // no column matched the column, table and schema given
+                    return null;
 
-                CaseInsensitiveHashSet database = new CaseInsensitiveHashSet();
-                if (DbSchema.get("study").getSqlDialect().treatCatalogsAsSchemas())
-                    rs = conn.getMetaData().getTables("studydataset", null, "%", new String[]{"TABLE"});
-                else
-                    rs = conn.getMetaData().getTables(DbSchema.get("study").getScope().getDatabaseName(), "studydataset", "%", new String[]{"TABLE"});
-                while (rs.next())
-                {
-                    database.add(rs.getString("TABLE_NAME").trim());
-                }
-
-                for (String s : domains)
-                {
-                    if (!database.contains(s))
-                        fail("Table not found in database: " + s);
-                }
-                for (String s : database)
-                {
-                    if (!domains.contains(s))
-                        fail("Domain not found for : " + s);
-                }
-            }
-            catch (SQLException x)
-            {
-                fail("sqlexception");
+                return new ColumnMetadata(rs.getString("IS_NULLABLE"), rs.getInt("COLUMN_SIZE"), rs.getInt("DATA_TYPE"), rs.getString("COLUMN_NAME"));
             }
             finally
             {
-                ResultSetUtil.close(rs);
-                if (null != conn)
-                    DbSchema.get("study").getScope().releaseConnection(conn);
-                scope.rollbackTransaction();
+                con.close();
             }
+
         }
+
+        class ColumnMetadata
+        {
+            final public boolean nullable;
+            final public int size;
+            final public int sqlTypeInt;
+            final public String name;
+
+            ColumnMetadata(String nullable, int size, int sqlTypeInt, String name)
+            {
+                this.nullable = !nullable.equals("NO"); // spec claims it can be empty string, which we'd count as nullable.
+                this.size = size;
+                this.sqlTypeInt = sqlTypeInt;
+                this.name = name;
+            }
+
+        }
+
     }
 }
