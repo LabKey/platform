@@ -17,10 +17,9 @@ package org.labkey.api.view.template;
 
 import org.labkey.api.view.NavTree;
 
-import java.util.List;
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /*
 * User: Mark Igra
@@ -59,9 +58,8 @@ public class AppBar extends NavTree
      */
     public List<NavTree> fixCrumbTrail(List<NavTree> crumbTrail)
     {
-        List<NavTree> fixed = new ArrayList<NavTree>();
         if (null == crumbTrail || crumbTrail.size() <= 1)
-            return (List<NavTree>) Collections.EMPTY_LIST;
+            return Collections.emptyList();
         else
         {
             NavTree selected = null;

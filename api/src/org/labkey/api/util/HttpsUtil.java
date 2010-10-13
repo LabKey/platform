@@ -16,7 +16,11 @@
 
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.Nullable;
+
 import javax.net.ssl.*;
+import java.io.IOException;
+import java.net.URL;
 import java.security.SecureRandom;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
@@ -48,6 +52,29 @@ public class HttpsUtil
     {
         sslConnection.setHostnameVerifier(_hostnameVerifier);
         sslConnection.setSSLSocketFactory(getSocketFactory());
+    }
+
+
+    // Attempts a connection to the testURL, returning null on success and an error message on failure
+    public static @Nullable String testSslUrl(URL testURL, String advice)
+    {
+        try
+        {
+            HttpsURLConnection connection = (HttpsURLConnection)testURL.openConnection();
+            HttpsUtil.disableValidation(connection);
+
+            if (connection.getResponseCode() != 200)
+            {
+                return "Bad response code, " + connection.getResponseCode() + " when connecting to the SSL port over HTTPS";
+            }
+        }
+        catch (IOException e)
+        {
+            return "Error connecting over HTTPS - Attempted to connect to " + testURL + " and received the following error: " +
+                    (e.getMessage() == null ? e.toString() : e.getMessage()) + ". " + advice;
+        }
+
+        return null;
     }
 
     // Create a socket factory that does not validate the server's certificate -

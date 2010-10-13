@@ -16,10 +16,6 @@
 package org.labkey.api.view.template;
 
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewContext;
-
-import java.util.List;
 
 public class AppBarView extends JspView<AppBar>
 {

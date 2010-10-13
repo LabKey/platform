@@ -20,7 +20,9 @@ import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.Filter;
@@ -41,6 +43,7 @@ public class AuthFilter implements Filter
 {
     private static final Object FIRST_REQUEST_LOCK = new Object();
     private static boolean _firstRequestHandled = false;
+    private static volatile Boolean _sslChecked = null;
 
     public void init(FilterConfig filterConfig) throws ServletException
     {
@@ -90,6 +93,24 @@ public class AuthFilter implements Filter
                 port = -1;
             }
             url = new URL("https", url.getHost(), port, url.getFile());
+
+            // If this is the first time redirecting to SSL, attempt a direct connection to the SSL URL first.
+            // If connection fails, treat it like a startup failure. #10968
+            if (null == _sslChecked)
+            {
+                String message = HttpsUtil.testSslUrl(url, "");
+                _sslChecked = true;
+
+                if (null != message)
+                {
+                    //noinspection ThrowableInstanceNeverThrown
+                    ConfigurationException ce = new ConfigurationException(message);
+                    ModuleLoader.getInstance().setStartupFailure(ce);
+                    ExceptionUtil.handleException(req, resp, ce, null, true);
+                    return;
+                }
+            }
+
             resp.sendRedirect(url.toString());
             return;
         }
