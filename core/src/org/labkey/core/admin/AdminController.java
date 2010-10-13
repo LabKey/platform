@@ -27,32 +27,105 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasValidator;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.StatusReportingRunnableAction;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.*;
-import org.labkey.api.data.*;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.CacheStats;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.QueryProfiler;
+import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.module.*;
+import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.FolderType;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.*;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
-import org.labkey.api.util.*;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.PreferenceService;
+import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.util.BreakpointThread;
+import org.labkey.api.util.ContainerTree;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionReportingLevel;
+import org.labkey.api.util.Formats;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HttpsUtil;
+import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.SessionAppender;
+import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.WebTheme;
+import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
@@ -65,19 +138,45 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
-import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
-import java.io.*;
-import java.lang.management.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.management.ClassLoadingMXBean;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadMXBean;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -836,23 +935,8 @@ public class AdminController extends SpringActionController
             if (form.isSslRequired() && !(request.isSecure() && (form.getSslPort() == request.getServerPort())))
             {
                 URL testURL = new URL("https", request.getServerName(), form.getSslPort(), AppProps.getInstance().getContextPath());
-                String error = null;
-                try
-                {
-                    HttpsURLConnection connection = (HttpsURLConnection)testURL.openConnection();
-                    HttpsUtil.disableValidation(connection);
-                    if (connection.getResponseCode() != 200)
-                    {
-                        error = "Bad response code, " + connection.getResponseCode() + " when connecting to the SSL port over HTTPS";
-                    }
-                }
-                catch (IOException e)
-                {
-                    error = "Error connecting over HTTPS - ensure that the web server is configured for SSL and that the port was correct. " +
-                            "If you are receiving this message even though SSL is enabled, try saving these settings while connected via SSL. " +
-                            "Attempted to connect to " + testURL + " and received the following error: " +
-                            (e.getMessage() == null ? e.toString() : e.getMessage());
-                }
+                String error = HttpsUtil.testSslUrl(testURL, "Ensure that the web server is configured for SSL and the port is correct. If SSL is enabled, try saving these settings while connected via SSL.");
+
                 if (error != null)
                 {
                     errors.reject(ERROR_MSG, error);
