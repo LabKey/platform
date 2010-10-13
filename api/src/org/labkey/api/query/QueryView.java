@@ -1400,13 +1400,24 @@ public class QueryView extends WebPartView<Object>
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        getSettings().setShowRows(ShowRows.ALL);
-        rgn.setAllowAsync(false);
-        view.getRenderContext().setCache(false);
-        RenderContext ctx = view.getRenderContext();
-        if (null == rgn.getResultSet(ctx))
-            return null;
-        return new Report.Results(ctx);
+        ShowRows prevShowRows = getSettings().getShowRows();
+        try
+        {
+            getSettings().setShowRows(ShowRows.ALL);
+            rgn.setAllowAsync(false);
+            view.getRenderContext().setCache(false);
+            RenderContext ctx = view.getRenderContext();
+            if (null == rgn.getResultSet(ctx))
+                return null;
+            return new Report.Results(ctx);
+        }
+        finally
+        {
+            // We have to reset the show-rows setting, since we don't know what's going to be done with this
+            // queryview after the call to 'getResults'.  It's possible it could still be rendered to the client,
+            // as happens with study datasets.
+            getSettings().setShowRows(prevShowRows);
+        }
     }
 
     public ResultSet getResultSet() throws SQLException, IOException

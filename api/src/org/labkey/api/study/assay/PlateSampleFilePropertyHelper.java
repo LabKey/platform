@@ -201,7 +201,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         }
         catch (IOException e)
         {
-            throw new ExperimentException(e);
+            throw new ExperimentException("Unable to parse sample properties file.  Please verify that the file is a valid Excel workbook.", e);
         }
         _sampleProperties = allProperties;
         return _sampleProperties;

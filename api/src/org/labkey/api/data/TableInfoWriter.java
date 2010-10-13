@@ -108,8 +108,11 @@ public class TableInfoWriter
         if (!column.isShownInDetailsView())
             columnXml.setShownInDetailsView(false);
 
-        columnXml.setDimension(column.isDimension());
-        columnXml.setMeasure(column.isMeasure());
+        if (column.isDimension() != ColumnRenderProperties.inferIsDimension(column))
+            columnXml.setDimension(column.isDimension());
+
+        if (column.isMeasure() != ColumnRenderProperties.inferIsMeasure(column))
+            columnXml.setMeasure(column.isMeasure());
 
         if (null != column.getURL())
             columnXml.setUrl(column.getURL().getSource());

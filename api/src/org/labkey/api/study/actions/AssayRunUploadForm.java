@@ -89,7 +89,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             if (col != null)
             {
                 orderedColumns.add(col);
-                uriToCol.remove(dc.getCaption());
+                uriToCol.remove(uri);
             }
         }
         // add the remaining columns:

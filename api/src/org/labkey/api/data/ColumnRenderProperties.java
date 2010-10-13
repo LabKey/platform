@@ -264,30 +264,54 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         this.dimension = dimension;
     }
 
-    public static boolean inferIsDimension(boolean isLookup, boolean isHidden)
+    public static boolean inferIsDimension(ColumnRenderProperties col)
     {
-        return isLookup && !isHidden;
+        return inferIsDimension(col.getName(), col.isLookup(), col.isHidden());
+    }
+    public static boolean inferIsDimension(String name, boolean isLookup, boolean isHidden)
+    {
+        return isLookup &&
+                !isHidden &&
+                !"CreatedBy".equalsIgnoreCase(name) &&
+                !"ModifiedBy".equalsIgnoreCase(name);
     }
 
     public boolean isDimension()
     {
         // If dimension is unspecified/null, make a best guess based on the type of the field:
         if (dimension == null)
-            return inferIsDimension(isLookup(), isHidden());
+            return inferIsDimension(getName(), isLookup(), isHidden());
         else
             return dimension;
     }
 
-    public static boolean inferIsMeasure(boolean isNumeric, boolean isAutoIncrement, boolean isLookup, boolean isHidden)
+    public static boolean inferIsMeasure(ColumnRenderProperties col)
     {
-        return isNumeric && !isAutoIncrement && !isLookup && !isHidden;
+        return inferIsMeasure(col.getName(),
+                col.isNumericType(),
+                col.isAutoIncrement(),
+                col.isLookup(),
+                col.isHidden());
+    }
+
+    public static boolean inferIsMeasure(String name, boolean isNumeric, boolean isAutoIncrement, boolean isLookup, boolean isHidden)
+    {
+        return isNumeric &&
+                !isAutoIncrement &&
+                !isLookup &&
+                !isHidden
+                && !"ParticipantID".equalsIgnoreCase(name)
+                && !"VisitID".equalsIgnoreCase(name)
+                && !"SequenceNum".equalsIgnoreCase(name)
+                && !"RowId".equalsIgnoreCase(name)
+                && !"ObjectId".equalsIgnoreCase(name);
     }
 
     public boolean isMeasure()
     {
         // If measure is unspecified/null, make a best guess based on the type of the field:
         if (measure == null)
-            return inferIsMeasure(isNumericType(), isAutoIncrement(), isLookup(), isHidden());
+            return inferIsMeasure(getName(), isNumericType(), isAutoIncrement(), isLookup(), isHidden());
         else
             return measure;
     }

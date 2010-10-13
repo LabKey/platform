@@ -352,7 +352,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
         catch (ExperimentException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            throw new RuntimeException(e);
         }
     }
 

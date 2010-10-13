@@ -17,13 +17,16 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -32,6 +35,18 @@ import java.util.Map;
 public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> extends AbstractAssayDataCollector<ContextType>
 {
     private boolean _uploadComplete = false;
+    private Set<String> _validExtensions = null;
+
+    public FileUploadDataCollector()
+    {
+
+    }
+
+    public FileUploadDataCollector(String... validExtensions)
+    {
+        _validExtensions = new CaseInsensitiveHashSet();
+        _validExtensions.addAll(Arrays.asList(validExtensions));
+    }
 
     public String getHTML(ContextType context)
     {

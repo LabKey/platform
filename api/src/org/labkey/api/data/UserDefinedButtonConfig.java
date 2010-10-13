@@ -172,7 +172,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         onClickWrapper.append("var dataRegionName = ").append(PageFlowUtil.jsString(ctx.getCurrentRegion().getName())).append("; ");
         onClickWrapper.append("var dataRegion = LABKEY.DataRegions[dataRegionName]; ");
         onClickWrapper.append(originalOnClick);
-        return onClickWrapper.toString();
+        return PageFlowUtil.filter(onClickWrapper.toString());
     }
 
     public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)
