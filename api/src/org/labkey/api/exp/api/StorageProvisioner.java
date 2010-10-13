@@ -95,7 +95,6 @@ public class StorageProvisioner
 
             TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.CreateTable);
 
-            CaseInsensitiveHashSet reserved = new CaseInsensitiveHashSet(kind.getReservedPropertyNames(domain));
             CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
             
             for (PropertyStorageSpec spec : kind.getBaseProperties())
@@ -106,9 +105,6 @@ public class StorageProvisioner
 
             for (DomainProperty property : domain.getProperties())
             {
-                if (reserved.contains(property.getName()))
-                    throw new IllegalArgumentException("Property name is reserved: " + property.getName());
-
                 if (base.contains(property.getName()))
                 {
                     // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
@@ -232,16 +228,12 @@ public class StorageProvisioner
 
         TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.AddColumns);
 
-        CaseInsensitiveHashSet reserved = new CaseInsensitiveHashSet(kind.getReservedPropertyNames(domain));
         CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
         for (PropertyStorageSpec s : kind.getBaseProperties())
             base.add(s.getName());
 
         for (DomainProperty prop : properties)
         {
-            if (reserved.contains(prop.getName()))
-                throw new IllegalArgumentException("Property name is reserved: " + prop.getName());
-
             if (base.contains(prop.getName()))
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
