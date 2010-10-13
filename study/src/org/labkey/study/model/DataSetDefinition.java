@@ -138,7 +138,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "ParticipantSequenceKey",
         // The following columns names don't refer to actual built-in dataset columns, but
         // they're used by import ('replace') or are commonly used/confused synonyms for built-in column names
-        // "replace", allow because this causes too many error on 10.3 upgrade 
+        "replace",
         "visit",
         "participant"
     };
