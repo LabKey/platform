@@ -426,10 +426,13 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     // using the columnStore.
     createNodeAttrs : function (fieldMetaRecord) {
         var fieldMeta = fieldMetaRecord.data;
+        var text = fieldMeta.name;
+        if (fieldMeta.caption && fieldMeta.caption != "&nbsp;")
+            text = fieldMeta.caption;
         var attrs = {
             id: fieldMeta.fieldKey,
             fieldKey: fieldMeta.fieldKey,
-            text: fieldMeta.caption,
+            text: text,
             leaf: !fieldMeta.lookup,
             //checked: fieldMeta.selectable ? this.hasField(fieldMeta.fieldKey) : undefined,
             checked: this.hasField(fieldMeta.fieldKey),
