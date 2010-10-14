@@ -1115,7 +1115,6 @@ img.labkey-grid-filter-icon
 .labkey-grab {
     background: url(./_images/grab.png) repeat-y 2px 0;
     width: 8px;
-    /*height: 14px;*/
     cursor: move;
 }
 
@@ -1233,7 +1232,7 @@ img.labkey-grid-filter-icon
     margin-top: 3px;
 }
 
-.labkey-customview-filter-item tr:nth-child(>2)
+/** Ext.ux.dd.GridDragDropRowOrder.js */
 
 .grid-row-insertion {
     background: darkblue;
