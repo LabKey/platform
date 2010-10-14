@@ -28,7 +28,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.webdav.*;
 import org.labkey.api.wiki.WikiRendererType;
@@ -36,7 +35,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
@@ -322,9 +320,9 @@ class WikiWebdavProvider implements WebdavService.Provider
 
             if (null != v)
             {
-                _type = getWikiVersion().getRendererTypeEnum();
-                _body = getHtml(getWikiVersion().getBody(), _type);
+                setBody(getWikiVersion().getBody());
                 _title = getWikiVersion().getTitle();
+                _type = getWikiVersion().getRendererTypeEnum();
                 _properties.put(SearchService.PROPERTY.displayTitle.toString(), v.getTitle().getSource());
             }
         }
@@ -336,18 +334,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             init(c, name, entityId, null, c.getPolicy(), m);
 
             _type = rendererType;
-            _body = getHtml(body, rendererType);
-        }
-
-
-        private static String getHtml(String body, WikiRendererType type)
-        {
-            WikiService service = ServiceRegistry.get().getService(WikiService.class);
-
-            if (null == service)
-                throw new IllegalStateException("WikiService not found");
-
-            return service.getRenderer(type).format(body).getHtml();
+            setBody(body);
         }
 
 
@@ -370,6 +357,12 @@ class WikiWebdavProvider implements WebdavService.Provider
             WikiManager.setLastIndexed(_c, _name, ms);
         }
         
+
+        protected void setBody(String body)
+        {
+            _body = body;
+        }
+
 
         public String getDocumentId()
         {
@@ -522,7 +515,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public String getContentType()
         {
-            return "text/html";
+            return _type.getContentType();
         }
 
         public long getContentLength()

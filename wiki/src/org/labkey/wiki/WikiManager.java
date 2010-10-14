@@ -1085,7 +1085,7 @@ public class WikiManager
                 props.put(SearchService.PROPERTY.displayTitle.toString(), wikiTitle);
                 props.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
 
-                WikiWebdavProvider.WikiPageResource r = new WikiWebdavProvider.WikiPageResource(c, name, entityId, body, rendererType, props);
+                WikiWebdavProvider.WikiPageResource r = new RenderedWikiResource(c, name, entityId, body, rendererType, props);
                 task.addResource(r, SearchService.PRIORITY.item);
                 if (Thread.interrupted())
                     return;
