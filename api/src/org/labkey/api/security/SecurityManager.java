@@ -2628,7 +2628,7 @@ public class SecurityManager
         private String _emailAddress = "";
         private String _recipient = "";
         protected boolean _verificationUrlRequired = true;
-        private List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
+        protected List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
 
         protected SecurityEmailTemplate(String name)
         {
@@ -2672,6 +2672,7 @@ public class SecurityManager
         protected static final String DEFAULT_SUBJECT =
                 "Welcome to the ^organizationName^ ^siteShortName^ Web Site new user registration";
         protected static final String DEFAULT_BODY =
+                "^optionalMessage^\n\n" +
                 "You now have an account on the ^organizationName^ ^siteShortName^ web site.  We are sending " +
                 "you this message to verify your email address and to allow you to create a password that will provide secure " +
                 "access to your data on the web site.  To complete the registration process, simply click the link below or " +
@@ -2692,18 +2693,10 @@ public class SecurityManager
             setBody(DEFAULT_BODY);
             setDescription("Sent to the new user and administrator when a user is added to the site.");
             setPriority(1);
-        }
 
-        public String renderBody(Container c)
-        {
-            StringBuffer sb = new StringBuffer();
-
-            if (_optionalPrefix != null)
-            {
-                sb.append(_optionalPrefix);
-                sb.append("\n\n");
-            }
-            return sb.append(super.renderBody(c)).toString();
+            _replacements.add(new ReplacementParam("optionalMessage", "An optional message to include with the new user email"){
+                public String getValue(Container c) {return _optionalPrefix;}
+            });
         }
     }
 
