@@ -308,6 +308,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     {
                         body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
                     }
+
+                    // Display title is sometimes null on production systems; if this happens, log the first 1,000 chars of HTML
+                    if (null == displayTitle)
+                    {
+                        throw new NullPointerException("Extracted title of " + r.getClass().getName() + " is null. HTML: " + html.substring(0, Math.min(html.length(), 1000)));
+                    }
                 }
                 else if (type.startsWith("text/") && !type.contains("xml"))
                 {
@@ -341,6 +347,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String url = r.getExecuteHref(null);
             assert null != url;
             assert null != displayTitle;
+
+            if (null == displayTitle)
+            {
+
+            }
+
             _log.debug("parsed " + url);
 
             if (StringUtils.isBlank(searchTitle))
