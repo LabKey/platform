@@ -110,7 +110,31 @@ public class StudyUnionTableInfo extends VirtualTable
                 }
                 else
                 {
-                    sqlf.append(", NULL AS " + getSqlDialect().makeLegalIdentifier(pd.getName()));
+                    // in at least Postgres, it isn't legal to union two columns where one is NULL and the other is
+                    // numeric. It's OK when the other column is text. It's presently unknown whether this is a problem if the
+                    // missing column is something other than text or numeric.
+                    //
+                    // The following selects a 0 if the column is numeric and isn't present for one of the tables in
+                    // the union.
+                    //
+                    // Too bad study.getSharedProperties returns properties that aren't present on all datasets.
+
+                    String empty;
+                    switch (pd.getSqlTypeInt())
+                    {
+                        case Types.BIGINT:
+                        case Types.INTEGER:
+                        case Types.NUMERIC:
+                        case Types.DOUBLE:
+                        case Types.DECIMAL:
+                        case Types.FLOAT:
+                            empty = "0";
+                            break;
+                        default:
+                            empty = "NULL";
+                    }
+
+                    sqlf.append(String.format(", %s AS %s", empty, getSqlDialect().makeLegalIdentifier(pd.getName())));
                 }
             }
 
