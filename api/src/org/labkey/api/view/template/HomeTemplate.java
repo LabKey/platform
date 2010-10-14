@@ -230,6 +230,7 @@ public class HomeTemplate extends PrintTemplate
 
                     //If it specified a trail, use it. Otherwise do the default thing.
                     // assume length == 1 is title only, length > 1 means root,...,title
+                    // TODO: Remove this completely in 11.1
                     if (trailExtras.length <= 1)
                     {
                         ActionURL startUrl = curModule.getTabURL(context.getContainer(), context.getUser());
