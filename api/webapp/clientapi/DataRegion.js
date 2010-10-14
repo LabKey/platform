@@ -815,12 +815,26 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         var fn;
         if (hasSelected) {
             fn = function (item, index) {
-                Ext.get(item).replaceClass("labkey-disabled-button", "labkey-button");
+                var elem = Ext.get(item);
+                var marker = "/*_b_*/return false;/*_e_*/";
+                elem.replaceClass("labkey-disabled-button", "labkey-button");
+                var click = elem.getAttribute('onclick');
+                if (click.indexOf(marker) >= 0) {
+                    click = click.replace(marker, "");
+                    elem.set({onclick : click});
+                }
+
             };
         }
         else {
             fn = function (item, index) {
-                Ext.get(item).replaceClass("labkey-button", "labkey-disabled-button");
+                var elem = Ext.get(item);
+                var marker = "/*_b_*/return false;/*_e_*/";
+                elem.replaceClass("labkey-button", "labkey-disabled-button");
+                var click = elem.getAttribute('onclick');
+                if (click.indexOf(marker) < 0) {
+                    elem.set({onclick : marker + elem.getAttribute('onclick')});
+                }
             };
         }
 
