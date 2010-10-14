@@ -303,6 +303,7 @@ public class UserController extends SpringActionController
             _userId = userId;
         }
 
+        // TODO: Switch to ReturnUrlForm and standard param
         public String getRedirUrl()
         {
             return _redirUrl;
@@ -381,6 +382,7 @@ public class UserController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
             String title = _active ? "Re-activate Users" : "Deactivate Users";
             return root.addChild(title);
         }
@@ -468,6 +470,7 @@ public class UserController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
             return root.addChild("Delete Users");
         }
     }
