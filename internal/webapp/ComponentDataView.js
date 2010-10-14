@@ -19,7 +19,6 @@ Ext.ux.ComponentDataView = Ext.extend(Ext.DataView, {
         this.renderItems(0, this.store.getCount() - 1);
     },
     onUpdate : function(ds, record){
-        console.log("store update");
         var index = ds.indexOf(record);
         if(index > -1){
             this.destroyItems(index);
@@ -30,7 +29,6 @@ Ext.ux.ComponentDataView = Ext.extend(Ext.DataView, {
         }
     },
     onAdd : function(ds, records, index){
-        console.log("store add");
         var count = this.all.getCount();
         Ext.ux.ComponentDataView.superclass.onAdd.apply(this, arguments);
         if(count !== 0){
@@ -38,7 +36,6 @@ Ext.ux.ComponentDataView = Ext.extend(Ext.DataView, {
         }
     },
     onRemove : function(ds, record, index){
-        console.log("store remove");
         this.destroyItems(index);
         Ext.ux.ComponentDataView.superclass.onRemove.apply(this, arguments);
     },
@@ -47,34 +44,70 @@ Ext.ux.ComponentDataView = Ext.extend(Ext.DataView, {
         Ext.destroy(this.components);
         this.components = [];
     },
+    
+    renderItem : function (rootNode, item, node, record, index)
+    {
+        var c = item.render ?
+                c = item.cloneConfig() :
+                Ext.create(item, this.defaultType);
+
+        if(c.renderTarget){
+            node = Ext.DomQuery.is(node, c.renderTarget) ? node : Ext.DomQuery.selectNode(c.renderTarget, node);
+            c.render(node);
+        }else if(c.applyTarget){
+            node = Ext.DomQuery.is(node, c.applyTarget) ? node : Ext.DomQuery.selectNode(c.applyTarget, node);
+            c.applyToMarkup(node);
+        }else{
+            c.render(node);
+        }
+
+        if (Ext.isFunction(c.setRecord)) {
+            c.setRecord(record, index);
+        }
+
+        if (index === undefined)
+        {
+            if(Ext.isFunction(c.setValue) && c.applyValue){
+                c.setValue(record.get(c.applyValue));
+                c.on('blur', function(f){
+                    var record = this.dataView.getRecord(this.node);
+                    record.data[this.dataIndex] = f.getValue();
+                }, {node: rootNode, dataView: this, dataIndex: c.applyValue});
+            }
+        }
+        else
+        {
+            // XXX: generalize setting index values on blur. See LABKEY.ext.FilterOpCombo and LABKEY.ext.FilterTextValue
+        }
+
+        return c;
+    },
+
     renderItems : function(startIndex, endIndex){
         var ns = this.all.elements;
         var args = [startIndex, 0];
         for(var i = startIndex; i <= endIndex; i++){
             var r = args[args.length] = [];
             for(var items = this.items, j = 0, len = items.length, c; j < len; j++){
-                c = items[j].render ?
-                    c = items[j].cloneConfig() :
-                    Ext.create(items[j], this.defaultType);
-                r[j] = c;
-                if(c.renderTarget){
-                    c.render(Ext.DomQuery.selectNode(c.renderTarget, ns[i]));
-                }else if(c.applyTarget){
-                    c.applyToMarkup(Ext.DomQuery.selectNode(c.applyTarget, ns[i]));
-                }else{
-                    c.render(ns[i]);
-                }
 
-                if (Ext.isFunction(c.setRecord)) {
-                    c.setRecord(this.store.getAt(i));
-                }
+                var item = items[j];
+                var record = this.store.getAt(i);
 
-                if(Ext.isFunction(c.setValue) && c.applyValue){
-                    c.setValue(this.store.getAt(i).get(c.applyValue));
-                    c.on('blur', function(f){
-                        var record = this.dataView.getRecord(this.node);
-                    	record.data[this.dataIndex] = f.getValue();
-                    }, {node: ns[i], dataView: this, dataIndex: c.applyValue});
+                var query = item.renderTarget || item.applyTarget;
+                if (query)
+                {
+                    if (item.indexedProperty)
+                    {
+                        Ext.each(Ext.query(query, ns[i]), function (node, index) {
+                            r.push(this.renderItem(ns[i], item, node, record, index));
+                        }, this);
+                    }
+                    else
+                        r.push(this.renderItem(ns[i], item, ns[i], record));
+                }
+                else
+                {
+                    r.push(this.renderItem(ns[i], item, ns[i], record));
                 }
             }
         }

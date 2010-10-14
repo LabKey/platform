@@ -867,6 +867,7 @@ LABKEY.Query = new function()
          * @param {String} config.schemaName The name of the schema.
          * @param {String} config.queryName The name of the query.
          * @param {String} [config.viewName] An optional view name or Array of view names to include custom view details.
+         * @param {String} [config.fields] An optional field key or Array of field keys to include in the metadata.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -899,15 +900,23 @@ LABKEY.Query = new function()
         getQueryDetails : function(config)
         {
             var params = {};
-            if(config.schemaName)
+            if (config.schemaName)
                 params.schemaName = config.schemaName;
-            if(config.queryName)
+
+            if (config.queryName)
                 params.queryName = config.queryName;
+
             if (Ext.isArray(config.viewName))
                 params.viewName = config.viewName.join(",");
             else
                 params.viewName = config.viewName;
-            if(config.fk)
+
+            if (Ext.isArray(config.fields))
+                params.fields = config.fields.join(",");
+            else
+                params.fields = config.fields;
+
+            if (config.fk)
                 params.fk = config.fk;
 
             Ext.Ajax.request({

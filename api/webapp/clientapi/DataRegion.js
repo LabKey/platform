@@ -14,7 +14,7 @@
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
-* limitations under the License. 
+* limitations under the License.
 * <p/>
 */
 
@@ -406,7 +406,7 @@ LABKEY.DataRegion = function (config)
     {
         if (false === this.fireEvent("beforefilterchange", this, newParamValPairs))
             return;
-        
+
         setSearchString(this.name, newQueryString);
     };
 
@@ -563,13 +563,44 @@ LABKEY.DataRegion = function (config)
     /**
      * Change the currently selected view to the named view
      * @param viewName the name of the saved view to display
+     * @param urlParameters <b>NOTE: Experimental parameter; may change without warning.</b> A set of filter and sorts to apply as URL parameters when changing the view.
      */
-    this.changeView = function(viewName)
+    this.changeView = function(viewName, urlParameters)
     {
-        if (false === this.fireEvent("beforechangeview", this, viewName))
+        if (false === this.fireEvent("beforechangeview", this, viewName, urlParameters))
             return;
 
-        this._setParam(".viewName", viewName, [".offset", ".showRows", ".viewName", ".reportId"]);
+        var skipPrefixes = [".offset", ".showRows", ".viewName", ".reportId"];
+        var newParamValPairs = [[".viewName", viewName]];
+        if (urlParameters)
+        {
+            if (urlParameters.filter && urlParameters.filter.length > 0)
+            {
+                for (var i = 0; i < urlParameters.filter.length; i++)
+                {
+                    var filter = urlParameters.filter[i];
+                    newParamValPairs.push(["." + filter.fieldKey + "~" + filter.op, filter.value]);
+                }
+            }
+
+            if (urlParameters.sort && urlParameters.sort.length > 0)
+            {
+                var newSortArray = [];
+                for (var i = 0; i < urlParameters.sort.length; i++)
+                {
+                    var sort = urlParameters.sort[i];
+                    newSortArray.push((sort.dir == "+" ? "" : sort.dir) + sort.fieldKey);
+                }
+                newParamValPairs.push([".sort", newSortArray.join(",")]);
+            }
+
+            // removes all filters and sorts parameters
+            skipPrefixes.push(".sort");
+            skipPrefixes.push(".");
+        }
+
+
+        this._setParams(newParamValPairs, skipPrefixes);
     };
 
     this._initElements();
@@ -699,16 +730,27 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this._setParam(null, null, skipPrefixes);
     },
 
-    // private
     _setParam : function (param, value, skipPrefixes)
+    {
+        this._setParams([param, value], skipPrefixes);
+    },
+
+    // private
+    _setParams : function (newParamValPairs, skipPrefixes)
     {
         for (var i in skipPrefixes)
             skipPrefixes[i] = this.name + skipPrefixes[i];
 
         var paramValPairs = getParamValPairs(this.requestURL, skipPrefixes);
-        if (null != value)
+        if (newParamValPairs)
         {
-            paramValPairs[paramValPairs.length] = [this.name + param, value];
+            for (var i = 0; i < newParamValPairs.length; i++)
+            {
+                var param = newParamValPairs[i][0],
+                        value = newParamValPairs[i][1];
+                if (null != param && null != value)
+                    paramValPairs[paramValPairs.length] = [this.name + param, value];
+            }
         }
         setSearchString(this.name, buildQueryString(paramValPairs));
     },
@@ -801,28 +843,31 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     /**
      * Show a ribbon panel. tabPanelConfig is an Ext config object for a TabPanel, the only required
      * value is the items array.
-     * */
-    showButtonPanel : function(panelButton, tabPanelConfig)
+     */
+    showButtonPanel : function (panelButton, tabPanelConfig)
+    {
+        var regionHeader = Ext.get(panelButton).parent(".labkey-data-region-header");
+        if (!regionHeader || !regionHeader.parent())
+            return;
+
+        this._showButtonPanel(regionHeader, panelButton.id, true, tabPanelConfig);
+    },
+
+    _showButtonPanel : function(headerOrFooter, panelId, animate, tabPanelConfig)
     {
         //create the ribbon container if necessary
-        if (!this.ribbonContainer)
-        {
-            var regionHeader = Ext.get(panelButton).parent(".labkey-data-region-header");
-            if (!regionHeader || !regionHeader.parent())
-                return;
+        if (!headerOrFooter.ribbonContainer)
+            headerOrFooter.ribbonContainer = headerOrFooter.parent().createChild({tag:'div', cls:'labkey-ribbon extContainer'});
 
-            this.ribbonContainer = regionHeader.parent().createChild({tag:'div',cls:'extContainer'});
-        }
-
-        var panelDiv = this.ribbonContainer;
+        var panelDiv = headerOrFooter.ribbonContainer;
         if (panelDiv)
         {
             var panelToHide = null;
             // If we find a spot to put the panel, check its current contents
-            if (this.currentPanelButton)
+            if (this.currentPanelId)
             {
                 // We're currently showing a ribbon panel, so remember that we need to hide it
-                panelToHide = this.panelButtonContents[this.currentPanelButton.id];
+                panelToHide = this.panelButtonContents[this.currentPanelId];
             }
 
             // Create a callback function to render the requested ribbon panel
@@ -832,13 +877,13 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 {
                     panelToHide.setVisible(false);
                 }
-                if (this.currentPanelButton != panelButton)
+                if (this.currentPanelId != panelId)
                 {
-                    if (!this.panelButtonContents[panelButton.id])
+                    if (!this.panelButtonContents[panelId])
                     {
                         var minWidth = 0;
                         var tabContentWidth = 0;
-                        
+
                         // New up the TabPanel if we haven't already
                         // Only create one per button, even if that button is rendered both above and below the grid
                         tabPanelConfig.cls ='vertical-tabs';
@@ -851,44 +896,51 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                             newItems[i] = tabPanelConfig.items[i];
                             newItems[i].autoScroll = true;
 
-                            //FF and IE won't auto-resize the tab panel to fit the content 
+                            //FF and IE won't auto-resize the tab panel to fit the content
                             //so we need to calculate the min size and set it explicitly
                             if (Ext.isGecko || Ext.isIE)
                             {
-                                newItems[i].removeClass("x-hide-display");
-                                tabContentWidth = Ext.get(newItems[i].items.items[0].contentEl).getWidth();
-//                                tabContentWidth = Ext.get(newItems[i].contentEl).getWidth();
-                                newItems[i].addClass("x-hide-display");
-                                minWidth = Math.max(minWidth, tabContentWidth);
+                                var item = newItems[i];
+                                if (!item.events)
+                                    newItems[i] = item = Ext.create(item, 'grouptab');
+                                item.removeClass("x-hide-display");
+                                if (item.items.getCount() > 0 && item.items.items[0].contentEl)
+                                {
+                                    tabContentWidth = Ext.get(item.items.items[0].contentEl).getWidth();
+                                    //                                tabContentWidth = Ext.get(newItems[i].contentEl).getWidth();
+                                    item.addClass("x-hide-display");
+                                    minWidth = Math.max(minWidth, tabContentWidth);
+                                }
                             }
                         }
                         tabPanelConfig.items = newItems;
-                        if ((Ext.isGecko || Ext.isIE) && minWidth > 0 && regionHeader.getWidth() < minWidth)
+                        if ((Ext.isGecko || Ext.isIE) && minWidth > 0 && headerOrFooter.getWidth() < minWidth)
                             tabPanelConfig.width = minWidth;
-                        this.panelButtonContents[panelButton.id] = new Ext.ux.GroupTabPanel(tabPanelConfig);
+                        this.panelButtonContents[panelId] = new Ext.ux.GroupTabPanel(tabPanelConfig);
                     }
                     else
                     {
                         // Otherwise, be sure that it's parented correctly - it might have been shown
                         // in a different button bar position
-                        this.panelButtonContents[panelButton.id].getEl().appendTo(Ext.get(panelDiv));
+                        this.panelButtonContents[panelId].getEl().appendTo(Ext.get(panelDiv));
                     }
 
-                    this.currentPanelButton = panelButton;
+                    this.currentPanelId = panelId;
 
                     // Slide it into place
-                    this.panelButtonContents[panelButton.id].setVisible(true);
-                    this.panelButtonContents[panelButton.id].getEl().slideIn();
+                    var panelToShow = this.panelButtonContents[panelId];
+                    panelToShow.setVisible(true);
+                    panelToShow.getEl().slideIn();
 
-                    this.panelButtonContents[panelButton.id].setWidth(this.panelButtonContents[panelButton.id].getResizeEl().getWidth());
+                    panelToShow.setWidth(panelToShow.getResizeEl().getWidth());
                 }
                 else
                 {
-                    this.currentPanelButton = null;
+                    this.currentPanelId = null;
                 }
             };
 
-            if (this.currentPanelButton)
+            if (this.currentPanelId)
             {
                 // We're already showing a ribbon panel, so hide it before showing the new one
                 panelToHide.getEl().slideOut('t', { callback: callback, scope: this });
@@ -901,12 +953,82 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         }
     },
 
+    showCustomizeView : function (chooseColumnsUrl, hideMessage, animate)
+    {
+        // UNDONE: when both header and footer are rendered, need to show the panel in the correct button bar
+        var headerOrFooter = this.header || this.footer;
+
+        //create the ribbon container if necessary
+        if (!headerOrFooter.ribbonContainer)
+            headerOrFooter.ribbonContainer = headerOrFooter.parent().createChild({tag:'div', cls:'labkey-ribbon extContainer'});
+
+        if (!this.customizeView)
+        {
+            LABKEY.requiresScript("designer/designer2.js", true, function () {
+
+                var additionalFields = {};
+                var userFilter = this.getUserFilter();
+                var userSort = this.getUserSort();
+
+                for (var i = 0; i < userFilter.length; i++)
+                    additionalFields[userFilter[i].fieldKey] = true;
+
+                for (var i = 0; i < userSort.length; i++)
+                    additionalFields[userSort[i].fieldKey] = true;
+
+                var fields = [];
+                for (var fieldKey in additionalFields)
+                    fields.push(fieldKey);
+
+                LABKEY.Query.getQueryDetails({
+                    schemaName: this.schemaName,
+                    queryName: this.queryName,
+                    viewName: this.viewName,
+                    fields: fields.join(","),
+                    successCallback: function (json, response, options) {
+                        if (hideMessage)
+                            this.hideMessage();
+
+                        var minWidth = Math.max(500, headerOrFooter.parent().getWidth(true));
+                        var renderTo = headerOrFooter.ribbonContainer.createChild({tag:"div"});
+
+                        this.customizeView = new LABKEY.DataRegion.ViewDesigner({
+                            renderTo: renderTo,
+                            width: minWidth,
+                            dataRegion: this,
+                            schemaName: this.schemaName,
+                            queryName: this.queryName,
+                            viewName: this.viewName,
+                            query: json
+                        });
+
+                        this.customizeView.on("viewsave", this.onViewSave, this);
+
+                        this.panelButtonContents["~~customizeView~~"] = this.customizeView;
+                        this._showButtonPanel(headerOrFooter, "~~customizeView~~", animate, null);
+                    },
+                    scope: this
+                });
+            }, this);
+        }
+        else
+        {
+            this._showButtonPanel(headerOrFooter, "~~customizeView~~", animate, null);
+        }
+    },
+
+    hideCustomizeView : function ()
+    {
+        if (this.customizeView && this.customizeView.isVisible())
+            this._showButtonPanel(this.header || this.footer, "~~customizeView~~", true, null);
+    },
+
     // private
     deleteCustomView : function ()
     {
         var title = (this.viewName ? "Delete " : "Revert ") +
-                    (this.view && this.view.shared ? "shared " : "your ") +
-                    (this.view && this.view.session ? "unsaved" : "") + "view";
+                (this.view && this.view.shared ? "shared " : "your ") +
+                (this.view && this.view.session ? "unsaved" : "") + "view";
         var msg = "Are you sure you want to " + (this.viewName ? "delete " : "revert ") + " the current view";
         if (this.viewName)
             msg += " '<em>" + escape(this.viewName) + "</em>'";
@@ -958,73 +1080,11 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         });
     },
 
-    showCustomizeView : function (chooseColumnsUrl, hideMessage)
-    {
-        if (chooseColumnsUrl && !this.schemaName || !this.queryName)
-        {
-            window.location = chooseColumnsUrl;
-            return;
-        }
-
-        if (!this.customizeView)
-        {
-            LABKEY.requiresScript("query/queryDesigner.js", true); // for FieldKey
-            LABKEY.requiresScript("designer/designer2.js", true, function () {
-
-                LABKEY.Query.getQueryDetails({
-                    schemaName: this.schemaName,
-                    queryName: this.queryName,
-                    viewName: this.viewName,
-                    successCallback: function (json, response, options) {
-                        if (hideMessage)
-                            this.hideMessage();
-                        
-                        var el = Ext.get(this.form || this.table);
-                        var renderTo = el.parent().insertFirst({tag: "div"});
-
-                        this.customizeView = new LABKEY.DataRegion.ViewDesigner({
-                            renderTo: renderTo,
-                            style: {
-                                "float": "left",
-                                "margin-right": "8px"
-                            },
-                            dataRegion: this,
-                            schemaName: this.schemaName,
-                            queryName: this.queryName,
-                            viewName: this.viewName,
-                            query: json
-                        });
-
-                        this.customizeView.on("viewsave", this.onViewSave, this);
-
-                        this.customizeView.setVisible(true);
-                        // XXX: animating the panel is too slow to render
-                        //this.customizeView.getEl().slideIn('l', {duration:0.35});
-                    },
-                    scope: this
-                });
-
-            }, this);
-        }
-        else
-        {
-            this.customizeView.setVisible(true);
-            // XXX: animating the panel is too slow to render
-            //this.customizeView.getEl().slideIn('l', {duration:0.35});
-        }
-    },
-
-    hideCustomizeView : function ()
-    {
-        if (this.customizeView)
-            this.customizeView.setVisible(false);
-    },
-
-    onViewSave : function (designer, savedViewsInfo) {
+    onViewSave : function (designer, savedViewsInfo, urlParameters) {
         if (savedViewsInfo && savedViewsInfo.views.length > 0)
         {
             this.hideCustomizeView();
-            this.changeView(savedViewsInfo.views[0].name);
+            this.changeView(savedViewsInfo.views[0].name, urlParameters);
         }
     }
 

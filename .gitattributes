@@ -2530,6 +2530,7 @@ internal/src/org/labkey/api/webdav/view/fileEmailNotify.jsp -text
 internal/src/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp -text
 internal/webapp/ComponentDataView.js -text
 internal/webapp/ComponentListView.js -text
+internal/webapp/Ext.ux.dd.GridDragDropRowOrder.js -text
 internal/webapp/Ext.ux.form.LovCombo.css -text
 internal/webapp/Ext.ux.form.LovCombo.js -text
 internal/webapp/FileUploadField.css -text
@@ -2639,6 +2640,7 @@ internal/webapp/_images/go-next-disabled.png -text
 internal/webapp/_images/go-next.png -text
 internal/webapp/_images/go-previous-disabled.png -text
 internal/webapp/_images/go-previous.png -text
+internal/webapp/_images/grab.png -text
 internal/webapp/_images/icons.css -text
 internal/webapp/_images/info.png -text
 internal/webapp/_images/key.png -text

@@ -50,6 +50,7 @@ public class PanelButton extends ActionButton
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         String requiresSelectionDataRegion = _requiresSelection ? ctx.getCurrentRegion().getName() : null;
+        // XXX: id is not unique if both top and bottom button bars render this button.
         String attributes = "id=\"" + getId() + "\"";
         if (requiresSelectionDataRegion != null)
             attributes += " labkey-requires-selection=\"" + PageFlowUtil.filter(requiresSelectionDataRegion) + "\"";

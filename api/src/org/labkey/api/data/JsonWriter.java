@@ -21,19 +21,20 @@ package org.labkey.api.data;
 
 import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class JsonWriter
 {
-    public static List<Map<String,Object>> getNativeColProps(TableInfo tinfo, FieldKey fieldKeyPrefix)
+    public static List<Map<String,Object>> getNativeColProps(TableInfo tinfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix)
     {
         List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
-        for (ColumnInfo cinfo : tinfo.getColumns())
+
+        List<ColumnInfo> columns = new ArrayList<ColumnInfo>(tinfo.getColumns());
+        LinkedHashMap<FieldKey, ColumnInfo> allColumns = QueryService.get().getColumns(tinfo, fields, columns);
+        for (ColumnInfo cinfo : allColumns.values())
         {
             colProps.add(JsonWriter.getMetaData(cinfo.getDisplayColumnFactory().createRenderer(cinfo), fieldKeyPrefix, true, true));
         }

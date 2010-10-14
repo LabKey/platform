@@ -3,13 +3,88 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresScript('ComponentDataView.js', true);
 
-LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
+LABKEY.requiresScript("query/queryDesigner.js", true); // for FieldKey
+LABKEY.requiresCss("groupTabPanel/GroupTab.css", true);
+LABKEY.requiresCss("groupTabPanel/UngroupedTab.css", true);
+LABKEY.requiresScript("groupTabPanel/GroupTabPanel.js", true);
+LABKEY.requiresScript("groupTabPanel/GroupTab.js", true);
+LABKEY.requiresScript('ComponentDataView.js', true);
+LABKEY.requiresScript('Ext.ux.dd.GridDragDropRowOrder.js', true);
+
+LABKEY.ext.SplitGroupTabPanel = Ext.extend(Ext.ux.GroupTabPanel, {
+    constructor : function (config) {
+        this.cls = 'vertical-tabs extContainer';
+        this.splitItem = this.lookupComponent(config.splitItem);
+        delete config.splitItem;
+        LABKEY.ext.SplitGroupTabPanel.superclass.constructor.call(this, config);
+
+        this.layout.layoutOnCardChange = true;
+    },
+
+    initComponent : function () {
+        LABKEY.ext.SplitGroupTabPanel.superclass.initComponent.call(this);
+    },
+
+    render : function (ct, position) {
+        LABKEY.ext.SplitGroupTabPanel.superclass.render.call(this, ct, position);
+    },
+
+    afterRender : function () {
+        var splitItem = this.splitItem;
+        splitItem.render(this.bwrap, 0);
+        splitItem.getEl().applyStyles({float: "left"});
+        this.splitResizer = new Ext.Resizable(splitItem.getEl(), {
+            handles: 'e',
+            //pinned: true, // always show the splitter
+            constrainTo: this.bwrap,
+            minWidth: 100,
+            resizeElement : function () {
+                var box = this.proxy.getBox();
+                splitItem.updateBox(box);
+                if (splitItem.layout) {
+                    splitItem.doLayout();
+                }
+                return box;
+            }
+        });
+        this.splitResizer.on('resize', this.adjustCenterSize, this);
+
+        LABKEY.ext.SplitGroupTabPanel.superclass.afterRender.apply(this, arguments);
+    },
+
+    onResize : function (adjWidth, adjHeight, rawWidth, rawHeight) {
+        LABKEY.ext.SplitGroupTabPanel.superclass.onResize.apply(this, arguments);
+
+        this.splitItem.setHeight(this.body.getHeight());
+        this.splitItem.setWidth(this.bwrap.getWidth()/2);
+        this.body.setWidth(this.bwrap.getWidth() - this.splitItem.getWidth());
+    },
+
+    adjustCenterSize : function (resizer, w, h, e) {
+        this.body.setWidth(this.bwrap.getWidth() - this.splitItem.getWidth());
+
+        // update the item sizes based on the centerItem
+        this.doLayout();
+    },
+
+    beforeDestroy : function () {
+        LABKEY.ext.SplitGroupTabPanel.superclass.beforeDestroy.call(this);
+        if (this.splitItem)
+            this.splitItem.destroy();
+        if (this.splitResizer)
+            this.splitResizer.destroy();
+    }
+});
+Ext.reg('splitgrouptab', LABKEY.ext.SplitGroupTabPanel);
+
+LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
     constructor : function (config) {
 
-        this.cls = 'extContainer';
+        this.tabWidth = 80;
+        this.activeGroup = 0;
+
         this.dataRegion = config.dataRegion;
 
         this.schemaName = config.schemaName;
@@ -45,7 +120,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
             for (var i = 0; i < this.userFilter.length; i++)
             {
                 // copy the filter so the original userFilter isn't modified by the designer
-                var userFilter = Ext.apply({userFilter: true}, this.userFilter[i]);
+                var userFilter = Ext.apply({urlParameter: true}, this.userFilter[i]);
                 this.customView.filter.unshift(userFilter);
             }
 
@@ -55,7 +130,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
             for (var i = 0; i < this.userSort.length; i++)
             {
                 // copy the sort so the original userSort isn't modified by the designer
-                var userSort = Ext.apply({userSort: true}, this.userSort[i]);
+                var userSort = Ext.apply({urlParameter: true}, this.userSort[i]);
                 newSortArray.push(userSort);
             }
 
@@ -111,29 +186,63 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
             readOnly: true
         });
 
+        this.fieldsTree = new Ext.tree.TreePanel({
+            autoScroll: true,
+            border: false,
+            //width: 230,
+            root: new Ext.tree.AsyncTreeNode({
+                id: "<root>",
+                expanded: true,
+                expandable: false,
+                draggable: false
+            }),
+            rootVisible: false,
+            loader: new LABKEY.ext.FieldTreeLoader({
+                store: this.fieldMetaStore,
+                designer: this,
+                schemaName: this.schemaName,
+                queryName: this.queryName,
+                createNodeConfigFn: {fn: this.createNodeAttrs, scope: this }
+            })
+        });
+
         var deleteToolTip =
                 (this.customView.name ? "Delete " : "Reset ") +
                 (this.customView.shared ? "shared " : "your ") + "view";
-        
+
         config = Ext.applyIf(config, {
             activeTab: 0,
             frame: false,
             shadow: true,
-            width: 300,
-            height: 560,
-            items: [
-                this.columnsTab,
-                this.filterTab,
-                this.sortTab,
-                this.propertiesTab
-            ],
+            height: 280,
+            splitItem: {
+                title: "Available Fields",
+                xtype: 'panel',
+                layout: 'fit',
+                autoScroll: true,
+                border: false,
+                style: { "border-left-width": "1px", "border-top-width": "1px", "border-bottom-width": "1px" },
+                items: [ this.fieldsTree ],
+            },
+            items: [{
+                xtype: 'grouptab',
+                items: [ this.columnsTab ]
+            },{
+                xtype: 'grouptab',
+                layoutOnTabChange: true,
+                items: [ this.filterTab ]
+            },{
+                xtype: 'grouptab',
+                layoutOnTabChange: true,
+                items: [ this.sortTab ]
+            }],
             buttonAlign: "left",
             bbar: {
                 xtype: 'container',
                 // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
                 //cls: "labkey-status-info",
                 style: { 'background-color': "#FFDF8C", padding: "2px" },
-                html: "button bar",
+                html: "bottom bar",
                 hidden: true
             },
             fbar: {
@@ -189,6 +298,9 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
         });
 
         LABKEY.DataRegion.ViewDesigner.superclass.constructor.call(this, config);
+
+        this.fieldsTree.on('checkchange', this.onCheckChange, this);
+        this.on('tabchange', this.onTabChange, this);
     },
 
     initComponent : function () {
@@ -197,25 +309,6 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
 
     onRender : function (ct, position) {
         LABKEY.DataRegion.ViewDesigner.superclass.onRender.call(this, ct, position);
-
-        var h = this.stripWrap.dom.offsetHeight;
-
-        // close button on the right
-        var btn = this.stripWrap.insertFirst({
-            tag: "img",
-            src: LABKEY.contextPath + "/_images/partdelete.gif",
-            title: "Close customize view designer",
-            style: {
-                opacity: "0.6",
-                float: "right",
-                "margin-top": "8px",
-                "margin-right": "8px",
-                cursor: "hand"
-            }
-        });
-        btn.on('click', this.onCloseClick, this);
-        this.closeButton = btn;
-
         if (!this.canEdit())
         {
             var msg = "This view is not editable, but you may<br>" +
@@ -257,11 +350,19 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
     showMessage : function (msg)
     {
         // XXX: support multiple messages and [X] close box
+        // UNDONE: bottom bar isn't rendering in the GroupTabPanel
         var tb = this.getBottomToolbar();
-        tb.getEl().update(msg);
-        tb.setVisible(true);
-        tb.getEl().slideIn();
-        tb.getEl().on('click', function () { this.hideMessage(); }, this, {single: true});
+        if (tb.getEl())
+        {
+            tb.getEl().update(msg);
+            tb.setVisible(true);
+            tb.getEl().slideIn();
+            tb.getEl().on('click', function () { this.hideMessage(); }, this, {single: true});
+        }
+        else
+        {
+            tb.on('afterrender', function () { this.showMessage(msg); }, this, {single: true});
+        }
     },
 
     hideMessage : function ()
@@ -272,20 +373,119 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
         tb.getEl().slideOut();
     },
 
+    getDesignerTabs : function ()
+    {
+        return [this.columnsTab, this.filterTab, this.sortTab];
+    },
+
+    getActiveDesignerTab : function ()
+    {
+        if (this.activeGroup !== undefined)
+        {
+            var group = (typeof this.activeGroup == 'object') ? this.activeGroup : this.items.get(this.activeGroup);
+            if (group)
+            {
+                var tab = group.activeTab || group.items.get(0);
+                if (tab instanceof LABKEY.DataRegion.Tab)
+                    return tab;
+            }
+        }
+
+        return undefined;
+    },
+
     setShowHiddenFields : function (showHidden)
     {
         this.showHiddenFields = showHidden;
-        for (var i = 0; i < this.items.length; i++)
+
+        // show hidden fields in fieldsTree
+        this.fieldsTree.getRootNode().cascade(function (node) {
+            if (showHidden)
+            {
+                if (node.hidden)
+                    node.ui.show();
+            }
+            else
+            {
+                if (node.attributes.hidden)
+                    node.ui.hide();
+            }
+        }, this);
+
+        var tabs = this.getDesignerTabs();
+        for (var i = 0; i < tabs.length; i++)
         {
-            var tab = this.items.get(i);
+            var tab = tabs[i];
             if (tab instanceof LABKEY.DataRegion.Tab)
                 tab.setShowHiddenFields(showHidden);
         }
     },
 
-    onCloseClick : function (btn, e)
+    // Called from FieldTreeLoader. Returns a TreeNode config for a FieldMetaRecord.
+    // This method is necessary since we need to determine checked state of the tree
+    // using the columnStore.
+    createNodeAttrs : function (fieldMetaRecord) {
+        var fieldMeta = fieldMetaRecord.data;
+        var attrs = {
+            id: fieldMeta.fieldKey,
+            fieldKey: fieldMeta.fieldKey,
+            text: fieldMeta.caption,
+            leaf: !fieldMeta.lookup,
+            //checked: fieldMeta.selectable ? this.hasField(fieldMeta.fieldKey) : undefined,
+            checked: this.hasField(fieldMeta.fieldKey),
+            disabled: !fieldMeta.selectable,
+            hidden: fieldMeta.hidden && !this.showHiddenFields,
+            qtip: fieldMeta.description,
+            icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.png" : ""
+        };
+
+        return attrs;
+    },
+
+    hasField : function (fieldKey) {
+        var tab = this.getActiveDesignerTab();
+        if (tab)
+            return tab.hasField(fieldKey);
+    },
+
+    addRecord : function (fieldKey) {
+        var tab = this.getActiveDesignerTab();
+        if (tab)
+            return tab.addRecord(fieldKey);
+    },
+
+    removeRecord : function (fieldKey)
     {
-        this.setVisible(false);
+        var tab = this.getActiveDesignerTab();
+        if (tab)
+            return tab.removeRecord(fieldKey);
+    },
+
+    onCheckChange : function (node, checked) {
+        if (checked)
+            this.addRecord(node.id);
+        else
+            this.removeRecord(node.id);
+    },
+
+    onTabChange : function () {
+        var tab = this.getActiveDesignerTab();
+        if (tab instanceof LABKEY.DataRegion.Tab)
+        {
+            // get the checked fields from the new tab's store
+            var storeRecords = tab.getList().getStore().getRange();
+            var checkedFieldKeys = { };
+            for (var i = 0; i < storeRecords.length; i++)
+                checkedFieldKeys[storeRecords[i].get("fieldKey")] = true;
+
+            // suspend check events so checked items aren't re-added to the tab's store
+            this.fieldsTree.suspendEvents();
+            this.fieldsTree.root.cascade(function () {
+                var fieldKey = this.id;
+                this.getUI().toggleCheck(fieldKey in checkedFieldKeys);
+            });
+            this.fieldsTree.resumeEvents();
+        }
     },
 
     onDeleteClick : function (btn, e) {
@@ -410,18 +610,20 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
     },
 
     revert : function () {
-        for (var i = 0; i < this.items.length; i++)
+        var tabs = this.getDesignerTabs();
+        for (var i = 0; i < tabs.length; i++)
         {
-            var tab = this.items.get(i);
+            var tab = tabs[i];
             if (tab instanceof LABKEY.DataRegion.Tab)
                 tab.revert();
         }
     },
 
     validate : function () {
-        for (var i = 0; i < this.items.length; i++)
+        var tabs = this.getDesignerTabs();
+        for (var i = 0; i < tabs.length; i++)
         {
-            var tab = this.items.get(i);
+            var tab = tabs[i];
             if (tab instanceof LABKEY.DataRegion.Tab)
             {
                 if (tab.validate() === false)
@@ -442,20 +644,22 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
                 return false;
 
             var edited = { };
-            for (var i = 0; i < this.items.length; i++)
+            var urlParameters = { };
+            var tabs = this.getDesignerTabs();
+            for (var i = 0; i < tabs.length; i++)
             {
-                var tab = this.items.get(i);
+                var tab = tabs[i];
                 if (tab instanceof LABKEY.DataRegion.Tab)
-                    Ext.applyIf(edited, tab.save());
+                    tab.save(edited, urlParameters);
             }
             Ext.apply(edited, properties);
 
-            this.doSave(edited, callback);
+            this.doSave(edited, urlParameters, callback);
         }
     },
 
     // private
-    doSave : function (edited, callback, scope)
+    doSave : function (edited, urlParameters, callback, scope)
     {
         LABKEY.Query.saveQueryViews({
             schemaName: this.schemaName,
@@ -463,8 +667,8 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
             views: [ edited ],
             successCallback: function (savedViewsInfo) {
                 if (callback)
-                    callback.call(scope || this, savedViewsInfo);
-                this.fireEvent("viewsave", this, savedViewsInfo);
+                    callback.call(scope || this, savedViewsInfo, urlParameters);
+                this.fireEvent("viewsave", this, savedViewsInfo, urlParameters);
             },
             scope: this
         });
@@ -483,7 +687,8 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     initComponent : function () {
         LABKEY.DataRegion.Tab.superclass.initComponent.call(this);
         this.getList().on('selectionchange', this.onListSelectionChange, this);
-        this.getList().on('render', function () {
+        this.getList().on('render', function (list) {
+            /*
             this.addEvents("beforetooltipshow");
             this.tooltip = new Ext.ToolTip({
                 renderTo: Ext.getBody(),
@@ -499,6 +704,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
                     scope: this
                 }
             });
+            */
         }, this.getList(), {single: true});
         this.getList().on('beforetooltipshow', this.onListBeforeToolTipShow, this);
         this.getList().on('beforeclick', this.onListBeforeClick, this);
@@ -512,7 +718,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
 
     validate : Ext.emptyFn,
 
-    save : function () {
+    save : function (edited, urlParameters) {
         var store = this.getList().getStore();
 
         // HACK: I'm most likely abusing the JsonWriter APIs which could break in future versions of Ext.
@@ -524,10 +730,21 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
             recordType: store.recordType
         });
 
-        var records = store.getRange();
-        var params = {};
-        writer.apply(params, null, "create", records);
-        return params.jsonData;
+        var saveRecords = [], urlRecords = [];
+        store.each(function (r) {
+            if (r.data.urlParameter)
+                urlRecords.push(r);
+            else
+                saveRecords.push(r);
+        });
+
+        var o = {};
+        writer.apply(o, null, "create", saveRecords);
+        Ext.applyIf(edited, o.jsonData);
+
+        o = {};
+        writer.apply(o, null, "create", urlRecords);
+        Ext.applyIf(urlParameters, o.jsonData);
     },
 
     hasField : Ext.emptyFn,
@@ -540,23 +757,57 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
         var node = list.getNode(index);
         if (node)
         {
-            // handle node's close button click
-            var closeEl = Ext.fly(node).child(".item-close", true);
-            if (closeEl == e.getTarget())
+            var target = Ext.fly(e.getTarget());
+            if (target.hasClass("labkey-tool"))
             {
-                this.removeRecord(index);
-                return false;
+                var classes = target.getAttribute("class").split(" ");
+                for (var j = 0; j < classes.length; j++)
+                {
+                    var cls = classes[j].trim();
+                    if (cls.indexOf("labkey-tool-") == 0)
+                    {
+                        var toolName = cls.substring("labkey-tool-".length);
+                        var fnName = "onTool" + toolName.charAt(0).toUpperCase() + toolName.substring(1);
+                        if (this[fnName])
+                            return this[fnName].call(this, index, item, e);
+                    }
+                }
             }
         }
         return true;
     },
-    
+
+    onToolClose : function (index, item, e)
+    {
+        this.removeRecord(index);
+        return false;
+    },
+
+    onToolPin : function (index, item, e)
+    {
+        this.pinRecord(index, true);
+        Ext.fly(e.getTarget()).replaceClass("labkey-tool-pin", "labkey-tool-unpin");
+        return false;
+    },
+
+    onToolUnpin : function (index, item, e)
+    {
+        this.pinRecord(index, false);
+        Ext.fly(e.getTarget()).replaceClass("labkey-tool-unpin", "labkey-tool-pin");
+        return false;
+    },
+
+    getFieldMetaRecord : function (fieldKey)
+    {
+        return this.fieldMetaStore.getById(fieldKey);
+    },
+
     onListBeforeToolTipShow : function (list, qt, record, node)
     {
         if (record)
         {
             var fieldKey = record.data.fieldKey;
-            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
+            var fieldMetaRecord = this.getFieldMetaRecord(fieldKey);
             if (fieldMetaRecord)
                 var html = LABKEY.ext.FieldMetaRecord.getToolTipHtml(fieldMetaRecord);
             else
@@ -566,61 +817,6 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     },
 
     onListSelectionChange : function (list, selections) {
-        var disabled = selections.length == 0;
-        this.moveDownButton.setDisabled(disabled);
-        this.moveUpButton.setDisabled(disabled);
-        this.deleteButton.setDisabled(disabled);
-        if (this.editPropsButton)
-            this.editPropsButton.setDisabled(selections.length != 1);
-    },
-
-    onMoveUpClick : function (btn, e) {
-        var list = this.getList();
-        var record = null;
-        var selectionsArray = list.getSelectedIndexes();
-        selectionsArray.sort();
-        var newSelectionsArray = [];
-        if (selectionsArray.length > 0) {
-            for (var i=0; i<selectionsArray.length; i++) {
-                record = list.store.getAt(selectionsArray[i]);
-                if ((selectionsArray[i] - 1) >= 0) {
-                    list.store.remove(record);
-                    list.store.insert(selectionsArray[i] - 1, record);
-                    newSelectionsArray.push(selectionsArray[i] - 1);
-                }
-            }
-            list.select(newSelectionsArray);
-        }
-    },
-
-    onMoveDownClick : function (btn, e) {
-        var list = this.getList();
-        var record = null;
-        var selectionsArray = list.getSelectedIndexes();
-        selectionsArray.sort();
-        selectionsArray.reverse();
-        var newSelectionsArray = [];
-        if (selectionsArray.length > 0) {
-            for (var i=0; i<selectionsArray.length; i++) {
-                record = list.store.getAt(selectionsArray[i]);
-                if ((selectionsArray[i] + 1) < list.store.getCount()) {
-                    list.store.remove(record);
-                    list.store.insert(selectionsArray[i] + 1, record);
-                    newSelectionsArray.push(selectionsArray[i] + 1);
-                }
-            }
-            list.select(newSelectionsArray);
-        }
-    },
-
-    onDeleteClick : function (btn, e) {
-        var list = this.getList();
-        var listRecords = list.getSelectedRecords();
-        if (listRecords == null || listRecords.length == 0)
-            return [];
-
-        list.store.remove(listRecords);
-        return listRecords;
     },
 
     // subclasses may override this to provide a better default
@@ -642,15 +838,46 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
         }
     },
 
-    removeRecord : function (fieldKeyOrIndex) {
+    getRecordIndex : function (fieldKeyOrIndex) {
         var list = this.getList();
         var index = -1;
         if (Ext.isNumber(fieldKeyOrIndex))
             index = fieldKeyOrIndex;
         else
             index = list.store.findExact("fieldKey", fieldKeyOrIndex);
+        return index;
+    },
+
+    getRecord : function (fieldKeyOrIndex) {
+        var index = this.getRecordIndex(fieldKeyOrIndex);
         if (index > -1)
-            list.store.removeAt(index);
+            return this.getList().store.getAt(index);
+        return null;
+    },
+
+    removeRecord : function (fieldKeyOrIndex) {
+        var index = this.getRecordIndex(fieldKeyOrIndex);
+        var record = this.getList().store.getAt(index);
+        if (record)
+        {
+            // remove from the store and select sibling
+            this.getList().store.removeAt(index);
+            var i = index < this.getList().store.getCount() ? index : index-1;
+            if (i > -1)
+                this.getList().select(i);
+
+            // uncheck the field tree
+            var fieldKey = record.data.fieldKey;
+            var treeNode = this.designer.fieldsTree.getNodeById(fieldKey);
+            if (treeNode)
+                treeNode.getUI().toggleCheck(false);
+        }
+    },
+
+    pinRecord : function (fieldKeyOrIndex, pin) {
+        var index = this.getRecordIndex(fieldKeyOrIndex);
+        if (index > -1)
+            this.getList().store.getAt(index).set("urlParameter", pin);
     },
 
     onAddClick : function (btn, e) {
@@ -685,99 +912,45 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         config = Ext.applyIf({
             title: "Columns",
             cls: "test-columns-tab",
-            layout: "border",
+            layout: "fit",
             items: [{
-                ref: "fieldsTree",
-                title: "Available Fields",
-                region: "center",
-                xtype: "treepanel",
-                autoScroll: true,
-                border: false,
-                style: {"border-bottom-width": "1px"},
-                root: new Ext.tree.AsyncTreeNode({
-                    id: "<root>",
-                    expanded: true,
-                    expandable: false,
-                    draggable: false
-                }),
-                rootVisible: false,
-                loader: new LABKEY.ext.FieldTreeLoader({
-                    store: config.fieldMetaStore,
-                    designer: config.designer,
-                    schemaName: config.schemaName,
-                    queryName: config.queryName,
-                    createNodeConfigFn: { fn: this.createNodeAttrs, scope: this }
-                })
-            },{
-                title: "Selected",
-                region: "south",
-                split: "true",
+                title: "Selected Fields",
                 xtype: "panel",
                 border: false,
-                style: {"border-top-width": "1px"},
+                width: 200,
+                style: {"border-left-width": "1px"},
                 layout: {
                     type: "hbox",
                     align: "stretch"
                 },
-                height: 200,
                 items: [{
                     ref: "../columnsList",
-                    xtype: "listview",
+                    xtype: "dataview",
+                    plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
                     flex: 1,
                     store: this.columnStore,
                     emptyText: "No fields selected",
-                    disableHeaders: true,
-                    hideHeaders: true,
                     multiSelect: true,
-                    columns: [{
-                        header: "Name", dataIndex: "name", tpl: "{[values.title ? values.title : values.name]}"
-                    }]
-                },{
-                    ref: "../buttonBox",
-                    unstyled: true,
-                    layout: {
-                        type: "vbox",
-                        defaultMargins: "6 0 0 0"
-                    },
-                    width: 28,
-                    height: 100,
-                    defaults: {
-                        xtype: "button",
-                        scale: "small",
-                        tooltipType: "title",
-                        disabled: "true",
-                        scope: this
-                    },
-                    items: [{
-                        ref: "../../moveDownButton",
-//                        icon: LABKEY.contextPath + "/query/moveup.gif",
-                        icon: LABKEY.contextPath + "/_images/uparrow.gif",
-                        tooltip: "Move Down",
-                        handler: this.onMoveUpClick
-                    },{
-                        ref: "../../moveUpButton",
-//                        icon: LABKEY.contextPath + "/query/movedown.gif",
-                        icon: LABKEY.contextPath + "/_images/downarrow.gif",
-                        tooltip: "Move Up",
-                        handler: this.onMoveDownClick
-                    },{
-                        ref: "../../deleteButton",
-                        icon: LABKEY.contextPath + "/_images/delete.gif",
-                        tooltip: "Delete",
-                        handler: this.onDeleteClick
-                    },{
-                        ref: "../../editPropsButton",
-                        icon: LABKEY.contextPath + "/_images/editprops.png",
-                        tooltip: "Set Field Caption",
-                        handler: this.onEditPropsClick
-                    }]
+                    autoScroll: true,
+                    overClass: "x-view-over",
+                    itemSelector: ".labkey-customview-item",
+                    tpl: new Ext.XTemplate(
+                            '<tpl for=".">',
+                            '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-column-item" fieldKey="{fieldKey}">',
+                            '  <tr>',
+                            '    <td rowspan="0" class="labkey-grab"></td>',
+                            '    <td><span class="item-caption">{[values.title || values.name]}</span></td>',
+                            '    <td width="15px"><div class="labkey-tool labkey-tool-gear" title="Edit Title"></div></td>',
+                            '    <td width="15px"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
+                            '  </tr>',
+                            '</table>',
+                            '</tpl>'
+                    )
                 }]
             }]
         }, config);
 
         LABKEY.DataRegion.ColumnsTab.superclass.constructor.call(this, config);
-
-        this.fieldsTree.on('checkchange', this.onCheckChange, this);
     },
 
     initComponent : function () {
@@ -786,39 +959,16 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
     getList : function () { return this.columnsList; },
 
-    onCheckChange : function (node, checked) {
-        if (checked)
-            this.addRecord(node.id);
-        else
-            this.removeRecord(node.id);
-    },
-
-    onDeleteClick : function (btn, e) {
-        var columnRecords = LABKEY.DataRegion.ColumnsTab.superclass.onDeleteClick.call(this, btn, e);
-
-        for (var i = 0; i < columnRecords.length; i++)
-        {
-            var fieldKey = columnRecords[i].data.fieldKey;
-            var treeNode = this.fieldsTree.getNodeById(fieldKey);
-            if (treeNode)
-                treeNode.getUI().toggleCheck(false);
-        }
-    },
-
-    onEditPropsClick : function (btn, e) {
-        var columnRecords = this.columnsList.getSelectedRecords();
-        if (columnRecords && columnRecords.length == 1)
-        {
-            var columnRecord = columnRecords[0];
-            var fieldKey = columnRecord.data.fieldKey;
-            Ext.Msg.prompt('Set column caption',
-                    "Set caption for column '" + fieldKey + "'",
-                    function (btnId, text) {
-                        text = text ? text.trim() : "";
-                        if (btnId == "ok" && text.length > 0)
-                            columnRecord.set("title", text);
-                    }, this, false, columnRecord.data.title);
-        }
+    onToolGear : function (index, item, e) {
+        var columnRecord = this.columnStore.getAt(index);
+        var fieldKey = columnRecord.data.fieldKey;
+        Ext.Msg.prompt('Set column caption',
+                "Set caption for column '" + fieldKey + "'",
+                function (btnId, text) {
+                    text = text ? text.trim() : "";
+                    if (btnId == "ok" && text.length > 0)
+                        columnRecord.set("title", text);
+                }, this, false, columnRecord.data.title);
     },
 
     createDefaultRecordData : function (fieldKey) {
@@ -837,46 +987,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         return { };
     },
 
-    // Called from FieldTreeLoader. Returns a TreeNode config for a FieldMetaRecord.
-    // This method is necessary since we need to determine checked state of the tree
-    // using the columnStore.
-    createNodeAttrs : function (fieldMetaRecord) {
-        var fieldMeta = fieldMetaRecord.data;
-        var attrs = {
-            id: fieldMeta.fieldKey,
-            fieldKey: fieldMeta.fieldKey,
-            text: fieldMeta.caption,
-            leaf: !fieldMeta.lookup,
-            //checked: fieldMeta.selectable ? this.hasField(fieldMeta.fieldKey) : undefined,
-            checked: this.hasField(fieldMeta.fieldKey),
-            disabled: !fieldMeta.selectable,
-            hidden: fieldMeta.hidden && !this.showHiddenFields,
-            qtip: fieldMeta.description,
-            icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.png" : ""
-        };
-
-        return attrs;
-    },
-
     setShowHiddenFields : function (showHidden) {
-        this.fieldsTree.getRootNode().cascade(function (node) {
-            if (showHidden)
-            {
-                if (node.hidden)
-                    node.ui.show();
-            }
-            else
-            {
-                var fieldKey = node.id;
-                var index = this.fieldMetaStore.getById(fieldKey);
-                if (index > -1)
-                {
-                    var fieldMetaRecord = this.fieldMetaStore.getAt(index);
-                    if (fieldMetaRecord.data.hidden)
-                        node.ui.hide();
-                }
-            }
-        }, this);
     },
 
     hasField : function (fieldKey) {
@@ -900,113 +1011,37 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
 });
 
-
-LABKEY.DataRegion.FilterItemPanel = Ext.extend(Ext.Container, {
-    constructor : function (config) {
-        this.fieldMetaStore = config.fieldMetaStore;
-
-        this.items = [{
-            ref: "closeButton",
-            cls: 'item-close',
-            xtype: 'component'
-        },{
-            ref: "fieldKeyButtonMenu",
-            xtype: 'labkey-fieldMetaButtonMenu',
-            cls: 'item-fieldKey',
-            applyValue: 'fieldKey',
-            fieldMetaStore: this.fieldMetaStore,
-            listeners: {
-                select: this.updateOpComboOptions,
-                blur: this.onFieldBlur,
-                scope: this
-            }
-        },{
-            ref: 'opCombo',
-            xtype: 'labkey-filterOpCombo',
-            cls: 'item-op test-item-op',
-            applyValue: 'op',
-            fieldMetaStore: this.fieldMetaStore,
-            listeners: {
-                select: this.updateValueTextFieldVisibility,
-                blur: this.onFieldBlur,
-                scope: this
-            }
-        },{
-            ref: 'valueTextField',
-            xtype: 'textfield',
-            cls: 'item-value',
-            applyValue: 'value',
-            listeners: {
-                blur: this.onFieldBlur,
-                scope: this
-            }
-        }];
-
-        LABKEY.DataRegion.FilterItemPanel.superclass.constructor.call(this, config);
-    },
-
-    setRecord : function (filterRecord) {
-        this.record = filterRecord;
-        this.setFieldValue(filterRecord, this.fieldKeyButtonMenu);
-        this.updateOpComboOptions();
-        this.setFieldValue(filterRecord, this.opCombo);
-        this.updateValueTextFieldVisibility();
-        this.setFieldValue(filterRecord, this.valueTextField);
-    },
-
-    setFieldValue : function (record, field) {
-        if (field.applyValue)
-            field.setValue(record.get(field.applyValue));
-    },
-
-    onFieldBlur : function (field) {
-        // bypass record update events by setting the value directly.
-        if (field.applyValue)
-            this.record.data[field.applyValue] = field.getValue();
-    },
-
-    updateOpComboOptions : function () {
-        var filterRecord = this.record;
-        var fieldKey = filterRecord.data.fieldKey;
-        if (fieldKey)
-        {
-            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
-            if (fieldMetaRecord)
-                this.opCombo.setOptions(fieldMetaRecord.data.jsonType);
-        }
-    },
-
-    updateValueTextFieldVisibility : function (combo) {
-        var filterRecord = this.record;
-
-        var filterType = this.opCombo.getFilterType();
-        this.valueTextField.setVisible(filterType != null && filterType.isDataValueRequired());
-    },
-
-    setShowHiddenFields : function (showHidden) {
-        this.fieldMetaButtonMenu.setShowHiddenFields(showHidden);
-    }
-
-});
-Ext.reg('labkey-filteritem', LABKEY.DataRegion.FilterItemPanel);
-
-
 LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
     constructor : function (config) {
         console.log("FilterTab");
 
         this.designer = config.designer;
         this.customView = config.customView;
-        this.fieldMetaStore = config.fieldMetaStore;
+        var fieldMetaStore = this.fieldMetaStore = config.fieldMetaStore;
 
+        // HACK: I'd like to use the GroupingStore with a JsonReader, but DataView doesn't support grouping.
+        // HACK: So we will create a manually grouped store.
+        var fieldKeyGroups = {};
+        var filters = [];
+        for (var i = 0; i < this.customView.filter.length; i++)
+        {
+            var filter = this.customView.filter[i];
+            var g = fieldKeyGroups[filter.fieldKey];
+            if (!g)
+            {
+                g = {fieldKey: filter.fieldKey, items: []};
+                fieldKeyGroups[filter.fieldKey] = g;
+                filters.push(g);
+            }
+            g.items.push(filter);
+        }
         this.filterStore = new Ext.data.JsonStore({
-            fields: ['fieldKey', 'op', 'value'],
+            fields: ['fieldKey', 'items', 'urlParameter'],
             root: 'filter',
-            // Note: use auto-gen id instead of idProperty: there may be more than one filter with the same fieldKey.
-            //idProperty: 'fieldKey',
-            data: this.customView,
+            data: { filter: filters },
             remoteSort: true
         });
+
         this.filterStore.on({
             load: this.onStoreLoad,
             add: this.onStoreAdd,
@@ -1014,74 +1049,95 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             scope: this
         });
 
+        function getFieldMetaRecord(fieldKey)
+        {
+            return fieldMetaStore.getById(fieldKey);
+        }
+
         config = Ext.applyIf({
             title: "Filter",
             cls: "test-filter-tab",
-            layout: {
-                type: "hbox",
-                align: "stretch"
-            },
+            layout: "fit",
             items: [{
-                ref: "filterList",
-                xtype: "compdataview",
-                flex: 1,
-                store: this.filterStore,
-                emptyText: "No filters added",
-                deferEmptyText: false,
-                multiSelect: true,
-                itemSelector: 'dt.labkey-customview-item',
-                overClass: "x-view-over",
-                tpl: new Ext.XTemplate(
-                        '<dl>',
-                        '<tpl for=".">',
-                        '<dt class="labkey-customview-item"></dt>',
-                        '</tpl>',
-                        '</dl>'
-                ),
-                items: [{
-                    xtype: 'labkey-filteritem',
-                    applyValue: 'fieldKey',
-                    fieldMetaStore: this.fieldMetaStore
-                }]
-            },{
-                ref: "buttonBox",
-                unstyled: true,
+                title: "Selected Filters",
+                xtype: "panel",
+                border: false,
+                style: {"border-left-width": "1px"},
                 layout: {
-                    type: "vbox",
-                    defaultMargins: "6 0 0 0"
-                },
-                width: 28,
-                height: 100,
-                defaults: {
-                    xtype: "button",
-                    scale: "small",
-                    tooltipType: "title",
-                    disabled: true,
-                    scope: this
+                    type: "hbox",
+                    align: "stretch"
                 },
                 items: [{
-                    ref: "../moveUpButton",
-//                        icon: LABKEY.contextPath + "/query/moveup.gif",
-                    icon: LABKEY.contextPath + "/_images/uparrow.gif",
-                    tooltip: "Move Up",
-                    handler: this.onMoveUpClick
-                },{
-                    ref: "../moveDownButton",
-//                        icon: LABKEY.contextPath + "/query/movedown.gif",
-                    icon: LABKEY.contextPath + "/_images/downarrow.gif",
-                    tooltip: "Move Down",
-                    handler: this.onMoveDownClick
-                },{
-                    ref: "../deleteButton",
-                    icon: LABKEY.contextPath + "/_images/delete.gif",
-                    tooltip: "Delete",
-                    handler: this.onDeleteClick
-                },{
-                    ref: "../addButton",
-                    icon: LABKEY.contextPath + "/_images/partadded.gif",
-                    tooltip: "Add",
-                    handler: this.onAddClick,
-                    disabled: false
+                    ref: "../filterList",
+                    xtype: "compdataview",
+                    flex: 1,
+                    plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
+                    store: this.filterStore,
+                    emptyText: "No filters added",
+                    deferEmptyText: false,
+                    multiSelect: true,
+                    autoScroll: true,
+                    overClass: "x-view-over",
+                    itemSelector: '.labkey-customview-item',
+                    tpl: new Ext.XTemplate(
+                            '<tpl for=".">',
+                            '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-filter-item" fieldKey="{fieldKey}">',
+                            '  <tr>',
+                            '    <td rowspan="0" class="labkey-grab" width="8px">&nbsp;</td>',
+                            '    <td colspan="3"><span class="item-caption">{[this.getFieldCaption(values.fieldKey)]}</span></td>',
+                            '  </tr>',
+                            '  <tpl for="items">',
+                            '  <tr clauseIndex="{[xindex-1]}">',
+                            '    <td>',
+                            '      <div class="item-op"></div>',
+                            '      <div class="item-value"></div>',
+                            '    </td>',
+                            '    <td width="15px"><div class="labkey-tool {[values.urlParameter ? "labkey-tool-unpin" : "labkey-tool-pin"]}"></div></td>',
+                            '    <td width="15px"><div class="labkey-tool labkey-tool-close" title="Remove filter clause"></div></td>',
+                            '  </tr>',
+                            '  </tpl>',
+                            '  <tr>',
+                            '    <td colspan="3">',
+                            '      <span style="float:right;">',
+                            LABKEY.Utils.textLink({text: "Add", onClick: "return false;", add: true}),
+                            '      </span>',
+                            '    </td>',
+                            '  </tr>',
+                            '</table>',
+                            '</tpl>',
+                        {
+                            getFieldMetaRecord : getFieldMetaRecord,
+                            getFieldCaption : function (fieldKey) {
+                                var fieldMeta = this.getFieldMetaRecord(fieldKey);
+                                return fieldMeta.data.caption || fieldMeta.data.name;
+                            }
+                        }
+                    ),
+                    items: [{
+                        xtype: 'labkey-filterOpCombo',
+                        cls: 'test-item-op',
+                        renderTarget: 'div.item-op',
+                        indexedProperty: true,
+                        fieldMetaStore: this.fieldMetaStore,
+                        listeners: {
+                            select: this.updateValueTextFieldVisibility,
+                            scope: this
+                        },
+                        mode: 'local',
+                        triggerAction: 'all',
+                        forceSelection: true,
+                        allowBlank: false,
+                        selectOnFocus: true,
+                        emptyText: "Select filter operator"
+                    },{
+                        xtype: 'labkey-filterValue',
+                        cls: 'test-item-value',
+                        renderTarget: 'div.item-value',
+                        indexedProperty: true,
+                        fieldMetaStore: this.fieldMetaStore,
+                        selectOnFocus: true,
+                        emptyText: "Enter filter value"
+                    }]
                 }]
             }]
         }, config);
@@ -1094,8 +1150,36 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         this.updateTitle();
     },
 
+    onListBeforeClick : function (list, index, item, e) {
+        if (LABKEY.DataRegion.FilterTab.superclass.onListBeforeClick.call(this, list, index, item, e) === false)
+            return false;
+
+        var target = Ext.fly(e.getTarget());
+        if (target.is("a.labkey-text-link") && target.dom.innerHTML == "Add")
+        {
+            this.addClause(index);
+        }
+    },
+
+    addClause : function (index) {
+        var record = this.getRecord(index);
+        if (record)
+        {
+            var items = record.get("items");
+            // NOTE: need to clone the array otherwise record.set won't fire the change event
+            items = items.slice();
+            items.push({
+                fieldKey: record.get("fieldKey"),
+                op: "eq",
+                value: ""
+            });
+            record.set("items", items);
+        }
+    },
+
     updateTitle : function ()
     {
+        // XXX: only counts the grouped filters
         var count = this.filterStore.getCount();
         var title = "Filter" + (count > 0 ? " (" + count + ")" : "");
         this.setTitle(title);
@@ -1113,14 +1197,118 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         this.updateTitle();
     },
 
-    setShowHiddenFields : function (showHidden) {
-        // Note: this.components is a private member of ComponentDataView
-        for (var i = 0; i < this.filterList.components.length; i++)
+    /** Get the record, clause, clause index, and &lt;tr> for a dom node. */
+    getClauseFromNode : function (recordIndex, node) {
+        var tr = Ext.fly(node).parent("tr[clauseIndex]");
+        if (!tr)
+            return;
+
+        var record = this.getRecord(recordIndex);
+        var items = record.get("items");
+        var clauseIndex = -1;
+        if (tr.getAttribute("clauseIndex") !== undefined)
+            clauseIndex = +tr.getAttribute("clauseIndex");
+        if (clauseIndex < 0 || clauseIndex >= items.length)
+            return;
+
+        return {
+            record: record,
+            index: recordIndex,
+            clause: items[clauseIndex],
+            clauseIndex: clauseIndex,
+            row: tr
+        };
+    },
+
+    onToolClose : function (index, item, e) {
+        var o = this.getClauseFromNode(index, e.getTarget());
+        if (!o)
+            return;
+
+        // remove it from the clause list
+        var items = o.record.get("items");
+        items.splice(o.clauseIndex, 1);
+
+        if (items.length == 0)
         {
-            var cs = this.filterList.components[i];
-            var filteritem = cs[0];
-            filteritem.setShowHiddenFields(showHidden);
+            // last clause was removed, remove the entire record
+            this.removeRecord(index);
         }
+        else
+        {
+            // remove the dom node and adjust all other clauseIndices by one
+            var table = o.row.parent("table.labkey-customview-item");
+            Ext.each(table.query("tr[clauseIndex]"), function (row, i, all) {
+                var clauseIndex = +row.getAttribute("clauseIndex");
+                if (clauseIndex == o.clauseIndex)
+                    Ext.fly(row).remove();
+                else if (clauseIndex > o.clauseIndex)
+                    row.setAttribute("clauseIndex", clauseIndex-1);
+            }, this);
+
+            // adjust clauseIndex down for all components for the filter
+            var cs = this.filterList.getComponents(index);
+            Ext.each(cs, function (c, i, all) {
+                if (c.clauseIndex == o.clauseIndex)
+                    Ext.destroy(c);
+                else if (c.clauseIndex > o.clauseIndex)
+                    c.clauseIndex--;
+            });
+        }
+        return false;
+    },
+
+    onToolPin : function (index, item, e) {
+        var o = this.getClauseFromNode(index, e.getTarget());
+        if (!o)
+            return;
+
+        this.pinClause(o.record, o.clauseIndex, true);
+        Ext.fly(e.getTarget()).replaceClass("labkey-tool-pin", "labkey-tool-unpin");
+        return false;
+    },
+
+    onToolUnpin : function (index, item, e) {
+        var o = this.getClauseFromNode(index, e.getTarget());
+        if (!o)
+            return;
+
+        this.pinClause(o.record, o.clauseIndex, false);
+        Ext.fly(e.getTarget()).replaceClass("labkey-tool-unpin", "labkey-tool-pin");
+        return false;
+    },
+
+    pinClause : function (record, clauseIndex, pin) {
+        record.get("items")[clauseIndex].urlParameter = pin;
+    },
+
+    updateValueTextFieldVisibility : function (combo) {
+        var record = combo.record;
+        var clauseIndex = combo.clauseIndex;
+
+        var filterType = combo.getFilterType();
+        // HACK: need to find the text field associated with this filter item
+        var cs = this.filterList.getComponents(combo);
+        for (var i = 0; i < cs.length; i++)
+        {
+            var c = cs[i];
+            if (c.clauseIndex == clauseIndex && c instanceof LABKEY.ext.FilterTextValue)
+            {
+                c.setVisible(filterType != null && filterType.isDataValueRequired());
+                break;
+            }
+        }
+    },
+
+    createDefaultRecordData : function (fieldKey) {
+        return {
+            fieldKey: fieldKey,
+            items: [{
+                fieldKey: fieldKey,
+                op: "eq",
+                value: ""
+            }]
+        };
     },
 
     getList : function () { return this.filterList; },
@@ -1152,33 +1340,65 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             }
 
             var jsonType = fieldMetaRecord.data.jsonType;
-            var filterOp = filterRecord.data.op;
-            if (filterOp)
+            var items = filterRecord.data.items;
+            for (var i = 0; i < items.length; i++)
             {
-                var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterOp);
-                if (!filterType) {
-                    alert("filter type '" + filterOp + "' isn't recognized");
-                    return false;
-                }
+                var filterOp = items[i].op;
+                if (filterOp)
+                {
+                    var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterOp);
+                    if (!filterType) {
+                        alert("filter type '" + filterOp + "' isn't recognized");
+                        return false;
+                    }
 
-                var value = filterType.validate(filterRecord.data.value, jsonType, fieldKey);
-                if (value == undefined)
-                    return false;
+                    var value = filterType.validate(items[i].value, jsonType, fieldKey);
+                    if (value == undefined)
+                        return false;
+                }
             }
         }
         return true;
+    },
+
+    save : function (edited, urlParameters) {
+        var records = this.filterStore.getRange();
+
+        // flatten the filters
+        var saveData = [], urlData = [];
+        for (var i = 0; i < records.length; i++)
+        {
+            var filterRecord = records[i];
+            var items = filterRecord.get("items");
+            for (var j = 0; j < items.length; j++)
+            {
+                var o = {
+                    fieldKey: items[j].fieldKey || filterRecord.data.fieldKey,
+                    op: items[j].op,
+                    value: items[j].value
+                };
+                if (items[j].urlParameter)
+                    urlData.push(o);
+                else
+                    saveData.push(o);
+            }
+        }
+
+        edited[this.filterStore.root] = saveData;
+        urlParameters[this.filterStore.root] = urlData;
     }
 
 });
+
 
 LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
     constructor : function (config) {
         this.designer = config.designer;
         this.customView = config.customView;
-        this.fieldMetaStore = config.fieldMetaStore;
+        var fieldMetaStore = this.fieldMetaStore = config.fieldMetaStore;
 
         this.sortStore = new Ext.data.JsonStore({
-            fields: ['fieldKey', 'dir'],
+            fields: ['fieldKey', 'dir', 'urlParameter'],
             root: 'sort',
             //idProperty: 'fieldKey',
             data: this.customView,
@@ -1191,87 +1411,77 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
             scope: this
         });
 
+        function getFieldMetaRecord(fieldKey)
+        {
+            return fieldMetaStore.getById(fieldKey);
+        }
+
         config = Ext.applyIf({
             title: "Sort",
             cls: "test-sort-tab",
-            layout: {
-                type: "hbox",
-                align: "stretch"
-            },
+            layout: "fit",
             items: [{
-                ref: "sortList",
-                xtype: "compdataview",
-                flex: 1,
-                store: this.sortStore,
-                emptyText: "No sorts added",
-                deferEmptyText: false,
-                multiSelect: true,
-                itemSelector: 'dt.labkey-customview-item',
-                overClass: "x-view-over",
-                tpl: new Ext.XTemplate(
-                        '<dl>',
-                        '<tpl for=".">',
-                        '<dt class="labkey-customview-item">',
-                        '<div class="item-close" title="Delete"></div>',
-                        '<div class="item-fieldKey"></div>',
-                        '<div class="item-dir"></div>',
-                        '</dt>',
-                        '</tpl>',
-                        '</dl>'
-                ),
-                items: [{
-                    xtype: 'labkey-fieldMetaButtonMenu',
-                    renderTarget: 'div.item-fieldKey',
-                    applyValue: 'fieldKey',
-                    fieldMetaStore: this.fieldMetaStore
-                },{
-                    xtype: 'combo',
-                    cls: 'test-item-op',
-                    renderTarget: 'div.item-dir',
-                    applyValue: 'dir',
-                    store: [["+", "Ascending"], ["-", "Descending"]],
-                    mode: 'local',
-                    triggerAction: 'all',
-                    forceSelection: true,
-                    allowBlank: false
-                }]
-            },{
-                ref: "buttonBox",
-                unstyled: true,
+                title: "Selected Sort",
+                xtype: "panel",
+                border: false,
+                style: {"border-left-width": "1px"},
+                //padding: "4px",
                 layout: {
-                    type: "vbox",
-                    defaultMargins: "6 0 0 0"
-                },
-                width: 28,
-                height: 100,
-                defaults: {
-                    xtype: "button",
-                    scale: "small",
-                    tooltipType: "title",
-                    disabled: true,
-                    scope: this
+                    type: "hbox",
+                    align: "stretch"
                 },
                 items: [{
-                    ref: "../moveDownButton",
-                    icon: LABKEY.contextPath + "/_images/uparrow.gif",
-                    tooltip: "Move Down",
-                    handler: this.onMoveUpClick
-                },{
-                    ref: "../moveUpButton",
-                    icon: LABKEY.contextPath + "/_images/downarrow.gif",
-                    tooltip: "Move Up",
-                    handler: this.onMoveDownClick
-                },{
-                    ref: "../deleteButton",
-                    icon: LABKEY.contextPath + "/_images/delete.gif",
-                    tooltip: "Delete",
-                    handler: this.onDeleteClick
-                },{
-                    ref: "../addButton",
-                    icon: LABKEY.contextPath + "/_images/partadded.gif",
-                    tooltip: "Add",
-                    handler: this.onAddClick,
-                    disabled: false
+                    title: "Selected Sort",
+                    ref: "../sortList",
+                    xtype: "compdataview",
+                    flex: 1,
+                    store: this.sortStore,
+                    plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
+                    emptyText: "No sorts added",
+                    deferEmptyText: false,
+                    multiSelect: true,
+                    autoScroll: true,
+                    overClass: "x-view-over",
+                    itemSelector: '.labkey-customview-item',
+                    tpl: new Ext.XTemplate(
+                            '<tpl for=".">',
+                            '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-sort-item" fieldKey="{fieldKey}">',
+                            '  <tr>',
+                            '    <td rowspan="0" class="labkey-grab"></td>',
+                            '    <td colspan="3"><span class="item-caption">{[this.getFieldCaption(values.fieldKey)]}</span></td>',
+                            '  </tr>',
+                            '  <tr>',
+                            '    <td><div class="item-dir"></div></td>',
+                            '    <td width="15px"><div class="labkey-tool {[values.urlParameter ? "labkey-tool-unpin" : "labkey-tool-pin"]}"></div></td>',
+                            '    <td width="15px"><span class="labkey-tool labkey-tool-close" title="Remove sort"></span></td>',
+                            '  </tr>',
+                            '</table>',
+                            '</tpl>',
+                        {
+                            getFieldMetaRecord : getFieldMetaRecord,
+                            getFieldCaption : function (fieldKey) {
+                                var fieldMeta = this.getFieldMetaRecord(fieldKey);
+                                return fieldMeta.data.caption || fieldMeta.data.name;
+                            }
+                        }
+                    ),
+                    items: [{
+                        xtype: 'combo',
+                        cls: 'test-item-op',
+                        renderTarget: 'div.item-dir',
+                        applyValue: 'dir',
+                        store: [["+", "Ascending"], ["-", "Descending"]],
+                        mode: 'local',
+                        triggerAction: 'all',
+                        forceSelection: true,
+                        allowBlank: false,
+                        listeners: {
+                            'afterrender': function () {
+                                // XXX: work around annoying focus bug for Fields in DataView.
+                                this.mon(this.el, 'mousedown', function () { this.focus(); }, this);
+                            }
+                        }
+                    }]
                 }]
             }]
         }, config);
@@ -1311,13 +1521,6 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     setShowHiddenFields : function (showHidden) {
-        // Note: this.components is a private member of ComponentDataView
-        for (var i = 0; i < this.sortList.components.length; i++)
-        {
-            var cs = this.sortList.components[i];
-            var filteritem = cs[0];
-            filteritem.setShowHiddenFields(showHidden);
-        }
     },
 
     getList : function () { return this.sortList; },
@@ -1347,7 +1550,7 @@ LABKEY.DataRegion.PropertiesTab = Ext.extend(Ext.Panel, {
         var disableSharedAndInherit = this.customView.hidden || this.customView.session || !this.designer.query.canEditSharedViews;
 
         config = Ext.applyIf({
-            title: "?", // "Properties" is too long to fit in the tab strip
+            title: "Properties",
             layout: "form",
             defaults: {
                 tooltipType: "title"
@@ -1407,9 +1610,9 @@ LABKEY.DataRegion.PropertiesTab = Ext.extend(Ext.Panel, {
     },
 
     isDirty : function () {
-        for (var i = 0; i < this.items.length; i++)
+        for (var i = 0; i < this.grouptab.items.length; i++)
         {
-            var field = this.items.get(i);
+            var field = this.grouptab.items.get(i);
             if (field instanceof Ext.form.Field)
                 if (field.isDirty())
                     return true;
@@ -1435,7 +1638,7 @@ LABKEY.DataRegion.PropertiesTab = Ext.extend(Ext.Panel, {
         return true;
     },
 
-    save : function () {
+    save : function (edited, urlParameters) {
         var o = {};
 
         if (this.customView.hidden)
@@ -1458,7 +1661,7 @@ LABKEY.DataRegion.PropertiesTab = Ext.extend(Ext.Panel, {
             }
         }
 
-        return o;
+        Ext.applyIf(edited, o);
     }
 
 });
@@ -1632,178 +1835,6 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
 });
 
 
-/**
- * Creates an Ext.menu.Menu bound to a LABKEY.ext.FieldMetaStore.
- * Implements enough of Field for ComponentDataView and FilterItemPanel to call getValue/setValue.
- */
-LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
-    constructor: function (config) {
-        console.log("FieldMetaButtonMenu");
-        this.fieldMetaStore = config.fieldMetaStore;
-        this.originalValue = config.fieldKey;
-        this.menu = this.createLookupMenu("<root>");
-        this.showHiddenFields = config.showHiddenFields || false;
-        this.showHiddenFieldsChanged = false;
-        LABKEY.ext.FieldMetaButtonMenu.superclass.constructor.call(this, config);
-
-        this.addEvents({
-            beforeselect : true,
-            select: true,
-            blur: true
-        });
-    },
-
-    initComponent : function () {
-        LABKEY.ext.FieldMetaButtonMenu.superclass.initComponent.call(this);
-        // UNDONE: load subtrees on path of selected fieldKey ?
-
-        this.setValue(this.originalValue);
-    },
-
-    setShowHiddenFields : function (showHidden) {
-        this.showHiddenFieldsChanged = showHidden !== this.showHiddenFields;
-        this.showHiddenFields = showHidden;
-    },
-
-    setRecord : function (filterRecord) {
-        this.record = filterRecord;
-    },
-
-    // Pretend to be Field.isDirty()
-    isDirty : function () {
-        if (this.disabled || !this.rendered)
-            return false;
-        return String(this.getValue()) !== String(this.originalValue);
-    },
-
-    // Pretend to be Field.setValue().
-    // ComponentDataView will call this with the value of the field named in applyValue.
-    setValue : function (fieldKey) {
-        this.fieldKey = fieldKey;
-        var text = fieldKey || "<i>Select a field</i>";
-        this.setText(text);
-    },
-
-    // Pretend to be Field.getValue().
-    getValue : function () {
-        return this.fieldKey;
-    },
-
-    // Pretend to be Field.onBlur().
-    // ComponentDataView will listen for 'blur' events to get the new value.
-    onBlur : function (e) {
-        LABKEY.ext.FieldMetaButtonMenu.superclass.onBlur.call(this, e);
-        this.fireEvent('blur', this); // notify the ComponentDataView the value changed
-    },
-
-    /** Get the FieldMetaRecord for the selected fieldKey. */
-    getSelected : function () {
-        return this.fieldMetaStore.getById(this.fieldKey);
-    },
-
-    _onMenuShow : function (menu) {
-        if (!menu.loadedLookup)
-        {
-            menu.loadedLookup = true;
-            menu.addMenuItem({
-                text: "Loading...",
-                iconCls: "loading-indicator"
-            });
-            var fieldKey = menu.fieldKey;
-            this.fieldMetaStore.loadLookup({fieldKey: fieldKey, menu: menu, callback: this.onLoadItems, scope: this});
-        }
-    },
-
-    _onMenuBeforeShow : function (menu) {
-        if (this.showHiddenFieldsChanged)
-        {
-            menu.items.each(function (item, index, len) {
-                if (this.showHiddenFields)
-                    item.show();
-                else
-                {
-                    var fieldKey = item.fieldKey;
-                    var index = this.fieldMetaStore.getById(fieldKey);
-                    if (index > -1)
-                    {
-                        var fieldMetaRecord = this.fieldMetaStore.getAt(index);
-                        if (fieldMetaRecord.data.hidden)
-                            item.hide();
-                    }
-                }
-            }, this);
-            this.showHiddenFieldsChanged = false;
-        }
-    },
-
-    _onMenuItemClick : function (item, e) {
-        var fieldKey = item.fieldKey;
-        var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
-        if (!fieldMetaRecord.data.selectable)
-            return false;
-        if (this.fireEvent('beforeselect', this, fieldMetaRecord) !== false)
-        {
-            this.setValue(fieldKey);
-            this.fireEvent('blur', this); // notify the ComponentDataView the value changed
-            this.fireEvent('select', this, fieldMetaRecord);
-        }
-    },
-
-    onLoadItems : function (fieldMetaRecords, options, success) {
-        var menu = options.menu;
-        menu.removeAll();
-
-        for (var i = 0; i < fieldMetaRecords.length; i++)
-        {
-            var fieldMetaRecord = fieldMetaRecords[i];
-            var config = this.createMenuConfig(fieldMetaRecord);
-            menu.add(config);
-        }
-    },
-
-    createMenuConfig : function (fieldMetaRecord) {
-        var fieldMeta = fieldMetaRecord.data;
-        var attrs = {
-            fieldKey: fieldMeta.fieldKey,
-            text: fieldMeta.caption || fieldMeta.name,
-            hidden: fieldMeta.hidden && !this.showHiddenFields,
-//            disabled: !fieldMeta.selectable,
-            icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.png" : ""
-        };
-        // UNDONE: render unselectable items as disabled, but still allow lookup sub-menus to be expanded.
-//        if (!fieldMeta.selectable)
-//            fieldMeta.itemCls = "x-item-disabled";
-        if (fieldMeta.lookup)
-        {
-            attrs.menu = this.createLookupMenu(fieldMeta.fieldKey);
-        }
-        return attrs;
-    },
-
-    createLookupMenu : function (fieldKey) {
-        return {
-            cls: "extContainer",
-            fieldKey: fieldKey,
-            listeners: {
-                beforeshow: {
-                    fn: this._onMenuBeforeShow,
-                    scope: this
-                },
-                show: {
-                    fn: this._onMenuShow,
-                    scope: this
-                },
-                itemclick: {
-                    fn: this._onMenuItemClick,
-                    scope: this
-                }
-            }
-        };
-    }
-});
-Ext.reg('labkey-fieldMetaButtonMenu', LABKEY.ext.FieldMetaButtonMenu);
-
-
 LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
 
     constructor : function (config) {
@@ -1823,8 +1854,16 @@ LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
         this.setOptions();
     },
 
-    setRecord : function (filterRecord) {
+    onMouseDown : function (e) {
+        // XXX: work around annoying focus bug for Fields in DataView.
+        this.focus();
+        LABKEY.ext.FilterOpCombo.superclass.onMouseDown.call(this, e);
+    },
+
+    /** Called once during initialization. */
+    setRecord : function (filterRecord, clauseIndex) {
         this.record = filterRecord;
+        this.clauseIndex = clauseIndex;
         var jsonType = undefined;
         if (this.record)
         {
@@ -1832,15 +1871,43 @@ LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
             if (fieldMetaRecord)
                 jsonType = fieldMetaRecord.data.jsonType;
         }
-        this.setOptions(jsonType);
+        var value = this.getRecordValue();
+        this.setOptions(jsonType, value);
+
+        this.setValue(value);
+        this.on('blur', function (f) {
+            var v = f.getValue();
+            this.setRecordValue(v);
+        }, this);
     },
 
-    setOptions : function (type) {
+    getRecordValue : function () {
+        return this.record.get("items")[this.clauseIndex].op;
+    },
+
+    setRecordValue : function (value) {
+        this.record.get("items")[this.clauseIndex].op = value;
+    },
+
+    setOptions : function (type, value) {
+        var found = false;
         var options = [];
         if (type)
             Ext.each(LABKEY.Filter.getFlterTypesForType(type), function (filterType) {
+                if (value && value == filterType.getURLSuffix())
+                    found = true;
                 options.push([filterType.getURLSuffix(), filterType.getDisplayText()]);
             });
+
+        if (!found) {
+            for (var key in LABKEY.Filter.Types) {
+                var filterType = LABKEY.Filter.Types[key];
+                if (filterType.getURLSuffix() == value) {
+                    options.unshift([filterType.getURLSuffix(), filterType.getDisplayText()]);
+                    break;
+                }
+            }
+        }
 
         var store = new Ext.data.SimpleStore({fields: ['value', 'text'], data: options });
 
@@ -1854,6 +1921,43 @@ LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
     }
 });
 Ext.reg("labkey-filterOpCombo", LABKEY.ext.FilterOpCombo);
+
+
+LABKEY.ext.FilterTextValue = Ext.extend(Ext.form.TextField, {
+    onMouseDown : function (e) {
+        // XXX: work around annoying focus bug for Fields in DataView.
+        this.focus();
+        LABKEY.ext.FilterTextValue.superclass.onMouseDown.call(this, e);
+    },
+
+    setRecord : function (filterRecord, clauseIndex) {
+        this.record = filterRecord;
+        this.clauseIndex = clauseIndex;
+
+        // UGH: get the op value to set visibility on init
+        var op = this.record.get("items")[this.clauseIndex].op;
+        var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(op);
+        this.setVisible(filterType != null && filterType.isDataValueRequired());
+
+        var value = this.getRecordValue();
+        this.setValue(value);
+        this.on('blur', function (f) {
+            var v = f.getValue();
+            this.setRecordValue(v);
+        }, this);
+    },
+
+    getRecordValue : function () {
+        return this.record.get("items")[this.clauseIndex].value;
+    },
+
+    setRecordValue : function (value) {
+        this.record.get("items")[this.clauseIndex].value = value;
+    }
+
+});
+Ext.reg("labkey-filterValue", LABKEY.ext.FilterTextValue);
+
 
 // This TreeLoader returns TreeNodes for field metadata and is backed by a FieldMetaStore.
 LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
