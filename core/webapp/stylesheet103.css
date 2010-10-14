@@ -1112,40 +1112,139 @@ img.labkey-grid-filter-icon
     display: inline;
 }
 
+.labkey-grab {
+    background: url(./_images/grab.png) repeat-y 2px 0;
+    width: 8px;
+    /*height: 14px;*/
+    cursor: move;
+}
+
+/** Unortunately, gtheme doesn't include some of the x-tool-* styles, so I'm redefining them here. */
+
+.labkey-tool {
+    background: url(./ext-3.2.2/resources/images/default/panel/tool-sprites.gif);
+    width: 15px;
+    height: 15px;
+}
+
+.labkey-tool-close {
+    background-position: 0 0;
+    cursor: pointer;
+}
+
+.labkey-tool-close:hover {
+    background-position: -15px 0;
+}
+
+.labkey-tool-pin {
+    background-position: 0 -135px;
+    cursor: pointer;
+}
+
+.labkey-tool-pin:hover {
+    background-position: -15px -135px;
+}
+
+.labkey-tool-unpin {
+    background-position: 0 -150px;
+    cursor: pointer;
+}
+
+.labkey-tool-unpin:hover {
+    background-position: -15px -150px;
+}
+
+.labkey-tool-gear {
+    background-position: 0 -90px;
+    cursor: pointer;
+}
+
+.labkey-tool-gear:hover {
+    background-position: -15px -90px;
+}
+
+.labkey-customview-filter-item .item-caption,
+.labkey-customview-sort-item .item-caption {
+    font-weight: bold;
+}
+
 .labkey-customview-item {
-    margin: 6px !important;
-    padding: 4px !important;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    border: 1px solid #cccccc;
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid transparent;
 }
 
 .labkey-customview-item.x-view-selected {
-    border: 1px solid #89A1B4;
     background: #eeeeee;
+}
+.labkey-customview-item.x-view-selected {
+    border-top: 1px solid #89A1B4;
+    border-bottom: 1px solid #89A1B4;
 }
 
 .labkey-customview-item.x-view-over {
-    border: 1px solid #126495;
+    border-top: 1px solid #126495;
+    border-bottom: 1px solid #126495;
 }
 
-.labkey-customview-item .item-close {
+/* grab */
+
+.labkey-customview-item .labkey-grab {
+    opacity: 0;
+    filter:alpha(opacity=0);
+    height: 100%;
+}
+
+.labkey-customview-item.x-view-over .labkey-grab {
+    opacity: 1;
+    filter:alpha(opacity=100);
+}
+
+/* gear */
+
+.labkey-customview-item .labkey-tool-gear {
+    opacity: 0;
+    filter:alpha(opacity=0);
+}
+
+.labkey-customview-item.x-view-over .labkey-tool-gear {
+    opacity: 1;
+    filter:alpha(opacity=100);
+}
+
+/* close */
+
+.labkey-customview-item .labkey-tool-close {
     float: right;
     opacity: 0;
     filter:alpha(opacity=0);
-    background-image: url(./_images/partdelete.gif);
-    width: 13px;
-    height: 13px;
 }
 
-.labkey-customview-item:hover .item-close {
-    opacity: 0.35;
-    filter:alpha(opacity=35);
+.labkey-customview-item.x-view-over .labkey-tool-close {
+    opacity: 1;
+    filter:alpha(opacity=100);
 }
 
-.labkey-customview-item .item-close:hover {
+.labkey-customview-filter-item .labkey-tool-pin,
+.labkey-customview-filter-item .labkey-tool-unpin,
+.labkey-customview-filter-item .labkey-tool-close,
+.labkey-customview-sort-item .labkey-tool-pin,
+.labkey-customview-sort-item .labkey-tool-unpin,
+.labkey-customview-sort-item .labkey-tool-close {
+    margin-top: 3px;
+}
+
+.labkey-customview-filter-item tr:nth-child(>2)
+
+.grid-row-insertion {
+    background: darkblue;
+    height: 3px;
     opacity: 0.8;
-    filter:alpha(opacity=8);
+    filter:alpha(opacity=60);
+    z-index: 1000;
+}
+
+.grid-row-insertion-invalid {
+    background: gray;
 }
 
 /* Home Template */
@@ -2612,9 +2711,11 @@ li.x-menu-item-active a.x-menu-item {
     padding:0;
 }
 
+/*
 div.extContainer td {
     padding: 3px;
 }
+*/
 
 
 /* Tools */

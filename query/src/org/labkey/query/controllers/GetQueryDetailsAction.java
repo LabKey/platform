@@ -118,8 +118,17 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (null != tinfo.getDescription())
             resp.put("description", tinfo.getDescription());
 
-        //now the native columns
-        resp.put("columns", JsonWriter.getNativeColProps(tinfo, fk));
+        Collection<FieldKey> fields = Collections.emptyList();
+        if (null != form.getAdditionalFields())
+        {
+            String[] additionalFields = form.getAdditionalFields().split(",");
+            fields = new ArrayList<FieldKey>(additionalFields.length);
+            for (int i = 0; i < additionalFields.length; i++)
+                fields.add(FieldKey.fromString(additionalFields[i]));
+        }
+
+        //now the native columns plus any additional fields requested
+        resp.put("columns", JsonWriter.getNativeColProps(tinfo, fields, fk));
 
         if (schema instanceof UserSchema && null == form.getFk())
         {
@@ -204,6 +213,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         private String _schemaName;
         private String _viewName;
         private String _fk;
+        private String _additionalFields; 
 
         public String getSchemaName()
         {
@@ -243,6 +253,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         public void setFk(String fk)
         {
             _fk = fk;
+        }
+
+        public String getAdditionalFields()
+        {
+            return _additionalFields;
+        }
+
+        public void setFields(String fields)
+        {
+            _additionalFields = fields;
         }
     }
 }
