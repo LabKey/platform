@@ -79,15 +79,35 @@ public class MultiValuedLookupColumn extends LookupColumn
 
     protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
     {
+        SqlDialect dialect = lookupTable.getSqlDialect();
+        boolean groupConcat = dialect.supportsGroupConcat();
+
         strJoin.append("\n\t(\n\t\t");
         strJoin.append("SELECT ");
+
+        if (!groupConcat)
+        {
+            strJoin.append("DISTINCT ");
+        }
+
         strJoin.append(_lookupKey.getValueSql("child"));
+
+        // In group_concat case, we always join to child.  In select_concat case, we need to re-join to junction on each
+        // column select, so we need a unique alias ("c") for the inner join.
+        String joinAlias = groupConcat ? "child" : "c";
+
+        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
+        _lookupColumn.declareJoins(joinAlias, joins);
 
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
         for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
         {
             // Skip text and ntext columns -- aggregates don't work on them in some databases
             if (col.isLongTextType())
+                continue;
+
+            // TODO: Temp hack to simplify queries
+            if (!col.getName().equals("AlleleName") && !col.getName().equals("RowId"))
                 continue;
 
             ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
@@ -98,12 +118,40 @@ public class MultiValuedLookupColumn extends LookupColumn
             {
                 valueSql.append("CAST((");
             }
-            valueSql.append(lc.getValueSql("child"));
+            valueSql.append(lc.getValueSql(joinAlias));
             if (needsCast)
             {
                 valueSql.append(") AS VARCHAR)");
             }
-            strJoin.append(getAggregateFunction(valueSql));
+
+            if (groupConcat)
+            {
+                strJoin.append(getAggregateFunction(valueSql));
+            }
+            else
+            {
+                SQLFragment select = new SQLFragment("SELECT ");
+                select.append(valueSql);
+                select.append(" FROM ");
+                select.append(_lookupKey.getParentTable().getFromSQL("c"));
+
+                for (SQLFragment fragment : joins.values())
+                {
+                    String join = StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t\t\t");
+                    join = join.replace("LEFT OUTER", "INNER");
+                    select.append(join);
+                }
+
+                select.append(" WHERE ");
+                select.append(_lookupKey.getValueSql("child"));
+                select.append(" = ");
+                select.append(_lookupKey.getValueSql("c"));
+
+                // TODO: Always order by value
+
+                strJoin.append(dialect.getSelectConcat(select));
+            }
+
             strJoin.append(" AS ");
             strJoin.append(lc.getAlias());
         }
@@ -111,18 +159,19 @@ public class MultiValuedLookupColumn extends LookupColumn
         strJoin.append("\n\t\tFROM ");
         strJoin.append(_lookupKey.getParentTable().getFromSQL("child"));
 
-        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
-        _lookupColumn.declareJoins("child", joins);
-
-        for (SQLFragment fragment : joins.values())
+        if (groupConcat)
         {
-            strJoin.append(StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t"));
+            for (SQLFragment fragment : joins.values())
+            {
+                strJoin.append(StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t"));
+            }
+
+            // TODO: Add ORDER BY?
+
+            strJoin.append("\n\t\tGROUP BY ");
+            strJoin.append(_lookupKey.getValueSql("child"));
         }
 
-        // TODO: Add ORDER BY?
-
-        strJoin.append("\n\t\tGROUP BY ");
-        strJoin.append(_lookupKey.getValueSql("child"));
         strJoin.append("\n\t) ").append(alias);
     }
     
@@ -146,7 +195,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     protected SQLFragment getAggregateFunction(SQLFragment sql)
     {
         // Can't sort because we need to make sure that all of the multi-value columns come back in the same order 
-        return getSqlDialect().getGroupConcatAggregateFunction(sql, false, false);
+        return getSqlDialect().getGroupConcat(sql, false, false);
     }
 
     @Override  // Must match the type of the aggregate function specified above.

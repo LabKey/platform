@@ -458,7 +458,14 @@ public abstract class SqlDialect
 
     public abstract String getSubstringFunction(String s, String start, String length);
 
-    public abstract SQLFragment getGroupConcatAggregateFunction(SQLFragment sql, boolean distinct, boolean sorted);
+    public abstract boolean supportsGroupConcat();
+
+    // GroupConcat is usable as an aggregate function within a GROUP BY
+    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted);
+
+    // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
+    // This is not generally usable within a GROUP BY.  Include distinct, order by, etc. in the selectSql if desired
+    public abstract SQLFragment getSelectConcat(SQLFragment selectSql);
 
     public abstract void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException;
 
