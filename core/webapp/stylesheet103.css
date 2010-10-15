@@ -468,6 +468,7 @@ img.labkey-mv-indicator
 a.labkey-button,
 a.labkey-button:visited {
     padding: 2px 5px;
+	margin-right: 5px;
     border: 1px solid #5894b8;
     background-color: #fff;
     color: #126495;
@@ -1445,23 +1446,35 @@ td.labkey-main-nav
     white-space: nowrap;
     padding:5px 5px 5px;
 }
+
 table.labkey-main-search
 {
     height:16px; font-size:8pt;
     border:solid 1px #a0a0a0;
+    width: 216px;
+    float: right;
 }
+
+table.labkey-main-search img {
+    width: 16px; height: 16px;
+}
+
 .labkey-main-search td
 {
-    height:16px; vertical-align:bottom;
+    vertical-align:bottom;
+    width: 200px;
 }
 .labkey-main-search input
 {
     height:16px; font-size:8pt;
     border:0;
 }
+
 #headerSearchInput /* undo ie ext stuff */
 {
     margin:0; top:0;
+    width: 200px;
+    padding; 0;
 }
 
 /* search results page */
@@ -1522,7 +1535,8 @@ table.labkey-expandable-nav
     border: 0;
     margin-top:5px;
     margin-right:5px;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0;
+	*border-collapse: collapse;
     border-collapse: collapse;
     width: 160px;
 }
@@ -1554,7 +1568,7 @@ table.labkey-expandable-nav
 {
     width: 100%;
     vertical-align: top;
-    padding: 0;
+    padding: 10px 0 0 0;
 }
 
 /* The rest of the project area besides the project nav panel */
@@ -1589,8 +1603,12 @@ th.labkey-expand-collapse-area
     text-align: left;
     white-space: nowrap;
     color:#126495;
-    width: 12px !important;
+	width: 12px;
 	border-bottom: 1px solid #e5e5e5;
+}
+
+th.labkey-expand-collapse-area img {
+	margin-right: 3px;
 }
 
 /* The table that contains all the expandable nodes in the expandable menus */
@@ -1623,8 +1641,13 @@ tr.labkey-nav-tree-row:hover
 /* The area on the left of a nav tree row which can be blank or have an expand/collapse button */
 td.labkey-nav-tree-node
 {
-    padding: 0 3px 0 0;
+    padding: 0;
     vertical-align: middle;
+}
+
+td.labkey-nav-tree-node img
+{
+    margin-right: 3px;
 }
 
 /* The link in an expandable nav menu */
@@ -1773,7 +1796,6 @@ td.labkey-wp-title-left
 th.labkey-wp-title-left {
     border-right: 0 none;
     font-family: Arial, Helvetica, sans serif;
-    font-size: 18px;
     color: #000;
 }
 
@@ -1997,6 +2019,9 @@ table.labkey-r-tsvout
     border-spacing: 0; *border-collapse: collapse;
 }
 
+
+
+
 /* GWT */
 
 .gwt-ToolTip {
@@ -2103,7 +2128,6 @@ table.labkey-r-tsvout
 	-khtml-opacity: 0.5;
 	opacity: 0.5;
 }
-
 
 .gwt-Tree {
 }
@@ -2562,14 +2586,20 @@ div.yuimenu li.checked em.checkedindicator.disabled {
  * These overrides were formerly in gtheme.css
  */
 
+
 .x-panel {
     border-color: #d0d0d0;
 }
 
 .x-panel-header {
-    color:#333;
+    color:#000;
 	border: 1px solid #89a1b4;
-    background: #E7EFF4 none;
+    background: #E7EFF4;
+}
+
+.extContainer div.x-panel-header {
+	padding: 5px;
+	font-size: 14px;
 }
 
 .x-panel-body {
@@ -2592,7 +2622,7 @@ div.yuimenu li.checked em.checkedindicator.disabled {
     border-color:#d0d0d0;
 }
 .x-panel-tl .x-panel-header {
-    color:#333;
+    color:#000;
 }
 .x-panel-tc {
 	background-image:none;
@@ -2613,7 +2643,7 @@ div.yuimenu li.checked em.checkedindicator.disabled {
 	background-image:none;
 }
 .x-panel-mc {
-    background:#f1f1f1;
+    background:#fff;
 	padding:0;
 }
 .x-panel-mc .x-panel-body {
@@ -2710,13 +2740,6 @@ li.x-menu-item-active a.x-menu-item {
     padding:0;
 }
 
-/*
-div.extContainer td {
-    padding: 3px;
-}
-*/
-
-
 /* Tools */
 .x-tool {
     background-image:url(./gtheme/img/icons7.png);
@@ -2745,27 +2768,11 @@ div.extContainer td {
 }
 
 .x-grid-panel .x-panel-mc .x-panel-body {
-    border:none;/*#d0d0d0;*/
+    border:none;
 }
+
 
 /* Buttons */
-/*
-.x-btn {
-	background:#ccc;
-	border:1px solid #999;
-}
-
-.x-btn-left{
-	background-image:none;
-}
-.x-btn-right{
-	background-image:none;
-}
-.x-btn-center{
-	background-image:none;
-}
-*/
-
 .x-btn button {
     font-size: 10px;
     font-weight: bold;
@@ -2776,8 +2783,25 @@ div.extContainer td {
 }
 
 .x-btn-with-menu .x-btn-center em {
-    background:transparent url(./gtheme/img/btn-arrow.gif) no-repeat scroll right 0
+    background:transparent url(./gtheme/img/btn-arrow.gif) no-repeat scroll right 0;
 }
+
+.x-btn-over button {
+    color: #000;
+}
+
+/* makes it more apparent that the item is disabled and works for IE */
+.x-button-disabled {
+    opacity: .35;
+    filter:alpha(opacity=35);
+}
+
+.x-btn-text {
+	font-size: 10px !important;
+	font-family: Verdana, Arial, sans serif;
+}
+
+
 /* Layout classes */
 
 .x-border-layout-ct {
@@ -2829,44 +2853,12 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
     font-size: 13px;
 }
 
+
 /*********** X-panel *******/
-.x-panel-tc {
-	background: #E7EFF4;
-}
-.x-panel-tl {
-	background: #E7EFF4;
-}
-.x-panel-tr {
-	background: #E7EFF4;
-}
-.x-panel-bc {
-	background: #E7EFF4;
-}
-.x-panel-bl {
-	background: #E7EFF4;
-	padding-left:4px;
-}
-.x-panel-br {
-	background: #E7EFF4;
-	padding-right: 4px;
-}
-.x-panel-mc {
-    border:0px solid #d0d0d0;
-    background:white;
-}
 
-.x-panel-ml {
-	background: #E7EFF4;
-	padding-left:4px;
-}
-.x-panel-mr{
-	background: #E7EFF4;
-	padding-right:4px;
-}
-
-/*********** X-panel kc *******/
 .x-panel-tc {
     background: #fff;
+	font-size: 14px;
 }
 .x-panel-tl {
     background: #fff;
@@ -3109,7 +3101,8 @@ td.labkey-export-tab-buttons
 table.labkey-tab-strip
 {
     width: 100%;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0;
+	*border-collapse: collapse;
 }
 
 .labkey-tab-strip {
@@ -3118,62 +3111,77 @@ table.labkey-tab-strip
 }
 
 /* This tab has no bottom border so it looks like it is forward */
-td.labkey-tab-selected, .labkey-tab-selected
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border-top:solid 1px #89A1B4;
-    border-left:solid 1px #89A1B4;
-    border-right:solid 1px #89A1B4;
-    border-bottom:solid 1px #ffffff;
-    background-color:white;
-    color: #126495;
-    text-decoration: none;
-    white-space:nowrap;
-    font-weight: bold;
-    cursor: pointer;
+td.labkey-tab-selected, .labkey-tab-selected {
+	padding: 4px 7px;
+    border-top: solid 1px #89A1B4;
+    border-left: solid 1px #89A1B4;
+    border-right: solid 1px #89A1B4;
+    border-bottom: solid 1px #ffffff;
+    background-color: #fff;
+    color: #000;
+	font-weight: bold;
+    white-space: nowrap;
+}
+
+.labkey-tab-selected a {
+	padding: 4px 7px;
+    border-top: solid 1px #89A1B4;
+    border-bottom: solid 1px #ffffff;
+    background-color: #fff;
+    color: #000;
+	font-weight: bold;
+    white-space: nowrap;
 }
 
 /* This tab has a bottom border so it looks like it is back */
-td.labkey-tab, .labkey-tab
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border:solid 1px #89A1B4;
-    background-color:white;
+td.labkey-tab, .labkey-tab {
+	padding: 4px 7px;
+    border: solid 1px #89A1B4;
+    background-color: #e7eff4;
     color: #126495;
     text-decoration: none;
-    vertical-align:bottom;
-    white-space:nowrap;
+    vertical-align: bottom;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.labkey-tab a {
+	padding: 4px 7px;
+    background-color: #e7eff4;
+    color: #126495;
+	font-weight: bold;
+    text-decoration: none;
+    vertical-align: bottom;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.labkey-tab a:hover {
+	padding: 4px 7px;
+    background-color: #e7eff4;
+    color: #000;
+	font-weight: bold;
+    text-decoration: none;
+    vertical-align: bottom;
+    white-space: nowrap;
     cursor: pointer;
 }
 
 /* This tab has a bottom border and its text is shaded so it looks like it is back and unselectable */
-td.labkey-tab-inactive
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
+td.labkey-tab-inactive {
+	padding: 4px 7px;
     border:solid 1px #89A1B4;
     text-decoration: none;
     color: #444444;
+	background-color: #e7e7e7;
 }
 
-td.labkey-tab-content, .labkey-tab-content
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
+td.labkey-tab-content, .labkey-tab-content {
+	padding: 4px 7px;
     border-left: solid 1px #89A1B4;
     border-right: solid 1px #89A1B4;
     border-bottom: solid 1px #89A1B4;
-    color: #126495;
+   /* color: #126495; */
     background-color:white;
     vertical-align:bottom;
 }
@@ -3214,46 +3222,47 @@ ul.labkey-tab-strip a
     border-right : 1px solid #89A1B4;
     border-left : 1px solid #89A1B4;
     border-bottom : none;
-    float : left;
+    float: left;
     line-height : 14px;
     margin-right : 8px;
-    padding : 2px 6px 2px 6px;
+    padding: 4px 7px;
     text-decoration : none;
 }
 
 li.labkey-tab-active a
 {
-    background-color : #E7EFF4;
-    font-weight: bold;
-    border-bottom : 1px solid #E7EFF4;
+    background-color : #fff;
+    border-bottom : 1px solid #fff;
     margin-bottom: -1px;
+	color: #000;
+	font-weight: bold;
 }
 
 li.labkey-tab-inactive a
 {
-    background-color : #FFFFFF;
+    background-color: #E7EFF4;
     font-weight: bold;
 }
 
 .labkey-tab-strip-spacer
 {
-    height:4px;
-    background-color:#E7EFF4;
+    height: 4px;
+    background-color:#fff;
 	border-left : 1px solid #89A1B4;
 	border-right : 1px solid #89A1B4;
-	border-bottom : 1px solid #89A1B4;
+	border-bottom : 1px solid #fff;
     font-size:1px;
     line-height:1px;
 }
 
 .labkey-tab-strip-content
 {
-	background : #ffffff;
-	border : 1px solid #89A1B4;
-	border-top : none;
-	clear : both;
-	margin : 0;
-	padding : 15px;
+	background: #ffffff;
+	border: 1px solid #89A1B4;
+	border-top: none;
+	clear: both;
+	margin: 0;
+	padding: 15px;
 }
 
 /* This is used as the final tab in a tab strip */
@@ -3263,64 +3272,15 @@ li.labkey-tab-inactive a
     white-space: nowrap;
 }
 
-
-/*****     TAB STRIPS kc     *****/
-
-/* This tab has no bottom border so it looks like it is forward */
-td.labkey-tab-selected, .labkey-tab-selected
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border-top:solid 1px #89A1B4;
-    border-left:solid 1px #89A1B4;
-    border-right:solid 1px #89A1B4;
-    border-bottom:solid 1px #ffffff;
-    background-color:white;
-    color: #126495;
-    text-decoration: none;
-    white-space:nowrap;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-/* This tab has a bottom border so it looks like it is back */
-td.labkey-tab, .labkey-tab
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border:solid 1px #89A1B4;
-    background-color:white;
-    color: #126495;
-    text-decoration: none;
-    vertical-align:bottom;
-    white-space:nowrap;
-    cursor: pointer;
-}
-
-td.labkey-tab-content, .labkey-tab-content
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border-left: solid 1px #89A1B4;
-    border-right: solid 1px #89A1B4;
-    border-bottom: solid 1px #89A1B4;
-    color: #126495;
-    background-color:white;
-    vertical-align:bottom;
-}
-
 /* gwt */
 
-.gwt-TabPanelBottom { border: 1px solid #89A1B4; }
+.gwt-TabPanelBottom {
+	border: 1px solid #89A1B4;
+}
 
 .gwt-TabBar {
-  font-size: 8pt;
+  /* font-size: 8pt; */
+  font-weight: bold;
 }
 
 .gwt-TabBar .gwt-TabBarFirst {
@@ -3336,12 +3296,12 @@ td.labkey-tab-content, .labkey-tab-content
   border-left: 1px solid #89A1B4;
   border-right: 1px solid #89A1B4;
   margin-right: 6px;
-  padding: 2px;
+  padding: 4px 7px;
   cursor: pointer;
 }
 
 .gwt-TabBar .gwt-TabBarItem-selected {
-  padding: 2px;
+  padding: 4px 7px;
   margin-right: 6px;
   cursor: default;
 }
@@ -3350,9 +3310,21 @@ td.labkey-tab-content, .labkey-tab-content
   font-weight: bold;
 }
 
-.gwt-TabBar .gwt-TabBarItem {padding:2px 6px 2px 6px;}
+.gwt-TabBar .gwt-TabBarItem {
+	padding: 4px 7px;
+}
+
 
 /* ext */
+
+div.extContainer .x-tab-panel {
+	margin-top: 10px;
+}
+
+div.extContainer h2 {
+	font-size: 16px;
+	margin-bottom: 5px;
+}
 
 .x-tab-panel-noborder .x-tab-panel-body-noborder {
 	border-width:0;
@@ -3385,34 +3357,48 @@ td.labkey-tab-content, .labkey-tab-content
 }
 
 .x-tab-panel-header, .x-tab-panel-footer {
-	background-color: #E7EFF4;
-	border-color: #89A1B4;
+	background-color: #fff;
+	border-color: none;
 	border: none;
 	border-left: none;
 	border-right: none;
 	padding-bottom: 3px;
 }
 
-ul.x-tab-strip-top { background: none; }
-ul.x-tab-strip-top { background: #ffffff none; padding-top:3px;}
+ul.x-tab-strip-top {
+	background: #ffffff none;
+	padding-top:3px;
+}
+
 ul.x-tab-strip-top li {
     margin-left:6px;
     border-top:1px solid #89A1B4;
     border-right:1px solid #89A1B4;
     border-left:1px solid #89A1B4;
+	background-color: #e7eff4;
 }
-.x-tab-strip-top .x-tab-strip-active .x-tab-right, .x-tab-strip-top .x-tab-strip-active .x-tab-close {
+
+.x-tab-strip-top .x-tab-strip-active .x-tab-right,
+.x-tab-strip-top .x-tab-strip-active .x-tab-close {
     margin-bottom:-1px;
-}
-.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-close {
-    border-bottom:1px solid #E7EFF4;
+	background-color: #fff;
 }
 
-.x-tab-strip span.x-tab-strip-text { color: #126495; }
+.x-tab-strip-top .x-tab-right,
+.x-tab-strip-top .x-tab-close {
+    border-bottom:1px solid #fff;
+}
 
-.x-tab-strip-top .x-tab-right { background:transparent none;}
-.x-tab-strip-top .x-tab-left { background:transparent none;}
-.x-tab-strip-top .x-tab-strip-inner {background:transparent none;}
+.x-tab-strip span.x-tab-strip-text {
+	color: #126495;
+	font-weight: bold;
+}
+
+.x-tab-strip-top .x-tab-right,
+.x-tab-strip-top .x-tab-left,
+.x-tab-strip-top .x-tab-strip-inner {
+	background:transparent none;
+}
 
 /* .x-tab-strip-top .x-tab-strip-active  .x-tab-right { background:#E1ECFC none; color: white;} */
 .x-tab-strip-active span.x-tab-strip-text {color:black;}
@@ -3434,10 +3420,13 @@ ul.x-tab-strip-top li {
 .x-tab-panel-header .x-tab-strip-spacer
 {
     height:4px;
-    border:1px solid #89A1B4;
-    font-size:1px;
-    line-height:1px;
+    border-left:1px solid #89A1B4;
+	border-right:1px solid #89A1B4;
+	border-top: none;
+	border-bottom: none;
+	background-color: #fff;
 }
+
 .x-tab-panel-header-plain .x-tab-strip-spacer,
 .x-tab-panel-header .x-tab-strip-spacer
 {
@@ -3447,13 +3436,9 @@ ul.x-tab-strip-top li {
 .x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner {
 	background-image: none;
 }
+
 .x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner {
 	background-image: none;
-}
-/* makes it more apparent that the item is disabled and works for IE */
-.x-button-disabled {
-    opacity: .35;
-    filter:alpha(opacity=35)
 }
 
 .drag-target-table-positioner {
@@ -3463,10 +3448,6 @@ ul.x-tab-strip-top li {
 
 .x-grid3-hd-inner {
     color: #126495;
-}
-
-.x-btn-over button {
-    color: #000;
 }
 
 .x-toolbar{

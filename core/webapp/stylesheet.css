@@ -24,12 +24,12 @@ yui
 */
 
 /* defaults */
-
 body, div, td, th, table, img, form
 {
     font-family: verdana, arial, helvetica, sans-serif;
     font-size: 8pt;
     margin: 0;
+    font-weight: normal;
 }
 
 html, body
@@ -47,20 +47,11 @@ th
     font-weight: bold;
 }
 
-body, div, td, table, img, form
-{
-    font-weight: normal;
-}
-
 a, a:visited, .labkey-link, .labkey-link:visited
 {
     color: #003399;
     cursor: pointer;
     text-decoration: none;
-}
-
-a:hover, a:visited:hover, .labkey-link, .labkey-link:hover
-{
 }
 
 input, .gwt-TextBox
@@ -106,6 +97,13 @@ legend
     vertical-align: top;
     padding: 1px;
     padding-right:4px;
+}
+
+th.labkey-header
+{
+    border: 0;
+    padding: 5px 0;
+    float: left;
 }
 
 .labkey-header:hover
@@ -1228,23 +1226,35 @@ td.labkey-main-nav
     white-space: nowrap;
     padding:5px 5px 5px;
 }
+
 table.labkey-main-search
 {
     height:16px; font-size:8pt;
     border:solid 1px #a0a0a0;
+    width: 216px;
+    float: right;
 }
+
+table.labkey-main-search img {
+    width: 16px; height: 16px;
+}
+
 .labkey-main-search td
 {
     height:16px; vertical-align:bottom;
+    width: 200px;
 }
 .labkey-main-search input
 {
     height:16px; font-size:8pt;
     border:0;
 }
+
 #headerSearchInput /* undo ie ext stuff */
 {
     margin:0; top:0;
+    width: 200px;
+    height: 16px;
 }
 
 /* search results page */
@@ -1385,6 +1395,11 @@ th.labkey-expand-collapse-area
     white-space: nowrap;
     text-align: left;
     width: 12px;
+}
+
+th.labkey-expand-collapse-area img
+{
+	margin-right: 3px;
 }
 
 /* The table that contains all the expandable nodes in the expandable menus */

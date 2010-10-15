@@ -121,18 +121,25 @@ var autoScroll = true;
 
 Ext.onReady(function(){
 
-    var doneBtn = new Ext.Button({text: (isRoot ? 'Done' : 'Save and Finish'), style:{display:'inline'}, handler:done});
-    doneBtn.render($('buttonDiv'));
-    if (!isRoot)
-    {
-        $('buttonDiv').createChild('&nbsp;');
-        var saveBtn = new Ext.Button({text:'Save', style:{display:'inline'}, handler:save});
-        saveBtn.render($('buttonDiv'));
-
-        var cancelBtn = new Ext.Button({text:'Cancel', style:{display:'inline'}, handler:cancel});
-        $('buttonDiv').createChild('&nbsp;');
-        cancelBtn.render($('buttonDiv'));
+    var btnItems = [];
+    btnItems.push(new Ext.Button({text: (isRoot ? 'Done' : 'Save and Finish'), handler:done}));
+    if (!isRoot) {
+        btnItems.push(new Ext.Button({text:'Save', handler:save}));
+        btnItems.push(new Ext.Button({text:'Cancel', handler:cancel}));
     }
+    var btnPanel = new Ext.Panel({
+        renderTo : 'buttonDiv',
+        layout : 'table',
+        layoutConfig: {columns: 3},
+        defaults : {
+            style : {
+                padding: '0px 5px 0px 0px'
+            }
+        },
+        border: false,
+        frame : false,
+        items : btnItems
+    });
 
     for (var i=0 ; i<tabItems.length ; i++)
         tabItems[i].contentEl = $(tabItems[i].contentEl);
