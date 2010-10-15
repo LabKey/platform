@@ -46,7 +46,7 @@ public class QAggregate extends QExpr
             {
                 ((QExpr)child).appendSql(nestedBuilder);
             }
-            builder.append(builder.getDialect().getGroupConcatAggregateFunction(nestedBuilder, _distinct, true));
+            builder.append(builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true));
         }
         else
         {

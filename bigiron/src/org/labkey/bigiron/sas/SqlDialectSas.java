@@ -136,15 +136,6 @@ public abstract class SqlDialectSas extends SimpleSqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql, boolean distinct, boolean sorted)
-    {
-        SQLFragment result = new SQLFragment("MIN(");
-        result.append(sql);
-        result.append(")");
-        return result;
-    }
-
-    @Override
     public Integer getSPID(Connection result) throws SQLException
     {
         return 0;  // TODO: Implement?

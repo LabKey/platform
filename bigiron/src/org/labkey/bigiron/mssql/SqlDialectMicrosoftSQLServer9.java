@@ -79,9 +79,16 @@ public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
     }
 
     @Override
-    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql, boolean distinct, boolean sorted)
+    public SQLFragment getSelectConcat(SQLFragment selectSql)
     {
-        // TODO: Replace this with SQL Server 2005+ group concat SQL: see XML PATH code in ViabilityAssaySchema
-        return super.getGroupConcatAggregateFunction(sql, distinct, sorted);
+        String sql = selectSql.getSQL();
+        int fromIndex = sql.indexOf("FROM");
+
+        SQLFragment ret = new SQLFragment(selectSql);
+        ret.insert(fromIndex, "AS [data()] ");
+        ret.insert(0, "REPLACE ((");
+        ret.append(" FOR XML PATH ('')), ' ', ',')");
+
+        return ret;
     }
 }

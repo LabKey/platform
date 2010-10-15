@@ -308,9 +308,21 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql, boolean distinct, boolean sorted)
+    public boolean supportsGroupConcat()
     {
-        return new SQLFragment("MIN(" + sql + ")");    // No GROUP_CONCAT support for SQL Server 2000
+        return false;
+    }
+
+    @Override
+    public SQLFragment getSelectConcat(SQLFragment selectSql)
+    {
+        return limitRows(selectSql, 1);    // No SELECT_CONCAT support for SQL Server 2000
+    }
+
+    @Override
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
     public String getTempTableKeyword()
