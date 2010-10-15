@@ -62,7 +62,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        if (!hasPermission(user, ReadPermission.class))
+        if (!hasPermission(user, ReadPermission.class) && !user.equals(User.getSearchUser()))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
