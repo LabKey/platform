@@ -744,7 +744,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
             var target = Ext.fly(e.getTarget());
             if (target.hasClass("labkey-tool"))
             {
-                var classes = target.getAttribute("class").split(" ");
+                var classes = ("" + target.dom.className).split(" ");
                 for (var j = 0; j < classes.length; j++)
                 {
                     var cls = classes[j].trim();
@@ -813,7 +813,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
         var selected = list.getSelectedIndexes();
         if (selected && selected.length > 0)
         {
-            var index = Math.max(selected);
+            var index = Ext.max(selected);
             list.store.insert(index+1, record);
         }
         else
@@ -922,7 +922,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             '<tpl for=".">',
                             '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-column-item" fieldKey="{fieldKey}">',
                             '  <tr>',
-                            '    <td rowspan="0" class="labkey-grab"></td>',
+                            '    <td class="labkey-grab"></td>',
                             '    <td><span class="item-caption">{[values.title || values.name]}</span></td>',
                             '    <td width="15px"><div class="labkey-tool labkey-tool-gear" title="Edit Title"></div></td>',
                             '    <td width="15px"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
@@ -1067,7 +1067,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             '<tpl for=".">',
                             '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-filter-item" fieldKey="{fieldKey}">',
                             '  <tr>',
-                            '    <td rowspan="0" class="labkey-grab" width="8px">&nbsp;</td>',
+                            '    <td rowspan="{[values.items.length+2]}" class="labkey-grab" width="8px">&nbsp;</td>',
                             '    <td colspan="3"><span class="item-caption">{[this.getFieldCaption(values.fieldKey)]}</span></td>',
                             '  </tr>',
                             '  <tpl for="items">',
@@ -1190,8 +1190,8 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         var record = this.getRecord(recordIndex);
         var items = record.get("items");
         var clauseIndex = -1;
-        if (tr.getAttribute("clauseIndex") !== undefined)
-            clauseIndex = +tr.getAttribute("clauseIndex");
+        if (tr.dom.getAttribute("clauseIndex") !== undefined)
+            clauseIndex = +tr.dom.getAttribute("clauseIndex");
         if (clauseIndex < 0 || clauseIndex >= items.length)
             return;
 
@@ -1431,7 +1431,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             '<tpl for=".">',
                             '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-sort-item" fieldKey="{fieldKey}">',
                             '  <tr>',
-                            '    <td rowspan="0" class="labkey-grab"></td>',
+                            '    <td rowspan="2" class="labkey-grab"></td>',
                             '    <td colspan="3"><span class="item-caption">{[this.getFieldCaption(values.fieldKey)]}</span></td>',
                             '  </tr>',
                             '  <tr>',
