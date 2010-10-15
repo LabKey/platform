@@ -84,12 +84,6 @@ public class MultiValuedLookupColumn extends LookupColumn
 
         strJoin.append("\n\t(\n\t\t");
         strJoin.append("SELECT ");
-
-        if (!groupConcat)
-        {
-            strJoin.append("DISTINCT ");
-        }
-
         strJoin.append(_lookupKey.getValueSql("child"));
 
         // In group_concat case, we always join to child.  In select_concat case, we need to re-join to junction on each
@@ -104,10 +98,6 @@ public class MultiValuedLookupColumn extends LookupColumn
         {
             // Skip text and ntext columns -- aggregates don't work on them in some databases
             if (col.isLongTextType())
-                continue;
-
-            // TODO: Temp hack to simplify queries
-            if (!col.getName().equals("AlleleName") && !col.getName().equals("RowId"))
                 continue;
 
             ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
@@ -165,13 +155,12 @@ public class MultiValuedLookupColumn extends LookupColumn
             {
                 strJoin.append(StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t"));
             }
-
-            // TODO: Add ORDER BY?
-
-            strJoin.append("\n\t\tGROUP BY ");
-            strJoin.append(_lookupKey.getValueSql("child"));
         }
 
+        // TODO: Add ORDER BY?
+
+        strJoin.append("\n\t\tGROUP BY ");
+        strJoin.append(_lookupKey.getValueSql("child"));
         strJoin.append("\n\t) ").append(alias);
     }
     
