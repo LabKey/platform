@@ -203,7 +203,16 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 schemaName: this.schemaName,
                 queryName: this.queryName,
                 createNodeConfigFn: {fn: this.createNodeAttrs, scope: this }
-            })
+            }),
+            fbar: [{
+                xtype: "checkbox",
+                boxLabel: "Show Hidden Fields",
+                checked: this.showHiddenFields,
+                handler: function (checkbox, checked) {
+                    this.setShowHiddenFields(checked);
+                },
+                scope: this
+            }]
         });
 
         var deleteToolTip =
@@ -245,51 +254,23 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 html: "bottom bar",
                 hidden: true
             },
-            fbar: {
-                xtype: 'container',
-                layout: {
-                    type: 'vbox',
-                    pack: 'start',
-                    align: 'stretch'
-                },
-                defaults: { flex: 1 },
-                height: 27 * 2,
-                items: [{
-                    xtype: "toolbar",
-                    toolbarCls: "x-tab-panel-footer",
-                    defaults: {minWidth: 75},
-                    items: [{
-                        xtype: "checkbox",
-                        boxLabel: "Show Hidden Fields",
-                        checked: this.showHiddenFields,
-                        handler: function (checkbox, checked) {
-                            this.setShowHiddenFields(checked);
-                        },
-                        scope: this
-                    }]
-                },{
-                    xtype: "toolbar",
-                    toolbarCls: "x-tab-panel-footer",
-                    defaults: {minWidth: 75},
-                    items: [{
-                        text: (this.customView.name ? "Delete" : "Reset"),
-                        tooltip: deleteToolTip,
-                        disabled: !this.canEdit(),
-                        handler: this.onDeleteClick,
-                        scope: this
-                    },"->",{
-                        text: "Apply",
-                        tooltip: "Apply changes to the view",
-                        handler: this.onApplyClick,
-                        scope: this
-                    },{
-                        text: "Save",
-                        tooltip: "Save changes",
-                        handler: this.onSaveClick,
-                        scope: this
-                    }]
-                }]
-            }
+            fbar: [{
+                text: (this.customView.name ? "Delete" : "Reset"),
+                tooltip: deleteToolTip,
+                disabled: !this.canEdit(),
+                handler: this.onDeleteClick,
+                scope: this
+            },"->",{
+                text: "Apply",
+                tooltip: "Apply changes to the view",
+                handler: this.onApplyClick,
+                scope: this
+            },{
+                text: "Save",
+                tooltip: "Save changes",
+                handler: this.onSaveClick,
+                scope: this
+            }]
         });
 
         this.addEvents({
