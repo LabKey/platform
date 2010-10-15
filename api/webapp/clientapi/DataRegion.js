@@ -727,12 +727,12 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     // private
     _removeParams : function (skipPrefixes)
     {
-        this._setParam(null, null, skipPrefixes);
+        this._setParams(null, skipPrefixes);
     },
 
     _setParam : function (param, value, skipPrefixes)
     {
-        this._setParams([param, value], skipPrefixes);
+        this._setParams([[param, value]], skipPrefixes);
     },
 
     // private
