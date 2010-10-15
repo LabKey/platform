@@ -343,6 +343,9 @@ public class StudyQuerySchema extends UserSchema
             return StudyImpl.DOMAIN_INFO.getDomainURI(getContainer());
 
         Study study = StudyManager.getInstance().getStudy(getContainer());
+        if (study == null)
+            return null;
+        
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, queryName);
         if (def != null)
         {
