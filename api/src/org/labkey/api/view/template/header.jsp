@@ -43,7 +43,6 @@
     AppProps app = AppProps.getInstance();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(currentContext.getContainer());
 
-    //me.addTestMessage();
     boolean hasWarnings = me.getWarningMessages().size() > 0;
     boolean showSearchForm = bean.pageConfig.getTemplate() == PageConfig.Template.Home || bean.pageConfig.getTemplate() == PageConfig.Template.None;
     if ("search".equalsIgnoreCase(currentURL.getPageFlow()) && "search".equalsIgnoreCase(currentURL.getAction()))
@@ -87,13 +86,12 @@
     </td>
   </tr>
   <tr>
-    <td valign="bottom" align="right" nowrap class="labkey-main-nav">
+    <td class="labkey-main-nav">
       <form id="headerSearchForm" action="<%=h(new ActionURL("search","search",c).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
-        <table cellspacing=0 cellpadding=0 style="width:216px;" class="labkey-main-search">
+        <table cellspacing=0 cellpadding=0 class="labkey-main-search">
           <tr>
-            <td style="width:200px;" align="right"><input id="headerSearchContainer" name="container" type="hidden" value=""><input style="width:200px" id="headerSearchInput" name="q" type="text"></td>
-            <td style="width:16px;" nowrap valign="middle"><input type="image" width="16" height="16" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
-            <%--<td style="width:16px;" nowrap valign="middle" onClick="showMenu(this,'headerSearchMenu','tr-br?');"><a href="#"><img border=0 height=16 width=20 src="<%=contextPath%>/_images/search_menu.png"></a></td>--%>
+            <td><input id="headerSearchContainer" name="container" type="hidden" value=""><input id="headerSearchInput" name="q" type="text"></td>
+            <td><input type="image" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
           </tr>
         </table>
       </form>
@@ -103,7 +101,7 @@
 
 <table id="header">
 <tr>
-  <td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>"><img alt="<%=h(laf.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
+  <td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>"></a></td>
   <td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span></td>
   <%if (hasWarnings) {%>
   <td width="16" valign="bottom"><span id="labkey-warning-message-icon" <%=me.isUserHidingWarningMessages() ? "" : "style=display:none;"%>><img src="<%=getViewContext().getContextPath()%>/_images/warning-small.png" alt="!" title="Click to view warning messages." style="cursor: pointer;" onclick="labkeyShowWarningMessages(true);"/></span></td>
@@ -162,7 +160,7 @@ Ext.onReady(function()
     var inputEl = Ext.get('headerSearchInput');
     var parentEl = inputEl.parent();
     inputEl.remove();
-    headerSearchField = new Ext.form.TextField({id:'headerSearchInput',name:'q',emptyText:'Search',cls:'labkey-main-search', height:16, width:200, focusClass:'labkey-main-search'});
+    headerSearchField = new Ext.form.TextField({id:'headerSearchInput',name:'q',emptyText:'Search',cls:'labkey-main-search', focusClass:'labkey-main-search'});
     headerSearchField.render(parentEl);
     var handler = function(item)
     {

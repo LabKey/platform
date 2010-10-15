@@ -25,8 +25,8 @@ import java.util.*;
 public class ThemeFont
 {
     protected final static ThemeFont XSMALL   = new ThemeFont("Smallest",  "11px", "13px", "18px", "18px", "25px", "13px", "13px", "11", "12");
-    protected final static ThemeFont SMALL   = new ThemeFont("Small",      "12px", "13px", "18px", "18px", "25px", "13px", "13px", "12", "13");
-    protected final static ThemeFont MEDIUM  = new ThemeFont("Medium",     "13px", "13px", "20px", "18px", "27px", "15px", "15px", "13", "14");
+    protected final static ThemeFont SMALL   = new ThemeFont("Small",      "12px", "13px", "18px", "22px", "25px", "13px", "13px", "12", "13");
+    protected final static ThemeFont MEDIUM  = new ThemeFont("Medium",     "13px", "13px", "20px", "24px", "27px", "15px", "15px", "13", "14");
     protected final static ThemeFont LARGE   = new ThemeFont("Large",      "14px", "14px", "22px", "30px", "28px", "18px", "18px", "14", "15");
 
     public final static ThemeFont DEFAULT_THEME_FONT = MEDIUM;
