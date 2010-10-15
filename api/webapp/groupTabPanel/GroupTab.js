@@ -43,10 +43,10 @@ Ext.ux.GroupTab = Ext.extend(Ext.Container, {
             this.groupEl = this.ownerCt.getGroupEl(this);
         }, this);
 
-        this.on('add', this.onAdd, this, {
+        this.on('add', this.onItemAdd, this, {
             target: this
         });
-        this.on('remove', this.onRemove, this, {
+        this.on('remove', this.onItemRemove, this, {
             target: this
         });
 
@@ -195,14 +195,14 @@ Ext.ux.GroupTab = Ext.extend(Ext.Container, {
     },
 
     // private
-    onAdd: function(gt, item, index){
+    onItemAdd: function(gt, item, index){
         if (this.rendered) {
             this.initTab.call(this, item, index);
         }
     },
 
     // private
-    onRemove: function(tp, item){
+    onItemRemove: function(tp, item){
         Ext.destroy(Ext.get(this.getTabEl(item)));
         this.stack.remove(item);
         item.un('disable', this.onItemDisabled, this);
@@ -258,6 +258,9 @@ Ext.ux.GroupTab = Ext.extend(Ext.Container, {
     },
 
     beforeDestroy: function(){
+        // Panel.beforeDestroy assumes toolbars exists
+        if (!this.toolbars)
+            this.toolbars = [];
         Ext.TabPanel.prototype.beforeDestroy.call(this);
         this.tooltip.destroy();
     }

@@ -56,13 +56,13 @@ LABKEY.ext.SplitGroupTabPanel = Ext.extend(Ext.ux.GroupTabPanel, {
     onResize : function (adjWidth, adjHeight, rawWidth, rawHeight) {
         LABKEY.ext.SplitGroupTabPanel.superclass.onResize.apply(this, arguments);
 
+        this.splitItem.setWidth(Math.floor((this.el.getWidth() - this.header.getWidth())/2));
+        this.body.setWidth(this.el.getWidth() - this.splitItem.getWidth() - this.header.getWidth());
         this.splitItem.setHeight(this.body.getHeight());
-        this.splitItem.setWidth(this.bwrap.getWidth()/2);
-        this.body.setWidth(this.bwrap.getWidth() - this.splitItem.getWidth());
     },
 
     adjustCenterSize : function (resizer, w, h, e) {
-        this.body.setWidth(this.bwrap.getWidth() - this.splitItem.getWidth());
+        this.body.setWidth(this.el.getWidth() - this.splitItem.getWidth() - this.header.getWidth());
 
         // update the item sizes based on the centerItem
         this.doLayout();

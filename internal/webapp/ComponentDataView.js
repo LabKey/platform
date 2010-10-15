@@ -40,7 +40,7 @@ Ext.ux.ComponentDataView = Ext.extend(Ext.DataView, {
         Ext.ux.ComponentDataView.superclass.onRemove.apply(this, arguments);
     },
     onDestroy : function(){
-        Ext.ux.ComponentDataView.onDestroy.call(this);
+        Ext.ux.ComponentDataView.superclass.onDestroy.call(this);
         Ext.destroy(this.components);
         this.components = [];
     },
