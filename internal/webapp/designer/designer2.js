@@ -41,7 +41,7 @@ LABKEY.ext.SplitGroupTabPanel = Ext.extend(Ext.ux.GroupTabPanel, {
             minWidth: 100,
             resizeElement : function () {
                 var box = this.proxy.getBox();
-                splitItem.updateBox(box);
+                splitItem.setWidth(box.width);
                 if (splitItem.layout) {
                     splitItem.doLayout();
                 }
