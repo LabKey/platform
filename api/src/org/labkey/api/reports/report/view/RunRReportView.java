@@ -222,14 +222,19 @@ public class RunRReportView extends RunScriptReportView
             else
             {
                 Report report = form.getReport();
-                if (form.getIsDirty())
-                    ((RReport)report).clearCache();
-                view.addView(report.renderReport(getViewContext()));
+                if (report != null)
+                {
+                    if (form.getIsDirty())
+                        ((RReport)report).clearCache();
+                    view.addView(report.renderReport(getViewContext()));
+                }
             }
         }
         else if (TAB_DATA.equals(tabId))
         {
-            view.addView(form.getReport().renderDataView(getViewContext()));
+            Report report = form.getReport();
+            if (report != null)
+                view.addView(report.renderDataView(getViewContext()));
         }
 
         // add the view to manage tab and view dirty state
