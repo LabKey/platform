@@ -27,6 +27,7 @@ import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -195,7 +196,7 @@ public class DomainUtil
             gpv.setDescription(pv.getDescription());
             gpv.setExpression(pv.getExpressionValue());
             gpv.setRowId(pv.getRowId());
-            gpv.setType(lsid.getObjectId());
+            gpv.setType(PropertyValidatorType.getType(lsid.getObjectId()));
             gpv.setErrorMessage(pv.getErrorMessage());
             gpv.setProperties(new HashMap<String,String>(pv.getProperties()));
 

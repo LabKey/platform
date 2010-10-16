@@ -16,6 +16,7 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.io.Serializable;
@@ -36,7 +37,7 @@ public class GWTPropertyValidator implements Serializable, IsSerializable
 
     private int _rowId;
     private String _name;
-    private String _type;
+    private PropertyValidatorType _type;
     private String _description;
     private String _expression;
     private String _errorMessage;
@@ -91,12 +92,12 @@ public class GWTPropertyValidator implements Serializable, IsSerializable
         _name = name;
     }
 
-    public String getType()
+    public PropertyValidatorType getType()
     {
         return _type;
     }
 
-    public void setType(String type)
+    public void setType(PropertyValidatorType type)
     {
         _type = type;
     }
@@ -170,7 +171,7 @@ public class GWTPropertyValidator implements Serializable, IsSerializable
 
         if (getRowId() != that.getRowId()) return false;
         if (!StringUtils.equals(getName(), that.getName())) return false;
-        if (!StringUtils.equals(getType(), that.getType())) return false;
+        if (!PropertyUtil.nullSafeEquals(getType(), that.getType())) return false;
         if (!StringUtils.equals(getDescription(), that.getDescription())) return false;
         if (!StringUtils.equals(getExpression(), that.getExpression())) return false;
         if (!StringUtils.equals(getErrorMessage(), that.getErrorMessage())) return false;

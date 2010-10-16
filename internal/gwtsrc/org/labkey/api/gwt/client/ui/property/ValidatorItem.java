@@ -21,6 +21,7 @@ import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -41,6 +42,9 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     private ImageButton _addRegexButton;
     private ImageButton _addLookupButton;
     private boolean _validatorChanged;
+    private HorizontalPanel _regexPanel;
+    private HorizontalPanel _rangePanel;
+    private HorizontalPanel _lookupPanel;
 
     public ValidatorItem(PropertyPane<DomainType, FieldType> propertyPane)
     {
@@ -50,24 +54,21 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     @Override
     public int addToTable(FlexTable flexTable, int row)
     {
-//        flexTable.getFlexCellFormatter().setHorizontalAlignment(row, 0, HasHorizontalAlignment.ALIGN_CENTER);
-//        flexTable.getFlexCellFormatter().setColSpan(row, 0, 2);
-
-//        FlowPanel label = new FlowPanel();
-//        label.add(new InlineHTML("<b>Field Validators</b>"));
-//        label.add(new HelpPopup("Field Validators",
-//                        "Field validators ensure that all values entered for a field " +
-//                        "obey a regular expression and/or fall within a specified range."));
-//        flexTable.setWidget(row, LABEL_COLUMN, label);
-//
-//        row++;
-
-        _addRegexButton = new ImageButton("Add Regular Expression Validator", new RegexClickHandler());
-        flexTable.setWidget(row++, INPUT_COLUMN, _addRegexButton);
+        _addRegexButton = new ImageButton("Add RegEx Validator", new RegexClickHandler());
+        _regexPanel = new HorizontalPanel();
+        _regexPanel.add(_addRegexButton);
+        _regexPanel.add(PropertyValidatorType.RegEx.createHelpPopup());
+        flexTable.setWidget(row++, INPUT_COLUMN, _regexPanel);
         _addRangeButton = new ImageButton("Add Range Validator", new RangeClickHandler());
-        flexTable.setWidget(row++, INPUT_COLUMN, _addRangeButton);
+        _rangePanel = new HorizontalPanel();
+        _rangePanel.add(_addRangeButton);
+        _rangePanel.add(PropertyValidatorType.Range.createHelpPopup());
+        flexTable.setWidget(row++, INPUT_COLUMN, _rangePanel);
         _addLookupButton = new ImageButton("Add Lookup Validator", new LookupClickHandler());
-        flexTable.setWidget(row++, INPUT_COLUMN, _addLookupButton);
+        _lookupPanel = new HorizontalPanel();
+        _lookupPanel.add(_addLookupButton);
+        _lookupPanel.add(PropertyValidatorType.Lookup.createHelpPopup());
+        flexTable.setWidget(row++, INPUT_COLUMN, _lookupPanel);
 
         _validatorTable = new FlexTable();
         int col = 1;
@@ -112,19 +113,19 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     {
         String rangeURI = field.getRangeURI();
         PropertyType t = PropertyType.fromName(rangeURI);
-        _addRangeButton.setVisible(PropertyType.xsdDateTime == t || PropertyType.xsdDouble == t || PropertyType.xsdInt == t);
+        _rangePanel.setVisible(PropertyType.xsdDateTime == t || PropertyType.xsdDouble == t || PropertyType.xsdInt == t);
         _validators = field.getPropertyValidators();
         boolean hasLookup = field.getLookupQuery() != null && field.getLookupSchema() != null;
         boolean hasLookupValidator = false;
         for (GWTPropertyValidator validator : _validators)
         {
-            if (GWTPropertyValidator.TYPE_LOOKUP.equals(validator.getType()))
+            if (validator.getType() == PropertyValidatorType.Lookup)
             {
                 hasLookupValidator = true;
                 break;
             }
         }
-        _addLookupButton.setVisible(hasLookup && !hasLookupValidator);
+        _lookupPanel.setVisible(hasLookup && !hasLookupValidator);
         refreshValidators();
     }
 
@@ -195,7 +196,7 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
             // No need for a dialog on this one - there are no options
             GWTPropertyValidator validator = new GWTPropertyValidator();
             validator.setName("Lookup validator");
-            validator.setType(GWTPropertyValidator.TYPE_LOOKUP);
+            validator.setType(PropertyValidatorType.Lookup);
             propertyChanged(validator);
         }
     }
@@ -231,21 +232,25 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
                 panel.add(new HTML("&nbsp;"));
                 PushButton editButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partedit.gif"));
                 Tooltip.addTooltip(editButton, "Edit this validator");
-                if (pv.getType().equals(GWTPropertyValidator.TYPE_RANGE))
+                if (pv.getType().equals(PropertyValidatorType.Range))
                 {
                     editButton.addClickHandler(new RangeClickHandler(pv));
                 }
-                else if (pv.getType().equals(GWTPropertyValidator.TYPE_REGEX))
+                else if (pv.getType().equals(PropertyValidatorType.RegEx))
                 {
                     editButton.addClickHandler(new RegexClickHandler(pv));
                 }
-                panel.add(editButton);
+                if (pv.getType().isConfigurable())
+                {
+                    panel.add(editButton);
+                }
             }
 
             _validatorTable.setWidget(row, 0, panel);
             _validatorTable.setWidget(row, 1, new HTML(StringUtils.filter(pv.getName(), true)));
             _validatorTable.setWidget(row, 2, new HTML(StringUtils.filter(pv.getDescription(), true)));
-            _validatorTable.setWidget(row++, 3, new HTML(pv.getType()));
+            _validatorTable.setWidget(row, 3, new Label(pv.getType().name()));
+            _validatorTable.setWidget(row++, 4, pv.getType().createHelpPopup());
         }
 
         _validatorTable.setVisible(!_validators.isEmpty());

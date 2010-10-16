@@ -18,6 +18,7 @@ package org.labkey.api.gwt.client.ui.property;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.BoundListBox;
@@ -100,7 +101,7 @@ public class RangeValidatorDialog extends ValidatorDialog
         if (_oldProp != null)
             prop.copy(_oldProp);
 
-        prop.setType(GWTPropertyValidator.TYPE_RANGE);
+        prop.setType(PropertyValidatorType.Range);
         int row = 0;
 
         BoundTextBox name = new BoundTextBox("name", prop.getName(), new WidgetUpdatable()
