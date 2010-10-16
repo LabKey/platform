@@ -26,6 +26,7 @@ import org.labkey.api.view.ViewServlet;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
@@ -61,6 +62,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String EXCEPTION_REPORTING_LEVEL = "exceptionReportingLevel";
     protected static final String USAGE_REPORTING_LEVEL = "usageReportingLevel";
     protected static final String SERVER_GUID = "serverGUID";
+    protected static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
     protected static final String MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP = "microarrayFeatureExtractionServer";
     protected static final String BLAST_SERVER_BASE_URL_PROP = "BLASTBaseURL";
     protected static final String MASCOT_SERVER_PROP = "MascotServer";
@@ -359,6 +361,15 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     public String getServerGUID()
     {
+        ServletContext context = ModuleLoader.getServletContext();
+        if (context != null)
+        {
+            String serverGUID = context.getInitParameter(SERVER_GUID_XML_PARAMETER_NAME);
+            if (serverGUID != null)
+            {
+                return serverGUID;
+            }
+        }
         String serverGUID = lookupStringValue(SERVER_GUID, SERVER_SESSION_GUID);
         if (serverGUID.equals(SERVER_SESSION_GUID))
         {
