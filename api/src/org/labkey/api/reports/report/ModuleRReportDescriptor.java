@@ -17,6 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
@@ -169,6 +170,13 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public long getSourceLastModified()
     {
         return _sourceLastModified;
+    }
+
+    @NotNull
+    @Override
+    public String getResourceId()
+    {
+        return getReportId().toString();
     }
 
     @Override

@@ -474,6 +474,9 @@ public class ReportUtil
                 record.put("container", view.getContainer() != null ? view.getContainer().getPath() : "");
                 record.put("inherited", String.valueOf(inherited));
 
+                if (!StringUtils.isEmpty(view.getCustomIconUrl()))
+                    record.put("icon", view.getCustomIconUrl());
+
                 views.add(record);
             }
         }
