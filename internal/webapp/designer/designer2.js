@@ -180,11 +180,11 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             customView: this.customView
         });
 
-        this.propertiesTab = new LABKEY.DataRegion.PropertiesTab({
-            designer: this,
-            customView: this.customView,
-            readOnly: true
-        });
+//        this.propertiesTab = new LABKEY.DataRegion.PropertiesTab({
+//            designer: this,
+//            customView: this.customView,
+//            readOnly: true
+//        });
 
         this.fieldsTree = new Ext.tree.TreePanel({
             autoScroll: true,
@@ -301,6 +301,20 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         {
             this.showMessage("Editing an unsaved view.");
         }
+    },
+
+    beforeDestroy : function () {
+        LABKEY.DataRegion.ViewDesigner.superclass.beforeDestroy.call(this);
+        if (this.columnsTab)
+            this.columnsTab.destroy();
+        if (this.filterTab)
+            this.filterTab.destroy();
+        if (this.sortTab)
+            this.sortTab.destroy();
+        if (this.fieldMetaStore)
+            this.fieldMetaStore.destroy();
+        if (this.dataRegion)
+            delete this.dataRegion;
     },
 
     canEdit : function ()
@@ -880,7 +894,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
 
 LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     constructor : function (config) {
-        console.log("ColumnsTab");
+        //console.log("ColumnsTab");
 
         this.customView = config.customView;
         this.fieldMetaStore = config.fieldMetaStore;
@@ -997,7 +1011,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
 LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
     constructor : function (config) {
-        console.log("FilterTab");
+        //console.log("FilterTab");
 
         this.designer = config.designer;
         this.customView = config.customView;
@@ -1525,7 +1539,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
 LABKEY.DataRegion.PropertiesTab = Ext.extend(Ext.Panel, {
     constructor : function (config) {
-        console.log("PropertiesTab");
+        //console.log("PropertiesTab");
 
         this.designer = config.designer;
         this.customView = config.customView;
@@ -1705,7 +1719,7 @@ LABKEY.ext.FieldMetaRecord.getToolTipHtml = function (fieldMetaRecord) {
  */
 LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
     constructor : function (config) {
-        console.log("FieldMetaStore");
+        //console.log("FieldMetaStore");
 
         if (config.schemaName && config.queryName) {
             var params = { schemaName: config.schemaName, queryName: config.queryName };
@@ -1730,19 +1744,15 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
     },
 
     onBeforeLoad : function() {
-        console.log("onBeforeLoad");
         this.isLoading = true;
     },
 
     onLoad : function(store, records, options) {
-        console.log("onLoad");
         this.isLoading = false;
     },
 
     onLoadException : function(proxy, options, response, error)
     {
-        console.log("onLoadException");
-
         this.isLoading = false;
         var loadError = {message: error};
 
@@ -1773,8 +1783,8 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
      * @param {Object} [options.scope] The scope the callback will be called in.
      */
     loadLookup : function (options) {
-        console.log("loadLookup");
-        console.log(options);
+        //console.log("loadLookup");
+        //console.log(options);
 
         // The record's name is the fieldKey relative to the root query table.
         var fieldKey = options.fieldKey || (options.record && options.record.data.fieldKey);

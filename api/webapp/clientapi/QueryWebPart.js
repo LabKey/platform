@@ -311,9 +311,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     render : function(renderTo) {
 
         var dr = LABKEY.DataRegions[this.dataRegionName];
-        if (dr)
-            dr.hideCustomizeView();
-        
+
         //allow renderTo param to override config property
         if(renderTo)
             this.renderTo = renderTo;
@@ -336,6 +334,17 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         if (this.sort)
             json.filters[this.dataRegionName + ".sort"] = this.sort;
 
+        // re-open designer after update
+        if (dr)
+        {
+            var customizeViewVisible = false;
+            if (dr.customizeView)
+            {
+                customizeViewVisible = dr.customizeView.isVisible();
+                dr.hideCustomizeView();
+            }
+        }
+
         Ext.Ajax.request({
             timeout: (this.timeout == undefined) ? 30000 : this.timeout,
             url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
@@ -351,13 +360,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                         if (!dr)
                             throw "Couldn't get dataregion '" + this.dataRegionName + "' object.";
 
-//                        // hijack the CustomizeView menu item
-//                        var customizeViewMenuItem = Ext.getCmp(this.dataRegionName + ":Views:Customize View");
-//                        if (customizeViewMenuItem)
-//                        {
-//                            customizeViewMenuItem.on('click', this.customizeViewClick, this);
-//                        }
-
                         dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
                         dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
                         dr.on("beforesortchange", this.beforeSortChange, this);
@@ -368,6 +370,9 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                         dr.on("beforechangeview", this.beforeChangeView, this);
                         dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
                         dr.on("buttonclick", this.onButtonClick, this);
+
+                        if (customizeViewVisible)
+                            dr.showCustomizeView(null, false, false);
 
                         if(this.successCallback)
                             Ext.onReady(function(){this.successCallback.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()

@@ -134,7 +134,7 @@ Ext.ux.dd.GridDragDropRowOrder = Ext.extend(Ext.util.Observable,
         }
 
         view.on({
-            render: { fn: this.onViewRender, scope: this, single: true }
+            afterrender: { fn: this.onViewRender, scope: this, single: true }
         });
     },
 

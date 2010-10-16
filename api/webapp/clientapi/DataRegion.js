@@ -870,10 +870,11 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     _showButtonPanel : function(headerOrFooter, panelId, animate, tabPanelConfig)
     {
         //create the ribbon container if necessary
-        if (!headerOrFooter.ribbonContainer)
-            headerOrFooter.ribbonContainer = headerOrFooter.parent().createChild({tag:'div', cls:'labkey-ribbon extContainer'});
 
-        var panelDiv = headerOrFooter.ribbonContainer;
+        var panelDiv = headerOrFooter.parent().child("labkey-ribbon");
+        if (!panelDiv)
+            panelDiv = headerOrFooter.parent().createChild({tag:'div', cls:'labkey-ribbon extContainer'});
+
         if (panelDiv)
         {
             var panelToHide = null;
@@ -973,8 +974,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         var headerOrFooter = this.header || this.footer;
 
         //create the ribbon container if necessary
-        if (!headerOrFooter.ribbonContainer)
-            headerOrFooter.ribbonContainer = headerOrFooter.parent().createChild({tag:'div', cls:'labkey-ribbon extContainer'});
+        var panelDiv = headerOrFooter.parent().child("labkey-ribbon");
+        if (!panelDiv)
+            panelDiv = headerOrFooter.parent().createChild({tag:'div', cls:'labkey-ribbon extContainer'});
 
         if (!this.customizeView)
         {
@@ -1004,7 +1006,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                             this.hideMessage();
 
                         var minWidth = Math.max(500, headerOrFooter.parent().getWidth(true));
-                        var renderTo = headerOrFooter.ribbonContainer.createChild({tag:"div"});
+                        var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
 
                         this.customizeView = new LABKEY.DataRegion.ViewDesigner({
                             renderTo: renderTo,
