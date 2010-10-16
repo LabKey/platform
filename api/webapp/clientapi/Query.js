@@ -23,12 +23,7 @@
  *		delete data from LabKey public queries. <p/>
  *		{@link LABKEY.Query.selectRows} works for all LabKey public queries.  However,
  *		{@link LABKEY.Query.updateRows}, {@link LABKEY.Query.insertRows} and
- *		{@link LABKEY.Query.deleteRows} are only available for lists, study datasets, or
- *		tables in a user-defined schema.
- *		These three methods may not be used to operate on rows returned by queries to other LabKey
- *		module schemas (e.g., ms1, ms2, flow, etc). To update, insert or delete data returned by
- * 		queries to these types of schemas, use the methods for their respective classes,
- *		such as the methods defined by {@link LABKEY.Assay} for assays.
+ *		{@link LABKEY.Query.deleteRows} are not available for all tables and queries.
  *            <p>Additional Documentation:
  *              <ul>
  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
@@ -1121,7 +1116,7 @@ LABKEY.Query = new function()
            "queryName": "API Test List"
            "rowsAffected": 1,
            "command": "insert",
-           "keys": [3],
+           "rows": [{ Key: 3, StringField: 'NewValue'}]
         } </pre></code>
 * @see LABKEY.Query.updateRows
 * @see LABKEY.Query.insertRows
@@ -1149,12 +1144,6 @@ LABKEY.Query = new function()
 * @name    command
 * @description   Will be "update", "insert", or "delete" depending on the API called.
 * @type    String
-*/
-
-/**
-* @name  keys
-* @description  The primary keys of the rows that are modified.
-* @type  Integer[]
 */
 
 /**
