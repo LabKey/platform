@@ -36,15 +36,14 @@ import java.util.Map;
 * Date: Jan 9, 2009
 * Time: 4:37:30 PM
 */
-public class ModuleCustomView implements CustomView
+public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
 {
     private QueryDefinition _queryDef;
-    private ModuleCustomViewDef _customViewDef;
 
     public ModuleCustomView(QueryDefinition queryDef, ModuleCustomViewDef customViewDef)
     {
+        super(customViewDef);
         _queryDef = queryDef;
-        _customViewDef = customViewDef;
     }
 
     public QueryDefinition getQueryDefinition()
@@ -52,48 +51,9 @@ public class ModuleCustomView implements CustomView
         return _queryDef;
     }
 
-    public String getName()
-    {
-        return _customViewDef.getName();
-    }
-
     public void setName(String name)
     {
         throw new UnsupportedOperationException("Can't set name on a module-based custom view!");
-    }
-
-
-    public User getOwner()
-    {
-        //module-based reports have no owner
-        return null;
-    }
-
-    public boolean isShared()
-    {
-        return true;
-    }
-
-    public User getCreatedBy()
-    {
-        return null;
-    }
-
-    @Override
-    public Date getModified()
-    {
-        return _customViewDef.getLastModified();
-    }
-
-    public Container getContainer()
-    {
-        //module-based reports have no explicit container
-        return null;
-    }
-
-    public boolean canInherit()
-    {
-        return false;
     }
 
     public void setCanInherit(boolean f)
@@ -101,57 +61,10 @@ public class ModuleCustomView implements CustomView
         throw new UnsupportedOperationException("Module-based custom views cannot inherit");
     }
 
-    public boolean isHidden()
-    {
-        return _customViewDef.isHidden();
-    }
-
     public void setIsHidden(boolean f)
     {
         throw new UnsupportedOperationException("Module-based custom views cannot be set to hidden. " +
                 "To suppress a module-based view, use Customize Folder to deactivate the module in this current folder.");
-    }
-
-    public boolean isEditable()
-    {
-        //module custom views are not updatable
-        return false;
-    }
-
-    public boolean isSession()
-    {
-        // module custom views are never in session state
-        return false;
-    }
-
-    public String getCustomIconUrl()
-    {
-        return _customViewDef.getCustomIconUrl();
-    }
-
-    public String getSchemaName()
-    {
-        return _customViewDef.getSchema();
-    }
-
-    public String getQueryName()
-    {
-        return _customViewDef.getQuery();
-    }
-
-    public List<FieldKey> getColumns()
-    {
-        List<FieldKey> ret = new ArrayList<FieldKey>();
-        for(Map.Entry<FieldKey, Map<CustomView.ColumnProperty,String>> entry : getColumnProperties())
-        {
-            ret.add(entry.getKey());
-        }
-        return ret;
-    }
-
-    public List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty,String>>> getColumnProperties()
-    {
-        return _customViewDef.getColList();
     }
 
     public void setColumns(List<FieldKey> columns)
@@ -185,33 +98,9 @@ public class ModuleCustomView implements CustomView
         throw new UnsupportedOperationException("Can't set the filter or sort of a module-based custom view!");
     }
 
-    public String getFilterAndSort()
-    {
-        return _customViewDef.getFilterAndSortString();
-    }
-
     public void setFilterAndSort(String filter)
     {
         throw new UnsupportedOperationException("Can't set filter on a module-based custom view!");
-    }
-
-    public String getContainerFilterName()
-    {
-        if (null == _customViewDef.getFilters())
-            return null;
-
-        for(Pair<String, String> filter : _customViewDef.getFilters())
-        {
-            if (filter.first.startsWith("containerFilterName~"))
-                return filter.second;
-        }
-
-        return null;
-    }
-
-    public boolean hasFilterOrSort()
-    {
-        return (null != _customViewDef.getFilters() || null != _customViewDef.getSorts());
     }
 
     public void save(User user, HttpServletRequest request) throws QueryException

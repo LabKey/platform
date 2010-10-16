@@ -138,7 +138,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     private Map<String, CustomView> getAllCustomViews(User user, HttpServletRequest request, boolean inheritable, boolean allModules)
     {
-        Map<String, CustomView> ret = new HashMap<String, CustomView>();
+        Map<String, CustomView> ret = new LinkedHashMap<String, CustomView>();
         try
         {
             Container container = getContainer();
@@ -153,37 +153,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 }
             }
 
-            addCustomViews(ret, mgr.getAllCstmViews(container, _queryDef.getSchema(), _queryDef.getName(), user, inheritable));
-
-            //finally, look in all the active modules for any views defined in the file system
-            Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
-            for(Module module : modules)
-            {
-                File queryDir = new File(getQueriesDir(module), getSchemaName() + "/" + FileUtil.makeLegalName(getName()));
-                if(queryDir.exists())
-                {
-                    for(File viewFile : queryDir.listFiles(customViewFileFilter))
-                    {
-                        ModuleCustomViewDef viewDef = (ModuleCustomViewDef)(QueryServiceImpl.getModuleResourcesCache().get(viewFile.getAbsolutePath()));
-                        if(null == viewDef || viewDef.isStale())
-                        {
-                            try
-                            {
-                                viewDef = new ModuleCustomViewDef(viewFile);
-                                QueryServiceImpl.getModuleResourcesCache().put(viewFile.getAbsolutePath(), viewDef);
-                            }
-                            catch (XmlValidationException e)
-                            {
-                                log.error("Invalid view definition file " + viewFile.getAbsolutePath(), e);
-                            }
-                        }
-                        
-                        if (null != viewDef && !ret.containsKey(viewDef.getName()))
-                            ret.put(viewDef.getName(), new ModuleCustomView(this, viewDef));
-                    }
-                }
-            }
-
+            ret.putAll(((QueryServiceImpl)QueryService.get()).getCustomViewMap(user, container, this));
         }
         catch (SQLException e)
         {
@@ -192,27 +162,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return ret;
     }
 
-    protected File getQueriesDir(Module module)
-    {
-        return new File(module.getExplodedPath(), "queries");
-    }
-
-    private void addCustomViews(Map<String, CustomView> map, List<CstmView> views)
-    {
-        for (CstmView view : views)
-        {
-            if (!map.containsKey(view.getName()))
-            {
-                map.put(view.getName(), new CustomViewImpl(this, view));
-            }
-        }
-    }
-
     public User getUser()
     {
         return _user;
     }
-
+    
     public Container getContainer()
     {
         return ContainerManager.getForId(_queryDef.getContainerId());

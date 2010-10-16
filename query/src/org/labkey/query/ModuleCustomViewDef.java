@@ -16,11 +16,16 @@
 
 package org.labkey.query;
 
-import org.apache.log4j.Logger;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.resource.ResourceRef;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlValidationException;
 
-import java.io.File;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: Dave
@@ -35,34 +40,83 @@ import java.util.Date;
  * to the source QueryDef, which holds a reference to the QueryView,
  * etc., etc.
  */
-public class ModuleCustomViewDef extends CustomViewXmlReader
+public class ModuleCustomViewDef extends ResourceRef
 {
+    private String _schema, _query;
+    private CustomViewXmlReader _customView;
     private long _lastModified;
 
-    public ModuleCustomViewDef(File sourceFile) throws XmlValidationException
+    public ModuleCustomViewDef(Resource r, String schema, String query) throws XmlValidationException
     {
-        super(sourceFile);
+        super(r);
+        _schema = schema;
+        _query = query;
+        _lastModified = r.getLastModified();
+        _customView = CustomViewXmlReader.loadDefinition(r);
 
-        _lastModified = sourceFile.lastModified();
+        String fileName = r.getName();
+        assert fileName.length() >= CustomViewXmlReader.XML_FILE_EXTENSION.length();
 
-        String fileName = _sourceFile.getName();
-        assert fileName.length() >= XML_FILE_EXTENSION.length();
-
-        if (fileName.length() > XML_FILE_EXTENSION.length())
+        if (fileName.length() > CustomViewXmlReader.XML_FILE_EXTENSION.length())
         {
             // Module custom views always use the file name as the name
-            _name = fileName.substring(0, fileName.length() - XML_FILE_EXTENSION.length());
+            _customView._name = fileName.substring(0, fileName.length() - CustomViewXmlReader.XML_FILE_EXTENSION.length());
         }
-    }
-
-    public boolean isStale()
-    {
-        return _sourceFile.lastModified() != _lastModified;
     }
 
     public Date getLastModified()
     {
-        return new Date(_lastModified);   
+        return new Date(_lastModified);
+    }
+
+    public String getName()
+    {
+        return _customView.getName();
+    }
+
+    public String getSchema()
+    {
+        return _schema != null ? _schema : _customView.getSchema();
+    }
+
+    public String getQuery()
+    {
+        return _query != null ? _query : _customView.getQuery();
+    }
+
+    public List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> getColList()
+    {
+        return _customView.getColList();
+    }
+
+    public boolean isHidden()
+    {
+        return _customView.isHidden();
+    }
+
+    public List<Pair<String, String>> getFilters()
+    {
+        return _customView.getFilters();
+    }
+
+    public List<String> getSorts()
+    {
+        return _customView.getSorts();
+    }
+
+    public String getSortParamValue()
+    {
+        return _customView.getSortParamValue();
+    }
+
+    public String getFilterAndSortString()
+    {
+        return _customView.getFilterAndSortString();
+    }
+
+    public String getCustomIconUrl()
+    {
+        return _customView.getCustomIconUrl();
     }
 
 }

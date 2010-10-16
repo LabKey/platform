@@ -20,13 +20,14 @@ import org.apache.log4j.Logger;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.util.*;
 import org.labkey.data.xml.queryCustomView.*;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,15 +56,11 @@ public class CustomViewXmlReader
     private List<String> _sorts;
     private String _customIconUrl;
 
-    protected final File _sourceFile;
     protected String _name;
 
 
-    public CustomViewXmlReader(File sourceFile) throws XmlValidationException
+    public CustomViewXmlReader() throws XmlValidationException
     {
-        _sourceFile = sourceFile;
-
-        loadDefinition();
     }
 
     public String getName()
@@ -159,29 +156,71 @@ public class CustomViewXmlReader
         return _customIconUrl;
     }
 
-    protected void loadDefinition() throws XmlValidationException
+    public static CustomViewXmlReader loadDefinition(Resource r) throws XmlValidationException
+    {
+        InputStream is = null;
+        try
+        {
+            is = r.getInputStream();
+            return loadDefinition(is, r.getPath().toString());
+        }
+        catch (IOException ioe)
+        {
+            UnexpectedException.rethrow(ioe);
+        }
+        finally
+        {
+            if (is != null) try { is.close(); } catch (IOException e) { }
+        }
+
+        return null;
+    }
+
+    public static CustomViewXmlReader loadDefinition(File f) throws XmlValidationException
+    {
+        InputStream is = null;
+        try
+        {
+            is = new FileInputStream(f);
+            return loadDefinition(is, f.toString());
+        }
+        catch (IOException ioe)
+        {
+            UnexpectedException.rethrow(ioe);
+        }
+        finally
+        {
+            if (is != null) try { is.close(); } catch (IOException e) { }
+        }
+
+        return null;
+    }
+
+    private static CustomViewXmlReader loadDefinition(InputStream is, String path) throws XmlValidationException
     {
         try
         {
-            CustomViewDocument doc = CustomViewDocument.Factory.parse(_sourceFile, XmlBeansUtil.getDefaultParseOptions());
+            CustomViewDocument doc = CustomViewDocument.Factory.parse(is, XmlBeansUtil.getDefaultParseOptions());
             XmlBeansUtil.validateXmlDocument(doc);
             CustomViewType viewElement = doc.getCustomView();
 
-            _name = viewElement.getName();
-            _schema = viewElement.getSchema();
-            _query = viewElement.getQuery();
-            _hidden = viewElement.isSetHidden() && viewElement.getHidden();
-            _customIconUrl = viewElement.getCustomIconUrl();
+            CustomViewXmlReader reader = new CustomViewXmlReader();
+            reader._name = viewElement.getName();
+            reader._schema = viewElement.getSchema();
+            reader._query = viewElement.getQuery();
+            reader._hidden = viewElement.isSetHidden() && viewElement.getHidden();
+            reader._customIconUrl = viewElement.getCustomIconUrl();
 
             //load the columns
-            _colList = loadColumns(viewElement.getColumns());
+            reader._colList = loadColumns(viewElement.getColumns());
 
             //load the filters
-            _filters = loadFilters(viewElement.getFilters());
+            reader._filters = loadFilters(viewElement.getFilters());
 
             //load the sorts
-            _sorts = loadSorts(viewElement.getSorts());
+            reader._sorts = loadSorts(viewElement.getSorts());
 
+            return reader;
         }
         catch (XmlValidationException e)
         {
@@ -189,11 +228,13 @@ public class CustomViewXmlReader
         }
         catch (Exception e)
         {
-            LOG.warn("Unable to load custom view definition from file " + _sourceFile.getPath(), e);
+            LOG.warn("Unable to load custom view definition from file " + path, e);
         }
+
+        return null;
     }
 
-    protected List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> loadColumns(ColumnsType columns)
+    protected static List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> loadColumns(ColumnsType columns)
     {
         List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> ret = new ArrayList<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>>();
 
@@ -229,7 +270,7 @@ public class CustomViewXmlReader
         return ret;
     }
 
-    protected List<Pair<String, String>> loadFilters(FiltersType filters)
+    protected static List<Pair<String, String>> loadFilters(FiltersType filters)
     {
         if(null == filters)
             return null;
@@ -246,12 +287,12 @@ public class CustomViewXmlReader
         return ret;
     }
 
-    protected FieldKey getFieldKey(String name)
+    protected static FieldKey getFieldKey(String name)
     {
         return null == name ? null : FieldKey.fromString(name);
     }
 
-    protected List<String> loadSorts(SortsType sorts)
+    protected static List<String> loadSorts(SortsType sorts)
     {
         if(null == sorts)
             return null;

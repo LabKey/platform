@@ -53,11 +53,8 @@ public class QueryServiceImpl extends QueryService
     private static final Cache<String, Object> MODULE_RESOURCES_CACHE = CacheManager.getCache(1024, CacheManager.DAY, "Module resources cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
     private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
-
-    public static Cache<String, Object> getModuleResourcesCache()
-    {
-        return MODULE_RESOURCES_CACHE;
-    }
+    private static final String CUSTOMVIEW_SET_CACHE_ENTRY = "CUSTOMVIEW:";
+    protected static final String MODULE_QUERIES_DIRECTORY = "queries";
 
     static public QueryServiceImpl get()
     {
@@ -156,7 +153,7 @@ public class QueryServiceImpl extends QueryService
                 //always scan the file system in dev mode
                 if (AppProps.getInstance().isDevMode())
                 {
-                    Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
+                    Resource schemaDir = module.getModuleResolver().lookup(new Path(MODULE_QUERIES_DIRECTORY, schemaName));
                     queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
                 }
                 else
@@ -168,7 +165,7 @@ public class QueryServiceImpl extends QueryService
 
                     if (null == queries)
                     {
-                        Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
+                        Resource schemaDir = module.getModuleResolver().lookup(new Path(MODULE_QUERIES_DIRECTORY, schemaName));
                         queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
                         MODULE_RESOURCES_CACHE.put(fileSetCacheKey, queries);
                     }
@@ -256,12 +253,38 @@ public class QueryServiceImpl extends QueryService
     private Map<String, CustomView> getCustomViewMap(User user, Container container, String schema, String query) throws SQLException
     {
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true);
+        QueryDefinition qd = queryDefs.get(new Pair<String, String>(schema, query));
+        if (qd == null)
+            qd = QueryService.get().getUserSchema(user, container, schema).getQueryDefForTable(query);
+
+        return getCustomViewMap(user, container, qd);
+    }
+
+    protected Map<String, CustomView> getCustomViewMap(User user, Container container, QueryDefinition qd) throws SQLException
+    {
         Map<String, CustomView> views = new HashMap<String, CustomView>();
 
-        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schema, query, user, true))
-            addCustomView(container, user, views, cstmView, queryDefs);
+        // custom views in the database get highest precedence
+        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getName(), qd.getName(), user, true))
+            addCustomView(views, cstmView, qd);
+
+        // module query views have lower precedence
+        for (ModuleCustomViewDef viewDef : getModuleCustomViewDefs(container, qd.getSchema().getName(), qd.getName(), false))
+            addCustomView(views, viewDef, qd);
 
         return views;
+    }
+
+    private void addCustomView(Map<String, CustomView> views, CstmView cstmView, QueryDefinition qd)
+    {
+        if (qd instanceof QueryDefinitionImpl && !views.containsKey(cstmView.getName()))
+            views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
+    }
+
+    private void addCustomView(Map<String, CustomView> views, ModuleCustomViewDef viewDef, QueryDefinition qd)
+    {
+        if (qd instanceof QueryDefinitionImpl && !views.containsKey(viewDef.getName()))
+            views.put(viewDef.getName(), new ModuleCustomView(qd, viewDef));
     }
 
     public CustomView getCustomView(User user, Container container, String schema, String query, String name)
@@ -297,6 +320,10 @@ public class QueryServiceImpl extends QueryService
             Map<String, CustomViewInfo> views = new HashMap<String, CustomViewInfo>();
             String key = StringUtils.defaultString(schema, "") + "-" + StringUtils.defaultString(query, "");
 
+            for (ModuleCustomViewDef viewDef : getModuleCustomViewDefs(container, schema, query, false))
+                views.put(key + "-" + viewDef.getName(), new ModuleCustomViewInfo(viewDef));
+
+            // custom views in the database get highest precedence
             for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schema, query, user, true))
                 views.put(key + "-" + cstmView.getName(), new CustomViewInfoImpl(cstmView));
 
@@ -308,18 +335,94 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
-    private void addCustomView(Container container, User user, Map<String, CustomView> views, CstmView cstmView, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
+    /**
+     * Get a list of module custom view definitions for the schema/query from all modules or only the active modules in the container.
+     * The list is cached in production mode.
+     * @param container Used to determine active modules.
+     * @param schema The schema name
+     * @param query The query name
+     * @param allModules Get custom views from all modules when true, or just active modules when false.
+     * @return
+     */
+    private List<ModuleCustomViewDef> getModuleCustomViewDefs(Container container, String schema, String query, boolean allModules)
     {
-        if (views.containsKey(cstmView.getName()))
-            return;
+        // XXX: null schema and query should search for all schema and query custom views to match .getAllCstmViews() behavior
+        if (schema == null || query == null)
+            return Collections.emptyList();
 
-        QueryDefinition qd = queryDefs.get(new Pair<String, String>(cstmView.getSchema(), cstmView.getQueryName()));
+        List<ModuleCustomViewDef> customViews = new ArrayList<ModuleCustomViewDef>();
 
-        if (qd == null)
-            qd = QueryService.get().getUserSchema(user, container, cstmView.getSchema()).getQueryDefForTable(cstmView.getQueryName());
+        Path path = new Path(QueryServiceImpl.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(schema), FileUtil.makeLegalName(query));
+        Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
+        for (Module module : modules)
+        {
+            Collection<? extends Resource> views;
 
-        if (qd instanceof QueryDefinitionImpl)
-            views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
+            //always scan the file system in dev mode
+            if (AppProps.getInstance().isDevMode())
+            {
+                Resource queryDir = module.getModuleResource(path);
+                views = getModuleCustomViews(queryDir);
+            }
+            else
+            {
+                //in production, cache the set of custom view defs for each module on first request
+                String fileSetCacheKey = CUSTOMVIEW_SET_CACHE_ENTRY + module.toString() + "." + schema + "." + query;
+                views = (Collection<? extends Resource>)MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
+
+                if (null == views)
+                {
+                    Resource queryDir = module.getModuleResource(path);
+                    views = getModuleCustomViews(queryDir);
+                    MODULE_RESOURCES_CACHE.put(fileSetCacheKey, views);
+                }
+            }
+
+            if (null != views)
+            {
+                for (Resource view : views)
+                {
+                    String cacheKey = view.getPath().toString();
+                    ModuleCustomViewDef moduleCustomViewDef = (ModuleCustomViewDef)MODULE_RESOURCES_CACHE.get(cacheKey);
+                    if (null == moduleCustomViewDef || moduleCustomViewDef.isStale())
+                    {
+                        try
+                        {
+                            moduleCustomViewDef = new ModuleCustomViewDef(view, schema, query);
+                            MODULE_RESOURCES_CACHE.put(cacheKey, moduleCustomViewDef);
+                        }
+                        catch (XmlValidationException ex)
+                        {
+                            // XXX: log or throw?
+                        }
+                    }
+
+                    if (moduleCustomViewDef != null)
+                        customViews.add(moduleCustomViewDef);
+                }
+            }
+        }
+
+        return customViews;
+    }
+
+    /** Find any .qview.xml files under the given queryDir Resource. */
+    private Collection<? extends Resource> getModuleCustomViews(Resource queryDir)
+    {
+        if (queryDir == null)
+            return Collections.emptyList();
+
+        List<Resource> ret = new ArrayList<Resource>();
+        for (String name : queryDir.listNames())
+        {
+            if (name.toLowerCase().endsWith(CustomViewXmlReader.XML_FILE_EXTENSION))
+            {
+                Resource queryViewXml = queryDir.find(name);
+                if (queryViewXml != null)
+                    ret.add(queryViewXml);
+            }
+        }
+        return ret;
     }
 
     public int importCustomViews(User user, Container container, File viewDir) throws XmlValidationException
@@ -336,7 +439,7 @@ public class QueryServiceImpl extends QueryService
 
         for (File viewFile : viewFiles)
         {
-            CustomViewXmlReader reader = new CustomViewXmlReader(viewFile);
+            CustomViewXmlReader reader = CustomViewXmlReader.loadDefinition(viewFile);
 
             QueryDefinition qd = QueryService.get().createQueryDef(user, container, reader.getSchema(), reader.getQuery());
             String viewName = reader.getName();
@@ -718,7 +821,7 @@ public class QueryServiceImpl extends QueryService
             //always scan the file system in dev mode
             if (AppProps.getInstance().isDevMode())
             {
-                Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
+                Resource schemaDir = module.getModuleResolver().lookup(new Path(MODULE_QUERIES_DIRECTORY, schemaName));
                 queryMetadatas = getModuleQueries(schemaDir, ModuleQueryDef.META_FILE_EXTENSION);
             }
             else
@@ -730,7 +833,7 @@ public class QueryServiceImpl extends QueryService
 
                 if (null == queryMetadatas)
                 {
-                    Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
+                    Resource schemaDir = module.getModuleResolver().lookup(new Path(MODULE_QUERIES_DIRECTORY, schemaName));
                     queryMetadatas = getModuleQueries(schemaDir, ModuleQueryDef.META_FILE_EXTENSION);
                     MODULE_RESOURCES_CACHE.put(fileSetCacheKey, queryMetadatas);
                 }
