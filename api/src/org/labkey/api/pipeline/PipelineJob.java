@@ -803,23 +803,32 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void run()
     {
-        // The act of queueing the job runs the state machine for the first time.
-        do
+        try
         {
-            try
+            // The act of queueing the job runs the state machine for the first time.
+            do
             {
-                runActiveTask();
+                try
+                {
+                    runActiveTask();
+                }
+                catch (IOException e)
+                {
+                    error(e.getMessage(), e);
+                }
+                catch (PipelineJobException e)
+                {
+                    error(e.getMessage(), e);
+                }
             }
-            catch (IOException e)
-            {
-                error(e.getMessage(), e);
-            }
-            catch (PipelineJobException e)
-            {
-                error(e.getMessage(), e);
-            }
+            while (runStateMachine());
         }
-        while (runStateMachine());
+        catch (RuntimeException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+            // Rethrow to let the standard Mule exception handler fire and deal with the job state
+            throw e;
+        }
     }
 
     /**
