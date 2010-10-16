@@ -22,6 +22,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 
@@ -49,7 +50,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
 
     public String getTypeURI()
     {
-        return createValidatorURI(GWTPropertyValidator.TYPE_LOOKUP).toString();
+        return createValidatorURI(PropertyValidatorType.Lookup).toString();
     }
 
     public String getDescription()
@@ -185,7 +186,14 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                 return true;
             }
 
-            errors.add(new PropertyValidationError("Value '" + value + "' was not present in lookup '" + field.getLookupSchema() + "." + field.getLookupQuery() + "' for field '" + field.getNonBlankCaption() + "'", field.getNonBlankCaption()));
+            if (value == null)
+            {
+                errors.add(new PropertyValidationError("No value specified for field '" + field.getNonBlankCaption() + "', which must be set to a value from the lookup '" + field.getLookupSchema() + "." + field.getLookupQuery() + "'", field.getNonBlankCaption()));
+            }
+            else
+            {
+                errors.add(new PropertyValidationError("Value '" + value + "' was not present in lookup '" + field.getLookupSchema() + "." + field.getLookupQuery() + "' for field '" + field.getNonBlankCaption() + "'", field.getNonBlankCaption()));
+            }
         }
         return true;
     }

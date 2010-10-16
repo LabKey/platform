@@ -21,6 +21,7 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.SimpleValidationError;
 import org.apache.commons.lang.BooleanUtils;
@@ -46,7 +47,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
 
     public String getTypeURI()
     {
-        return createValidatorURI(GWTPropertyValidator.TYPE_REGEX).toString();
+        return createValidatorURI(PropertyValidatorType.RegEx).toString();
     }
 
     public String getDescription()

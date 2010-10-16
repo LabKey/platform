@@ -23,6 +23,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.util.Pair;
 
@@ -43,7 +44,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
 
     public String getTypeURI()
     {
-        return createValidatorURI(GWTPropertyValidator.TYPE_RANGE).toString();
+        return createValidatorURI(PropertyValidatorType.Range).toString();
     }
 
     public String getDescription()
