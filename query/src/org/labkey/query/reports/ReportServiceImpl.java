@@ -395,6 +395,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             Report report = createReportInstance(type);
             if (report != null)
             {
+                // the descriptor is a securable resource, so it must have a non-null container id, since file-based
+                // module reports don't have a container associated, default to the current container security
+                if (descriptor.getContainerId() == null)
+                    descriptor.setContainerId(c.getId());
+
                 report.setDescriptor(descriptor);
                 reports.add(report);
             }
