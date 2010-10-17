@@ -59,6 +59,7 @@ import org.labkey.api.data.QueryProfiler;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
@@ -3127,6 +3128,17 @@ public class AdminController extends SpringActionController
                         contentBuilder.append(schema.getName());
                         contentBuilder.append("<br/>");
                         contentBuilder.append(sOut);
+                    }
+                }
+
+                contentBuilder.append("\n<br/><br/>Checking Consistency of Provisioned Storage...\n");
+                StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
+                contentBuilder.append(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
+                for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
+                {
+                    for (String error : dr.getErrors())
+                    {
+                        contentBuilder.append("<div class=\"warning\">"+error+"</div>");
                     }
                 }
 
