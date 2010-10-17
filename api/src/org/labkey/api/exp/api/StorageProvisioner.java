@@ -27,8 +27,10 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
@@ -50,8 +52,13 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -498,10 +505,192 @@ public class StorageProvisioner
         }
     }
 
+    public static ProvisioningReport getProvisioningReport() throws SQLException
+    {
+        ProvisioningReport report = new ProvisioningReport();
+        SQLFragment sql = new SQLFragment("select domainid, name, storageschemaname, storagetablename from " +
+                OntologyManager.getTinfoDomainDescriptor().getFromSQL("dd"));
+        ResultSet rs = null;
+
+        try
+        {
+            rs = Table.executeQuery(OntologyManager.getExpSchema(), sql);
+            while (rs.next())
+            {
+                ProvisioningReport.DomainReport domain = new ProvisioningReport.DomainReport();
+                domain.setId(rs.getInt("domainid"));
+                domain.setName(rs.getString("name"));
+                if (rs.getString("storagetablename") == null)
+                {
+                    report.addUnprovisioned(domain);
+                }
+                else
+                {
+                    domain.setSchemaName(rs.getString("storageschemaname"));
+                    domain.setTableName(rs.getString("storagetablename"));
+                    report.addProvisioned(domain);
+                }
+
+            }
+        }
+        finally
+        {
+            rs.close();
+        }
+        
+        Map<String,DbSchema> schemas = new HashMap<String, DbSchema>();
+
+        for (ProvisioningReport.DomainReport domainReport : report.getProvisionedDomains())
+        {
+            DbSchema schema = schemas.get(domainReport.getSchemaName());
+            if (schema == null)
+            {
+                try
+                {
+                    schema = DbSchema.createFromMetaData(domainReport.getSchemaName());
+                }
+                catch (Exception e)
+                {
+                    domainReport.addError("error resolving schema " + domainReport.getSchemaName() + " - " + e.getMessage());
+                    continue;
+                }
+            }
+
+            TableInfo table = schema.getTable(domainReport.getTableName());
+            if (table == null)
+            {
+                domainReport.addError(String.format("metadata for domain %s specifies a hard table at %s.%s but that table is not present",
+                        domainReport.getName(), domainReport.getSchemaName(), domainReport.getTableName()));
+                continue;
+            }
+            Set<String> hardColumnNames = table.getColumnNameSet();
+            Domain domain = PropertyService.get().getDomain(domainReport.getId());
+            for (DomainProperty domainProp : domain.getProperties())
+            {
+                String expectedColumnName = AliasManager.makeLegalName(domainProp.getName(), schema.getSqlDialect());
+                if (hardColumnNames.contains(expectedColumnName))
+                {
+                    if (domainProp.isMvEnabled() && !hardColumnNames.contains(PropertyStorageSpec.getMvIndicatorColumnName(expectedColumnName)))
+                    {
+                        domainReport.addError(String.format("hard table %s.%s has mvindicator enabled but expected %s column wasn't present",
+                                domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(expectedColumnName)));
+                    }
+
+                }
+                else
+                {
+                    domainReport.addError(String.format("hard table %s.%s did not contain expected column %s",
+                            domainReport.getSchemaName(), domainReport.getTableName(), expectedColumnName));
+                }
+
+            }
+
+        }
+
+
+        return report;
+    }
+
+    public static class ProvisioningReport
+    {
+        private Set<DomainReport> unprovisionedDomains = new HashSet<DomainReport>();
+        private Set<DomainReport> provisionedDomains = new HashSet<DomainReport>();
+
+        public void addUnprovisioned(DomainReport domain)
+        {
+            unprovisionedDomains.add(domain);
+        }
+
+        public void addProvisioned(DomainReport domain)
+        {
+            provisionedDomains.add(domain);
+        }
+
+        public Set<DomainReport> getUnprovisionedDomains()
+        {
+            return unprovisionedDomains;
+        }
+
+        public Set<DomainReport> getProvisionedDomains()
+        {
+            return provisionedDomains;
+        }
+
+        public int getErrorCount()
+        {
+            int errors = 0;
+            for (DomainReport d : getProvisionedDomains())
+            {
+                errors += d.getErrors().size();
+            }
+
+            return errors;
+        }
+
+        public static class DomainReport
+        {
+            Integer id;
+            String name;
+            String schemaName;
+            String tableName;
+            List<String> errors = new ArrayList<String>();
+
+            public Integer getId()
+            {
+                return id;
+            }
+
+            public void setId(Integer id)
+            {
+                this.id = id;
+            }
+
+            public String getName()
+            {
+                return name;
+            }
+
+            public void setName(String name)
+            {
+                this.name = name;
+            }
+
+            public String getSchemaName()
+            {
+                return schemaName;
+            }
+
+            public void setSchemaName(String schemaName)
+            {
+                this.schemaName = schemaName;
+            }
+
+            public String getTableName()
+            {
+                return tableName;
+            }
+
+            public void setTableName(String tableName)
+            {
+                this.tableName = tableName;
+            }
+
+            public void addError(String message)
+            {
+                errors.add(message);
+            }
+
+            public List<String> getErrors()
+            {
+                return errors;
+            }
+        }
+    }
+
     public static class TestCase extends Assert
     {
         Container container = JunitUtil.getTestContainer();
-        Domain domain;
+        org.labkey.api.exp.property.Domain domain;
         final String notNullPropName = "a_" + System.currentTimeMillis();
         final String propNameB = "b_" + System.currentTimeMillis();
         final String propBMvColumnName = PropertyStorageSpec.getMvIndicatorColumnName(propNameB).toLowerCase();
@@ -637,6 +826,19 @@ renaming a property AND toggling mvindicator on in the same change.
 
 */
 
+
+        @Test
+        public void testProvisioningReport() throws Exception
+        {
+            ProvisioningReport report = StorageProvisioner.getProvisioningReport();
+            Assert.assertNotNull(report);
+            for (ProvisioningReport.DomainReport dr : report.getProvisionedDomains())
+            {
+                Assert.assertTrue(dr.getErrors().toString(), dr.getErrors().isEmpty());
+            }
+
+        }
+
         private void addPropertyB() throws Exception
         {
             DomainProperty dp = domain.addProperty();
@@ -695,4 +897,5 @@ renaming a property AND toggling mvindicator on in the same change.
         }
 
     }
+
 }
