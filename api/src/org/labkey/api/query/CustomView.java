@@ -41,5 +41,6 @@ public interface CustomView extends CustomViewInfo
 
     void save(User user, HttpServletRequest request) throws QueryException;
     void delete(User user, HttpServletRequest request) throws QueryException;
-    void serialize(VirtualFile dir) throws IOException;
+    /** @return true if serialized sucessfully. */
+    boolean serialize(VirtualFile dir) throws IOException;
 }
