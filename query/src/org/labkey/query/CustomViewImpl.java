@@ -226,11 +226,11 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         }
     }
 
-    public void serialize(VirtualFile dir) throws IOException
+    public boolean serialize(VirtualFile dir) throws IOException
     {
-        // UNDONE: should we serialize session customviews?
-        // if (isSession())
-        //     return;
+        // Don't serialize session views
+        if (isSession())
+            return false;
 
         CustomViewDocument customViewDoc = CustomViewDocument.Factory.newInstance();
         CustomViewType customViewXml = customViewDoc.addNewCustomView();
@@ -323,6 +323,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         String filename = (null != getName() ? getName() : "default") + ".db_" + getCstmView().getCustomViewId() + CustomViewXmlReader.XML_FILE_EXTENSION;
 
         dir.saveXmlBean(filename, customViewDoc);
+        return true;
     }
 
     public boolean isNew()

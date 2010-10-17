@@ -64,9 +64,13 @@ public class CustomViewWriter implements ExternalStudyWriter
 
                 for (CustomView customView : customViews)
                 {
-                    // Create the <view> element only if we have a custom view to write
                     VirtualFile customViewDir = ensureViewDirectory(ctx, root);
-                    customView.serialize(customViewDir);
+                    if (customView.serialize(customViewDir))
+                    {
+                        // Create the <view> element only if we have a custom view to write
+                        if (!ctx.getStudyXml().isSetViews())
+                            ctx.getStudyXml().addNewViews().setDir(DEFAULT_DIRECTORY);
+                    }
                 }
             }
         }
@@ -77,7 +81,6 @@ public class CustomViewWriter implements ExternalStudyWriter
     {
         if (null == _viewDir)
         {
-            ctx.getStudyXml().addNewViews().setDir(DEFAULT_DIRECTORY);
             _viewDir = root.getDir(DEFAULT_DIRECTORY);
         }
 
