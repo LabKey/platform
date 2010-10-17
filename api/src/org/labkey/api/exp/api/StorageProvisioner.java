@@ -548,6 +548,7 @@ public class StorageProvisioner
                 try
                 {
                     schema = DbSchema.createFromMetaData(domainReport.getSchemaName());
+                    schemas.put(domainReport.getSchemaName(), schema);
                 }
                 catch (Exception e)
                 {
