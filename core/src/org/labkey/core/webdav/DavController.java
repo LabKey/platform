@@ -2760,7 +2760,8 @@ public class DavController extends SpringActionController
         List ranges = parseRange(resource);
 
         // ETag header
-        getResponse().setEntityTag(resource.getETag());
+        // NOTE it is better to use an older etag and newer content, than vice-versa
+        getResponse().setEntityTag(resource.getETag(true));
 
         // Last-Modified header
         long modified = resource.getLastModified();
