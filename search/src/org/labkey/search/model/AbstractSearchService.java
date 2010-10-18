@@ -473,8 +473,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         b.deleteParameter("_docid");
         b.deleteParameter("_print");
 
-        Path aPath = a.getParsedPath();
-        Path bPath = b.getParsedPath();
+        Path aPath = a instanceof ActionURL ? ((ActionURL)a).getFullParsedPath() : a.getParsedPath();
+        Path bPath = b instanceof ActionURL ? ((ActionURL)b).getFullParsedPath() : b.getParsedPath();
         if (!aPath.equals(bPath))
         {
             // handle container ids
