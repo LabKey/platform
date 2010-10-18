@@ -2387,52 +2387,6 @@ public class StudyManager
     }
 
 
-    /** NOTE: this is usually handled at import time, this is only useful if DataSetDefinition.visitDatePropertyName changes */
-    public void recomputeStudyDataVisitDate(StudyImpl study, Collection<DataSetDefinition> changedDatasets)
-    {
-        for (DataSetDefinition def : changedDatasets)
-        {
-            String propertyName = StringUtils.trimToNull(def.getVisitDateColumnName());
-            if (null == propertyName)
-                continue;
-            if (null == StringUtils.trimToNull(def.getTypeURI()))
-                continue;
-
-            TableInfo ti = def.getStorageTableInfo();
-            if (null == ti)
-                continue;
-            
-            ColumnInfo colVisitDate = null;
-            for (ColumnInfo col : ti.getColumns())
-            {
-                if (propertyName.equalsIgnoreCase(col.getName()))
-                {
-                    colVisitDate = col;
-                    break;
-                }
-            }
-            if (colVisitDate != null)
-            {
-                try
-                {
-                    DbSchema schema = StudySchema.getInstance().getSchema();
-                    String sqlUpdate = "UPDATE " + ti.getSelectName() + " SET _VisitDate=" + colVisitDate.getSelectName();
-                    int count = Table.execute(schema, sqlUpdate, null);
-                    if (count > 0)
-                    {
-//                        def.unmaterialize();
-                        StudyManager.fireDataSetChanged(def);
-                    }
-                }
-                catch (SQLException x)
-                {
-                    throw new RuntimeSQLException(x);
-                }
-            }
-        }
-    }
-
-
     public VisitManager getVisitManager(StudyImpl study)
     {
         switch (study.getTimepointType())

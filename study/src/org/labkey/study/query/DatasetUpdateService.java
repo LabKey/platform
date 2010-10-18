@@ -123,7 +123,6 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // we need to recompute the participant-visit map:
         if (recomputeCohorts || lsidChanged)
         {
-            StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singletonList(_dataset));
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset));
         }
     }

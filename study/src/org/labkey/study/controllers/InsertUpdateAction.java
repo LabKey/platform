@@ -298,7 +298,6 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             // we need to recompute the participant-visit map:
             if (recomputeCohorts || isInsert() || !newLsid.equals(form.getLsid()))
             {
-                StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singleton(ds));
                 StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(user, Collections.singleton(ds));
             }
 

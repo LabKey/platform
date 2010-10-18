@@ -4186,7 +4186,6 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy(), getStudy().getDataSets());
             StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser(), getStudy().getDataSets());
 
             TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
