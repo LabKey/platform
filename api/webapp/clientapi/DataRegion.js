@@ -818,8 +818,8 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 var elem = Ext.get(item);
                 var marker = "/*_b_*/return false;/*_e_*/";
                 elem.replaceClass("labkey-disabled-button", "labkey-button");
-                var click = elem.getAttribute('onclick');
-                if (click.indexOf(marker) >= 0) {
+                var click = elem.dom.getAttribute('onclick');
+                if (click && click.indexOf(marker) >= 0) {
                     click = click.replace(marker, "");
                     elem.set({onclick : click});
                 }
@@ -831,9 +831,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 var elem = Ext.get(item);
                 var marker = "/*_b_*/return false;/*_e_*/";
                 elem.replaceClass("labkey-button", "labkey-disabled-button");
-                var click = elem.getAttribute('onclick');
-                if (click.indexOf(marker) < 0) {
-                    elem.set({onclick : marker + elem.getAttribute('onclick')});
+                var click = elem.dom.getAttribute('onclick');
+                if (click && click.indexOf(marker) < 0) {
+                    elem.set({onclick : marker + elem.dom.getAttribute('onclick')});
                 }
             };
         }
