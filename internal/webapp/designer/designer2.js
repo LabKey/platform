@@ -1859,14 +1859,18 @@ LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
         this.record = filterRecord;
         this.clauseIndex = clauseIndex;
         var jsonType = undefined;
+        var mvEnabled = false;
         if (this.record)
         {
             var fieldMetaRecord = this.fieldMetaStore.getById(this.record.data.fieldKey);
             if (fieldMetaRecord)
+            {
                 jsonType = fieldMetaRecord.data.jsonType;
+                mvEnabled = fieldMetaRecord.data.mvEnabled;
+            }
         }
         var value = this.getRecordValue();
-        this.setOptions(jsonType, value);
+        this.setOptions(jsonType, mvEnabled, value);
 
         this.setValue(value);
         this.on('blur', function (f) {
@@ -1883,11 +1887,11 @@ LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
         this.record.get("items")[this.clauseIndex].op = value;
     },
 
-    setOptions : function (type, value) {
+    setOptions : function (type, mvEnabled, value) {
         var found = false;
         var options = [];
         if (type)
-            Ext.each(LABKEY.Filter.getFlterTypesForType(type), function (filterType) {
+            Ext.each(LABKEY.Filter.getFilterTypesForType(type, mvEnabled), function (filterType) {
                 if (value && value == filterType.getURLSuffix())
                     found = true;
                 options.push([filterType.getURLSuffix(), filterType.getDisplayText()]);

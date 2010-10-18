@@ -137,7 +137,9 @@ LABKEY.Filter = new function()
             DOES_NOT_START_WITH : createFilterType("Does Not Start With", "doesnotstartwith", true),
             STARTS_WITH : createFilterType("Starts With", "startswith", true),
             IN : createFilterType("Equals One Of", "in", true),
-            EQUALS_ONE_OF : createFilterType("Equals One Of", "in", true)
+            EQUALS_ONE_OF : createFilterType("Equals One Of", "in", true),
+            HAS_MISSING_VALUE : createFilterType("Has a missing value indicator", "hasmvvalue", false),
+            DOES_NOT_HAVE_MISSING_VALUE : createFilterType("Does not have a missing value indicator", "nomvvalue", false)
         },
 
 
@@ -269,11 +271,19 @@ LABKEY.Filter = new function()
     };
 
     /** @private Returns an Array of filter types that can be used with the given type ("int", "double", "string", "boolean", "date") */
-    ret.getFlterTypesForType = function (type)
+    ret.getFilterTypesForType = function (type, mvEnabled)
     {
+        var types = [];
         if (filterTypes[type])
-            return filterTypes[type];
-        return null;
+            types = types.concat(filterTypes[type]);
+
+        if (mvEnabled)
+        {
+            types.push(ft.HAS_MISSING_VALUE);
+            types.push(ft.DOES_NOT_HAVE_MISSING_VALUE);
+        }
+
+        return types;
     };
 
     return ret;
