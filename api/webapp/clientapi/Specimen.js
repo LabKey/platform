@@ -50,8 +50,10 @@ LABKEY.Specimen = new function()
         */
           getRepositories : function(successCallback, failureCallback, containerPath)
           {
+              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+              // default callback and callback wrapper functions:
               if (!failureCallback)
-                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               Ext.Ajax.request({
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getRespositories", containerPath),
                   method : 'POST',
@@ -77,8 +79,10 @@ LABKEY.Specimen = new function()
         */
           getVialsByRowId : function(successCallback, vialRowIdArray, failureCallback, containerPath)
           {
+              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+              // default callback and callback wrapper functions:
               if (!failureCallback)
-                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               Ext.Ajax.request({
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getVialsByRowId", containerPath),
                   method : 'POST',
@@ -108,8 +112,10 @@ LABKEY.Specimen = new function()
         */
           getOpenRequests : function(successCallback, allUsers, failureCallback, containerPath)
           {
+              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+              // default callback and callback wrapper functions:
               if (!failureCallback)
-                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               Ext.Ajax.request({
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getOpenRequests", containerPath),
                   method : 'POST',
@@ -135,8 +141,10 @@ LABKEY.Specimen = new function()
         */
           getProvidingLocations : function(successCallback, specimenHashArray, failureCallback, containerPath)
           {
+              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+              // default callback and callback wrapper functions:
               if (!failureCallback)
-                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               Ext.Ajax.request({
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getProvidingLocations", containerPath),
                   method : 'POST',
@@ -162,8 +170,10 @@ LABKEY.Specimen = new function()
         */
           getRequest : function(successCallback, requestId, failureCallback, containerPath)
           {
+              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+              // default callback and callback wrapper functions:
               if (!failureCallback)
-                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               Ext.Ajax.request({
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getRequest", containerPath),
                   method : 'POST',
@@ -191,8 +201,10 @@ LABKEY.Specimen = new function()
         */
           cancelRequest : function(successCallback, requestId, failureCallback, containerPath)
           {
+              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+              // default callback and callback wrapper functions:
               if (!failureCallback)
-                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               Ext.Ajax.request({
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "cancelRequest", containerPath),
                   method : 'POST',
@@ -223,8 +235,10 @@ LABKEY.Specimen = new function()
         */
           addVialsToRequest : function(successCallback, requestId, vialIdArray, idType, failureCallback, containerPath)
           {
+              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+              // default callback and callback wrapper functions:
               if (!failureCallback)
-                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               if (!idType)
                 idType = "GlobalUniqueId";
               Ext.Ajax.request({
@@ -259,8 +273,10 @@ LABKEY.Specimen = new function()
         */
           addSamplesToRequest : function(successCallback, requestId, specimenHashArray, preferredLocation, failureCallback, containerPath)
           {
+              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+              // default callback and callback wrapper functions:
               if (!failureCallback)
-                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               Ext.Ajax.request({
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "addSamplesToRequest", containerPath),
                   method : 'POST',
@@ -292,8 +308,10 @@ LABKEY.Specimen = new function()
         */
           removeVialsFromRequest : function(successCallback, requestId, vialIdArray, idType, failureCallback, containerPath)
           {
+              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+              // default callback and callback wrapper functions:
               if (!failureCallback)
-                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               if (!idType)
                 idType = "GlobalUniqueId";
               Ext.Ajax.request({

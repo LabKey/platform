@@ -15,14 +15,17 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 
+import java.net.URISyntaxException;
 import java.util.List;
 
 /**
@@ -172,7 +175,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         onClickWrapper.append("var dataRegionName = ").append(PageFlowUtil.jsString(ctx.getCurrentRegion().getName())).append("; ");
         onClickWrapper.append("var dataRegion = LABKEY.DataRegions[dataRegionName]; ");
         onClickWrapper.append(originalOnClick);
-        return PageFlowUtil.filter(onClickWrapper.toString());
+        return onClickWrapper.toString();
     }
 
     public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)

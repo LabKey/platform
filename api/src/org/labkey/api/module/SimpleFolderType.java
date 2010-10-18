@@ -114,32 +114,36 @@ public class SimpleFolderType extends DefaultFolderType
         return doc.getFolderType();
     }
 
-    private List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references)
+    private List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references, Logger log)
     {
         List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
         for (WebPartDocument.WebPart reference : references)
         {
             WebPartFactory factory = Portal.getPortalPart(reference.getName());
-            if (factory == null)
-                throw new IllegalStateException("Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
-            String location = null;
-            if (reference.getLocation() != null)
-                location = SimpleWebPartFactory.getInternalLocationName(reference.getLocation().toString());
-            Portal.WebPart webPart = factory.createWebPart(location);
-            for (Property prop : reference.getPropertyArray())
-                webPart.setProperty(prop.getName(), prop.getValue());
-            parts.add(webPart);
+            if (factory != null)
+            {
+                String location = null;
+                if (reference.getLocation() != null)
+                    location = SimpleWebPartFactory.getInternalLocationName(reference.getLocation().toString());
+                Portal.WebPart webPart = factory.createWebPart(location);
+                for (Property prop : reference.getPropertyArray())
+                    webPart.setProperty(prop.getName(), prop.getValue());
+                parts.add(webPart);
+            }
+            else
+                log.error("Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
         }
         return parts;
     }
 
     private void reload()
     {
+        Logger log = Logger.getLogger(SimpleFolderType.class);
         FolderType type = parseFile(_folderTypeFile);
         _name = type.getName();
         _description = type.getDescription();
-        _preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray());
-        _requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray());
+        _preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray(), log);
+        _requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray(), log);
         setWorkbookType(type.isSetWorkbookType() && type.getWorkbookType());
 
         Set<Module> activeModules = new HashSet<Module>();
@@ -147,7 +151,7 @@ public class SimpleFolderType extends DefaultFolderType
         {
             Module module = getModule(moduleName);
             if (module == null)
-                throw new IllegalStateException("Unable to load folder type: module " + moduleName + " does not exist.");
+                log.error("Unable to load folder type: module " + moduleName + " does not exist.");
             activeModules.add(module);
         }
         _activeModules = activeModules;
