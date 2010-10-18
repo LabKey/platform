@@ -18,6 +18,7 @@ package org.labkey.experiment.api.property;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -76,23 +77,18 @@ public class DomainPropertyManager
         return getValidators(property.getPropertyId());
     }
 
-    public ConditionalFormat[] getConditionalFormats(DomainProperty property)
+    public ConditionalFormat[] getConditionalFormats(DomainPropertyImpl property)
     {
-        return getConditionalFormats(property.getPropertyId());
+        return getConditionalFormats(property._pd);
     }
 
     public ConditionalFormat[] getConditionalFormats(PropertyDescriptor property)
     {
-        return getConditionalFormats(property.getPropertyId());
-    }
-
-    private ConditionalFormat[] getConditionalFormats(int propertyId)
-    {
         try
         {
-            if (propertyId != 0)
+            if (property != null && property.getPropertyId() != 0)
             {
-                String cacheKey = getCacheKey(propertyId);
+                String cacheKey = getCacheKey(property.getPropertyId());
                 ConditionalFormat[] formats = (ConditionalFormat[])DbCache.get(getTinfoConditionalFormat(), cacheKey);
 
                 if (formats != null)
@@ -103,7 +99,7 @@ public class DomainPropertyManager
                         "WHERE CF.PropertyId = ? " +
                         "ORDER BY SortOrder";
 
-                formats = Table.executeQuery(getExpSchema(), sql, new Object[]{propertyId}, ConditionalFormat.class);
+                formats = Table.executeQuery(getExpSchema(), sql, new Object[]{property.getPropertyId()}, ConditionalFormat.class);
 
                 DbCache.put(getTinfoConditionalFormat(), cacheKey, formats);
                 return formats;
@@ -116,9 +112,60 @@ public class DomainPropertyManager
         }
     }
 
+    public static class ConditionalFormatWithPropertyId extends ConditionalFormat
+    {
+        private int _propertyId;
+
+        public int getPropertyId()
+        {
+            return _propertyId;
+        }
+
+        public void setPropertyId(int propertyId)
+        {
+            _propertyId = propertyId;
+        }
+    }
+
+    public ConditionalFormatWithPropertyId[] getConditionalFormats(Domain domain)
+    {
+        try
+        {
+            if (domain != null && domain.getTypeId() != 0)
+            {
+                String cacheKey = getCacheKey(domain);
+                ConditionalFormatWithPropertyId[] formats = (ConditionalFormatWithPropertyId[])DbCache.get(getTinfoConditionalFormat(), cacheKey);
+
+                if (formats != null)
+                    return formats;
+
+                String sql = "SELECT CF.* " +
+                        "FROM " + getTinfoConditionalFormat() + " CF " +
+                        "WHERE CF.PropertyId IN " +
+                        "(SELECT PropertyId FROM " + OntologyManager.getTinfoPropertyDomain() + " WHERE DomainId = ?)" +
+                        "ORDER BY PropertyId, SortOrder";
+
+                formats = Table.executeQuery(getExpSchema(), sql, new Object[]{domain.getTypeId()}, ConditionalFormatWithPropertyId.class);
+
+                DbCache.put(getTinfoConditionalFormat(), cacheKey, formats);
+                return formats;
+            }
+            return new ConditionalFormatWithPropertyId[0];
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
     private String getCacheKey(int propertyId)
     {
         return String.valueOf(propertyId);
+    }
+
+    private String getCacheKey(Domain domain)
+    {
+        return "Domain" + domain.getTypeId();
     }
 
     private PropertyValidator[] getValidators(int propertyId)
@@ -292,7 +339,8 @@ public class DomainPropertyManager
         {
             String deleteFormatSql = "DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId = ?";
             Table.execute(getExpSchema(), deleteFormatSql, new Object[]{propertyId});
-            DbCache.remove(getTinfoValidator(), getCacheKey(propertyId));
+            // Cached both on property and domain level, so blow the whole cache
+            DbCache.clear(getTinfoConditionalFormat());
         }
         catch (SQLException e)
         {
@@ -323,7 +371,8 @@ public class DomainPropertyManager
                 row.put("PropertyId", prop.getPropertyId());
 
                 Table.insert(user, getTinfoConditionalFormat(), row);
-                DbCache.remove(getTinfoValidator(), getCacheKey(prop.getPropertyId()));
+                // Cached both on property and domain level, so blow the whole cache
+                DbCache.clear(getTinfoConditionalFormat());
             }
         }
         catch (SQLException e)

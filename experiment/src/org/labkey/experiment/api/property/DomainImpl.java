@@ -51,9 +51,19 @@ public class DomainImpl implements Domain
         _dd = dd;
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
         _properties = new ArrayList<DomainPropertyImpl>(pds.length);
+        DomainPropertyManager.ConditionalFormatWithPropertyId[] allFormats = DomainPropertyManager.get().getConditionalFormats(this);
         for (PropertyDescriptor pd : pds)
         {
-            _properties.add(new DomainPropertyImpl(this, pd));
+            List<ConditionalFormat> formats = new ArrayList<ConditionalFormat>();
+            for (DomainPropertyManager.ConditionalFormatWithPropertyId format : allFormats)
+            {
+                if (format.getPropertyId() == pd.getPropertyId())
+                {
+                    formats.add(format);
+                }
+            }
+            DomainPropertyImpl property = new DomainPropertyImpl(this, pd, formats);
+            _properties.add(property);
         }
     }
     public DomainImpl(Container container, String uri, String name)
@@ -178,7 +188,7 @@ public class DomainImpl implements Domain
         {
             throw new IndexOutOfBoundsException();
         }
-        if (!_properties.remove((DomainPropertyImpl)prop))
+        if (!_properties.remove(prop))
         {
             throw new IllegalArgumentException("The property is not part of this domain");
         }

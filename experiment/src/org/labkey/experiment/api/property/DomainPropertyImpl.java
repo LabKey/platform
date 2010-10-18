@@ -48,8 +48,14 @@ public class DomainPropertyImpl implements DomainProperty
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
     {
+        this(type, pd, null);
+    }
+
+    public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd, List<ConditionalFormat> formats)
+    {
         _domain = type;
         _pd = pd.clone();
+        _formats = formats;
     }
 
     public int getPropertyId()
