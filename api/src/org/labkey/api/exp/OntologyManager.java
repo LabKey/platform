@@ -3093,7 +3093,7 @@ public class OntologyManager
                 Container container = ContainerManager.getForId(containerId);
                 if (null==container)
                     continue;  // should be handled by container check
-                newProjectId = container.getProject().getId();
+                newProjectId = container.getProject() == null ? container.getId() : container.getProject().getId();
                 if (!projectId.equals(newProjectId))
                 {
                    if  (bFix)

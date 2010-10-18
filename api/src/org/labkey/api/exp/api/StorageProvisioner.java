@@ -564,7 +564,7 @@ public class StorageProvisioner
                         domainReport.getName(), domainReport.getSchemaName(), domainReport.getTableName()));
                 continue;
             }
-            Set<String> hardColumnNames = table.getColumnNameSet();
+            Set<String> hardColumnNames = new CaseInsensitiveHashSet(table.getColumnNameSet());
             Domain domain = PropertyService.get().getDomain(domainReport.getId());
             for (DomainProperty domainProp : domain.getProperties())
             {
