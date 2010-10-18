@@ -46,6 +46,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
     private String _change;
     private String _comment;
     private String _fieldChanges;
+    private String _recipients;
 
     public IssueUpdateEmailTemplate()
     {
@@ -80,6 +81,13 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
             public String getValue(Container c)
             {
                 return _comment;
+            }
+        });
+        _replacements.add(new ReplacementParam("recipients", "All of the recipients of the email notification")
+        {
+            public String getValue(Container c)
+            {
+                return _recipients == null ? "user@domain.com" : _recipients;
             }
         });
         _replacements.add(new HStringReplacementParam("title", "The current title of the issue")
@@ -294,13 +302,23 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         protected abstract Integer getUserId(Container c);
     }
 
-    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges)
+    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, String[] recipients)
     {
         _newIssue = newIssue;
         _detailsURL = detailsURL;
         _change = change;
         _comment = comment;
         _fieldChanges = fieldChanges;
+
+        StringBuilder sb = new StringBuilder();
+        String separator = "";
+        for (String address : recipients)
+        {
+            sb.append(separator);
+            separator = ", ";
+            sb.append(address);
+        }
+        _recipients = sb.toString();
     }
 
     public List<ReplacementParam> getValidReplacements(){return _replacements;}

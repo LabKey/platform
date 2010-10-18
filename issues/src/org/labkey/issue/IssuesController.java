@@ -1165,7 +1165,7 @@ public class IssuesController extends SpringActionController
                 if (addresses != null && addresses.length > 0)
                 {
                     IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, getContainer());
-                    template.init(issue, detailsURL, change, comment, fieldChanges);
+                    template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses);
 
                     m.setSubject(template.renderSubject(getContainer()));
                     m.setHeader("References", references);
