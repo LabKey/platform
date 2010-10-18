@@ -24,12 +24,14 @@
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
     SpecimenController.ManageRequestBean bean = me.getModelBean();
     ViewContext context = me.getViewContext();
     SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(context.getContainer(), context.getUser());
 %>
+<labkey:errors />
 <form action="manageRequestStatus.post" enctype="multipart/form-data" method="POST">
     <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId()%>">
     <table  class="labkey-manage-display">

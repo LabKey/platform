@@ -80,12 +80,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -349,7 +344,7 @@ public class StudyManager
         Date oldStartDate = oldStudy.getStartDate();
         _studyHelper.update(user, study, new Object[] { study.getContainer() });
 
-        if (oldStudy.getTimepointType() == TimepointType.DATE && !study.getStartDate().equals(oldStartDate))
+        if (oldStudy.getTimepointType() == TimepointType.DATE && !PageFlowUtil.nullSafeEquals(study.getStartDate(), oldStartDate))
         {
             // start date has changed, and datasets may use that value. Uncache.
             RelativeDateVisitManager visitManager = (RelativeDateVisitManager) getVisitManager(study);
@@ -896,7 +891,7 @@ public class StudyManager
             if (!def.isDemographicData())
             {
                 VisitImpl visit = lsidVisits.get(lsid);
-                auditKey.append(", Visit ").append(visit.getLabel());
+                auditKey.append(", Visit ").append(visit != null ? visit.getLabel() : "unknown");
             }
             String keyProp = def.getKeyPropertyName();
             if (keyProp != null)

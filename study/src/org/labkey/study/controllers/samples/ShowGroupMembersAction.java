@@ -61,7 +61,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
 
         User[] members = actor.getMembers(site);
         JspView<GroupMembersBean> view = new JspView<GroupMembersBean>("/org/labkey/study/view/samples/groupMembers.jsp",
-                new GroupMembersBean(actor, site, members, form.getReturnUrl()));
+                new GroupMembersBean(actor, site, members, form.getReturnUrl()), errors);
 
         return view;
     }
@@ -103,7 +103,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                 // Ignore lines of all whitespace, otherwise show an error.
                 if (!"".equals(rawEmail.trim()))
                 {
-                    errors.rejectValue(SpecimenController.ERROR_MSG, "Could not add user " + rawEmail.trim() + ": Invalid email address");
+                    errors.reject(SpecimenController.ERROR_MSG, "Could not add user " + rawEmail.trim() + ": Invalid email address");
                 }
             }
 
@@ -119,7 +119,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                 {
                     User user = UserManager.getUser(email);
                     if (user == null)
-                        errors.rejectValue(SpecimenController.ERROR_MSG, email.getEmailAddress() + " is not a registered system user.");
+                        errors.reject(SpecimenController.ERROR_MSG, email.getEmailAddress() + " is not a registered system user.");
                     else
                     {
                         newMembers.add(UserManager.getUser(email));

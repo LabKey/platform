@@ -262,7 +262,7 @@
             layout:'fit',
             border: false,
             width: 475,
-            height: 270,
+            height: 300,
             closeAction:'close',
             modal: true,
             items: formPanel,

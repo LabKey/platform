@@ -300,7 +300,7 @@ public class SampleManager
     public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(Specimen[] specimens) throws SQLException
     {
         SpecimenEvent[] allEvents = getSpecimenEvents(specimens);
-        Map<Integer, List<SpecimenEvent>> vialIdToEvents = new HashMap<Integer, List<SpecimenEvent>>(); 
+        Map<Integer, List<SpecimenEvent>> vialIdToEvents = new HashMap<Integer, List<SpecimenEvent>>();
         for (SpecimenEvent event : allEvents)
         {
             List<SpecimenEvent> vialEvents = vialIdToEvents.get(event.getVialId());
@@ -357,7 +357,7 @@ public class SampleManager
     private boolean skipAsProcessingSite(SpecimenEvent event)
     {
         boolean allNullDates = event.getLabReceiptDate() == null && event.getStorageDate() == null && event.getShipDate() == null;
-        // 
+        //
         return allNullDates && !safeComp(event.getLabId(), event.getOriginatingLocationId());
     }
 
@@ -430,16 +430,31 @@ public class SampleManager
         return request;
     }
 
-    public void updateRequest(User user, SampleRequest request) throws SQLException
+    public void updateRequest(User user, SampleRequest request) throws SQLException, RequestabilityManager.InvalidRuleException
     {
-        _requestHelper.update(user, request);
-
-        // update specimen states
-        Specimen[] specimens = request.getSpecimens();
-        if (specimens != null && specimens.length > 0)
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        boolean ownTransaction = !scope.isTransactionActive();
+        try
         {
-            SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
-            updateSpecimenStatus(specimens, user, status.isSpecimensLocked());
+            if (ownTransaction)
+                scope.beginTransaction();
+
+            _requestHelper.update(user, request);
+
+            // update specimen states
+            Specimen[] specimens = request.getSpecimens();
+            if (specimens != null && specimens.length > 0)
+            {
+                SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
+                updateSpecimenStatus(specimens, user, status.isSpecimensLocked());
+            }
+            if (ownTransaction)
+                scope.commitTransaction();
+        }
+        finally
+        {
+            if (ownTransaction && scope.isTransactionActive())
+                scope.rollbackTransaction();
         }
     }
 
@@ -468,7 +483,7 @@ public class SampleManager
     /**
      * Update the lockedInRequest and available field states for the set of specimens.
      */
-    private void updateSpecimenStatus(Specimen[] specimens, User user, boolean lockedInRequest) throws SQLException
+    private void updateSpecimenStatus(Specimen[] specimens, User user, boolean lockedInRequest) throws SQLException, RequestabilityManager.InvalidRuleException
     {
         for (Specimen specimen : specimens)
         {
@@ -534,7 +549,7 @@ public class SampleManager
                 Boolean.TRUE, // LockedInRequest case of ExpectedAvailableCount
                 Boolean.FALSE, // Requestable case of ExpectedAvailableCount
                 container.getId()); // container filter
-        
+
         if (specimens != null && specimens.length > 0)
         {
             Set<Integer> specimenIds = new HashSet<Integer>();
@@ -560,7 +575,7 @@ public class SampleManager
         updateSpecimenCounts(container, user, null);
     }
 
-    public void updateRequestabilityAndCounts(Specimen[] specimens, User user) throws SQLException
+    private void updateRequestabilityAndCounts(Specimen[] specimens, User user) throws SQLException, RequestabilityManager.InvalidRuleException
     {
         if (specimens.length == 0)
             return;
@@ -653,7 +668,7 @@ public class SampleManager
     {
         return _primaryTypeHelper.get(c, rowId);
     }
-    
+
     public PrimaryType[] getPrimaryTypes(Container c) throws SQLException
     {
         return _primaryTypeHelper.get(c, "ExternalId");
@@ -1199,39 +1214,55 @@ public class SampleManager
     }
 
     private static final Object REQUEST_ADDITION_LOCK = new Object();
-    public void createRequestSampleMapping(User user, SampleRequest request, List<Specimen> specimens, boolean createEvents, boolean createRequirements) throws SQLException
+    public void createRequestSampleMapping(User user, SampleRequest request, List<Specimen> specimens, boolean createEvents, boolean createRequirements) throws SQLException, RequestabilityManager.InvalidRuleException
     {
         if (specimens == null || specimens.size() == 0)
             return;
 
-        synchronized (REQUEST_ADDITION_LOCK)
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        boolean ownTransaction = !scope.isTransactionActive();
+        try
         {
-            for (Specimen specimen : specimens)
-            {
-                if (!request.getContainer().getId().equals(specimen.getContainer().getId()))
-                    throw new IllegalStateException("Mismatched containers.");
+            if (ownTransaction)
+                scope.beginTransaction();
 
-                Integer[] requestIds = getRequestIdsForSpecimen(specimen, true);
-                if (requestIds.length > 0)
-                    throw new IllegalStateException("Specimen " + specimen.getGlobalUniqueId() + " is already part of request " + requestIds[0]);
+            synchronized (REQUEST_ADDITION_LOCK)
+            {
+                for (Specimen specimen : specimens)
+                {
+                    if (!request.getContainer().getId().equals(specimen.getContainer().getId()))
+                        throw new IllegalStateException("Mismatched containers.");
+
+                    Integer[] requestIds = getRequestIdsForSpecimen(specimen, true);
+                    if (requestIds.length > 0)
+                        throw new IllegalStateException("Specimen " + specimen.getGlobalUniqueId() + " is already part of request " + requestIds[0]);
+                }
+
+                for (Specimen specimen : specimens)
+                {
+                    Map<String, Object> fields = new HashMap<String, Object>();
+                    fields.put("Container", request.getContainer().getId());
+                    fields.put("SampleRequestId", request.getRowId());
+                    fields.put("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
+                    Table.insert(user, StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), fields);
+                    if (createEvents)
+                        createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, specimen.getSampleDescription(), null);
+                }
+
+                if (createRequirements)
+                    getRequirementsProvider().generateDefaultRequirements(user, request);
+
+                SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
+                updateSpecimenStatus(specimens.toArray(new Specimen[specimens.size()]), user, status.isSpecimensLocked());
             }
 
-            for (Specimen specimen : specimens)
-            {
-                Map<String, Object> fields = new HashMap<String, Object>();
-                fields.put("Container", request.getContainer().getId());
-                fields.put("SampleRequestId", request.getRowId());
-                fields.put("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
-                Table.insert(user, StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), fields);
-                if (createEvents)
-                    createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, specimen.getSampleDescription(), null);
-            }
-
-            if (createRequirements)
-                getRequirementsProvider().generateDefaultRequirements(user, request);
-
-            SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
-            updateSpecimenStatus(specimens.toArray(new Specimen[specimens.size()]), user, status.isSpecimensLocked());
+            if (ownTransaction)
+                scope.commitTransaction();
+        }
+        finally
+        {
+            if (ownTransaction && scope.isTransactionActive())
+                scope.rollbackTransaction();
         }
     }
 
@@ -1249,7 +1280,7 @@ public class SampleManager
         return specimens;
     }
 
-    public void deleteRequest(User user, SampleRequest request) throws SQLException
+    public void deleteRequest(User user, SampleRequest request) throws SQLException, RequestabilityManager.InvalidRuleException
     {
         DbScope scope = _requestHelper.getTableInfo().getSchema().getScope();
         boolean transactionOwner = !scope.isTransactionActive();
@@ -1282,7 +1313,7 @@ public class SampleManager
         }
     }
 
-    public void deleteRequestSampleMappings(User user, SampleRequest request, int[] sampleIds, boolean createEvents) throws SQLException
+    public void deleteRequestSampleMappings(User user, SampleRequest request, int[] sampleIds, boolean createEvents) throws SQLException, RequestabilityManager.InvalidRuleException
     {
         if (sampleIds == null || sampleIds.length == 0)
             return;
@@ -1295,17 +1326,33 @@ public class SampleManager
             descriptions.add(specimen.getSampleDescription());
         }
 
-        SimpleFilter filter = new SimpleFilter("SampleRequestId", request.getRowId());
-        filter.addCondition("Container", request.getContainer().getId());
-        filter.addInClause("SpecimenGlobalUniqueId", globalUniqueIds);
-        Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
-        if (createEvents)
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        boolean ownTransaction = !scope.isTransactionActive();
+        try
         {
-            for (String description : descriptions)
-                createRequestEvent(user, request, RequestEventType.SPECIMEN_REMOVED, description, null);
-        }
+            if (ownTransaction)
+                scope.beginTransaction();
 
-        updateSpecimenStatus(specimens, user, false);
+            SimpleFilter filter = new SimpleFilter("SampleRequestId", request.getRowId());
+            filter.addCondition("Container", request.getContainer().getId());
+            filter.addInClause("SpecimenGlobalUniqueId", globalUniqueIds);
+            Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
+            if (createEvents)
+            {
+                for (String description : descriptions)
+                    createRequestEvent(user, request, RequestEventType.SPECIMEN_REMOVED, description, null);
+            }
+
+            updateSpecimenStatus(specimens, user, false);
+
+            if (ownTransaction)
+                scope.commitTransaction();
+        }
+        finally
+        {
+            if (ownTransaction && scope.isTransactionActive())
+                scope.rollbackTransaction();
+        }
     }
 
     public Integer[] getRequestIdsForSpecimen(Specimen specimen) throws SQLException
@@ -1762,10 +1809,10 @@ public class SampleManager
                 throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
             // generate our select SQL:
             SQLFragment specimenSql = Table.getSelectSQL(tinfo, cols, null, null);
-            
+
             SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit from (" + specimenSql.getSQL() + ") SimpleSpecimenQuery");
             visitIdSQL.addAll(specimenSql.getParamsArray());
-            
+
             List<Double> visitIds = new ArrayList<Double>();
             ResultSet rs = null;
             try
@@ -2262,7 +2309,7 @@ public class SampleManager
         }
     }
 
-    public SummaryByVisitParticipant[] getParticipantSummaryByVisitType(Container container, User user, 
+    public SummaryByVisitParticipant[] getParticipantSummaryByVisitType(Container container, User user,
                                 SimpleFilter specimenDetailFilter, CustomView baseView, CohortFilter.Type cohortType) throws SQLException
     {
         if (specimenDetailFilter == null)

@@ -297,6 +297,19 @@ public abstract class ScheduleGrid extends EditableGrid
                 GWTTimepoint.Unit unit = GWTTimepoint.Unit.fromString(lbUnit.getItemText(lbUnit.getSelectedIndex()));
                 tp.setUnit(unit);
                 tp.setDays(unit.daysPerUnit * count);
+
+                for (GWTTimepoint existing : schedule.getTimepoints())
+                {
+                    if (tp != existing && tp.getUnit() == existing.getUnit() && tp.getDays() == existing.getDays())
+                    {
+                        String msgStart = existing.getName() != null ? "Timepoint " + existing.getName() : "A timepoint";
+                        Window.alert(msgStart + " already exists at " + unit.daysAsUnit(existing.getDays()) +
+                                " " + unit.name + ". Duplicate timepoints are not allowed.");
+                        tbCount.setFocus(true);
+                        return;
+                    }
+                }
+
                 hide();
                 update();                
             }

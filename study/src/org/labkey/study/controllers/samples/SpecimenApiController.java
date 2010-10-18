@@ -23,6 +23,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SampleManager;
+import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.controllers.BaseStudyController;
@@ -445,7 +446,17 @@ public class SpecimenApiController extends BaseStudyController
             for (String vialId : vialRequestForm.getVialIds())
             {
                 Specimen vial = getVial(vialId, vialRequestForm.getIdType());
-                SampleManager.getInstance().createRequestSampleMapping(getUser(), request, Collections.singletonList(vial), true, true);
+                try
+                {
+                    SampleManager.getInstance().createRequestSampleMapping(getUser(), request, Collections.singletonList(vial), true, true);
+                }
+                catch (RequestabilityManager.InvalidRuleException e)
+                {
+                    errors.reject(ERROR_MSG, "The samples could not be added because a requestability rule is configured incorrectly. " +
+                                "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                    return null;
+                }
+
             }
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
@@ -516,7 +527,16 @@ public class SpecimenApiController extends BaseStudyController
                 int[] rowIdArray = new int[rowIds.size()];
                 for (int i = 0; i < rowIdArray.length; i++)
                     rowIdArray[i] = rowIds.get(i).intValue();
-                SampleManager.getInstance().deleteRequestSampleMappings(getUser(), request, rowIdArray, true);
+                try
+                {
+                    SampleManager.getInstance().deleteRequestSampleMappings(getUser(), request, rowIdArray, true);
+                }
+                catch (RequestabilityManager.InvalidRuleException e)
+                {
+                    errors.reject(ERROR_MSG, "The samples could not be removed because a requestability rule is configured incorrectly. " +
+                                "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                    return null;
+                }
             }
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
@@ -543,7 +563,16 @@ public class SpecimenApiController extends BaseStudyController
             {
                 List<Specimen> specimens = new ArrayList<Specimen>(requested.getSpecimens().length);
                 Collections.addAll(specimens, requested.getSpecimens());
-                SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimens, true, true);
+                try
+                {
+                    SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimens, true, true);
+                }
+                catch (RequestabilityManager.InvalidRuleException e)
+                {
+                    errors.reject(ERROR_MSG, "The samples could not be added because a requestability rule is configured incorrectly. " +
+                                "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                    return null;
+                }
             }
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
@@ -563,7 +592,17 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(RequestIdForm deleteRequestForm, BindException errors) throws Exception
         {
             SampleRequest request = getRequest(getUser(), getContainer(), deleteRequestForm.getRequestId(), true, true);
-            SampleManager.getInstance().deleteRequest(getUser(), request);
+            try
+            {
+                SampleManager.getInstance().deleteRequest(getUser(), request);
+            }
+            catch (RequestabilityManager.InvalidRuleException e)
+            {
+                errors.reject(ERROR_MSG, "The request could not be deleted because a requestability rule is configured incorrectly. " +
+                            "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                return null;
+            }
+
             return new ApiResponse()
             {
                 public Map<String, Object> getProperties()

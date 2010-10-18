@@ -83,7 +83,10 @@ public class QueryHelper<K extends StudyCachable>
                     sort = new Sort(sortString);
                 try
                 {
-                    return Table.select(getTableInfo(), Table.ALL_COLUMNS, filter, sort, _objectClass);
+                    StudyCachable[] objs = Table.select(getTableInfo(), Table.ALL_COLUMNS, filter, sort, _objectClass);
+                    for (StudyCachable obj : objs)
+                        obj.lock();
+                    return objs;
                 }
                 catch (SQLException x)
                 {
@@ -125,7 +128,10 @@ public class QueryHelper<K extends StudyCachable>
                 filter.addCondition(rowIdColumnName, rowId);
                 try
                 {
-                    return Table.selectObject(getTableInfo(), Table.ALL_COLUMNS, filter, null, _objectClass);
+                    StudyCachable obj = Table.selectObject(getTableInfo(), Table.ALL_COLUMNS, filter, null, _objectClass);
+                    if (obj != null)
+                        obj.lock();
+                    return obj;
                 }
                 catch (SQLException x)
                 {

@@ -123,7 +123,7 @@ Each study needs specimen ids for the specimens included in the study. To upload
     specimens, follow the instructions below.<br>
 <ol>
     <li>Download the specimen spreadsheet
-        <%=textLink("Download Excel Workbook", "#downloadSpecimens", "sendToForm('getSpecimenExcel.view')", "")%><br>
+        <%=textLink("Download Excel Workbook", "#downloadSpecimens", "sendFormTo('getSpecimenExcel.view')", "")%><br>
 </li>
     <li>Save the spreadsheet to your computer</li>
     <li>Fill in the specimen spreadsheet. The following columns must be filled in

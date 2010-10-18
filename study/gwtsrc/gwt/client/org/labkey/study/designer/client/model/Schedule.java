@@ -29,7 +29,7 @@ public interface Schedule /*extends XMLSavable*/
 {
     void removeTimepoint(GWTTimepoint tp);
 
-    List/*<Timepoint>*/ getTimepoints();
+    List<GWTTimepoint> getTimepoints();
 
     GWTTimepoint getTimepoint(int i);
 

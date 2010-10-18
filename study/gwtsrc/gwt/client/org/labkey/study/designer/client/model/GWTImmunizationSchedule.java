@@ -97,7 +97,7 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
         timepoints.remove(tp);
     }
 
-    public List/*<Timepoint>*/ getTimepoints()
+    public List<GWTTimepoint> getTimepoints()
     {
         return timepoints;
     }

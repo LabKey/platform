@@ -68,7 +68,7 @@ public class AssayPanel extends Composite
 
             HorizontalPanel linkPanel = new HorizontalPanel();
             linkPanel.setSpacing(8);
-            Hyperlink editLink = new Hyperlink("Edit Assay List", null);
+            Anchor editLink = new Anchor("Edit Assay List");
             editLink.addClickHandler(new ClickHandler()
             {
                 public void onClick(ClickEvent e)
@@ -88,7 +88,7 @@ public class AssayPanel extends Composite
             });
             linkPanel.add(editLink);
 
-            Hyperlink editSamplesLink = new Hyperlink("Edit Sample Types", null);
+            Anchor editSamplesLink = new Anchor("Edit Sample Types");
             editSamplesLink.addClickHandler(new ClickHandler()
             {
                 public void onClick(ClickEvent e)

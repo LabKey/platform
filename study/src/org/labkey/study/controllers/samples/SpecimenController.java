@@ -1055,7 +1055,16 @@ public class SpecimenController extends BaseStudyController
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
             int[] sampleIds = toIntArray(DataRegionSelection.getSelected(getViewContext(), true));
-            SampleManager.getInstance().deleteRequestSampleMappings(getUser(), request, sampleIds, true);
+            try
+            {
+                SampleManager.getInstance().deleteRequestSampleMappings(getUser(), request, sampleIds, true);
+            }
+            catch (RequestabilityManager.InvalidRuleException e)
+            {
+                errors.reject(ERROR_MSG, "The samples could not be removed because a requestability rule is configured incorrectly. " +
+                            "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                return false;
+            }
             return true;
         }
 
@@ -1116,7 +1125,7 @@ public class SpecimenController extends BaseStudyController
             if (_sampleRequest == null)
                 HttpView.throwNotFound();
             return new JspView<ManageRequestBean>("/org/labkey/study/view/samples/manageRequestStatus.jsp",
-                    new ManageRequestBean(getViewContext(), _sampleRequest, false, null, null));
+                    new ManageRequestBean(getViewContext(), _sampleRequest, false, null, null), errors);
         }
 
         public boolean handlePost(final ManageRequestStatusForm form, BindException errors) throws Exception
@@ -1148,7 +1157,16 @@ public class SpecimenController extends BaseStudyController
                     _sampleRequest = _sampleRequest.createMutable();
                     _sampleRequest.setStatusId(form.getStatus());
                     _sampleRequest.setModified(new Date());
-                    SampleManager.getInstance().updateRequest(getUser(), _sampleRequest);
+                    try
+                    {
+                        SampleManager.getInstance().updateRequest(getUser(), _sampleRequest);
+                    }
+                    catch (RequestabilityManager.InvalidRuleException e)
+                    {
+                        errors.reject(ERROR_MSG, "The request could not be updated because a requestability rule is configured incorrectly. " +
+                                    "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                        return false;
+                    }
                     changeType = SampleManager.RequestEventType.REQUEST_STATUS_CHANGED;
                 }
                 else
@@ -1498,44 +1516,69 @@ public class SpecimenController extends BaseStudyController
             if (form.getDestinationSite() > 0)
                 _sampleRequest.setDestinationSiteId(form.getDestinationSite());
             _sampleRequest.setStatusId(SampleManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), false).getRowId());
-            _sampleRequest = SampleManager.getInstance().createRequest(getUser(), _sampleRequest, true);
-            List<Specimen> samples;
-            if (sampleIds != null && sampleIds.length > 0)
-            {
-                samples = new ArrayList<Specimen>();
-                for (int sampleId : sampleIds)
-                {
-                    Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), sampleId);
-                    if (specimen != null)
-                    {
 
-                        Integer[] requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen, true);
-                        if (requestIds != null && requestIds.length > 0)
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+            try
+            {
+                scope.beginTransaction();
+
+                _sampleRequest = SampleManager.getInstance().createRequest(getUser(), _sampleRequest, true);
+                List<Specimen> samples;
+                if (sampleIds != null && sampleIds.length > 0)
+                {
+                    samples = new ArrayList<Specimen>();
+                    for (int sampleId : sampleIds)
+                    {
+                        Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), sampleId);
+                        if (specimen != null)
                         {
-                            errors.reject(null, "Vial " + specimen.getGlobalUniqueId() + " is already part of request " + requestIds[0] +
-                            ".  This sample has been removed from the list below.");
+
+                            Integer[] requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen, true);
+                            if (requestIds != null && requestIds.length > 0)
+                            {
+                                errors.reject(null, "Vial " + specimen.getGlobalUniqueId() + " is already part of request " + requestIds[0] +
+                                ".  This sample has been removed from the list below.");
+                            }
+                            else
+                                samples.add(specimen);
                         }
                         else
-                            samples.add(specimen);
+                        {
+                            ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(),
+                                    new IllegalStateException("Specimen ID " + sampleId + " was not found in container " + getContainer().getId()));
+                        }
+                    }
+                    if (errors.getErrorCount() == 0)
+                    {
+                        try
+                        {
+                            SampleManager.getInstance().createRequestSampleMapping(getUser(), _sampleRequest, samples, true, true);
+                        }
+                        catch (RequestabilityManager.InvalidRuleException e)
+                        {
+                            errors.reject(ERROR_MSG, "The request could not be created because a requestability rule is configured incorrectly. " +
+                                    "Please report this problem to an administrator.  Error details: " + e.getMessage());
+                            return false;
+                        }
                     }
                     else
                     {
-                        ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(),
-                                new IllegalStateException("Specimen ID " + sampleId + " was not found in container " + getContainer().getId()));
+                        int[] validSampleIds = new int[samples.size()];
+                        int index = 0;
+                        for (Specimen sample : samples)
+                            validSampleIds[index++] = sample.getRowId();
+                        form.setSampleRowIds(validSampleIds);
+                        return false;
                     }
                 }
-                if (errors.getErrorCount() == 0)
-                    SampleManager.getInstance().createRequestSampleMapping(getUser(), _sampleRequest, samples, true, true);
-                else
-                {
-                    int[] validSampleIds = new int[samples.size()];
-                    int index = 0;
-                    for (Specimen sample : samples)
-                        validSampleIds[index++] = sample.getRowId();
-                    form.setSampleRowIds(validSampleIds);
-                    return false;
-                }
+                scope.commitTransaction();
             }
+            finally
+            {
+                if (scope.isTransactionActive())
+                    scope.rollbackTransaction();
+            }
+
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
                 getUtils().sendNewRequestNotifications(_sampleRequest);
             return true;
@@ -2370,7 +2413,16 @@ public class SpecimenController extends BaseStudyController
             if (receivingSite == null)
                 HttpView.throwNotFound();
 
-            final LabSpecimenListsBean.Type type = LabSpecimenListsBean.Type.valueOf(form.getListType());
+            final LabSpecimenListsBean.Type type;
+            try
+            {
+                type = LabSpecimenListsBean.Type.valueOf(form.getListType());
+            }
+            catch (IllegalArgumentException e)
+            {
+                HttpView.throwNotFound();
+                return false;
+            }
 
             Map<SiteImpl, List<ActorNotificationRecipientSet>> notifications = new HashMap<SiteImpl, List<ActorNotificationRecipientSet>>();
             if (form.getNotify() != null)
@@ -3139,13 +3191,17 @@ public class SpecimenController extends BaseStudyController
 
             for (Specimen sample : samples)
             {
-                String ptid = sample.getPtid();
-                Visit v = StudyManager.getInstance().getVisitForSequence(study, sample.getVisitValue());
-                if (ptid != null && v != null)
+                Double visit = sample.getVisitValue();
+                if (visit != null)
                 {
-                    if (!pvMap.containsKey(ptid))
-                        pvMap.put(ptid, new HashMap<String, Integer>());
-                    pvMap.get(ptid).put(v.getDisplayString(), sample.getRowId());
+                    String ptid = sample.getPtid();
+                    Visit v = StudyManager.getInstance().getVisitForSequence(study, visit.doubleValue());
+                    if (ptid != null && v != null)
+                    {
+                        if (!pvMap.containsKey(ptid))
+                            pvMap.put(ptid, new HashMap<String, Integer>());
+                        pvMap.get(ptid).put(v.getDisplayString(), sample.getRowId());
+                    }
                 }
             }
             return pvMap;

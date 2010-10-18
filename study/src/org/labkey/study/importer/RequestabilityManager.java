@@ -311,6 +311,19 @@ public class RequestabilityManager
         // private constructor to ensure use of singleton.
     }
 
+    public static class InvalidRuleException extends Exception
+    {
+        public InvalidRuleException(String msg)
+        {
+            super(msg);
+        }
+
+        public InvalidRuleException(String msg, Exception cause)
+        {
+            super(msg, cause);
+        }
+    }
+
     public static abstract class RequestableRule
     {
         protected Container _container;
@@ -320,7 +333,7 @@ public class RequestabilityManager
             _container = container;
         }
 
-        public int updateRequestability(User user, Specimen[] specimens) throws SQLException
+        public int updateRequestability(User user, Specimen[] specimens) throws InvalidRuleException
         {
             String reason = getMarkType().getLabel() + " based on " + getName() + ".";
             SQLFragment updateSQL = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoVial() + " SET ");
@@ -329,7 +342,14 @@ public class RequestabilityManager
             updateSQL.add(reason);
             updateSQL.add(_container.getId());
             updateSQL.append(getFilterSQL(_container, user, specimens));
-            return Table.execute(StudySchema.getInstance().getSchema(), updateSQL);
+            try
+            {
+                return Table.execute(StudySchema.getInstance().getSchema(), updateSQL);
+            }
+            catch (SQLException e)
+            {
+                throw new InvalidRuleException("Failed to run rule " + getName() + ": " + e.getMessage(), e);
+            }
         }
 
         protected SQLFragment getAvailableAssignmentSQL()
@@ -359,7 +379,7 @@ public class RequestabilityManager
             return sql;
         }
 
-        protected abstract SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens);
+        protected abstract SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException;
 
         public MarkType getMarkType()
         {
@@ -444,7 +464,7 @@ public class RequestabilityManager
                     _markRequestable;
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens)
+        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
         {
             SimpleFilter viewFilter = new SimpleFilter();
             if (_viewName != null)
@@ -458,7 +478,7 @@ public class RequestabilityManager
                     viewFilter.addUrlFilters(url, "mockDataRegion");
                 }
                 else
-                    throw new IllegalStateException("Could not find view " + _viewName + " on query " + _queryName + " in schema " + _schemaName + ".");
+                    throw new InvalidRuleException("Could not find view " + _viewName + " on query " + _queryName + " in schema " + _schemaName + ".");
             }
 
             if (specimens != null && specimens.length > 0)
@@ -473,7 +493,7 @@ public class RequestabilityManager
             TableInfo tinfo = schema.getTable(_queryName);
             ColumnInfo globalUniqueIdCol = tinfo.getColumn("GlobalUniqueId");
             if (globalUniqueIdCol == null)
-                throw new IllegalStateException("Query " + _queryName + " in schema " + _schemaName + " doesn't include required column name 'GlobalUniqueId'.");
+                throw new InvalidRuleException("Query " + _queryName + " in schema " + _schemaName + " doesn't include required column name 'GlobalUniqueId'.");
 
 
             SQLFragment vialListSql = Table.getSelectSQL(tinfo, Collections.singleton(globalUniqueIdCol), viewFilter, null);
@@ -504,7 +524,7 @@ public class RequestabilityManager
             super(container);
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens)
+        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment("AtRepository = ?", Boolean.FALSE);
             if (specimens != null && specimens.length > 0)
@@ -532,7 +552,7 @@ public class RequestabilityManager
             return RuleType.ADMIN_OVERRIDE;
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens)
+        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment("Requestable IS NOT NULL");
             if (specimens != null && specimens.length > 0)
@@ -554,7 +574,7 @@ public class RequestabilityManager
             super(container);
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens)
+        public SQLFragment getFilterSQL(Container container, User user, Specimen[] specimens) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment("LockedInRequest = ?", Boolean.TRUE);
             if (specimens != null && specimens.length > 0)
@@ -576,11 +596,19 @@ public class RequestabilityManager
         return _instance;
     }
 
-    public List<RequestableRule> getRules(Container container) throws SQLException
+    public List<RequestableRule> getRules(Container container)
     {
         TableInfo ruleTableInfo = StudySchema.getInstance().getTableInfoSampleAvailabilityRule();
-        RuleBean[] ruleBeans = Table.select(ruleTableInfo, Table.ALL_COLUMNS, new SimpleFilter("Container", container.getId()),
-                new Sort("SortOrder"), RuleBean.class);
+        RuleBean[] ruleBeans;
+        try
+        {
+            ruleBeans = Table.select(ruleTableInfo, Table.ALL_COLUMNS, new SimpleFilter("Container", container.getId()),
+                    new Sort("SortOrder"), RuleBean.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         List<RequestableRule> rules = new ArrayList<RequestableRule>();
         if (ruleBeans.length == 0)
         {
@@ -627,8 +655,10 @@ public class RequestabilityManager
         }
     }
 
-    private void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger, Specimen[] specimens) throws SQLException
+    private void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger, Specimen[] specimens) throws InvalidRuleException
     {
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        assert schema.getScope().isTransactionActive() : "Requestability should always be updated within a transaction wrapping the addition/removal of vials.";
         if (logger != null)
             logger.info("Updating vial availability...");
 
@@ -652,7 +682,14 @@ public class RequestabilityManager
             }
             updateSQL.append("Container = ?");
             updateSQL.add(container.getId());
-            Table.execute(StudySchema.getInstance().getSchema(), updateSQL);
+            try
+            {
+                Table.execute(schema, updateSQL);
+            }
+            catch (SQLException e)
+            {
+                throw new InvalidRuleException("Unable to reset vials to their default requestability state: " + e.getMessage(), e);
+            }
             if (logger != null)
                 logger.info("\tReset complete.");
         }
@@ -672,17 +709,17 @@ public class RequestabilityManager
 
     }
 
-    public void updateRequestability(Container container, User user, Specimen[] specimens) throws SQLException
+    public void updateRequestability(Container container, User user, Specimen[] specimens) throws InvalidRuleException
     {
         updateRequestability(container, user, true, null, specimens);
     }
 
-    public void updateRequestability(Container container, User user) throws SQLException
+    public void updateRequestability(Container container, User user) throws InvalidRuleException
     {
         updateRequestability(container, user, true, null, null);
     }
 
-    public void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger) throws SQLException
+    public void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger) throws InvalidRuleException
     {
         updateRequestability(container, user, resetToAvailable, logger, null);
     }

@@ -42,6 +42,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -100,7 +101,18 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
 
         //Remember whether we used a different header so we can put up error messages that make sense
         Map<String, String> labels = new HashMap<String, String>();
-        for (ColumnDescriptor c : loader.getColumns())
+        ColumnDescriptor[] columns;
+        try
+        {
+            columns = loader.getColumns();
+        }
+        catch (IOException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            return false;
+        }
+
+        for (ColumnDescriptor c : columns)
         {
             if (columnAliases.containsKey(c.name))
             {

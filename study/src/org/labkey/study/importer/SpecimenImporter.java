@@ -1039,7 +1039,14 @@ public class SpecimenImporter
         // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
         updateSpecimenProcessingInfo(container, logger);
 
-        RequestabilityManager.getInstance().updateRequestability(container, user, false, logger);
+        try
+        {
+            RequestabilityManager.getInstance().updateRequestability(container, user, false, logger);
+        }
+        catch (RequestabilityManager.InvalidRuleException e)
+        {
+            throw new IllegalStateException("One or more requestability rules is invalid.  Please remove or correct the invalid rule.", e);
+        }
         if (logger != null)
             logger.info("Updating cached vial counts...");
         SampleManager.getInstance().updateSpecimenCounts(container, user);
@@ -1855,7 +1862,7 @@ public class SpecimenImporter
         return new Parameter(value, col.getSQLType());
     }
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {
