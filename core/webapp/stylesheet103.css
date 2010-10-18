@@ -512,6 +512,7 @@ a.labkey-button:hover span {
 a.labkey-disabled-button {
     padding: 2px 5px;
     border: 1px solid #676767;
+    margin-right: 5px;
     background-color: #fff;
     color: #808080;
     text-transform: uppercase;
