@@ -27,6 +27,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -47,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -460,12 +462,20 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return 0;
         }
 
+        // check every 5 seconds (always check in devMode)
+        final long _checkInterval = AppProps.getInstance().isDevMode() ? -1 : TimeUnit.SECONDS.toMillis(5);
+        long _etagUpdated = 0;
+
+
         @Override
-        public String getETag()
+        public synchronized String getETag(boolean force)
         {
-            // In dev mode don't cache the etag!
-            if (null == _etag || AppProps.getInstance().isDevMode())
+            long current = HeartBeat.currentTimeMillis();
+            if (null == _etag || force || _etagUpdated + _checkInterval < current)
+            {
+                _etagUpdated = current;
                 _etag = "W/\"" + getLastModified() + "\"";
+            }
             return _etag;
         }
     }

@@ -102,6 +102,9 @@ public interface WebdavResource extends Resource
     @Nullable
     String getIconHref();
 
+    // static resources may cache the etag, force to check file system
+    String getETag(boolean force);
+
     String getETag();
 
     @NotNull

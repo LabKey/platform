@@ -50,7 +50,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 {
     private SecurityPolicy _policy;
     protected String _containerId;
-    
+
     protected String _etag = null;
     protected Map<String, Object> _properties = null;
 
@@ -181,7 +181,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
-    public String getETag()
+    public String getETag(boolean force)
     {
         long len = 0;
         try
@@ -196,6 +196,13 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
             _etag = "W/\"" + len + "-" + getLastModified() + "\"";
         return _etag;
     }
+
+
+    public String getETag()
+    {
+        return getETag(false);
+    }
+
 
     public Map<String, ?> getProperties()
     {
