@@ -1632,9 +1632,8 @@ table.labkey-protocol-applications
 
 .labkey-flow-graph
 {
-    height: 300px;
-    width: 300px;
 }
+
 a.labkey-selected-link
 {
     cursor:default;
