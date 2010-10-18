@@ -532,7 +532,14 @@ public class ActionURL extends URLHelper implements Cloneable
         return toPathString(_contextPath, _controller, _action, _path, !asForward);
     }
 
-    
+
+    // CONSIDER: should this override getParsedPath()
+    public Path getFullParsedPath()
+    {
+        return _contextPath.append(_controller).append(_path).append(_action + ".view");
+    }
+
+
     @Override
     public ActionURL clone()
     {
