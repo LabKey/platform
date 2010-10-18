@@ -1514,7 +1514,12 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             {
                 // add role combo
                 role = this.roles[r];
-                var c = new PrincipalComboBox({cache:this.cache, id:('$add$'+role.uniqueName), roleId:role.uniqueName, excludedPrincipals:role.excludedPrincipals});
+                var c = new PrincipalComboBox({
+                    cache:this.cache,
+                    id:('$add$'+role.uniqueName),
+                    roleId:role.uniqueName, 
+                    excludedPrincipals: [-1].concat(role.excludedPrincipals)  // exclude SiteAdministrators who already has all permissions
+                });
                 c.on("select", this.Combo_onSelect, this);
                 c.render(Ext.fly('$combo$' + role.uniqueName));
                 this.add(c);
