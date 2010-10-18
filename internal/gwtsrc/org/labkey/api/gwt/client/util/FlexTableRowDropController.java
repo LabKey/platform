@@ -119,8 +119,7 @@ public abstract class FlexTableRowDropController extends AbstractPositioningDrop
             Widget w = flexTable.getWidget(targetRow == -1 ? 0 : targetRow, 0);
             Location widgetLocation = new WidgetLocation(w, context.boundaryPanel);
             Location tableLocation = new WidgetLocation(flexTable, context.boundaryPanel);
-            context.boundaryPanel.add(positioner, tableLocation.getLeft(), widgetLocation.getTop()
-                    + (targetRow == -1 ? 0 : w.getOffsetHeight()));
+            context.boundaryPanel.add(positioner, tableLocation.getLeft(), widgetLocation.getTop());
         }
     }
 
