@@ -314,6 +314,7 @@ public class UserController extends SpringActionController
             _redirUrl = redirUrl;
         }
     }
+
     public abstract class BaseActivateUsersAction extends FormViewAction<UserIdForm>
     {
         private boolean _active = true;

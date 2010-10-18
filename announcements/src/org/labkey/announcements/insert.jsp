@@ -128,7 +128,7 @@ if (bean.allowBroadcast)
       </table>
     </td></tr>
 </table>
-<br>&nbsp;<%=generateSubmitButton("Submit")%>&nbsp;<%
+<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, null, false, true)%>&nbsp;<%
 if (null != cancelURL)
 {
     %><%=PageFlowUtil.generateButton("Cancel", cancelURL)%><%

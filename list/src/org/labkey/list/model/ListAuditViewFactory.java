@@ -17,20 +17,30 @@
 package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DetailsColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainAuditViewFactory;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -38,8 +48,12 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.list.view.ListController;
 
 import java.io.IOException;
-import java.io.Writer;                              
-import java.util.*;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -243,11 +257,12 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
     {
         Container c = ContainerManager.getSharedContainer();
         String domainURI = AuditLogService.get().getDomainURI(ListManager.LIST_AUDIT_EVENT);
-
         Domain domain = PropertyService.get().getDomain(c, domainURI);
+
         if (domain == null)
         {
-            try {
+            try
+            {
                 domain = PropertyService.get().createDomain(c, domainURI, "ListAuditEventDomain");
                 domain.save(user);
                 domain = PropertyService.get().getDomain(c, domainURI);

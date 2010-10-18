@@ -32,15 +32,17 @@ import java.util.Collections;
 
 public class BtSchema extends UserSchema
 {
-    static public final String name = "biotrue";
+    public static final String name = "biotrue";
     public static final String DESCRIPTION = "Contains data about connections to BioTrue servers.";
-    static public final DefaultSchema.SchemaProvider PROVIDER = new DefaultSchema.SchemaProvider()
+
+    public static final DefaultSchema.SchemaProvider PROVIDER = new DefaultSchema.SchemaProvider()
     {
         public QuerySchema getSchema(DefaultSchema schema)
         {
             return new BtSchema(schema.getUser(), schema.getContainer());
         }
     };
+
     public BtSchema(User user, Container container)
     {
         super(name, DESCRIPTION, user, container, BtManager.get().getSchema());
@@ -52,7 +54,9 @@ public class BtSchema extends UserSchema
         Entities,
         Tasks,
     }
+
     final static Set<String> tableNames = new LinkedHashSet<String>();
+
     static
     {
         for (TableType type : TableType.values())
