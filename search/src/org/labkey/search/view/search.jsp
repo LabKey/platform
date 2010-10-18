@@ -143,7 +143,7 @@
     if (!form.isWebPart() && searchConfig.includeAdvancedUI())
     {
 %>
-<table width=100% cellpadding="0" cellspacing="0" style="padding-left: 18px;">
+<table width=100% cellpadding="0" cellspacing="0" style="padding-left: 10px;">
     <tr>
         <td><input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(); return false;"><span> Advanced Search</span></td>
     </tr>
@@ -624,7 +624,7 @@ String projectInfo(Container c, boolean returnID)
             items: {
                 id        : 'adv-category',
                 xtype     : 'checkboxgroup',
-                columns   : [90,90,90,90],
+                columns   : [90,90,90,100],
                 autoHeight: true,
                 defaults  : {
                     listeners : {
@@ -767,7 +767,7 @@ String projectInfo(Container c, boolean returnID)
         var panel = new Ext.Panel({
             id : 'advanced-panel',
             renderTo: 'advancedPanelDiv',
-            width: 340,                            // Fix 10502 : Extended the width to stop word wrapping.
+            width: 345,                            // Fix 10502 : Extended the width to stop word wrapping.
             items: [header, categories, scopes],
             border: false,
             defaults: {
