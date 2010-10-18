@@ -3271,9 +3271,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }, scope:this}
             });
 
-            this.uploadPanel = new Ext.FormPanel({
-                //id: 'uploadFileTab',
-                //formId : Ext.id(), //this.id ? this.id + 'Upload-form' : 'fileUpload-form',
+            var uploadFormPanel = new Ext.FormPanel({
                 method : 'POST',
                 fileUpload: true,
                 enctype:'multipart/form-data',
@@ -3302,6 +3300,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     "actioncomplete" : {fn: this.uploadSuccess, scope: this},
                     "actionfailed" : {fn: this.uploadFailed, scope: this}
                 }
+            });
+            this.uploadPanel = new Ext.Panel({
+                bodyStyle : 'background-color:#f0f0f0;',
+                items: [uploadFormPanel]
             });
             this.uploadPanel.on('beforeshow', function(c){uploadPanel_rb1.setValue(true); uploadPanel_rb2.setValue(false);}, this);
 
@@ -3335,9 +3337,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 width: 325
             });
 
-            this.uploadMultiPanel = new Ext.FormPanel({
-                //id: 'uploadMultiFileTab',
-                layout: 'form',
+            var uploadMultiFormPanel = new Ext.FormPanel({
                 border:false,
                 stateful: false,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
@@ -3360,12 +3360,15 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     this.appletStatusBar
                 ]
             });
+            this.uploadMultiPanel = new Ext.Panel({
+                bodyStyle : 'background-color:#f0f0f0;',
+                items: [uploadMultiFormPanel]
+            });
             this.uploadMultiPanel.on('beforeshow', function(c){uploadMultiPanel_rb1.setValue(false); uploadMultiPanel_rb2.setValue(true);}, this);
 
             this.fileUploadPanel = new LABKEY.TinyTabPanel({
                 region: 'north',
                 collapseMode: 'mini',
-                height: 130,
                 header: false,
                 margins:'0 0 0 0',
                 border: false,
@@ -3377,10 +3380,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 activeTab: this.uploadPanel.getId(),
                 deferredRender: false,
                 stateful: false,
-                items: [
-                    this.uploadPanel,
-                    this.uploadMultiPanel
-                ]});
+                items: [this.uploadPanel, this.uploadMultiPanel]
+            });
 
             layoutItems.push(this.fileUploadPanel);
         }
@@ -3470,7 +3471,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         if (this.currentDirectory)
         {
-            var form = this.fileUploadPanel.getActiveTab().getForm();
+            var formPanel = this.uploadPanel.items.first();
+            var form = formPanel.getForm();
             var path = this.fileUploadField.getValue();
             var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
             var name = path.substring(i+1);
@@ -3512,7 +3514,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     uploadSuccess : function(f, action)
     {
         this.fileUploadPanel.getEl().unmask();
-        var form = this.uploadPanel.getForm();
+        var formPanel = this.uploadPanel.items.first();
+        var form = formPanel.getForm();
         if (form)
             form.reset();
         Ext.getBody().dom.style.cursor = "pointer";
@@ -3530,7 +3533,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     uploadFailed : function(f, action)
     {
         this.fileUploadPanel.getEl().unmask();
-        var form = this.uploadPanel.getForm();
+        var formPanel = this.uploadPanel.items.first();
+        var form = formPanel.getForm();
         if (form)
             form.reset();
         Ext.getBody().dom.style.cursor = "pointer";
