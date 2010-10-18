@@ -418,10 +418,14 @@ public class StringExpressionFactory
 
         String getValue(Map map)
         {
-            if (!map.containsKey(key))
-                LOG.warn("No replacement value found for FieldKey " + key.toString() + ". Could be a FieldKey vs. alias/column name mismatch.");
+            Object lookupKey = key;
+            if (!map.containsKey(lookupKey))
+            {
+                LOG.warn("No replacement value found for FieldKey " + lookupKey + ". Could be a FieldKey vs. alias/column name mismatch. Attemping lookup by as string");
+                lookupKey = key.getParent() == null ? key.getName() : key.encode();
+            }
 
-            Object value = map.get(key);
+            Object value = map.get(lookupKey);
             return PageFlowUtil.encodePath(valueOf(value));
         }
 

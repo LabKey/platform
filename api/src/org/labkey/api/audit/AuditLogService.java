@@ -60,7 +60,6 @@ public class AuditLogService
     {
         /**
          * Specifies whether the provider produces displayable views.
-         * @return
          */
         public boolean isViewable();
 
@@ -78,18 +77,11 @@ public class AuditLogService
          * specified domain. The domain and associated properties must have been created in advance, in order
          * for the query views to correctly display the additional properties, URI's for domains and properties
          * should be created using the methods on this service.
-         *
-         * @param event
-         * @param dataMap
-         * @param domainURI
-         * @return
          */
         public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI);
 
         /**
          * Convenience methods to properly construct lsids with the correct audit namespace
-         * @param eventType
-         * @return
          */
         public String getDomainURI(String eventType);
         public String getPropertyURI(String eventType, String propertyName);
@@ -105,10 +97,6 @@ public class AuditLogService
          * Creates a query view specific to the audit view factory specified by the eventType parameter.
          * The audit view factory is able to customize the table info of the underlying query view.
          * @see org.labkey.api.audit.AuditLogService.AuditViewFactory
-         * @param context
-         * @param filter
-         * @param eventType
-         * @return
          */
         public AuditLogQueryView createQueryView(ViewContext context, SimpleFilter filter, String eventType);
 
@@ -118,7 +106,6 @@ public class AuditLogService
 
         /**
          * An audit view factory is for creating customized views of specific audit event types.
-         * @param factory
          */
         public void addAuditViewFactory(AuditViewFactory factory);
         public AuditViewFactory getAuditViewFactory(String eventType);

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HString;
@@ -44,7 +45,7 @@ import javax.servlet.ServletException;
  *
  * Note, that the QuerySettings require a schemaName and dataRegionName before being constructed.
  */
-public class QueryForm implements HasViewContext, HasBindParameters
+public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindParameters
 {
     public static final String PARAMVAL_NOFILTER = "NONE";
     private ViewContext _context;
