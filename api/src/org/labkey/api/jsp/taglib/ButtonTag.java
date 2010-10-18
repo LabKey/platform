@@ -33,20 +33,17 @@ public class ButtonTag extends SimpleTagBase
     String _name;
     String _value;
     String _id;
+    String _target;
 
     public void doTag() throws JspException, IOException
     {
         JspWriter out = getOut();
         if (_href != null)
         {
-            if (_onclick != null)
-            {
-                out.write(PageFlowUtil.generateButton(_text, _href, _onclick));
-            }
-            else
-            {
-                out.write(PageFlowUtil.generateButton(_text, _href));
-            }
+            String attributes = "";
+            if (null != _target)
+                attributes = "target='" + h(_target) + "'";
+            out.write(PageFlowUtil.generateButton(_text, _href, _onclick, attributes));
         }
         else
         {
@@ -133,5 +130,10 @@ public class ButtonTag extends SimpleTagBase
     public void setAlt(String alt)
     {
         _alt = alt;
+    }
+
+    public void setTarget(String target)
+    {
+        _target = target;
     }
 }

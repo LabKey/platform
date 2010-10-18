@@ -43,6 +43,9 @@
             <name>alt</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
+        <attribute>
+            <name>target</name>
+        </attribute>
     </tag>
     <tag>
         <name>selectAll</name>
