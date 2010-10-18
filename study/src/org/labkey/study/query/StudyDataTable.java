@@ -16,9 +16,9 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.*;
 import org.labkey.api.study.StudyService;

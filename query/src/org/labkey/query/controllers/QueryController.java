@@ -2036,7 +2036,18 @@ public class QueryController extends SpringActionController
                     }
                 }
 
-                ActionURL gridUrl = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+
+                ActionURL gridUrl;
+                if (_form.getReturnActionURL() != null)
+                {
+                    // If we have a specific return URL requested, use that
+                    gridUrl = _form.getReturnActionURL();
+                }
+                else
+                {
+                    // Otherwise go back to the default grid view
+                    gridUrl = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+                }
                 if (gridUrl != null)
                 {
                     ActionButton gridButton = new ActionButton("Show Grid", gridUrl);

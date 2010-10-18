@@ -6356,17 +6356,17 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private static class DatasetDetailRedirectForm
+    private static class DatasetDetailRedirectForm extends ReturnUrlForm
     {
-        private int _datasetId;
+        private String _datasetId;
         private String _lsid;
 
-        public int getDatasetId()
+        public String getDatasetId()
         {
             return _datasetId;
         }
 
-        public void setDatasetId(int datasetId)
+        public void setDatasetId(String datasetId)
         {
             _datasetId = datasetId;
         }
@@ -6407,10 +6407,22 @@ public class StudyController extends BaseStudyController
             {
                 throw new NotFoundException("No study found");
             }
-            DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(study, form.getDatasetId());
+            // First try the dataset id as an entityid
+            DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinitionByEntityId(study, form.getDatasetId());
             if (dataset == null)
             {
-                throw new NotFoundException("Could not find dataset " + form.getDatasetId());
+                try
+                {
+                    // Then try the dataset id as an integer
+                    int id = Integer.parseInt(form.getDatasetId());
+                    dataset = StudyManager.getInstance().getDataSetDefinition(study, id);
+                }
+                catch (NumberFormatException e) {}
+
+                if (dataset == null)
+                {
+                    throw new NotFoundException("Could not find dataset " + form.getDatasetId());
+                }
             }
 
             if (form.getLsid() == null)
@@ -6423,6 +6435,11 @@ public class StudyController extends BaseStudyController
             QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, dataset.getName());
             assert queryDef != null : "Dataset was found but couldn't get a corresponding TableInfo";
             _url = queryDef.urlFor(QueryAction.detailsQueryRow, getContainer(), Collections.singletonMap("lsid", (Object)form.getLsid()));
+            String referrer = getViewContext().getRequest().getHeader("Referer");
+            if (referrer != null)
+            {
+                _url.addParameter(ReturnUrlForm.Params.returnUrl, referrer);
+            }
         }
     }
 
