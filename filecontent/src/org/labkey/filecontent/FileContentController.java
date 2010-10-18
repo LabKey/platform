@@ -837,6 +837,7 @@ public class FileContentController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("propertyFields");
             return root.addChild("File Properties Designer");
         }
     }
