@@ -190,7 +190,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		}
 
 		@Override
-		public String getETag()
+		public String getETag(boolean force)
 		{
 			// TODO since getLastModified() is NYI
 			String sql = StringUtils.trimToEmpty(_q.getSql());
