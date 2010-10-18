@@ -17,10 +17,7 @@ package org.labkey.query.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
@@ -62,11 +59,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     private class ImportHelper implements OntologyManager.ImportHelper
     {
-        boolean insert = false;
-
-        ImportHelper(boolean insert)
+        ImportHelper()
         {
-            this.insert = insert;
         }
 
         @Override
@@ -77,12 +71,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
             // Get existing Lsid
             String lsid = (String)map.get(objectUriCol.getName());
-            assert insert || lsid != null;
             if (lsid != null)
                 return lsid;
 
             // Generate a new Lsid
-            lsid = queryTable.getPropertyURI();
+            lsid = queryTable.createPropertyURI();
             map.put(objectUriCol.getName(), lsid);
             return lsid;
         }
@@ -174,7 +167,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
 
             PropertyDescriptor[] properties = pds.toArray(new PropertyDescriptor[pds.size()]);
-            List<String> lsids = OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(true), properties, Collections.singletonList(values), true);
+            List<String> lsids = OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(), properties, Collections.singletonList(values), true);
             String lsid = lsids.get(0);
 
             row.put(objectUriCol.getName(), lsid);
@@ -187,20 +180,30 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        //when updating a row, we should strip the following fields, as they are
-        //automagically maintained by the table layer, and should not be allowed
-        //to change once the record exists.
-        //unfortunately, the Table.update() method doesn't strip these, so we'll
-        //do that here.
-        // Owner, CreatedBy, Created, EntityId
         Map<String,Object> rowStripped = new CaseInsensitiveHashMap<Object>(row.size());
-        for(String key : row.keySet())
+        for(ColumnInfo col : getDbTable().getColumns())
         {
-            if(0 != key.compareToIgnoreCase("Owner")
-            && 0 != key.compareToIgnoreCase("CreatedBy")
-            && 0 != key.compareToIgnoreCase("Created")
-            && 0 != key.compareToIgnoreCase("EntityId"))
-                rowStripped.put(key, row.get(key));
+            String name = col.getName();
+            if (!row.containsKey(name))
+                continue;
+
+            // Skip readonly and wrapped columns.  The wrapped column is usually a pk column and can't be updated.
+            if (col.isReadOnly() || col instanceof WrappedColumn)
+                continue;
+
+            //when updating a row, we should strip the following fields, as they are
+            //automagically maintained by the table layer, and should not be allowed
+            //to change once the record exists.
+            //unfortunately, the Table.update() method doesn't strip these, so we'll
+            //do that here.
+            // Owner, CreatedBy, Created, EntityId
+            if (name.equalsIgnoreCase("Owner") ||
+                    name.equalsIgnoreCase("CreatedBy") ||
+                    name.equalsIgnoreCase("Created") ||
+                    name.equalsIgnoreCase("EntityId"))
+                continue;
+
+            rowStripped.put(name, row.get(name));
         }
 
         convertTypes(rowStripped);
@@ -244,7 +247,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 PropertyDescriptor pd = pc.getPropertyDescriptor();
                 pds.add(pd);
 
-                if (hasProperty(oldRow, pd))
+                if (lsid != null && hasProperty(oldRow, pd))
                     OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), c, c);
 
                 Object value = getPropertyValue(row, pd);
@@ -255,7 +258,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             // Note: copy lsid into newValues map so it will be found by the ImportHelper.beforeImportObject()
             newValues.put(objectUriCol.getName(), lsid);
             PropertyDescriptor[] properties = pds.toArray(new PropertyDescriptor[pds.size()]);
-            OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(false), properties, Collections.singletonList(newValues), true);
+            OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(), properties, Collections.singletonList(newValues), true);
         }
 
         return Table.update(user, getDbTable(), row, keys);

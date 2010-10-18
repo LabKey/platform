@@ -129,7 +129,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
         }
     }
 
-    public static String getPropertyURI(String schemaName, String tableName, Container c, User u)
+    public static String createPropertyURI(String schemaName, String tableName, Container c, User u)
     {
         try
         {

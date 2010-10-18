@@ -240,12 +240,12 @@ public class SimpleUserSchema extends UserSchema
             return SimpleTableDomainKind.getDomainURI(_userSchema.getName(), getName(), getContainer(), _userSchema.getUser());
         }
 
-        protected String getPropertyURI()
+        protected String createPropertyURI()
         {
             if (_objectUriCol == null)
                 return null;
 
-            return SimpleTableDomainKind.getPropertyURI(_userSchema.getName(), getName(), getContainer(), _userSchema.getUser());
+            return SimpleTableDomainKind.createPropertyURI(_userSchema.getName(), getName(), getContainer(), _userSchema.getUser());
         }
 
         @Override
