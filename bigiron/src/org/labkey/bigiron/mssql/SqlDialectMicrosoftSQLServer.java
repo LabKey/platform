@@ -614,7 +614,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
         {
             statements.add(String.format("EXEC sp_rename '%s','%s','COLUMN'",
-                    makeTableIdentifier(change), oldToNew.getKey(), oldToNew.getValue()));
+                    makeTableIdentifier(change) + "." + oldToNew.getKey(), oldToNew.getValue()));
         }
 
         return statements;
@@ -625,10 +625,10 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         List<String> sqlParts = new ArrayList<String>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
-            sqlParts.add("DROP " + prop.getName());
+            sqlParts.add(prop.getName());
         }
 
-        return String.format("ALTER TABLE %s %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n"));
+        return String.format("ALTER TABLE %s DROP COLUMN %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n"));
     }
 
     private String getAddColumnsStatement(TableChange change)
