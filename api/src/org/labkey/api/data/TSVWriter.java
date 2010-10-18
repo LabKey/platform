@@ -189,6 +189,7 @@ public abstract class TSVWriter
     }
 
     // Prepare the TSVWriter to stream TSV file to the browser
+    // TODO: Factor out TextWriter and share with FastaWriter
     public void prepare(HttpServletResponse response) throws ServletException
     {
         // Flush any extraneous output (e.g., <CR><LF> from JSPs)
@@ -208,7 +209,7 @@ public abstract class TSVWriter
         {
             // Get the outputstream of the servlet (BTW, always get the outputstream AFTER you've
             // set the content-disposition and content-type)
-            _outputStream = response.getOutputStream();
+            _outputStream = response.getOutputStream();        // TODO: Shouldn't need to stash OutputStream
             _pw = new PrintWriter(_outputStream);
         }
         catch(IOException e)

@@ -22,7 +22,6 @@
 <%
 JspView<ActionURL> me = (JspView<ActionURL>) HttpView.currentView();
 %>
-
 <table class="labkey-export-tab-contents">
     <tr>
         <td class="labkey-export-tab-options">

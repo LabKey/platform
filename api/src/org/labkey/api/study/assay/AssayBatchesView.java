@@ -22,17 +22,15 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.actions.AssayBatchDetailsAction;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Collections;
 
 public class AssayBatchesView extends AbstractAssayView
 {

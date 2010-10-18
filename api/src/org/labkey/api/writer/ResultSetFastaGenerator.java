@@ -25,7 +25,7 @@ import java.sql.SQLException;
  * Date: Aug 24, 2010
  * Time: 1:40:23 PM
  */
-public abstract class ResultSetFastaGenerator implements FastaWriter.FastaGenerator
+public abstract class ResultSetFastaGenerator implements FastaGenerator<FastaEntry>
 {
     private final ResultSet _rs;
 
@@ -56,9 +56,9 @@ public abstract class ResultSetFastaGenerator implements FastaWriter.FastaGenera
     }
 
     @Override
-    public FastaWriter.FastaEntry next()
+    public FastaEntry next()
     {
-        return new FastaWriter.FastaEntry() {
+        return new FastaEntry() {
             @Override
             public String getHeader()
             {

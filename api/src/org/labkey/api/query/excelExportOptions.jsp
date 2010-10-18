@@ -30,8 +30,6 @@ if (model.getIqyURL() != null)
     onClickScript = "window.location = document.getElementById('" + guid + "').checked ? " + PageFlowUtil.jsString(model.getXlsURL().getLocalURIString()) + " : " + PageFlowUtil.jsString(model.getIqyURL().getLocalURIString()) + "; return false;";
 }
 %>
-
-
 <table class="labkey-export-tab-contents">
     <tr>
         <td class="labkey-export-tab-options">

@@ -15,41 +15,64 @@
  */
 package org.labkey.api.writer;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Iterator;
 
 /**
  * User: adam
  * Date: Aug 24, 2010
  * Time: 12:08:36 AM
  */
-public class FastaWriter
+public class FastaWriter<E extends FastaEntry>
 {
-    private final FastaGenerator _generator;
+    private final FastaGenerator<E> _generator;
 
-    public FastaWriter(FastaGenerator generator)
+    public FastaWriter(FastaGenerator<E> generator)
     {
         _generator = generator;
     }
 
+    // TODO: Create base class TextWriter that implements write() methods (TSVWriter should inherit as well)
     public void write(File file) throws IOException
     {
-        PrintWriter pw = null;
+        write(new PrintWriter(new BufferedWriter(new FileWriter(file))));
+    }
 
+    public void write(HttpServletResponse response, String filename, boolean exportAsWebPage) throws IOException
+    {
+        // Flush any extraneous output (e.g., <CR><LF> from JSPs)
+        response.reset();
+
+        // Specify attachment and foil caching
+        if (exportAsWebPage)
+        {
+           response.setHeader("Content-disposition", "inline; filename=\"" + filename + "\"");
+        }
+        else
+        {
+           // Set the content-type so the browser knows which application to launch
+           response.setContentType(getContentType());
+           response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
+        }
+
+        // Write to the outputstream of the servlet (BTW, always get the outputstream AFTER you've
+        // set the content-disposition and content-type)
+        write(new PrintWriter(response.getOutputStream()));
+    }
+
+    // Always closes the PrintWriter
+    private void write(PrintWriter pw)
+    {
         try
         {
-            pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-
             while (_generator.hasNext())
             {
-                FastaEntry entry = _generator.next();
-                pw.print(">");
-                pw.println(entry.getHeader());
-                pw.println(entry.getSequence());
+                E entry = _generator.next();
+                writeEntry(pw, entry);
             }
         }
         finally
@@ -59,13 +82,15 @@ public class FastaWriter
         }
     }
 
-    public interface FastaGenerator extends Iterator<FastaEntry>
+    private String getContentType()
     {
+        return "text/plain";
     }
 
-    public interface FastaEntry
+    protected void writeEntry(PrintWriter pw, E entry)
     {
-        public String getHeader();
-        public String getSequence();
+        pw.print(">");
+        pw.println(entry.getHeader());
+        pw.println(entry.getSequence());
     }
 }
