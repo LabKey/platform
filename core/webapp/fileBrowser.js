@@ -334,6 +334,12 @@ var PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
     },
 
     // we're not really ready to show anything, we have to get the resource still
+    show : function ()
+    {
+        this.showAt(this.getTargetXY());
+    },
+
+    // we're not really ready to show anything, we have to get the resource still
     showAt : function(xy)
     {
         this.showAt_xy = xy;
@@ -345,21 +351,21 @@ var PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
         PreviewResource.superclass.showAt.call(this, xy);
     },
 
-    render : function(ct)
+    render : function(ct, position)
     {
-        PreviewResource.superclass.render.call(this, ct);
+        PreviewResource.superclass.render.call(this, ct, position);
     },
 
-    onRender : function(ct)
+    onRender : function(ct, position)
     {
         this.title = false;
-        PreviewResource.superclass.onRender.call(this, ct);
+        PreviewResource.superclass.onRender.call(this, ct, position);
         this.body.update($dom.markup(this.html));
     },
 
-    doAutoWidth : function()
+    doAutoWidth : function(adjust)
     {
-        PreviewResource.superclass.doAutoWidth.call(this);
+        PreviewResource.superclass.doAutoWidth.call(this, adjust);
     },
 
 
