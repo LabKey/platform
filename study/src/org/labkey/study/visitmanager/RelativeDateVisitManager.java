@@ -309,17 +309,18 @@ public class RelativeDateVisitManager extends VisitManager
         SQLFragment sql = new SQLFragment();
         sql.append(
             "SELECT sd.datasetid, v.sequencenummin " +
-            // There's only on implementation of Study, so it's safe enough to cast it
+            // There's only one implementation of Study, so it's safe enough to cast it
             "FROM ").append(StudySchema.getInstance().getTableInfoStudyData((StudyImpl)study, null).getFromSQL("SD")).append("\n");
         sql.append(
             "JOIN study.ParticipantVisit pv ON  \n" +
             "     sd.SequenceNum = pv.SequenceNum AND \n" +
             "     sd.ParticipantId = pv.ParticipantId AND \n" +
-            "     sd.Container = pv.Container \n" +
+            "     ? = pv.Container \n" +
             "JOIN study.Visit v ON \n" +
             "     pv.VisitRowId = v.RowId AND \n" +
             "     pv.Container = v.Container \n" +
             "GROUP BY sd.datasetid, v.sequencenummin");
+        sql.add(study.getContainer());
         return sql;
     }
 }
