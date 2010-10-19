@@ -2307,9 +2307,9 @@ public class AdminController extends SpringActionController
 
         private MemBean(HttpServletRequest request)
         {
-            // removeCache recentely allocated
+            // ignore recently allocated
             long threadId = Thread.currentThread().getId();
-            long start = ViewServlet.getRequestStartTime(request);
+            long start = ViewServlet.getRequestStartTime(request) - 2000;
             for (MemTracker.HeldReference r : all)
             {
                 if (r.getThreadId() == threadId && r.getAllocationTime() >= start)

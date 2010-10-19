@@ -45,6 +45,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
@@ -167,7 +168,7 @@ public class CoreController extends SpringActionController
                 return;
 
             response.setContentType(getContentType());
-            response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 35);
+            response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + MILLIS_IN_DAY * 35);
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", "cache");
             response.setDateHeader("Last-Modified", content.modified);

@@ -38,6 +38,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -217,7 +218,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         public void completeItem(Object item, boolean success)
         {
             if (item instanceof Item)
-                ((Item)item)._complete = System.currentTimeMillis();
+                ((Item)item)._complete = HeartBeat.currentTimeMillis();
             super.completeItem(item, success);
         }
 
@@ -262,7 +263,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         Item(IndexTask task, OPERATION op, String id, WebdavResource r, PRIORITY pri)
         {
             if (null != r)
-                _start = System.currentTimeMillis();
+                _start = HeartBeat.currentTimeMillis();
             _op = op;
             _id = id;
             _res = r;
@@ -282,7 +283,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             if (null == _res)
             {
-                _start = System.currentTimeMillis();
+                _start = HeartBeat.currentTimeMillis();
                 _res = resolveResource(_id);
             }
             return _res;
@@ -982,7 +983,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 try
                 {
                     i = getPreprocessedItem();
-                    long ms = System.currentTimeMillis();
+                    long ms = HeartBeat.currentTimeMillis();
 
                     if (null == i || _commitItem == i)
                     {
@@ -1406,7 +1407,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             Table.execute(search,
                     "DELETE FROM search.ParticipantIndex " +
                     "WHERE LastIndexed < ?",
-                    new Object[] {new Date(System.currentTimeMillis() - 7*24*60*60*1000L)});
+                    new Object[] {new Date(HeartBeat.currentTimeMillis() - 7*24*60*60*1000L)});
             Table.execute(search, "DELETE FROM search.CrawlResources WHERE parent NOT IN (SELECT id FROM search.CrawlCollections)", null);
             if (search.getSqlDialect().isPostgreSQL())
             {

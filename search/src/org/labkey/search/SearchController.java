@@ -31,6 +31,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -645,7 +646,7 @@ public class SearchController extends SpringActionController
 
             // reenable caching for search results page (fast browser back button)
             HttpServletResponse response = getViewContext().getResponse();
-            response.setDateHeader("Expires", System.currentTimeMillis() + (5 * 60 * 1000));
+            response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + (5 * 60 * 1000));
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", "cache");
             response.addHeader("Vary", "Cookie");
