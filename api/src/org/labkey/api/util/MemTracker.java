@@ -52,7 +52,7 @@ public class MemTracker
 
         AllocationInfo()
         {
-            this(Thread.currentThread().getStackTrace(), Thread.currentThread().getId(), System.currentTimeMillis());
+            this(Thread.currentThread().getStackTrace(), Thread.currentThread().getId(), HeartBeat.currentTimeMillis());
         }
 
         AllocationInfo(StackTraceElement[] stackTrace, long threadId, long allocTime)

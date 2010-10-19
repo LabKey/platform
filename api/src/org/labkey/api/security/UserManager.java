@@ -23,6 +23,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.AjaxCompletion;
@@ -225,7 +226,7 @@ public class UserManager
     {
         synchronized(_activeUsers)
         {
-            _activeUsers.put(user.getUserId(), System.currentTimeMillis());
+            _activeUsers.put(user.getUserId(), HeartBeat.currentTimeMillis());
         }
     }
 

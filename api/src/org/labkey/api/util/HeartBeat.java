@@ -55,6 +55,8 @@ public class HeartBeat
 
     static
     {
+        long ms = System.currentTimeMillis();
+        currentTimeMillis = ms - (ms % 1000);
         new HeartBeatThread().start();
     }
 
