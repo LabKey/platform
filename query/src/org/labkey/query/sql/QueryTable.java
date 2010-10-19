@@ -150,7 +150,7 @@ public class QueryTable extends QueryRelation
         SqlDialect d = getSchema().getDbSchema().getSqlDialect();
         if (StringUtils.isEmpty(name))
             name = "table";
-        else if (name.startsWith(d.getGlobalTempTablePrefix()) && 10 < name.indexOf('$'))
+        else if (!StringUtils.isEmpty(d.getGlobalTempTablePrefix()) && name.startsWith(d.getGlobalTempTablePrefix()) && 10 < name.indexOf('$'))
             name = name.substring(d.getGlobalTempTablePrefix().length(), name.indexOf("$"));
         String r = AliasManager.makeLegalName(name, getSchema().getDbSchema().getSqlDialect(), true);
         r += "_" + _query.incrementAliasCounter();
