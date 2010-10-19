@@ -1029,7 +1029,7 @@ loop:
         _columns.clear();
         for (DgColumn dgColumn : query.getSelect().getColumnArray())
         {
-            QExpr field;
+            QExpr field = null;
             DgValue value = dgColumn.getValue();
             if (value.isSetField())
             {
@@ -1039,10 +1039,8 @@ loop:
             {
                 field = (new SqlParser()).parseExpr(value.getSql(), errors);
             }
-            else
-            {
+            if (null == field)
                 continue;
-            }
             SelectColumn column = new SelectColumn(field);
             if (dgColumn.isSetAlias() && dgColumn.getAlias().trim().length() > 0)
             {

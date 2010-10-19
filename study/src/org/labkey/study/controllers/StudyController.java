@@ -2746,16 +2746,22 @@ public class StudyController extends BaseStudyController
     public static List<String> generateParticipantList(QueryView queryView)
     {
         final TableInfo table = queryView.getTable();
+
         if (table != null)
         {
             Set<String> participantSet = new LinkedHashSet<String>();
+            FieldKey ptidKey = new FieldKey(null,StudyService.get().getSubjectColumnName(queryView.getContainer()));
             ResultSet rs = null;
+
             try
             {
-                rs = queryView.getResultSet();
-                while (rs.next())
+                Report.Results r = queryView.getResults();
+                rs = r.getResultSet();
+                ColumnInfo ptidColumnInfo = r.getFieldMap().get(ptidKey);
+                int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
+                while (rs.next() && ptidIndex > 0)
                 {
-                    String ptid = rs.getString(StudyService.get().getSubjectColumnName(queryView.getContainer()));
+                    String ptid = rs.getString(ptidIndex);
                     participantSet.add(ptid);
                 }
                 return new ArrayList<String>(participantSet);
@@ -2766,8 +2772,7 @@ public class StudyController extends BaseStudyController
             }
             finally
             {
-                if (null != rs)
-                    try { rs.close(); } catch (SQLException e){}
+                ResultSetUtil.close(rs);
             }
         }
         return Collections.emptyList();
