@@ -1420,11 +1420,13 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+
     public ResultSet getResultSet() throws SQLException, IOException
     {
         Report.Results r = getResults();
         return r == null ? null : r.rs;
     }
+
 
     public List<DisplayColumn> getExportColumns(List<DisplayColumn> list)
     {
