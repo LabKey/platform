@@ -2731,6 +2731,13 @@ td a.x-grid3-hd-btn:hover {
 	background-position: -12px -41px;
 }
 
+/* File browser grid */
+#fileBrowser .x-grid3-cell-inner,
+#fileBrowser x-grid3-hd-inner
+{
+    padding: 2px 0px;
+}
+
 .x-menu {
     padding:0;
     background: white none;
