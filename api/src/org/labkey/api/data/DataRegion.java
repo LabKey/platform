@@ -75,7 +75,7 @@ public class DataRegion extends DisplayElement
     private long _offset = 0;
     private List<Pair<String, Object>> _hiddenFormFields = new ArrayList<Pair<String, Object>>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
     private int _defaultMode = MODE_GRID;
-    private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.BOTTOM;
+    private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.TOP;
     private boolean allowAsync = false;
     private ActionURL _formActionUrl = null;
 
