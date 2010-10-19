@@ -100,7 +100,6 @@ public class PanelButton extends ActionButton
                 "LABKEY.requiresScript(\"groupTabPanel/GroupTab.js\", true);\n" +
                 "});</script>");
         out.append(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
-                (requiresSelectionDataRegion != null ? "if (this.className.indexOf('labkey-disabled-button') == -1)\n" : "") +
                 "LABKEY.DataRegions[" + PageFlowUtil.filterQuote(_dataRegionName) + "].showButtonPanel(this, " + config + ");", attributes));
     }
 

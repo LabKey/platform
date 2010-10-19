@@ -1039,8 +1039,13 @@ public class PageFlowUtil
 
     public static String generateButton(String text, String href, String onClick, String attributes)
     {
+        char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
+
+        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
+        String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
+
         return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" +
-                (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                " onClick=" + script  +
                 (attributes != null ? " " + attributes : "") +
                 "><span>" + filter(text) + "</span></a>";
     }
@@ -1081,20 +1086,21 @@ public class PageFlowUtil
         String guid = GUID.makeGUID();
         char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
 
+        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
         String submitCode = "submitForm(document.getElementById(" + quote + guid + quote + ").form); return false;";
 
         String onClickMethod;
 
         if (disableOnClick)
         {
-            onClick = onClick != null ? onClick + ";Ext.get(this).replaceClass('labkey-button', 'labkey-disabled-button')" :
-                    "Ext.get(this).replaceClass('labkey-button', 'labkey-disabled-button')";
+            String replaceClass = "Ext.get(this).replaceClass(" + quote + "labkey-button" + quote + ", " + quote + "labkey-disabled-button" + quote + ");";
+            onClick = onClick != null ? onClick + ";" + replaceClass : replaceClass;
         }
 
         if (onClick == null || "".equals(onClick))
-            onClickMethod = submitCode;
+            onClickMethod = checkDisabled + submitCode;
         else
-            onClickMethod = "this.form = document.getElementById(" + quote + guid + quote + ").form; if (isTrueOrUndefined(function() {" + onClick + "}.call(this))) " +  submitCode;
+            onClickMethod = checkDisabled + "this.form = document.getElementById(" + quote + guid + quote + ").form; if (isTrueOrUndefined(function() {" + onClick + "}.call(this))) " +  submitCode;
 
         StringBuilder sb = new StringBuilder();
 
@@ -1122,7 +1128,13 @@ public class PageFlowUtil
     /* Renders a span and a drop down arrow image wrapped in a link */
     public static String generateDropDownButton(String text, String href, String onClick, String attributes)
     {
-        return "<a class=\"labkey-menu-button\" href=\"" + filter(href) + "\"" + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+        char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
+
+        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
+        String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
+
+        return "<a class=\"labkey-menu-button\" href=\"" + filter(href) + "\"" +
+                " onClick=" + script +
                 (attributes != null ? " " + attributes : "") +
                 "><span>" + filter(text) + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
                 "/_images/button_arrow.gif\" class=\"labkey-button-arrow\"></a>";
@@ -1137,8 +1149,13 @@ public class PageFlowUtil
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
     public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold)
     {
+        char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
+
+        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
+        String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
+
         return "<a class=\"labkey-header\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
-                (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                " onClick=" + script +
                 "><span>" + text + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
                 "/_images/text_link_arrow.gif\" style=\"position:relative; background-color:transparent; width:10px; height:auto; top:-1px; right:0;\"></a>";
     }

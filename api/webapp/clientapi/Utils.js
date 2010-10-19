@@ -627,6 +627,19 @@ LABKEY.Utils.convertToExcel(
                 return '[<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>]';
             }
             throw "Config object not found for textLink.";
+        },
+
+        // private
+        enableButton : function (elem)
+        {
+            return Ext.get(elem).replaceClass("labkey-disabled-button", "labkey-button");
+        },
+
+        // private
+        disableButton : function (elem)
+        {
+            return Ext.get(elem).replaceClass("labkey-button", "labkey-disabled-button");
         }
+
     };
 };

@@ -812,31 +812,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     onSelectChange : function (hasSelected)
     {
-        var fn;
-        if (hasSelected) {
-            fn = function (item, index) {
-                var elem = Ext.get(item);
-                var marker = "/*_b_*/return false;/*_e_*/";
-                elem.replaceClass("labkey-disabled-button", "labkey-button");
-                var click = elem.dom.getAttribute('onclick');
-                if (click && click.indexOf(marker) >= 0) {
-                    click = click.replace(marker, "");
-                    elem.set({onclick : click});
-                }
-
-            };
-        }
-        else {
-            fn = function (item, index) {
-                var elem = Ext.get(item);
-                var marker = "/*_b_*/return false;/*_e_*/";
-                elem.replaceClass("labkey-button", "labkey-disabled-button");
-                var click = elem.dom.getAttribute('onclick');
-                if (click && click.indexOf(marker) < 0) {
-                    elem.set({onclick : marker + elem.dom.getAttribute('onclick')});
-                }
-            };
-        }
+        var fn = hasSelected ? LABKEY.Utils.enableButton : LABKEY.Utils.disableButton;
 
         // 10566: for javascript perf on IE stash the requires selection buttons
         if (!this._requiresSelectionButtons) {

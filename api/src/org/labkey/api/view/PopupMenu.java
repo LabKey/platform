@@ -94,7 +94,6 @@ public class PopupMenu extends DisplayElement
             if (requiresSelection)
                 attributes = "labkey-requires-selection=\"" + PageFlowUtil.filter(dataRegionName) + "\"";
             out.append(PageFlowUtil.generateDropDownButton(_navTree.getKey(), "javascript:void(0)",
-                    (requiresSelection ? "if (this.className.indexOf('labkey-disabled-button') == -1)\n" : "") +
                     "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", attributes));
         }
         else if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT)
