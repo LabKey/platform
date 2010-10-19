@@ -869,7 +869,23 @@ table.labkey-customize-view
 	*border-collapse: collapse;
 }
 
+table.labkey-customize-view td,
+table.labkey-customize-view a,
+table.labkey-customize-view .labkey-tab a:hover
+{
+    background: white;
+}
 
+table.labkey-customize-view .labkey-help-pop-up
+{
+    background: transparent;
+}
+
+table.labkey-customize-view td.labkey-tab-space,
+table.labkey-customize-view td.labkey-tab-space a
+{
+    background: transparent;
+}
 
 /* Data Region */
 
@@ -2599,7 +2615,6 @@ div.yuimenu li.checked em.checkedindicator.disabled {
 
 .extContainer div.x-panel-header {
 	padding: 5px;
-	font-size: 14px;
 }
 
 .x-panel-body {
@@ -2837,7 +2852,7 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-btn-tl, .x-btn-tr, .x-btn-tc, .x-btn-ml, .x-btn-mr, .x-btn-mc, .x-btn-bl, .x-btn-br, .x-btn-bc{
-	background-image:url(./gtheme/img/lkbtn.png);
+	background-image:url(./gtheme/img/lkbtn2.png);
 }
 
 /* Window */
@@ -3316,10 +3331,6 @@ li.labkey-tab-inactive a
 
 
 /* ext */
-
-div.extContainer .x-tab-panel {
-	margin-top: 10px;
-}
 
 div.extContainer h2 {
 	font-size: 16px;

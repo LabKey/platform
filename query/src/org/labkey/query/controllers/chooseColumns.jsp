@@ -114,21 +114,6 @@
         }
     }
 </script>
-
-<p>
-<table style="width:100%">
-    <tr class="labkey-wp-header"><td align="left">
-    Grid View :
-        <% if (view != null) { %>
-            <%=h(view.getName())%>
-        <% } %>
-        <% if (form.getQueryDef() != null && form.getQueryDef().getName() != null) { %>
-            based on <%=form.getQueryDef().getName()%> query
-        <% } %>
-    </td></tr>
-</table>
-
-<p>
 <% if (form.isSaveInSession()) { %>
     <p><b>
     <% if (getViewContext().getUser().isGuest()) out.print("You are not currently logged in."); %>
@@ -191,25 +176,20 @@
             </table>
         </th>
     </tr>
-    <tr><td class="labkey-tab-strip-spacer"></td><td></td><td colspan=2 class="labkey-tab-strip-spacer"></td></tr>
+    <tr><td class="labkey-tab-strip-spacer"></td><td style="background-color: transparent;"></td><td colspan=2 class="labkey-tab-strip-spacer"></td></tr>
     <tr>
-    <td onSelectStart="return false;" onMouseDown="return false;" class="labkey-tab" style="border-top:none;vertical-align:top;">
-        <div style="height:400px;width:300px;overflow:auto;position:relative" id="columnPicker">
-        </div>
-    </td>
-    <td>
-        <br>
-        <br>
-        <br>
-
-        <p style="margin:5px;">
-            <labkey:button text="Add >>" href="#" onclick="designer.add();return false;"/>
-        </p>
-    </td>
-
-    <td id="columns.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-tab">
-        <div id="columns.list.div" style="height:400px;width:500px;overflow:auto;"></div>
-    </td>
+        <td onSelectStart="return false;" onMouseDown="return false;" class="labkey-tab" style="border-top:none;vertical-align:top;">
+            <div style="height:400px;width:300px;overflow:auto;position:relative" id="columnPicker">
+            </div>
+        </td>
+        <td style="background-color: transparent;">
+            <div style="margin: 140px 0px 0px 5px;">
+                <%=generateButton("Add >>", "#", "designer.add();return false;")%>
+            </div>
+        </td>
+        <td id="columns.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-tab">
+            <div id="columns.list.div" style="height:400px;width:500px;overflow:auto;"></div>
+        </td>
     <td valign="top" id="columns.controls" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-tab">
         <br>
 

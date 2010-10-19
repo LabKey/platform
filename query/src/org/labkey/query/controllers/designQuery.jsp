@@ -107,22 +107,18 @@
     <tr><td class="labkey-tab-strip-spacer"></td><td></td><td colspan=3 class="labkey-tab-strip-spacer"></td></tr>
     <tr>
         <td valign="top" onSelectStart="return false;" onMouseDown="return false;" class="labkey-tab" style="border-top:none;">
-        <div style="height:400px;width:300px;overflow:auto">
-        <table>
-            <tbody id="columnPicker">
-            </tbody>
-        </table>
-        </div>
-    </td>
-    <td>
-        <br>
-        <br>
-        <br>
-
-        <p>
-            <labkey:button text="Add >>" href="#" onclick="designer.add();return false;"/>
-        </p>
-    </td>
+            <div style="height:400px;width:300px;overflow:auto">
+                <table>
+                    <tbody id="columnPicker">
+                    </tbody>
+                </table>
+            </div>
+        </td>
+        <td>
+            <div style="margin: 140px 0px 0px 5px;">
+                <%=generateButton("Add >>", "#", "designer.add();return false;")%>
+            </div>
+        </td>
 
     <td id="columns.list" valign="top" style="display:none;border-top:none;border-right:none;" class="labkey-tab">
         <div id="columns.list.div" style="height:400px;width:200px;overflow:auto;border:solid 1px black;"></div>

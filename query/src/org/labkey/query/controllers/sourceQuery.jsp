@@ -62,9 +62,11 @@ if (!form.getQueryDef().isTableQueryDefinition())
 }%>
 <% if(canEdit && form.getQueryDef().isMetadataEditable()) { %>
     <labkey:button text="Edit Metadata" onclick="submit_onclick('metadataQuery')" />&nbsp;
-<% } %>
+<% }
+    String topic = "labkeySql";
+%>
     <labkey:button text="View Data" onclick="submit_onclick('executeQuery')" />&nbsp;
-    <labkey:button text="SQL Help" href="<%=new HelpTopic("labkeySql")%>" target="_blank" />
+    <labkey:button text="SQL Help" href="<%=new HelpTopic(topic)%>" target="_blank" />
 <br/><br/>
     <p>Metadata XML<%=PageFlowUtil.helpPopup("Metadata XML", "This XML lets you configure how your columns are displayed and other query-level attributes. See the <a target='_blank' href='https://www.labkey.org/download/schema-docs/xml-schemas/schemas/tableInfo_xsd/schema-summary.html'>XSD documentation</a> to learn more.", true)%>:<br>
     <textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="metadataText" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
