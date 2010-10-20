@@ -17,6 +17,7 @@
 package org.labkey.study.assay.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -209,6 +210,15 @@ public class AssaySchemaImpl extends AssaySchema
             propsCol.setFk(new AssayPropertyForeignKey(batchDomain));
         }
 
+        for (ColumnInfo col : result.getColumns())
+        {
+            if (col instanceof PropertyColumn)
+            {
+                PropertyDescriptor pd = ((PropertyColumn) col).getPropertyDescriptor();
+                fixupRenderers(pd, col);
+            }
+        }
+
         result.setDescription("Contains a row per " + protocol.getName() + " batch, a group of runs that were loaded at the same time.");
 
         return result;
@@ -319,6 +329,54 @@ public class AssaySchemaImpl extends AssaySchema
             fixupPropertyURL(fk, c);
     }
 
+    public void fixupRenderers(final PropertyDescriptor pd, ColumnInfo columnInfo)
+    {
+        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
+        {
+            columnInfo.setFk(new LookupForeignKey("Folder", "Label")
+            {
+                public TableInfo getLookupTableInfo()
+                {
+                    FilteredTable table = new FilteredTable(StudyManager.getSchema().getTable("Study"));
+                    table.setContainerFilter(new StudyContainerFilter(AssaySchemaImpl.this));
+                    ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), Types.VARCHAR);
+                    col.setFk(new ContainerForeignKey());
+                    table.addColumn(col);
+                    table.addWrapColumn(table.getRealTable().getColumn("Label"));
+                    return table;
+                }
+            });
+            columnInfo.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new DataColumn(colInfo)
+                    {
+                        public String getFormattedValue(RenderContext ctx)
+                        {
+                            Object value = getDisplayColumn().getValue(ctx);
+                            if (value == null)
+                            {
+                                return "[None]";
+                            }
+                            return super.getFormattedValue(ctx);
+                        }
+                    };
+                }
+            });
+        }
+        if (pd.getPropertyType() == PropertyType.FILE_LINK)
+        {
+            columnInfo.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new FileLinkDisplayColumn(colInfo, pd, new ActionURL(AssayController.DownloadFileAction.class, _container));
+                }
+            });
+        }
+    }
+
 
     private class AssayPropertyForeignKey extends PropertyForeignKey
     {
@@ -331,50 +389,7 @@ public class AssaySchemaImpl extends AssaySchema
         protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, final PropertyDescriptor pd)
         {
             ColumnInfo result = super.constructColumnInfo(parent, name, pd);
-            if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
-            {
-                result.setFk(new LookupForeignKey("Folder", "Label")
-                {
-                    public TableInfo getLookupTableInfo()
-                    {
-                        FilteredTable table = new FilteredTable(StudyManager.getSchema().getTable("Study"));
-                        table.setContainerFilter(new StudyContainerFilter(AssaySchemaImpl.this));
-                        ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), Types.VARCHAR);
-                        col.setFk(new ContainerForeignKey());
-                        table.addColumn(col);
-                        table.addWrapColumn(table.getRealTable().getColumn("Label"));
-                        return table;
-                    }
-                });
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new DataColumn(colInfo)
-                        {
-                            public String getFormattedValue(RenderContext ctx)
-                            {
-                                Object value = getDisplayColumn().getValue(ctx);
-                                if (value == null)
-                                {
-                                    return "[None]";
-                                }
-                                return super.getFormattedValue(ctx);
-                            }
-                        };
-                    }
-                });
-            }
-            if (pd.getPropertyType() == PropertyType.FILE_LINK)
-            {
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new FileLinkDisplayColumn(colInfo, pd, new ActionURL(AssayController.DownloadFileAction.class, _container));
-                    }
-                });
-            }
+            fixupRenderers(pd, result);
             return result;
         }
     }

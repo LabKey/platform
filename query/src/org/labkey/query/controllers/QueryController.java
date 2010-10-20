@@ -2373,7 +2373,7 @@ public class QueryController extends SpringActionController
 
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            TempQuerySettings settings = new TempQuerySettings(schemaName, sql, getViewContext().getContainer());
+            TempQuerySettings settings = new TempQuerySettings(sql, getViewContext().getContainer());
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
@@ -2486,7 +2486,7 @@ public class QueryController extends SpringActionController
 
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            TempQuerySettings settings = new TempQuerySettings(schemaName, sql, getViewContext().getContainer());
+            TempQuerySettings settings = new TempQuerySettings(sql, getViewContext().getContainer());
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string

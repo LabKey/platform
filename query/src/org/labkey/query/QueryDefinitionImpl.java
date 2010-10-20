@@ -71,6 +71,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _dirty = queryDef.getQueryDefId() == 0;
     }
 
+    public QueryDefinitionImpl(User user, Container container, UserSchema schema, String name)
+    {
+        this(user, container, schema.getName(), name);
+        _schema = schema;
+    }
+
     public QueryDefinitionImpl(User user, Container container, String schema, String name)
     {
         _user = user;

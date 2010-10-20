@@ -611,32 +611,30 @@ public class StudyServiceImpl implements StudyService.Service
 
     public boolean isValidSubjectColumnName(Container container, String subjectColumnName)
     {
-// UNDONE move call to this method to Controller/designer and out of setter()
-//        TableInfo studyDataTable = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
-//        for (ColumnInfo col : studyDataTable.getColumns())
-//        {
-//            String colName = col.getName();
-//            // Our subject column name isn't allowed to match the name of a non-participant column in the same table:
-//            if (!"ParticipantId".equalsIgnoreCase(colName) && subjectColumnName.equalsIgnoreCase(colName))
-//                return false;
-//        }
+        TableInfo studyDataTable = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
+        for (ColumnInfo col : studyDataTable.getColumns())
+        {
+            String colName = col.getName();
+            // Our subject column name isn't allowed to match the name of a non-participant column in the same table:
+            if (!"ParticipantId".equalsIgnoreCase(colName) && subjectColumnName.equalsIgnoreCase(colName))
+                return false;
+        }
         return true;
     }
 
     public boolean isValidSubjectNounSingular(Container container, String subjectNounSingular)
     {
-// UNDONE move call to this method to Controller/designer and out of setter()
-//        String subjectTableName = getSubjectTableName(subjectNounSingular);
-//        String subjectVisitTableName = getSubjectVisitTableName(subjectNounSingular);
-//        for (SchemaTableInfo schemaTable : StudySchema.getInstance().getSchema().getTables())
-//        {
-//            String tableName = schemaTable.getName();
-//            if (!tableName.equalsIgnoreCase("Participant") && !tableName.equalsIgnoreCase("ParticipantVisit"))
-//            {
-//                if (subjectTableName.equalsIgnoreCase(tableName) || subjectVisitTableName.equalsIgnoreCase(tableName))
-//                    return false;
-//            }
-//        }
+        String subjectTableName = getSubjectTableName(subjectNounSingular);
+        String subjectVisitTableName = getSubjectVisitTableName(subjectNounSingular);
+        for (SchemaTableInfo schemaTable : StudySchema.getInstance().getSchema().getTables())
+        {
+            String tableName = schemaTable.getName();
+            if (!tableName.equalsIgnoreCase("Participant") && !tableName.equalsIgnoreCase("ParticipantVisit"))
+            {
+                if (subjectTableName.equalsIgnoreCase(tableName) || subjectVisitTableName.equalsIgnoreCase(tableName))
+                    return false;
+            }
+        }
         return true;
     }
 

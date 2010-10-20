@@ -5,7 +5,6 @@ import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -19,7 +18,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
-import java.sql.ResultSet;
 import java.util.*;
 
 /**
@@ -125,14 +123,304 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public static class MeasureFilter
+    protected Map<String, ? extends VisualizationProvider> getVisualizationProviders()
     {
-        public enum QueryType {
-            builtIn,
-            custom,
-            all,
+        return Collections.singletonMap("study", new StudyVisualizationProvider());
+    }
+
+    public static class VisualizationProvider
+    {
+        protected static enum ColumnMatchType
+        {
+            DATETIME_COLS()
+                    {
+                        @Override
+                        public boolean match(ColumnInfo col)
+                        {
+                            return !col.isHidden() && col.isDateTimeType();
+                        }
+                    },
+            CONFIGURED_MEASURES()
+                    {
+                        @Override
+                        public boolean match(ColumnInfo col)
+                        {
+                            return !col.isHidden() && col.isMeasure();
+                        }
+                    },
+            CONFIGURED_DIMENSIONS()
+                    {
+                        @Override
+                        public boolean match(ColumnInfo col)
+                        {
+                            return !col.isHidden() && col.isDimension();
+                        }};
+
+            public abstract boolean match(ColumnInfo col);
         }
 
+        private String _schemaName;
+
+        public VisualizationProvider(String userSchemaName)
+        {
+            _schemaName = userSchemaName;
+        }
+
+        protected UserSchema getUserSchema(Container container, User user)
+        {
+            DefaultSchema defSchema = DefaultSchema.get(user, container);
+            QuerySchema schema = defSchema.getSchema(_schemaName);
+            if (!(schema instanceof UserSchema))
+            {
+                if (schema == null)
+                    throw new IllegalStateException("No schema found with name " + _schemaName);
+                else
+                    throw new IllegalStateException("Unexpected schema type: " + schema.getClass().getSimpleName());
+            }
+            return (UserSchema) schema;
+        }
+
+        protected QueryView getQueryView(ViewContext context, ColumnMatchType matchType, String queryName)
+        {
+            UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
+            // built in tables
+            if (schema.getTableNames().contains(queryName))
+            {
+                QueryView view = getView(context, schema, queryName);
+                if (isValid(view, matchType))
+                    return view;
+            }
+
+            // custom queries:
+            QueryDefinition qdef = QueryService.get().getQueryDef(context.getUser(), context.getContainer(), _schemaName, queryName);
+            if (!qdef.isHidden())
+            {
+                QueryView view = getView(context, schema, qdef.getName());
+                if (isValid(view, matchType))
+                    return view;
+            }
+            return null;
+        }
+
+        protected Collection<QueryView> getQueryViews(ViewContext context, QueryType queryType, ColumnMatchType matchType)
+        {
+            Map<String, QueryView> views = new HashMap<String, QueryView>();
+            UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
+            if (queryType == QueryType.all || queryType == QueryType.custom)
+            {
+                Map<String, QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(context.getUser(), context.getContainer(), _schemaName);
+                for (Map.Entry<String, QueryDefinition> entry : queryDefMap.entrySet())
+                {
+                    QueryDefinition qdef = entry.getValue();
+                    if (!qdef.isHidden())
+                    {
+                        QueryView view = getView(context, schema, qdef.getName());
+                        if (isValid(view, matchType))
+                            views.put(qdef.getName(), view);
+                    }
+                }
+            }
+
+            // built in tables
+            if (queryType == QueryType.all || queryType == QueryType.builtIn)
+            {
+                for (String name : schema.getTableNames())
+                {
+                    QueryView view = getView(context, schema, name);
+                    if (isValid(view, matchType))
+                        views.put(name, view);
+                }
+            }
+            return views.values();
+        }
+
+        protected boolean isValid(QueryView view, ColumnMatchType type)
+        {
+            return true;
+        }
+
+        protected QueryView getView(ViewContext context, UserSchema schema, String queryName)
+        {
+            QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, queryName);
+            return new QueryView(schema, settings, null);
+        }
+
+        protected Map<ColumnInfo, QueryView> getMatchingColumns(Container container, Collection<QueryView> views, ColumnMatchType columnMatchType)
+        {
+            Map<ColumnInfo, QueryView> matches = new HashMap<ColumnInfo, QueryView>();
+            for (QueryView view : views)
+            {
+                for (DisplayColumn dc : view.getDisplayColumns())
+                {
+                    ColumnInfo col = dc.getColumnInfo();
+
+                    if (col != null)
+                    {
+                        // ignore hidden columns
+                        if (columnMatchType.match(col))
+                            matches.put(col, view);
+                    }
+                }
+            }
+            return matches;
+        }
+
+        protected Map<ColumnInfo, QueryView> getMatchingColumns(ViewContext context, ColumnMatchType matchType, String queryName)
+        {
+            QueryView view = getQueryView(context, matchType, queryName);
+            return getMatchingColumns(context.getContainer(), Collections.singleton(view), matchType);
+        }
+
+        protected Map<ColumnInfo, QueryView> getMatchingColumns(ViewContext context, QueryType queryType, ColumnMatchType matchType)
+        {
+            Collection<QueryView> views = getQueryViews(context, queryType, matchType);
+            return getMatchingColumns(context.getContainer(), views, matchType);
+        }
+
+        public Map<ColumnInfo, QueryView> getMeasures(ViewContext context, QueryType queryType)
+        {
+            return getMatchingColumns(context, queryType, ColumnMatchType.CONFIGURED_MEASURES);
+        }
+
+        public Map<ColumnInfo, QueryView> getMeasures(ViewContext context, String queryName)
+        {
+            return getMatchingColumns(context, ColumnMatchType.CONFIGURED_MEASURES, queryName);
+        }
+
+        public Map<ColumnInfo, QueryView> getDateMeasures(ViewContext context, QueryType queryType)
+        {
+            return getMatchingColumns(context, queryType, ColumnMatchType.DATETIME_COLS);
+        }
+
+        public Map<ColumnInfo, QueryView> getDateMeasures(ViewContext context, String queryName)
+        {
+            return getMatchingColumns(context, ColumnMatchType.DATETIME_COLS, queryName);
+        }
+
+        public Map<ColumnInfo, QueryView> getZeroDateMeasures(ViewContext context, QueryType queryType)
+        {
+            // By default, assume that any date can be a measure date or a zero date.
+            return getDateMeasures(context, queryType);
+        }
+
+        public Map<ColumnInfo, QueryView> getDimensions(ViewContext context, String queryName)
+        {
+            return getMatchingColumns(context, ColumnMatchType.CONFIGURED_DIMENSIONS, queryName);
+        }
+    }
+
+    public static class StudyVisualizationProvider extends VisualizationProvider
+    {
+        public StudyVisualizationProvider()
+        {
+            super("study");
+        }
+
+        @Override
+        protected boolean isValid(QueryView view, ColumnMatchType type)
+        {
+            if (type == ColumnMatchType.CONFIGURED_MEASURES)
+            {
+                TableInfo tinfo = view.getTable();
+                return tinfo != null && tinfo.getColumnNameSet().contains("ParticipantSequenceKey");
+            }
+            else
+                return super.isValid(view, type);
+        }
+
+        protected Map<ColumnInfo, QueryView> getMatchingColumns(Container container, Collection<QueryView> views, ColumnMatchType type)
+        {
+            Map<ColumnInfo, QueryView> matches = super.getMatchingColumns(container, views, type);
+            if (type == ColumnMatchType.DATETIME_COLS)
+            {
+                Study study = StudyService.get().getStudy(container);
+                // for visit based studies, we will look for the participantVisit.VisitDate column and
+                // if found, return that as a date measure
+                if (study != null && study.getTimepointType().isVisitBased())
+                {
+                    for (QueryView view : views)
+                    {
+                        TableInfo tinfo = view.getTable();
+                        String visitColName = StudyService.get().getSubjectVisitColumnName(container);
+                        ColumnInfo visitCol = tinfo.getColumn(visitColName);
+                        if (visitCol != null)
+                        {
+                            TableInfo visitTable = visitCol.getFkTableInfo();
+                            if (visitTable != null)
+                            {
+                                ColumnInfo visitDate = visitTable.getColumn("visitDate");
+                                if (visitDate != null)
+                                {
+                                    visitDate.setFieldKey(FieldKey.fromParts(visitColName, visitDate.getName()));
+                                    matches.put(visitDate, view);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return matches;
+        }
+
+        @Override
+        public Map<ColumnInfo, QueryView> getZeroDateMeasures(ViewContext context, QueryType queryType)
+        {
+            // For studies, valid zero date columns are found in demographic datasets only:
+            Map<ColumnInfo, QueryView> measures = new HashMap<ColumnInfo, QueryView>();
+            Study study = StudyService.get().getStudy(context.getContainer());
+            if (study != null)
+            {
+                for (DataSet ds : study.getDataSets())
+                {
+                    if (ds.isDemographicData())
+                    {
+                        DefaultSchema defSchema = DefaultSchema.get(context.getUser(), context.getContainer());
+                        UserSchema schema = (UserSchema)defSchema.getSchema("study");
+                        QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, ds.getName());
+                        QueryView view = new QueryView(schema, settings, null);
+
+                        for (DisplayColumn dc : view.getDisplayColumns())
+                        {
+                            ColumnInfo col = dc.getColumnInfo();
+                            if (col != null && ColumnMatchType.DATETIME_COLS.match(col))
+                               measures.put(col, view);
+                        }
+                    }
+                }
+            }
+            return measures;
+        }
+
+        private static final boolean INCLUDE_DEMOGRAPHIC_DIMENSIONS = false;
+        @Override
+        public Map<ColumnInfo, QueryView> getDimensions(ViewContext context, String queryName)
+        {
+            Map<ColumnInfo, QueryView> dimensions = super.getDimensions(context, queryName);
+            if (INCLUDE_DEMOGRAPHIC_DIMENSIONS)
+            {
+                // include dimensions from demographic data sources
+                Study study = StudyService.get().getStudy(context.getContainer());
+                if (study != null)
+                {
+                    for (DataSet ds : study.getDataSets())
+                    {
+                        if (ds.isDemographicData())
+                            dimensions.putAll(super.getDimensions(context, ds.getName()));
+                    }
+                }
+            }
+            return dimensions;
+        }
+    }
+    
+    public enum QueryType {
+        builtIn,
+        custom,
+        all,
+    }
+    
+    public static class MeasureFilter
+    {
         private String _schema;
         private String _query;
         private QueryType _queryType = QueryType.all;
@@ -178,269 +466,74 @@ public class VisualizationController extends SpringActionController
     {
         public ApiResponse execute(Form form, BindException errors) throws Exception
         {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            List<Map<String, Object>> measures = new ArrayList<Map<String, Object>>();
-            int count = 1;
-
-            for (Map.Entry<String, Map<String, QueryView>> schemaEntry : getViews(form).entrySet())
+            Map<ColumnInfo, QueryView> measures = new HashMap<ColumnInfo, QueryView>();
+            if (form.getFilters() != null && form.getFilters().length > 0)
             {
-                for (Map.Entry<String, QueryView> tableEntry : schemaEntry.getValue().entrySet())
+                for (String filter : form.getFilters())
                 {
-                    QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), schemaEntry.getKey(), tableEntry.getKey());
-
-                    for (ColumnInfo col : getMeasureColumns(tableEntry.getValue(), def, form))
+                    MeasureFilter mf = new MeasureFilter(filter);
+                    VisualizationProvider provider = getVisualizationProviders().get(mf.getSchema());
+                    if (provider == null)
                     {
-                        // add measure properties
-                        Map<String, Object> props = getColumnProps(col);
+                        errors.reject(ERROR_MSG, "No measure provider found for schema " + mf.getSchema());
+                        return null;
+                    }
 
-                        props.put("schemaName", schemaEntry.getKey());
-                        props.put("queryName", tableEntry.getKey());
-                        props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
-                        props.put("id", count++);
+                    if (form.isDateMeasures())
+                    {
+                        if (mf.getQuery() != null)
+                            measures.putAll(provider.getDateMeasures(getViewContext(), mf.getQuery()));
+                        else
+                            measures.putAll(provider.getDateMeasures(getViewContext(), mf.getQueryType()));
 
-                        measures.add(props);
+                    }
+                    else
+                    {
+                        if (mf.getQuery() != null)
+                            measures.putAll(provider.getMeasures(getViewContext(), mf.getQuery()));
+                        else
+                            measures.putAll(provider.getMeasures(getViewContext(), mf.getQueryType()));
                     }
                 }
             }
+            else
+            {
+                // get all tables in this container
+                for (VisualizationProvider provider : getVisualizationProviders().values())
+                {
+                    if (form.isDateMeasures())
+                        measures.putAll(provider.getDateMeasures(getViewContext(), QueryType.all));
+                    else
+                        measures.putAll(provider.getMeasures(getViewContext(), QueryType.all));
+                }
+            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            List<Map<String, Object>> measuresJSON = getColumnResponse(measures);
             resp.put("success", true);
-            resp.put("measures", measures);
+            resp.put("measures", measuresJSON);
 
             return resp;
         }
 
-        protected List<ColumnInfo> getMeasureColumns(QueryView view, QueryDefinition def, Form form)
+        protected List<Map<String, Object>> getColumnResponse(Map<ColumnInfo, QueryView> cols)
         {
-            List<ColumnInfo> columns = new ArrayList<ColumnInfo>();
-
-            for (DisplayColumn dc : view.getDisplayColumns())
+            List<Map<String, Object>> measuresJSON = new ArrayList<Map<String, Object>>();
+            int count = 1;
+            for (Map.Entry<ColumnInfo, QueryView> entry : cols.entrySet())
             {
-                ColumnInfo col = dc.getColumnInfo();
+                // add measure properties
+                Map<String, Object> props = getColumnProps(entry.getKey());
 
-                if (col != null)
-                {
-                    // ignore hidden columns
-                    if (col.isHidden()) continue;
+                QueryView queryView = entry.getValue();
+                props.put("schemaName", queryView.getSchema().getName());
+                props.put("queryName", queryView.getQueryDef().getName());
+                props.put("isUserDefined", !queryView.getQueryDef().isTableQueryDefinition());
+                props.put("id", count++);
 
-                    if (form.isDateMeasures())
-                    {
-                        if (col.isDateTimeType())
-                            columns.add(col);
-                    }
-                    else
-                    {
-                        if (col.isMeasure())
-                            columns.add(col);
-                    }
-                }
+                measuresJSON.add(props);
             }
-
-            TableInfo tinfo = view.getTable();
-            if (form.isDateMeasures() && "study".equalsIgnoreCase(tinfo.getSchema().getName()))
-            {
-                // for visit based studies, we will look for the participantVisit.VisitDate column and
-                // if found, return that as a date measure
-                Study study = StudyService.get().getStudy(getContainer());
-                if (study != null && study.getTimepointType().isVisitBased())
-                {
-                    String visitColName = StudyService.get().getSubjectVisitColumnName(getContainer());
-                    ColumnInfo visitCol = tinfo.getColumn(visitColName);
-                    if (visitCol != null)
-                    {
-                        TableInfo visitTable = visitCol.getFkTableInfo();
-                        if (visitTable != null)
-                        {
-                            ColumnInfo visitDate = visitTable.getColumn("visitDate");
-                            if (visitDate != null)
-                            {
-                                visitDate.setFieldKey(FieldKey.fromParts(visitColName, visitDate.getName()));
-                                columns.add(visitDate);
-                            }
-                        }
-                    }
-                }
-            }
-            return columns;
-        }
-
-        protected Map<String, Map<String, TableInfo>> getTables(MeasuresForm form)
-        {
-            Map<String, Map<String, TableInfo>> tables = new HashMap<String, Map<String, TableInfo>>();
-            DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
-
-            if (form.getFilters() != null && form.getFilters().length > 0)
-            {
-                for (String filter : form.getFilters())
-                {
-                    MeasureFilter mf = new MeasureFilter(filter);
-                    QuerySchema schema = defSchema.getSchema(mf.getSchema());
-                    if (schema instanceof UserSchema)
-                    {
-                        UserSchema uschema = (UserSchema)schema;
-
-                        if (mf.getQuery() == null)
-                        {
-                            // add all tables from this schema
-                            getTablesFromSchema(uschema, mf.getQueryType(), tables);
-                        }
-                        else
-                            // add a specific table
-                            addTable(uschema, mf.getQuery(), tables);
-                    }
-                }
-            }
-            else
-            {
-                // get all tables in this container
-                for (String schemaName : defSchema.getUserSchemaNames())
-                {
-                    QuerySchema schema = defSchema.getSchema(schemaName);
-                    if (schema instanceof UserSchema)
-                    {
-                        getTablesFromSchema((UserSchema)schema, MeasureFilter.QueryType.all, tables);
-                    }
-                }
-            }
-            return tables;
-        }
-
-        protected Map<String, Map<String, QueryView>> getViews(MeasuresForm form)
-        {
-            Map<String, Map<String, QueryView>> tables = new HashMap<String, Map<String, QueryView>>();
-            DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
-
-            if (form.getFilters() != null && form.getFilters().length > 0)
-            {
-                for (String filter : form.getFilters())
-                {
-                    MeasureFilter mf = new MeasureFilter(filter);
-                    QuerySchema schema = defSchema.getSchema(mf.getSchema());
-                    if (schema instanceof UserSchema)
-                    {
-                        UserSchema uschema = (UserSchema)schema;
-
-                        if (mf.getQuery() == null)
-                        {
-                            // add all tables from this schema
-                            getViewsFromSchema(uschema, mf.getQueryType(), tables);
-                        }
-                        else
-                            // add a specific table
-                            addView(uschema, mf.getQuery(), tables);
-                    }
-                }
-            }
-            else
-            {
-                // get all tables in this container
-                for (String schemaName : defSchema.getUserSchemaNames())
-                {
-                    QuerySchema schema = defSchema.getSchema(schemaName);
-                    if (schema instanceof UserSchema)
-                    {
-                        getViewsFromSchema((UserSchema)schema, MeasureFilter.QueryType.all, tables);
-                    }
-                }
-            }
-            return tables;
-        }
-
-        private void getTablesFromSchema(UserSchema schema, MeasureFilter.QueryType type, Map<String, Map<String, TableInfo>> schemas)
-        {
-            if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.custom)
-            {
-                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getUser(), getContainer(), schema.getSchemaName());
-                for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
-                {
-                    QueryDefinition qdef = entry.getValue();
-                    if (!qdef.isHidden())
-                    {
-                        addTable(schema, qdef.getName(), schemas);
-                    }
-                }
-            }
-
-            // built in tables
-            if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.builtIn)
-            {
-                for (String name : schema.getTableNames())
-                {
-                    addTable(schema, name, schemas);
-                }
-            }
-        }
-
-        private void getViewsFromSchema(UserSchema schema, MeasureFilter.QueryType type, Map<String, Map<String, QueryView>> schemas)
-        {
-            if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.custom)
-            {
-                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getUser(), getContainer(), schema.getSchemaName());
-                for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
-                {
-                    QueryDefinition qdef = entry.getValue();
-                    if (!qdef.isHidden())
-                    {
-                        addView(schema, qdef.getName(), schemas);
-                    }
-                }
-            }
-
-            // built in tables
-            if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.builtIn)
-            {
-                for (String name : schema.getTableNames())
-                {
-                    addView(schema, name, schemas);
-                }
-            }
-        }
-
-        private void addTable(UserSchema schema, String tableName, Map<String, Map<String, TableInfo>> schemas)
-        {
-            TableInfo tinfo = schema.getTable(tableName);
-            if (tinfo != null)
-            {
-                if (!schemas.containsKey(schema.getSchemaName()))
-                    schemas.put(schema.getSchemaName(), new HashMap<String, TableInfo>());
-
-                Map<String, TableInfo> tables = schemas.get(schema.getSchemaName());
-                if (!tables.containsKey(tableName))
-                    tables.put(tableName, tinfo);
-            }
-        }
-
-        private void addView(UserSchema schema, String tableName, Map<String, Map<String, QueryView>> schemas)
-        {
-            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, tableName);
-            QueryView view = new QueryView(schema, settings, null);
-
-            if (view != null)
-            {
-                if (!schemas.containsKey(schema.getSchemaName()))
-                    schemas.put(schema.getSchemaName(), new HashMap<String, QueryView>());
-
-                Map<String, QueryView> tables = schemas.get(schema.getSchemaName());
-                if (!tables.containsKey(tableName))
-                    tables.put(tableName, view);
-            }
-        }
-
-        protected Set<String> getSchemaNames(MeasuresForm form)
-        {
-            if (form.getSchemaName() != null)
-                return Collections.singleton(form.getSchemaName());
-            else
-            {
-                DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
-                return defSchema.getUserSchemaNames();
-            }
-        }
-
-        protected Set<String> getTableNames(MeasuresForm form, UserSchema schema)
-        {
-            if (form.getQueryName() != null)
-                return Collections.singleton(form.getQueryName());
-            else
-                return schema.getTableNames();
+            return measuresJSON;
         }
 
         protected Map<String, Object> getColumnProps(ColumnInfo col)
@@ -462,65 +555,23 @@ public class VisualizationController extends SpringActionController
         public ApiResponse execute(DimensionsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            List<Map<String, Object>> dimensions = new ArrayList<Map<String, Object>>();
-
             if (form.getSchemaName() != null && form.getQueryName() != null)
             {
-                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName());
-
-                if (schema instanceof UserSchema)
+                VisualizationProvider provider = getVisualizationProviders().get(form.getSchemaName());
+                if (provider == null)
                 {
-                    UserSchema uschema = (UserSchema)schema;
-                    TableInfo tinfo = uschema.getTable(form.getQueryName());
-
-                    getDimensions(tinfo, form.getSchemaName(), form.getQueryName(), dimensions);
+                    errors.reject(ERROR_MSG, "No measure provider found for schema " + form.getSchemaName());
+                    return null;
                 }
-
-                if (form.isIncludeDemographics())
-                {
-                    // include dimensions from demographic data sources, probably only relevant for studies
-                    Study study = StudyService.get().getStudy(getContainer());
-                    if (study != null)
-                    {
-                        for (DataSet ds : study.getDataSets())
-                        {
-                            if (ds.isDemographicData())
-                            {
-                                getDimensions(ds.getTableInfo(getUser()), "study", ds.getName(), dimensions);
-                            }
-                        }
-                    }
-                }
+                Map<ColumnInfo, QueryView> dimensions = provider.getDimensions(getViewContext(), form.getQueryName());
+                List<Map<String, Object>> dimensionJSON = getColumnResponse(dimensions);
                 resp.put("success", true);
-                resp.put("dimensions", dimensions);
+                resp.put("dimensions", dimensionJSON);
             }
             else
                 throw new IllegalArgumentException("schemaName and queryName are required parameters");
 
             return resp;
-        }
-
-        protected void getDimensions(TableInfo tinfo, String schema, String query, List<Map<String, Object>> dimensions)
-        {
-            if (tinfo != null)
-            {
-                QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), schema, query);
-
-                for (ColumnInfo col : tinfo.getColumns())
-                {
-                    if (col.isDimension())
-                    {
-                        // add measure properties
-                        Map<String, Object> props = getColumnProps(col);
-
-                        props.put("schemaName", schema);
-                        props.put("queryName", query);
-                        props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
-
-                        dimensions.add(props);
-                    }
-                }
-            }
         }
     }
 
@@ -599,14 +650,14 @@ public class VisualizationController extends SpringActionController
             resp.put("success", true);
 
             List<Map<String, Object>> types = new ArrayList<Map<String, Object>>();
-
+/*  NOT SUPPORTED FOR 10.3
             // motion chart
             Map<String, Object> motion = getBaseTypeProperties();
             motion.put("type", "motion");
             motion.put("label", "Motion Chart");
             motion.put("icon", getViewContext().getContextPath() + "/reports/output_motionchart.jpg");
             types.add(motion);
-
+*/
             // line chart
             Map<String, Object> line = getBaseTypeProperties();
             line.put("type", "line");
@@ -621,6 +672,7 @@ public class VisualizationController extends SpringActionController
             line.put("enabled", true);
             types.add(line);
 
+/*  NOT SUPPORTED FOR 10.3
             // scatter chart
             Map<String, Object> scatter = getBaseTypeProperties();
             scatter.put("type", "scatter");
@@ -634,7 +686,7 @@ public class VisualizationController extends SpringActionController
 
             scatter.put("enabled", true);
             types.add(scatter);
-
+*/
             // data grid
             Map<String, Object> data = getBaseTypeProperties();
             data.put("type", "dataGridTime");
@@ -664,7 +716,7 @@ public class VisualizationController extends SpringActionController
             dataScatter.put("enabled", true);
 
             types.add(dataScatter);
-
+/*  NOT SUPPORTED FOR 10.3
             // excel data export
             Map<String, Object> excel = getBaseTypeProperties();
             excel.put("type", "excelExport");
@@ -678,7 +730,7 @@ public class VisualizationController extends SpringActionController
             tsv.put("label", "Tab-delimited Data Export");
             tsv.put("icon", getViewContext().getContextPath() + "/reports/output_text.jpg");
             types.add(tsv);
-
+*/
             resp.put("types", types);
 
             return resp;
@@ -1359,7 +1411,7 @@ public class VisualizationController extends SpringActionController
             String schemaName = schema.getName();
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            TempQuerySettings settings = new TempQuerySettings(schemaName, sql, getViewContext().getContainer());
+            TempQuerySettings settings = new TempQuerySettings(sql, getViewContext().getContainer());
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
@@ -1390,55 +1442,34 @@ public class VisualizationController extends SpringActionController
         public ApiResponse execute(MeasuresForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            List<Map<String, Object>> measures = new ArrayList<Map<String, Object>>();
 
-            getDateMeasures(measures);
-
-            resp.put("success", true);
-            resp.put("measures", measures);
-
-            return resp;
-        }
-
-        /**
-         * For 10.3 make the assumption that date measures consist only of date columns from study demographics
-         * datasets
-         * @param measures
-         */
-        private void getDateMeasures(List<Map<String, Object>> measures)
-        {
-            Study study = StudyService.get().getStudy(getContainer());
-            if (study != null)
+            Map<ColumnInfo, QueryView> measures = new HashMap<ColumnInfo, QueryView>();
+            if (form.getFilters() != null && form.getFilters().length > 0)
             {
-                for (DataSet ds : study.getDataSets())
+                for (String filter : form.getFilters())
                 {
-                    if (ds.isDemographicData())
+                    MeasureFilter mf = new MeasureFilter(filter);
+                    VisualizationProvider provider = getVisualizationProviders().get(mf.getSchema());
+                    if (provider == null)
                     {
-                        DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
-                        UserSchema schema = (UserSchema)defSchema.getSchema("study");
-                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, ds.getName());
-                        QueryView view = new QueryView(schema, settings, null);
-
-                        if (view != null)
-                        {
-                            for (DisplayColumn dc : view.getDisplayColumns())
-                            {
-                                ColumnInfo col = dc.getColumnInfo();
-
-                                if (col != null && col.isDateTimeType())
-                                {
-                                    Map<String, Object> props = getColumnProps(col);
-
-                                    props.put("schemaName", "study");
-                                    props.put("queryName", ds.getName());
-
-                                    measures.add(props);
-                                }
-                            }
-                        }
+                        errors.reject(ERROR_MSG, "No measure provider found for schema " + mf.getSchema());
+                        return null;
                     }
+                    measures.putAll(provider.getZeroDateMeasures(getViewContext(), mf.getQueryType()));
                 }
             }
+            else
+            {
+                // get all tables in this container
+                for (VisualizationProvider provider : getVisualizationProviders().values())
+                    measures.putAll(provider.getZeroDateMeasures(getViewContext(), QueryType.all));
+            }
+
+            List<Map<String, Object>> measuresJSON = getColumnResponse(measures);
+            resp.put("success", true);
+            resp.put("measures", measuresJSON);
+
+            return resp;
         }
     }
 }

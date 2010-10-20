@@ -90,7 +90,7 @@
 %>
 <table>
 <%
-//    if (countUndefined > 0)
+    if (countUndefined > 0)
     {
         %><tr>
             <td>A visit map can refer to datasets that do not have defined schemas.

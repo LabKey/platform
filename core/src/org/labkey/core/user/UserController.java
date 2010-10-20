@@ -1080,7 +1080,7 @@ public class UserController extends SpringActionController
                 {
                     ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
                     deactivateUrl.addParameter("userId", _detailsUserId);
-                    deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getEncodedLocalURIString());
+                    deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getLocalURIString());
                     bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Re-Activate", deactivateUrl));
 
                     ActionURL deleteUrl = new ActionURL(DeleteUsersAction.class, c);

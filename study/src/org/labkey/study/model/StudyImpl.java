@@ -445,8 +445,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public void setSubjectNounSingular(String subjectNounSingular)
     {
-        if (!StudyService.get().isValidSubjectColumnName(getContainer(), subjectNounSingular))
-            throw new IllegalArgumentException(subjectNounSingular + " is not a valid subject column name.");
         _subjectNounSingular = subjectNounSingular;
     }
 
@@ -467,11 +465,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public void setSubjectColumnName(String subjectColumnName)
     {
-        String proposedName = ColumnInfo.legalNameFromName(subjectColumnName);
-        if (!StudyService.get().isValidSubjectColumnName(getContainer(), proposedName))
-            throw new IllegalArgumentException(subjectColumnName + " is not a valid subject column name.");
-        // normalize on 'set' to ensure good names:
-        _subjectColumnName = proposedName;
+        _subjectColumnName = ColumnInfo.legalNameFromName(subjectColumnName);
     }
 
     @Override

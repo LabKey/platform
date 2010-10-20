@@ -76,6 +76,11 @@ public class QueryServiceImpl extends QueryService
         return new CustomQueryDefinitionImpl(user, container, schema, name);
     }
 
+    public QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name)
+    {
+        return new CustomQueryDefinitionImpl(user, container, schema, name);
+    }
+
     public ActionURL urlQueryDesigner(User user, Container container, String schema)
     {
         return urlFor(user, container, QueryAction.begin, schema, null);

@@ -1248,7 +1248,6 @@ public class StudyController extends BaseStudyController
             study.setSubjectNounSingular(form.getSubjectNounSingular());
             study.setSubjectNounPlural(form.getSubjectNounPlural());
             study.setSubjectColumnName(form.getSubjectColumnName());
-// UNDONE: study.isValidSubjectNoun(singular, plural, column);
             StudyManager.getInstance().createStudy(user, study);
         }
     }
@@ -4302,6 +4301,10 @@ public class StudyController extends BaseStudyController
                     }
                 }
             }
+
+            // Changing visit order can cause cohort assignments to change when advanced cohort tracking is enabled:
+            if (getStudy().isAdvancedCohorts())
+                CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudy());
             return true;
         }
 
