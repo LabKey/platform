@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.search.SearchService;
@@ -37,6 +38,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * User: rossb
@@ -67,7 +72,8 @@ public class ExceptionUtil
     }
 
 
-    public static Throwable unwrapException(Throwable ex)
+    @NotNull
+    public static Throwable unwrapException(@NotNull Throwable ex)
     {
         Throwable cause=ex;
 
@@ -148,9 +154,15 @@ public class ExceptionUtil
     /** request may be null if this is coming from a background thread */
     public static void logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
     {
+        Map<Enum,String> decorations = getExceptionDecorations(ex);
+
         ex = unwrapException(ex);
 
-        if (ex == null || ex instanceof SkipMothershipLogging || isClientAbortException(ex) || _jobRunner.getJobCount() > 10)
+        if (ex == null ||
+                null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
+                ex instanceof SkipMothershipLogging ||
+                isClientAbortException(ex) ||
+                _jobRunner.getJobCount() > 10)
         {
             // Don't log these
             return;
@@ -169,6 +181,10 @@ public class ExceptionUtil
             try
             {
                 MothershipReport report = new MothershipReport("reportException");
+
+                if (!decorations.isEmpty())
+                    report.addParam("exceptionMessage", getExtendedMessage(ex));
+
                 StringWriter stringWriter = new StringWriter();
                 PrintWriter printWriter = new PrintWriter(stringWriter, true);
                 ex.printStackTrace(printWriter);
@@ -528,5 +544,94 @@ public class ExceptionUtil
         {
             _log.error("doErrorRedirect", x);
         }
+    }
+
+
+
+    public enum ExceptionInfo
+    {
+        ResolveURL,     // suggestion for where to fix this e.g. sourceQuery.view
+        HelpURL,
+        DialectSQL,
+        LabkeySQL,
+        QueryName,
+        QuerySchema,
+        SkipMothershipLogging
+    }
+
+
+    private final static WeakHashMap<Throwable, HashMap<Enum,String>> _exceptionDecorations = new WeakHashMap<Throwable, HashMap<Enum, String>>();
+    
+    public static void decorateException(Throwable t, Enum key, String value, boolean overwrite)
+    {
+        t = unwrapException(t);
+        synchronized (_exceptionDecorations)
+        {
+            HashMap<Enum,String> m = _exceptionDecorations.get(t);
+            if (null == m)
+                _exceptionDecorations.put(t, m = new HashMap<Enum,String>());
+            if (overwrite || !m.containsKey(key))
+                m.put(key,value);
+        }
+    }
+
+
+    @NotNull
+    public static Map<Enum,String> getExceptionDecorations(Throwable start)
+    {
+        HashMap<Enum,String> collect = new HashMap<Enum,String>();
+        LinkedList<Throwable> list = new LinkedList<Throwable>();
+
+        Throwable next = unwrapException(start);
+        while (null != next)
+        {
+            list.addFirst(next);
+            next = getCause(next);
+        }
+
+        synchronized (_exceptionDecorations)
+        {
+            for (Throwable th : list)
+            {
+                HashMap<Enum,String> m = _exceptionDecorations.get(th);
+                if (null != m)
+                    collect.putAll(m);
+            }
+        }
+        return collect;
+    }
+
+
+    @Nullable
+    public static String  getExceptionDecoration(Throwable t, Enum e)
+    {
+        // could optimize...
+        return getExceptionDecorations(t).get(e);
+    }
+
+
+    @NotNull
+    public static String getExtendedMessage(Throwable t)
+    {
+        StringBuffer sb = new StringBuffer(t.toString());
+        for (Map.Entry<Enum,String> e : getExceptionDecorations(t).entrySet())
+            sb.append("\n").append(e.getKey()).append("=").append(e.getValue());
+        return sb.toString();
+    }
+
+
+    @Nullable
+    public static Throwable getCause(Throwable t)
+    {
+        Throwable cause;
+        if (t instanceof RuntimeSQLException)
+            cause = ((RuntimeSQLException)t).getSQLException();
+        else if (t instanceof ServletException)
+            cause = ((ServletException)t).getRootCause();
+        else if (t instanceof BatchUpdateException)
+            cause = ((BatchUpdateException)t).getNextException();
+        else
+            cause = t.getCause();
+        return cause==t ? null : cause;
     }
 }

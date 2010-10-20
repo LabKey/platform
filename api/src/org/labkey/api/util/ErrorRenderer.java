@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.Enumeration;
+import java.util.Map;
 
 public class ErrorRenderer
 {
@@ -118,7 +119,17 @@ public class ErrorRenderer
             }
 
             renderException(_exception, out);
-            String s;
+
+            Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(_exception);
+            for (Map.Entry<Enum,String> e : decorations.entrySet())
+            {
+                out.print(PageFlowUtil.filter(e.getKey()));
+                out.print(" = ");
+                out.print(PageFlowUtil.filter(e.getValue().replaceAll("\n", "<br>&nbsp;&nbsp;&nbsp;&nbsp;")));
+                out.println("<br>");
+            }
+            if (!decorations.isEmpty())
+                out.println("<br>");
 
             // Show the request attributes and database details, but only if it's not a startup failure
             if (!_isStartupFailure && !(_exception instanceof HideConfigurationDetails))
@@ -128,9 +139,9 @@ public class ErrorRenderer
                 {
                     try
                     {
-                        s = e.nextElement().toString();
+                        String s = e.nextElement().toString();
                         s = PageFlowUtil.filter("    " + s + " = " + request.getAttribute(s));
-                        s = s.replaceAll("\n", "<br>");
+                        s = s.replaceAll("\n", "<br>&nbsp;&nbsp;&nbsp;&nbsp;");
                         out.println(s);
                     }
                     catch (Exception x)

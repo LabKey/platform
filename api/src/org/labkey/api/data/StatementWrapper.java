@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.labkey.api.util.BreakpointThread;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.DateUtil;
 
@@ -550,7 +551,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(_debugSql, ex);
+            afterExecute(_debugSql, ex);
         }
     }
 
@@ -570,7 +571,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(_debugSql, ex);
+            afterExecute(_debugSql, ex);
         }
     }
 
@@ -747,7 +748,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(_debugSql, ex);
+            afterExecute(_debugSql, ex);
         }
     }
 
@@ -849,7 +850,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(_debugSql, ex);
+            afterExecute(_debugSql, ex);
         }
     }
 
@@ -869,7 +870,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(sql, ex);
+            afterExecute(sql, ex);
         }
     }
 
@@ -961,7 +962,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(sql, ex);
+            afterExecute(sql, ex);
         }
     }
 
@@ -1049,7 +1050,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(_debugSql, ex);
+            afterExecute(_debugSql, ex);
         }
     }
 
@@ -1089,7 +1090,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(sql, ex);
+            afterExecute(sql, ex);
         }
     }
 
@@ -1109,7 +1110,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(sql, ex);
+            afterExecute(sql, ex);
         }
     }
 
@@ -1129,7 +1130,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(sql, ex);
+            afterExecute(sql, ex);
         }
     }
 
@@ -1149,7 +1150,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(sql, ex);
+            afterExecute(sql, ex);
         }
     }
 
@@ -1169,7 +1170,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(sql, ex);
+            afterExecute(sql, ex);
         }
     }
 
@@ -1189,7 +1190,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            _logStatement(sql, ex);
+            afterExecute(sql, ex);
         }
     }
 
@@ -1495,6 +1496,15 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throw new IllegalArgumentException("SQL injection test failed: " + _debugSql);
         _msStart = System.currentTimeMillis();
     }
+
+
+    private void afterExecute(String sql, Exception x)
+    {
+        if (null != x)
+            ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.DialectSQL, sql, true);
+        _logStatement(sql,x);
+    }
+    
 
     private void _logStatement(String sql, Exception x)
     {

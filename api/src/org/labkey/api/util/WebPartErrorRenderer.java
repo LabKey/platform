@@ -27,11 +27,13 @@ class WebPartErrorRenderer extends ErrorRenderer
 
     public void renderStart(PrintWriter out)
     {
-        out.println("<div style=\"height:200px; overflow:scroll;\">");
+        String id = "errorDiv" + System.identityHashCode(this);
+        out.println("<div id='" + id + "' style=\"height:200px; overflow:scroll;\">");
         if (null != getHeading())
         {
             out.println("<h3 style=\"color:red;\">" + getHeading() + "</h3>");
         }
+        out.println("<script>new Ext.Resizable(Ext.get('" + id + "'), { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{padding:2}})</script>");
         super.renderStart(out);
     }
 

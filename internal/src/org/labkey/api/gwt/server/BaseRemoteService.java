@@ -17,6 +17,9 @@
 package org.labkey.api.gwt.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
@@ -104,8 +107,14 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
         HttpServletResponse response = getThreadLocalResponse();
         try
         {
+            int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+            if (failure instanceof UnauthorizedException)
+            {
+                response.setHeader("WWW-Authenticate", "Basic realm=\"" + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription() + "\"");
+                status = HttpServletResponse.SC_UNAUTHORIZED;
+            }
             response.setContentType("text/plain");
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setStatus(status);
             response.getWriter().write("There was an error processing the request.");
             if (failure.getMessage() != null)
             {
