@@ -376,6 +376,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
      */
     getFormValues : function ()
     {
+        // First, get all dirty form field values
         var fieldValues = this.getForm().getFieldValues(true);
         for (var key in fieldValues)
         {
@@ -383,6 +384,26 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
                 fieldValues[key] = fieldValues[key].trim();
         }
 
+        // 10887: Include checkboxes that weren't included in the call to .getFieldValues(true).
+        this.getForm().items.each(function (f) {
+            if (f instanceof Ext.form.Checkbox && !f.isDirty())
+            {
+                var name = f.getName();
+                var key = fieldValues[name];
+                var val = f.getValue();
+                if (Ext.isDefined(key)) {
+                    if (Ext.isArray(key)) {
+                        fieldValues[name].push(val);
+                    } else {
+                        fieldValues[name] = [key, val];
+                    }
+                } else {
+                    fieldValues[name] = val;
+                }
+            }
+        });
+
+        // Finally, populate the data array with form values overriding the initial values.
         var initialValues = this.initialConfig.values || [];
         var len = initialValues.length || 1;
         var result = [];
