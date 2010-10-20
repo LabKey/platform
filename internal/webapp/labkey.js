@@ -74,10 +74,33 @@ LABKEY.init = function(config)
 };
 
 
+/**
+ * Loads a javascript file from the server.
+ * @param file A single file or an Array of files.
+ * @param immediate True to load the script immediately; false will defer script loading until the page has been downloaded.
+ * @param callback Called after the script files have been loaded.
+ * @param scope Callback scope.
+ */
 LABKEY.requiresScript = function(file, immediate, callback, scope)
 {
     if (arguments.length < 2)
         immediate = true;
+
+    if (Object.prototype.toString.call(file) == "[object Array]")
+    {
+        var requestedLength = file.length;
+        var loaded = 0;
+        function allDone()
+        {
+            loaded++;
+            if (loaded == requestedLength && typeof callback == 'function')
+                callback.call(scope);
+        }
+
+        for (var i = 0; i < file.length; i++)
+            LABKEY.requiresScript(file[i], immediate, allDone);
+        return;
+    }
 
 //    console.log("requiresScript( " + file + " , " + immediate + " )");
 

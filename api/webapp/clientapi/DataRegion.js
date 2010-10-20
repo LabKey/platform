@@ -956,51 +956,63 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
         if (!this.customizeView)
         {
-            LABKEY.requiresScript("designer/designer2.js", true, function () {
+            var dependencies = [
+                "query/queryDesigner.js",
+                "groupTabPanel/GroupTabPanel.js",
+                "groupTabPanel/GroupTab.js",
+                "ComponentDataView.js",
+                "Ext.ux.dd.GridDragDropRowOrder.js"
+            ];
 
-                var additionalFields = {};
-                var userFilter = this.getUserFilter();
-                var userSort = this.getUserSort();
+            LABKEY.requiresCss("groupTabPanel/GroupTab.css", true);
+            LABKEY.requiresCss("groupTabPanel/UngroupedTab.css", true);
+            LABKEY.requiresScript(dependencies, true, function () {
+                LABKEY.requiresScript("designer/designer2.js", true, function () {
 
-                for (var i = 0; i < userFilter.length; i++)
-                    additionalFields[userFilter[i].fieldKey] = true;
+                    var additionalFields = {};
+                    var userFilter = this.getUserFilter();
+                    var userSort = this.getUserSort();
 
-                for (var i = 0; i < userSort.length; i++)
-                    additionalFields[userSort[i].fieldKey] = true;
+                    for (var i = 0; i < userFilter.length; i++)
+                        additionalFields[userFilter[i].fieldKey] = true;
 
-                var fields = [];
-                for (var fieldKey in additionalFields)
-                    fields.push(fieldKey);
+                    for (var i = 0; i < userSort.length; i++)
+                        additionalFields[userSort[i].fieldKey] = true;
 
-                LABKEY.Query.getQueryDetails({
-                    schemaName: this.schemaName,
-                    queryName: this.queryName,
-                    viewName: this.viewName,
-                    fields: fields.join(","),
-                    successCallback: function (json, response, options) {
-                        if (hideMessage)
-                            this.hideMessage();
+                    var fields = [];
+                    for (var fieldKey in additionalFields)
+                        fields.push(fieldKey);
 
-                        var minWidth = Math.max(500, headerOrFooter.parent().getWidth(true));
-                        var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
+                    LABKEY.Query.getQueryDetails({
+                        schemaName: this.schemaName,
+                        queryName: this.queryName,
+                        viewName: this.viewName,
+                        fields: fields.join(","),
+                        successCallback: function (json, response, options) {
+                            if (hideMessage)
+                                this.hideMessage();
 
-                        this.customizeView = new LABKEY.DataRegion.ViewDesigner({
-                            renderTo: renderTo,
-                            width: minWidth,
-                            dataRegion: this,
-                            schemaName: this.schemaName,
-                            queryName: this.queryName,
-                            viewName: this.viewName,
-                            query: json
-                        });
+                            var minWidth = Math.max(500, headerOrFooter.parent().getWidth(true));
+                            var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
 
-                        this.customizeView.on("viewsave", this.onViewSave, this);
+                            this.customizeView = new LABKEY.DataRegion.ViewDesigner({
+                                renderTo: renderTo,
+                                width: minWidth,
+                                dataRegion: this,
+                                schemaName: this.schemaName,
+                                queryName: this.queryName,
+                                viewName: this.viewName,
+                                query: json
+                            });
 
-                        this.panelButtonContents["~~customizeView~~"] = this.customizeView;
-                        this._showButtonPanel(headerOrFooter, "~~customizeView~~", animate, null);
-                    },
-                    scope: this
-                });
+                            this.customizeView.on("viewsave", this.onViewSave, this);
+
+                            this.panelButtonContents["~~customizeView~~"] = this.customizeView;
+                            this._showButtonPanel(headerOrFooter, "~~customizeView~~", animate, null);
+                        },
+                        scope: this
+                    });
+                }, this);
             }, this);
         }
         else

@@ -4,14 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresScript("query/queryDesigner.js", true); // for FieldKey
-LABKEY.requiresCss("groupTabPanel/GroupTab.css", true);
-LABKEY.requiresCss("groupTabPanel/UngroupedTab.css", true);
-LABKEY.requiresScript("groupTabPanel/GroupTabPanel.js", true);
-LABKEY.requiresScript("groupTabPanel/GroupTab.js", true);
-LABKEY.requiresScript('ComponentDataView.js', true);
-LABKEY.requiresScript('Ext.ux.dd.GridDragDropRowOrder.js', true);
-
 LABKEY.ext.SplitGroupTabPanel = Ext.extend(Ext.ux.GroupTabPanel, {
     constructor : function (config) {
         this.cls = 'vertical-tabs extContainer';
