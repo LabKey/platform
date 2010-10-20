@@ -391,7 +391,7 @@
                 row++;
                 className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
                 %>
-                <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap>Details</td><%
+                <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap>Details</td><td>&nbsp;</td><%
                 for (VisitImpl visit : visits)
                 {
                     for (double seq : visitSequenceMap.get(visit.getRowId()))
