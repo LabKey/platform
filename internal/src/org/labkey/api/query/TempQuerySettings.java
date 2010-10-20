@@ -31,21 +31,19 @@ import org.labkey.api.data.ContainerFilter;
  */
 public class TempQuerySettings extends QuerySettings
 {
-    private String _schemaName;
     private String _sql;
     private Container _container;
 
-    public TempQuerySettings(String schemaName, String sql, Container container)
+    public TempQuerySettings(String sql, Container container)
     {
         super("query");
-        _schemaName = schemaName;
         _sql = sql;
         _container = container;
     }
 
     public QueryDefinition getQueryDef(UserSchema schema)
     {
-        QueryDefinition qdef = QueryService.get().createQueryDef(schema.getUser(), _container, _schemaName, "temp");
+        QueryDefinition qdef = QueryService.get().createQueryDef(schema.getUser(), _container, schema, "temp");
         qdef.setSql(_sql);
         if (getContainerFilterName() != null)
             qdef.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));

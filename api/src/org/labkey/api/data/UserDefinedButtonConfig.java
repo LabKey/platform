@@ -148,6 +148,10 @@ public class UserDefinedButtonConfig implements ButtonConfig
 
     private String processURL(RenderContext ctx, String url)
     {
+        // Basic fixup, since users won't always encode spaces when defining custom button bars via metadata XML
+        if (-1 != url.indexOf(' '))
+            url = StringUtils.replace(url, " ", "%20");
+
         StringExpression urlExpr = StringExpressionFactory.createURL(url);
         if (urlExpr != null)
         {

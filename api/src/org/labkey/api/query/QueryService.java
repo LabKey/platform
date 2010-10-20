@@ -45,6 +45,7 @@ abstract public class QueryService
     abstract public Map<String, QueryDefinition> getQueryDefs(User user, Container container, String schema);
     abstract public List<QueryDefinition> getQueryDefs(User user, Container container);
     abstract public QueryDefinition createQueryDef(User user, Container container, String schema, String name);
+    abstract public QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name);
     abstract public QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
     abstract public QueryDefinition getQueryDef(User user, Container container, String schema, String name);
     abstract public QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String name);
