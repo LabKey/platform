@@ -222,9 +222,14 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return getQuery(schema, errors, null);
     }
 
+    /*
+     * I find it very strange that only the xml errors get added to the "errors" list, while
+     * the parse errors remain in the getParseErrors() list
+     */
     public Query getQuery(QuerySchema schema, List<QueryException> errors, Query parent)
     {
         Query query = new Query(schema, parent);
+        query.setName(getSchemaName() + "." + getName());
         query.setContainerFilter(getContainerFilter());
         String sql = getSql();
         if (sql != null)
@@ -233,7 +238,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
         TablesDocument doc = getTablesDocument(errors);
         query.setTablesDocument(doc);
-        query.setName(getSchemaName() + "." + getName());
         return query;
     }
 
@@ -245,6 +249,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         assert _schema.getSchemaName().equals(getSchemaName());
         return _schema;
     }
+
 
     public String getSchemaName()
     {
@@ -289,7 +294,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         
         if (null != ret && null != query.getTablesDocument())
             ((QueryTableInfo)ret).loadFromXML(schema, query.getTablesDocument().getTables().getTableArray(0), errors);
-        errors.addAll(query.getParseErrors());
+
+        ActionURL sourceURL = urlFor(QueryAction.sourceQuery);
+        for (QueryException qe : query.getParseErrors())
+        {
+            if (ExceptionUtil.decorateException(qe, ExceptionUtil.ExceptionInfo.ResolveURL, sourceURL.getLocalURIString(false), false))
+                ExceptionUtil.decorateException(qe, ExceptionUtil.ExceptionInfo.ResolveText, "edit " + getName(), true);
+            errors.add(qe);
+        }
+
         return ret;
     }
 

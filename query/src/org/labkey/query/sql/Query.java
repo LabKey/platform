@@ -38,6 +38,7 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
@@ -173,7 +174,9 @@ public class Query
     public void parse(String queryText)
     {
         _querySource = queryText;
+
         _parse(_querySource);
+        
         if (_parseErrors.isEmpty() && null != _queryRoot)
             _queryRoot.declareFields();
 
@@ -505,10 +508,14 @@ public class Query
             QueryDefinitionImpl def = (QueryDefinitionImpl)t;
             List<QueryException> tableErrors = new ArrayList<QueryException>();
             Query query = def.getQuery(schema, tableErrors, this);
-            if (tableErrors.size() > 0)
+
+            if (tableErrors.size() > 0 || query.getParseErrors().size() > 0)
             {
                 //noinspection ThrowableInstanceNeverThrown
-                _parseErrors.add(new QueryParseException("Query '" + key.getName() + "' has errors", null, node.getLine(), node.getColumn()));
+                QueryParseException qpe = new QueryParseException("Query '" + key.getName() + "' has errors", null, node.getLine(), node.getColumn());
+                ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveURL, def.urlFor(QueryAction.sourceQuery).getLocalURIString(false), true);
+                ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveText, "edit " + def.getName(), true);
+                _parseErrors.add(qpe);
                 return null;
             }
 
