@@ -172,107 +172,109 @@ public class ExceptionUtil
 
         String originalURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL_STRING);
         ExceptionReportingLevel level = AppProps.getInstance().getExceptionReportingLevel();
-        if (level != ExceptionReportingLevel.NONE &&
-                ex != null &&
-                // Need this extra check to make sure we're not in an infinite loop if there's
-                // an exception when trying to submit an exception
-                (originalURL == null || !originalURL.toLowerCase().contains("/Mothership/_mothership/reportException".toLowerCase())))
+
+        if (level == ExceptionReportingLevel.NONE)
+            return;
+
+        // Need this extra check to make sure we're not in an infinite loop if there's
+        // an exception when trying to submit an exception
+        if (originalURL != null && originalURL.toLowerCase().contains("/Mothership/_mothership/reportException".toLowerCase()))
+            return;
+
+        try
         {
-            try
+            MothershipReport report = new MothershipReport("reportException");
+
+            if (!decorations.isEmpty() && (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH))
+                report.addParam("exceptionMessage", getExtendedMessage(ex));
+
+            StringWriter stringWriter = new StringWriter();
+            PrintWriter printWriter = new PrintWriter(stringWriter, true);
+            ex.printStackTrace(printWriter);
+            if (ex instanceof ServletException && ((ServletException)ex).getRootCause() != null)
             {
-                MothershipReport report = new MothershipReport("reportException");
+                printWriter.println("Nested ServletException cause is:");
+                ((ServletException)ex).getRootCause().printStackTrace(printWriter);
+            }
+            report.addParam("browser", request == null ? null : request.getHeader("User-Agent"));
 
-                if (!decorations.isEmpty())
-                    report.addParam("exceptionMessage", getExtendedMessage(ex));
+            String stackTrace = stringWriter.getBuffer().toString();
+            for (Throwable t = ex ; t != null ; t = t.getCause())
+            {
+                String sqlState = null;
 
-                StringWriter stringWriter = new StringWriter();
-                PrintWriter printWriter = new PrintWriter(stringWriter, true);
-                ex.printStackTrace(printWriter);
-                if (ex instanceof ServletException && ((ServletException)ex).getRootCause() != null)
+                if (t instanceof RuntimeSQLException)
                 {
-                    printWriter.println("Nested ServletException cause is:");
-                    ((ServletException)ex).getRootCause().printStackTrace(printWriter);
+                    // Unwrap RuntimeSQLExceptions
+                    t = ((RuntimeSQLException)t).getSQLException();
                 }
-                report.addParam("browser", request == null ? null : request.getHeader("User-Agent"));
 
-                String stackTrace = stringWriter.getBuffer().toString();
-                for (Throwable t = ex ; t != null ; t = t.getCause())
+                if (t instanceof SQLException)
                 {
-                    String sqlState = null;
-
-                    if (t instanceof RuntimeSQLException)
+                    SQLException sqlException = (SQLException) t;
+                    if (sqlException.getMessage() != null && sqlException.getMessage().indexOf("terminating connection due to administrator command") != -1)
                     {
-                        // Unwrap RuntimeSQLExceptions
-                        t = ((RuntimeSQLException)t).getSQLException();
+                        // Don't report exceptions from Postgres shutting down
+                        return;
                     }
-
-                    if (t instanceof SQLException)
+                    sqlState = sqlException.getSQLState();
+                    String extraInfo = CoreSchema.getInstance().getSqlDialect().getExtraInfo(sqlException);
+                    if (extraInfo != null)
                     {
-                        SQLException sqlException = (SQLException) t;
-                        if (sqlException.getMessage() != null && sqlException.getMessage().indexOf("terminating connection due to administrator command") != -1)
-                        {
-                            // Don't report exceptions from Postgres shutting down
-                            return;
-                        }
-                        sqlState = sqlException.getSQLState();
-                        String extraInfo = CoreSchema.getInstance().getSqlDialect().getExtraInfo(sqlException);
-                        if (extraInfo != null)
-                        {
-                            stackTrace = stackTrace + "\n" + extraInfo;
-                        }
-                    }
-
-                    if (sqlState != null)
-                    {
-                        report.addParam("sqlState", sqlState);
-                        break;
+                        stackTrace = stackTrace + "\n" + extraInfo;
                     }
                 }
 
-                report.addParam("stackTrace", stackTrace);
+                if (sqlState != null)
+                {
+                    report.addParam("sqlState", sqlState);
+                    break;
+                }
+            }
 
-                report.addServerSessionParams();
+            report.addParam("stackTrace", stackTrace);
+
+            report.addServerSessionParams();
+            if (originalURL != null)
+            {
+                try
+                {
+                    ActionURL url = new ActionURL(originalURL);
+                    report.addParam("pageflowName", url.getPageFlow());
+                    report.addParam("pageflowAction", url.getAction());
+                }
+                catch (IllegalArgumentException x)
+                {
+                    // fall through
+                }
+            }
+            if (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH)
+            {
                 if (originalURL != null)
                 {
-                    try
-                    {
-                        ActionURL url = new ActionURL(originalURL);
-                        report.addParam("pageflowName", url.getPageFlow());
-                        report.addParam("pageflowAction", url.getAction());
-                    }
-                    catch (IllegalArgumentException x)
-                    {
-                        // fall through
-                    }
+                    report.addParam("requestURL", originalURL);
+                    report.addParam("referrerURL", request == null ? null : request.getHeader("Referer"));
                 }
-                if (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH)
+
+                if (level == ExceptionReportingLevel.HIGH)
                 {
-                    if (originalURL != null)
+                    User user = request == null ? null : (User) request.getUserPrincipal();
+                    if (user == null)
                     {
-                        report.addParam("requestURL", originalURL);
-                        report.addParam("referrerURL", request == null ? null : request.getHeader("Referer"));
+                        report.addParam("username", "NOT SET");
                     }
-
-                    if (level == ExceptionReportingLevel.HIGH)
+                    else
                     {
-                        User user = request == null ? null : (User) request.getUserPrincipal();
-                        if (user == null)
-                        {
-                            report.addParam("username", "NOT SET");
-                        }
-                        else
-                        {
-                            report.addParam("username", user.getEmail() == null ? "Guest" : user.getEmail());
-                        }
+                        report.addParam("username", user.getEmail() == null ? "Guest" : user.getEmail());
                     }
                 }
+            }
 
-                _jobRunner.execute(report);
-            }
-            catch (MalformedURLException e)
-            {
-                throw new RuntimeException(e);
-            }
+            _jobRunner.execute(report);
+        }
+        catch (MalformedURLException e)
+        {
+            throw new RuntimeException(e);
         }
     }
 
@@ -551,6 +553,7 @@ public class ExceptionUtil
     public enum ExceptionInfo
     {
         ResolveURL,     // suggestion for where to fix this e.g. sourceQuery.view
+        ResolveText,    // text to go with the ResolveURL
         HelpURL,
         DialectSQL,
         LabkeySQL,
@@ -562,7 +565,7 @@ public class ExceptionUtil
 
     private final static WeakHashMap<Throwable, HashMap<Enum,String>> _exceptionDecorations = new WeakHashMap<Throwable, HashMap<Enum, String>>();
     
-    public static void decorateException(Throwable t, Enum key, String value, boolean overwrite)
+    public static boolean decorateException(Throwable t, Enum key, String value, boolean overwrite)
     {
         t = unwrapException(t);
         synchronized (_exceptionDecorations)
@@ -571,8 +574,12 @@ public class ExceptionUtil
             if (null == m)
                 _exceptionDecorations.put(t, m = new HashMap<Enum,String>());
             if (overwrite || !m.containsKey(key))
+            {
                 m.put(key,value);
+                return true;
+            }
         }
+        return false;
     }
 
 

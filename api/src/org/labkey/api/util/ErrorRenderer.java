@@ -19,7 +19,10 @@ package org.labkey.api.util;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -69,6 +72,9 @@ public class ErrorRenderer
 
     public void renderContent(PrintWriter out, HttpServletRequest request, ButtonBarRenderer bbr) throws IOException, ServletException
     {
+        ViewContext context = HttpView.currentContext();
+        User user = null != context ? context.getUser() : null;
+
         if (null != _exception)
         {
             String exceptionMessage = null;
@@ -120,16 +126,20 @@ public class ErrorRenderer
 
             renderException(_exception, out);
 
-            Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(_exception);
-            for (Map.Entry<Enum,String> e : decorations.entrySet())
+            // Since there might be SQL in here, maybe don't dump for non-admin/dev
+            if (null != user && (user.isAdministrator() || user.isDeveloper()))
             {
-                out.print(PageFlowUtil.filter(e.getKey()));
-                out.print(" = ");
-                out.print(PageFlowUtil.filter(e.getValue().replaceAll("\n", "<br>&nbsp;&nbsp;&nbsp;&nbsp;")));
-                out.println("<br>");
+                Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(_exception);
+                for (Map.Entry<Enum,String> e : decorations.entrySet())
+                {
+                    out.print(PageFlowUtil.filter(e.getKey()));
+                    out.print(" = ");
+                    out.print(PageFlowUtil.filter(e.getValue().replaceAll("\n", "<br>&nbsp;&nbsp;&nbsp;&nbsp;")));
+                    out.println("<br>");
+                }
+                if (!decorations.isEmpty())
+                    out.println("<br>");
             }
-            if (!decorations.isEmpty())
-                out.println("<br>");
 
             // Show the request attributes and database details, but only if it's not a startup failure
             if (!_isStartupFailure && !(_exception instanceof HideConfigurationDetails))

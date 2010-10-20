@@ -220,6 +220,9 @@ public class QueryView extends WebPartView<Object>
         out.print("<p class=\"labkey-error\">");
         out.print(PageFlowUtil.filter(message));
         out.print("</p>");
+
+        Set<String> seen = new HashSet<String>();
+
         if (verboseErrors())
         {
             for (Throwable e : errors)
@@ -231,6 +234,17 @@ public class QueryView extends WebPartView<Object>
                 else
                 {
                     out.print(PageFlowUtil.filter(e.toString()));
+                }
+
+                String resolveURL =  ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveURL);
+                if (null != resolveURL && seen.add(resolveURL))
+                {
+                    String resolveText = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveText);
+                    if (getUser().isAdministrator() || getUser().isDeveloper())
+                    {
+                        out.print(" ");
+                        out.print(PageFlowUtil.textLink(StringUtils.defaultString(resolveText,"resolve"), resolveURL));
+                    }
                 }
                 out.print("<br>");
             }
