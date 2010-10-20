@@ -1637,11 +1637,6 @@ public class PageFlowUtil
 
             if (!c.isRoot())
             {
-                ActionURL containerThemeStylesheetURL = coreUrls.getThemeStylesheetURL(c);
-
-                if (null != containerThemeStylesheetURL)
-                    F.format(link, PageFlowUtil.filter(containerThemeStylesheetURL));
-
                 ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
                 if (null != containerCustomStylesheetURL)
