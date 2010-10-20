@@ -16,7 +16,6 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
@@ -37,25 +36,22 @@
     URLHelper returnURL = form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
     boolean agreeOnly = bean.agreeOnly;
 
-    // Next bit of code makes the enter button work on IE.
+    // Next bit of code makes the enter button work on all browsers.
     %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
 </script>
 <script type="text/javascript">
-    if (Ext.isIE)
-    {
-        Ext.onReady(function() {
-            var forms = document.getElementsByTagName('form');
+    Ext.onReady(function() {
+        var forms = document.getElementsByTagName('form');
 
-            for (var i=0;i < forms.length;i++) {
-                var inputs = forms[i].getElementsByTagName('input');
+        for (var i=0;i < forms.length;i++) {
+            var inputs = forms[i].getElementsByTagName('input');
 
-                for (var j=0;j < inputs.length;j++)
-                    addInputSubmitEvent(forms[i], inputs[j]);
-            }
-        });
-    }
+            for (var j=0;j < inputs.length;j++)
+                addInputSubmitEvent(forms[i], inputs[j]);
+        }
+    });
 </script>
     <%
 
