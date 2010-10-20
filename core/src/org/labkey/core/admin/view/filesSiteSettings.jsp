@@ -80,6 +80,7 @@
 </form>
 
 <script type="text/javascript">
+    var isUpgrade = <%=bean.isUpgrade()%>;
 
     function configSelected(node)
     {
@@ -98,42 +99,47 @@
     }
 
     Ext.onReady(function(){
-        var tree = new Ext.ux.tree.TreeGrid({
-            //width: 800,
-            //height: 500,
-            rootVisible:false,
-            autoScroll:true,
-            //renderTo: 'viewsGrid',
 
-            columns:[{
-                header:'Project',
-                width:330,
-                dataIndex:'name'
-            },{
-                header:'Directory',
-                width:420,
-                dataIndex:'path'
-            },{
-                header:'Default',
-                width:75,
-                dataIndex:'default'
-            }],
-            tbar: [
-                {text:'Expand All', tooltip: {text:'Expands all containers', title:'Expand All'}, listeners:{click:function(button, event) {tree.expandAll();}}},
-                {text:'Collapse All', tooltip: {text:'Collapses all containers', title:'Collapse All'}, listeners:{click:function(button, event) {tree.collapseAll();}, scope:this}},
-                {text:'Configure Selected', tooltip: {text:'Configure settings for the selected root', title:'Configure Selected'}, listeners:{click:function(button, event) {configSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
-                {text:'Browse Selected', tooltip: {text:'Browse files from the selected root', title:'Browse Selected'}, listeners:{click:function(button, event) {browseSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
-            ],
-            dataUrl: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container),
-            listeners: {dblclick: function(node){browseSelected(node);}}
-        });
+        // show the file root browser
+        if (!isUpgrade)
+        {
+            var tree = new Ext.ux.tree.TreeGrid({
+                //width: 800,
+                //height: 500,
+                rootVisible:false,
+                autoScroll:true,
+                //renderTo: 'viewsGrid',
 
-        var panel = new Ext.Panel({
-            layout: 'fit',
-            renderTo: 'viewsGrid',
-            items: [tree],
-            height: 500
-        });
+                columns:[{
+                    header:'Project',
+                    width:330,
+                    dataIndex:'name'
+                },{
+                    header:'Directory',
+                    width:420,
+                    dataIndex:'path'
+                },{
+                    header:'Default',
+                    width:75,
+                    dataIndex:'default'
+                }],
+                tbar: [
+                    {text:'Expand All', tooltip: {text:'Expands all containers', title:'Expand All'}, listeners:{click:function(button, event) {tree.expandAll();}}},
+                    {text:'Collapse All', tooltip: {text:'Collapses all containers', title:'Collapse All'}, listeners:{click:function(button, event) {tree.collapseAll();}, scope:this}},
+                    {text:'Configure Selected', tooltip: {text:'Configure settings for the selected root', title:'Configure Selected'}, listeners:{click:function(button, event) {configSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
+                    {text:'Browse Selected', tooltip: {text:'Browse files from the selected root', title:'Browse Selected'}, listeners:{click:function(button, event) {browseSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
+                ],
+                dataUrl: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container),
+                listeners: {dblclick: function(node){browseSelected(node);}}
+            });
+
+            var panel = new Ext.Panel({
+                layout: 'fit',
+                renderTo: 'viewsGrid',
+                items: [tree],
+                height: 500
+            });
+        }
     });
 </script>
 

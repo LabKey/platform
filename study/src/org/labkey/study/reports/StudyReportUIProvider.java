@@ -66,6 +66,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         crossTabURL.addParameter(QueryParam.schemaName, settings.getSchemaName());
         crossTabURL.addParameter(QueryParam.queryName, settings.getQueryName());
         crossTabURL.addParameter(QueryParam.viewName, settings.getViewName());
+        crossTabURL.addParameter(QueryParam.dataRegionName, settings.getDataRegionName());
         crossTabURL.addParameter("redirectUrl", context.getActionURL().getLocalURIString());
 
         if (StudyManager.getSchemaName().equals(settings.getSchemaName()))
