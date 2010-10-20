@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
@@ -52,9 +53,21 @@ public class QueryForeignKey implements ForeignKey
 
     public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
     {
-        TableInfo lookupTable = getLookupTableInfo();
+        TableInfo lookupTable = null;
+
+        try
+        {
+            lookupTable = getLookupTableInfo();
+        }
+        catch (QueryParseException qpe)
+        {
+            String name = StringUtils.defaultString(displayField,"?");
+            FieldKey key = new FieldKey(foreignKey.getFieldKey(), name);
+            return qpe.makeErrorColumnInfo(foreignKey.getParentTable(), key);
+        }
         if (null == lookupTable)
             return null;
+
         if (displayField == null)
         {
             displayField = _displayField;

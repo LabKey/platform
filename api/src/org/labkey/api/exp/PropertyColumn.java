@@ -49,24 +49,20 @@ public class PropertyColumn extends LookupColumn
         setAlias(ColumnInfo.legalNameFromName(pd.getName()));
 
         copyAttributes(user, this, pd);
+        setSqlTypeName(getPropertySqlType(pd,OntologyManager.getSqlDialect()));
 
         _pd = pd;
         _containerId = containerId;
     }
 
 
-
     public static void copyAttributes(User user, ColumnInfo to, PropertyDescriptor pd)
     {
-//        to.setName(pd.getName());
-//        to.setAlias(ColumnInfo.legalNameFromName(pd.getName()));
+        // ColumnRenderProperties
+        pd.copyTo(to);
+
         to.setNullable(!pd.isRequired());
         to.setHidden(pd.isHidden());
-        to.setShownInDetailsView(pd.isShownInDetailsView());
-        to.setShownInInsertView(pd.isShownInInsertView());
-        to.setShownInUpdateView(pd.isShownInUpdateView());
-        to.setDimension(pd.isDimension());
-        to.setMeasure(pd.isMeasure());
         String description = pd.getDescription();
         if (null == description && null != pd.getConceptURI())
         {
@@ -76,17 +72,6 @@ public class PropertyColumn extends LookupColumn
         }
         to.setDescription(description);
         to.setLabel(pd.getLabel() == null ? ColumnInfo.labelFromName(pd.getName()) : pd.getLabel());
-        to.setSqlTypeName(getPropertySqlType(pd,OntologyManager.getSqlDialect()));
-        String format = StringUtils.trimToNull(pd.getFormat());
-        if (null != format)
-            to.setFormat(format);
-
-        // UNDONE PropertyDescriptor() does not have getScale()
-        to.setInputType(pd.getPropertyType().getInputType());
-        to.setInputLength(pd.getInputLength());
-        to.setInputRows(pd.getInputRows());
-        to.setURL(pd.getURL());
-        to.setImportAliasesSet(pd.getImportAliasSet());
 
         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
         {
@@ -108,7 +93,6 @@ public class PropertyColumn extends LookupColumn
 
         to.setPropertyURI(pd.getPropertyURI());
     }
-
 
 
     // select the mv column instead

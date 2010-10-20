@@ -49,7 +49,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     // in its constructor:
     protected boolean nullable = false;
     protected String label;
-    protected String name;
     protected String description;
     protected boolean hidden;
     protected Boolean measure;
@@ -65,9 +64,9 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void copyTo(ColumnRenderProperties to)
     {
         to.sortDirection = sortDirection;
-        to.inputType = inputType;
-        to.inputLength = inputLength;
-        to.inputRows = inputRows;
+        to.setInputType(getInputType());
+        to.setInputLength(getInputLength());
+        to.setInputRows(getInputRows());
         to.displayWidth = displayWidth;
         to.format = format;
         to.excelFormatString = excelFormatString;
@@ -79,7 +78,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.shownInDetailsView = shownInDetailsView;
         to.measure = measure;
         to.dimension = dimension;
-        to.name = name;
         to.url = url;
         to.importAliases = new LinkedHashSet<String>(importAliases);
     }
@@ -172,16 +170,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setLabel(String label)
     {
         this.label = label;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(String name)
-    {
-        this.name = name;
     }
 
     public String getDescription()

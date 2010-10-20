@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.query.FieldKey;
+
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
@@ -24,6 +26,12 @@ package org.labkey.api.data;
 
 public class NullColumnInfo extends ColumnInfo
 {
+    public NullColumnInfo(TableInfo parent, FieldKey name, String sqlType)
+    {
+        super(name, parent);
+        setSqlTypeName(sqlType);
+    }
+
     public NullColumnInfo(TableInfo parent, String name, String sqlType)
     {
         super(name, parent);

@@ -32,7 +32,8 @@ import java.util.Map;
  * Time: 2:41:47 PM
  */
 public class PropertyDescriptor extends ColumnRenderProperties implements Serializable, Cloneable
-{
+{                           
+    private String name;
     private int propertyId;
     private String propertyURI;
     private String ontologyURI;
@@ -138,6 +139,11 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         this.propertyURI = propertyURI;
     }
 
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
     @Override
     public String getName()
     {
@@ -181,6 +187,15 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
             propertyType = PropertyType.getFromURI(getConceptURI(), rangeURI);
 
         return propertyType;
+    }
+
+    @Override
+    public String getInputType()
+    {
+        if (null == propertyType)
+            return super.getInputType();
+
+        return propertyType.getInputType();
     }
 
     public String getConceptURI()

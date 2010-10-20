@@ -26,6 +26,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -84,6 +85,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private static final Set<String> nonEditableColNames = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
     private FieldKey fieldKey;
+    private String name;
     private String alias;
     private String sqlTypeName;
     private int sqlTypeInt = Types.NULL;
@@ -171,7 +173,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     
     
     /** use setFieldKey() avoid ambiguity when columns have "/" */
-    @Override
     public void setName(String name)
     {
         assert !_lockName;
@@ -449,7 +450,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         ForeignKey fk = getFk();
         if (fk == null)
             return null;
-        return fk.createLookupColumn(this, null);
+        try
+        {
+            return fk.createLookupColumn(this, null);
+        }
+        catch (QueryParseException qpe)
+        {
+            return null;
+        }
     }
 
     public ColumnInfo getSortField()
@@ -568,24 +576,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (null == inputType)
         {
-            TableInfo lookupTable = null;
-            if (null != fk)
-            {
-                lookupTable = fk.getLookupTableInfo();
-            }
-            if (lookupTable == null)
-            {
-                if (isStringType() && scale > 300) // lsidtype is 255 characters
-                    inputType = "textarea";
-                else if ("image".equalsIgnoreCase(getSqlTypeName()))
-                    inputType = "file";
-                else if (getSqlTypeInt() == Types.BIT || getSqlTypeInt() == Types.BOOLEAN)
-                    inputType = "checkbox";
-                else
-                    inputType = "text";
-            }
+            if (isStringType() && scale > 300) // lsidtype is 255 characters
+                inputType = "textarea";
+            else if ("image".equalsIgnoreCase(getSqlTypeName()))
+                inputType = "file";
+            else if (getSqlTypeInt() == Types.BIT || getSqlTypeInt() == Types.BOOLEAN)
+                inputType = "checkbox";
             else
-                inputType = "select";
+                inputType = "text";
         }
 
         return inputType;
@@ -645,7 +643,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (fk == null)
             return null;
 
-        return fk.getURL(this);
+        try
+        {
+            return fk.getURL(this);
+        }
+        catch (QueryParseException qpe)
+        {
+            return null;
+        }
     }
 
     public void copyToXml(ColumnType xmlCol, boolean full)

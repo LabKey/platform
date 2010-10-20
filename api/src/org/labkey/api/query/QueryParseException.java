@@ -16,6 +16,10 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.TableInfo;
+
 public class QueryParseException extends QueryException
 {
     int _line;
@@ -53,5 +57,12 @@ public class QueryParseException extends QueryException
     public int getColumn()
     {
         return _column;
+    }
+
+    public ColumnInfo makeErrorColumnInfo(TableInfo parent, FieldKey key)
+    {
+        NullColumnInfo col = new NullColumnInfo(parent, key, "VARCHAR");
+        col.setLabel("#ERROR: " + key.getDisplayString() + " " + getMessage());
+        return col;
     }
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -354,6 +355,7 @@ public class PropertyManager
         private final String _objectId;
         private final String _category;
 
+        boolean _modified = false;
         Set<Object> removedKeys = null;
 
 
@@ -361,6 +363,7 @@ public class PropertyManager
         {
             return _set;
         }
+
 
         private PropertyMap(int set, int userId, String objectId, String category)
         {
@@ -377,7 +380,10 @@ public class PropertyManager
             if (null == removedKeys)
                 removedKeys = new HashSet<Object>();
             if (this.containsKey(key))
+            {
                 removedKeys.add(key);
+                _modified = true;
+            }
             return super.remove(key);
         }
 
@@ -387,7 +393,17 @@ public class PropertyManager
         {
             if (null != removedKeys)
                 removedKeys.remove(key);
+            if (!StringUtils.equals(value, get(value)))
+                _modified = true;
             return super.put(key, value);
+        }
+
+
+        @Override
+        public void putAll(Map<? extends String, ? extends String> m)
+        {
+            _modified = true;   // putAll() calls put(), but just to be safe
+            super.putAll(m);
         }
 
 
@@ -397,7 +413,27 @@ public class PropertyManager
             if (null == removedKeys)
                 removedKeys = new HashSet<Object>();
             removedKeys.addAll(keySet());
+            _modified = true;
             super.clear();
+        }
+
+
+        @Override
+        public Set<String> keySet()
+        {
+            return Collections.unmodifiableSet(super.keySet());
+        }
+
+        @Override
+        public Collection<String> values()
+        {
+            return Collections.unmodifiableCollection(super.values());
+        }
+
+        @Override
+        public Set<Map.Entry<String, String>> entrySet()
+        {
+            return Collections.unmodifiableSet(super.entrySet());
         }
 
         public Object[] getCacheParams()

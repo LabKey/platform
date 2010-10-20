@@ -27,6 +27,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -73,6 +74,15 @@ public class DataColumn extends DisplayColumn
         setExcelFormatString(_displayColumn.getExcelFormatString());
         setDescription(_boundColumn.getDescription());
         _inputType = _boundColumn.getInputType();
+        try
+        {
+            if (null != _displayColumn && null != _boundColumn.getFk() && null != _boundColumn.getFkTableInfo())
+                _inputType = "select";
+        }
+        catch (QueryParseException qpe)
+        {
+            /* fall through */
+        }
         _inputRows = _boundColumn.getInputRows();
         _inputLength = _boundColumn.getInputLength();
         _caption = StringExpressionFactory.create(_boundColumn.getLabel());
