@@ -44,11 +44,6 @@ body, div, td, th, table, img, form,
     font-size: 13px;
 }
 
-td
-{
-    vertical-align: top; /* IE */
-}
-
 img
 {
     border: 0 none;
@@ -66,7 +61,8 @@ a:hover, a:visited:hover, .labkey-link:hover, .labkey-link:visited:hover
 	color: #000;
 }
 
-h3 {
+h3
+{
 	font-size: 14px;
 }
 
@@ -90,12 +86,14 @@ legend
     background-color: #EBF4FF;
 }
 
-table#header {
+table#header
+{
     border-bottom: 10px solid #126495;
 }
 
 /* Quick options (admin, help, my account, signout) table */
-#headerDiv {
+#headerDiv
+{
     position: absolute;
     top: 0; right: 0;
     padding-right: 10px;
@@ -904,12 +902,6 @@ table.labkey-show-surrounding-border
     border: 1px solid #DDDDDD;
 }
 
-.labkey-data-region a
-{
-    color: #126495;
-    text-decoration: none;
-}
-
 .labkey-data-region th
 {
     border-bottom: solid 1px #AAAAAA;
@@ -1370,6 +1362,11 @@ table.labkey-proj
     padding: 0 30px 30px 30px;
 }
 
+td.labkey-proj
+{
+    vertical-align: top; /* IE */
+}
+
 /* The icon in the header panel */
 td.labkey-main-icon
 {
@@ -1595,12 +1592,6 @@ table.labkey-expandable-nav
     width: 100%;
     height: 100%;
     vertical-align: top;
-}
-
-
-.labkey-body-panel {
-
-    /*width: 600px;  This might not be doable - some content wants to expand this area? */
 }
 
 /* The right side panel that is seen in views like portal */
@@ -3042,15 +3033,6 @@ body .x-window .x-window-tl .x-window-header {
     border-width:0;
 }
 
-
-/* SHADOWS */
-/*
-.x-shadow * {
-	display:none;
-	background: none;
-	visibility: hidden;
-}*/
-
 /* GRID ROWS */
 
 body .x-grid3 .x-grid3-row {
@@ -3068,10 +3050,6 @@ body .x-grid3 .x-grid3-row-selected {
 body .x-grid3 .x-grid3-row-alt {
 	background: #EEE;
 }
-/*
-body {
-	background: #ddd !important;
-}*/
 
 /* FORM */
 
@@ -3203,7 +3181,6 @@ td.labkey-tab-content, .labkey-tab-content {
     border-left: solid 1px #89A1B4;
     border-right: solid 1px #89A1B4;
     border-bottom: solid 1px #89A1B4;
-   /* color: #126495; */
     background-color:white;
     vertical-align:bottom;
 }
@@ -3464,18 +3441,14 @@ ul.x-tab-strip-top li {
   margin-top: 1px;
 }
 
-.x-grid3-hd-inner {
+.x-grid3-hd-inner
+{
     color: #126495;
 }
 
-.x-toolbar{
+.x-toolbar
+{
     border-color:#d0d0d0;
     background: #E7EFF4;
     border-width: 0;
-}
-
-body .x-grid3 .x-grid3-row-selected {
-    padding:0;
-    border: 1px solid #126495;
-    background: #E7EFF4 !important;
 }
