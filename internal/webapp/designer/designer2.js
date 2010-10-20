@@ -934,7 +934,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     itemSelector: ".labkey-customview-item",
                     tpl: new Ext.XTemplate(
                             '<tpl for=".">',
-                            '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-column-item" fieldKey="{fieldKey}">',
+                            '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-columns-item" fieldKey="{fieldKey}">',
                             '  <tr>',
                             '    <td class="labkey-grab"></td>',
                             '    <td><span class="item-caption">{[values.title || values.name]}</span></td>',
