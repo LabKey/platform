@@ -116,6 +116,8 @@ public class SimpleUserSchema extends UserSchema
             for (ColumnInfo col : _rootTable.getColumns())
             {
                 ColumnInfo wrap = wrapColumn(col);
+                // 10945: Copy label from the underlying column -- wrapColumn() doesn't copy the label.
+                wrap.setLabel(col.getLabel());
                 addColumn(wrap);
 
                 // ColumnInfo doesn't copy these attributes by default
