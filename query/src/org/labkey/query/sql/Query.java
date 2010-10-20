@@ -47,6 +47,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -68,6 +69,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.*;
 
 
 /**
@@ -158,6 +161,7 @@ public class Query
         return _containerFilter;
     }
 
+
     public void parse()
     {
         if (null == _querySource)
@@ -165,13 +169,24 @@ public class Query
         _parse(_querySource);
     }
 
+
     public void parse(String queryText)
     {
         _querySource = queryText;
         _parse(_querySource);
         if (_parseErrors.isEmpty() && null != _queryRoot)
             _queryRoot.declareFields();
+
+        for (QueryException e : _parseErrors)
+        {
+            ExceptionUtil.decorateException(e, LabkeySQL, queryText, false);
+            if (null != getSchema() && null != getSchema().getName())
+                ExceptionUtil.decorateException(e, QuerySchema, getSchema().getName(), false);
+            if (null != _name)
+                ExceptionUtil.decorateException(e, QueryName, _name, false);
+        }
     }
+
 
 	private void _parse(String queryText)
     {

@@ -641,7 +641,8 @@ public class MothershipController extends SpringActionController
                 if (form.getSvnRevision() != null && form.getSvnURL() != null)
                 {
                     ExceptionReport report = new ExceptionReport();
-                    if (stackTrace.getStackTrace() != null)
+                    report.setExceptionMessage(form.getExceptionMessage());
+                    if (null == form.getExceptionMessage() && stackTrace.getStackTrace() != null)
                     {
                         // Grab the first line of the exception report so that we don't lose things like
                         // file paths or other unique info that's thrown away as part of the de-dupe process
@@ -1119,6 +1120,18 @@ public class MothershipController extends SpringActionController
         private String _pageflowName;
         private String _pageflowAction;
         private String _sqlState;
+
+        public String getExceptionMessage()
+        {
+            return _exceptionMessage;
+        }
+
+        public void setExceptionMessage(String exceptionMessage)
+        {
+            _exceptionMessage = exceptionMessage;
+        }
+
+        private String _exceptionMessage;
 
         public String getUsername()
         {

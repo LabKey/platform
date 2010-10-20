@@ -2509,7 +2509,15 @@ public class StudyController extends BaseStudyController
     private void setColumnURL(final ActionURL url, final QueryView queryView,
                               final UserSchema querySchema, final DataSet def)
     {
-        List<DisplayColumn> columns = queryView.getDisplayColumns();
+        List<DisplayColumn> columns;
+        try
+        {
+            columns = queryView.getDisplayColumns();
+        }
+        catch (QueryParseException qpe)
+        {
+            return;
+        }
         for (DisplayColumn col : columns)
         {
             String subjectColName = StudyService.get().getSubjectColumnName(def.getContainer());

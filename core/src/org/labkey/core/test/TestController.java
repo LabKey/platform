@@ -25,6 +25,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
@@ -517,10 +518,13 @@ public class TestController extends SpringActionController
     {
         public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
         {
+            NullPointerException npe;
             if (null == form.getMessage())
-                throw new NullPointerException();
+                npe = new NullPointerException();
             else
-                throw new NullPointerException(form.getMessage());
+                npe = new NullPointerException(form.getMessage());
+            ExceptionUtil.decorateException(npe, ExceptionUtil.ExceptionInfo.QuerySchema, "testing", true);
+            throw npe;
         }
 
         public NavTree appendNavTrail(NavTree root)
