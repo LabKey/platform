@@ -90,6 +90,10 @@ public class MothershipManager
             if (null != browser && browser.length() > 100)
                 report.setBrowser(browser.substring(0,90) + "...");
 
+            String exceptionMessage = report.getExceptionMessage();
+            if (null != exceptionMessage && exceptionMessage.length() > 1000)
+                report.setExceptionMessage(exceptionMessage.substring(0,990) + "...");
+
             Table.insert(null, getTableInfoExceptionReport(), report);
             scope.commitTransaction();
         }
