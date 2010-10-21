@@ -53,6 +53,7 @@ public class MenuView extends VBox
 
         PrintWriter out = response.getWriter();
 
+        out.println("<div class=\"menu-wrapper\">");
         out.println("<table class=\"labkey-expandable-nav-panel\">");
         if (showFolders)
         {
@@ -88,7 +89,7 @@ public class MenuView extends VBox
             renderExpandCollapseTD(request, out, showFolders);
             out.println("</tr>");
         }
-        out.print("</table>");
+        out.print("</table></div");
     }
 
     private void renderExpandCollapseTD(HttpServletRequest request, PrintWriter out, boolean showFolders)

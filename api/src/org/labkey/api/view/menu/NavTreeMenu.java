@@ -194,7 +194,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                     out.printf("<a href=\"%s\"", filter(link));
                 if (selected)
                 {
-                    out.printf(" style=\"%s\"", "font-weight:bold;font-style:italic");
+                    out.print(" class=\"nav-tree-selected\"");
                 }
                 if (null != nav.getScript())
                 {
@@ -205,8 +205,6 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 out.print(">");
                 out.print(filter(nav.getKey()));
                 out.print("</a>");
-                if (selected)
-                    out.printf("&nbsp;<img src=\"%s/_images/square.gif\">", context.getContextPath());
             }
 
             out.print("</td></tr>");
