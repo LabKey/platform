@@ -1667,6 +1667,12 @@ td.labkey-nav-tree-text
 	line-height: 1.2em;
 }
 
+a.nav-tree-selected
+{
+    font-weight: bold;
+    font-style: italic;
+}
+
 /* The expandable nav rows sometimes have a total like in the Study module */
 td.labkey-nav-tree-total
 {
@@ -1865,9 +1871,12 @@ a.labkey-text-link:hover {
 	color: #000;
 }
 
-a.no-arrow {
+a.no-arrow
+{
     background: none !important;
     padding-right: 2px !important;
+    padding-top: 0px !important;
+    margin: 0;
 }
 
 div.x-tree-node-leaf IMG.x-tree-node-icon.labkey-tree-error-icon

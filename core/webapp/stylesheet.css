@@ -1444,6 +1444,14 @@ td.labkey-nav-tree-text
     vertical-align: top;
 }
 
+a.nav-tree-selected
+{
+    font-weight: bold;
+    font-style: italic;
+    background: url(./_images/square.gif) center right no-repeat;
+    padding-right: 8px;
+}
+
 /* The expandable nav rows sometimes have a total like in the Study module */
 td.labkey-nav-tree-total
 {
