@@ -63,6 +63,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GuidString;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
@@ -1177,7 +1178,8 @@ public class IssuesController extends SpringActionController
             }
             catch (Exception e)
             {
-                _log.error("sendUpdateEmail", e);
+                _log.error("error sending update email to " + to, e);
+                ExceptionUtil.logExceptionToMothership(null, e);
             }
         }
     }
