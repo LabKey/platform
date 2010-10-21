@@ -42,7 +42,7 @@ public class StudyUnionTableInfo extends VirtualTable
 {
     StudyImpl _study;
 
-    final private static String[] COLUMN_NAMES = {
+    final public static String[] COLUMN_NAMES = {
             "participantid",
             "lsid",
             "sequencenum",

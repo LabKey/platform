@@ -19,6 +19,7 @@ package org.labkey.study;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -611,15 +612,13 @@ public class StudyServiceImpl implements StudyService.Service
 
     public boolean isValidSubjectColumnName(Container container, String subjectColumnName)
     {
-        TableInfo studyDataTable = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
-        for (ColumnInfo col : studyDataTable.getColumns())
-        {
-            String colName = col.getName();
-            // Our subject column name isn't allowed to match the name of a non-participant column in the same table:
-            if (!"ParticipantId".equalsIgnoreCase(colName) && subjectColumnName.equalsIgnoreCase(colName))
-                return false;
-        }
-        return true;
+        // Short-circuit for the common case:
+        if ("ParticipantId".equalsIgnoreCase(subjectColumnName))
+            return true;
+        Set<String> colNames = new CaseInsensitiveHashSet(Arrays.asList(StudyUnionTableInfo.COLUMN_NAMES));
+        // We allow any name that isn't found in the default set of columns added to all datasets, except "participantid",
+        // which is handled above:
+        return !colNames.contains(subjectColumnName);
     }
 
     public boolean isValidSubjectNounSingular(Container container, String subjectNounSingular)
@@ -642,6 +641,10 @@ public class StudyServiceImpl implements StudyService.Service
     @Override
     public TableInfo getStudyDataTable(Container container)
     {
-        return StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        if (study != null)
+            return StudySchema.getInstance().getTableInfoStudyData(study, null);
+        else
+            return null;
     }
 }
