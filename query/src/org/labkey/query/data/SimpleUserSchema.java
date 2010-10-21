@@ -35,6 +35,7 @@ import org.labkey.api.util.Filter;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,6 +46,7 @@ import java.util.Set;
 public class SimpleUserSchema extends UserSchema
 {
     private Map<String, SchemaTableInfo> _tables;
+    private Set<String> _visible;
 
     public SimpleUserSchema(String name, String description, User user, Container container, DbSchema dbschema)
     {
@@ -54,12 +56,16 @@ public class SimpleUserSchema extends UserSchema
     public SimpleUserSchema(String name, String description, User user, Container container, DbSchema dbschema, @Nullable Filter<TableInfo> filter)
     {
         super(name, description, user, container, dbschema);
+        _visible = new HashSet<String>();
         _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
         if (_dbSchema != null)
         {
             for (SchemaTableInfo table : _dbSchema.getTables())
-                if (null == filter || filter.accept(table))
-                    _tables.put(table.getName(), table);
+            {
+                if (!table.isHidden() && (null == filter || filter.accept(table)))
+                    _visible.add(table.getName());
+                _tables.put(table.getName(), table);
+            }
         }
     }
 
@@ -80,6 +86,12 @@ public class SimpleUserSchema extends UserSchema
     public Set<String> getTableNames()
     {
         return Collections.unmodifiableSet(_tables.keySet());
+    }
+
+    @Override
+    public Set<String> getVisibleTableNames()
+    {
+        return Collections.unmodifiableSet(_visible);
     }
 
     @Override
