@@ -568,7 +568,7 @@ public class StorageProvisioner
             Domain domain = PropertyService.get().getDomain(domainReport.getId());
             for (DomainProperty domainProp : domain.getProperties())
             {
-                String expectedColumnName = AliasManager.makeLegalName(domainProp.getName(), schema.getSqlDialect());
+                String expectedColumnName = domainProp.getName();
                 if (hardColumnNames.contains(expectedColumnName))
                 {
                     if (domainProp.isMvEnabled() && !hardColumnNames.contains(PropertyStorageSpec.getMvIndicatorColumnName(expectedColumnName)))
