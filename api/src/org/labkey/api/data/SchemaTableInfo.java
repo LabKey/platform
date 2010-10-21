@@ -70,6 +70,7 @@ public class SchemaTableInfo implements TableInfo
     private DetailsURL _updateURL;
     private DetailsURL _detailsURL;
     protected ButtonBarConfig _buttonBarConfig;
+    private boolean _hidden;
 
     protected SchemaTableInfo(DbSchema parentSchema)
     {
@@ -517,6 +518,8 @@ public class SchemaTableInfo implements TableInfo
                 xmlTable.setTitleColumn(titleColumn);
             if (null != _versionColumnName)
                 xmlTable.setVersionColumnName(_versionColumnName);
+            if (_hidden)
+                xmlTable.setHidden(true);
         }
 
         org.labkey.data.xml.TableType.Columns xmlColumns = xmlTable.addNewColumns();
@@ -548,6 +551,7 @@ public class SchemaTableInfo implements TableInfo
         //Override with the table name from the schema so casing is nice...
         name = xmlTable.getTableName();
         _description = xmlTable.getDescription();
+        _hidden = xmlTable.getHidden();
         title = xmlTable.getTableTitle();
         titleColumn = xmlTable.getTitleColumn();
         if (xmlTable.isSetCacheSize())
@@ -795,6 +799,12 @@ public class SchemaTableInfo implements TableInfo
         defaultVisibleColumns = new ArrayList<FieldKey>();
         for (FieldKey key : keys)
             defaultVisibleColumns.add(key);
+    }
+
+    /** Used by SimpleUserSchema and external schemas to hide tables from the list of visible tables.  Not the same as isPublic(). */
+    public boolean isHidden()
+    {
+        return _hidden;
     }
 
     public boolean isPublic()

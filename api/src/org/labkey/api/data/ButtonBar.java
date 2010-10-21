@@ -37,6 +37,7 @@ public class ButtonBar extends DisplayElement
     // It's possible to have multiple button bar configs, as in the case of a tableinfo-level config
     // that's partially overridden by a 
     private List<ButtonBarConfig> _configs = null;
+    private boolean _renderedIncludes = false;
 
     public static ButtonBar BUTTON_BAR_GRID = new ButtonBar();
     public static ButtonBar BUTTON_BAR_DETAILS = new ButtonBar();
@@ -118,12 +119,7 @@ public class ButtonBar extends DisplayElement
         if (!shouldRender(ctx))
             return;
 
-        if (_configs != null)
-        {
-            for (ButtonBarConfig config : _configs)
-                applyConfig(ctx, config);
-        }
-        renderIncludes(out);
+        renderIncludes(ctx, out);
 
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
@@ -147,10 +143,13 @@ public class ButtonBar extends DisplayElement
         out.write("</div>");
     }
 
-    private void renderIncludes(Writer out) throws IOException
+    private void renderIncludes(RenderContext ctx, Writer out) throws IOException
     {
-        if (_configs != null && !_configs.isEmpty())
+        if (_configs != null && !_configs.isEmpty() && _renderedIncludes == false)
         {
+            for (ButtonBarConfig config : _configs)
+                applyConfig(ctx, config);
+
             Set<String> allScriptIncludes = new HashSet<String>();
             for (ButtonBarConfig config : _configs)
             {
@@ -173,6 +172,8 @@ public class ButtonBar extends DisplayElement
                 }
                 out.write("</script>");
             }
+
+            _renderedIncludes = true;
         }
     }
 
