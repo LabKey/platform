@@ -697,19 +697,14 @@ table.labkey-show-surrounding-border
     text-decoration: none;
 }
 
-.labkey-data-region TH
-{
-    border-bottom: solid 1px #AAAAAA;
-    vertical-align: top;
-}
-
+.labkey-data-region TH,
 .labkey-data-region .labkey-column-header
 {
     border-bottom: solid 1px #AAAAAA;
     vertical-align: top;
 }
 
-.labkey-data-region TD, .labkey-data-region TH, .wiki-table TD, .wiki-table TH, .labkey-data-region .labkey-column-header
+.labkey-row TD, .labkey-data-region TH, .wiki-table TD, .wiki-table TH, .labkey-data-region .labkey-column-header
 {
     padding: 1px;
     padding-right:4px;
@@ -818,12 +813,9 @@ in the table tag.  They are necessary so that the borders take precedence correc
 }
 
 /* Used for the shaded alternate rows */
-.labkey-error-alternate-row td, .labkey-error-alternate-row th, tr.labkey-error-alternate-row, td.labkey-error-alternate-row, th.labkey-error-alternate-row
+.labkey-error-row.labkey-alternate-row td, .labkey-error-row.labkey-alternate-row th, tr.labkey-error-row.labkey-alternate-row, td.labkey-error-row.labkey-alternate-row, th.labkey-error-row.labkey-alternate-row
 {
-    border-top:  1px solid #990000;
-    border-bottom:  1px solid #990000;
     background: #FFBBBB;
-    border-collapse: separate;
 }
 
 /* This is used for the headers on data regions that highlight on mouseover and give a drop down
@@ -860,7 +852,8 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
 .labkey-data-region-header-container
 {
     background-color: #F2F2F2;
-    border-bottom: 1px solid #AAAAAA
+    border-bottom: 1px solid #AAAAAA;
+    padding: 0;
 }
 
 .labkey-data-region-header
@@ -989,6 +982,15 @@ img.labkey-grid-filter-icon
 .labkey-customview-item.x-view-over {
     border-top: 1px solid #126495;
     border-bottom: 1px solid #126495;
+}
+
+.labkey-customview-item .item-op {
+    float: left;
+    padding: 2px;
+}
+
+.labkey-customview-item .item-value {
+    padding: 2px;
 }
 
 /* grab */
