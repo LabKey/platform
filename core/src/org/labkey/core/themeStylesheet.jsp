@@ -114,17 +114,6 @@ fieldset
 }
 
 /* general */
-
-.labkey-header:hover
-{
-    background: #<%= wpHeaderPanel %>;
-}
-
-.labkey-header-large:hover
-{
-    background: #<%= wpHeaderPanel %>;
-}
-
 .labkey-header-large
 {
     font-size: <%= themeFont.getHeader_1Size() %>;

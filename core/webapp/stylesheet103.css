@@ -133,13 +133,6 @@ th.labkey-header {
     float: left;
 }
 
-th.labkey-header a:link, th.labkey-header a:visited {
-    color: #000;
-    font-weight: normal;
-    text-transform: uppercase;
-    font-size: 12px;
-}
-
 th.labkey-header a:hover {
     color: #126495;
     font-weight: normal;
@@ -1308,36 +1301,12 @@ table.labkey-main
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
-/*tr.labkey-header-panel {
-    background-color: #fff;
-}*/
-
 .labkey-header-panel td, .labkey-header-panel th
 {
     padding: 0px;
 }
 
 /* The side panel with the navigation and admin expandable menus */
-/*.labkey-site-nav-panel
-{
-    background-color: #E1ECFC;
-    border-top: 0;
-    border-right: 0;
-    border-collapse: separate; border-spacing: 2px;
-    vertical-align: top;
-    padding: 0;
-}
-
-.labkey-site-nav-panel
-{
-    background-color: #E1ECFC;
-    border-collapse: separate; border-spacing: 2px;
-    border-top: 0;
-    border-right: 0;
-    vertical-align: top;
-    padding: 0;
-}*/
-
 td.labkey-site-nav-panel {
     background-color: #f8f8f8;
     padding-top: 10px;
@@ -1351,7 +1320,11 @@ td.labkey-site-nav-panel {
     vertical-align: top;
     width: 120px;
 	overflow: auto;
-	white-space: nowrap;
+}
+
+div.menu-wrapper {
+    width: 175px;
+    overflow: hidden;
 }
 
 /* The project area (the rest of the page besides the side and top panels) */
@@ -1606,18 +1579,23 @@ table.labkey-expandable-nav
 }
 
 /* The cell that contains the expand/collapse image */
-th.labkey-expand-collapse-area
+td.labkey-expand-collapse-area
 {
-    font-weight: bold;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+td.labkey-expand-collapse-area a
+{
+    font-weight: normal;
     padding: 2px 0;
     text-align: left;
     white-space: nowrap;
-    color:#126495;
+    color: #000000;
+    text-transform: uppercase;
 	width: 12px;
-	border-bottom: 1px solid #e5e5e5;
 }
 
-th.labkey-expand-collapse-area img {
+td.labkey-expand-collapse-area img {
 	margin-right: 3px;
 }
 
@@ -1663,7 +1641,7 @@ td.labkey-nav-tree-node img
 /* The link in an expandable nav menu */
 td.labkey-nav-tree-text
 {
-    padding: 6px 0;
+    padding: 5px 0;
     width: 100%;
     vertical-align: top;
 	line-height: 1.2em;
@@ -2861,7 +2839,7 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-btn-tl, .x-btn-tr, .x-btn-tc, .x-btn-ml, .x-btn-mr, .x-btn-mc, .x-btn-bl, .x-btn-br, .x-btn-bc{
-	background-image:url(./gtheme/img/lkbtn2.png);
+	background-image:url(./gtheme/img/lkbtn.gif);
 }
 
 /* Window */
@@ -3107,7 +3085,7 @@ td.labkey-export-tab-buttons
 /*****     TAB STRIPS     *****/
 
 
-/* labkey -- there are three different markups: <table>, table with wiki classes, and <ul> TODO pick one! (kill <table>) */
+/* labkey -- there are three different markups: <table>, table with wiki classes, and <ul> */
 
 table.labkey-tab-strip
 {
@@ -3330,6 +3308,10 @@ li.labkey-tab-inactive a
 div.extContainer h2 {
 	font-size: 16px;
 	margin-bottom: 5px;
+}
+
+div.extContainer .x-tab-panel {
+    margin-top: 0;
 }
 
 .x-tab-panel-noborder .x-tab-panel-body-noborder {

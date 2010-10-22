@@ -95,21 +95,19 @@ legend
     text-align: left;
     text-decoration: none;
     vertical-align: top;
-    padding: 1px;
     padding-right:4px;
 }
 
-th.labkey-header
+a.labkey-header
 {
     border: 0;
-    padding: 5px 0;
-    float: left;
+    font-weight: bold;
+    white-space: nowrap;
 }
 
-.labkey-header:hover
+td.labkey-header a
 {
-    background-color: #EBF4FF;
-    cursor: pointer;
+    text-align: left;
 }
 
 .labkey-header:active
@@ -128,12 +126,6 @@ th.labkey-header
     padding-right:4px;
     font-size: 10pt;
     font-weight:bold;
-}
-
-.labkey-header-large:hover
-{
-    background-color: #EBF4FF;
-    cursor: pointer;
 }
 
 /* Used for the titles in announcement threads and elsewhere for
@@ -1387,19 +1379,22 @@ table.labkey-expandable-nav
 }
 
 /* The cell that contains the expand/collapse image */
-th.labkey-expand-collapse-area
+td.labkey-expand-collapse-area
 {
-    font-weight: bold;
-    color: #003399;
+    width: 100% !important;
+    border-top: 1px solid #89A1B4;
+    border-right: 1px solid #89A1B4;
+    border-bottom: 1px solid #89A1B4;
+}
+
+td.labkey-expand-collapse-area a
+{
     padding-top: 2px;
     padding-bottom: 2px;
-    padding-left: 5px;
-    white-space: nowrap;
-    text-align: left;
     width: 12px;
 }
 
-th.labkey-expand-collapse-area img
+td.labkey-expand-collapse-area img
 {
 	margin-right: 3px;
 }
