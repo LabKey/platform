@@ -817,8 +817,7 @@ public class DataRegion extends DisplayElement
             renderRegionStart(ctx, out, renderButtons, renderers);
 
             renderHeader(ctx, out, renderButtons, colCount);
-            renderMessageBox(ctx, out, colCount);
-            
+
             if (null == sqlx)
             {
                 renderGridHeaderColumns(ctx, out, renderers);
@@ -918,7 +917,13 @@ public class DataRegion extends DisplayElement
         out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
         if (_showPagination && _buttonBarPosition.atTop())
             renderPagination(ctx, out);
-        out.write("</td></tr></table>\n");
+        out.write("</td></tr>\n");
+
+        renderRibbon(ctx, out);
+        renderMessageBox(ctx, out, colCount);
+
+        // end table.labkey-data-region-header
+        out.write("</table>\n");
 
         out.write("\n</td></tr>");
     }
@@ -987,15 +992,23 @@ public class DataRegion extends DisplayElement
         out.write("</script>\n");
     }
 
+    protected void renderRibbon(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("<tr>");
+        out.write("<td colspan=\"2\" class=\"labkey-ribbon extContainer\" style=\"display:none;\">&nbsp;</td>");
+        out.write("</tr>\n");
+    }
+
     protected void renderMessageBox(RenderContext ctx, Writer out, int colCount) throws IOException
     {
         out.write("<tr id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\" style=\"display:none\">");
         out.write("<td colspan=\"");
-        out.write(String.valueOf(colCount));
+        out.write("2");
         out.write("\" class=\"labkey-dataregion-msgbox\">");
-        out.write("<img style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
+        out.write("<span class=\"labkey-tool labkey-tool-close\" style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\"></span>");
         out.write("<div></div>");
-        out.write("</td></tr>");
+        out.write("</td>");
+        out.write("</tr>\n");
     }
 
     protected void renderFooter(RenderContext ctx, Writer out, boolean renderButtons, int colCount) throws IOException
@@ -1020,6 +1033,9 @@ public class DataRegion extends DisplayElement
             if (_showPagination && _buttonBarPosition.atBottom())
                 renderPagination(ctx, out);
             out.write("</td></tr>\n");
+
+            renderRibbon(ctx, out);
+            
             out.write("</table>");
 
             out.write("</td></tr>");
@@ -1313,10 +1329,10 @@ public class DataRegion extends DisplayElement
     protected String getRowClass(RenderContext ctx, int rowIndex)
     {
         boolean isErrorRow = isErrorRow(ctx, rowIndex);
-        if (_shadeAlternatingRows && rowIndex % 2 == 0)
-            return isErrorRow ? "labkey-error-alternate-row" : "labkey-alternate-row";
-        else
-            return isErrorRow ? "labkey-error-row" : "labkey-row";
+        String rowClass = _shadeAlternatingRows && rowIndex % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+        if (isErrorRow)
+            return rowClass + " " + "labkey-error-row";
+        return rowClass;
     }
 
     protected boolean isErrorRow(RenderContext ctx, int rowIndex)
