@@ -1635,14 +1635,18 @@ public class PageFlowUtil
 
             if (!c.isRoot())
             {
-                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
+                if (coreUrls.getThemeStylesheetURL(c) != null)
+                    F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
                 ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
                 if (null != containerCustomStylesheetURL)
                     F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
             }
             else
-                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+            {
+                if (coreUrls.getThemeStylesheetURL() != null)
+                    F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));               
+            }
         }
 
         ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
