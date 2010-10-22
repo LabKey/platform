@@ -238,17 +238,6 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     private void purgeTable(TableInfo table, Container c, User u)
             throws SQLException
     {
-        Domain domain = table.getDomain();
-        if (domain != null)
-        {
-            SQLFragment objectIds = domain.getDomainKind().sqlObjectIdsInDomain(domain);
-            objectIds.append(" AND Container = ?");
-            objectIds.add(c);
-
-            Integer[] ids = Table.executeArray(table.getSchema(), objectIds, Integer.class);
-            OntologyManager.deleteOntologyObjects(ids, c, true);
-        }
-
         if (table instanceof FilteredTable)
         {
             SimpleFilter filter = new SimpleFilter("Container", c);
@@ -257,6 +246,15 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
             {
                 Table.delete(realTable, filter);
             }
+        }
+        
+        Domain domain = table.getDomain();
+        if (domain != null)
+        {
+            SQLFragment objectIds = domain.getDomainKind().sqlObjectIdsInDomain(domain);
+
+            Integer[] ids = Table.executeArray(table.getSchema(), objectIds, Integer.class);
+            OntologyManager.deleteOntologyObjects(ids, c, true);
         }
     }
 
