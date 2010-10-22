@@ -67,8 +67,8 @@ LABKEY.Visualization = new function() {
             {
                 url : LABKEY.ActionURL.buildURL("viz", "getVisualizationTypes"),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(createTypes, config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
+                success: getSuccessCallbackWrapper(createTypes, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -91,8 +91,8 @@ LABKEY.Visualization = new function() {
             {
                 url : LABKEY.ActionURL.buildURL("viz", "getMeasures"),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(createMeasures, config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
+                success: getSuccessCallbackWrapper(createMeasures, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : params
             });
         },
@@ -109,8 +109,8 @@ LABKEY.Visualization = new function() {
             {
                 url : LABKEY.ActionURL.buildURL("viz", "getData"),
                 method : 'POST',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope, false),
-                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData : params,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -179,8 +179,8 @@ LABKEY.Visualization.Measure = Ext.extend(Object, {
             url : LABKEY.ActionURL.buildURL("viz", "getDimensions"),
             method : 'GET',
             params : params,
-            success: getSuccessCallbackWrapper(createDimensions, config.successCallback, config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
+            success: getSuccessCallbackWrapper(createDimensions, LABKEY.Utils.getOnSuccess(config), config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
         });
     }
 });
@@ -236,8 +236,8 @@ LABKEY.Visualization.Dimension = Ext.extend(Object, {
             url : LABKEY.ActionURL.buildURL("viz", "getDimensionValues"),
             method : 'GET',
             params : params,
-            success: getSuccessCallbackWrapper(createValues, config.successCallback, config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
+            success: getSuccessCallbackWrapper(createValues, LABKEY.Utils.getOnSuccess(config), config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
         });
     }
 });

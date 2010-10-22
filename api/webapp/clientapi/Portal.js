@@ -211,8 +211,8 @@ LABKEY.Portal = new function()
         var params = {};
 
         LABKEY.Utils.applyTranslated(params, config, {
-                successCallback: false,
-                errorCallback: false,
+                success: false,
+                failure: false,
                 scope: false
             });
 
@@ -224,22 +224,22 @@ LABKEY.Portal = new function()
         // below).  The wrapErrorCallback/wrapSuccessCallback function is responsible for updating the DOM, if necessary,
         // closing the wait dialog, and then calling the API developer's success callback function, if one exists.  If
         // no DOM update is requested, we skip the middle callback layer.
-        var errorCallback = config.errorCallback ? config.errorCallback : defaultErrorHandler;
+        var errorCallback = LABKEY.Utils.getOnFailure(config) || defaultErrorHandler;
 
         if (config.updateDOM)
              errorCallback = wrapErrorCallback(errorCallback);
         errorCallback = LABKEY.Utils.getCallbackWrapper(errorCallback, config.scope, true);
 
         // do the same double-wrap with the success callback as with the error callback:
-        var successCallback = config.successCallback;
+        var successCallback = config.success;
         if (config.updateDOM)
-            successCallback = wrapSuccessCallback(config.successCallback, action, config.webPartId, direction);
+            successCallback = wrapSuccessCallback(LABKEY.Utils.getOnSuccess(config), action, config.webPartId, direction);
         successCallback = LABKEY.Utils.getCallbackWrapper(successCallback, config.scope);
 
         return {
             params: params,
-            successCallback: successCallback,
-            errorCallback: errorCallback
+            success: successCallback,
+            error: errorCallback
         };
     }
 
@@ -254,7 +254,7 @@ LABKEY.Portal = new function()
          * If not provided, main portal page for the container will be queried.
          * @param {String} config.containerPath Optional.  Specifies the container in which the web part query should be performed.
          * If not provided, the method will operate on the current container.
-         * @param {Function} config.successCallback
+         * @param {Function} config.success
                 Function called when the this function completes successfully.
                 This function will be called with the following arguments:
                 <ul>
@@ -270,7 +270,7 @@ LABKEY.Portal = new function()
                     <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                     <li>options: the options used for the AJAX request</li>
                 </ul>
-        * @param {Function} [config.errorCallback] Function called when execution fails.
+        * @param {Function} [config.failure] Function called when execution fails.
         *       This function will be called with the following arguments:
                 <ul>
                     <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
@@ -283,8 +283,8 @@ LABKEY.Portal = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('project', 'getWebParts', config.containerPath),
                 method : 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params: config
             });
         },
@@ -298,7 +298,7 @@ LABKEY.Portal = new function()
          * If not provided, the method will operate on the current container.
          * @param {String} config.webPartId The unique integer ID of the web part to be moved.
          * @param {Boolean} config.updateDOM Optional, defaults to false.  Indicates whether the current page's DOM should be updated to reflect changes to web part layout.
-         * @param {Function} config.successCallback
+         * @param {Function} config.success
                 Function called when the this function completes successfully.
                 This function will be called with the following arguments:
                 <ul>
@@ -314,7 +314,7 @@ LABKEY.Portal = new function()
                     <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                     <li>options: the options used for the AJAX request</li>
                 </ul>
-        * @param {Function} [config.errorCallback] Function called when execution fails.
+        * @param {Function} [config.failure] Function called when execution fails.
         *       This function will be called with the following arguments:
                 <ul>
                     <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
@@ -330,8 +330,8 @@ LABKEY.Portal = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync', config.containerPath),
                 method : 'GET',
-                success: callConfig.successCallback,
-                failure: callConfig.errorCallback,
+                success: LABKEY.Utils.getOnSuccess(callConfig),
+                failure: LABKEY.Utils.getOnFailure(callConfig),
                 params: callConfig.params
             });
         },
@@ -347,7 +347,7 @@ LABKEY.Portal = new function()
          * If not provided, the method will operate on the current container.
          * @param {String} config.webPartId The unique integer ID of the web part to be moved.
          * @param {Boolean} config.updateDOM Optional, defaults to false.  Indicates whether the current page's DOM should be updated to reflect changes to web part layout.
-         * @param {Function} config.successCallback
+         * @param {Function} config.success
                 Function called when the this function completes successfully.
                 This function will be called with the following arguments:
                 <ul>
@@ -363,7 +363,7 @@ LABKEY.Portal = new function()
                     <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                     <li>options: the options used for the AJAX request</li>
                 </ul>
-        * @param {Function} [config.errorCallback] Function called when execution fails.
+        * @param {Function} [config.failure] Function called when execution fails.
         *       This function will be called with the following arguments:
                 <ul>
                     <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
@@ -379,8 +379,8 @@ LABKEY.Portal = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync', config.containerPath),
                 method : 'GET',
-                success: callConfig.successCallback,
-                failure: callConfig.errorCallback,
+                success: LABKEY.Utils.getOnSuccess(callConfig),
+                failure: LABKEY.Utils.getOnFailure(callConfig),
                 params: callConfig.params
             });
         },
@@ -393,7 +393,7 @@ LABKEY.Portal = new function()
          * If not provided, the method will operate on the current container.
          * @param {String} config.webPartId The unique integer ID of the web part to be moved.
          * @param {Boolean} config.updateDOM Optional, defaults to false.  Indicates whether the current page's DOM should be updated to reflect changes to web part layout.
-         * @param {Function} config.successCallback
+         * @param {Function} config.success
                 Function called when the this function completes successfully.
                 This function will be called with the following arguments:
                 <ul>
@@ -409,7 +409,7 @@ LABKEY.Portal = new function()
                     <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                     <li>options: the options used for the AJAX request</li>
                 </ul>
-        * @param {Function} [config.errorCallback] Function called when execution fails.
+        * @param {Function} [config.failure] Function called when execution fails.
         *       This function will be called with the following arguments:
                 <ul>
                     <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
@@ -425,8 +425,8 @@ LABKEY.Portal = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('project', 'deleteWebPartAsync', config.containerPath),
                 method : 'GET',
-                success: callConfig.successCallback,
-                failure: callConfig.errorCallback,
+                success: LABKEY.Utils.getOnSuccess(callConfig),
+                failure: LABKEY.Utils.getOnFailure(callConfig),
                 params: callConfig.params
             });
         }

@@ -213,7 +213,7 @@ LABKEY.DataRegion = function (config)
      * Get all selected items.
      *
      * @param config A configuration object with the following properties:
-     * @param {Function} config.successCallback The function to be called upon success of the request.
+     * @param {Function} config.success The function to be called upon success of the request.
      * The callback will be passed the following parameters:
      * <ul>
      * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
@@ -326,7 +326,7 @@ LABKEY.DataRegion = function (config)
      * Clear all selected items.
      *
      * @param config A configuration object with the following properties:
-     * @param {Function} config.successCallback The function to be called upon success of the request.
+     * @param {Function} config.success The function to be called upon success of the request.
      * The callback will be passed the following parameters:
      * <ul>
      * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
@@ -1091,7 +1091,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
  * @param {String} config.selectionKey Unique string used by selection APIs as a key store or retrieve the selected items for a grid.
  * @param {Array} config.id Array of primary key ids for each row to select/unselect.
  * @param {Boolean} config.checked If true, the ids will be selected, otherwise unselected.
- * @param {Function} config.successCallback The function to be called upon success of the request.
+ * @param {Function} config.success The function to be called upon success of the request.
  * The callback will be passed the following parameters:
  * <ul>
  * <li><b>data:</b> an object with the property 'count' to indicate the updated selection count.
@@ -1117,8 +1117,8 @@ LABKEY.DataRegion.setSelected = function (config)
         method: "POST",
         params: params,
         scope: config.scope,
-        success: config.successCallback,
-        failure: config.failureCallback
+        success: LABKEY.Utils.getOnSuccess(config),
+        failure: LABKEY.Utils.getOnFailure(config)
     });
 };
 
@@ -1127,7 +1127,7 @@ LABKEY.DataRegion.setSelected = function (config)
  *
  * @param config A configuration object with the following properties:
  * @param {String} config.selectionKey Unique string used by selection APIs as a key store or retrieve the selected items for a grid.
- * @param {Function} config.successCallback The function to be called upon success of the request.
+ * @param {Function} config.success The function to be called upon success of the request.
  * The callback will be passed the following parameters:
  * <ul>
  * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
@@ -1155,7 +1155,7 @@ LABKEY.DataRegion.clearSelected = function (config)
  *
  * @param config A configuration object with the following properties:
  * @param {String} config.selectionKey Unique string used by selection APIs as a key store or retrieve the selected items for a grid.
- * @param {Function} config.successCallback The function to be called upon success of the request.
+ * @param {Function} config.success The function to be called upon success of the request.
  * The callback will be passed the following parameters:
  * <ul>
  * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
@@ -1177,8 +1177,8 @@ LABKEY.DataRegion.getSelected = function (config)
 
     Ext.Ajax.request({
         url: url,
-        success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-        failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
+        success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+        failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
     });
 };
 

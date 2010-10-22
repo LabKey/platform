@@ -52,8 +52,8 @@ LABKEY.Query = new function()
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("query", config.action, config.containerPath),
             method : 'POST',
-            success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
             jsonData : dataObject,
             headers : {
                 'Content-Type' : 'application/json'
@@ -165,11 +165,11 @@ LABKEY.Query = new function()
          *       if different than the current container. If not supplied, the current container's path will be used.
          * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets
          *       the scope of this query
-         * @param {Function} config.successCallback
+         * @param {Function} config.success
 				Function called when the "selectRows" function executes successfully. Will be called with three arguments:
 				the parsed response data ({@link LABKEY.Query.SelectRowsResults}), the XMLHttpRequest object and
                 (optionally) the "options" object ({@link LABKEY.Query.SelectRowsOptions}).
-         * @param {Function} [config.errorCallback] Function called when execution of the "executeSql" function fails.
+         * @param {Function} [config.failure] Function called when execution of the "executeSql" function fails.
          *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
          * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to returning all rows).
          * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
@@ -232,8 +232,8 @@ LABKEY.Query = new function()
             return Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams),
                 method : 'POST',
-                success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData : dataObject,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -290,7 +290,7 @@ LABKEY.Query = new function()
         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function} config.successCallback
+        * @param {Function} config.success
 				Function called when the "selectRows" function executes successfully.
 				This function will be called with the following arguments:
 				<ul>
@@ -300,7 +300,7 @@ LABKEY.Query = new function()
                     <li><b>responseObj:</b> The XMLHttpResponseObject instance used to make the AJAX request</li>
 				    <li><b>options:</b> The options used for the AJAX request</li>
 				</ul>
-        * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
+        * @param {Function} [config.failure] Function called when execution of the "selectRows" function fails.
         *       This function will be called with the following arguments:
 				<ul>
 				    <li><b>errorInfo:</b> an object describing the error with the following fields:
@@ -389,7 +389,7 @@ LABKEY.Query = new function()
                 config = {
                     schemaName: arguments[0],
                     queryName: arguments[1],
-                    successCallback: arguments[2],
+                    success: arguments[2],
                     errorCallback: arguments[3],
                     filterArray: arguments[4],
                     sort: arguments[5],
@@ -446,8 +446,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : dataObject
             });
         },
@@ -461,11 +461,11 @@ LABKEY.Query = new function()
         * @param {String} config.queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function} config.successCallback Function called when the "updateRows" function executes successfully.
+        * @param {Function} config.success Function called when the "updateRows" function executes successfully.
         	    Will be called with arguments:
                 the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
                 (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
-        * @param {Function} [config.errorCallback] Function called when execution of the "updateRows" function fails.
+        * @param {Function} [config.failure] Function called when execution of the "updateRows" function fails.
         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *               The row array must include the primary key column values and values for
@@ -501,11 +501,11 @@ LABKEY.Query = new function()
         * @param {String} config.commands[].command Name of the command to be performed. Must be one of "insert", "update", or "delete".
         * @param {Array} config.commands[].rows An array of data for each row to be changed. See {@link LABKEY.Query.insertRows},
         * {@link LABKEY.Query.updateRows}, or {@link LABKEY.Query.deleteRows} for requirements of what data must be included for each row.
-        * @param {Function} config.successCallback Function called when the "saveRows" function executes successfully.
+        * @param {Function} config.success Function called when the "saveRows" function executes successfully.
         	    Will be called with arguments:
                 an object with a single "result" property - an array of parsed response data ({@link LABKEY.Query.ModifyRowsResults}) (one for each command in the request),
                 the XMLHttpRequest object and (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
-        * @param {Function} [config.errorCallback] Function called if execution of the "saveRows" function fails.
+        * @param {Function} [config.failure] Function called if execution of the "saveRows" function fails.
         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {String} [config.containerPath] The container path in which the changes are to be performed.
         *              If not supplied, the current container path will be used.
@@ -527,8 +527,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "saveRows", config.containerPath),
                 method : 'POST',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData : config,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -545,11 +545,11 @@ LABKEY.Query = new function()
         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function} config.successCallback Function called when the "insertRows" function executes successfully.
+        * @param {Function} config.success Function called when the "insertRows" function executes successfully.
 						Will be called with the following arguments:
                         the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
                         (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
-		* @param {Function} [config.errorCallback]  Function called when execution of the "insertRows" function fails.
+		* @param {Function} [config.failure]  Function called when execution of the "insertRows" function fails.
         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array must include all column values except for the primary key column.
@@ -604,11 +604,11 @@ LABKEY.Query = new function()
         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function} config.successCallback Function called when the "deleteRows" function executes successfully.
+        * @param {Function} config.success Function called when the "deleteRows" function executes successfully.
                      Will be called with the following arguments:
                      the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
                      (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
-		* @param {Function} [config.errorCallback] Function called when execution of the "deleteRows" function fails.
+		* @param {Function} [config.failure] Function called when execution of the "deleteRows" function fails.
          *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array needs to include only the primary key column value, not all columns.
@@ -663,12 +663,12 @@ LABKEY.Query = new function()
         /**
          * Returns the set of schemas available in the specified container.
          * @param config An object that contains the following configuration parameters
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>schemasInfo:</b> An object with a property called "schemas," which contains an array of schema names.</li>
          * </ul>
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
@@ -686,8 +686,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getSchemas', config.containerPath),
                 method : 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params: params
             });
         },
@@ -696,7 +696,7 @@ LABKEY.Query = new function()
          * Returns the set of queries available in a given schema.
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>queriesInfo:</b> An object with the following properties
@@ -720,7 +720,7 @@ LABKEY.Query = new function()
          *  </ul>
          * </li>
          * </ul>
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
@@ -746,8 +746,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueries', config.containerPath),
                 method : 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params: params
             });
         },
@@ -759,7 +759,7 @@ LABKEY.Query = new function()
          * @param {String} config.queryName the name of the query.
          * @param {String} [config.viewName] An optional view name (empty string for the default view), otherwise return all views for the query.
          * @param {Boolean} [config.metadata] Optionally include view column field metadata.
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>viewsInfo:</b> An object with the following properties
@@ -788,7 +788,7 @@ LABKEY.Query = new function()
          *  </ul>
          * </li>
          * </ul>
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
@@ -811,8 +811,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryViews', config.containerPath),
                 method : 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params: params
             });
         },
@@ -824,9 +824,9 @@ LABKEY.Query = new function()
          * @param {String} config.schemaName The name of the schema.
          * @param {String} config.queryName The name of the query.
          * @param {String} config.views The updated view definitions.
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the ssame parameters as getQueryViews.successCallback.
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
@@ -847,8 +847,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'saveQueryViews', config.containerPath),
                 method: 'POST',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData : params,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -863,7 +863,7 @@ LABKEY.Query = new function()
          * @param {String} config.queryName The name of the query.
          * @param {String} [config.viewName] An optional view name or Array of view names to include custom view details.
          * @param {String} [config.fields] An optional field key or Array of field keys to include in the metadata.
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>queryInfo:</b> An object with the following properties
@@ -883,7 +883,7 @@ LABKEY.Query = new function()
          * </li>
          * </ul>
          * @see LABKEY.Query.FieldMetaData
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
@@ -917,8 +917,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails', config.containerPath),
                 method : 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params: params
             });
         },
@@ -930,9 +930,9 @@ LABKEY.Query = new function()
          * @param {String} config.queryName the name of the query.
          * @param {Boolean} config.includeAllColumns If set to false, only the columns in the user's default view
          * of the specific query will be tested (defaults to true).
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with a simple object with one property named "valid" set to true.
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
@@ -954,8 +954,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'validateQuery', config.containerPath),
                 method : 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params: params
             });
         },
@@ -963,9 +963,9 @@ LABKEY.Query = new function()
         /**
          * Returns the current date/time on the LabKey server.
          * @param config An object that contains the following configuration parameters
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with a single parameter of type Date.
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
@@ -975,13 +975,14 @@ LABKEY.Query = new function()
         {
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getServerDate'),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope),
                 success: LABKEY.Utils.getCallbackWrapper(function(json){
                     var d;
-                    if(json && json.date && config.successCallback)
+                    var onSuccess = LABKEY.Utils.getOnSuccess(config);
+                    if(json && json.date && onSuccess)
                     {
                         d = new Date(json.date);
-                        config.successCallback(d);
+                        onSuccess(d);
                     }
                 }, this)
             });

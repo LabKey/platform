@@ -86,13 +86,13 @@ LABKEY.Message = new function()
          *      <li>content: the email message body for this content type.</li>
          *  </ul>
          * The utility function LABKEY.Message.createMsgContent can be used to help create these objects.
-         * @param {function} [config.successCallback] A reference to a function to call if the action succeeds. This
+         * @param {function} [config.success] A reference to a function to call if the action succeeds. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>result:</b> an object containing a boolean property: success..
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -150,8 +150,8 @@ LABKEY.Message = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("announcements", "sendMessage"),
                 method : 'POST',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData : dataObject,
                 headers : {
                     'Content-Type' : 'application/json'

@@ -492,9 +492,9 @@ LABKEY.Utils.convertToExcel(
          * @param {Function} config.testCallback A function that returns true or false. This will be called every
          * ten milliseconds until it returns true or the maximum number of tests have been made.
          * @param {Array} [config.testArguments] An optional array of arguments to pass to the testCallback function
-         * @param {Function} config.successCallback The function to call when the testCallback returns true.
+         * @param {Function} config.success The function to call when the testCallback returns true.
          * @param {Array} [config.successArguments] An optional array of arguments to pass to the successCallback function
-         * @param {Object} [config.errorCallback] A function to call when the testCallback throws an exception, or when
+         * @param {Object} [config.failure] A function to call when the testCallback throws an exception, or when
          * the maximum number of tests have been made.
          * @param {Array} [config.errorArguments] An optional array of arguments to pass to the errorCallback function
          * @param {Object} [config.scope] A scope to use when calling any of the callback methods (defaults to this)
@@ -539,7 +539,7 @@ LABKEY.Utils.convertToExcel(
             try
             {
                 if(config.testCallback.apply(config.scope || this, config.testArguments))
-                    config.successCallback.apply(config.scope || this, config.successArguments);
+                    LABKEY.Utils.getOnSuccess(config).apply(config.scope || this, config.successArguments);
                 else
                 {
                     if (config.maxTests <= 0) {
@@ -552,8 +552,8 @@ LABKEY.Utils.convertToExcel(
             }
             catch(e)
             {
-                if (config.errorCallback) {
-                    config.errorCallback.apply(config.scope || this, [e,config.errorArguments]);                    
+                if (LABKEY.Utils.getOnFailure(config)) {
+                    LABKEY.Utils.getOnFailure(config).apply(config.scope || this, [e,config.errorArguments]);
                 }
             }
         },
@@ -627,6 +627,33 @@ LABKEY.Utils.convertToExcel(
                 return '[<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>]';
             }
             throw "Config object not found for textLink.";
+        },
+
+        /**
+         *
+         * Standard documented name for error callback arguments is "failure" but various other names have been employed in past.
+         * This function provides reverse compatibility by picking the failure callback argument out of a config object
+         * be it named failure, failureCallback or errorCallback.
+         *
+         * @param config
+         */
+        getOnFailure : function(config)
+        {
+            return config.failure || config.errorCallback || config.failureCallback;
+            // maybe it be desirable for this fall all the way back to returning LABKEY.Utils.displayAjaxErrorResponse?
+        },
+
+        /**
+         *
+         * Standard documented name for success callback arguments is "success" but various names have been employed in past.
+         * This function provides reverse compatibility by picking the success callback argument out of a config object,
+         * be it named success or successCallback.
+         *
+         * @param config
+         */
+        getOnSuccess : function(config)
+        {
+            return config.success || config.successCallback
         },
 
         // private

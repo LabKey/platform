@@ -33,8 +33,8 @@ LABKEY.Assay = new function()
         //check for old-style separate arguments
         if(arguments.length > 1) {
             config = {
-                successCallback: arguments[0],
-                failureCallback: arguments[1],
+                success: arguments[0],
+                failure: arguments[1],
                 parameters: arguments[2],
                 containerPath: arguments[3]
             };
@@ -47,8 +47,8 @@ LABKEY.Assay = new function()
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("assay", "assayList", config.containerPath),
             method : 'POST',
-            success: config.successCallback,
-            failure: config.failureCallback,
+            success: LABKEY.Utils.getOnSuccess(config),
+            failure: LABKEY.Utils.getOnFailure(config),
             jsonData : config.parameters,
             headers : {
                 'Content-Type' : 'application/json'
@@ -79,11 +79,11 @@ LABKEY.Assay = new function()
 
 	/**
 	* Gets all assays.
-	* @param {Function} config.successCallback Required. Function called when the
+	* @param {Function} config.success Required. Function called when the
 			"getAll" function executes successfully.  Will be called with the argument: 
 			{@link LABKEY.Assay.AssayDesign[]}.
     * @param {Object} config An object which contains the following configuration properties.
-	* @param {Function} [config.failureCallback] Function called when execution of the "getAll" function fails.
+	* @param {Function} [config.failure] Function called when execution of the "getAll" function fails.
 	* @param {String} [config.containerPath] The container path in which the requested Assays are defined.
 	*       If not supplied, the current container path will be used.
 	* @example Example:
@@ -118,7 +118,7 @@ LABKEY.Assay = new function()
 		alert('An error occurred retrieving data.'); 
 	}
 	
-	LABKEY.Assay.getAll({successCallback: successHandler, failureCallback: errorHandler});
+	LABKEY.Assay.getAll({success: successHandler, failure: errorHandler});
 &lt;/script&gt;
 &lt;div id='testDiv'&gt;Loading...&lt;/div&gt;
 </pre>
@@ -128,19 +128,19 @@ LABKEY.Assay = new function()
         {
             if(arguments.length > 1) {
                 config = {
-                    successCallback: arguments[0],
-                    failureCallback: arguments[1],
+                    success: arguments[0],
+                    failure: arguments[1],
                     parameters: {},
                     containerPath: arguments[2]
                 };
             }
 
-            config.successCallback = getSuccessCallbackWrapper(config.successCallback);
+            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config));
             getAssays(config);
         },
 	  /**
 	  * Gets an assay by name.
-	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.successCallback Function called when the "getByName" function executes successfully.
+	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.success Function called when the "getByName" function executes successfully.
       * @param {Object} config An object which contains the following configuration properties.
 	  * @param {Function} [config.failureCallback] Function called when execution of the "getByName" function fails.
 	  * @param {String} config.name String name of the assay.
@@ -152,21 +152,21 @@ LABKEY.Assay = new function()
         {
             if(arguments.length > 1) {
                 config = {
-                    successCallback: arguments[0],
-                    failureCallback: arguments[1],
+                    success: arguments[0],
+                    failure: arguments[1],
                     parameters: { name: arguments[2] },
                     containerPath: arguments[3]
                 };
             }
 
             moveParameter(config, "name");
-            config.successCallback = getSuccessCallbackWrapper(config.successCallback);
+            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config));
             getAssays(config);
         },
 
 	  /**
 	  * Gets an assay by type.
-	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.successCallback Function called
+	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.success Function called
 				when the "getByType" function executes successfully.
       * @param {Object} config An object which contains the following configuration properties.
 	  * @param {Function} [config.failureCallback] Function called when execution of the "getByType" function fails.
@@ -179,21 +179,21 @@ LABKEY.Assay = new function()
         {
             if(arguments.length > 1) {
                 config = {
-                    successCallback: arguments[0],
-                    failureCallback: arguments[1],
+                    success: arguments[0],
+                    failure: arguments[1],
                     parameters: { type: arguments[2] },
                     containerPath: arguments[3]
                 };
             }
 
             moveParameter(config, "type");
-            config.successCallback = getSuccessCallbackWrapper(config.successCallback);
+            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config));
             getAssays(config);
         },
 
 	 /**
 	 * Gets an assay by its ID.
-	 * @param {Function(LABKEY.Assay.AssayDesign[])} config.successCallback Function called
+	 * @param {Function(LABKEY.Assay.AssayDesign[])} config.success Function called
 				when the "getById" function executes successfully.
      * @param {Object} config An object which contains the following configuration properties.
 	 * @param {Function} [config.failureCallback] Function called when execution of the "getById" function fails.
@@ -206,15 +206,15 @@ LABKEY.Assay = new function()
         {
             if(arguments.length > 1) {
                 config = {
-                    successCallback: arguments[0],
-                    failureCallback: arguments[1],
+                    success: arguments[0],
+                    failure: arguments[1],
                     parameters: { id: arguments[2] },
                     containerPath: arguments[3]
                 };
             }
 
             moveParameter(config, "id");
-            config.successCallback = getSuccessCallbackWrapper(config.successCallback);
+            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config));
             getAssays(config);
         },
 
@@ -229,7 +229,7 @@ LABKEY.Assay = new function()
          * @param {Boolean} [config.calculateNeut]  Whether neutralization should be calculated on the server.
          * @param {Boolean} [config.includeFitParameters]  Whether the parameters used in the neutralization curve fitting calculation
          * should be included in the response.
-        * @param {Function} config.successCallback
+        * @param {Function} config.success
                 Function called when the "getNAbRuns" function executes successfully.
                 This function will be called with the following arguments:
                 <ul>
@@ -237,7 +237,7 @@ LABKEY.Assay = new function()
                     <li>options: the options used for the AJAX request</li>
                     <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                 </ul>
-        * @param {Function} [config.errorCallback] Function called when execution of the "getNAbRuns" function fails.
+        * @param {Function} [config.failure] Function called when execution of the "getNAbRuns" function fails.
         *       This function will be called with the following arguments:
                 <ul>
                     <li>responseObj: The XMLHttpRequest object containing the response data.</li>
@@ -280,17 +280,14 @@ LABKEY.Assay = new function()
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
-            if (!config.errorCallback)
-               config.errorCallback = LABKEY.Utils.displayAjaxErrorResponse;
-
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getNabRuns', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                    if(config.successCallback)
-                        config.successCallback.call(config.scope, data.runs);
+                    if(config.success)
+                        config.success.call(config.scope, data.runs);
                 }, this),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
                 params : dataObject
             });
         },
@@ -309,13 +306,13 @@ LABKEY.Assay = new function()
          * should be included in the response.
          * @param {String} [config.containerPath] The path to the study container containing the NAb summary,
          *       if different than the current container. If not supplied, the current container's path will be used.
-         * @param {Function} config.successCallback
+         * @param {Function} config.success
                 Function called when the "getStudyNabRuns" function executes successfully.
                 This function will be called with the following arguments:
                 <ul>
                     <li>runs: an array of NAb run objects</li>
                 </ul>
-        * @param {Function} [config.errorCallback] Function called when execution of the "getStudyNabRuns" function fails.
+        * @param {Function} [config.failure] Function called when execution of the "getStudyNabRuns" function fails.
         *       This function will be called with the following arguments:
                 <ul>
                     <li>responseObj: The XMLHttpRequest object containing the response data.</li>
@@ -333,17 +330,14 @@ LABKEY.Assay = new function()
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
-            if (!config.errorCallback)
-               config.errorCallback = LABKEY.Utils.displayAjaxErrorResponse;
-
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getStudyNabRuns', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                    if(config.successCallback)
-                        config.successCallback.call(config.scope, data.runs);
+                    if(config.success)
+                        config.success.call(config.scope, data.runs);
                 }, this),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
                 params : dataObject
             });
         },
@@ -363,7 +357,7 @@ LABKEY.Assay = new function()
          * @param {String} config.width Optional, defaults to 425.  Desired width of the graph image in pixels.
          * @param {String} [config.containerPath] The path to the study container containing the NAb summary data,
          *       if different than the current container. If not supplied, the current container's path will be used.
-         * @param {Function} config.successCallback
+         * @param {Function} config.success
                 Function called when the "getStudyNabGraphURL" function executes successfully.
                 This function will be called with the following arguments:
                 <ul>
@@ -376,7 +370,7 @@ LABKEY.Assay = new function()
                     <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                     <li>options: the options used for the AJAX request</li>
                 </ul>
-        * @param {Function} [config.errorCallback] Function called when execution of the "getStudyNabGraphURL" function fails.
+        * @param {Function} [config.failure] Function called when execution of the "getStudyNabGraphURL" function fails.
         *       This function will be called with the following arguments:
                 <ul>
                     <li>responseObj: The XMLHttpRequest object containing the response data.</li>
@@ -425,14 +419,11 @@ LABKEY.Assay = new function()
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
-            if (!config.errorCallback)
-               config.errorCallback = LABKEY.Utils.displayAjaxErrorResponse;
-
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getStudyNabGraphURL', config.containerPath),
                 method : 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope, false),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
                 params : parameters
             });
         }

@@ -140,17 +140,17 @@ Ext.extend(LABKEY.MultiRequest, Ext.util.Observable,
             return true;
         }
 
-        var success = config.success || config.successCallback;
+        var success = LABKEY.Utils.getOnSuccess(config);
         if (!success) success = function () { };
         if (!success._hookInstalled) {
-            config.success = config.successCallback = success.createSequence(fireDone);
+            config.success = success.createSequence(fireDone);
             config.success._hookInstalled = true;
         }
 
-        var failure = config.failure || config.failureCallback || config.errorCallback;
+        var failure = LABKEY.Utils.getOnFailure(config);
         if (!failure) failure = function () { };
         if (!failure._hookInstalled) {
-            config.failure = config.failureCallback = config.errorCallback = failure.createSequence(fireDone);
+            config.failure = failure.createSequence(fireDone);
             config.failure._hookInstalled = true;
         }
 

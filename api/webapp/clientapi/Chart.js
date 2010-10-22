@@ -50,7 +50,7 @@
 					How To Find schemaName, queryName &amp; viewName</a>. 
   * @param {String} config.renderTo Element on the page where the chart will render.
   * @param {String} [config.renderImageMapTo] Element on the page where the imagemap will render.
-  * @param {Function} [config.errorCallback] Javascript function that can be used as a callback
+  * @param {Function} [config.failure] Javascript function that can be used as a callback
   *                   if an error occurs. Otherwise, a standard listener will be used.
   * @param {String} config.columnXName Name of the column to plot on the X axis.
   * @param {String|[String]} config.columnYName Name of the column (or columns)
@@ -196,13 +196,10 @@ LABKEY.Chart = function(config)
                 config.imageMapName = imageDivName;
             }
 
-            if (!config.errorCallback)
-                config.errorCallback = handleLoadError;
-
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("reports", "plotChartApi", containerPath),
                 success: renderChartInternal,
-                failure: config.errorCallback,
+                failure: LABKEY.Utils.getOnFailure(config) || handleLoadError,
                 params: config
             });
         }

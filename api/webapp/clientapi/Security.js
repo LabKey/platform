@@ -112,7 +112,7 @@ LABKEY.Security = new function()
          * Get the effective permissions for all groups within the container, optionally
          * recursing down the container hierarchy.
          * @param config A configuration object with the following properties:
-         * @param {function} config.successCallback A reference to a function to call with the API results. This
+         * @param {function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>groupPermsInfo:</b> an object containing properties about the container and group permissions.
@@ -150,7 +150,7 @@ LABKEY.Security = new function()
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -163,8 +163,8 @@ LABKEY.Security = new function()
          */
         getGroupPermissions : function(config)
         {
-            if(!config.successCallback)
-                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getGroupPermissions()!");
+            if(!LABKEY.Utils.getOnSuccess(config))
+                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getGroupPermissions()!");
 
             var params = {};
             if(config.includeSubfolders != undefined)
@@ -174,8 +174,8 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("security", "getGroupPerms", config.containerPath),
                 method : 'GET',
                 params: params,
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -213,7 +213,7 @@ LABKEY.Security = new function()
          * @param config A configuration object containing the following properties
          * @param {Integer} config.userId The id of the user. Omit to get the current user's information
          * @param {String} config.userEmail The email address (user name) of the user (specify only userId or userEmail, not both)
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>userPermsInfo:</b> an object containing properties about the user's permissions.
@@ -266,7 +266,7 @@ LABKEY.Security = new function()
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -279,8 +279,8 @@ LABKEY.Security = new function()
          */
         getUserPermissions : function(config)
         {
-            if(!config.successCallback)
-                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getUserPermissions()!");
+            if(!LABKEY.Utils.getOnSuccess(config))
+                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getUserPermissions()!");
 
             var params = {};
 
@@ -296,8 +296,8 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("security", "getUserPerms", config.containerPath),
                 method : 'GET',
                 params: params,
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -308,7 +308,7 @@ LABKEY.Security = new function()
          * @param {string} [config.group] The name of a project group for which you want the members (specify groupId or group, not both).
          * @param {string} [config.name] The first part of the user name, useful for user name completion. If specified,
          * only users whose email address or display name starts with the value supplied will be returned.
-         * @param {function} config.successCallback A reference to a function to call with the API results. This
+         * @param {function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>usersInfo:</b> an object with the following shape:
@@ -325,7 +325,7 @@ LABKEY.Security = new function()
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -337,8 +337,8 @@ LABKEY.Security = new function()
          */
         getUsers : function(config)
         {
-            if(!config.successCallback)
-                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getUsers()!");
+            if(!LABKEY.Utils.getOnSuccess(config))
+                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getUsers()!");
 
             var params = {};
             if(undefined != config.groupId)
@@ -353,8 +353,8 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("user", "getUsers", config.containerPath),
                 method : 'GET',
                 params: params,
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -366,7 +366,7 @@ LABKEY.Security = new function()
          * @param {String} [config.description] The description of the container, used primarily for workbooks.
          * @param {boolean} [config.isWorkbook] Whether this a workbook should be created. Defaults to false.
          * @param {String} [config.folderType] The name of the folder type to be applied.
-         * @param {function} [config.successCallback] A reference to a function to call with the API results. This
+         * @param {function} [config.success] A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>containersInfo:</b> an object with the following properties:
@@ -383,7 +383,7 @@ LABKEY.Security = new function()
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -406,21 +406,21 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("core", "createContainer", config.containerPath),
                 method : 'POST',
                 jsonData : params,
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
         
         /**
          * Deletes an existing container, which may be a project, folder, or workbook.
          * @param config A configuration object with the following properties
-         * @param {function} [config.successCallback] A reference to a function to call with the API results. This
+         * @param {function} [config.success] A reference to a function to call with the API results. This
          * function will be passed the following parameter:
          * <ul>
          * <li><b>object:</b> Empty JavaScript object</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -436,15 +436,15 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("core", "deleteContainer", config.containerPath),
                 method : 'POST',
                 jsonData : {},
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
         /**
          * Retrieves the full set of folder types that are available on the server.
          * @param config A configuration object with the following properties
-         * @param {function} config.successCallback A reference to a function to call with the API results. This
+         * @param {function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameter:
          * <ul>
          * <li><b>folderTypes:</b> Map from folder type name to folder type object, which consists of the following properties:
@@ -466,7 +466,7 @@ LABKEY.Security = new function()
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -480,8 +480,8 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("core", "getFolderTypes", config.containerPath),
                 method : 'POST',
                 jsonData : {},
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -493,7 +493,7 @@ LABKEY.Security = new function()
          * @param {boolean} [config.includeSubfolders] If set to true, the entire branch of containers will be returned.
          * If false, only the immediate children of the starting container will be returned (defaults to false).
          * @param {int} [config.depth] May be used to control the depth of recursion if includeSubfolders is set to true.
-         * @param {function} config.successCallback A reference to a function to call with the API results. This
+         * @param {function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>containersInfo:</b> an object with the following properties:
@@ -514,7 +514,7 @@ LABKEY.Security = new function()
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -526,8 +526,8 @@ LABKEY.Security = new function()
          */
         getContainers : function(config)
         {
-            if(!config.successCallback)
-                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getContainers()!");
+            if(!LABKEY.Utils.getOnSuccess(config))
+                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getContainers()!");
 
             var params = {};
             if(undefined != config.includeSubfolders)
@@ -539,8 +539,8 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("project", "getContainers", config.containerPath),
                 method : 'GET',
                 params: params,
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -566,7 +566,7 @@ LABKEY.Security = new function()
          * Returns the set of groups the current user belongs to in the current container or specified containerPath.
          * This may be called by any user.
          * @param {object} config A configuration object with the following properties:
-         * @param {function} config.successCallback A reference to a function that will be called with the results.
+         * @param {function} config.success A reference to a function that will be called with the results.
          * This function will receive the follwing parameters:
          * <ul>
          * <li>results: an object with the following properties:
@@ -582,7 +582,7 @@ LABKEY.Security = new function()
          *  </ul>
          * </li>
          * </ul>
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -594,14 +594,14 @@ LABKEY.Security = new function()
          */
         getGroupsForCurrentUser : function(config)
         {
-            if(!config.successCallback)
-                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getGroupsForCurrentUser()!");
+            if(!LABKEY.Utils.getOnSuccess(config))
+                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getGroupsForCurrentUser()!");
 
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getGroupsForCurrentUser", config.containerPath),
                 method: 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -612,8 +612,8 @@ LABKEY.Security = new function()
          * After the user logs in, the browser will be redirected back to the current page, and the current user information
          * will be available via {@link LABKEY.Security.currentUser}. If omitted or set to false, this function
          * will attempt to login via an AJAX request, which will cause the browser to display the basic authentication
-         * dialog. After the user logs in successfully, the config.successCallback function will be called.
-         * @param {function} config.successCallback A reference to a function that will be called after a successful login.
+         * dialog. After the user logs in successfully, the config.success function will be called.
+         * @param {function} config.success A reference to a function that will be called after a successful login.
          * It is passed the following parameters:
          * <ul>
          *  <li>results: an object with the following properties:
@@ -624,7 +624,7 @@ LABKEY.Security = new function()
          * </ul>
          * Note that if the current user is already logged in, the successCallback function will be called immediately,
          * passing the current user information from {@link LABKEY.Security.currentUser}.
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -650,17 +650,17 @@ LABKEY.Security = new function()
                             if(data.currentUser)
                                 LABKEY.Security.currentUser = data.currentUser;
 
-                            if(config.successCallback)
-                                config.successCallback.call(config.scope || this, data, req);
+                            if(LABKEY.Utils.getOnSuccess(config))
+                                LABKEY.Utils.getOnSuccess(config).call(config.scope || this, data, req);
 
                         }, this),
-                        failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                        failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
                     });
                 }
             }
             else
             {
-                config.successCallback.call(config.scope || this, {currentUser: LABKEY.Security.currentUser});
+                LABKEY.Utils.getOnSuccess(config).call(config.scope || this, {currentUser: LABKEY.Security.currentUser});
             }
         },
 
@@ -673,7 +673,7 @@ LABKEY.Security = new function()
          * list of effective permissions (unique names) the current user has to each resource (defaults to false).
          * These permissions are calcualted based on the current user's group memberships and role assignments, and
          * represent the actual permissions the user has to these resources at the time of the API call.
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>data:</b> an object with a property named "resources" which contains the root resource.
@@ -693,7 +693,7 @@ LABKEY.Security = new function()
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -715,15 +715,15 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("security", "getSecurableResources", config.containerPath),
                 method: "GET",
                 params: params,
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
         /**
          * Returns the complete set of roles defined on the server, along with the permissions each role grants.
          * @param config A configuration object with the following properties:
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>roles:</b> An array of role objects, each of which has the following properties:
@@ -744,7 +744,7 @@ LABKEY.Security = new function()
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -780,10 +780,10 @@ LABKEY.Security = new function()
                         }
                     }
 
-                    config.successCallback.call(config.scope || this, data.roles, req);
+                    LABKEY.Utils.getOnSuccess(config).call(config.scope || this, data.roles, req);
 
                 }, this),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -795,14 +795,14 @@ LABKEY.Security = new function()
          * Note that the securable resource must be within the current container, or one of its descendants.
          * @param config A configuration object with the following properties
          * @param {String} config.resourceId The unique id of the securable resource.
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>policy:</b> an instance of a LABKEY.SecurityPolicy object.</li>
          * <li><b>relevantRoles:</b> an array of role ids that are relevant for the given resource.</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -822,9 +822,9 @@ LABKEY.Security = new function()
                 success: LABKEY.Utils.getCallbackWrapper(function(data, req){
                     data.policy.requestedResourceId = config.resourceId;
                     var policy = new LABKEY.SecurityPolicy(data.policy);
-                    config.successCallback.call(config.scope || this, policy, data.relevantRoles, req);
+                    LABKEY.Utils.getOnSuccess(config).call(config.scope || this, policy, data.relevantRoles, req);
                 }, this),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -833,13 +833,13 @@ LABKEY.Security = new function()
          * security policy from its parent resource.
          * @param config A configuration object with the following properties
          * @param {String} config.resourceId The unique id of the securable resource.
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>data:</b> a simple object with one property called 'success' which will be set to true.</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -855,8 +855,8 @@ LABKEY.Security = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "deletePolicy", config.containerPath),
                 method: "POST",
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData: params,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -872,13 +872,13 @@ LABKEY.Security = new function()
          * method on the policy passing null.
          * @param config A configuration object with the following properties
          * @param {String} config.policy The LABKEY.SecurityPolicy object
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>data:</b> a simple object with one property called 'success' which will be set to true.</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -893,8 +893,8 @@ LABKEY.Security = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "savePolicy", config.containerPath),
                 method : 'POST',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData : config.policy.policy,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -908,13 +908,13 @@ LABKEY.Security = new function()
          * container is the root.
          * @param config A configuration object with the following properties:
          * @param {String} config.groupName The name of the group to create
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>data:</b> a simple object with two properties: id and name (the new group id and name respectively)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -930,8 +930,8 @@ LABKEY.Security = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "createGroup", config.containerPath),
                 method: "POST",
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData: params,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -943,13 +943,13 @@ LABKEY.Security = new function()
          * Deletes a group.
          * @param config A configuration object with the following properties:
          * @param {int} config.groupId The id of the group to delete
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>data:</b> a simple object with a property named "deleted" that contains the deleted group id.</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -965,8 +965,8 @@ LABKEY.Security = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "deleteGroup", config.containerPath),
                 method: "POST",
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData: params,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -979,13 +979,13 @@ LABKEY.Security = new function()
          * @param config A configuration object with the following properties:
          * @param {int} config.groupId The id of the group to delete
          * @param {String} config.newName The new name for the group
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>data:</b> a simple object with the following properties: 'renamed'=the group id; 'oldName'=the old name; 'newName'=the new name.</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -1000,8 +1000,8 @@ LABKEY.Security = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "renameGroup", config.containerPath),
                 method: "POST",
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData: params,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -1015,13 +1015,13 @@ LABKEY.Security = new function()
          * @param config A configuration object with the following properties:
          * @param {int} config.groupId The id of the group to which you want to add the member.
          * @param {int or Array} config.principalIds An integer id or array of ids of the users or groups you want to add as members.
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>data:</b> a simple object with a property named "added" that contains the added principal id.</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -1040,8 +1040,8 @@ LABKEY.Security = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "addGroupMember", config.containerPath),
                 method: "POST",
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData: params,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -1055,13 +1055,13 @@ LABKEY.Security = new function()
          * @param config A configuration object with the following properties:
          * @param {int} config.groupId The id of the group from which you want to remove the member.
          * @param {int or Array} config.principalIds An integer id or array of ids of the users or groups you want to remove.
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>data:</b> a simple object with a property named "removed" that contains the removed principal id.</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -1080,8 +1080,8 @@ LABKEY.Security = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "removeGroupMember", config.containerPath),
                 method: "POST",
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData: params,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -1094,13 +1094,13 @@ LABKEY.Security = new function()
          * @param config A configuration object with the following properties:
          * @param {String} config.email The new user's email address.
          * @param {Boolean} config.sendEmail Set to false to stop the server from sending a welcome email to the user.
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>data:</b> a simple object with three properties: userId, email, and message.</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -1119,8 +1119,8 @@ LABKEY.Security = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "createNewUser", config.containerPath),
                 method: "POST",
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData: params,
                 headers : {
                     'Content-Type' : 'application/json'

@@ -50,15 +50,11 @@ LABKEY.Specimen = new function()
         */
           getRepositories : function(successCallback, failureCallback, containerPath)
           {
-              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
-              // default callback and callback wrapper functions:
-              if (!failureCallback)
-                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               Ext.Ajax.request({
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getRespositories", containerPath),
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback, 'repositories'),
-                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback || LABKEY.Utils.displayAjaxErrorResponse, this, true),
                   headers : {
                       'Content-Type' : 'application/json'
                   }
@@ -79,15 +75,11 @@ LABKEY.Specimen = new function()
         */
           getVialsByRowId : function(successCallback, vialRowIdArray, failureCallback, containerPath)
           {
-              // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
-              // default callback and callback wrapper functions:
-              if (!failureCallback)
-                 failureCallback = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
               Ext.Ajax.request({
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getVialsByRowId", containerPath),
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback, 'vials'),
-                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback || LABKEY.Utils.displayAjaxErrorResponse, this, true),
                   jsonData : { rowIds : vialRowIdArray },
                   headers : {
                       'Content-Type' : 'application/json'

@@ -32,7 +32,7 @@ LABKEY.Pipeline = new function(){
          * container in which the request was made, or a parent container if the pipeline was defined
          * there.
          * @param {Object} config A configuration object with the following properties.
-         * @param {Function} config.successCallback The function to call with the resulting information.
+         * @param {Function} config.success The function to call with the resulting information.
          * This function will be passed a single parameter of type object, which will have the following
          * properties:
          * <ul>
@@ -40,7 +40,7 @@ LABKEY.Pipeline = new function(){
          * been defined in this container hierarchy, the value of this property will be null.</li>
          *  <li>webDavURL: the WebDavURL for the pipeline root.</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A function to call if an error occurs. This function
+         * @param {Function} [config.failure] A function to call if an error occurs. This function
          * will receive one parameter of type object with the following properites:
          * <ul>
          *  <li>exception: The exception message.</li>
@@ -52,8 +52,8 @@ LABKEY.Pipeline = new function(){
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("pipeline", "getPipelineContainer.api", config.containerPath),
                 method: 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -63,7 +63,7 @@ LABKEY.Pipeline = new function(){
          * @param {Object} config A configuration object with the following properties.
          * @param {String} config.taskId Identifier for the pipeline.
          * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
-         * @param {Function} config.successCallback The function to call with the resulting information.
+         * @param {Function} config.success The function to call with the resulting information.
          * This function will be passed a list of protocol objects, which will have the following properties:
          * <ul>
          *  <li>name: name of the saved protocol.</li>
@@ -71,7 +71,7 @@ LABKEY.Pipeline = new function(){
          *  <li>xmlParameters: bioml representation of the parameters defined by this protocol.</li>
          *  <li>jsonParameters: JSON representation of the parameters defined by this protocol.</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A function to call if an error occurs. This function
+         * @param {Function} [config.failure] A function to call if an error occurs. This function
          * will receive one parameter of type object with the following properites:
          * <ul>
          *  <li>exception: The exception message.</li>
@@ -88,10 +88,9 @@ LABKEY.Pipeline = new function(){
                 method: 'POST',
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                    if(config.successCallback)
-                        config.successCallback(data.protocols, data.defaultProtocolName, response);
+                        LABKEY.Utils.getOnSuccess(config).call(data.protocols, data.defaultProtocolName, response);
                 }, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -104,7 +103,7 @@ LABKEY.Pipeline = new function(){
          * @param {String[]} config.files names of the file within the subdirectory described by the path property
          * @param {String} config.protocolName name of the analysis protocol
          * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
-         * @param {Function} config.successCallback The function to call with the resulting information.
+         * @param {Function} config.success The function to call with the resulting information.
          * This function will be passed two arguments, a list of file status objects (described below) and the
          * name of the action that would be performed on the files if the user initiated processing
          * ('Retry' or 'Analyze', for example).
@@ -112,7 +111,7 @@ LABKEY.Pipeline = new function(){
          *  <li>name: name of the file, a String.</li>
          *  <li>status: status of the file, a String</li>
          * </ul>
-         * @param {Function} [config.errorCallback] A function to call if an error occurs. This function
+         * @param {Function} [config.failure] A function to call if an error occurs. This function
          * will receive one parameter of type object with the following properites:
          * <ul>
          *  <li>exception: The exception message.</li>
@@ -134,10 +133,9 @@ LABKEY.Pipeline = new function(){
                 timeout: 60000000,
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                    if(config.successCallback)
-                        config.successCallback(data.files, data.submitType, response);
+                        LABKEY.Utils.getOnSuccess(config).call(data.files, data.submitType, response);
                 }, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
 
@@ -160,8 +158,8 @@ LABKEY.Pipeline = new function(){
          * this protocol definition for future use. Defaults to true.
          *
          * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
-         * @param {Function} config.successCallback A function to call if this operation is successful.
-         * @param {Function} [config.errorCallback] A function to call if an error occurs. This function
+         * @param {Function} config.success A function to call if this operation is successful.
+         * @param {Function} [config.failure] A function to call if an error occurs. This function
          * will receive one parameter of type object with the following properites:
          * <ul>
          *  <li>exception: The exception message.</li>
@@ -205,8 +203,8 @@ LABKEY.Pipeline = new function(){
                 method: 'POST',
                 params: params,
                 timeout: 60000000,
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         }
     };

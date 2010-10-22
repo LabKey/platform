@@ -55,14 +55,14 @@ LABKEY.Experiment = new function()
          * Create or recycle an existing run group. Run groups are the basis for some operations, like comparing
          * MS2 runs to one another.
          * @param config A configuration object with the following properties:
-         * @param {function} config.successCallback A reference to a function to call with the API results. This
+         * @param {function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>runGroup:</b> a {@link LABKEY.Exp.RunGroup} object containing properties about the run group</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Integer[]} config.runIds An array of integer ids for the runs to be members of the group.
-         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -75,9 +75,9 @@ LABKEY.Experiment = new function()
          */
         createHiddenRunGroup : function (config)
         {
-            if(!config.successCallback)
+            if(!LABKEY.Utils.getOnSuccess(config))
             {
-                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.createHiddenRunGroup()!");
+                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.createHiddenRunGroup()!");
                 return;
             }
 
@@ -91,8 +91,8 @@ LABKEY.Experiment = new function()
                 url : LABKEY.ActionURL.buildURL("experiment", "createHiddenRunGroup", config.containerPath),
                 method : 'POST',
                 jsonData : { runIds : config.runIds },
-                success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
+                success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 headers :
                 {
                     'Content-Type' : 'application/json'
@@ -105,13 +105,13 @@ LABKEY.Experiment = new function()
          * @param config An object that contains the following configuration parameters
          * @param {Number} config.assayId The assay protocol id.
          * @param {Number} config.batchId The batch id.
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with a the parameters:
          * <ul>
          * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.
          * <li><b>response</b> The original response
          * </ul>
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>response</b> The original response
@@ -122,8 +122,8 @@ LABKEY.Experiment = new function()
          */
         loadBatch : function (config)
         {
-            if (!config.successCallback) {
-                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.loadBatch()!");
+            if (!LABKEY.Utils.getOnSuccess(config)) {
+                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.loadBatch()!");
                 return;
             }
 
@@ -135,8 +135,8 @@ LABKEY.Experiment = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayBatch", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
-                success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
+                success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 scope: config.scope,
                 jsonData : {
                     assayId: config.assayId,
@@ -153,13 +153,13 @@ LABKEY.Experiment = new function()
          * @param config An object that contains the following configuration parameters
          * @param {Number} config.assayId The assay protocol id.
          * @param {LABKEY.Exp.RunGroup} config.batch The modified batch object.
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with a the parameters:
          * <ul>
          * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.  Some values will be filled in by the server.
          * <li><b>response</b> The original response
          * </ul>
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>response</b> The original response
@@ -169,8 +169,8 @@ LABKEY.Experiment = new function()
          */
         saveBatch : function (config)
         {
-            if (!config.successCallback) {
-                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.saveBatch()!");
+            if (!LABKEY.Utils.getOnSuccess(config)) {
+                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
                 return;
             }
 
@@ -186,8 +186,8 @@ LABKEY.Experiment = new function()
                     assayId: config.assayId,
                     batch: config.batch
                 },
-                success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
+                success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 scope: config.scope,
                 headers: {
                     'Content-Type' : 'application/json'
@@ -202,13 +202,13 @@ LABKEY.Experiment = new function()
          * @param config An object that contains the following configuration parameters
          * @param config.name name of the sample set
          * @param config.materials An array of LABKEY.Exp.Material objects to be saved.
-         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.  Some values will be filled in by the server.
          * <li><b>response</b> The original response
          * </ul>
-         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
          * <li><b>response</b> The original response
@@ -218,8 +218,8 @@ LABKEY.Experiment = new function()
          */
         saveMaterials : function (config)
         {
-            if (!config.successCallback) {
-                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.saveBatch()!");
+            if (!LABKEY.Utils.getOnSuccess(config)) {
+                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
                 return;
             }
 
@@ -227,8 +227,8 @@ LABKEY.Experiment = new function()
                 schemaName: 'Samples',
                 queryName: config.name,
                 rowDataArray: config.materials,
-                successCallback: config.successCallback,
-                errorCallback: config.failureCallback,
+                success: LABKEY.Utils.getOnSuccess(config),
+                failure: LABKEY.Utils.getOnFailure(config),
                 scope: config.scope
             });
         }
@@ -359,13 +359,13 @@ LABKEY.Exp.Run = function (config) {
     /**
      * Deletes the run from the database.
      * @param config An object that contains the following configuration parameters
-     * @param {Function} config.successCallback A reference to a function to call with the API results. This
+     * @param {Function} config.success A reference to a function to call with the API results. This
      * function will be passed the following parameters:
      * <ul>
      * <li><b>data:</b> a simple object with one property called 'success' which will be set to true.</li>
      * <li><b>response:</b> The XMLHttpResponse object</li>
      * </ul>
-     * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+     * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
      * function will be passed the following parameters:
      * <ul>
      * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -374,9 +374,9 @@ LABKEY.Exp.Run = function (config) {
      */
     this.deleteRun = function(config)
     {
-        if(!config.successCallback)
+        if(!LABKEY.Utils.getOnSuccess(config))
         {
-            Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.Run.deleteRun()!");
+            Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.Run.deleteRun()!");
             return;
         }
 
@@ -385,8 +385,8 @@ LABKEY.Exp.Run = function (config) {
             url : LABKEY.ActionURL.buildURL("experiment", "deleteRun"),
             method : 'POST',
             params : { runId : this.id },
-            success: LABKEY.Utils.getCallbackWrapper(config.successCallback, this, false),
-            failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, this, true)
+            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), this, false),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
         });
     };
 };
@@ -507,7 +507,7 @@ LABKEY.Exp.SampleSet = function (config) {
     /**
      * Get a domain design for the SampleSet.
      *
-     * @param {Function} config.successCallback Required. Function called if the
+     * @param {Function} config.success Required. Function called if the
      *	"getDomain" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
      *    which describes the fields of a domain.
      * @param {Function} [config.failureCallback] Function called if execution of the "getDomain" function fails.
@@ -530,7 +530,7 @@ LABKEY.Exp.SampleSet = function (config) {
      */
     this.getDomain = function (config)
     {
-        LABKEY.Domain.get(config.successCallback, config.failureCallback, "Samples", this.name, config.containerPath);
+        LABKEY.Domain.get(LABKEY.Utils.getOnSuccess(config), LABKEY.Utils.getOnFailure(config), "Samples", this.name, config.containerPath);
     };
 
 };
@@ -538,7 +538,7 @@ Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
 
 /**
  * Create a new Sample Set definition.
- * @param {Function} config.successCallback Required callback function.
+ * @param {Function} config.success Required callback function.
  * @param {Function} [config.failureCallback] Optional error callback function.
  * @param {LABKEY.Domain.DomainDesign} config.domainDesign The domain design to save.
  * @param {Object} [config.options] Set of extra options used when creating the SampleSet:
@@ -577,7 +577,7 @@ Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
  */
 LABKEY.Exp.SampleSet.create = function (config)
 {
-    LABKEY.Domain.create(config.successCallback, config.failureCallback, "SampleSet", config.domainDesign, config.options, config.containerPath);
+    LABKEY.Domain.create(LABKEY.Utils.getOnSuccess(config), LABKEY.Utils.getOnFailure(config), "SampleSet", config.domainDesign, config.options, config.containerPath);
 };
 
 
@@ -777,14 +777,14 @@ LABKEY.Exp.Data = function (config) {
      * Retrieves the contents of the data object from the server.
      * @param config An object that contains the following configuration parameters
      * @param {object} config.scope An optional scoping object for the success and error callback functions (default to this).
-     * @param {function} config.successCallback The function to call when the function finishes successfully.
+     * @param {function} config.success The function to call when the function finishes successfully.
      * This function will be called with the parameters:
      * <ul>
      * <li><b>content</b> The type of the content varies based on the format requested.
      * <li><b>format</b> The format used in the request
      * <li><b>response</b> The original response
      * </ul>
-     * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+     * @param {function} [config.failure] The function to call if this function encounters an error.
      * This function will be called with the following parameters:
      * <ul>
      * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
@@ -813,9 +813,9 @@ LABKEY.Exp.Data = function (config) {
      */
     this.getContent = function(config)
     {
-        if(!config.successCallback)
+        if(!LABKEY.Utils.getOnSuccess(config))
         {
-            Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.Data.getContent()!");
+            Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.Data.getContent()!");
             return;
         }
 
@@ -824,8 +824,8 @@ LABKEY.Exp.Data = function (config) {
             url : LABKEY.ActionURL.buildURL("experiment", "showFile"),
             method : 'GET',
             params : { rowId : this.id, format: config.format },
-            success: getSuccessCallbackWrapper(config.successCallback, config.format, config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
+            success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.format, config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
         });
 
     };
