@@ -902,7 +902,8 @@ table.labkey-show-surrounding-border
     vertical-align: top;
 }
 
-.labkey-row TD, .labkey-data-region TH, .wiki-table TD, .wiki-table TH, .labkey-data-region .labkey-column-header
+.labkey-row TD, .labkey-alternate-row TD,
+.labkey-data-region TH, .wiki-table TD, .wiki-table TH, .labkey-data-region .labkey-column-header
 {
     padding: 1px;
     padding-right:4px;
