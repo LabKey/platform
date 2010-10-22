@@ -1627,8 +1627,6 @@ public class PageFlowUtil
             F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
             if (oldIE)
                 F.format(link, PageFlowUtil.filter(new ResourceURL("stylesheetIE7.css", ContainerManager.getRoot())));
-            if (coreUrls.getThemeStylesheetURL() != null)
-                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
 
             ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
@@ -1637,13 +1635,16 @@ public class PageFlowUtil
 
             if (!c.isRoot())
             {
+                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
                 ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
                 if (null != containerCustomStylesheetURL)
                     F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
             }
+            else
+                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
         }
-        
+
         ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
         sb.append("<link href=\"");
         sb.append(filter(printStyleURL));

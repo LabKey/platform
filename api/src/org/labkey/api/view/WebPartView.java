@@ -465,32 +465,26 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                         expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), "", rootId);
                     }
                     
-                    out.print("<th class=\"labkey-expand-collapse-area\">");
+                    out.print("<td class=\"labkey-expand-collapse-area\"><div>");
 
                     if (collapsed != null)
                     {
-                        out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
+                        out.printf("<a class=\"labkey-header\" href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
                                 filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
                         String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
                         out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
-                    }
-                    out.print("</th>"); // end of first <th>
-
-                    out.print("<th class=\"labkey-header\" title=\"");
-                    out.print(PageFlowUtil.filter(title));
-                    out.print("\">");
-
+                    }                    
                     if (null != href)
                     {
                         // print title with user-specified link:
-                        out.print("<a href=\"" + PageFlowUtil.filter(href) + "\">");
+                        out.print("<a class=\"labkey-header\" href=\"" + PageFlowUtil.filter(href) + "\">");
                         out.print(PageFlowUtil.filter(title));
                         out.print("</a>");
                     }
                     else if (collapsed != null)
                     {
                         // print title with expand/collapse link:
-                        out.printf("<a href=\"%s\" onclick=\"return toggleLink(document.getElementById(%s), %s);\">",
+                        out.printf("<a class=\"labkey-header\" href=\"%s\" onclick=\"return toggleLink(document.getElementById(%s), %s);\">",
                                 filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
                         out.print(PageFlowUtil.filter(title));
                         out.print("</a>");
@@ -501,7 +495,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                         out.print(PageFlowUtil.filter(title));
                     }
                     
-                    out.print("</th></tr>\n"); // end of second <th>
+                    out.print("</div></td></tr>\n"); // end of second <th>
                 }
                 out.print("<tr" + (collapsed != null && collapsed.booleanValue() ? " style=\"display:none\"" : "") + " class=\"" + className + "\">" +
                         "<td colspan=\"2\" class=\"labkey-expandable-nav-body\">");
