@@ -620,7 +620,7 @@ LABKEY.Utils.convertToExcel(
                         attrs += i.toString() + '=\"' + config[i] + '\" ';
                     }
                 }
-                if (LABKEY.project.cssRespectedTheme)
+                if (LABKEY.project && LABKEY.project.cssRespectedTheme)
                 {
                     return '<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>';
                 }
