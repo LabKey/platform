@@ -806,7 +806,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
                 catch (NoSuchMethodException x)
                 {
-                    throw new RuntimeException(x);
+                    throw new RuntimeException("Zero-argument constructor not found for " + actionClass.getName(), x);
                 }
             }
 

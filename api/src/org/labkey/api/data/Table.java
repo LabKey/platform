@@ -998,8 +998,13 @@ public class Table
     }
 
 
-    public static <K> K update(User user, TableInfo table, K fieldsIn, Object rowId)
-            throws SQLException
+    public static <K> K update(User user, TableInfo table, K fieldsIn, Object rowId) throws SQLException
+    {
+        return update(user, table, fieldsIn, rowId, null);
+    }
+
+
+    public static <K> K update(User user, TableInfo table, K fieldsIn, Object rowId, @Nullable Filter filter) throws SQLException
     {
         assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): (table.getName() + " is not in the physical database.");
         assert null != rowId;
@@ -1011,7 +1016,6 @@ public class Table
         ArrayList<Object> parametersSet = new ArrayList<Object>();
         ArrayList<Object> parametersWhere = new ArrayList<Object>();
         String comma = "";
-        String whereAND = "WHERE ";
 
         // NOTE: no multi-column primary keys?
         // UNDONE -- rowVersion
@@ -1025,6 +1029,16 @@ public class Table
             pkVals = new Object[]{rowId};
         else
             pkVals = (Object[]) rowId;
+
+        String whereAND = "WHERE ";
+
+        if (null != filter)
+        {
+            SQLFragment fragment = filter.getSQLFragment(table, null);
+            whereSQL.append(fragment.getSQL());
+            parametersWhere.addAll(fragment.getParams());
+            whereAND = " AND ";
+        }
 
         for (int i = 0; i < columnPK.size(); i++)
         {

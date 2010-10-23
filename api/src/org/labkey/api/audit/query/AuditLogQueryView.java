@@ -53,7 +53,7 @@ public abstract class AuditLogQueryView extends QueryView
 
     public AuditLogQueryView(ViewContext context)
     {
-        super((UserSchema)null);
+        super(null);
 
         _buttonBarPosition = DataRegion.ButtonBarPosition.NONE;
         UserSchema schema = AuditLogService.get().createSchema(context.getUser(), context.getContainer());

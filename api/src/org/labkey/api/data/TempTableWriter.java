@@ -149,6 +149,9 @@ public class TempTableWriter
 
         Table.batchExecute(schema, sqlInsert.toString(), paramList);
 
+        // Update statistics on the new table to inform query planner
+        schema.getSqlDialect().updateStatistics(tinfoTempTable);
+
         return tinfoTempTable;
     }
 

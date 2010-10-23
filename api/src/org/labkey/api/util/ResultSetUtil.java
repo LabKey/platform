@@ -165,7 +165,7 @@ public class ResultSetUtil
     {
         try
         {
-            if (!log.isInfoEnabled())
+            if (log.isInfoEnabled())
             {
                 StringBuilder sb = new StringBuilder();
 
@@ -187,7 +187,7 @@ public class ResultSetUtil
                     {
                         Object value = rs.getObject(i);
 
-                        sb.append(null == value ? "-" : value.toString().trim()).append(" ");
+                        sb.append(null == value ? "-" : value.toString()).append(" ");
                     }
 
                     sb.append('\n');
