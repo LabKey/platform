@@ -29,6 +29,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.*;
 import org.labkey.study.SampleManager;
@@ -1179,7 +1180,7 @@ public class SpecimenImporter
                 "AND (exp.Material.CpasType = ? OR exp.Material.CpasType = 'StudySpecimen') \n" +
                 "AND exp.Material.Container = ?)";
 
-        String prefix = new Lsid("StudySpecimen", "Folder-" + info.getContainer().getRowId(), "").toString();
+        String prefix = new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + info.getContainer().getRowId(), "").toString();
 
         String cpasType;
 

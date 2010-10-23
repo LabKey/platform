@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.Specimen;
@@ -227,6 +228,6 @@ public class SpecimenServiceImpl implements SpecimenService.Service
 
     public Lsid getSpecimenMaterialLsid(Container studyContainer, String id)
     {
-        return new Lsid("StudySpecimen", "Folder-" + studyContainer.getRowId(), id);
+        return new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + studyContainer.getRowId(), id);
     }
 }

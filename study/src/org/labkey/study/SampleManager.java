@@ -1118,12 +1118,12 @@ public class SampleManager
 
     private static String getRequestInputObjectLsid(Container container)
     {
-        return new Lsid("StudySpecimen", "Folder-" + container.getRowId(), "RequestInput").toString();
+        return new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + container.getRowId(), "RequestInput").toString();
     }
 
     private static String getRequestInputDefaultObjectLsid(Container container)
     {
-        return new Lsid("StudySpecimen", "Folder-" + container.getRowId(), "RequestInputDefault").toString();
+        return new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + container.getRowId(), "RequestInputDefault").toString();
     }
 
     private static String ensureOntologyManagerSetItem(Container container, String lsidBase, String uniqueItemId) throws SQLException
@@ -1762,7 +1762,7 @@ public class SampleManager
 
         DbSchema expSchema = ExperimentService.get().getSchema();
         TableInfo tinfoMaterial = expSchema.getTable("Material");
-        containerFilter.addCondition("CpasType", "StudySpecimen");
+        containerFilter.addCondition("CpasType", StudyService.SPECIMEN_NAMESPACE_PREFIX);
         Table.delete(tinfoMaterial, containerFilter);
 
         // Views

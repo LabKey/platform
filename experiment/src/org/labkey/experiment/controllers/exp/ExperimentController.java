@@ -19,7 +19,6 @@ package org.labkey.experiment.controllers.exp;
 import jxl.*;
 import jxl.read.biff.BiffException;
 import jxl.write.*;
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -49,10 +48,14 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
@@ -220,7 +223,7 @@ public class ExperimentController extends SpringActionController
                 HttpView.throwRedirect(getViewContext().cloneActionURL().setContainer(_experiment.getContainer()));
             }
 
-            CustomPropertiesView customPropertiesView = new CustomPropertiesView(_experiment.getLSID(), getViewContext().cloneActionURL(), c);
+            CustomPropertiesView customPropertiesView = new CustomPropertiesView(_experiment.getLSID(), c);
 
             DetailsView detailsView = new DetailsView(new DataRegion(), _experiment.getRowId());
             detailsView.getDataRegion().setTable(ExperimentServiceImpl.get().getTinfoExperiment());
@@ -492,12 +495,21 @@ public class ExperimentController extends SpringActionController
     }
 
 
+    /** Only shows standard and custom properties, not parent and child samples. Used for indexing */
     @RequiresPermissionClass(ReadPermission.class)
-    public class ShowMaterialAction extends SimpleViewAction<ExpObjectForm>
+    public class ShowMaterialSimpleAction extends SimpleViewAction<ExpObjectForm>
     {
-        private ExpMaterialImpl _material;
+        protected ExpMaterialImpl _material;
 
-        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
+        @Override
+        protected Set<Role> getContextualRoles()
+        {
+            if (getViewContext().getUser() == User.getSearchUser())
+                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
+            return null;
+        }
+
+        public VBox getView(ExpObjectForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
             _material = ExperimentServiceImpl.get().getExpMaterial(form.getRowId());
@@ -518,7 +530,7 @@ public class ExperimentController extends SpringActionController
 
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoMaterial().getUserEditableColumns());
-            dr.removeColumns("RowId", "RunId", "LSID", "SourceApplicationId", "CpasType");
+            dr.removeColumns("RowId", "RunId", "LastIndexed", "LSID", "SourceApplicationId", "CpasType");
 
             //dr.addColumns(extraProps);
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
@@ -532,9 +544,32 @@ public class ExperimentController extends SpringActionController
             DetailsView detailsView = new DetailsView(dr, _material.getRowId());
             detailsView.setTitle("Standard Properties");
 
-            CustomPropertiesView cpv = new CustomPropertiesView(_material.getLSID(), getViewContext().cloneActionURL(), c);
+            CustomPropertiesView cpv = new CustomPropertiesView(_material.getLSID(), c);
 
-            VBox vbox = new VBox(new StandardAndCustomPropertiesView(detailsView, cpv));
+            return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("sampleSets");
+            root = appendRootNavTrail(root);
+            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            ExpSampleSet sampleSet = _material.getSampleSet();
+            if (sampleSet != null)
+            {
+                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
+            }
+            root.addChild("Sample " + _material.getName());
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ShowMaterialAction extends ShowMaterialSimpleAction 
+    {
+        public VBox getView(ExpObjectForm form, BindException errors) throws Exception
+        {
+            VBox vbox = super.getView(form, errors);
 
             List<ExpMaterial> materialsToInvestigate = new ArrayList<ExpMaterial>();
             final List<ExpRun> successorRuns = new ArrayList<ExpRun>();
@@ -785,20 +820,6 @@ public class ExperimentController extends SpringActionController
             }
             return parentMaterials;
         }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("sampleSets");
-            root = appendRootNavTrail(root);
-            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
-            ExpSampleSet sampleSet = _material.getSampleSet();
-            if (sampleSet != null)
-            {
-                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
-            }
-            root.addChild("Sample " + _material.getName());
-            return root;
-        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -871,7 +892,7 @@ public class ExperimentController extends SpringActionController
             JspView<ExpRun> detailsView = new JspView<ExpRun>("/org/labkey/experiment/ExperimentRunDetails.jsp", _experimentRun);
             detailsView.setTitle("Standard Properties");
 
-            CustomPropertiesView cpv = new CustomPropertiesView(_experimentRun.getLSID(), getViewContext().cloneActionURL(), getContainer());
+            CustomPropertiesView cpv = new CustomPropertiesView(_experimentRun.getLSID(), getContainer());
 
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, cpv));
             vbox.addView(new ExperimentRunGroupsView(getUser(), getContainer(), _experimentRun, getViewContext().getActionURL()));
@@ -1204,7 +1225,7 @@ public class ExperimentController extends SpringActionController
             dr.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
             dr.setButtonBar(bb);
 
-            CustomPropertiesView cpv = new CustomPropertiesView(_data.getLSID(), getViewContext().cloneActionURL(), c);
+            CustomPropertiesView cpv = new CustomPropertiesView(_data.getLSID(), c);
 
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
@@ -1680,7 +1701,7 @@ public class ExperimentController extends SpringActionController
             JspView<ExpProtocol> detailsView = new JspView<ExpProtocol>("/org/labkey/experiment/ProtocolDetails.jsp", _protocol);
             detailsView.setTitle("Standard Properties");
 
-            CustomPropertiesView cpv = new CustomPropertiesView(_protocol.getLSID(), getViewContext().cloneActionURL(), getContainer());
+            CustomPropertiesView cpv = new CustomPropertiesView(_protocol.getLSID(), getContainer());
             ProtocolParametersView parametersView = new ProtocolParametersView(_protocol);
             ProtocolListView listView = new ProtocolListView(_protocol, getContainer());
 
@@ -1747,7 +1768,7 @@ public class ExperimentController extends SpringActionController
             JspView<ExpProtocol> detailsView = new JspView<ExpProtocol>("/org/labkey/experiment/ProtocolDetails.jsp", childProtocol);
             detailsView.setTitle("Standard Properties");
 
-            CustomPropertiesView cpv = new CustomPropertiesView(childProtocol.getLSID(), getViewContext().cloneActionURL(), getContainer());
+            CustomPropertiesView cpv = new CustomPropertiesView(childProtocol.getLSID(), getContainer());
 
             ProtocolParametersView parametersView = new ProtocolParametersView(childProtocol);
             ProtocolSuccessorPredecessorView predecessorView = new ProtocolSuccessorPredecessorView(parentProtocolLSID, actionSequence, getContainer(), "PredecessorChildLSID", "PredecessorSequence", "ActionSequence", "Protocol Predecessors");

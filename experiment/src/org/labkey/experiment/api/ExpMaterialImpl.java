@@ -16,21 +16,32 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.ActionResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implements ExpMaterial
 {
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Material/Sample");
+
     static public ExpMaterialImpl[] fromMaterials(Material[] materials)
     {
         ExpMaterialImpl[] ret = new ExpMaterialImpl[materials.length];
@@ -96,15 +107,61 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
     public void save(User user)
     {
         save(user, ExperimentServiceImpl.get().getTinfoMaterial());
+        index(null);
     }
 
     public void delete(User user)
     {
         ExperimentServiceImpl.get().deleteMaterialByRowIds(getContainer(), getRowId());
+        // Deleting from search index is handled inside deleteMaterialByRowIds()
     }
 
     public ExpRun[] getTargetRuns()
     {
         return getTargetRuns(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId");
     }
+
+    public void index(SearchService.IndexTask task)
+    {
+        // Big hack to prevent study specimens from being indexed as
+        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
+        {
+            return;
+        }
+        if (task == null)
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (null == ss)
+                return;
+            task = ss.defaultTask();
+        }
+
+        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(this);
+        ActionURL sourceURL = new ActionURL(ExperimentController.ShowMaterialSimpleAction.class, getContainer()).addParameter("rowId", getRowId());
+
+        ActionResource r = new ActionResource(searchCategory, getDocumentId(), url, sourceURL)
+        {
+            @Override
+            public void setLastIndexed(long ms, long modified)
+            {
+                try
+                {
+                    Table.execute(ExperimentService.get().getSchema(),
+                            "UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?",
+                            new Object[] { new Timestamp(ms), getRowId() } );
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            }
+        };
+        task.addResource(r, SearchService.PRIORITY.item);
+    }
+
+    public String getDocumentId()
+    {
+        return "material:" + getRowId();
+    }
+
 }

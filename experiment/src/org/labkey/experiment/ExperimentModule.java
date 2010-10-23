@@ -20,6 +20,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
@@ -49,6 +50,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainType;
@@ -94,7 +96,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 10.24;
+        return 10.25;
     }
 
     protected void init()
@@ -208,7 +210,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (null != ss)
         {
 //            ss.addSearchCategory(OntologyManager.conceptCategory);
-//            ss.addDocumentProvider(this);
+            ss.addSearchCategory(ExpMaterialImpl.searchCategory);
+            ss.addDocumentProvider(this);
         }
 
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
@@ -320,13 +323,29 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new ExperimentUpgradeCode();
     }
 
-    public void enumerateDocuments(@NotNull SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
+    public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-        if (c == ContainerManager.getSharedContainer())
-            OntologyManager.indexConcepts(task);
+//        if (c == ContainerManager.getSharedContainer())
+//            OntologyManager.indexConcepts(task);
+
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                ExpMaterialImpl[] materials = ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince);
+                for (ExpMaterialImpl material : materials)
+                {
+                    material.index(task);
+                }
+            }
+        };
+        task.addRunnable(r, SearchService.PRIORITY.bulk);
+
     }
 
     public void indexDeleted() throws SQLException
     {
+        // Clear the last indexed time on all materials
+        Table.execute(ExperimentService.get().getSchema(), "UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = NULL", new Object[0]);
     }
 }

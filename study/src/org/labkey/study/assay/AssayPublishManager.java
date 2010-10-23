@@ -23,6 +23,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
@@ -307,6 +309,10 @@ public class AssayPublishManager implements AssayPublishService.Service
         {
             throw new RuntimeSQLException(e);
         }
+        catch (ChangePropertyDescriptorException e)
+        {
+            throw new UnexpectedException(e);
+        }
         finally
         {
             if (ownsTransaction)
@@ -378,19 +384,24 @@ public class AssayPublishManager implements AssayPublishService.Service
 
 
     private Map<String, String> ensurePropertyDescriptors(
-            Container container, User user, DataSet dataset,
-            List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException
+            Container container, User user, DataSetDefinition dataset,
+            List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException, ChangePropertyDescriptorException
     {
-        PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(dataset.getTypeURI(), container);
+        Domain domain = dataset.getDomain();
         // Strip out any spaces from existing PropertyDescriptors in the dataset
-        for (PropertyDescriptor pd : pds)
+        boolean propertyChanged = false;
+        for (DomainProperty existingProperty : domain.getProperties())
         {
-            if (pd.getName().indexOf(" ") != -1)
+            if (existingProperty.getName().indexOf(" ") != -1)
             {
-                pd.setName(pd.getName().replace(" ", ""));
-                pd.setPropertyURI(pd.getPropertyURI().replace(" ", ""));
-                OntologyManager.updatePropertyDescriptor(pd);
+                existingProperty.setName(existingProperty.getName().replace(" ", ""));
+                existingProperty.setPropertyURI(existingProperty.getPropertyURI().replace(" ", ""));
+                propertyChanged = true;
             }
+        }
+        if (propertyChanged)
+        {
+            domain.save(user);
         }
 
         // Strip out spaces from any proposed PropertyDescriptor names
@@ -417,8 +428,8 @@ public class AssayPublishManager implements AssayPublishService.Service
         Map<String, String> propertyNamesToUris = new CaseInsensitiveHashMap<String>();
 
         // add ontology properties to our return map
-        for (PropertyDescriptor pd : pds)
-            propertyNamesToUris.put(pd.getName(), pd.getPropertyURI());
+        for (DomainProperty property : domain.getProperties())
+            propertyNamesToUris.put(property.getName(), property.getPropertyURI());
 
         // add hard columns to our return map
         for (ColumnInfo col : DataSetDefinition.getTemplateTableInfo().getColumns())
@@ -445,27 +456,34 @@ public class AssayPublishManager implements AssayPublishService.Service
             typeMap.put(pd.getName(), pd);
 
         // loop through all new columns, and verify that we have a property already defined:
-        DomainDescriptor domainDescriptor = new DomainDescriptor(dataset.getTypeURI(), container);
         int sortOrder = 0;
+        boolean changed = false;
         for (String newPdName : newPdNames)
         {
             if (!propertyNamesToUris.containsKey(newPdName))
             {
                 // We used to copy batch properties with the "Run" prefix - see if we need to rename the target column
-                if (!renameRunPropertyToBatch(pds, propertyNamesToUris, newPdNames, domainDescriptor, newPdName))
+                if (!renameRunPropertyToBatch(domain, propertyNamesToUris, newPdNames, newPdName, user))
                 {
                     PropertyDescriptor pd = typeMap.get(newPdName);
-                    OntologyManager.insertOrUpdatePropertyDescriptor(pd, domainDescriptor, sortOrder);
+                    DomainProperty newProperty = domain.addProperty();
+                    pd.copyTo(newProperty.getPropertyDescriptor());
+                    domain.setPropertyIndex(newProperty, sortOrder);
+                    changed = true;
                     propertyNamesToUris.put(newPdName, pd.getPropertyURI());
                 }
             }
             sortOrder++;
         }
+        if (changed)
+        {
+            domain.save(user);
+        }
         return propertyNamesToUris;
     }
 
-    private boolean renameRunPropertyToBatch(PropertyDescriptor[] pds, Map<String, String> propertyNamesToUris, Set<String> newPdNames, DomainDescriptor domainDescriptor, String newPdName)
-            throws SQLException
+    private boolean renameRunPropertyToBatch(Domain domain, Map<String, String> propertyNamesToUris, Set<String> newPdNames, String newPdName, User user)
+            throws SQLException, ChangePropertyDescriptorException
     {
         if (newPdName.startsWith(AssayService.BATCH_COLUMN_NAME))
         {
@@ -475,17 +493,17 @@ public class AssayPublishManager implements AssayPublishService.Service
             {
                 String originalURI = propertyNamesToUris.get(oldName);
 
-                for (PropertyDescriptor pd : pds)
+                for (DomainProperty property : domain.getProperties())
                 {
-                    if (pd.getPropertyURI().equals(originalURI))
+                    if (property.getPropertyURI().equals(originalURI))
                     {
                         // Rename the property, including its URI
-                        pd.setName(newPdName);
-                        pd.setLabel(null);
-                        pd.setPropertyURI(pd.getPropertyURI().replace("#Run", "#Batch"));
-                        OntologyManager.updatePropertyDescriptor(pd);
+                        property.setName(newPdName);
+                        property.setLabel(null);
+                        property.setPropertyURI(property.getPropertyURI().replace("#Run", "#Batch"));
                         propertyNamesToUris.remove(oldName);
-                        propertyNamesToUris.put(newPdName, pd.getPropertyURI());
+                        propertyNamesToUris.put(newPdName, property.getPropertyURI());
+                        domain.save(user);
                         return true;
                     }
                 }
@@ -517,7 +535,6 @@ public class AssayPublishManager implements AssayPublishService.Service
                 newDataSet.setProtocolId(protocol.getRowId());
 
             StudyManager.getInstance().createDataSetDefinition(user, newDataSet);
-//            newDataSet.provisionTable();
 
             if (ownTransaction)
             {

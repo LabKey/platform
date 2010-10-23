@@ -41,9 +41,12 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.*;
@@ -359,6 +362,26 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             Material result = Table.selectObject(getTinfoMaterial(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Material.class);
             return result == null ? null : new ExpMaterialImpl(result);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    public ExpMaterialImpl[] getIndexableMaterials(Container container, @Nullable Date modifiedSince)
+    {
+        try
+        {
+            // Big hack to prevent indexing study specimens. Also in ExpMaterialImpl.index()
+            SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE Container = ? AND LSID NOT LIKE '%:"
+                    + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%'");
+            sql.add(container.getId());
+            SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, null).toSQLFragment(null, null);
+            if (!modifiedSQL.isEmpty())
+                sql.append(" AND ").append(modifiedSQL);
+            Material[] result = Table.executeQuery(getSchema(), sql, Material.class);
+            return ExpMaterialImpl.fromMaterials(result);
         }
         catch (SQLException x)
         {
@@ -1691,9 +1714,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     "DELETE FROM exp.Material WHERE RowId IN (" + materialIds + ")",
                     new Object[]{});
 
-
             if (!containingTrans)
                 getExpSchema().getScope().commitTransaction();
+
+            // Remove from search index
+            SearchService ss = ServiceRegistry.get(SearchService.class);
+            if (null != ss)
+            {
+                for (Material material : materials)
+                {
+                    ss.deleteResource(new ExpMaterialImpl(material).getDocumentId());
+                }
+            }
         }
         catch (SQLException e)
         {
@@ -2047,6 +2079,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             for (ExpRun run : getRunsUsingSampleSets(source))
             {
                 deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
+            }
+
+            // Remove from search index separately since we're doing a bulk-delete that doesn't fire
+            // the delete code for each material individually
+            SearchService ss = ServiceRegistry.get(SearchService.class);
+            if (null != ss)
+            {
+                for (ExpMaterial material : source.getSamples())
+                {
+                    ss.deleteResource(material.getDocumentId());
+                }
             }
 
             //Delete all materials in this source

@@ -256,6 +256,9 @@
       <ns:column columnName="Container">
           <ns:description>Contains a reference to the folder that holds this sample</ns:description>
       </ns:column>
+      <ns:column columnName="LastIndexed">
+          <ns:description>Contains the time this material was last updated in the search index</ns:description>
+      </ns:column>
     </ns:columns>
     <ns:description>Contains a row per material or sample described in this folder.</ns:description>
   </ns:table>
@@ -800,6 +803,7 @@
       <ns:column columnName="Modified"/>
       <ns:column columnName="ModifiedBy"/>
       <ns:column columnName="Container"/>
+      <ns:column columnName="LastIndexed"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="ObjectPropertiesView" tableDbType="VIEW">

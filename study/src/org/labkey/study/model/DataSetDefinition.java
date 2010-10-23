@@ -915,14 +915,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     static ColumnInfo newDatasetColumnInfo(TableInfo tinfo, ColumnInfo from, final String propertyURI)
     {
-        return new ColumnInfo(from, tinfo)
+        ColumnInfo result = new ColumnInfo(from, tinfo)
         {
             @Override
             public String getPropertyURI()
             {
-                return null!=propertyURI ? propertyURI : super.getPropertyURI();
+                return null != propertyURI ? propertyURI : super.getPropertyURI();
             }
         };
+        // Hidden doesn't get copied with the default set of properties
+        result.setHidden(from.isHidden());
+        return result;
     }
 
     

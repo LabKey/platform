@@ -57,13 +57,11 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
     {
         private final Map<String, ObjectProperty> _customProperties;
         private final Map<String, CustomPropertyRenderer> _renderers;
-        private final ActionURL _url;
 
-        public CustomPropertiesBean(Map<String, ObjectProperty> customProperties, Map<String, CustomPropertyRenderer> renderers, ActionURL url)
+        public CustomPropertiesBean(Map<String, ObjectProperty> customProperties, Map<String, CustomPropertyRenderer> renderers)
         {
             _customProperties = customProperties;
             _renderers = renderers;
-            _url = url;
         }
 
         public Map<String, ObjectProperty> getCustomProperties()
@@ -75,14 +73,9 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
         {
             return _renderers;
         }
-
-        public ActionURL getUrlHelper()
-        {
-            return _url;
-        }
     }
 
-    public CustomPropertiesView(String parentLSID, ActionURL url, Container c) throws SQLException
+    public CustomPropertiesView(String parentLSID, Container c) throws SQLException
     {
         super("/org/labkey/experiment/CustomProperties.jsp");
         setTitle("Custom Properties");
@@ -93,7 +86,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
             String name = OntologyManager.getPropertyName(uri, c);
             map.put(name, props.get(uri));
         }
-        setModelBean(new CustomPropertiesBean(map, _renderers, url));
+        setModelBean(new CustomPropertiesBean(map, _renderers));
     }
 
     public boolean hasProperties()
