@@ -262,15 +262,15 @@ public class QueryServiceImpl extends QueryService
         if (qd == null)
             qd = QueryService.get().getUserSchema(user, container, schema).getQueryDefForTable(query);
 
-        return getCustomViewMap(user, container, qd);
+        return getCustomViewMap(user, container, qd, false);
     }
 
-    protected Map<String, CustomView> getCustomViewMap(User user, Container container, QueryDefinition qd) throws SQLException
+    protected Map<String, CustomView> getCustomViewMap(User user, Container container, QueryDefinition qd, boolean inheritable) throws SQLException
     {
         Map<String, CustomView> views = new HashMap<String, CustomView>();
 
         // custom views in the database get highest precedence
-        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getName(), qd.getName(), user, true))
+        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getName(), qd.getName(), user, inheritable))
             addCustomView(views, cstmView, qd);
 
         // module query views have lower precedence

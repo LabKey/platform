@@ -159,7 +159,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 }
             }
 
-            ret.putAll(((QueryServiceImpl)QueryService.get()).getCustomViewMap(user, container, this));
+            ret.putAll(((QueryServiceImpl)QueryService.get()).getCustomViewMap(user, container, this, inheritable));
         }
         catch (SQLException e)
         {
@@ -301,12 +301,22 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (null != ret && null != query.getTablesDocument())
             ((QueryTableInfo)ret).loadFromXML(schema, query.getTablesDocument().getTables().getTableArray(0), errors);
 
-        ActionURL sourceURL = urlFor(QueryAction.sourceQuery);
-        for (QueryException qe : query.getParseErrors())
+        if (!query.getParseErrors().isEmpty())
         {
-            if (ExceptionUtil.decorateException(qe, ExceptionUtil.ExceptionInfo.ResolveURL, sourceURL.getLocalURIString(false), false))
-                ExceptionUtil.decorateException(qe, ExceptionUtil.ExceptionInfo.ResolveText, "edit " + getName(), true);
-            errors.add(qe);
+            String resolveURL = null;
+            if (null != ret)
+            {
+                ActionURL sourceURL = urlFor(QueryAction.sourceQuery);
+                if (sourceURL != null)
+                    resolveURL = sourceURL.getLocalURIString(false);
+            }
+            
+            for (QueryException qe : query.getParseErrors())
+            {
+                if (ExceptionUtil.decorateException(qe, ExceptionUtil.ExceptionInfo.ResolveURL, resolveURL, false))
+                    ExceptionUtil.decorateException(qe, ExceptionUtil.ExceptionInfo.ResolveText, "edit " + getName(), true);
+                errors.add(qe);
+            }
         }
 
         return ret;
