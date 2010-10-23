@@ -17,7 +17,6 @@
 package org.labkey.api.exp.api;
 
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.DomainProperty;
 
 import java.util.Map;
 
@@ -26,4 +25,7 @@ public interface ExpMaterial extends ExpProtocolOutput
     public ExpSampleSet getSampleSet();
 
     public Map<PropertyDescriptor, Object> getPropertyValues();
+
+    /** @return the search document id for this material */
+    public String getDocumentId();
 }

@@ -35,7 +35,6 @@ import java.io.IOException;
 public class FileServlet extends HttpServlet
 {
     static Logger _log = Logger.getLogger(FileServlet.class);
-    static final boolean _debug = _log.isDebugEnabled();
     private static final String PAGE_FLOW_ATTR = FileServlet.class.getName() + ".pageFlow";
 
     @Override
@@ -83,25 +82,8 @@ public class FileServlet extends HttpServlet
         _log.info("FileServlet initialized");
     }
 
-    /**
-     * Return the original pageflow that was used to access a static file in this request...
-     *
-     * @param request
-     * @return
-     */
-    public static String getOriginalPageFlow(HttpServletRequest request)
-    {
-        return (String) request.getAttribute(PAGE_FLOW_ATTR);
-    }
-
-    public static void _logError(String s, Throwable t)
-    {
-        _log.error(s, t);
-    }
-
-
     public void log(String s, Throwable t)
     {
-        _logError(s, t);
+        _log.error(s, t);
     }
 }

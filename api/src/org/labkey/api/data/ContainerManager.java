@@ -423,7 +423,9 @@ public class ContainerManager
         {
             if (childIds == emptyStringArray)
                 return Collections.emptyMap();
-            Map<String,Container> ret = new TreeMap<String,Container>(String.CASE_INSENSITIVE_ORDER);
+            // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily
+            // alphabetical
+            Map<String,Container> ret = new LinkedHashMap<String,Container>();
             for (String id : childIds)
             {
                 Container c = ContainerManager.getForId(id);

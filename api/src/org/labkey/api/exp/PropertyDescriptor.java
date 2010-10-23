@@ -39,7 +39,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     private String ontologyURI;
     private String rangeURI;
     private String conceptURI;
-//    private PropertyDescriptor concept;
     private PropertyType propertyType;
     private String searchTerms;
     private String semanticType;
@@ -366,6 +365,28 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         return ((PropertyDescriptor) obj).getPropertyId() == getPropertyId();
     }
 
+    @Override
+    public void copyTo(ColumnRenderProperties to)
+    {
+        super.copyTo(to);
+        if (to instanceof PropertyDescriptor)
+        {
+            PropertyDescriptor toPD = (PropertyDescriptor)to;
+            toPD.propertyURI = propertyURI; // ?
+            toPD.container = container; // ?
+            toPD.project = project; // ?
+            toPD.ontologyURI = ontologyURI;
+            toPD.rangeURI = rangeURI;
+            toPD.conceptURI = conceptURI;
+            toPD.propertyType = propertyType;
+            toPD.searchTerms = searchTerms;
+            toPD.semanticType = semanticType;
+            toPD.lookupContainer = lookupContainer;
+            toPD.lookupSchema = lookupSchema;
+            toPD.lookupQuery = lookupQuery;
+            toPD.mvEnabled = mvEnabled;
+        }
+    }
 
     static
     {

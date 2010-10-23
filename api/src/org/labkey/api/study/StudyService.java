@@ -41,6 +41,9 @@ public class StudyService
 {
     private static Service _serviceImpl;
 
+    /** LSID namespace prefix for study specimens in the experiment material table */
+    public static final String SPECIMEN_NAMESPACE_PREFIX = "StudySpecimen";
+
     public interface Service
     {
         /**

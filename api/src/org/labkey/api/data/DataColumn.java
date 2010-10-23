@@ -84,6 +84,9 @@ public class DataColumn extends DisplayColumn
             /* fall through */
         }
         _inputRows = _boundColumn.getInputRows();
+        // Assume that if the use can enter the value in a text area that they'll want to see
+        // their newlines in grid views as well
+        _preserveNewlines = _inputRows > 1;
         _inputLength = _boundColumn.getInputLength();
         _caption = StringExpressionFactory.create(_boundColumn.getLabel());
         _editable = !_boundColumn.isReadOnly() && _boundColumn.isUserEditable();

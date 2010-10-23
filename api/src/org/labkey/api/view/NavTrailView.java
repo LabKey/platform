@@ -180,23 +180,10 @@ public class NavTrailView extends HttpView
             _out.print(" class=\"labkey-tab-space\"");
         _out.print(">");
 
-        if (null != connectionsInUse || _pageConfig.getExploratoryFeatures())
+        if (null != connectionsInUse)
         {
             out.print("<span>");
-
-            if (null != connectionsInUse)
-            {
-                _out.print(formatLink(connectionsInUse, PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL()));
-
-                if (_pageConfig.getExploratoryFeatures())
-                    _out.print("&nbsp;&nbsp;");
-            }
-            if (_pageConfig.getExploratoryFeatures())
-            {
-                _out.print("<a class=\"labkey-error\" href=\"");_out.print(filter((new HelpTopic("exploratory")).getHelpTopicLink()));
-                _out.print("\" target=\"help\">This page contains exploratory features</a>");
-            }
-
+            _out.print(formatLink(connectionsInUse, PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL()));
             _out.print("</span>");
         }
 

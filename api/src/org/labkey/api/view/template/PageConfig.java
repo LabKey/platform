@@ -29,7 +29,6 @@ import org.labkey.api.view.NavTree;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -58,7 +57,6 @@ public class PageConfig
     private Template _template = Template.Home;
     private String _title;
     private HelpTopic _helpTopic;
-    private boolean _exploratoryFeatures = false;
     private boolean _appendPathToTitle;
     private Module _moduleOwner;
     private String _focus = null;
@@ -103,17 +101,6 @@ public class PageConfig
     {
         _helpTopic = topic;
         return this;
-    }
-
-    public PageConfig setExploratoryFeatures(boolean exploratoryFeatures)
-    {
-        _exploratoryFeatures = exploratoryFeatures;
-        return this;
-    }
-
-    public boolean getExploratoryFeatures()
-    {
-        return _exploratoryFeatures;
     }
 
     public @NotNull HelpTopic getHelpTopic()
