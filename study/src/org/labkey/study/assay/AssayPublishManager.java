@@ -25,6 +25,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
@@ -252,7 +253,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             }
             if (!errors.isEmpty())
                 return null;
-            Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(targetContainer, user, dataset, dataMaps, types);
+            Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types);
             List<Map<String, Object>> convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
             // in 'ensurePropertyDescriptors'.
@@ -384,10 +385,15 @@ public class AssayPublishManager implements AssayPublishService.Service
 
 
     private Map<String, String> ensurePropertyDescriptors(
-            Container container, User user, DataSetDefinition dataset,
+            User user, DataSetDefinition dataset,
             List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException, ChangePropertyDescriptorException
     {
         Domain domain = dataset.getDomain();
+        if (domain == null)
+        {
+            domain = PropertyService.get().createDomain(dataset.getContainer(), dataset.getTypeURI(), dataset.getName());
+            domain.save(user);
+        }
         // Strip out any spaces from existing PropertyDescriptors in the dataset
         boolean propertyChanged = false;
         for (DomainProperty existingProperty : domain.getProperties())
@@ -468,12 +474,11 @@ public class AssayPublishManager implements AssayPublishService.Service
                     PropertyDescriptor pd = typeMap.get(newPdName);
                     DomainProperty newProperty = domain.addProperty();
                     pd.copyTo(newProperty.getPropertyDescriptor());
-                    domain.setPropertyIndex(newProperty, sortOrder);
+                    domain.setPropertyIndex(newProperty, sortOrder++);
                     changed = true;
                     propertyNamesToUris.put(newPdName, pd.getPropertyURI());
                 }
             }
-            sortOrder++;
         }
         if (changed)
         {
