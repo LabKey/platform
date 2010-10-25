@@ -83,12 +83,13 @@ LABKEY.Pipeline = new function(){
             params.taskId = config.taskId;
             var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
             var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "getSavedProtocols.api", containerPath);
+            var onSuccess = LABKEY.Utils.getOnSuccess(config);
             Ext.Ajax.request({
                 url: url,
                 method: 'POST',
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                        LABKEY.Utils.getOnSuccess(config).call(data.protocols, data.defaultProtocolName, response);
+                        onSuccess(data.protocols, data.defaultProtocolName, response);
                 }, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
@@ -127,13 +128,14 @@ LABKEY.Pipeline = new function(){
             params.protocolName = config.protocolName;
             var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
             var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "getFileStatus.api", containerPath);
+            var onSuccess = LABKEY.Utils.getOnSuccess(config);
             Ext.Ajax.request({
                 url: url,
                 method: 'POST',
                 timeout: 60000000,
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                        LABKEY.Utils.getOnSuccess(config).call(data.files, data.submitType, response);
+                        onSuccess(data.files, data.submitType, response);
                 }, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
