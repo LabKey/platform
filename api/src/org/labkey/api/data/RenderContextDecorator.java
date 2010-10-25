@@ -87,6 +87,12 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
+    public String getSelectionKey()
+    {
+        return _ctx.getSelectionKey();
+    }
+
+    @Override
     public Filter getBaseFilter()
     {
         return _ctx.getBaseFilter();

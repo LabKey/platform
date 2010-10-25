@@ -289,6 +289,10 @@ public class QuerySettings
                 }
             }
         }
+
+        String selectionKey = StringUtils.trimToNull(_getParameter(param(QueryParam.selectionKey)));
+        if (null != selectionKey)
+            setSelectionKey(selectionKey);
     }
 
 	public void setSchemaName(HString schemaName)

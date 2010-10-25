@@ -434,6 +434,9 @@ LABKEY.Query = new function()
             if(config.columns)
                 dataObject['query.columns'] = Ext.isArray(config.columns) ? config.columns.join(",") : config.columns;
 
+            if (config.selectionKey)
+                dataObject['query.selectionKey'] = config.selectionKey;
+
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 

@@ -130,6 +130,11 @@ public class RenderContext extends BoundMap // extends ViewContext
         }
     }
 
+    public String getSelectionKey()
+    {
+        return _currentRegion != null ? _currentRegion.getSelectionKey() : null;
+    }
+
     public Filter getBaseFilter()
     {
         return _baseFilter;

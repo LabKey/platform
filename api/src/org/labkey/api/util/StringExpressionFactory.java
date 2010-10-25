@@ -452,7 +452,7 @@ public class StringExpressionFactory
         protected StringPart parsePart(String expr)
         {
             // HACK
-            if ("containerPath".equals(expr) || "contextPath".equals(expr) || "_row".equals(expr))
+            if ("containerPath".equals(expr) || "contextPath".equals(expr) || "_row".equals(expr) || "selectionKey".equals(expr))
                 return new SubstitutePart(expr);
             return new FieldPart(expr);
         }

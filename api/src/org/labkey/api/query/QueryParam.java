@@ -33,5 +33,6 @@ public enum QueryParam
 
     dataRegionName,
     srcURL,
-    containerFilterName
+    containerFilterName,
+    selectionKey
 }

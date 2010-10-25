@@ -145,7 +145,7 @@ public class ButtonBar extends DisplayElement
 
     private void renderIncludes(RenderContext ctx, Writer out) throws IOException
     {
-        if (_configs != null && !_configs.isEmpty() && _renderedIncludes == false)
+        if (_configs != null && !_configs.isEmpty() && !_renderedIncludes)
         {
             for (ButtonBarConfig config : _configs)
                 applyConfig(ctx, config);
