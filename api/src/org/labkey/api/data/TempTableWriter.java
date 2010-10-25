@@ -48,7 +48,7 @@ public class TempTableWriter
 
     // TODO: Use iterator() instead of load() to support larger files.  Would need to infer varchar column widths via
     // first n rows approach (and potentially check and ALTER if we find a larger width later)
-    public Table.TempTableInfo loadTempTable(DbSchema schema) throws IOException, SQLException
+    public TempTableInfo loadTempTable(DbSchema schema) throws IOException, SQLException
     {
         //
         // Load the file
@@ -75,7 +75,7 @@ public class TempTableWriter
         }
 
         // note: this call sets col.parentTable()
-        Table.TempTableInfo tinfoTempTable = new Table.TempTableInfo(schema, "ttw", activeColumns, null);
+        TempTableInfo tinfoTempTable = new TempTableInfo(schema, "ttw", activeColumns, null);
         String tempTableName = tinfoTempTable.getTempTableName();
 
         //
@@ -149,7 +149,7 @@ public class TempTableWriter
 
         Table.batchExecute(schema, sqlInsert.toString(), paramList);
 
-        // Update statistics on the new table to inform query planner
+        // Update statistics on the new table -- without this, query planner might pick a terrible plan
         schema.getSqlDialect().updateStatistics(tinfoTempTable);
 
         return tinfoTempTable;

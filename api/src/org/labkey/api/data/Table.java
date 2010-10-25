@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.jetbrains.annotations.NotNull;
@@ -1531,87 +1532,6 @@ public class Table
                 cols.put(column.getAlias(), column);
             else if (column.isVersionColumn())
                 cols.put(column.getAlias(), column);
-        }
-    }
-
-
-    public static class TempTableInfo extends SchemaTableInfo
-    {
-        TempTableTracker _ttt;
-        String _tempTableName;
-        String _unique;
-
-        static private String shortGuid()
-        {
-            String guid = GUID.makeGUID();
-            StringBuilder sb = new StringBuilder(guid.length());
-            for (int i=0 ; i<guid.length() ; i++)
-            {
-                char ch = guid.charAt(i);
-                if (ch != '-')
-                    sb.append(ch);
-            }
-            return sb.toString();
-        }
-
-        public TempTableInfo(DbSchema parentSchema, String name, List<ColumnInfo> cols, List<String> pk)
-        {
-            super(parentSchema);
-
-            _unique = shortGuid();
-            _tempTableName = parentSchema.getSqlDialect().getGlobalTempTablePrefix() + name + "$" + _unique;
-
-            // overwrite selectName to not use schema/owner name
-            this.name = name;
-            selectName = new SQLFragment(_tempTableName);
-            for (ColumnInfo col : cols)
-                col.setParentTable(this);
-            columns.addAll(cols);
-            if (pk != null)
-                setPkColumnNames(pk);
-            setTableType(TABLE_TYPE_TABLE);
-        }
-
-        public void setButtonBarConfig(ButtonBarConfig bbarConfig)
-        {
-            _buttonBarConfig = bbarConfig;
-        }
-
-        public String getSelectName()
-        {
-            return _tempTableName;
-        }
-
-
-        public String getTempTableName()
-        {
-            return _tempTableName;
-        }
-
-
-        /** Call this method when table is physically created */
-        public void track()
-        {
-            _ttt = TempTableTracker.track(getSchema(), getTempTableName(), this);
-        }
-
-
-        public void delete()
-        {
-            _ttt.delete();
-        }
-
-        public boolean verify()
-        {
-            try
-            {
-                isEmpty(this);
-                return true;
-            }
-            catch (SQLException e)
-            {
-                return false;
-            }
         }
     }
 

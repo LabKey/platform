@@ -627,7 +627,7 @@ public class DbSchema
         col.setNullable(false);
         listColInfos.add(col);
 
-        Table.TempTableInfo tTemplate = new Table.TempTableInfo(coreSchema, "cltmp", listColInfos, Collections.singletonList("RowId"));
+        TempTableInfo tTemplate = new TempTableInfo(coreSchema, "cltmp", listColInfos, Collections.singletonList("RowId"));
         String tempTableName = tTemplate.getTempTableName();
 
         String createTempTableSql =
