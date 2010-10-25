@@ -1094,7 +1094,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
  * Add or remove items from the current selection.
  *
  * @param config A configuration object with the following properties:
- * @param {String} config.selectionKey Unique string used by selection APIs as a key store or retrieve the selected items for a grid.
+ * @param {String} config.selectionKey Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
  * @param {Array} config.id Array of primary key ids for each row to select/unselect.
  * @param {Boolean} config.checked If true, the ids will be selected, otherwise unselected.
  * @param {Function} config.success The function to be called upon success of the request.
@@ -1132,7 +1132,7 @@ LABKEY.DataRegion.setSelected = function (config)
  * Clear all selected items.
  *
  * @param config A configuration object with the following properties:
- * @param {String} config.selectionKey Unique string used by selection APIs as a key store or retrieve the selected items for a grid.
+ * @param {String} config.selectionKey Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
  * @param {Function} config.success The function to be called upon success of the request.
  * The callback will be passed the following parameters:
  * <ul>
@@ -1160,7 +1160,7 @@ LABKEY.DataRegion.clearSelected = function (config)
  * Get all selected items.
  *
  * @param config A configuration object with the following properties:
- * @param {String} config.selectionKey Unique string used by selection APIs as a key store or retrieve the selected items for a grid.
+ * @param {String} config.selectionKey Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
  * @param {Function} config.success The function to be called upon success of the request.
  * The callback will be passed the following parameters:
  * <ul>
