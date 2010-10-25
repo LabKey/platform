@@ -388,18 +388,20 @@ List<NavTree> parseNavTrail(String s)
 }
 
 
+SearchService ss = ServiceRegistry.get(SearchService.class);
+
 Collection<NavTree> getActions(SearchService.SearchHit hit)
 {
     String docid = hit.docid;
-    if (null == docid || !docid.startsWith("dav:"))
+    if (null == docid)
         return null;
-    Path p = Path.parse(docid.substring(4));
-    WebdavResource r = WebdavService.get().getResolver().lookup(p);
+    WebdavResource r = ss.resolveResource(docid);
     if (null == r || !r.exists())
         return null;
     Collection<NavTree> nav = r.getActions(HttpView.currentContext().getUser());
     return nav.isEmpty() ? null : nav;
 }
+
 
 Path files = new Path("@files");
 Path pipeline = new Path("@pipeline");
