@@ -200,6 +200,12 @@ public class NoopSearchService implements SearchService
     {
     }
 
+    @Override
+    public WebdavResource resolveResource(@NotNull String resourceIdentifier)
+    {
+        return null;
+    }
+
     public SearchResult search(String queryString, List<SearchCategory> categories, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
     {
         return null;
