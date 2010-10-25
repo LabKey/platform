@@ -160,6 +160,11 @@ public class QueryController extends SpringActionController
             // exists with errors
             return true;
         }
+        catch (QueryException x)
+        {
+            // exists with errors
+            return true;
+        }
     }
 
 
