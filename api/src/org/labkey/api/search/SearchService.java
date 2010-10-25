@@ -282,6 +282,8 @@ public interface SearchService
     public void addSearchCategory(SearchCategory category);
     public List<SearchCategory> getCategory(String category);
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
+    public WebdavResource resolveResource(@NotNull String resourceIdentifier);
+    
 
     public interface DocumentProvider
     {

@@ -59,7 +59,7 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
         }
         _map.put(key, value);
 //        assert !_correctCaseMap.containsKey(key.toLowerCase());
-        _correctCaseMap.put(key.toLowerCase(), key);
+        _correctCaseMap.put(null==key?null:key.toLowerCase(), key);
         return ret;
     }
 

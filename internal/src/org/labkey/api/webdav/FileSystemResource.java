@@ -38,6 +38,7 @@ import org.labkey.api.files.FileContentEmailPref;
 import org.labkey.api.files.FileContentEmailPrefFilter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
+import org.labkey.api.flow.api.FlowService;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.QueryUpdateService;
@@ -71,6 +72,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -97,7 +100,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
     private static final long UNKNOWN = -1;
     private boolean _dataQueried = false;
-    private ExpData _data;
+    private List<ExpData> _data;
     private boolean _mergeFromParent;
     private Map<String, String> _customProperties;
 
@@ -484,70 +487,83 @@ public class FileSystemResource extends AbstractWebdavResource
     @Override
     public User getCreatedBy()
     {
-        ExpData data = getExpData();
-        return data == null ? super.getCreatedBy() : data.getCreatedBy();
+        List<ExpData> data = getExpData();
+        return data != null && data.size() == 1 ? data.get(0).getCreatedBy() : super.getCreatedBy();
     }
 
     public String getDescription()
     {
-        ExpData data = getExpData();
-        return data == null ? null : data.getComment();
+        List<ExpData> data = getExpData();
+        return data != null && data.size() == 1 ? data.get(0).getComment() : super.getDescription();
     }
 
     @Override
     public User getModifiedBy()
     {
-        ExpData data = getExpData();
-        return data == null ? super.getCreatedBy() : data.getModifiedBy();
+        List<ExpData> data = getExpData();
+        return data != null && data.size() == 1 ? data.get(0).getCreatedBy() : super.getModifiedBy();
     }
+
 
     @NotNull @Override
     public Collection<NavTree> getActions(User user)
     {
-        if (isFile())
+        if (!isFile())
+            return Collections.emptyList();
+
+        List<ExpData> datas = getExpData();
+
+        List<NavTree> result = new ArrayList<NavTree>();
+        Set<Integer> runids = new HashSet<Integer>();
+
+        for (ExpData data : datas)
         {
-            ExpData data = getExpData();
+            if (data == null || !data.getContainer().hasPermission(user, ReadPermission.class))
+                continue;
 
-            if (data != null && data.getContainer().hasPermission(user, ReadPermission.class))
+            ActionURL dataURL = data.findDataHandler().getContentURL(data.getContainer(), data);
+            List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
+
+            for (ExpRun run : runs)
             {
-                ActionURL dataURL = data.findDataHandler().getContentURL(data.getContainer(), data);
-                List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
-                List<NavTree> result = new ArrayList<NavTree>();
+                if (!run.getContainer().hasPermission(user, ReadPermission.class))
+                    continue;
+                if (!runids.add(run.getRowId()))
+                    continue;
 
-                for (ExpRun run : runs)
+                String runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL.toString();
+                String actionName;
+
+                if (!run.getName().equals(data.getName()))
                 {
-                    if (run.getContainer().hasPermission(user, ReadPermission.class))
-                    {
-                        String runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL.toString();
-                        String actionName;
-
-                        if (!run.getName().equals(data.getName()))
-                        {
-                            actionName = run.getName() + " (" + run.getProtocol().getName() + ")";
-                        }
-                        else
-                        {
-                            actionName = run.getProtocol().getName();
-                        }
-
-                        result.add(new NavTree(actionName, runURL));
-                    }
+                    actionName = run.getName() + " (" + run.getProtocol().getName() + ")";
+                }
+                else
+                {
+                    actionName = run.getProtocol().getName();
                 }
 
-                return result;
+                result.add(new NavTree(actionName, runURL));
             }
         }
-
-        return Collections.emptyList();
+        return result;
     }
+    
 
-    private ExpData getExpData()
+    private List<ExpData> getExpData()
     {
         if (!_dataQueried)
         {
             try
             {
-                _data = ExperimentService.get().getExpDataByURL(getFile().toURI().toURL().toString(), null);
+                String fileURL = getFile().toURI().toURL().toString();
+                List<ExpData> list = new LinkedList<ExpData>();
+                List<ExpData> f = ServiceRegistry.get(FlowService.class).getExpDataByURL(fileURL, getContainer());
+                list.addAll(f);
+                ExpData d = ExperimentService.get().getExpDataByURL(fileURL, null);
+                if (null != d)
+                    list.add(d);
+                _data = list;
             }
             catch (MalformedURLException e) {}
             _dataQueried = true;
