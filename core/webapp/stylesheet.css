@@ -105,6 +105,11 @@ a.labkey-header
     white-space: nowrap;
 }
 
+a.labkey-header span
+{
+    font-weight: normal;
+}
+
 td.labkey-header a
 {
     text-align: left;
