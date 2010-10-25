@@ -16,6 +16,8 @@
 
 package org.labkey.query;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -32,7 +34,9 @@ import java.util.*;
 // Helper class to serialize a CustomView to/from json
 public class CustomViewUtil
 {
+    // UNDONE: consolodate String constants
     protected static final String FILTER_PARAM_PREFIX = "filter";
+    protected static final String CONTAINER_FILTER_NAME = "containerFilterName";
 
     public static void update(CustomView view, JSONObject jsonView, boolean saveFilterAndSort)
     {
@@ -94,7 +98,9 @@ public class CustomViewUtil
             sort.applyToURL(url, FILTER_PARAM_PREFIX);
         }
 
-        // UNDONE: container filter
+        String containerFilter = StringUtils.trimToNull(jsonView.optString("containerFilter"));
+        if (containerFilter != null)
+            url.addParameter(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME, containerFilter);
 
         view.setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
     }
@@ -116,7 +122,17 @@ public class CustomViewUtil
                 return Collections.emptyMap();
         }
 
-        return toMap(view, includeFieldMeta);
+        Map<String, Object> ret = toMap(view, includeFieldMeta);
+
+        // Get list of allowable container filters
+        List<String[]> allowableContainerFilterNames = Lists.transform(qview.getAllowableContainerFilterTypes(), new Function<ContainerFilter.Type, String[]>() {
+            public String[] apply(ContainerFilter.Type input) {
+                return new String[] { input.name(), input.toString() };
+            }
+        });
+        ret.put("allowableContainerFilters", allowableContainerFilterNames);
+
+        return ret;
     }
 
     // UNDONE: Move to API so DataRegion can use this

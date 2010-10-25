@@ -149,6 +149,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             Container container = getContainer();
 
+            // Database custom view and module custom views.
+            ret.putAll(((QueryServiceImpl)QueryService.get()).getCustomViewMap(user, container, this, inheritable));
+
+            // Session views have highest precedence.
             if (user != null && request != null)
             {
                 for (CstmView view : CustomViewSetKey.getCustomViewsFromSession(request, this).values())
@@ -158,8 +162,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                     ret.put(view.getName(), v);
                 }
             }
-
-            ret.putAll(((QueryServiceImpl)QueryService.get()).getCustomViewMap(user, container, this, inheritable));
         }
         catch (SQLException e)
         {
