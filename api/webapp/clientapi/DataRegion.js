@@ -571,7 +571,9 @@ LABKEY.DataRegion = function (config)
             return;
 
         var skipPrefixes = [".offset", ".showRows", ".viewName", ".reportId"];
-        var newParamValPairs = [[".viewName", viewName]];
+        var newParamValPairs = [];
+        if (viewName)
+            newParamValPairs.push([".viewName", viewName]);
         if (urlParameters)
         {
             if (urlParameters.filter && urlParameters.filter.length > 0)
@@ -594,9 +596,13 @@ LABKEY.DataRegion = function (config)
                 newParamValPairs.push([".sort", newSortArray.join(",")]);
             }
 
-            // removes all filters and sorts parameters
-            skipPrefixes.push(".sort");
+            if (urlParameters.containerFilter)
+                newParamValPairs.push([".containerFilterName", urlParameters.containerFilter]);
+
+            // removes all filter, sort, and container filter parameters
             skipPrefixes.push(".");
+            skipPrefixes.push(".sort");
+            skipPrefixes.push(".containerFilterName");
         }
 
 

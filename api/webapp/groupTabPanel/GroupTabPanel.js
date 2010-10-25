@@ -26,7 +26,7 @@ Ext.ux.GroupTabPanel = Ext.extend(Ext.TabPanel, {
             'beforegroupchange',
             'groupchange'
         );
-        this.elements = 'body,header';
+        this.elements += ',body,header';
         this.stripTarget = 'header';
 
         this.tabPosition = this.tabPosition == 'right' ? 'right' : 'left';

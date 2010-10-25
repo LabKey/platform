@@ -243,7 +243,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
                 //cls: "labkey-status-info",
                 style: { 'background-color': "#FFDF8C", padding: "2px" },
-                html: "bottom bar",
+                html: "<span>message</span><span class='labkey-tool labkey-tool-close' style='float:right;'></span>",
                 hidden: true
             },
             fbar: [{
@@ -341,7 +341,8 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         var tb = this.getBottomToolbar();
         if (tb.getEl())
         {
-            tb.getEl().update(msg);
+            var el = tb.getEl().first();
+            el.update(msg);
             tb.setVisible(true);
             tb.getEl().slideIn();
             tb.getEl().on('click', function () { this.hideMessage(); }, this, {single: true});
@@ -355,7 +356,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     hideMessage : function ()
     {
         var tb = this.getBottomToolbar();
-        tb.getEl().update('');
+        tb.getEl().first().update('');
         tb.setVisible(false);
         tb.getEl().slideOut();
     },
@@ -416,6 +417,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         var text = fieldMeta.name;
         if (fieldMeta.caption && fieldMeta.caption != "&nbsp;")
             text = fieldMeta.caption;
+
         var attrs = {
             id: fieldMeta.fieldKey,
             fieldKey: fieldMeta.fieldKey,
@@ -426,7 +428,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             disabled: !fieldMeta.selectable,
             hidden: fieldMeta.hidden && !this.showHiddenFields,
             qtip: fieldMeta.description,
-            icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.png" : ""
+            iconCls: "x-hide-display"
         };
 
         return attrs;
@@ -1049,12 +1051,13 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             cls: "test-filter-tab",
             layout: "fit",
             items: [{
+                ref: "filterPanel",
                 title: "Selected Filters",
                 xtype: "panel",
                 border: false,
                 style: {"border-left-width": "1px"},
                 layout: {
-                    type: "hbox",
+                    type: "vbox",
                     align: "stretch"
                 },
                 items: [{
@@ -1082,7 +1085,8 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             '      <div class="item-op"></div>',
                             '      <div class="item-value"></div>',
                             '    </td>',
-                            '    <td width="15px" valign="top"><div class="labkey-tool {[values.urlParameter ? "labkey-tool-unpin" : "labkey-tool-pin"]}"></div></td>',
+                            '    <td width="15px" valign="top"><div class="labkey-tool {[values.urlParameter ? "labkey-tool-unpin" : "labkey-tool-pin"]}"',
+                            ' title="Pinned filters are included with the saved view."></div></td>',
                             '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-close" title="Remove filter clause"></div></td>',
                             '  </tr>',
                             '  </tpl>',
@@ -1128,16 +1132,84 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         selectOnFocus: true,
                         emptyText: "Enter filter value"
                     }]
+                }],
+                bbar: [{
+                    xtype: "label",
+                    text: "Folder Filter:"
+                }," ",{
+                    // HACK: Need to wrap the combo in an panel so the combo doesn't overlap items after it.
+                    xtype: "panel",
+                    width: 200,
+                    plain: true,
+                    border: false,
+                    layout: "fit",
+                    items: [{
+                        xtype: "combo",
+                        cls: "labkey-folder-filter-combo",
+                        //enabled: this.customView.containerFilter != null,
+                        value: this.customView.containerFilter,
+                        store: [["&nbsp;", "Default"]].concat(this.customView.allowableContainerFilters),
+                        mode: 'local',
+                        triggerAction: 'all',
+                        allowBlank: true,
+                        emptyText: "Default",
+                        listeners: {
+                            change: function (combo, newValue, oldValue) {
+                                console.log("change:");
+                                console.log(newValue);
+                                console.log(oldValue);
+                                this.onFolderFilterChange(newValue);
+                            },
+                            scope: this
+                        }
+                    }]
+                }," ",{
+                    xtype: "box",
+                    overCls: "x-over",
+                    cls: "labkey-folder-filter-pin labkey-tool " + (this.designer.userContainerFilter ? "labkey-tool-unpin" : "labkey-tool-pin"),
+                    autoEl: {
+                        tag: "div",
+                        title: "Pinned folder filter is included with the saved view."
+                    },
+                    disabled: !this.customView.containerFilter,
+                    listeners: {
+                        render: function (f) {
+                            f.el.on("click", this.onFolderFilterPinClick, this);
+                        },
+                        scope: this
+                    }
                 }]
             }]
         }, config);
 
         LABKEY.DataRegion.FilterTab.superclass.constructor.call(this, config);
+
+        var bbar = this.filterPanel.getBottomToolbar();
+        this.containerFilterCombo = bbar.items.get(2).items.get(0);
+        this.containerFilterPin = bbar.items.get(4);
     },
 
     initComponent : function () {
         LABKEY.DataRegion.FilterTab.superclass.initComponent.call(this);
         this.updateTitle();
+    },
+
+    onFolderFilterChange : function (newValue) {
+        if (newValue)
+            this.containerFilterPin.enable();
+        else
+            this.containerFilterPin.disable();
+    },
+
+    onFolderFilterPinClick : function () {
+        if (this.containerFilterPin.disabled)
+            return;
+        
+        var el = this.containerFilterPin.getEl();
+        if (el.hasClass("labkey-tool-pin"))
+            el.replaceClass("labkey-tool-pin", "labkey-tool-unpin");
+        else
+            el.replaceClass("labkey-tool-unpin", "labkey-tool-pin");
     },
 
     onListBeforeClick : function (list, index, item, e) {
@@ -1374,6 +1446,15 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             }
         }
 
+        var containerFilter = this.containerFilterCombo.getValue();
+        if (containerFilter)
+        {
+            if (this.containerFilterPin.getEl().hasClass("labkey-tool-pin"))
+                edited.containerFilter = containerFilter;
+            else
+                urlParameters.containerFilter = containerFilter;
+        }
+
         edited[this.filterStore.root] = saveData;
         urlParameters[this.filterStore.root] = urlData;
     }
@@ -1442,7 +1523,8 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             '  </tr>',
                             '  <tr>',
                             '    <td><div class="item-dir"></div></td>',
-                            '    <td width="15px" valign="top"><div class="labkey-tool {[values.urlParameter ? "labkey-tool-unpin" : "labkey-tool-pin"]}"></div></td>',
+                            '    <td width="15px" valign="top"><div class="labkey-tool {[values.urlParameter ? "labkey-tool-unpin" : "labkey-tool-pin"]}"',
+                            ' title="Pinned sorts are included with the saved view."></div></td>',
                             '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove sort"></span></td>',
                             '  </tr>',
                             '</table>',
