@@ -54,6 +54,9 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.files.FileContentService;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.ByteArrayAttachmentFile;
+import org.labkey.study.samples.SampleSearchBean;
+import org.labkey.study.samples.SampleSearchWebPart;
+import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.samples.notifications.DefaultRequestNotification;
 import org.labkey.study.samples.notifications.NotificationRecipientSet;
@@ -112,6 +115,24 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    public class OverviewAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            SampleSearchWebPart sampleSearch = new SampleSearchWebPart(true);
+            SamplesWebPart sampleSummary = new SamplesWebPart(true);
+            return new VBox(sampleSummary, sampleSearch);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendBaseSpecimenNavTrail(root);
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o)
@@ -120,17 +141,17 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private NavTree appendBaseSpecimenNavTrail(NavTree root, boolean vialView)
+    private NavTree appendBaseSpecimenNavTrail(NavTree root)
     {
         root = _appendNavTrail(root);
-        ActionURL specimenURL = new ActionURL(ShowSearchAction.class,  getContainer());
-        root.addChild(vialView ? "Vials" : "Specimens", specimenURL);
+        ActionURL overviewURL = new ActionURL(OverviewAction.class,  getContainer());
+        root.addChild("Specimen Overview", overviewURL);
         return root;
     }
 
     private NavTree appendSpecimenRequestsNavTrail(NavTree root)
     {
-        root = appendBaseSpecimenNavTrail(root, false);
+        root = appendBaseSpecimenNavTrail(root);
         return root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
     }
 
@@ -285,7 +306,9 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendBaseSpecimenNavTrail(root, _vialView);
+            root = appendBaseSpecimenNavTrail(root);
+            root.addChild(_vialView ? "Vials" : "Specimens");
+            return root;
         }
     }
 
@@ -550,12 +573,12 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root = _appendNavTrail(root);
-            root.addChild("Specimens", new ActionURL(ShowSearchAction.class,
-                    getContainer()).addParameter(SampleViewTypeForm.PARAMS.showVials, "true"));
+            root = appendBaseSpecimenNavTrail(root);
             if (_showingSelectedSamples)
+            {
                 root.addChild("Selected Specimens", new ActionURL(SelectedSamplesAction.class,
                         getContainer()).addParameter(SampleViewTypeForm.PARAMS.showVials, "true"));
+            }
             root.addChild("Vial History");
             return root;
         }
@@ -808,7 +831,7 @@ public class SpecimenController extends BaseStudyController
 
                 if (SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), sampleRequest) && !_finalState)
                 {
-                    ActionButton addButton = new ActionButton("showSearch.view?showVials=true", "Specimen Search");
+                    ActionButton addButton = new ActionButton(new ActionURL(OverviewAction.class, getContainer()), "Specimen Search");
                     ActionButton deleteButton = new ActionButton(HandleRemoveRequestSamplesAction.class, "Remove Selected");
                     _specimenQueryView.addHiddenFormField("id", "" + _sampleRequest.getRowId());
                     buttons.add(addButton);
@@ -2799,7 +2822,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root = appendBaseSpecimenNavTrail(root, false);
+            root = appendBaseSpecimenNavTrail(root);
             root.addChild("Available Reports", new ActionURL(AutoReportListAction.class, getContainer()));
             return root.addChild("Specimen Report: " + _form.getLabel());
         }
@@ -2996,7 +3019,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root = appendBaseSpecimenNavTrail(root, false);
+            root = appendBaseSpecimenNavTrail(root);
             return root.addChild("Specimen Reports");
         }
     }
@@ -3395,7 +3418,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root = appendBaseSpecimenNavTrail(root, true);
+            root = appendBaseSpecimenNavTrail(root);
             return root.addChild("Set vial comments");
         }
     }

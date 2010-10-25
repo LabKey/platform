@@ -2632,6 +2632,8 @@ study/src/org/labkey/study/requirements/RequirementType.java -text
 study/src/org/labkey/study/requirements/SpecimenRequestRequirementProvider.java -text
 study/src/org/labkey/study/requirements/SpecimenRequestRequirementType.java -text
 study/src/org/labkey/study/samples/ByteArrayAttachmentFile.java -text
+study/src/org/labkey/study/samples/SampleSearchBean.java -text
+study/src/org/labkey/study/samples/SampleSearchWebPart.java -text
 study/src/org/labkey/study/samples/SamplesWebPart.java -text
 study/src/org/labkey/study/samples/SpecimenCommentAuditViewFactory.java -text
 study/src/org/labkey/study/samples/notifications/ActorNotificationRecipientSet.java -text
@@ -2696,12 +2698,13 @@ study/src/org/labkey/study/view/BaseStudyPage.java -text
 study/src/org/labkey/study/view/DataHeader.java -text
 study/src/org/labkey/study/view/DataSetSummaryPage.java -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
-study/src/org/labkey/study/view/ParticipantWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyGWTView.java -text
 study/src/org/labkey/study/view/StudyListWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyNavigationView.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyViewLoader.java -text
+study/src/org/labkey/study/view/SubjectDetailsWebPartFactory.java -text
+study/src/org/labkey/study/view/SubjectsWebPart.java -text
 study/src/org/labkey/study/view/assayList2.jsp -text
 study/src/org/labkey/study/view/bulkDatasetDelete.jsp -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
@@ -2792,6 +2795,7 @@ study/src/org/labkey/study/view/securityTabHeader.jsp -text
 study/src/org/labkey/study/view/snapshotData.jsp -text
 study/src/org/labkey/study/view/studyList.jsp -text
 study/src/org/labkey/study/view/studySummary.jsp -text
+study/src/org/labkey/study/view/subjects.jsp -text
 study/src/org/labkey/study/view/typeNotFound.jsp -text
 study/src/org/labkey/study/view/typeSummary.jsp -text
 study/src/org/labkey/study/view/updateDatasetVisitMapping.jsp -text

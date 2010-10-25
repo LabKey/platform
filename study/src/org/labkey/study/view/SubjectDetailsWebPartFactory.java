@@ -29,7 +29,7 @@ import java.sql.SQLException;
  * User: brittp
  * Created: May 2, 2008 2:13:02 PM
  */
-public class ParticipantWebPartFactory extends BaseWebPartFactory
+public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
 {
     public enum DataType
     {
@@ -58,9 +58,10 @@ public class ParticipantWebPartFactory extends BaseWebPartFactory
     public static final String SOURCE_DATASET_ID_KEY = "datasetId";
     public static final String CURRENT_URL_KEY = "currentUrl";
 
-    public ParticipantWebPartFactory()
+    public SubjectDetailsWebPartFactory()
     {
-        super("Participant Details", null, true, true);
+        super("Subject Details", null, true, true);
+        addLegacyNames("Participant Details");
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception

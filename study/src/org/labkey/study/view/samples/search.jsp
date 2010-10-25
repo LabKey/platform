@@ -25,10 +25,15 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.data.RenderContext" %>
+<%@ page import="org.labkey.study.samples.SampleSearchBean" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ShowSearchAction.SearchBean> me = (JspView<ShowSearchAction.SearchBean>) HttpView.currentView();
-    ShowSearchAction.SearchBean bean = me.getModelBean();
+    JspView<SampleSearchBean> me = (JspView<SampleSearchBean>) HttpView.currentView();
+    SampleSearchBean bean = me.getModelBean();
+
+    String hideExtraColumnsLabel = "Hide extra columns";
+    String showExtraColumnsLabel = "Show all columns";
 
     Set<String> availableColumns = new HashSet<String>();
     for (DisplayColumn dc : bean.getDisplayColumns())
@@ -81,28 +86,33 @@
         if (additionalColumnsTable.style.display == "none")
         {
             additionalColumnsTable.style.display = "block";
-            additionalColumnsLink.innerHTML = "Hide extra columns";
+            additionalColumnsLink.innerHTML = "<%= hideExtraColumnsLabel %>";
         }
         else
         {
             additionalColumnsTable.style.display = "none";
-            additionalColumnsLink.innerHTML = "Show all columns";
+            additionalColumnsLink.innerHTML = "<%= showExtraColumnsLabel %>";
         }
     }
 
 </script>
+<%
+    if (!bean.isInWebPart())
+    {
+%>
 This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specimen" %>.<br>
 <%= textLink("Search by " + (!bean.isDetailsView() ? "vial" : "specimen"), "showSearch.view?showVials=" + !bean.isDetailsView())%><br><br>
 <%
+    }
     int paramNumber = 0;
 %>
-<form action="showSearch.view" id="searchForm" method="POST">
+<form action="<%= new ActionURL(ShowSearchAction.class, getViewContext().getContainer()).getLocalURIString() %>" id="searchForm" method="POST">
     <input type="hidden" name="showVials" value="<%= bean.isDetailsView() ? "true" : "false" %>" >
     <%
-        for (int pass = 0; pass < 2; pass++)
+        for (int pass = 0; pass < (bean.isInWebPart() ? 1 : 2); pass++)
         {
     %>
-    <table id="<%= pass == 0 ? "specialColumnsTable" : "additionalColumnsTable" %>" style="display:<%= pass == 0 ? "block" : "none" %>">
+    <table id="<%= pass == 0 ? "specialColumnsTable" : "additionalColumnsTable" %>" style="display:<%= (pass == 0 || bean.isAdvancedExpanded()) ? "block" : "none" %>">
     <%
             RenderContext renderContext = new RenderContext(me.getViewContext());
             for (DisplayColumn col : bean.getDisplayColumns())
@@ -176,13 +186,30 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
         %>
     </table><br>
     <%
-            if (pass == 0)
+            if (pass == 0 && !bean.isInWebPart())
             {
             %>
-    <%=textLink("Show all columns", "#", "showOrHideAdditionalColumns()", "additionalColumnsLink")%><br>
+    <%= textLink(bean.isAdvancedExpanded() ? hideExtraColumnsLabel: showExtraColumnsLabel, "#", "showOrHideAdditionalColumns()", "additionalColumnsLink") %><br>
+            <%
+            }
+            if (bean.isInWebPart())
+            {
+                ActionURL advancedVialSearch = new ActionURL(ShowSearchAction.class, getViewContext().getContainer());
+                advancedVialSearch.addParameter("showAdvanced", "true");
+                advancedVialSearch.addParameter("showVials", "true");
+            %>
+    <%= textLink("More options", advancedVialSearch) %><br><br>
             <%
             }
         }
     %>
-<%= generateSubmitButton("Search") %> <%= generateButton("Cancel", "samples.view?_lastFilter=1&showVials=" + bean.isDetailsView())%>
+<%= generateSubmitButton("Search") %>
+<%
+    if (!bean.isInWebPart())
+    {
+%>
+    <%= generateButton("Cancel", "samples.view?_lastFilter=1&showVials=" + bean.isDetailsView())%>
+<%
+    }
+%>
 </form>

@@ -20,22 +20,13 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.view.*;
-import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.samples.SampleSearchBean;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @RequiresPermissionClass(ReadPermission.class)
 public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm>
@@ -55,8 +46,9 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
         _title = (form.isShowVials() ? "Vial" : "Specimen") + " Search";
 
-        return new JspView<SearchBean>("/org/labkey/study/view/samples/search.jsp",
-                new SearchBean(getViewContext(), form.isShowVials()));
+        SampleSearchBean bean = new SampleSearchBean(getViewContext(), form.isShowVials(), false);
+        bean.setAdvancedExpanded(form.isShowAdvanced());
+        return new JspView<SampleSearchBean>("/org/labkey/study/view/samples/search.jsp", bean);
     }
 
     public boolean handlePost(SearchForm form, BindException errors) throws Exception
@@ -83,6 +75,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     public NavTree appendNavTrail(NavTree root)
     {
         root.addChild(_study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getViewContext().getContainer()));
+        root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getViewContext().getContainer()));
         root.addChild(_title);
 
         return root;
@@ -90,6 +83,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
     public static class SearchForm extends ShowSearchForm
     {
+        private boolean _showAdvanced = false;
         private SearchParam[] _searchParams;
         public static class SearchParam
         {
@@ -143,160 +137,15 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         {
             _searchParams = searchParams;
         }
-    }
 
-    public static class SearchBean
-    {
-        private boolean _detailsView;
-        private List<DisplayColumn> _displayColumns;
-        private ActionURL _baseViewURL;
-        private String _dataRegionName;
-        private Container _container;
-        private Map<String, DisplayColumnInfo> _defaultDetailCols;
-        private Map<String, DisplayColumnInfo> _defaultSummaryCols;
-
-        private static class DisplayColumnInfo
+        public boolean isShowAdvanced()
         {
-            private boolean _displayByDefault;
-            private boolean _displayAsPickList;
-            private boolean _forceDistinctQuery;
-            private String _orderBy;
-            private TableInfo _tableInfo;
-
-            public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList)
-            {
-                this(displayByDefault, displayAsPickList, false);
-            }
-
-            public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList, boolean forceDistinctQuery)
-            {
-                this(displayByDefault, displayAsPickList, forceDistinctQuery, null);
-            }
-
-            public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList, boolean forceDistinctQuery, TableInfo tableInfo)
-            {
-                _displayByDefault = displayByDefault;
-                _displayAsPickList = displayAsPickList;
-                _forceDistinctQuery = forceDistinctQuery;
-                _tableInfo = tableInfo;
-            }
-
-            public boolean isDisplayAsPickList()
-            {
-                return _displayAsPickList;
-            }
-
-            public boolean isDisplayByDefault()
-            {
-                return _displayByDefault;
-            }
-
-            public boolean isForceDistinctQuery()
-            {
-                return _forceDistinctQuery;
-            }
-
-            public String getOrderBy()
-            {
-                return _orderBy;
-            }
-
-            public void setOrderBy(String orderBy)
-            {
-                _orderBy = orderBy;
-            }
-
-            public TableInfo getTableInfo()
-            {
-                return _tableInfo;
-            }
+            return _showAdvanced;
         }
 
-
-        public SearchBean(ViewContext context, boolean detailsView)
+        public void setShowAdvanced(boolean showAdvanced)
         {
-            _container = context.getContainer();
-            _detailsView = detailsView;
-            SpecimenQueryView view = SpecimenQueryView.createView(context, detailsView ? SpecimenQueryView.ViewType.VIALS :
-                    SpecimenQueryView.ViewType.SUMMARY);
-
-            _displayColumns = new ArrayList<DisplayColumn>();
-            for (DisplayColumn dc : view.getDisplayColumns())
-                if (dc.getColumnInfo() != null)
-                    _displayColumns.add(dc);
-            _dataRegionName = view.getDataRegionName();
-            _baseViewURL = view.getBaseViewURL();
-
-            _defaultDetailCols = new HashMap<String, DisplayColumnInfo>();
-            _defaultDetailCols.put("PrimaryType", new DisplayColumnInfo(true, true));
-            _defaultDetailCols.put("AdditiveType", new DisplayColumnInfo(true, true));
-            DisplayColumnInfo visitInfo = new DisplayColumnInfo(true, true);
-            visitInfo.setOrderBy("DisplayOrder");
-            _defaultDetailCols.put("Visit", visitInfo);
-            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), context.getUser(), true);
-            TableInfo simpleSpecimenTable = schema.createSimpleSpecimenTable();
-
-            DisplayColumnInfo participantColInfo = new DisplayColumnInfo(true, true, true, simpleSpecimenTable);
-            participantColInfo.setOrderBy("PTID");
-            _defaultDetailCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), participantColInfo);
-            _defaultDetailCols.put("Available", new DisplayColumnInfo(true, true));
-            _defaultDetailCols.put("SiteLdmsCode", new DisplayColumnInfo(true, true));
-            _defaultDetailCols.put("DerivativeType", new DisplayColumnInfo(true, true));
-            _defaultDetailCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, simpleSpecimenTable));
-            _defaultDetailCols.put("GlobalUniqueId", new DisplayColumnInfo(true, false));
-            _defaultDetailCols.put("Clinic", new DisplayColumnInfo(true, true));
-
-            _defaultSummaryCols = new HashMap<String, DisplayColumnInfo>();
-            _defaultSummaryCols.put("PrimaryType", new DisplayColumnInfo(true, true));
-            _defaultSummaryCols.put("AdditiveType", new DisplayColumnInfo(true, true));
-            _defaultSummaryCols.put("DerivativeType", new DisplayColumnInfo(true, true));
-            _defaultSummaryCols.put("Visit", visitInfo);
-            _defaultSummaryCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), participantColInfo);
-            _defaultSummaryCols.put("Available", new DisplayColumnInfo(true, false));
-            _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, simpleSpecimenTable));
-            _defaultSummaryCols.put("Clinic", new DisplayColumnInfo(true, true));
-        }
-
-        public List<DisplayColumn> getDisplayColumns()
-        {
-            return _displayColumns;
-        }
-
-        public boolean isDetailsView()
-        {
-            return _detailsView;
-        }
-
-        public ActionURL getBaseViewURL()
-        {
-            return _baseViewURL;
-        }
-
-        public String getDataRegionName()
-        {
-            return _dataRegionName;
-        }
-
-        public boolean isDefaultColumn(ColumnInfo info)
-        {
-            Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
-            DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
-            return colInfo != null && colInfo.isDisplayByDefault();
-        }
-
-        public boolean isPickListColumn(ColumnInfo info)
-        {
-            Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
-            DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
-            return colInfo != null && colInfo.isDisplayAsPickList();
-        }
-
-        public List<String> getPickListValues(ColumnInfo info) throws SQLException
-        {
-            Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
-            DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
-            assert colInfo != null : info.getName() + " is not a picklist column.";
-            return SampleManager.getInstance().getDistinctColumnValues(_container, info, colInfo.isForceDistinctQuery(), colInfo.getOrderBy(), colInfo.getTableInfo());
+            _showAdvanced = showAdvanced;
         }
     }
 

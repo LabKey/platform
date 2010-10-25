@@ -54,8 +54,11 @@ public class StudyFolderType extends DefaultFolderType
                         "Use specimen repository for samples. Design and manage specialized assays. " +
                         "Analyze, visualize and share results.",
                 null,
-                Arrays.asList(StudyModule.manageStudyPartFactory.createWebPart(), StudyModule.reportsPartFactory.createWebPart(), StudyModule.samplesPartFactory.createWebPart(),
-                        StudyModule.datasetsPartFactory.createWebPart()),
+                Arrays.asList(StudyModule.manageStudyPartFactory.createWebPart(),
+                        StudyModule.reportsPartFactory.createWebPart(),
+                        StudyModule.samplesPartFactory.createWebPart(),
+                        StudyModule.datasetsPartFactory.createWebPart(),
+                        StudyModule.subjectsWideWebPartFactory.createWebPart()),
                 getActiveModulesForOwnedFolder(module), module);
 
     }

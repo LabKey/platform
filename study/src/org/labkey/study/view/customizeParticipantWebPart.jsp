@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.study.view.ParticipantWebPartFactory" %>
+<%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory" %>
 <%@ page import="java.util.EnumSet" %>
 <%@ page import="org.labkey.study.model.QCStateSet" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -28,14 +28,14 @@
     Portal.WebPart bean = me.getModelBean();
     ViewContext ctx = me.getViewContext();
     ActionURL postUrl = new ActionURL("Project", "customizeWebPart.post", ctx.getContainer());
-    String participantId = bean.getPropertyMap().get(ParticipantWebPartFactory.PARTICIPANT_ID_KEY);
+    String participantId = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY);
     String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(ctx.getContainer(), SpecimenService.CompletionType.ParticipantId);
 
-    String selectedData = bean.getPropertyMap().get(ParticipantWebPartFactory.DATA_TYPE_KEY);
+    String selectedData = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.DATA_TYPE_KEY);
     if (selectedData == null)
-        selectedData = ParticipantWebPartFactory.DataType.ALL.name();
+        selectedData = SubjectDetailsWebPartFactory.DataType.ALL.name();
     
-    boolean includePrivateData = Boolean.parseBoolean(bean.getPropertyMap().get(ParticipantWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY));
+    boolean includePrivateData = Boolean.parseBoolean(bean.getPropertyMap().get(SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY));
     String subjectNoun = StudyService.get().getSubjectColumnName(getViewContext().getContainer());
 %>
 <script type="text/javascript">LABKEY.requiresScript("completion.js");</script>
@@ -51,7 +51,7 @@
         </td>
         <td>
             <input type="text"
-                   name="<%= ParticipantWebPartFactory.PARTICIPANT_ID_KEY %>"
+                   name="<%= SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY %>"
                    value="<%= h(participantId)%>"
                    onKeyDown="return ctrlKeyCheck(event);"
                    onBlur="hideCompletionDiv();"
@@ -62,9 +62,9 @@
     <tr>
         <td>Data type to display:</td>
         <td>
-            <select name="<%=ParticipantWebPartFactory.DATA_TYPE_KEY%>">
+            <select name="<%=SubjectDetailsWebPartFactory.DATA_TYPE_KEY%>">
                 <%
-                    for (ParticipantWebPartFactory.DataType type : EnumSet.allOf(ParticipantWebPartFactory.DataType.class))
+                    for (SubjectDetailsWebPartFactory.DataType type : EnumSet.allOf(SubjectDetailsWebPartFactory.DataType.class))
                     {
                         %>
                 <option value="<%=type.name()%>"<% if (selectedData.equals(type.name())) out.print(" selected=\"selected\""); %>><%=type.toString()%></option>
@@ -82,7 +82,7 @@
     <tr>
         <td>QC state to display:</td>
         <td>
-            <select name="<%=ParticipantWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY%>">
+            <select name="<%=SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY%>">
                 <option value="false">Public data</option>
                 <option value="true" <%= includePrivateData ? "SELECTED" : "" %>>All data</option>
             </select>

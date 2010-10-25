@@ -113,6 +113,7 @@ import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
+import org.labkey.study.samples.SampleSearchWebPart;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.security.roles.AssayDesignerRole;
@@ -141,6 +142,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory reportsWidePartFactory = new ReportsWideWebPartFactory();
     public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory("right");
     public static final WebPartFactory samplesWidePartFactory = new SamplesWebPartFactory(HttpView.BODY);
+    public static final WebPartFactory subjectsWideWebPartFactory = new SubjectsWebPartFactory(HttpView.BODY);
+    public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory("right");
+    public static final WebPartFactory sampleSearchPartFactory = new SampleSearchWebPartFactory(HttpView.BODY);
     public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
     public static final WebPartFactory manageStudyPartFactory = new StudySummaryWebPartFactory();
     public static final WebPartFactory enrollmentChartPartFactory = new EnrollmentChartWebPartFactory();
@@ -150,7 +154,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory assayBatchesWebPartFactory = new AssayBatchesWebPartFactory();
     public static final WebPartFactory assayRunsWebPartFactory = new AssayRunsWebPartFactory();
     public static final WebPartFactory assayResultsWebPartFactory = new AssayResultsWebPartFactory();
-    public static final WebPartFactory participantWebPartFactory = new ParticipantWebPartFactory();
+    public static final WebPartFactory subjectDetailsWebPartFactory = new SubjectDetailsWebPartFactory();
     public static final WebPartFactory assayList2WebPartFactory = new AssayList2WebPartFactory();
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
 
@@ -229,7 +233,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory,
-                participantWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory));
+                subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
+                subjectsWebPartFactory, subjectsWideWebPartFactory));
     }
 
     public Collection<String> getSummary(Container c)
@@ -403,6 +408,44 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
                 return new HtmlView("Specimens", "This folder does not contain a study.");
             return new SamplesWebPart(webPart.getLocation().equals(HttpView.BODY));
+        }
+    }
+
+    private static class SampleSearchWebPartFactory extends DefaultWebPartFactory
+    {
+        public SampleSearchWebPartFactory(String position)
+        {
+            super("Specimen Search", position, SampleSearchWebPart.class);
+        }
+
+        @Override
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
+        {
+            if (!portalCtx.hasPermission(ReadPermission.class))
+                return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+
+            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
+                return new HtmlView("Specimens", "This folder does not contain a study.");
+            return new SampleSearchWebPart(true);
+        }
+    }
+
+    private static class SubjectsWebPartFactory extends DefaultWebPartFactory
+    {
+        public SubjectsWebPartFactory(String position)
+        {
+            super("Subject List", position, SubjectsWebPart.class);
+        }
+
+        @Override
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
+        {
+            if (!portalCtx.hasPermission(ReadPermission.class))
+                return new HtmlView("Subject List", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+
+            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
+                return new HtmlView("Subject List", "This folder does not contain a study.");
+            return new SubjectsWebPart(HttpView.BODY.equals(webPart.getLocation()));
         }
     }
 
