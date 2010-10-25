@@ -200,20 +200,12 @@ public class IssueManager
     }
 
 
-    public static void addKeyword(Container c, int type, HString keyword)
+    public static void addKeyword(Container c, int type, HString keyword) throws SQLException
     {
-        try
-        {
-            Table.execute(_issuesSchema.getSchema(),
-                    "INSERT INTO " + _issuesSchema.getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
-                    new Object[]{c.getId(), new Integer(type), keyword});
-            DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
-        }
-        catch (SQLException x)
-        {
-            _log.error(x);
-            //probably primary key violation
-        }
+        Table.execute(_issuesSchema.getSchema(),
+                "INSERT INTO " + _issuesSchema.getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
+                new Object[]{c.getId(), new Integer(type), keyword});
+        DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
     }
 
 

@@ -39,6 +39,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
@@ -72,6 +73,7 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -1289,9 +1291,9 @@ public class IssuesController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class AdminAction extends SimpleViewAction
+    public class AdminAction extends FormViewAction<AdminForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
         {
             // TODO: This hack ensures that priority & resolution option defaults get populated if first reference is the admin page.  Fix this.
             IssuePage page = new IssuePage()
@@ -1304,7 +1306,7 @@ public class IssuesController extends SpringActionController
             page.getResolutionOptions(getContainer());
             // </HACK>
 
-            return new AdminView(getContainer(), getCustomColumnConfiguration());
+            return new AdminView(getContainer(), getCustomColumnConfiguration(), errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1316,6 +1318,24 @@ public class IssuesController extends SpringActionController
         public ActionURL getUrl()
         {
             return issueURL(AdminAction.class);
+        }
+
+
+        @Override
+        public void validateCommand(AdminForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(AdminForm adminForm, BindException errors) throws Exception
+        {
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(AdminForm adminForm)
+        {
+            return getUrl();
         }
     }
 
@@ -1334,9 +1354,10 @@ public class IssuesController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class AddKeywordAction extends AdminFormAction
+    public class AddKeywordAction extends AdminAction
     {
-        public boolean handlePost(AdminForm form, BindException errors) throws Exception
+        @Override
+        public void validateCommand(AdminForm form, Errors errors)
         {
             int type = form.getType();
             HString keyword = form.getKeyword();
@@ -1350,11 +1371,30 @@ public class IssuesController extends SpringActionController
                 catch (NumberFormatException e)
                 {
                     errors.reject(ERROR_MSG, "Priority must be an integer");
-                    return false;
                 }
             }
 
-            IssueManager.addKeyword(getContainer(), type, keyword);
+            if (null == keyword || StringUtils.isBlank(keyword.getSource()))
+                errors.reject(ERROR_MSG, "Enter a value in the text box before clicking any of the \"Add <Keyword>\" buttons");
+        }
+
+        public boolean handlePost(AdminForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                IssueManager.addKeyword(getContainer(), form.getType(), form.getKeyword());
+            }
+            catch (SQLException e)
+            {
+                if (SqlDialect.isConstraintException(e))
+                {
+                    errors.reject(ERROR_MSG, "\"" + form.getKeyword() + "\" already exists");
+                    return false;
+                }
+
+                throw e;
+            }
+
             return true;
         }
     }
@@ -1820,9 +1860,9 @@ public class IssuesController extends SpringActionController
     //
     public static class AdminView extends JspView<AdminBean>
     {
-        public AdminView(Container c, IssueManager.CustomColumnConfiguration ccc)
+        public AdminView(Container c, IssueManager.CustomColumnConfiguration ccc, BindException errors)
         {
-            super("/org/labkey/issue/admin.jsp");
+            super("/org/labkey/issue/admin.jsp", new AdminBean(), errors);
 
             KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
             keywordView.addKeyword("Type", ISSUE_TYPE);
@@ -1843,7 +1883,7 @@ public class IssuesController extends SpringActionController
 
             IssuesPreference ipb = new IssuesPreference(cols, IssueManager.getRequiredIssueFields(c), IssueManager.getEntryTypeNames(c));
 
-            AdminBean bean = new AdminBean();
+            AdminBean bean = getModelBean();
 
             bean.ccc = ccc;
             bean.keywordView = keywordView;

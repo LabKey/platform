@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.TempTableWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.iterator.CloseableIterator;
@@ -1161,7 +1162,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         TempTableWriter ttw = new TempTableWriter(loader);
         DbSchema search = getSchema();
-        Table.TempTableInfo tinfo = null;
+        TempTableInfo tinfo = null;
 
         try
         {

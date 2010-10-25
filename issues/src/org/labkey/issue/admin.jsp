@@ -38,9 +38,10 @@
 <table>
 <tr><td>
     <%=PageFlowUtil.generateButton("Back to " + bean.entryTypeNames.pluralName, "list.view?.lastFilter=true")%>
-    <%=PageFlowUtil.generateButton("Customize Email Template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, me.getViewContext().getActionURL()))%></td>
-</tr>
+    <%=PageFlowUtil.generateButton("Customize Email Template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, me.getViewContext().getActionURL()))%>
+</td></tr>
 <tr><td>&nbsp;</td></tr>
+<%=formatMissedErrorsInTable("form", 1)%>
 </table>
 <% me.include(bean.keywordView, out); %>
 <br>

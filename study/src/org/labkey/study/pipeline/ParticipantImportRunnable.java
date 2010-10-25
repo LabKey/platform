@@ -18,6 +18,7 @@ package org.labkey.study.pipeline;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.TempTableWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -98,7 +99,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         StudySchema schema = StudySchema.getInstance();
 
         TempTableWriter ttl = new TempTableWriter(loader);
-        Table.TempTableInfo tinfoTemp = ttl.loadTempTable(schema.getSchema());
+        TempTableInfo tinfoTemp = ttl.loadTempTable(schema.getSchema());
         TableInfo site = StudySchema.getInstance().getTableInfoSite();
         ColumnInfo siteLookup = site.getColumn(_siteLookup);
 
