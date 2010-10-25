@@ -36,6 +36,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 
 
@@ -318,7 +319,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return new HString(s);
     }
 
-    protected HString getKeywordOptionsWithDefault(Container c, int type, HString[] standardValues, HString def)
+    protected HString getKeywordOptionsWithDefault(Container c, int type, HString[] standardValues, HString def) throws SQLException
     {
         HString options = getKeywordOptions(c, type, false);
 
@@ -351,12 +352,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return getKeywordOptions(container, IssuesController.ISSUE_MILESTONE, true);
     }
 
-    public HString getResolutionOptions(Container c)
+    public HString getResolutionOptions(Container c) throws SQLException
     {
         return getKeywordOptionsWithDefault(c, IssuesController.ISSUE_RESOLUTION, HString.array(false, "Fixed", "Duplicate", "Won't Fix", "Not Repro", "By Design"), new HString("Fixed",false));
     }
 
-    public HString getPriorityOptions(Container c)
+    public HString getPriorityOptions(Container c) throws SQLException
     {
         return getKeywordOptionsWithDefault(c, IssuesController.ISSUE_PRIORITY, HString.array(false,"0", "1", "2", "3", "4"), new HString("3",false));
     }
