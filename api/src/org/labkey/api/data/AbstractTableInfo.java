@@ -521,32 +521,36 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         }
     }
 
+
+    DetailsURL parseDetailsURL(Container c, String url, Collection<QueryException> errors)
+    {
+        try
+        {
+            return DetailsURL.fromString(c, url);
+        }
+        catch (IllegalArgumentException x)
+        {
+            errors.add(new QueryException("Illegal URL expression: " + url, x));
+            return null;
+        }
+    }
+    
+
     public void loadFromXML(QuerySchema schema, TableType xmlTable, Collection<QueryException> errors)
     {
         if (xmlTable.getTitleColumn() != null)
-        {
             setTitleColumn(xmlTable.getTitleColumn());
-        }
         if (xmlTable.getDescription() != null)
-        {
             setDescription(xmlTable.getDescription());
-        }
         if (xmlTable.getGridUrl() != null)
-        {
-            _gridURL = DetailsURL.fromString(schema.getContainer(), xmlTable.getGridUrl(), errors);
-        }
+            _gridURL = parseDetailsURL(schema.getContainer(), xmlTable.getGridUrl(), errors);
         if (xmlTable.getInsertUrl() != null)
-        {
-            _insertURL = DetailsURL.fromString(schema.getContainer(), xmlTable.getInsertUrl(), errors);
-        }
+            _insertURL = parseDetailsURL(schema.getContainer(), xmlTable.getInsertUrl(), errors);
         if (xmlTable.getUpdateUrl() != null)
-        {
-            _updateURL = DetailsURL.fromString(schema.getContainer(), xmlTable.getUpdateUrl(), errors);
-        }
+            _updateURL = parseDetailsURL(schema.getContainer(), xmlTable.getUpdateUrl(), errors);
         if (xmlTable.getTableUrl() != null)
-        {
-            setDetailsURL(DetailsURL.fromString(schema.getContainer(), xmlTable.getTableUrl(), errors));
-        }
+            setDetailsURL(parseDetailsURL(schema.getContainer(), xmlTable.getTableUrl(), errors));
+
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
 
