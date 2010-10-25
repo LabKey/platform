@@ -50,6 +50,12 @@ public class LookupColumn extends ColumnInfo
         return ret;
     }
 
+    @Override
+    public boolean isKeyField()
+    {
+        return false;   // Lookup columns are never key fields of the parent table
+    }
+
     protected ColumnInfo _foreignKey;
     protected ColumnInfo _lookupKey;
     protected ColumnInfo _lookupColumn;
