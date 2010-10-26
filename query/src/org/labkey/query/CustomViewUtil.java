@@ -93,7 +93,7 @@ public class CustomViewUtil
                 String dir = (String)sortInfo.get("dir");
 
                 String columnName = ((dir != null && dir.length() == 1) ? dir : "") + fieldKey;
-                sort.insertSortColumn(columnName, true);
+                sort.appendSortColumn(columnName, true);
             }
             sort.applyToURL(url, FILTER_PARAM_PREFIX);
         }
