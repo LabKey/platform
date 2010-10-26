@@ -167,7 +167,7 @@ public class Sort
 
 
     /**
-     * Add a column to the sort.
+     * Insert a sort column to the head of the sort list.
      *
      * @param columnName Name of column to sort on. Use -columnName to indicate a descending sort.
      */
@@ -177,7 +177,7 @@ public class Sort
     }
 
     /**
-     * Add a column to the sort.
+     * Insert a sort column to the head of the sort list.
      *
      * @param columnName Name of column to sort on. Use -columnName to indicate a descending sort.
      * @param urlClause  Make this column visible on the URL.
@@ -199,6 +199,17 @@ public class Sort
         SortField sfToInsert = new SortField(columnName);
         sfToInsert._urlClause = urlClause;
         replaceSortColumn(sfToInsert, insertionIndex);
+    }
+
+    /**
+     * Append a sort column to the end of the sort list.
+     *
+     * @param columnName Name of column to sort on. Use -columnName to indicate a descending sort.
+     * @param urlClause  Make this column visible on the URL.
+     */
+    public void appendSortColumn(String columnName, boolean urlClause)
+    {
+        insertSortColumn(columnName, urlClause, _sortList.size());
     }
 
     // Add all the columns to this sort
