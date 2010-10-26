@@ -26,7 +26,6 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.json.JSONObject;
@@ -46,22 +45,10 @@ public class AnalysisController extends SpringActionController
 {
     private static DefaultActionResolver _resolver = new DefaultActionResolver(AnalysisController.class);
 
-    private static HelpTopic getHelpTopic(String topic)
-    {
-        return new HelpTopic(topic);
-    }
-
     public AnalysisController()
     {
         super();
         setActionResolver(_resolver);
-    }
-
-    public PageConfig defaultPageConfig()
-    {
-        PageConfig p = super.defaultPageConfig();
-        p.setHelpTopic(getHelpTopic("pipeline-analysis"));
-        return p;
     }
 
     public static ActionURL urlAnalyze(Container container, TaskId tid, String path)
