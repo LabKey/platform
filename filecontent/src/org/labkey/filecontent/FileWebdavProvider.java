@@ -211,8 +211,12 @@ public class FileWebdavProvider implements WebdavService.Provider
         public WebdavResource find(String name)
         {
             AttachmentDirectory dir = _map.get(name);
-            Path path = getPath().append(name);
-            return AttachmentService.get().getAttachmentResource(path, dir);
+            if (dir != null)
+            {
+                Path path = getPath().append(name);
+                return AttachmentService.get().getAttachmentResource(path, dir);
+            }
+            return null;
         }
     }
 }

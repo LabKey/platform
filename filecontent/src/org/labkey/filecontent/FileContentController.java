@@ -128,6 +128,9 @@ public class FileContentController extends SpringActionController
             AttachmentDirectory p;
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
+            if (svc == null)
+                throw new NotFoundException();
+
             if (null == fileSet)
             {
                 p = svc.getMappedAttachmentDirectory(getContainer(), false);
