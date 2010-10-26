@@ -76,7 +76,11 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.longMsgNoSelection = new Ext.XTemplate('This action requires selection from this list of file(s):<br>', fileListTemplate).compile();
 
         this.adminOptions = new LABKEY.FileContentConfig();
-        this.adminOptions.on('actionConfigChanged', this.updateToolbarButtons, this);
+
+        var btnUpdateTask = new Ext.util.DelayedTask(this.updateToolbarButtons, this);
+        this.adminOptions.on('actionConfigChanged', function(){btnUpdateTask.delay(250);});
+        this.adminOptions.on('tbarConfigChanged', function(){btnUpdateTask.delay(250);});
+
         this.adminOptions.on('filePropConfigChanged', this.onFilePropConfigChanged, this);
         this.adminOptions.on('gridConfigChanged', this.onGridConfigChanged, this);
 
@@ -169,7 +173,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     createGrid : function()
     {
         var sm = new Ext.grid.CheckboxSelectionModel();
-        var grid = new Ext.grid.GridPanel(
+        var grid = new LABKEY.StatefulGridPanel(
         {
             store: this.store,
             border:false,
@@ -344,6 +348,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     updateToolbarButtons : function()
     {
+        console.debug('Updating toolbar...');
+
         var toolbar = this.getTopToolbar();
         if (toolbar && toolbar.items)
         {
@@ -906,5 +912,58 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             this.grid.applyState(config.getGridConfig());
             this.grid.getView().refresh(true);            
         }
+    }
+});
+
+/**
+ * Version of Ext GridPanel that allows the column module to be re-configured. This was to
+ * work around a change in GridPanel.js between 3.2.1 and 3.2.2 that made it so you couldn't
+ * customize the grid view in the way we did previously (using the configuration state of the component). 
+ *
+ */
+LABKEY.StatefulGridPanel = Ext.extend(Ext.grid.GridPanel, {
+
+    applyState : function(state){
+
+        var cm = this.colModel,
+            cs = state.columns,
+            store = this.store,
+            s,
+            c,
+            oldIndex;
+
+        if(cs){
+            for(var i = 0, len = cs.length; i < len; i++){
+                s = cs[i];
+                c = cm.getColumnById(s.id);
+                if(c){
+                    c.hidden = s.hidden;
+                    c.width = s.width;
+                    oldIndex = cm.getIndexById(s.id);
+                    if(oldIndex != i){
+                        cm.moveColumn(oldIndex, i);
+                    }
+                }
+            }
+        }
+        if(store){
+            s = state.sort;
+            if(s){
+                store[store.remoteSort ? 'setDefaultSort' : 'sort'](s.field, s.direction);
+            }
+            s = state.group;
+            if(store.groupBy){
+                if(s){
+                    store.groupBy(s);
+                }else{
+                    store.clearGrouping();
+                }
+            }
+
+        }
+        var o = Ext.apply({}, state);
+        delete o.columns;
+        delete o.sort;
+        Ext.grid.GridPanel.superclass.applyState.call(this, o);
     }
 });

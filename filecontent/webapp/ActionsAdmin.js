@@ -640,7 +640,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 col.renderer = undefined;
         }
 
-        this.grid = new Ext.grid.GridPanel(
+        this.grid = new LABKEY.StatefulGridPanel(
         {
             tbar: this.toolbar,
             layout: 'fit',
@@ -663,9 +663,9 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 pack: 'start'
             },
             items: [
-                {html: '<span class="labkey-strong">Configure Grid columns and Toolbar</span></br>Drag the buttons on the toolbar to customize the button order. ' +
+                {html: '<span class="labkey-strong">Configure Grid columns and Toolbar</span><br>Drag the buttons on the toolbar to customize the button order. ' +
                        'Buttons can be added by dragging from the list of available buttons below and dropping them on the toolbar. Buttons can be removed ' +
-                       'by clicking on the toolbar button and selecting "remove" from the dropdown menu.</br></br>' +
+                       'by clicking on the toolbar button and selecting "remove" from the dropdown menu.<br><br>' +
                        'Grid columns can be customized by dragging to reorder, adjusting the width, and controlling the sort or show state using the drop down ' +
                        'menus on each column.', border: false, height: 120, autoScroll:true},
                 panel,
@@ -806,7 +806,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 pack: 'start'
             },
             items: [
-                {html: '<span class="labkey-strong">Configure Email defaults</span></br>Select the default email notification options to apply ' +
+                {html: '<span class="labkey-strong">Configure Email defaults</span><br>Select the default email notification options to apply ' +
                        'to this folder. Project users will have the option to override or accept folder defaults.', border: false, height: 55, autoScroll:true},
                 panel
             ]
