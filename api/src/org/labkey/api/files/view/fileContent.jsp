@@ -196,7 +196,7 @@ function renderBrowser(rootPath, renderTo)
         Ext.EventManager.onWindowResize(_resize);
         Ext.EventManager.fireWindowResize();
     }
-    fileBrowser.start();
+    fileBrowser.start(<%=bean.getDirectory() != null ? q(bean.getDirectory().toString()) : ""%>);
 }
 
 <%  if (bean.isEnabled() && bean.isRootValid()) { %>
