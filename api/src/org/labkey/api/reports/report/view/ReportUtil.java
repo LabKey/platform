@@ -113,7 +113,9 @@ public class ReportUtil
         if (report instanceof Report.ImageReport)
         {
             ActionURL filterUrl = RenderContext.getSortFilterURLHelper(context);
-            url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
+            ReportIdentifier id = report.getDescriptor().getReportId();
+            if (id != null)
+                url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
             for (Pair<String, String> param : filterUrl.getParameters())
             {
                 if (!param.getKey().equals(ReportDescriptor.Prop.reportId.name()))
