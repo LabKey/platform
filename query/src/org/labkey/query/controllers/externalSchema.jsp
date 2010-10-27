@@ -42,6 +42,7 @@
 %>
 <style type="text/css">
     .systemSchemaStyleClass{padding-right:5px !important}
+    .x-panel-body{background-color: transparent;}
 </style>
 
 <labkey:errors/>
