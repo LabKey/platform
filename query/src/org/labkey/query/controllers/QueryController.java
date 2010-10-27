@@ -2160,6 +2160,7 @@ public class QueryController extends SpringActionController
         private String _sort;
         private String _dir;
         private String _containerFilter;
+        private boolean _includeTotalCount = true;
 
         public Integer getStart()
         {
@@ -2210,6 +2211,16 @@ public class QueryController extends SpringActionController
         {
             _containerFilter = containerFilter;
         }
+
+        public boolean isIncludeTotalCount()
+        {
+            return _includeTotalCount;
+        }
+
+        public void setIncludeTotalCount(boolean includeTotalCount)
+        {
+            _includeTotalCount = includeTotalCount;
+        }
     }
 
 
@@ -2252,10 +2263,11 @@ public class QueryController extends SpringActionController
                 form.getQuerySettings().setContainerFilterName(containerFilterType.name());
             }
 
-
             QueryView view = QueryView.create(form, errors);
             if(metaDataOnly)
                 view.getSettings().setMaxRows(1); //query assumes that 0 means all rows!
+
+            view.setShowPagination(form.isIncludeTotalCount());
 
             //if viewName was specified, ensure that it was actually found and used
             //QueryView.create() will happily ignore an invalid view name and just return the default view

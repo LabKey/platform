@@ -21,14 +21,17 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.SqlScriptParser;
+import org.labkey.api.data.StatementWrapper;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
@@ -70,6 +73,21 @@ class SqlDialectPostgreSQL extends SqlDialect
     public static SqlDialect get()
     {
         return INSTANCE;
+    }
+
+    @Override
+    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+    {
+        StatementWrapper statementWrapper = super.getStatementWrapper(conn, stmt, sql);
+        try
+        {
+            //pgSQL JDBC driver will load all results locally unless this is set along with autoCommit=false on the connection
+            statementWrapper.setFetchSize(1000);
+        } catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        return statementWrapper;
     }
 
     private SqlDialectPostgreSQL()
