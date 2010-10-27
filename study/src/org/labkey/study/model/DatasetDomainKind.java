@@ -19,7 +19,15 @@ package org.labkey.study.model;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
@@ -82,7 +90,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         BASE_PROPERTIES.addAll(AbstractDomainKind.BASE_PROPERTIES);
 
         PropertyStorageSpec.Index[] indices = {
-          new PropertyStorageSpec.Index(true, LSID),
           new PropertyStorageSpec.Index(false, QCSTATE),
           new PropertyStorageSpec.Index(false, PARTICIPANTSEQUENCEKEY),
           new PropertyStorageSpec.Index(true, PARTICIPANTID, SEQUENCENUM, _KEY)
