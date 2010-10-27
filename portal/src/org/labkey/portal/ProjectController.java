@@ -17,7 +17,17 @@
 package org.labkey.portal;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -25,7 +35,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.*;
+import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -33,7 +47,18 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavService;
@@ -43,7 +68,11 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class ProjectController extends SpringActionController
@@ -178,7 +207,7 @@ public class ProjectController extends SpringActionController
                 HttpView.throwNotFound();
                 return null;
             }
-            
+
             boolean appendPath = true;
             String title;
             FolderType folderType = c.getFolderType();
@@ -202,11 +231,11 @@ public class ProjectController extends SpringActionController
             if (title != null)
                 page.setTitle(title, appendPath);
             page.setHelpTopic(folderType.getHelpTopic());
-            
+
             HttpView template = new HomeTemplate(getViewContext(), c, new VBox(), page, new NavTree[0]);
 
             Portal.populatePortalView(getViewContext(), c.getId(), template);
-            
+
             getPageConfig().setTemplate(PageConfig.Template.None);
             return template;
         }
@@ -216,7 +245,7 @@ public class ProjectController extends SpringActionController
             return root;
         }
     }
-    
+
 
     /**
      * Same as begin, but used for our home page. We retain the action
@@ -266,12 +295,12 @@ public class ProjectController extends SpringActionController
             if (path.startsWith(pipeline))
             {
                 path = pipeline.relativize(path);
-                _redirect = new ActionURL("pipeline", "browse", c).addParameter("path",path.encode());
+                _redirect = new ActionURL("pipeline", "browse", c).addParameter("path", path.encode());
             }
             else if (path.startsWith(files))
             {
                 path = files.relativize(path);
-                _redirect = new ActionURL("filecontent", "begin", c).addParameter("path",path.encode());
+                _redirect = new ActionURL("filecontent", "begin", c).addParameter("path", path.encode());
             }
             else
             {
@@ -285,7 +314,7 @@ public class ProjectController extends SpringActionController
         {
         }
     }
-    
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class MoveWebPartAction extends FormViewAction<MovePortletForm>
@@ -297,7 +326,7 @@ public class ProjectController extends SpringActionController
         public ModelAndView getView(MovePortletForm movePortletForm, boolean reshow, BindException errors) throws Exception
         {
             // UNDONE: this seems to be used a link, fix to make POST
-            handlePost(movePortletForm,errors);
+            handlePost(movePortletForm, errors);
             return HttpView.redirect(getSuccessURL(movePortletForm));
         }
 
@@ -323,7 +352,7 @@ public class ProjectController extends SpringActionController
     {
         WebPartFactory _desc = null;
         Portal.WebPart _newPart = null;
-        
+
         public void validateCommand(AddWebPartForm target, Errors errors)
         {
         }
@@ -331,7 +360,7 @@ public class ProjectController extends SpringActionController
         public ModelAndView getView(AddWebPartForm addWebPartForm, boolean reshow, BindException errors) throws Exception
         {
             // UNDONE: this seems to be used a link, fix to make POST
-            handlePost(addWebPartForm,errors);
+            handlePost(addWebPartForm, errors);
             return HttpView.redirect(getSuccessURL(addWebPartForm));
         }
 
@@ -351,7 +380,7 @@ public class ProjectController extends SpringActionController
             {
                 return new ActionURL(CustomizeWebPartAction.class, getContainer())
                         .addParameter("pageId", form.getPageId())
-                        .addParameter("index", ""+_newPart.getIndex());
+                        .addParameter("index", "" + _newPart.getIndex());
             }
             else
                 return form.getReturnURLHelper();
@@ -441,9 +470,9 @@ public class ProjectController extends SpringActionController
         {
             Portal.WebPart webPart = Portal.getPart(movePortletForm.getWebPartId());
             if (webPart != null && handleMoveWebPart(webPart.getPageId(), webPart.getIndex(), movePortletForm.getDirection()))
-                 return getWebPartLayoutApiResponse(movePortletForm.getPageId());
-             else
-                 throw new RuntimeException("Unable to move the specified web part.  Please refresh the page and try again.");
+                return getWebPartLayoutApiResponse(movePortletForm.getPageId());
+            else
+                throw new RuntimeException("Unable to move the specified web part.  Please refresh the page and try again.");
         }
     }
 
@@ -454,7 +483,7 @@ public class ProjectController extends SpringActionController
         @Override
         public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors) throws Exception
         {
-             return getWebPartLayoutApiResponse(movePortletForm.getPageId());
+            return getWebPartLayoutApiResponse(movePortletForm.getPageId());
         }
     }
 
@@ -571,7 +600,7 @@ public class ProjectController extends SpringActionController
         public ModelAndView getView(CustomizePortletForm customizePortletForm, boolean reshow, BindException errors) throws Exception
         {
             // UNDONE: this seems to be used a link, fix to make POST
-            handlePost(customizePortletForm,errors);
+            handlePost(customizePortletForm, errors);
             return HttpView.redirect(getSuccessURL(customizePortletForm));
         }
 
@@ -870,7 +899,7 @@ public class ProjectController extends SpringActionController
 
     public static class GetWebPartForm implements CustomApiForm
     {
-        private Map<String,Object> _extendedProperites;
+        private Map<String, Object> _extendedProperites;
 
         public void bindProperties(Map<String, Object> props)
         {
@@ -894,15 +923,15 @@ public class ProjectController extends SpringActionController
             String qs = request.getQueryString();
             String webPartName = request.getParameter(PARAM_WEBPART);
 
-            if(null == webPartName || webPartName.length() == 0)
+            if (null == webPartName || webPartName.length() == 0)
                 throw new IllegalArgumentException("You must provide a value for the " + PARAM_WEBPART + " parameter!");
 
             WebPartFactory factory = Portal.getPortalPartCaseInsensitive(webPartName);
-            if(null == factory)
+            if (null == factory)
                 throw new RuntimeException("Couldn't get the web part factory for web part '" + webPartName + "'!");
 
             Portal.WebPart part = factory.createWebPart();
-            if(null == part)
+            if (null == part)
                 throw new RuntimeException("Couldn't create web part '" + webPartName + "'!");
 
             part.setProperties(qs);
@@ -913,19 +942,19 @@ public class ProjectController extends SpringActionController
                 throw new RuntimeException("Couldn't create web part view for part '" + webPartName + "'!");
 
             String frame = StringUtils.trimToEmpty(request.getParameter("webpart.frame"));
-            if(null != frame && frame.length() > 0 && _frameTypeMap.containsKey(frame))
+            if (null != frame && frame.length() > 0 && _frameTypeMap.containsKey(frame))
                 view.setFrame(_frameTypeMap.get(frame));
 
             String bodyClass = StringUtils.trimToEmpty(request.getParameter("webpart.bodyClass"));
-            if(null != bodyClass && bodyClass.length() > 0)
+            if (null != bodyClass && bodyClass.length() > 0)
                 view.setBodyClass(bodyClass);
 
             String title = StringUtils.trimToEmpty(request.getParameter("webpart.title"));
-            if(null != title && title.length() > 0)
+            if (null != title && title.length() > 0)
                 view.setTitle(title);
 
             String titleHref = StringUtils.trimToEmpty(request.getParameter("webpart.titleHref"));
-            if(null != titleHref && titleHref.length() > 0)
+            if (null != titleHref && titleHref.length() > 0)
                 view.setTitleHref(titleHref);
 
             view.render(request, getViewContext().getResponse());
@@ -970,36 +999,37 @@ public class ProjectController extends SpringActionController
 
         public ApiResponse execute(GetContainersForm form, BindException errors) throws Exception
         {
-            _requestedDepth = form.getDepth();
+            _requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
             ApiSimpleResponse response = new ApiSimpleResponse();
-            response.putAll(getContainerProps(getViewContext().getContainer(),
-                    getViewContext().getUser(), form.isIncludeSubfolders(), 0));
+            User user = getViewContext().getUser();
+            Container container = getViewContext().getContainer();
+            Map<String, Object> containerMap = container.toJSON(user);
+            containerMap.put("children", getVisibleChildren(container, user, 0));
+
+            response.putAll(containerMap);
             return response;
         }
 
-        protected Map<String, Object> getContainerProps(Container container, User user, boolean recurse, int depth)
+        //return only those paths through the container tree leading to a container to which the user has permission
+        protected List<Map<String, Object>> getVisibleChildren(Container parent, User user, int depth)
         {
-            Map<String, Object> containerProps = container.toJSON(user);
+            List<Map<String, Object>> visibleChildren = new ArrayList<Map<String, Object>>();
+            if (depth == _requestedDepth)
+                return visibleChildren;
 
-            //recurse into children if requested
-            if (recurse && depth < _requestedDepth)
-                containerProps.put("children", getContainers(container, user, recurse, depth+1));
-
-            return containerProps;
-        }
-
-        protected List<Map<String,Object>> getContainers(Container parent, User user, boolean recurse, int depth)
-        {
-            List<Map<String,Object>> containersProps = new ArrayList<Map<String,Object>>();
-            for(Container child : parent.getChildren())
+            for (Container child : parent.getChildren())
             {
-                if (!child.hasPermission(user, ReadPermission.class))
-                    continue;
+                List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, depth + 1);
+                if (child.hasPermission(user, ReadPermission.class) || !theseChildren.isEmpty())
+                {
+                    Map<String, Object> visibleChild = child.toJSON(user);
+                    visibleChild.put("children", theseChildren);
+                    visibleChildren.add(visibleChild);
+                }
 
-                containersProps.add(getContainerProps(child, user, recurse, depth));
             }
 
-            return containersProps;
+            return visibleChildren;
         }
     }
 
