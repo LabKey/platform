@@ -128,14 +128,15 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         LABKEY.ext.Store.superclass.constructor.call(this, {
             reader: new LABKEY.ext.ExtendedJsonReader(),
-            proxy : new Ext.data.HttpProxy(new Ext.data.Connection({
-                method: (config.sql ? 'POST' : 'GET'),
-                url: (config.sql ? LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams)
-                        : LABKEY.ActionURL.buildURL("query", "selectRows", config.containerPath)),
-                listeners: {
-                    beforerequest: {fn: this.onBeforeRequest, scope: this}
-                }
-            })),
+            proxy: this.proxy ||
+                    new Ext.data.HttpProxy(new Ext.data.Connection({
+                        method: (config.sql ? 'POST' : 'GET'),
+                        url: (config.sql ? LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams)
+                                : LABKEY.ActionURL.buildURL("query", "selectRows", config.containerPath)),
+                        listeners: {
+                            beforerequest: {fn: this.onBeforeRequest, scope: this}
+                        }
+                    })),
             baseParams: baseParams,
             autoLoad: false
             //Moved below to allow user to supply listeners on creation

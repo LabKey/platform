@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -1405,7 +1406,7 @@ public class QueryView extends WebPartView<Object>
         ResultSet rs = rgn.getResultSet(rc);
         Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
         TSVGridWriter tsv = new TSVGridWriter(rs, map, getExportColumns(rgn.getDisplayColumns()));
-        tsv.setFilenamePrefix(getSettings().getQueryName());
+        tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
         tsv.setColumnHeaderType(getColumnHeaderType());
         return tsv;
     }
@@ -1521,9 +1522,20 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            TSVGridWriter tsv = getTsvWriter();
-            tsv.setExportAsWebPage(isExportAsWebPage);
-            tsv.write(response);
+            DbScope scope = getSchema().getDbSchema().getScope();
+            try
+            {
+                scope.beginTransaction();
+                scope.getConnection().setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+                scope.getConnection().setAutoCommit(false);
+                TSVGridWriter tsv = getTsvWriter();
+                tsv.setExportAsWebPage(isExportAsWebPage);
+                tsv.write(response);
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
         }
     }
 

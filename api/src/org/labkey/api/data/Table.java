@@ -1335,7 +1335,7 @@ public class Table
     public static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset)
             throws SQLException
     {
-        return selectForDisplay(table, select, filter, sort, rowCount, offset, true);
+        return selectForDisplay(table, select, filter, sort, rowCount, offset, true, false);
     }
 
     public static Map<String, Aggregate.Result>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, Collection<ColumnInfo> select, Filter filter, boolean cache) throws SQLException
@@ -1402,14 +1402,14 @@ public class Table
     }
 
 
-    public static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache)
+    public static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable)
             throws SQLException
     {
-        return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, null, null);
+        return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, scrollable, null, null);
     }
 
 
-    private static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, AsyncQueryRequest asyncRequest, Logger log)
+    private static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
@@ -1427,11 +1427,11 @@ public class Table
         int decideRowCount = decideRowCount(queryRowCount, null);
         SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount, queryOffset);
         Integer statementRowCount = (table.getSqlDialect().requiresStatementMaxRows() ? decideRowCount : null);  // TODO: clean this all up
-        return (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, !cache, asyncRequest, log, statementRowCount);
+        return (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, scrollable, asyncRequest, log, statementRowCount);
     }
 
 
-    public static TableResultSet selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, HttpServletResponse response) throws SQLException, IOException
+    public static TableResultSet selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
     {
         final Logger log = ConnectionWrapper.getConnectionLogger();
         final AsyncQueryRequest<TableResultSet> asyncRequest = new AsyncQueryRequest<TableResultSet>(response);
@@ -1439,7 +1439,7 @@ public class Table
 		{
             public TableResultSet call() throws Exception
             {
-                return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, asyncRequest, log);
+                return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, scrollable, asyncRequest, log);
             }
         });
     }

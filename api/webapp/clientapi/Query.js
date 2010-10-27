@@ -346,6 +346,8 @@ LABKEY.Query = new function()
         *        If you want to return all possible rows, set this config property to -1.
         * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
         *        Use this along with the maxRows config property to request pages of data.
+        * @param {Boolean} [config.includeTotalCount] Include the total number of rows available (defaults to true).
+        *       If false totalCount will equal number of rows returned (equal to maxRows unless maxRows == 0).
         * @param {String} [config.selectionKey] Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
         *         Not used unless <code>config.showRows</code> is 'selected' or 'unselected'.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
@@ -447,6 +449,9 @@ LABKEY.Query = new function()
 
             if(config.containerFilter)
                 dataObject.containerFilter = config.containerFilter;
+
+            if(config.includeTotalCount)
+                dataObject.includeTotalCount = config.includeTotalCount;
 
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),

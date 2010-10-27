@@ -396,11 +396,11 @@ public class RenderContext extends BoundMap // extends ViewContext
     {
         if (async)
         {
-            return Table.selectForDisplayAsync(table, columns, filter, sort, maxRows, offset, getCache(), getViewContext().getResponse());
+            return Table.selectForDisplayAsync(table, columns, filter, sort, maxRows, offset, getCache(), false, getViewContext().getResponse());
         }
         else
         {
-            return Table.selectForDisplay(table, columns, filter, sort, maxRows, offset, getCache());
+            return Table.selectForDisplay(table, columns, filter, sort, maxRows, offset, getCache(), false);
         }
     }
 
