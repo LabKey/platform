@@ -33,7 +33,7 @@ public class PropertyStorageSpec
 {
     String name;
     int sqlTypeInt;
-    boolean unique = false;
+    boolean primaryKey = false;
     boolean nullable = true;
     boolean autoIncrement = false;
     boolean isMvEnabled = false;
@@ -60,13 +60,6 @@ public class PropertyStorageSpec
         this.sqlTypeInt = sqlTypeInt;
     }
 
-    public PropertyStorageSpec(String name, int sqlTypeInt, boolean unique)
-    {
-        this.sqlTypeInt = sqlTypeInt;
-        this.name = name;
-        this.unique = unique;
-    }
-
     public PropertyStorageSpec(String name, int sqlTypeInt, int size)
     {
         this.sqlTypeInt = sqlTypeInt;
@@ -74,12 +67,11 @@ public class PropertyStorageSpec
         this.size = size;
     }
 
-    public PropertyStorageSpec(String name, int sqlTypeInt, int size, boolean unique, boolean nullable)
+    public PropertyStorageSpec(String name, int sqlTypeInt, int size, Special specialness)
     {
         this.name = name;
         this.sqlTypeInt = sqlTypeInt;
-        this.unique = unique;
-        this.nullable = nullable;
+        this.primaryKey = specialness == Special.PrimaryKey;
         this.size = size;
     }
 
@@ -111,18 +103,18 @@ public class PropertyStorageSpec
         this.sqlTypeInt = sqlTypeInt;
     }
 
-    public boolean isUnique()
+    public boolean isPrimaryKey()
     {
-        return unique;
+        return primaryKey;
     }
 
     /**
      * enforce uniqueness. defaults false
-     * @param unique
+     * @param primaryKey
      */
-    public void setUnique(boolean unique)
+    public void setPrimaryKey(boolean primaryKey)
     {
-        this.unique = unique;
+        this.primaryKey = primaryKey;
     }
 
     public boolean isNullable()
@@ -203,7 +195,11 @@ public class PropertyStorageSpec
             this.isUnique = unique;
         }
 
+    }
 
+    public enum Special
+    {
+        PrimaryKey
     }
 
 }
