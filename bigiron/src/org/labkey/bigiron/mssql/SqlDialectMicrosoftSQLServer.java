@@ -578,12 +578,26 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     {
         List<String> statements = new ArrayList<String>();
         List<String> createTableSqlParts = new ArrayList<String>();
+        String pkColumn = null;
         for (PropertyStorageSpec prop : change.getColumns())
         {
             createTableSqlParts.add(getSqlColumnSpec(prop));
+            if (prop.isPrimaryKey())
+            {
+                assert null == pkColumn : "no more than one primary key defined";
+                pkColumn = prop.getName();
+            }
+
         }
 
         statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ",\n")));
+
+        if (null != pkColumn)
+            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)",
+                    makeTableIdentifier(change),
+                    change.getTableName() + "_pk",
+                    pkColumn));
+
 
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
@@ -651,7 +665,6 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getSqlTypeInt() == Types.NUMERIC)
             colSpec.add("(15,4)");
-        if (prop.isUnique()) colSpec.add("UNIQUE");
         if (!prop.isNullable()) colSpec.add("NOT NULL");
         // todo auto increment?
 

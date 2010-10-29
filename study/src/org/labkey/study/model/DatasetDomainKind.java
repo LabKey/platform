@@ -78,7 +78,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         PropertyStorageSpec[] props =
         {
             new PropertyStorageSpec(PARTICIPANTID, Types.VARCHAR, 32),
-            new PropertyStorageSpec(LSID, Types.VARCHAR, 200, true, false),
+            new PropertyStorageSpec(LSID, Types.VARCHAR, 200, PropertyStorageSpec.Special.PrimaryKey),
             new PropertyStorageSpec(SEQUENCENUM, Types.NUMERIC),
             new PropertyStorageSpec(SOURCELSID, Types.VARCHAR, 200),
             new PropertyStorageSpec(_KEY, Types.VARCHAR, 200),
