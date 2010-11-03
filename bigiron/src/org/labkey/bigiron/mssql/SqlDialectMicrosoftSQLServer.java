@@ -607,7 +607,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
 
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("CREATE %s INDEX %s ON %s (%s)", 
+            statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
                     index.isUnique ? "UNIQUE" : "",
                     nameIndex(change.getTableName(), index.columnNames),
                     makeTableIdentifier(change),
@@ -672,8 +672,6 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getSqlTypeInt() == Types.NUMERIC)
             colSpec.add("(15,4)");
-        if (!prop.isNullable()) colSpec.add("NOT NULL");
-        // todo auto increment?
 
         if (!prop.isNullable() || prop.isPrimaryKey()) colSpec.add("NOT NULL");
 
