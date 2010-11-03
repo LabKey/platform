@@ -20,6 +20,7 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.PropertyPane;
+import org.labkey.api.gwt.client.ui.PropertyType;
 
 /**
  * User: jgarms
@@ -56,8 +57,29 @@ public class DimensionItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     }
 
     @Override
+     public void showPropertyDescriptor(DomainType domain, FieldType field)
+    {
+        super.showPropertyDescriptor(domain, field);
+        updateEnabledState(field);
+    }
+
+    private void updateEnabledState(FieldType currentField)
+    {
+        PropertyType type = PropertyType.fromURI(currentField.getRangeURI());
+        // Can't pivot on dates or attachments:
+        boolean isValidDimension = (type == PropertyType.xsdBoolean  ||
+                                    type == PropertyType.xsdDouble ||
+                                    type == PropertyType.xsdInt ||
+                                    type == PropertyType.xsdString);
+        if (!isValidDimension && currentField.isDimension())
+            setFieldValue(currentField, false);
+        setEnabled(isValidDimension);
+    }
+
+    @Override
     public void propertyDescriptorChanged(FieldType field)
     {
         checkbox.setValue(getFieldValue(field));
+        updateEnabledState(field);
     }
 }

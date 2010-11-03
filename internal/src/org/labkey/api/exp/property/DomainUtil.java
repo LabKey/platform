@@ -474,6 +474,22 @@ public class DomainUtil
             formats.add(new ConditionalFormat(format));
         }
         to.setConditionalFormats(formats);
+        // If the incoming DomainProperty specifies its dimension/measure state, respect that value.  Otherwise we need
+        // to infer the correct value. This is necessary for code paths like the dataset creation wizard which does not
+        // (and should not, for simplicity reasons) provide the user with the option to specify dimension/measure status
+        // at the time that the property descriptors are created.
+        if (from.isSetDimension())
+            to.setDimension(from.isDimension());
+        else
+            to.setDimension(ColumnRenderProperties.inferIsDimension(from.getName(), from.getLookupQuery() != null, from.isHidden()));
+        if (from.isSetMeasure())
+            to.setMeasure(from.isMeasure());
+        else
+        {
+            Type type = Type.getTypeByXsdType(from.getRangeURI());
+            to.setMeasure(ColumnRenderProperties.inferIsMeasure(from.getName(), type != null && type.isNumeric(),
+                                                                false, from.getLookupQuery() != null, from.isHidden()));
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -463,6 +463,8 @@ public abstract class SqlDialect
     // GroupConcat is usable as an aggregate function within a GROUP BY
     public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted);
 
+    public abstract boolean supportsSelectConcat();
+
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
     // This is not generally usable within a GROUP BY.  Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql);

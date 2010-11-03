@@ -30,10 +30,12 @@ public class SampleChooserUtils
     public static final String PROP_NAME_DEFAULT_SAMPLE_SET_LSID = "defaultSampleSetLSID";
     public static final String PROP_NAME_DEFAULT_SAMPLE_SET_NAME = "defaultSampleSetName";
     public static final String PROP_NAME_DEFAULT_SAMPLE_SET_ROW_ID = "defaultSampleRowId";
-    // Prefix for sample LSIDs that match the barcode
+    /** Prefix for sample LSIDs that match the barcode */
     public static final String PROP_PREFIX_SELECTED_SAMPLE_LSID = "selectedSampleLSID";
-    // Prefix for sample set LSIDs for each material that matches the barcode
+    /** Prefix for sample set LSIDs for each material that matches the barcode */
     public static final String PROP_PREFIX_SELECTED_SAMPLE_SET_LSID = "selectedSampleSetLSID";
+    /** Prefix to indicate if the selection should be editable or not (true/false) */
+    public static final String PROP_PREFIX_SELECTED_SAMPLE_LOCKED = "selectedSampleLocked";
 
     public static final String DUMMY_LSID = "--DUMMY-LSID--";
     

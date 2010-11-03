@@ -342,6 +342,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         shownInDetailsView.setBool(shown);
     }
 
+    public boolean isSetMeasure()
+    {
+        return measure.getBoolean() != null;
+    }
+
     public boolean isMeasure()
     {
         return measure.booleanValue();
@@ -350,6 +355,11 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setMeasure(boolean isMeasure)
     {
         measure.setBool(isMeasure);
+    }
+
+    public boolean isSetDimension()
+    {
+        return dimension.getBoolean() != null;
     }
 
     public boolean isDimension()

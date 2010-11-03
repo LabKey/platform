@@ -76,6 +76,8 @@
  *                          Default is 'READ' if permissionClass is not specified.</li>
  *          <li><b>permissionClass</b>: Optional. If permission (see above) is not specified, the fully qualified Java class
  *                           name of the permission that the user must possess to view the button.</li>
+ *          <li><b>requiresSelection</b>: A boolean value (true/false) indicating whether the button should only be enabled when
+ *                          data rows are checked/selected.</li>
  *          <li><b>items</b>: To create a drop-down menu button, set this to an array of menu item configurations.
  *                          Each menu item configuration can specify any of the following properties:
  *              <ul>

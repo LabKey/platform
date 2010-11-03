@@ -1,7 +1,7 @@
-/*
+/**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @license Copyright (c) 2010 LabKey Corporation
+ * @license Copyright (c) 2008-2010 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  * limitations under the License.
  * <p/>
  */
+
 function getSuccessCallbackWrapper(createMeasureFn, fn, scope)
 {
     return function(response, options)

@@ -35,7 +35,7 @@ if (model.getIqyURL() != null)
         <td class="labkey-export-tab-options">
             <table class="labkey-export-tab-layout">
                 <tr>
-                    <td valign="center">Export to Excel as:</td>
+                    <td>Export to Excel as:</td>
                     <td valign="center"><input type="radio" id="<%= guid %>" name="excelExportType" value="<%= PageFlowUtil.filter(model.getXlsURL()) %>" checked="true" /></td>
                     <td valign="center"><label for="<%=guid%>">Standard File (.xls)</label></td>
                 </tr>
@@ -46,10 +46,19 @@ if (model.getIqyURL() != null)
                     <td valign="center"><label for="excelWebQuery">Refreshable Web Query (.iqy)</label></td>
                 </tr>
                 <% } %>
-            </table>            
+            </table>
         </td>
         <td class="labkey-export-tab-buttons">
             <%=PageFlowUtil.generateButton("Export to Excel", model.getXlsURL(), onClickScript) %>
+        </td>
+    </tr>
+    <tr>
+        <td class="labkey-export-tab-options" colspan="2">
+            <table class="labkey-export-tab-layout">
+                <tr>
+                    <td><br>Note: The Excel export format is limited to 65,536 rows and 256 columns of data.</td>
+                </tr>
+            </table>
         </td>
     </tr>
 </table>

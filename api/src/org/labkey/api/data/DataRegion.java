@@ -980,7 +980,27 @@ public class DataRegion extends DisplayElement
         out.write("'selectionKey' : " + PageFlowUtil.jsString(getSelectionKey()) + ",\n");
         out.write("'requestURL' : " + PageFlowUtil.jsString(ctx.getViewContext().getActionURL().toString()) + ",\n");
         out.write("'selectorCols' : " + PageFlowUtil.jsString(_recordSelectorValueColumns == null ? null : _recordSelectorValueColumns.toString()) + "\n,");
-        
+
+        // TODO: Don't get available container filters from render context.
+        // 11082: Populate customize view with list of allowable container filters from the QueryView
+        List<ContainerFilter.Type> allowableContainerFilterTypes = (List<ContainerFilter.Type>)ctx.get("allowableContainerFilterTypes");
+        if (allowableContainerFilterTypes != null && allowableContainerFilterTypes.size() > 0)
+        {
+            out.write("'allowableContainerFilters' : [");
+            String sep = "";
+            for (ContainerFilter.Type type : allowableContainerFilterTypes)
+            {
+                out.write(sep);
+                sep = ", ";
+                out.write("[ ");
+                out.write(PageFlowUtil.jsString(type.name()));
+                out.write(" , ");
+                out.write(PageFlowUtil.jsString(type.toString()));
+                out.write(" ]");
+            }
+            out.write("],\n");
+        }
+
         out.write("});\n");
         if (headerMessage != null && headerMessage.length() > 0)
         {
@@ -995,7 +1015,7 @@ public class DataRegion extends DisplayElement
     protected void renderRibbon(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<tr>");
-        out.write("<td colspan=\"2\" class=\"labkey-ribbon extContainer\" style=\"display:none;\">&nbsp;</td>");
+        out.write("<td colspan=\"2\" class=\"labkey-ribbon extContainer\" style=\"display:none;\"></td>");
         out.write("</tr>\n");
     }
 

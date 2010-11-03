@@ -99,6 +99,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
         return false;
     }
 
+    @Override
+    public boolean supportsSelectConcat()
+    {
+        return false;
+    }
+
     // The following methods may or may not need to be implemented in a simple dialect... if these exceptions appear
     // then either provide a standard implementation above or remove the stub implementation from this class.
 

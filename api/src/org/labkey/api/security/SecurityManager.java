@@ -49,6 +49,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
@@ -832,13 +833,14 @@ public class SecurityManager
         try
         {
             message.setVerificationURL(PageFlowUtil.filter(verificationURL.getURIString()));
-            message.setFrom(user.getEmail());
+            message.setOriginatingUser(user.getEmail());
             if (message.getTo() == null)
                 message.setTo(to);
 
             MimeMessage m = message.createMailMessage(c);
 
-            m.addFrom(new Address[]{new InternetAddress(user.getEmail(), user.getFullName())});
+            LookAndFeelProperties properties = LookAndFeelProperties.getInstance(c);
+            m.addFrom(new Address[]{new InternetAddress(properties.getSystemEmailAddress(), properties.getShortName())});
             m.addRecipients(Message.RecipientType.TO, to);
 
             return m;
@@ -2684,7 +2686,7 @@ public class SecurityManager
                 "The ^siteShortName^ home page is ^homePageURL^.  When you visit the home page " +
                 "and log in with your new password you will see a list of projects on the left side of the page.  Click those " +
                 "links to visit your projects.\n\n" +
-                "If you have any questions don't hesitate to contact the ^siteShortName^ team at ^emailAddress^.";
+                "If you have any questions don't hesitate to contact the ^siteShortName^ team at ^systemEmail^.";
 
         public RegistrationEmailTemplate()
         {

@@ -26,7 +26,7 @@ import javax.mail.internet.MimeMessage;
 public class SecurityMessage
 {
     private String _verificationURL;
-    private String _from;
+    private String _originatingUser;
     private String _to;
     private String _type;
     private String _messagePrefix;
@@ -46,7 +46,7 @@ public class SecurityMessage
             MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
             _template.setVerificationUrl(getVerificationURL());
-            _template.setEmailAddress(getFrom());
+            _template.setEmailAddress(getOriginatingUser());
             _template.setRecipient(getTo());
             _template.setOptionPrefix(getMessagePrefix());
 
@@ -71,13 +71,13 @@ public class SecurityMessage
     {
         return _verificationURL;
     }
-    public String getFrom()
+    public String getOriginatingUser()
     {
-        return _from;
+        return _originatingUser;
     }
-    public void setFrom(String from)
+    public void setOriginatingUser(String originatingUser)
     {
-        _from = from;
+        _originatingUser = originatingUser;
     }
 
     public String getType()

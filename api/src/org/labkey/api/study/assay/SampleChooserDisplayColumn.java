@@ -80,9 +80,12 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
             out.write("<input type=\"hidden\" name=\"" + nameID + "\" id=\"" + nameID + "\"/>\n");
         }
 
+        // Use the value the user selected if it was posted, otherwise use the default
+        int defaultSampleCount = getSampleCount(ctx.getRequest(), _defaultSampleCount);
+
         props.put(SampleChooserUtils.PROP_NAME_MAX_SAMPLE_COUNT, Integer.toString(_maxSamples));
         props.put(SampleChooserUtils.PROP_NAME_MIN_SAMPLE_COUNT, Integer.toString(_minSamples));
-        props.put(SampleChooserUtils.PROP_NAME_DEFAULT_SAMPLE_COUNT, Integer.toString(_defaultSampleCount));
+        props.put(SampleChooserUtils.PROP_NAME_DEFAULT_SAMPLE_COUNT, Integer.toString(defaultSampleCount));
 
         if (_matchingMaterials.size() == _maxSamples)
         {
@@ -92,6 +95,7 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
                 ExpMaterial material = _matchingMaterials.get(i);
                 props.put(SampleChooserUtils.PROP_PREFIX_SELECTED_SAMPLE_LSID + i, material.getLSID());
                 props.put(SampleChooserUtils.PROP_PREFIX_SELECTED_SAMPLE_SET_LSID + i, material.getSampleSet().getLSID());
+                props.put(SampleChooserUtils.PROP_PREFIX_SELECTED_SAMPLE_LOCKED + i, "true");
             }
         }
         else
@@ -103,6 +107,30 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
                 props.put(SampleChooserUtils.PROP_NAME_DEFAULT_SAMPLE_SET_LSID, sampleSet.getLSID());
                 props.put(SampleChooserUtils.PROP_NAME_DEFAULT_SAMPLE_SET_NAME, sampleSet.getName());
                 props.put(SampleChooserUtils.PROP_NAME_DEFAULT_SAMPLE_SET_ROW_ID, Integer.toString(sampleSet.getRowId()));
+            }
+
+            // Reshow with the same selections
+            for (int i = 0; i < _maxSamples; i++)
+            {
+                try
+                {
+                    ExpMaterial selectedMaterial = getMaterial(i, ctx.getContainer(), ctx.getRequest());
+                    // If we find the material that the user selected, tell the GWT app to automatically select it
+                    if (selectedMaterial != null)
+                    {
+                        props.put(SampleChooserUtils.PROP_PREFIX_SELECTED_SAMPLE_LSID + i, selectedMaterial.getLSID());
+
+                        ExpSampleSet selectedSampleSet = selectedMaterial.getSampleSet();
+                        if (selectedSampleSet != null)
+                        {
+                            props.put(SampleChooserUtils.PROP_PREFIX_SELECTED_SAMPLE_SET_LSID + i, selectedSampleSet.getLSID());
+                        }
+                    }
+                }
+                catch (ExperimentException e)
+                {
+                    throw new IOException(e);
+                }
             }
         }
 

@@ -109,7 +109,7 @@ public class PropertyStorageSpec
     }
 
     /**
-     * enforce uniqueness. defaults false
+     * cause this field to be provisioned as a primary key in the db
      * @param primaryKey
      */
     public void setPrimaryKey(boolean primaryKey)

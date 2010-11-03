@@ -1118,14 +1118,11 @@ public class QueryView extends WebPartView<Object>
             ActionURL urlTableInfo = getSchema().urlFor(QueryAction.tableInfo);
             urlTableInfo.addParameter(QueryParam.queryName.toString(), getQueryDef().getName());
 
-            NavTree customizeView = new NavTree("Customize New View");
+            NavTree customizeView = new NavTree("Customize View");
             customizeView.setId(getDataRegionName() + ":Views:Customize View");
             customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
-                    ".showCustomizeView(" + PageFlowUtil.jsString(urlFor(QueryAction.chooseColumns).toString()) + ");");
+                    ".toggleShowCustomizeView();");
             button.addMenuItem(customizeView);
-
-            NavTree oldCustomizeView = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
-            button.addMenuItem(oldCustomizeView);
         }
 
         if (QueryService.get().isQuerySnapshot(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName()))
@@ -1354,6 +1351,10 @@ public class QueryView extends WebPartView<Object>
         // XXX: Move to QuerySettings?
         if (_customView != null)
             ret.getRenderContext().setView(_customView);
+
+        // TODO: Don't set available container filters in render context
+        // 11082: Need to push list of available container filters to DataRegion.js
+        ret.getRenderContext().put("allowableContainerFilterTypes", getAllowableContainerFilterTypes());
     }
 
     protected void renderDataRegion(PrintWriter out) throws Exception
@@ -1474,6 +1475,19 @@ public class QueryView extends WebPartView<Object>
     // Set up an ExcelWriter that exports no data -- used to export templates on upload pages
     protected ExcelWriter getExcelTemplateWriter() throws Exception
     {
+        // The template should be based on the actual columns in the table, not the user's default view,
+        // which may be hiding columns or showing values joined through lookups
+        List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+        for (ColumnInfo columnInfo : createTable().getColumns())
+        {
+            if (columnInfo.isUserEditable())
+            {
+                fieldKeys.add(columnInfo.getFieldKey());
+            }
+        }
+        // Force the view to use our special list
+        getSettings().setFieldKeys(fieldKeys);
+        
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);

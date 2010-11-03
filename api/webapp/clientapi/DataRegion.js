@@ -522,6 +522,27 @@ LABKEY.DataRegion = function (config)
         this.msgbox.setVisible(true);
     };
 
+    this.showLoadingMessage = function (html)
+    {
+        html = html || "Loading...";
+        this.clearMessage();
+        this.showMessage("<div><span class='loading-indicator'>&nbsp;</span><em>" + html + "</em></div>");
+    };
+
+    this.showSuccessMessage = function (html)
+    {
+        html = html || "Completed successfully.";
+        this.clearMessage();
+        this.showMessage("<div class='labkey-message'>" + html + "</div>");
+    };
+
+    this.showErrorMessage = function (html)
+    {
+        html = html || "An error occurred.";
+        this.clearMessage();
+        this.showMessage("<div class='labkey-error'>" + html + "</div>");
+    };
+
     /** Returns true if a message is currently being shown for this DataRegion. Messages are shown as a header. */
     this.isMessageShowing = function()
     {
@@ -532,6 +553,12 @@ LABKEY.DataRegion = function (config)
     this.hideMessage = function ()
     {
         this.msgbox.setVisible(false, false);
+        this.clearMessage();
+    };
+
+    /** Clear the message box contents. */
+    this.clearMessage = function ()
+    {
         var div = this.msgbox.child("div");
         div.dom.innerHTML = "";
     };
@@ -616,11 +643,11 @@ LABKEY.DataRegion = function (config)
 
     if (this.view && this.view.session)
     {
-        var msg = (this.viewName ? "The current view '<em>" + escape(this.viewName) + "</em>' " : "This current view ") + "is unsaved.";
+        var msg = (this.viewName ? "The current view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
         msg += " &nbsp;";
-        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].deleteCustomView(null, true);'>" + (this.viewName ? "Delete" : "Revert") + "</span>";
+        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].revertCustomView();'>Revert</span>";
         msg += ", &nbsp;";
-        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showCustomizeView(null, true);'>Edit</span>";
+        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showCustomizeView(undefined, true);'>Edit</span>";
         msg += ", &nbsp;";
         msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].saveSessionCustomView();'>Save</span>";
         this.showMessage(msg);
@@ -943,8 +970,17 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         }
     },
 
-    showCustomizeView : function (chooseColumnsUrl, hideMessage, animate)
+    /**
+     * Show the customize view interface.
+     * @param activeTab {[String]} Optional. One of "ColumnsTab", "FilterTab", or "SortTab".  If no value is specified (or undefined), the ColumnsTab will be shown.
+     * @param hideMessage {[boolean]} Optional. True to hide the DataRegion message bar when showing.
+     * @param animate {[boolean]} Optional. True to slide in the ribbon panel.
+     */
+    showCustomizeView : function (activeTab, hideMessage, animate)
     {
+        if (hideMessage)
+            this.hideMessage();
+
         // UNDONE: when both header and footer are rendered, need to show the panel in the correct button bar
         var headerOrFooter = this.header || this.footer;
 
@@ -980,23 +1016,25 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     LABKEY.Query.getQueryDetails({
                         schemaName: this.schemaName,
                         queryName: this.queryName,
-                        viewName: this.viewName,
+                        viewName: (this.view && this.viewName) || "",
                         fields: fields.join(","),
                         successCallback: function (json, response, options) {
                             if (hideMessage)
                                 this.hideMessage();
 
-                            var minWidth = Math.max(500, headerOrFooter.getWidth(true));
+                            var minWidth = Math.max(700, headerOrFooter.getWidth(true));
                             var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
 
                             this.customizeView = new LABKEY.DataRegion.ViewDesigner({
                                 renderTo: renderTo,
                                 width: minWidth,
+                                activeGroup: activeTab,
                                 dataRegion: this,
                                 schemaName: this.schemaName,
                                 queryName: this.queryName,
                                 viewName: this.viewName,
-                                query: json
+                                query: json,
+                                allowableContainerFilters: this.allowableContainerFilters
                             });
 
                             this.customizeView.on("viewsave", this.onViewSave, this);
@@ -1011,10 +1049,21 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         }
         else
         {
-            this._showButtonPanel(headerOrFooter, "~~customizeView~~", animate, null);
+            if (activeTab)
+            {
+                this.customizeView.setActiveGroup(activeTab);
+                var group = this.customizeView.activeGroup;
+                if (!group.activeItem)
+                    group.setActiveTab(group.getMainItem());
+            }
+            if (this.currentPanelId != "~~customizeView~~")
+                this._showButtonPanel(headerOrFooter, "~~customizeView~~", animate, null);
         }
     },
 
+    /**
+     * Hide the customize view interface if it is showing.
+     */
     hideCustomizeView : function ()
     {
         if (this.customizeView && this.customizeView.isVisible())
@@ -1022,33 +1071,228 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     },
 
     // private
+    toggleShowCustomizeView : function ()
+    {
+        if (this.customizeView && this.customizeView.isVisible())
+            this.hideCustomizeView();
+        else
+            this.showCustomizeView();
+    },
+
+    // private
     deleteCustomView : function ()
     {
-        var title = (this.viewName ? "Delete " : "Revert ") +
+        var title = "Delete " +
                 (this.view && this.view.shared ? "shared " : "your ") +
                 (this.view && this.view.session ? "unsaved" : "") + "view";
-        var msg = "Are you sure you want to " + (this.viewName ? "delete " : "revert ") + " the current view";
+        var msg = "Are you sure you want to delete the ";
         if (this.viewName)
-            msg += " '<em>" + escape(this.viewName) + "</em>'";
-        msg += "?";
+            msg += " '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'";
+        else
+            msg += "default";
+        msg += " saved view?";
         Ext.Msg.confirm(title, msg, function (btnId) {
             if (btnId == "yes")
             {
-                Ext.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL("query", "deleteView", null, {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName}),
-                    method: "GET",
-                    scope: this,
-                    success: function () {
-                        // Go to the default view if successful
-                        // XXX: if we are deleting a session view that shadows a saved view, we should reshow that saved view.
-                        this.changeView();
-                    },
-                    failure: function () {
-                        Ext.Msg.alert("Delete View", "Deletion Failed");
-                    }
-                });
+                this._deleteCustomView(true, "Deleting view...");
             }
         }, this);
+    },
+
+    // private
+    revertCustomView : function ()
+    {
+        this._deleteCustomView(false, "Reverting view...");
+    },
+
+    _deleteCustomView : function (complete, message)
+    {
+        var timerId = function () {
+            timerId = 0;
+            this.showLoadingMessage(message);
+        }.defer(500, this);
+
+        Ext.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("query", "deleteView"),
+            jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
+            method: "POST",
+            scope: this,
+            success: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
+                if (timerId > 0)
+                    clearTimeout(timerId);
+                this.showSuccessMessage();
+                // change view to either a shadowed view or the default view
+                var viewName = json.viewName;
+                this.changeView(viewName);
+            }, this),
+            failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
+                if (timerId > 0)
+                    clearTimeout(timerId);
+                this.showErrorMessage(json.exception);
+            }, this, true)
+        });
+    },
+
+    _getCustomViewEditableErrors : function (view)
+    {
+        var errors = [];
+        if (view)
+        {
+            if (view.inherit)
+            {
+                if (view.containerPath && view.containerPath != LABKEY.ActionURL.getContainer())
+                    errors.push("Inherited views can only be edited from the defining folder.");
+            }
+
+            if (!view.editable)
+                errors.push("The view is read-only and cannot be edited.");
+        }
+        return errors;
+    },
+
+    saveCustomizeViewPrompt : function (config)
+    {
+        var success = config.success;
+        var scope = config.scope;
+
+        var viewName = config.name;
+        var hidden = config.hidden;
+        var session = config.session;
+        var inherit = config.inherit;
+        var shared = config.shared;
+        var containerPath = config.containerPath;
+        var canEdit = this._getCustomViewEditableErrors(config).length == 0;
+        var canEditSharedViews = config.canEditSharedViews;
+
+        var disableSharedAndInherit = LABKEY.user.isGuest || hidden /*|| session*/ || (containerPath && containerPath != LABKEY.ActionURL.getContainer());
+        var newViewName = viewName || "New View";
+        if (!canEdit && viewName)
+            newViewName = viewName + " Copy";
+
+        var win = new Ext.Window({
+            title: "Save Custom View" + (viewName ? ": " + Ext.util.Format.htmlEncode(viewName) : ""),
+            cls: "extContainer",
+            bodyStyle: "padding: 6px",
+            modal: true,
+            width: 460,
+            height: 220,
+            layout: "form",
+            defaults: {
+                tooltipType: "title"
+            },
+            items: [{
+                ref: "defaultNameField",
+                xtype: "radio",
+                fieldLabel: "View Name",
+                boxLabel: "Default view for this page",
+                inputValue: "default",
+                name: "saveCustomView_namedView",
+                checked: canEdit && !viewName,
+                disabled: hidden || !canEdit
+            },{
+                xtype: "compositefield",
+                ref: "nameCompositeField",
+                items: [{
+                    xtype: "radio",
+                    fieldLabel: "",
+                    boxLabel: "Named",
+                    inputValue: "named",
+                    name: "saveCustomView_namedView",
+                    checked: !canEdit || viewName,
+                    handler: function (radio, value) {
+                        // items will be populated after initComponent
+                        if (win.nameCompositeField.items.get)
+                        {
+                            var nameField = win.nameCompositeField.items.get(1);
+                            if (value)
+                                nameField.enable();
+                            else
+                                nameField.disable();
+                        }
+                    },
+                    scope: this
+                },{
+                    fieldLabel: "",
+                    xtype: "textfield",
+                    name: "saveCustomView_name",
+                    tooltip: "Name of the custom view",
+                    tooltipType: "title",
+                    allowBlank: false,
+                    emptyText: "Name is required",
+                    maxLength: 50,
+                    autoCreate: {tag: 'input', type: 'text', size: '50'},
+                    selectOnFocus: true,
+                    value: newViewName,
+                    disabled: hidden || (canEdit && !viewName)
+                }]
+            },{
+                xtype: "box",
+                style: "padding-left: 122px; padding-bottom: 8px",
+                html: "<em>The current view can't be saved over.<br>Please enter an alternate view name.</em>",
+                hidden: canEdit
+            },{
+                xtype: "spacer",
+                height: "8"
+            },{
+                ref: "sharedField",
+                xtype: "checkbox",
+                name: "saveCustomView_shared",
+                fieldLabel: "Shared",
+                boxLabel: "Make this grid view available to all users",
+                checked: shared,
+                disabled: disableSharedAndInherit || !canEditSharedViews
+            },{
+                ref: "inheritField",
+                xtype: "checkbox",
+                name: "saveCustomView_inherit",
+                fieldLabel: "Inherit",
+                boxLabel: "Make this grid view available in child folders",
+                checked: inherit,
+                disabled: disableSharedAndInherit
+            }],
+            buttons: [{
+                text: "Save",
+                handler: function () {
+                    var nameField = win.nameCompositeField.items.get(1);
+                    if (!canEdit && viewName == nameField.getValue())
+                    {
+                        Ext.Msg.error("You must save this view with an alternate name.");
+                        return;
+                    }
+
+                    var o = {};
+                    if (hidden)
+                    {
+                        o = {
+                            name: viewName,
+                            shared: shared,
+                            hidden: true,
+                            session: session // set session=false for hidden views?
+                        };
+                    }
+                    else
+                    {
+                        o.name = "";
+                        if (!win.defaultNameField.getValue())
+                            o.name = nameField.getValue();
+                        o.session = false;
+                        if (!o.session && canEditSharedViews)
+                        {
+                            o.shared = win.sharedField.getValue();
+                            o.inherit = win.inheritField.getValue();
+                        }
+                    }
+
+                    success.call(scope, win, o);
+                    win.close();
+                },
+                scope: this
+            },{
+                text: "Cancel",
+                handler: function () { win.close(); }
+            }]
+        });
+        win.show();
     },
 
     // private
@@ -1058,24 +1302,69 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         if (!(this.view && this.view.session))
             return;
 
-        // UNDONE: prompt for shared and inherit properties if user has EditSharedViewPermission
-        Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("query", "saveSessionView"),
-            method: "POST",
-            jsonData: {
-                schemaName: this.schemaName,
-                "query.queryName": this.queryName,
-                "query.viewName": this.viewName
-            },
-            headers : {
-                'Content-Type' : 'application/json'
-            },
-            scope: this,
-            success: function () {
-                this.changeView(this.viewName);
-            },
-            failure: LABKEY.Utils.getCallbackWrapper(undefined, this, true)
-        });
+        var self = this;
+        function showPrompt()
+        {
+            var config = Ext.applyIf({
+                canEditSharedViews: self.canEditSharedViews,
+                success: function (win, o) {
+                    var timerId = function () {
+                        timerId = 0;
+                        this.showLoadingMessage("Saving custom view...");
+                    }.defer(500, self);
+
+                    Ext.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL("query", "saveSessionView"),
+                        method: "POST",
+                        jsonData: {
+                            schemaName: self.schemaName,
+                            "query.queryName": self.queryName,
+                            "query.viewName": self.viewName
+                        },
+                        headers : {
+                            'Content-Type' : 'application/json'
+                        },
+                        scope: self,
+                        success: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
+                            if (timerId > 0)
+                                clearTimeout(timerId);
+                            self.showSuccessMessage();
+                            self.changeView(self.viewName);
+                        }, self),
+                        failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
+                            if (timerId > 0)
+                                clearTimeout(timerId);
+                            self.showErrorMessage(json.exception);
+                        }, self, true)
+                    });
+                },
+                scope: self
+            }, self.view);
+
+            self.saveCustomizeViewPrompt(config);
+        }
+
+        // CONSIDER: moving into LABKEY.DataRegion constructor
+        if (this.canEditSharedViews === undefined)
+        {
+            LABKEY.Security.getUserPermissions({
+                userId: LABKEY.user.id,
+                success: function (info) {
+                    var canEditSharedViews = false;
+                    if (info && info.container && info.container.effectivePermissions)
+                        canEditSharedViews = info.container.effectivePermissions.indexOf("org.labkey.api.security.permissions.EditSharedViewPermission") != -1;
+
+                    this.canEditSharedViews = canEditSharedViews;
+                    showPrompt();
+                },
+                scope: this
+            });
+        }
+        else
+        {
+            showPrompt();
+        }
+
     },
 
     onViewSave : function (designer, savedViewsInfo, urlParameters) {
@@ -1558,7 +1847,9 @@ function setSearchString(tableName, search)
             return;
         }
     }
-    window.location.search = "?" + savedSearchString;
+    // If the search string doesn't change and there is a hash on the url, the page won't reload.
+    // Remove the hash by setting the full path plus search string.
+    window.location.assign(window.location.pathname + "?" + savedSearchString);
 }
 
 

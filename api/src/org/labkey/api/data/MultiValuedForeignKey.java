@@ -112,4 +112,10 @@ public class MultiValuedForeignKey implements ForeignKey
     {
         return _fk.getLookupColumnName();
     }
+
+    // TODO: Remove once we remove SQL Server 2000 support 
+    public static boolean isSupported(SqlDialect dialect)
+    {
+        return dialect.supportsGroupConcat() || dialect.supportsSelectConcat();
+    }
 }

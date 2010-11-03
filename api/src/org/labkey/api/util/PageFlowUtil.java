@@ -1637,6 +1637,12 @@ public class PageFlowUtil
             {
                 if (coreUrls.getThemeStylesheetURL(c) != null)
                     F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
+                else
+                {
+                    /* In this case a themeStylesheet was not found in a subproject to default to the root */
+                    if (coreUrls.getThemeStylesheetURL() != null)
+                        F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+                }
                 ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
                 if (null != containerCustomStylesheetURL)
@@ -1645,7 +1651,7 @@ public class PageFlowUtil
             else
             {
                 if (coreUrls.getThemeStylesheetURL() != null)
-                    F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));               
+                    F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
             }
         }
 

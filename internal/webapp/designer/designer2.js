@@ -73,22 +73,22 @@ Ext.reg('splitgrouptab', LABKEY.ext.SplitGroupTabPanel);
 LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
     constructor : function (config) {
-
-        this.tabWidth = 80;
-        this.activeGroup = 0;
-
+        
         this.dataRegion = config.dataRegion;
 
         this.schemaName = config.schemaName;
         this.queryName = config.queryName;
         this.viewName = config.viewName || "";
         this.query = config.query;
+
+        var customViewExists = false;
         this.customView = null;
         for (var i = 0; i < this.query.views.length; i++)
         {
             if (this.query.views[i].name == this.viewName)
             {
                 this.customView = this.query.views[i];
+                customViewExists = true;
                 break;
             }
         }
@@ -100,7 +100,21 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         });
         this.fieldMetaStore.loadData(this.query);
 
-        if (this.customView)
+        if (!this.customView)
+        {
+            this.customView = {
+                name: this.viewName,
+                inherit: false,
+                shared: false,
+                session: false,
+                hidden: false,
+                fields: [],
+                columns: [],
+                sort: [],
+                filter: []
+            };
+        }
+
         {
             // Add any additional field metadata for view's selected columns, sorts, filters.
             // The view may be filtered or sorted upon columns not present in the query's selected column metadata.
@@ -150,6 +164,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         }
 
         this.showHiddenFields = config.showHiddenFields || false;
+        this.allowableContainerFilters = config.allowableContainerFilters || [];
 
         this.columnsTab = new LABKEY.DataRegion.ColumnsTab({
             designer: this,
@@ -207,11 +222,17 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             }]
         });
 
-        var deleteToolTip =
-                (this.customView.name ? "Delete " : "Reset ") +
-                (this.customView.shared ? "shared " : "your ") + "view";
+        var canEdit = this.canEdit();
+
+        // enabled for named editable views.
+        var deleteEnabled = canEdit && this.customView.name;
+
+        // enabled for saved (non-session) editable views or customized default view (not new) views.
+        var revertEnabled = canEdit && (this.customView.session || (!this.customView.name && !this.customView["new"]));
 
         config = Ext.applyIf(config, {
+            tabWidth: 80,
+            activeGroup: "ColumnsTab",
             activeTab: 0,
             frame: false,
             shadow: true,
@@ -223,17 +244,21 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 autoScroll: true,
                 border: false,
                 style: { "border-left-width": "1px", "border-top-width": "1px", "border-bottom-width": "1px" },
-                items: [ this.fieldsTree ],
+                items: [ this.fieldsTree ]
             },
             items: [{
                 xtype: 'grouptab',
+                id: 'ColumnsTab',
+                layoutOnTabChange: true,
                 items: [ this.columnsTab ]
             },{
                 xtype: 'grouptab',
+                id: 'FilterTab',
                 layoutOnTabChange: true,
                 items: [ this.filterTab ]
             },{
                 xtype: 'grouptab',
+                id: 'SortTab',
                 layoutOnTabChange: true,
                 items: [ this.sortTab ]
             }],
@@ -243,23 +268,34 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
                 //cls: "labkey-status-info",
                 style: { 'background-color': "#FFDF8C", padding: "2px" },
-                html: "<span>message</span><span class='labkey-tool labkey-tool-close' style='float:right;'></span>",
+                html: "<span class='labkey-tool labkey-tool-close' style='float:right;vertical-align:top;'></span><span>message</span>",
                 hidden: true
             },
             fbar: [{
-                text: (this.customView.name ? "Delete" : "Reset"),
-                tooltip: deleteToolTip,
-                disabled: !this.canEdit(),
+                text: "Delete",
+                tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved view",
+                tooltipType: "title",
+                disabled: !deleteEnabled,
                 handler: this.onDeleteClick,
                 scope: this
+            },{
+                text: "Revert",
+                tooltip: "Revert " + (this.customView.shared ? "shared" : "your") + " edited view",
+                tooltipType: "title",
+                // disabled for hidden, saved (non-session), customized (not new) default view, or uneditable views
+                disabled: !revertEnabled,
+                handler: this.onRevertClick,
+                scope: this
             },"->",{
-                text: "Apply",
-                tooltip: "Apply changes to the view",
+                text: "View Grid",
+                tooltip: "Apply changes to the view and reshow grid",
+                tooltipType: "title",
                 handler: this.onApplyClick,
                 scope: this
             },{
                 text: "Save",
                 tooltip: "Save changes",
+                tooltipType: "title",
                 handler: this.onSaveClick,
                 scope: this
             }]
@@ -274,6 +310,9 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
         this.fieldsTree.on('checkchange', this.onCheckChange, this);
         this.on('tabchange', this.onTabChange, this);
+
+        if (!customViewExists)
+            this.showMessage("Custom View '" + Ext.util.Format.htmlEncode(this.viewName) + "' not found.");
     },
 
     initComponent : function () {
@@ -284,8 +323,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         LABKEY.DataRegion.ViewDesigner.superclass.onRender.call(this, ct, position);
         if (!this.canEdit())
         {
-            var msg = "This view is not editable, but you may<br>" +
-                      "save a new view with a different name.";
+            var msg = "This view is not editable, but you may save a new view with a different name.";
             // XXX: show this.editableErrors in a '?' help tooltip
             this.showMessage(msg);
         }
@@ -318,18 +356,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     {
         if (!this.editableErrors)
         {
-            this.editableErrors = [];
-            if (this.customView)
-            {
-                if (this.customView.inherit)
-                {
-                    if (this.customView.containerPath != LABKEY.ActionURL.getContainer())
-                        this.editableErrors.push("Inherited views can only be edited from the defining folder.");
-                }
-
-                if (!this.customView.editable)
-                    this.editableErrors.push("The view is read-only and cannot be edited.");
-            }
+            this.editableErrors = this.dataRegion._getCustomViewEditableErrors(this.customView);
         }
         return this.editableErrors;
     },
@@ -339,9 +366,9 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         // XXX: support multiple messages and [X] close box
         // UNDONE: bottom bar isn't rendering in the GroupTabPanel
         var tb = this.getBottomToolbar();
-        if (tb.getEl())
+        if (tb && tb.getEl())
         {
-            var el = tb.getEl().first();
+            var el = tb.getEl().last();
             el.update(msg);
             tb.setVisible(true);
             tb.getEl().slideIn();
@@ -349,14 +376,14 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         }
         else
         {
-            tb.on('afterrender', function () { this.showMessage(msg); }, this, {single: true});
+            this.on('afterrender', function () { this.showMessage(msg); }, this, {single: true});
         }
     },
 
     hideMessage : function ()
     {
         var tb = this.getBottomToolbar();
-        tb.getEl().first().update('');
+        tb.getEl().last().update('');
         tb.setVisible(false);
         tb.getEl().slideOut();
     },
@@ -484,6 +511,10 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         this.dataRegion.deleteCustomView();
     },
 
+    onRevertClick : function (btn, e) {
+        this.dataRegion.revertCustomView();
+    },
+
     onApplyClick : function (btn, e) {
         // Save a session view. Session views can't be inherited or shared.
         var props = {
@@ -493,112 +524,21 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             inherit: false,
             session: true
         };
-        this.save(props, function () {
-            this.setVisible(false);
-        }, this);
+        this.save(props);
     },
 
     onSaveClick : function (btn, e) {
-        var disableSharedAndInherit = LABKEY.user.isGuest || this.customView.hidden || this.customView.session || (this.customView.containerPath != LABKEY.ActionURL.getContainer());
-        var canEdit = this.canEdit();
-        var win = new Ext.Window({
-            title: "Save Custom View" + (this.customView.name ? ": " + escape(this.customView.name) : ""),
-            layout: "form",
-            cls: "extContainer",
-            padding: "8 8 8 4",
-            modal: true,
-            defaults: {
-                tooltipType: "title"
+        var config = Ext.applyIf({
+            canEditSharedViews: this.query.canEditSharedViews,
+            success: function (win, o) {
+                this.save(o, function () {
+                    this.setVisible(false);
+                }, this);
             },
-            items: [{
-                ref: "nameField",
-                fieldLabel: "Name",
-                xtype: "textfield",
-                tooltip: "Name of the custom view (leave blank to save as the default grid view)",
-                value: canEdit ? this.customView.name : (this.customView.name ? this.customView.name + " Copy" : "Customized View"),
-                disabled: this.customView.hidden
-            },{
-                // XXX: this looks terrible
-                xtype: "box",
-                html: "You must save this view with an alternate name",
-                hidden: canEdit
-            },{
-                ref: "sharedField",
-                fieldLabel: "Shared",
-                xtype: "checkbox",
-                tooltip: "Make this grid view available to all users",
-                checked: this.customView.shared,
-                disabled: disableSharedAndInherit
-            },{
-                ref: "inheritField",
-                fieldLabel: "Inherit",
-                xtype: "checkbox",
-                tooltip: "Make this grid view available in child folders",
-                checked: this.customView.inherit,
-                disabled: disableSharedAndInherit
-            },{
-                ref: "sessionField",
-                fieldLabel: "Temporary",
-                xtype: "checkbox",
-                tooltip: "Save this view temporarily.  Any changes will only persist for the duration of your session.",
-                checked: LABKEY.user.isGuest || this.customView.session,
-                disabled: LABKEY.user.isGuest || this.customView.hidden,
-                handler: function (checkbox, checked) {
-                    if (checked) {
-                        win.sharedField.setValue(false);
-                        win.sharedField.setDisabled(true);
-                        win.inheritField.setValue(false);
-                        win.inheritField.setDisabled(true);
-                    }
-                    else if (disableSharedAndInherit)
-                    {
-                        win.sharedField.reset();
-                        win.sharedField.setDisabled(false);
-                        win.inheritField.reset();
-                        win.inheritField.setDisabled(false);
-                    }
-                },
-                scope: this
-            }],
-            buttons: [{
-                text: "Cancel",
-                handler: function () { win.close(); }
-            },{
-                text: "Save",
-                handler: function () {
-                    if (!canEdit && this.customView.name == win.nameField.getValue())
-                    {
-                        Ext.Msg.error("You must save this view with an alternate name.");
-                        return;
-                    }
+            scope: this
+        }, this.customView);
 
-                    var o = {};
-                    if (this.customView.hidden)
-                    {
-                        o = {
-                            name: this.customView.name,
-                            shared: this.customView.shared,
-                            hidden: this.customView.hidden,
-                            session: this.customView.session
-                        };
-                    }
-                    else
-                    {
-                        o.name = win.nameField.getValue();
-                        o.session = win.sessionField.getValue();
-                        if (!o.session && this.query.canEditSharedViews)
-                        {
-                            o.shared = win.sharedField.getValue();
-                            o.inherit = win.inheritField.getValue();
-                        }
-                    }
-                    this.save(o);
-                    win.close();
-                },
-                scope: this
-            }]
-        });
-        win.show();
+        this.dataRegion.saveCustomizeViewPrompt(config);
     },
 
     revert : function () {
@@ -664,6 +604,11 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             },
             scope: this
         });
+    },
+
+    close : function ()
+    {
+        this.dataRegion.hideCustomizeView();
     }
 
 });
@@ -672,6 +617,15 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     constructor : function (config) {
         this.designer = config.designer;
         this.unstyled = true;
+
+        var mainPanel = config.items[0];
+        mainPanel.tools = [{
+            id: "close",
+            handler: function (event, toolEl, panel, config) {
+                this.designer.close();
+            },
+            scope: this
+        }];
 
         LABKEY.DataRegion.Tab.superclass.constructor.call(this, config);
     },
@@ -922,6 +876,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     flex: 1,
                     store: this.columnStore,
                     emptyText: "No fields selected",
+                    deferEmptyText: false,
                     multiSelect: true,
                     autoScroll: true,
                     overClass: "x-view-over",
@@ -1133,52 +1088,52 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         emptyText: "Enter filter value"
                     }]
                 }],
-                bbar: [{
-                    xtype: "label",
-                    text: "Folder Filter:"
-                }," ",{
-                    // HACK: Need to wrap the combo in an panel so the combo doesn't overlap items after it.
-                    xtype: "panel",
-                    width: 200,
-                    plain: true,
-                    border: false,
-                    layout: "fit",
+                bbar: {
+                    xtype: "toolbar",
+                    hidden: !this.designer.allowableContainerFilters || this.designer.allowableContainerFilters.length == 0,
                     items: [{
-                        xtype: "combo",
-                        cls: "labkey-folder-filter-combo",
-                        //enabled: this.customView.containerFilter != null,
-                        value: this.customView.containerFilter,
-                        store: [["&nbsp;", "Default"]].concat(this.customView.allowableContainerFilters),
-                        mode: 'local',
-                        triggerAction: 'all',
-                        allowBlank: true,
-                        emptyText: "Default",
+                        xtype: "label",
+                        text: "Folder Filter:"
+                    }," ",{
+                        // HACK: Need to wrap the combo in an panel so the combo doesn't overlap items after it.
+                        xtype: "panel",
+                        width: 200,
+                        plain: true,
+                        border: false,
+                        layout: "fit",
+                        items: [{
+                            xtype: "combo",
+                            cls: "labkey-folder-filter-combo",
+                            //enabled: this.customView.containerFilter != null,
+                            value: this.customView.containerFilter,
+                            store: [["&nbsp;", "Default"]].concat(this.designer.allowableContainerFilters),
+                            mode: 'local',
+                            triggerAction: 'all',
+                            allowBlank: true,
+                            emptyText: "Default",
+                            listeners: {
+                                change: this.onFolderFilterChange,
+                                scope: this
+                            }
+                        }]
+                    }," ",{
+                        xtype: "box",
+                        overCls: "x-over",
+                        cls: "labkey-folder-filter-pin labkey-tool " + (this.designer.userContainerFilter ? "labkey-tool-unpin" : "labkey-tool-pin"),
+                        pinned: !this.designer.userContainerFilter,
+                        autoEl: {
+                            tag: "div",
+                            title: "Pinned folder filter is included with the saved view."
+                        },
+                        disabled: !this.customView.containerFilter,
                         listeners: {
-                            change: function (combo, newValue, oldValue) {
-                                console.log("change:");
-                                console.log(newValue);
-                                console.log(oldValue);
-                                this.onFolderFilterChange(newValue);
+                            render: function (f) {
+                                f.el.on("click", this.onFolderFilterPinClick, this);
                             },
                             scope: this
                         }
                     }]
-                }," ",{
-                    xtype: "box",
-                    overCls: "x-over",
-                    cls: "labkey-folder-filter-pin labkey-tool " + (this.designer.userContainerFilter ? "labkey-tool-unpin" : "labkey-tool-pin"),
-                    autoEl: {
-                        tag: "div",
-                        title: "Pinned folder filter is included with the saved view."
-                    },
-                    disabled: !this.customView.containerFilter,
-                    listeners: {
-                        render: function (f) {
-                            f.el.on("click", this.onFolderFilterPinClick, this);
-                        },
-                        scope: this
-                    }
-                }]
+                }
             }]
         }, config);
 
@@ -1194,7 +1149,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         this.updateTitle();
     },
 
-    onFolderFilterChange : function (newValue) {
+    onFolderFilterChange : function (combo, newValue, oldValue) {
         if (newValue)
             this.containerFilterPin.enable();
         else
@@ -1206,10 +1161,16 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             return;
         
         var el = this.containerFilterPin.getEl();
-        if (el.hasClass("labkey-tool-pin"))
+        if (this.containerFilterPin.pinned)
+        {
+            this.containerFilterPin.pinned = false;
             el.replaceClass("labkey-tool-pin", "labkey-tool-unpin");
+        }
         else
+        {
+            this.containerFilterPin.pinned = true;
             el.replaceClass("labkey-tool-unpin", "labkey-tool-pin");
+        }
     },
 
     onListBeforeClick : function (list, index, item, e) {
@@ -1449,7 +1410,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         var containerFilter = this.containerFilterCombo.getValue();
         if (containerFilter)
         {
-            if (this.containerFilterPin.getEl().hasClass("labkey-tool-pin"))
+            if (this.containerFilterPin.pinned)
                 edited.containerFilter = containerFilter;
             else
                 urlParameters.containerFilter = containerFilter;

@@ -43,7 +43,7 @@ public class AuthFilter implements Filter
 {
     private static final Object FIRST_REQUEST_LOCK = new Object();
     private static boolean _firstRequestHandled = false;
-    private static volatile Boolean _sslChecked = null;
+    private static volatile boolean _sslChecked = false;
 
     public void init(FilterConfig filterConfig) throws ServletException
     {
@@ -95,20 +95,24 @@ public class AuthFilter implements Filter
             url = new URL("https", url.getHost(), port, url.getFile());
 
             // If this is the first time redirecting to SSL, attempt a direct connection to the SSL URL first.
-            // If connection fails, treat it like a startup failure. #10968
-            if (null == _sslChecked)
+            // If connection fails, treat it like a startup failure. #10968 & #11103.
+            if (!_sslChecked)
             {
-                String message = HttpsUtil.testSslUrl(url, "");
-                _sslChecked = true;
-
-                if (null != message)
+                if (AppProps.getInstance().isDevMode())
                 {
-                    //noinspection ThrowableInstanceNeverThrown
-                    ConfigurationException ce = new ConfigurationException(message);
-                    ModuleLoader.getInstance().setStartupFailure(ce);
-                    ExceptionUtil.handleException(req, resp, ce, null, true);
-                    return;
+                    String message = HttpsUtil.testSslUrl(url, "");
+
+                    if (null != message)
+                    {
+                        //noinspection ThrowableInstanceNeverThrown
+                        ConfigurationException ce = new ConfigurationException(message);
+                        ModuleLoader.getInstance().setStartupFailure(ce);
+                        ExceptionUtil.handleException(req, resp, ce, null, true);
+                        return;
+                    }
                 }
+
+                _sslChecked = true;
             }
 
             resp.sendRedirect(url.toString());
