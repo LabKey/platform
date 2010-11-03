@@ -112,25 +112,25 @@ public class CustomViewUtil
         QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, queryName, viewName);
         QueryView qview = schema.createView(context, settings, null);
 
+        boolean newView = false;
         CustomView view = qview.getCustomView();
         if (view == null)
         {
             if (viewName == null)
+            {
                 // create a new default view if it doesn't exist
                 view = qview.getQueryDef().createCustomView(context.getUser(), viewName);
+                newView = true;
+            }
             else
+            {
                 return Collections.emptyMap();
+            }
         }
 
         Map<String, Object> ret = toMap(view, includeFieldMeta);
-
-        // Get list of allowable container filters
-        List<String[]> allowableContainerFilterNames = Lists.transform(qview.getAllowableContainerFilterTypes(), new Function<ContainerFilter.Type, String[]>() {
-            public String[] apply(ContainerFilter.Type input) {
-                return new String[] { input.name(), input.toString() };
-            }
-        });
-        ret.put("allowableContainerFilters", allowableContainerFilterNames);
+        if (newView)
+            ret.put("new", true);
 
         return ret;
     }

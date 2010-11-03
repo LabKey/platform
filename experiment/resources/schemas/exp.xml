@@ -882,6 +882,7 @@
           <ns:column columnName="TextColor" />
           <ns:column columnName="BackgroundColor" />
       </ns:columns>
+      <ns:cacheSize>10000</ns:cacheSize>
     </ns:table>
     <ns:table tableName="PropertyValidator" tableDbType="TABLE">
       <ns:columns>

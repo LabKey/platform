@@ -3379,12 +3379,18 @@ public class QueryController extends SpringActionController
         }
     }
 
-    
-    // UNDONE: should use POST, change to FormHandlerAction
+
     @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
-    public class DeleteViewAction extends SimpleViewAction<DeleteViewForm>
+    public class DeleteViewAction extends ApiAction<DeleteViewForm>
     {
-        public ModelAndView getView(DeleteViewForm form, BindException errors) throws Exception
+        @Override
+        protected ModelAndView handleGet() throws Exception
+        {
+            HttpView.throwUnauthorized();
+            return null;
+        }
+
+        public ApiResponse execute(DeleteViewForm form, BindException errors) throws Exception
         {
             CustomView view = form.getCustomView();
             if (view == null)
@@ -3398,20 +3404,30 @@ public class QueryController extends SpringActionController
                     HttpView.throwUnauthorized();
             }
             view.delete(getUser(), getViewContext().getRequest());
-            return HttpView.redirect(getSuccessURL(form));
-        }
 
-        public ActionURL getSuccessURL(DeleteViewForm form)
-        {
-            String returnURL = getViewContext().getRequest().getParameter(QueryParam.srcURL.toString());
-            if (returnURL != null)
-                return new ActionURL(returnURL);
-            return form.urlFor(QueryAction.begin);
-        }
+            // Delete the first shadowed custom view, if available.
+            if (form.isComplete())
+            {
+                form.setCustomView(null);
+                CustomView shadowed = form.getCustomView();
+                if (shadowed != null && shadowed.isEditable())
+                {
+                    if (!shadowed.isShared() || getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
+                        shadowed.delete(getUser(), getViewContext().getRequest());
+                }
+            }
 
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
+            // Try to get a custom view of the same name as the view we just deleted.
+            // The deleted view may have been a session view or a personal view masking shared view with the same name.
+            form.setCustomView(null);
+            view = form.getCustomView();
+            String nextViewName = null;
+            if (view != null)
+                nextViewName = view.getName();
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("viewName", nextViewName);
+            return response;
         }
     }
 

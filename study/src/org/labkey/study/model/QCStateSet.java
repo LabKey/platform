@@ -196,6 +196,7 @@ public class QCStateSet
 
     public static QCStateSet getPublicStates(Container container)
     {
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
         QCState[] states = StudyManager.getInstance().getQCStates(container);
         List<QCState> selectedStates = new ArrayList<QCState>();
         for (QCState state : states)
@@ -203,11 +204,12 @@ public class QCStateSet
             if (state.isPublicData())
                 selectedStates.add(state);
         }
-        return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), false, PUBLIC_STATES_LABEL);
+        return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), study.isBlankQCStatePublic(), PUBLIC_STATES_LABEL);
     }
 
     public static QCStateSet getPrivateStates(Container container)
     {
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
         QCState[] states = StudyManager.getInstance().getQCStates(container);
         List<QCState> selectedStates = new ArrayList<QCState>();
         for (QCState state : states)
@@ -215,7 +217,7 @@ public class QCStateSet
             if (!state.isPublicData())
                 selectedStates.add(state);
         }
-        return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), false, PRIVATE_STATES_LABEL);
+        return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), !study.isBlankQCStatePublic(), PRIVATE_STATES_LABEL);
     }
 
     public static QCStateSet getDefaultStates(Container container)
@@ -272,7 +274,7 @@ public class QCStateSet
         List<QCStateSet> set = new ArrayList<QCStateSet>();
 
         QCStateSet publicStates = getPublicStates(container);
-        if (publicStates.getStates().size() > 1)
+        if (publicStates.getStates().size() > 1 || publicStates.isIncludeUnmarked())
             set.add(QCStateSet.getPublicStates(container));
 
         QCStateSet privateStates = getPrivateStates(container);

@@ -172,7 +172,7 @@ public class ExportExcelReport extends RedirectReport
                 continue;
 
             TableInfo tinfo = def.getTableInfo(user, checkUserPermissions);
-            Sort sort = new Sort(StudyService.get().getSubjectColumnName(getContainer()) + ",SequenceNum");
+            Sort sort = new Sort(StudyService.get().getSubjectColumnName(study.getContainer()) + ",SequenceNum");
             ResultSet rs = Table.select(tinfo, Table.ALL_COLUMNS, siteFilter, sort);
 
             String label = def.getLabel() != null ? def.getLabel() : String.valueOf(def.getDataSetId());
@@ -211,7 +211,7 @@ public class ExportExcelReport extends RedirectReport
                     null);
 
             writer.createColumns(rs.getMetaData());
-            renderSheet(workbook, writer, StudyService.get().getSubjectNounPlural(getContainer()), rs);
+            renderSheet(workbook, writer, StudyService.get().getSubjectNounPlural(study.getContainer()), rs);
         }
 
         ExcelWriter.closeWorkbook(workbook, outputStream);

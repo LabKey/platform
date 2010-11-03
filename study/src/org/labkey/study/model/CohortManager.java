@@ -306,10 +306,8 @@ public class CohortManager
         }
     }
 
-    private void updateCohorts(User user, StudyImpl study, TableInfo tableParticipant, DataSetDefinition dsd, ColumnInfo cohortLabelCol)
+    private SQLFragment getParticipantVisitCohortSql(User user, StudyImpl study, DataSetDefinition dsd, ColumnInfo cohortLabelCol)
     {
-        TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
-
         // The following SQL will return a list of all participant/visit combinations, ordered by participant and sub-ordered by chronological
         // visit order.  There will be a column for cohort assignment, if available in the cohort dataset.  For example:
         //
@@ -327,6 +325,7 @@ public class CohortManager
         // assignment never changes.  Participant "NegativeUntil2" starts out negative, then switches to positive in visit
         // 2.  The following code uses this information to fill in the blanks between assignment changes, saving a cohort
         // assignment for every known participant/visit combination based on the results of this query.
+        TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
         ColumnInfo subjectCol = ((DataSetDefinition.DatasetSchemaTableInfo)cohortDatasetTinfo).getParticipantColumn();
         SQLFragment pvCohortSql = new SQLFragment("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, " + cohortLabelCol.getValueSql("D") + "\n" +
                 "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV") + "\n" +
@@ -337,6 +336,39 @@ public class CohortManager
                 "WHERE PV.Container = ? " + (study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "") + "\n" +
                 "ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
         pvCohortSql.add(study.getContainer());
+        return pvCohortSql;
+    }
+
+    private SQLFragment getContinuousStudyCohortSql(User user, StudyImpl study, DataSetDefinition dsd, ColumnInfo cohortLabelCol)
+    {
+        // Continuous studies don't populate study.ParticipantVisit, so we have a simpler form of the SQL here.  This path
+        // assumes that the study is continuous and that advanced cohort management (which allows subjects to change cohorts
+        // over time) is not enabled.
+        if (study.getTimepointType() != TimepointType.CONTINUOUS)
+            throw new IllegalArgumentException("Only continuous studies should populate cohorts through this code path.");
+        if (study.isAdvancedCohorts())
+            throw new IllegalStateException("Continuous studies require simple cohort management");
+
+        TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
+        ColumnInfo subjectCol = ((DataSetDefinition.DatasetSchemaTableInfo)cohortDatasetTinfo).getParticipantColumn();
+        SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, " + cohortLabelCol.getValueSql("D") + "\n" +
+                "FROM " + StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P") + "\n" +
+                "  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
+                    "\tP.ParticipantId = " + subjectCol.getValueSql("D") + "\n" +
+                "WHERE P.Container = ? " + "\n" +
+                "ORDER BY P.ParticipantId" + (!dsd.isDemographicData() ? ", D.SequenceNumMin" : ""));
+        pCohortSql.add(study.getContainer());
+        return pCohortSql;
+    }
+
+    private void updateCohorts(User user, StudyImpl study, TableInfo tableParticipant, DataSetDefinition dsd, ColumnInfo cohortLabelCol)
+    {
+        SQLFragment cohortSql;
+        // Continuous studies don't populate the participant/visit table, so we use simpler SQL (which doesn't support advanced cohort features)
+        if (study.getTimepointType() != TimepointType.CONTINUOUS)
+            cohortSql = getParticipantVisitCohortSql(user, study, dsd, cohortLabelCol);
+        else
+            cohortSql = getContinuousStudyCohortSql(user, study, dsd, cohortLabelCol);
 
         Map<String, Integer> initialCohortAssignments = new HashMap<String, Integer>();
         Map<String, Integer> currentCohortAssignments = new HashMap<String, Integer>();
@@ -346,7 +378,7 @@ public class CohortManager
         ResultSet rs = null;
         try
         {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), pvCohortSql);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), cohortSql);
             String prevParticipantId = null;
             Integer prevCohortId = null;
 
@@ -431,7 +463,7 @@ public class CohortManager
             participantRow.add(study.getContainer().getId());
             participantParams.add(participantRow);
 
-            if (!study.isAdvancedCohorts())
+            if (!study.isAdvancedCohorts() && study.getTimepointType() != TimepointType.CONTINUOUS)
             {
                 List<Object> participantVisitRow = new ArrayList<Object>();
                 addCohortIdParameter(participantVisitRow, currentCohortId);
@@ -475,7 +507,7 @@ public class CohortManager
             throw new RuntimeSQLException(e);
         }
     }
-    
+
     private void addCohortIdParameter(List<Object> parameters, Integer cohortId)
     {
         if (cohortId != null)

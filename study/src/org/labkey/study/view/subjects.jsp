@@ -85,6 +85,7 @@ ul.subjectlist {
         renderSubjects(_maxSubjects, _cols, undefined);
     }
 
+    var _initialRenderComplete = false;
     function renderSubjects(maxCount, cols, substr)
     {
         if (_subjects.length == 0)
@@ -93,6 +94,14 @@ ul.subjectlist {
                     _singularNoun + " IDs will appear here after specimens or datasets are imported.";
             return;
         }
+
+        // Lock the initial div size on first render, but allow it to change if we're filtering:
+        if (_initialRenderComplete)
+        {
+            var outerDiv = document.getElementById(_divId + 'wrapper');
+            outerDiv.removeAttribute('style');
+        }
+        _initialRenderComplete = true;
 
         var maxPerCol = Math.ceil(maxCount / cols);
         var html = '<table><tr><td valign="top"><ul class="subjectlist">';
@@ -156,7 +165,7 @@ ul.subjectlist {
         loadParticipants();
     });
 </script>
-<div id="<%= divId %>wrapper">
+<div id="<%= divId %>wrapper" style="height:<%= 1.5 * rows + 4 %>em">
     Filter: <input type="text" size="15" onKeyUp="updateSubjects(this.value); return false;">
     <div id="<%= divId %>">Loading...</div>
 </div>

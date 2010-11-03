@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -38,7 +39,11 @@
     <input type="hidden" name="clearParticipants" value="false">
     <input type="hidden" name="updateParticipants" value="false">
 <%
-    WebPartView.startTitleFrame(out, "Assignment Mode", null, "100%", null);
+    // Continuous studies don't populate study.ParticipantVisit or study.Visit, so it's not yet possible to
+    // do advanced cohort calculations for continuous studies.  This support could be added in the future.
+    if (study.getTimepointType() != TimepointType.CONTINUOUS)
+    {
+        WebPartView.startTitleFrame(out, "Assignment Mode", null, "100%", null);
 %>
     <script type="text/javascript">
         function setAdvanced(advanced)
@@ -71,8 +76,9 @@
     <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport" id="advancedCohorts" 
            value="true" <%=study.isAdvancedCohorts() ? "checked" : ""%>>Advanced: <%= h(subjectNounPlural) %> may change cohorts mid-study.  Note that advanced cohort management requires automatic assignment via a study dataset.<br>
 <%
-    WebPartView.endTitleFrame(out);
-
+        WebPartView.endTitleFrame(out);
+    }
+    
     if (!study.isAdvancedCohorts())
     {
         WebPartView.startTitleFrame(out, "Assignment Type", null, "100%", null);

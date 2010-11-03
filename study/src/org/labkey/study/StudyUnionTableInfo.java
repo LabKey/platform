@@ -144,7 +144,7 @@ public class StudyUnionTableInfo extends VirtualTable
 
         if (0==count)
         {
-            sqlf.append("SELECT '' as dataset, 0 as datasetid");
+            sqlf.append("SELECT CAST(NULL AS VARCHAR) as dataset, 0 as datasetid");
             for (String column : unionColumns)
             {
                 sqlf.append(", ");

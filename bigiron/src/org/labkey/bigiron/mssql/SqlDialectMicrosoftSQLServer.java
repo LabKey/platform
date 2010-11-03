@@ -314,9 +314,15 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     @Override
+    public boolean supportsSelectConcat()
+    {
+        return false;
+    }
+
+    @Override
     public SQLFragment getSelectConcat(SQLFragment selectSql)
     {
-        return limitRows(selectSql, 1);    // No SELECT_CONCAT support for SQL Server 2000
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
     @Override
@@ -661,12 +667,15 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         List<String> colSpec = new ArrayList<String>();
         colSpec.add(prop.getName());
         colSpec.add(sqlTypeNameFromSqlTypeInt(prop.getSqlTypeInt()));
+
         if (prop.getSqlTypeInt() == Types.VARCHAR)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getSqlTypeInt() == Types.NUMERIC)
             colSpec.add("(15,4)");
         if (!prop.isNullable()) colSpec.add("NOT NULL");
         // todo auto increment?
+
+        if (!prop.isNullable() || prop.isPrimaryKey()) colSpec.add("NOT NULL");
 
         return StringUtils.join(colSpec, ' ');
     }

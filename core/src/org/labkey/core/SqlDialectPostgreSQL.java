@@ -339,6 +339,12 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
     @Override
+    public boolean supportsSelectConcat()
+    {
+        return true;
+    }
+
+    @Override
     public SQLFragment getSelectConcat(SQLFragment selectSql)
     {
         SQLFragment result = new SQLFragment("array_to_string(array(");

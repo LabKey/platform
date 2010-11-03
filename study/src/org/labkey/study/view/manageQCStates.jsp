@@ -44,24 +44,19 @@
         WebPartView.startTitleFrame(out, "Currently Defined Dataset QC States", null, "100%", null);
     %>
         <table>
-    <%
-                if (bean.getQCStates() == null || bean.getQCStates().length == 0)
-                {
-            %>
-            <tr>
-                <td colspan="5">
-                    <em>No QC states have been defined for datasets in this study.</em>
-                </td>
-            </tr>
-            <%
-                }
-            %>
             <tr>
                 <th>&nbsp;</th>
                 <th>State Name</th>
                 <th>State Description</th>
                 <th>Public Data<%= helpPopup("Public Data", "The 'Public Data' setting determines whether data in each QC state is shown to users by default.") %></th>
                 <th>&nbsp;</th>
+            </tr>
+                <td>&nbsp;</td>
+                <td>[none]</td>
+                <td>Applies to data that has not been assigned an explicit QC State</td>
+                <td align="center"><input name="blankQCStatePublic" value="true" type="checkbox" <%= bean.getStudy().isBlankQCStatePublic() ? "CHECKED" : "" %>/></td>
+                <td>[in&nbsp;use]<%= helpPopup("Blank QC State", "This QC state is provided by the system and cannot be deleted.") %></td>
+            <tr>
             </tr>
             <%
                 ActionURL baseDeleteStateURL = new ActionURL(StudyController.DeleteQCStateAction.class, me.getViewContext().getContainer());

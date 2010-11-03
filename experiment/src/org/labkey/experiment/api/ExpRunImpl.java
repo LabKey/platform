@@ -375,8 +375,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         List<ExpProtocolApplication> listPA = new ArrayList<ExpProtocolApplication>();
         List<ExpMaterial> listM = new ArrayList<ExpMaterial>();
         List<ExpData> listD = new ArrayList<ExpData>();
-        List<ExpProtocolApplication> ancestorPAStack = new ArrayList<ExpProtocolApplication>();
-        List<ExpProtocolApplication> descendantPAStack = new ArrayList<ExpProtocolApplication>();
+        Set<ExpProtocolApplication> ancestorPAStack = new LinkedHashSet<ExpProtocolApplication>();
+        Set<ExpProtocolApplication> descendantPAStack = new LinkedHashSet<ExpProtocolApplication>();
         ExpProtocolApplicationImpl[] apps = getProtocolApplications();
 
         boolean found = false;
@@ -473,7 +473,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 throw new IllegalStateException("Infinite loop detected for run " + getRowId());
             }
 
-            ExpProtocolApplication pa = descendantPAStack.get(0);
+            ExpProtocolApplication pa = descendantPAStack.iterator().next();
             for (ExpMaterial m : pa.getOutputMaterials())
             {
                 listM.add(m);
@@ -500,7 +500,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 throw new IllegalStateException("Infinite loop detected for run " + getRowId());
             }
 
-            ExpProtocolApplication pa = ancestorPAStack.get(0);
+            ExpProtocolApplication pa = ancestorPAStack.iterator().next();
             if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun)
                 break;
             for (ExpMaterial m : pa.getInputMaterials())

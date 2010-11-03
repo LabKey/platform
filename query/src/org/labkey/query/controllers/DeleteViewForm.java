@@ -20,8 +20,25 @@ import org.labkey.api.query.QueryForm;
 
 public class DeleteViewForm extends QueryForm
 {
+    private boolean _complete;
+
     public DeleteViewForm()
     {
         super(null);
+    }
+
+    /**
+     * Delete both the saved view and session view, if present.
+     * Otherwise just the first view found (session or saved) will be deleted.
+     * @return
+     */
+    public boolean isComplete()
+    {
+        return _complete;
+    }
+
+    public void setComplete(boolean b)
+    {
+        _complete = b;
     }
 }

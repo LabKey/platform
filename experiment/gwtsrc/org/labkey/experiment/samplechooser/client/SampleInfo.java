@@ -47,11 +47,13 @@ public class SampleInfo
     private GWTSampleSet _sampleSet;
     private final String _defaultSampleLSID;
     private final String _defaultSampleSetLSID;
+    private final boolean _selectionLocked;
 
-    public SampleInfo(int index, SampleCache cache, String defaultSampleLSID, String sampleSetLSID)
+    public SampleInfo(int index, SampleCache cache, String defaultSampleLSID, String sampleSetLSID, boolean locked)
     {
         _defaultSampleLSID = defaultSampleLSID;
         _defaultSampleSetLSID = sampleSetLSID;
+        _selectionLocked = locked;
         _name = "Sample " + (index + 1);
         _index = index;
         _cache = cache;
@@ -234,8 +236,12 @@ public class SampleInfo
                 if (material.getLsid().equals(_defaultSampleLSID))
                 {
                     _materialListBox.setSelectedIndex(_materialListBox.getItemCount() - 1);
-                    _materialListBox.setEnabled(false);
-                    _sampleSetListBox.setEnabled(false);
+                    if (_selectionLocked)
+                    {
+                        // Selection is locked, don't let the user change the value
+                        _materialListBox.setEnabled(false);
+                        _sampleSetListBox.setEnabled(false);
+                    }
                 }
             }
             pushToForm();

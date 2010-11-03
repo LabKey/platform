@@ -640,6 +640,8 @@ public class VisualizationController extends SpringActionController
         {
             Map<String, Object> properties = new HashMap<String, Object>();
             properties.put("subjectColumn", StudyService.get().getSubjectColumnName(getContainer()));
+            properties.put("subjectNounSingular", StudyService.get().getSubjectNounSingular(getContainer()));
+            properties.put("subjectNounPlural", StudyService.get().getSubjectNounPlural(getContainer()));
             return properties;
         }
 

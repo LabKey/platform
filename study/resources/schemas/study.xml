@@ -48,6 +48,9 @@
         <ns:description>Whether each study uses manual (versus automatic) cohort assignment.</ns:description>
       </ns:column>
       <ns:column columnName="LSID"/>
+      <ns:column columnName="BlankQCStatePublic">
+        <ns:description>Whether data without an assigned QC state should be considered public.  Applies only in studies where QC states are configured.</ns:description>
+      </ns:column>
       <ns:column columnName="DefaultPipelineQCState">
         <ns:description>The default quality control state to be applied to data imported via the pipeline.</ns:description>
       </ns:column>

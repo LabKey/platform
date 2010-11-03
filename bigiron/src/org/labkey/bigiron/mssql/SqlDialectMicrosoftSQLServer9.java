@@ -79,6 +79,12 @@ public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
     }
 
     @Override
+    public boolean supportsSelectConcat()
+    {
+        return true;
+    }
+
+    @Override
     public SQLFragment getSelectConcat(SQLFragment selectSql)
     {
         String sql = selectSql.getSQL();

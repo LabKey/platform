@@ -3016,6 +3016,7 @@ public class StudyController extends BaseStudyController
         private Integer _defaultAssayQCState;
         private Integer _defaultDirectEntryQCState;
         private boolean _showPrivateDataByDefault;
+        private boolean _blankQCStatePublic;
         private ReturnURLString _returnUrl;
 
         public int[] getIds()
@@ -3147,6 +3148,16 @@ public class StudyController extends BaseStudyController
         {
             _returnUrl = returnUrl;
         }
+
+        public boolean isBlankQCStatePublic()
+        {
+            return _blankQCStatePublic;
+        }
+
+        public void setBlankQCStatePublic(boolean blankQCStatePublic)
+        {
+            _blankQCStatePublic = blankQCStatePublic;
+        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
@@ -3249,6 +3260,7 @@ public class StudyController extends BaseStudyController
         if (!nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
             !nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
             !nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
+            !nullSafeEqual(study.isBlankQCStatePublic(), form.isBlankQCStatePublic()) ||
             study.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
         {
             study = study.createMutable();
@@ -3256,6 +3268,7 @@ public class StudyController extends BaseStudyController
             study.setDefaultPipelineQCState(form.getDefaultPipelineQCState());
             study.setDefaultDirectEntryQCState(form.getDefaultDirectEntryQCState());
             study.setShowPrivateDataByDefault(form.isShowPrivateDataByDefault());
+            study.setBlankQCStatePublic(form.isBlankQCStatePublic());
             StudyManager.getInstance().updateStudy(user, study);
         }
     }

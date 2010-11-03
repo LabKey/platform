@@ -58,6 +58,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Integer _defaultAssayQCState;
     private Integer _defaultDirectEntryQCState;
     private boolean _showPrivateDataByDefault = true;
+    private boolean _blankQCStatePublic = false;
     private boolean _isAllowReload;
     private Integer _reloadInterval;
     private Date _lastReload;
@@ -334,6 +335,18 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         _showPrivateDataByDefault = showPrivateDataByDefault;
     }
+
+    public boolean isBlankQCStatePublic()
+    {
+        return _blankQCStatePublic;
+    }
+
+    public void setBlankQCStatePublic(boolean blankQCStatePublic)
+    {
+        _blankQCStatePublic = blankQCStatePublic;
+    }
+
+    /** Used to determine whether records without an assigned QC state are considered 'public' data */
 
     public int getNumExtendedProperties(User user)
     {

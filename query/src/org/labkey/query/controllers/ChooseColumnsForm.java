@@ -132,32 +132,6 @@ public class ChooseColumnsForm extends DesignForm
         ff_columnListName = name;
     }
 
-    private void addColumns(Map<FieldKey, ColumnInfo> map, TableInfo table, FieldKey tableKey, int depth)
-    {
-        for (String columnName : table.getColumnNameSet())
-        {
-            ColumnInfo column = table.getColumn(columnName);
-            FieldKey fieldKey;
-            if (tableKey == null)
-            {
-                fieldKey = FieldKey.fromString(columnName);
-            }
-            else
-            {
-                fieldKey = new FieldKey(tableKey, columnName);
-            }
-            map.put(fieldKey, column);
-            if (depth > 0)
-            {
-                TableInfo fkTableInfo = column.getFkTableInfo();
-                if (fkTableInfo != null)
-                {
-                    addColumns(map, fkTableInfo, fieldKey, depth - 1);
-                }
-            }
-        }
-    }
-
     public ActionURL urlFor(QueryAction action)
     {
         ActionURL ret = super.urlFor(action);
@@ -166,17 +140,6 @@ public class ChooseColumnsForm extends DesignForm
         ret.addParameter(QueryParam.dataRegionName.toString(), getDataRegionName());
         ret.addParameter(QueryParam.queryName.toString(), getQueryName());
         return ret;
-    }
-
-    private Map<FieldKey, ColumnInfo> getAvailableColumns()
-    {
-        Map<FieldKey, ColumnInfo> ret = new TreeMap<FieldKey, ColumnInfo>();
-        TableInfo table = getQueryDef().getTable(getSchema(), null, true);
-        addColumns(ret, table, null, 3);
-
-        return QueryService.get().getColumns(table, ret.keySet());
-
-        //return ret;
     }
 
     public static boolean isFilterOrSort(String dataRegionName, String param)
@@ -215,7 +178,10 @@ public class ChooseColumnsForm extends DesignForm
     {
         FieldKey fKey = FieldKey.fromString(colName);
         String caption = fKey.getCaption();
-        Map<FieldKey,ColumnInfo> columns = getAvailableColumns();
+
+        TableInfo table = getQueryDef().getTable(getSchema(), null, true);
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(table, Collections.singleton(fKey));
+
         ColumnInfo column = columns.get(fKey);
         if (column != null)
             caption = column.getLabel();

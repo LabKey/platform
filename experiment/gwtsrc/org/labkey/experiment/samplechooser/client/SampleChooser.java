@@ -91,7 +91,8 @@ public class SampleChooser extends SampleChooserUtils implements EntryPoint
             {
                 String sampleLSID = PropertyUtil.getServerProperty(PROP_PREFIX_SELECTED_SAMPLE_LSID + i);
                 String sampleSetLSID = PropertyUtil.getServerProperty(PROP_PREFIX_SELECTED_SAMPLE_SET_LSID + i);
-                _sampleInfos[i] = new SampleInfo(i, cache, sampleLSID, sampleSetLSID);
+                boolean locked = Boolean.parseBoolean(PropertyUtil.getServerProperty(PROP_PREFIX_SELECTED_SAMPLE_LOCKED + i));
+                _sampleInfos[i] = new SampleInfo(i, cache, sampleLSID, sampleSetLSID, locked);
                 _sampleInfos[i].setVisible(i < _maxSampleCount);
 
                 int tableRow = i + 1;
