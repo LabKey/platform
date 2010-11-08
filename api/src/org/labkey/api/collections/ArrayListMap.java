@@ -15,6 +15,8 @@
  */
 package org.labkey.api.collections;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.util.Pair;
 
 import java.io.Serializable;
@@ -210,13 +212,40 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    public static void main(String[] args)
+    public static class TestCase extends Assert
     {
-        Map<String,String> m = new ArrayListMap<String,String>(4);
-        m.put("A", "one");
-        m.put("B", "two");
-        m.put("C", "three");
-        m.put("D", "four");
-        System.out.println(m.toString());
+        @Test
+        public void test()
+        {
+            ArrayListMap<String,String> a = new ArrayListMap<String,String>(4);
+            a.put("A", "one");
+            a.put("B", "two");
+            a.put("C", "three");
+            a.put("D", "four");
+
+            ArrayListMap<String,String> b = new ArrayListMap<String,String>(a, new ArrayList<String>());
+            b.put("A", "ONE");
+            b.put("E", "FIVE");
+            a.put("F", "six");
+            b.put("G", "SEVEN");
+
+            assertEquals(a.get("A"), "one");
+            assertEquals(b.get("A"), "ONE");
+
+            assertTrue(a.containsKey("E"));
+            assertNull(a.get("E"));
+            assertEquals(b.get("E"),"FIVE");
+            a.put("E", "five");
+            assertEquals(a.get("E"), "five");
+            assertEquals(b.get("E"), "FIVE");
+
+            assertTrue(b.containsKey("F"));
+            assertNull(b.get("F"));
+            assertEquals(a.get("F"), "six");
+            
+            assertEquals(b.get("G"), "SEVEN");
+            
+            assertSame(a.getFindMap(), b.getFindMap());
+        }
     }
 }
