@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -534,6 +535,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             PageFlowUtil.TestCase.class,
             ResultSetUtil.TestCase.class
             ,StorageProvisioner.TestCase.class
+            ,ArrayListMap.TestCase.class
             //,RateLimiter.TestCase.class
         ));
 
