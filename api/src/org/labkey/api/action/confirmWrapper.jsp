@@ -27,6 +27,7 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView me = (JspView) HttpView.currentView();
     ViewContext context = me.getViewContext();
@@ -34,7 +35,9 @@
     PropertyValues propertyValues = confirmAction.getPropertyValues();
     URLHelper cancelUrl = confirmAction.getCancelUrl();
 %>
-<form action="<%=context.getActionURL().getAction()%>.post" method="POST"><%
+<form action="<%=context.getActionURL().getAction()%>.post" method="POST">
+    <labkey:csrf/>
+    <%
     me.include(me.getBody(), out);
     writePropertyValues(out, propertyValues);
 

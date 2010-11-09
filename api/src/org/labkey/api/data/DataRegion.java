@@ -30,6 +30,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -850,7 +851,7 @@ public class DataRegion extends DisplayElement
     protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, List<DisplayColumn> renderers) throws IOException
     {
         if(renderButtons)
-            renderFormHeader(out, MODE_GRID);
+            renderFormHeader(ctx, out, MODE_GRID);
         out.write("\n<table class=\"labkey-data-region");
 
         if (isShowBorders())
@@ -1381,7 +1382,7 @@ public class DataRegion extends DisplayElement
     }
 
 
-    protected void renderFormHeader(Writer out, int mode) throws IOException
+    protected void renderFormHeader(RenderContext ctx, Writer out, int mode) throws IOException
     {
         out.write("<form method=\"post\" ");
         String name = getName();
@@ -1413,15 +1414,15 @@ public class DataRegion extends DisplayElement
                 out.write("action=\"\">");
         }
 
-        renderHiddenFormFields(out, mode);
+        renderHiddenFormFields(ctx, out, mode);
     }
 
     // Output hidden params to be posted
-    protected void renderHiddenFormFields(Writer out, int mode) throws IOException
+    protected void renderHiddenFormFields(RenderContext ctx, Writer out, int mode) throws IOException
     {
         if (mode == MODE_GRID)
-            out.write("<input type=\"hidden\" name=\"" + DataRegionSelection.DATA_REGION_SELECTION_KEY + "\" value=\"" + PageFlowUtil.filter(getSelectionKey()) + "\" />");
-
+            out.write("<input type=\"hidden\" name=\"" + DataRegionSelection.DATA_REGION_SELECTION_KEY + "\" value=\"" + PageFlowUtil.filter(getSelectionKey()) + "\">");
+        out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + CSRFUtil.getExpectedToken(ctx.getRequest()) + "\">");
         for (Pair<String, Object> field : _hiddenFormFields)
         {
             if (field.second instanceof HString)
@@ -1429,6 +1430,7 @@ public class DataRegion extends DisplayElement
             else
                 out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((String)field.second) + "\">");
         }
+
     }
 
     public void setRecordSelectorValueColumns(String... columns)
@@ -1537,7 +1539,7 @@ public class DataRegion extends DisplayElement
             ResultSet rs = ctx.getResultSet();
             List<DisplayColumn> renderers = getDisplayColumns();
 
-            renderFormHeader(out, MODE_DETAILS);
+            renderFormHeader(ctx, out, MODE_DETAILS);
 
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             RowMap rowMap = null;
@@ -1774,7 +1776,7 @@ public class DataRegion extends DisplayElement
         else
             buttonBar = _updateButtonBar;
 
-        renderFormHeader(out, action);
+        renderFormHeader(ctx, out, action);
         renderMainErrors(ctx, out);
 
         out.write("<table>");
@@ -2006,7 +2008,7 @@ public class DataRegion extends DisplayElement
         else
             buttonBar = _updateButtonBar;
 
-        renderFormHeader(out, action);
+        renderFormHeader(ctx, out, action);
         renderMainErrors(ctx, out);
 
         out.write("<table>");
