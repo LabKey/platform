@@ -103,6 +103,7 @@ LABKEY.requiresScript('completion.js');
 </table>
 
 <form action=newGroup.post method=POST>
+    <labkey:csrf/>
     <table>
         <tr>
             <td class="labkey-form-label">Create new group</td>

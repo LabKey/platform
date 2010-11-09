@@ -78,6 +78,7 @@ Ext.onReady(function()
 <%if (bean.group.getUserId() > 0){%><%=PageFlowUtil.generateButton("Rename Group", "renameGroup.view?id=" + bean.group.getUserId())%><%}%>
 
 <form id="groupMembersForm" action="updateMembers.post" method="POST">
+<labkey:csrf />
 <%
 if (bean.messages.size() > 0)
 {
@@ -168,6 +169,7 @@ if (!bean.isSystemGroup)
     {
         %>
         <form action="standardDeleteGroup.post" method="POST">
+        <labkey:csrf/>
         <%=PageFlowUtil.generateSubmitButton("Delete Empty Group", "return confirm('Permanently delete group " + bean.groupName + "?')")%>
         <input type="hidden" name="group" value="<%= bean.groupName %>">
         </form>

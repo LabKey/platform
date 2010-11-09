@@ -389,7 +389,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresSiteAdmin @CSRF
     public class DeactivateUsersAction extends BaseActivateUsersAction
     {
         public DeactivateUsersAction()
@@ -398,7 +398,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresSiteAdmin @CSRF
     public class ActivateUsersAction extends BaseActivateUsersAction
     {
         public ActivateUsersAction()
@@ -407,7 +407,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresSiteAdmin @CSRF
     public class DeleteUsersAction extends FormViewAction<UserIdForm>
     {
         public void validateCommand(UserIdForm target, Errors errors)
@@ -1153,7 +1153,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresLogin
+    @RequiresLogin @CSRF
     public class ShowUpdateAction extends FormViewAction<UpdateForm>
     {
         Integer _userId;

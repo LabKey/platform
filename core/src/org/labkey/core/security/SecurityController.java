@@ -305,7 +305,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(AdminPermission.class) @CSRF
     public class StandardDeleteGroupAction extends FormHandlerAction<GroupForm>
     {
         public void validateCommand(GroupForm form, Errors errors) {}
@@ -544,7 +544,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(AdminPermission.class) @CSRF
     public class NewGroupAction extends FormViewAction<NewGroupForm>
     {
         public ModelAndView getView(NewGroupForm form, boolean reshow, BindException errors) throws Exception
@@ -1033,7 +1033,7 @@ public class SecurityController extends SpringActionController
         toInherited,
     }
    
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(AdminPermission.class) @CSRF
     public class UpdatePermissionsAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors) {}
@@ -1216,7 +1216,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresSiteAdmin @CSRF
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
         public ModelAndView getView(AddUsersForm form, boolean reshow, BindException errors) throws Exception

@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<DeactivateUsersBean> me = (JspView<DeactivateUsersBean>) HttpView.currentView();
     DeactivateUsersBean bean = me.getModelBean();
@@ -38,6 +39,7 @@
     %>
     </ul>
 <form action="<%=urlPost.getEncodedLocalURIString()%>" method="post">
+    <labkey:csrf/>
     <input type="hidden" name="redirUrl" value="<%=bean.getRedirUrl().getEncodedLocalURIString()%>"/>
     <%
         for(User user : bean.getUsers())

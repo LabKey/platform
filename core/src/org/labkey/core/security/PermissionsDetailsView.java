@@ -25,6 +25,7 @@ import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.VBox;
@@ -149,7 +150,8 @@ public class PermissionsDetailsView extends WebPartView
         //out.println("Go back to <a href=\"" + ActionURL.toPathString("Project", "begin", _c.getPath()) + "\">" + _c.getPath() + "</a>");
 
         out.println("<form name=\"updatePermissions\" action=\"updatePermissions.post\" method=\"POST\">");
-
+        out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + CSRFUtil.getExpectedToken(getViewContext().getRequest()) + "\">");
+        
         if(_c.isProject())
         {
             boolean subfoldersInherit = SecurityManager.shouldNewSubfoldersInheritPermissions(_c);

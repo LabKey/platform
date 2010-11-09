@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.user.DeleteUsersBean" %>
 <%@ page import="org.labkey.core.user.UserController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<DeleteUsersBean> me = (JspView<DeleteUsersBean>) HttpView.currentView();
     DeleteUsersBean bean = me.getModelBean();
@@ -43,6 +44,7 @@ This action cannot be undone.</p>
     %>
     </ul>
 <form action="<%=urlPost.getEncodedLocalURIString()%>" method="post" name="deleteUsersForm">
+    <labkey:csrf/>
     <%
         for(User user : bean.getUsers())
         {
@@ -65,6 +67,7 @@ This action cannot be undone.</p>
     if(canDeactivate) {
 %>
 <form action="<%=deactivateUsersUrl%>" method="post" name="deactivateUsersForm">
+    <labkey:csrf/>
     <%
         for(User user : bean.getUsers())
         {

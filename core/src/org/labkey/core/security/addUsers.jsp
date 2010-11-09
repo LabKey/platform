@@ -64,6 +64,7 @@
 </script>
 
 <form action="addUsers.post" method=post>
+    <labkey:csrf/>
     <table><%
             if (getErrors("form").hasErrors());
             { %>
