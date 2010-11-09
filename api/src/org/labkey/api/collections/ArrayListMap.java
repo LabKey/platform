@@ -52,16 +52,11 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    protected ArrayListMap(Map<K, Integer> findMap, int columnCount)
-    {
-        this(findMap, new ArrayList<V>(columnCount));
-    }
-
-
     protected ArrayListMap(Map<K, Integer> findMap, List<V> row)
     {
         _findMap = findMap;
         _row = row;
+        assert consistent();
     }
 
 
@@ -84,6 +79,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         {
             i = _findMap.size();
             _findMap.put(key, i);
+            assert consistent();
         }
         else
         {
@@ -138,7 +134,10 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     // CONSIDER: throw UnsupportedOperation()
     public V remove(Object key)
     {
-        return put((K)key, null);
+        if (_findMap.containsKey(key))
+            return put((K)key, null);
+        else
+            return null;
     }
 
 
@@ -209,6 +208,20 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     public List<V> getRow()
     {
         return _row;
+    }
+
+
+    private boolean consistent()
+    {
+        BitSet s = new BitSet();
+        for (Map.Entry<K,Integer> e : _findMap.entrySet())
+        {
+            Integer i = e.getValue();
+            assert 0 <= i && i < _findMap.size();
+            assert !s.get(i);
+            s.set(i);
+        }
+        return true;
     }
 
 
