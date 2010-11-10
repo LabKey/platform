@@ -171,7 +171,7 @@ public class QueryTable extends QueryRelation
         else
             _innerAlias = makeRelationName(_tableInfo.getName());
 
-        String comment = "<QueryTable@" + System.identityHashCode(this);
+        String comment = "<QueryTable";
         if (!StringUtils.isEmpty(_savedName))
             comment += " savedName='" + _savedName + "'";
         comment += " name='" + this._tableInfo.getName() + "' class='" + this._tableInfo.getClass().getSimpleName() + "'>";
@@ -200,7 +200,7 @@ public class QueryTable extends QueryRelation
         sql.append(_tableInfo.getFromSQL(_innerAlias));
         for (SQLFragment j : joins.values())
             sql.append(j);
-        assert sql.appendComment("</QueryTable@" + System.identityHashCode(this) + ">", _schema.getDbSchema().getSqlDialect());
+        assert sql.appendComment("</QueryTable>", _schema.getDbSchema().getSqlDialect());
         return sql;
     }
 

@@ -29,6 +29,7 @@
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -107,20 +108,20 @@
             }
 %>
                 <td colspan="3">
-                <%=bean.writeInput(new HString("title",false), issue.getTitle(), new HString("id=title style=\"width:100%;\"",false))%>
+                <%=bean.writeInput(new HString("title",false), issue.getTitle(), new HString("id=title tabindex=0 style=\"width:100%;\"",false))%>
                 </td></tr>
             <tr>
                 <td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td>
                 <td rowspan="6" valign="top">
                     <table>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(context))%></td></tr>
-                        <tr><td class="labkey-form-label">Changed</td><td><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(context))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(context))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=bean.writeSelect(new HString("resolution",false), issue.getResolution(), bean.getResolutionOptions(c))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(context))%></td></tr>
+                        <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(context))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(context))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=bean.writeSelect(new HString("resolution",false), issue.getResolution(), bean.getResolutionOptions(c), 10)%></td></tr>
         <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus().getSource()) && null != issue.getDuplicate()) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
                         <% if (bean.isEditable("duplicate")) { %>
-                            <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString(issue.getResolution().getSource() != "Duplicate" ? " disabled" : ""))%>
+                            <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\"" + issue.getResolution().getSource() != "Duplicate" ? " disabled" : ""))%>
                             <script type="text/javascript">
                                 var duplicateInput = document.getElementsByName('duplicate')[0];
                                 var duplicateOrig = duplicateInput.value;
@@ -151,8 +152,8 @@
                         <% } %>
                         </td></tr>
         <% } %>
-                        <%=bean.writeCustomColumn(c, new HString("int1",false), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE)%>
-                        <%=bean.writeCustomColumn(c, new HString("int2",false), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE)%>
+                        <%=bean.writeCustomColumn(c, new HString("int1",false), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE, 10)%>
+                        <%=bean.writeCustomColumn(c, new HString("int2",false), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE, 10)%>
                     </table>
                 </td>
                 <td valign="top" rowspan="6"><table>
@@ -167,11 +168,11 @@
                         if (issue.getIssueId() == 0)
                         {
     %>
-                            <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class))%>
+                            <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).getLocalURIString(), null, null, Collections.singletonMap("tabindex", "20"))%>
     <%
                         } else {
     %>
-                            <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()))%>
+                            <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()).getLocalURIString(), null, null, Collections.singletonMap("tabindex", "20"))%>
     <%
                         }
     %>
@@ -185,29 +186,29 @@
     <%
                 }
     %>
-                    <%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1)%>
-                    <%=bean.writeCustomColumn(c, new HString("string2",false), issue.getString2(), IssuesController.ISSUE_STRING2)%>
-                    <%=bean.writeCustomColumn(c, new HString("string3",false), issue.getString3(), IssuesController.ISSUE_STRING3)%>
-                    <%=bean.writeCustomColumn(c, new HString("string4",false), issue.getString4(), IssuesController.ISSUE_STRING4)%>
-                    <%=bean.writeCustomColumn(c, new HString("string5",false), issue.getString5(), IssuesController.ISSUE_STRING5)%>
+                    <%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1, 20)%>
+                    <%=bean.writeCustomColumn(c, new HString("string2",false), issue.getString2(), IssuesController.ISSUE_STRING2, 20)%>
+                    <%=bean.writeCustomColumn(c, new HString("string3",false), issue.getString3(), IssuesController.ISSUE_STRING3, 20)%>
+                    <%=bean.writeCustomColumn(c, new HString("string4",false), issue.getString4(), IssuesController.ISSUE_STRING4, 20)%>
+                    <%=bean.writeCustomColumn(c, new HString("string5",false), issue.getString5(), IssuesController.ISSUE_STRING5, 20)%>
                 </table></td>
             </tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect(new HString("assignedTo",false), HString.valueOf(issue.getAssignedTo()), issue.getAssignedToName(context), bean.getUserOptions(c, issue, context))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Type")%></td><td><%=bean.writeSelect(new HString("type",false), issue.getType(), bean.getTypeOptions(c))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Area")%></td><td><%=bean.writeSelect(new HString("area",false), issue.getArea(), bean.getAreaOptions(c))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Priority")%></td><td><%=bean.writeSelect(new HString("priority",false),  HString.valueOf(issue.getPriority()), bean.getPriorityOptions(c))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Milestone")%></td><td><%=bean.writeSelect(new HString("milestone",false), issue.getMilestone(), bean.getMilestoneOptions(c))%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect(new HString("assignedTo",false), HString.valueOf(issue.getAssignedTo()), issue.getAssignedToName(context), bean.getUserOptions(c, issue, context), 0)%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Type")%></td><td><%=bean.writeSelect(new HString("type",false), issue.getType(), bean.getTypeOptions(c), 0)%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Area")%></td><td><%=bean.writeSelect(new HString("area",false), issue.getArea(), bean.getAreaOptions(c), 0)%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Priority")%></td><td><%=bean.writeSelect(new HString("priority",false),  HString.valueOf(issue.getPriority()), bean.getPriorityOptions(c), 0)%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Milestone")%></td><td><%=bean.writeSelect(new HString("milestone",false), issue.getMilestone(), bean.getMilestoneOptions(c), 0)%></td></tr>
             <tr><td class="labkey-form-label">Comment</td>
                 <td colspan="3">
 <%
     if (bean.getBody() != null)
     {
 %>
-    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;"><%=PageFlowUtil.filter(bean.getBody())%></textarea>
+    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="0"><%=PageFlowUtil.filter(bean.getBody())%></textarea>
 <%
     } else {
 %>
-    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;"></textarea>
+    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="0"></textarea>
 <% } %>
     </td></tr></table>
     <table>

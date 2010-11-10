@@ -171,6 +171,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         setReadOnly(!startInEdit || !_hasDeleteListPermission);
 
         _buttons = new FlexTable();
+        _buttons.getElement().setClassName("gwt-ButtonBar");
 
         _saveButton = new SubmitButton();
 
@@ -288,6 +289,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 }
             }));
         }
+        _buttons.setStyleName("gwt-ButtonBar");
     }
 
 
@@ -368,7 +370,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         showDesignerUI();
     }
 
-    
+
     private void showNewListUI()
     {
         if (0 == _listId)
@@ -377,7 +379,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             clearLoading(_root);
             _root.add(_buttons);
-            
+
             _list = new GWTList();
             CreateListPanel p = new CreateListPanel();
             _root.add(p);
@@ -395,10 +397,12 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         {
             clearLoading(_root);
             _root.add(_buttons);
+            _root.add(new HTML("<br/>"));
 
             _propertiesPanel = new ListPropertiesPanel(_readonly);
             _root.add(new WebPartPanel("List Properties", _propertiesPanel));
 
+            _root.add(new HTML("<br/>"));
             _propTable.setReadOnly(_readonly);
             _schemaPanel = new ListSchema(_propTable);
             _root.add(new WebPartPanel("List Fields", _schemaPanel));

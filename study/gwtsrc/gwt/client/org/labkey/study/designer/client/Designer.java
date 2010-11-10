@@ -139,6 +139,7 @@ public class Designer implements EntryPoint
         assayPanel = new AssayPanel(this);
         mainPanel.add(assayPanel);
         HorizontalPanel buttonPanel = new HorizontalPanel();
+        buttonPanel.getElement().setClassName("gwt-ButtonBar");
         buttonPanel.setSpacing(3);
         mainPanel.add(buttonPanel);
 

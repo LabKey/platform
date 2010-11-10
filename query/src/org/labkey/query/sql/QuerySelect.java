@@ -930,7 +930,7 @@ loop:
         if (AppProps.getInstance().isDevMode())
         {
             ret = new SqlBuilder(sql.getDialect());
-            String comment = "<QuerySelect@" + System.identityHashCode(this);
+            String comment = "<QuerySelect";
             if (!StringUtils.isEmpty(_savedName))
                 comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
             comment += ">";
@@ -942,7 +942,7 @@ loop:
                         ret.appendComment("|         " + s);
             }
             ret.append(sql);
-            ret.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">");
+            ret.appendComment("</QuerySelect>");
         }
         return ret;
     }

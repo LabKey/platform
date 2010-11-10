@@ -53,7 +53,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
                 return new HtmlView(title, "List does not exist");
 
             form.setViewName(viewName);
-            return new SingleListWebPart(form, props);
+            return new SingleListWebPart(form, webPart, props);
         }
         catch (NumberFormatException e)
         {
@@ -68,7 +68,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
 
     private static class SingleListWebPart extends ListQueryView
     {
-        private SingleListWebPart(ListQueryForm form, Map<String, String> props)
+        private SingleListWebPart(ListQueryForm form, Portal.WebPart webPart, Map<String, String> props)
         {
             super(form, null);
 
@@ -84,6 +84,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
             QuerySettings settings = getSettings();
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
+            settings.setDataRegionName("list" + webPart.getIndex());
         }
     }
 }

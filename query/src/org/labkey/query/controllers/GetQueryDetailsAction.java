@@ -119,12 +119,12 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             resp.put("description", tinfo.getDescription());
 
         Collection<FieldKey> fields = Collections.emptyList();
-        if (null != form.getAdditionalFields())
+        if (null != form.getAdditionalFields() && form.getAdditionalFields().length > 0)
         {
-            String[] additionalFields = form.getAdditionalFields().split(",");
+            String[] additionalFields = form.getAdditionalFields();
             fields = new ArrayList<FieldKey>(additionalFields.length);
-            for (int i = 0; i < additionalFields.length; i++)
-                fields.add(FieldKey.fromString(additionalFields[i]));
+            for (String additionalField : additionalFields)
+                fields.add(FieldKey.fromString(additionalField));
         }
 
         //now the native columns plus any additional fields requested
@@ -136,12 +136,13 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             resp.put("defaultView", getDefaultViewProps((UserSchema)schema, form.getQueryName()));
 
             List<Map<String, Object>> viewInfos = new ArrayList<Map<String, Object>>();
-            // form.getViewName() is either null, a String, or a comma separated list of Strings.
             String[] viewNames;
-            if (form.getViewName() != null)
-                viewNames = form.getViewName().split(",");
+            if (form.getViewName() != null && form.getViewName().length > 0)
+                viewNames = form.getViewName();
             else
-                viewNames = new String[] { form.getViewName() };
+                // Get the default view.
+                viewNames = new String[] { null };
+
             for (String viewName : viewNames)
             {
                 viewName = StringUtils.trimToNull(viewName);
@@ -211,9 +212,9 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
     {
         private String _queryName;
         private String _schemaName;
-        private String _viewName;
+        private String[] _viewName;
         private String _fk;
-        private String _additionalFields; 
+        private String[] _additionalFields; 
 
         public String getSchemaName()
         {
@@ -235,12 +236,12 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             _queryName = queryName;
         }
 
-        public String getViewName()
+        public String[] getViewName()
         {
             return _viewName;
         }
 
-        public void setViewName(String viewName)
+        public void setViewName(String[] viewName)
         {
             _viewName = viewName;
         }
@@ -255,12 +256,12 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             _fk = fk;
         }
 
-        public String getAdditionalFields()
+        public String[] getAdditionalFields()
         {
             return _additionalFields;
         }
 
-        public void setFields(String fields)
+        public void setFields(String[] fields)
         {
             _additionalFields = fields;
         }

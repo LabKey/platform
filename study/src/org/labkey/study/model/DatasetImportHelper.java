@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -59,7 +58,7 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
         _study = StudyManager.getInstance().getStudy(c);
         _datasetId = dataset.getDataSetId();
         _dataset = StudyManager.getInstance().getDataSetDefinition(_study, _datasetId);
-        _urnPrefix = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + c.getRowId() + ":" + _datasetId + ".";
+        _urnPrefix = dataset.getURNPrefix();
         _conn = conn;
         _lastModified = lastModified;
         /*
@@ -111,6 +110,7 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
 
     public String getURI(Map map)
     {
+        // Note - this should generate the same value as how we do it in SQL in StudyManager.updateDataSetDefinition
         String ptid = String.valueOf(map.get(participantURI));
         double visit;
         if (_study.getTimepointType() != TimepointType.VISIT)

@@ -1897,8 +1897,8 @@ public class ReportsController extends BaseStudyController
         String participantId = context.getActionURL().getParameter("participantId");
         String qcState = context.getActionURL().getParameter(SharedFormParameters.QCState);
 
-        String previousParticipantURL = null;
-        String nextParticipantURL = null;
+        ActionURL previousParticipantURL = null;
+        ActionURL nextParticipantURL = null;
         String title = null;
 
         if (!participantList.isEmpty())
@@ -1916,17 +1916,15 @@ public class ReportsController extends BaseStudyController
                 if (idx > 0)
                 {
                     final String ptid = participantList.get(idx-1);
-                    ActionURL prevUrl = context.cloneActionURL();
-                    prevUrl.replaceParameter("participantId", ptid);
-                    previousParticipantURL = prevUrl.getEncodedLocalURIString();
+                    nextParticipantURL = context.cloneActionURL();
+                    nextParticipantURL.replaceParameter("participantId", ptid);
                 }
 
                 if (idx < participantList.size()-1)
                 {
                     final String ptid = participantList.get(idx+1);
-                    ActionURL nextUrl = context.cloneActionURL();
-                    nextUrl.replaceParameter("participantId", ptid);
-                    nextParticipantURL = nextUrl.getEncodedLocalURIString();
+                    nextParticipantURL = context.cloneActionURL();
+                    nextParticipantURL.replaceParameter("participantId", ptid);
                 }
             }
         }

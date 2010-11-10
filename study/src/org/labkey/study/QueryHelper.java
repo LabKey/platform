@@ -76,7 +76,7 @@ public class QueryHelper<K extends StudyCachable>
             public Object load(String key, Object argument)
             {
                 SimpleFilter filter = null!=filterArg ? filterArg : new SimpleFilter("Container", c.getId());
-                if (filter.hasContainerEqualClause())
+                if (!filter.hasContainerEqualClause())
                     filter.addCondition("Container", c.getId());
                 Sort sort = null;
                 if (sortString != null)
@@ -194,7 +194,7 @@ public class QueryHelper<K extends StudyCachable>
         StudyCache.uncache(getTableInfo(), obj.getContainer().getId(), obj.getPrimaryKey().toString());
     }
 
-    private String getCacheId(Filter filter)
+    protected String getCacheId(Filter filter)
     {
         if (filter == null)
             return "~ALL";

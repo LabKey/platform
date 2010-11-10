@@ -88,8 +88,8 @@
 <%
             }
 %>
-            <%=bean.writeCustomColumn(c, new HString("int1"), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE)%>
-            <%=bean.writeCustomColumn(c, new HString("int2"), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE)%>
+            <%=bean.writeCustomColumn(c, new HString("int1"), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE, 10)%>
+            <%=bean.writeCustomColumn(c, new HString("int2"), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE, 10)%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(context))%></td></tr>
@@ -97,11 +97,11 @@
             <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(context))%></td></tr>
             <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
 
-            <%=bean.writeCustomColumn(c, new HString("string1"), issue.getString1(), IssuesController.ISSUE_STRING1)%>
-            <%=bean.writeCustomColumn(c, new HString("string2"), issue.getString2(), IssuesController.ISSUE_STRING2)%>
-            <%=bean.writeCustomColumn(c, new HString("string3"), issue.getString3(), IssuesController.ISSUE_STRING3)%>
-            <%=bean.writeCustomColumn(c, new HString("string4"), issue.getString4(), IssuesController.ISSUE_STRING4)%>
-            <%=bean.writeCustomColumn(c, new HString("string5"), issue.getString5(), IssuesController.ISSUE_STRING5)%>
+            <%=bean.writeCustomColumn(c, new HString("string1"), issue.getString1(), IssuesController.ISSUE_STRING1, 20)%>
+            <%=bean.writeCustomColumn(c, new HString("string2"), issue.getString2(), IssuesController.ISSUE_STRING2, 20)%>
+            <%=bean.writeCustomColumn(c, new HString("string3"), issue.getString3(), IssuesController.ISSUE_STRING3, 20)%>
+            <%=bean.writeCustomColumn(c, new HString("string4"), issue.getString4(), IssuesController.ISSUE_STRING4, 20)%>
+            <%=bean.writeCustomColumn(c, new HString("string5"), issue.getString5(), IssuesController.ISSUE_STRING5, 20)%>
         </table></td>
     </tr>
 </table>

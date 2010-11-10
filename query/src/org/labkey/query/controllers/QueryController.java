@@ -1576,7 +1576,7 @@ public class QueryController extends SpringActionController
     {
         User owner = getUser();
         boolean canSaveForAllUsers = getContainer().hasPermission(getUser(), EditSharedViewPermission.class);
-        if (share && canSaveForAllUsers)
+        if (share && canSaveForAllUsers && !session)
         {
             owner = null;
         }
@@ -1584,7 +1584,10 @@ public class QueryController extends SpringActionController
 
         boolean isHidden = false;
         CustomView view = queryDef.getCustomView(owner, getViewContext().getRequest(), name);
-        boolean canEdit = ChooseColumnsForm.canEdit(view, getContainer(), errors);
+
+        // 11179: Allow editing the view if we're saving to session.
+        // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
+        boolean canEdit = session || ChooseColumnsForm.canEdit(view, getContainer(), errors);
         if (canEdit)
         {
             // Create a new view if none exists or the current view is a shared view
@@ -1721,7 +1724,11 @@ public class QueryController extends SpringActionController
                     response.put("redirect", savedView.get("redirect"));
                 views.add((Map<String, Object>)savedView.get("view"));
             }
-            return new ApiSimpleResponse(response);
+
+            if (errors.hasErrors())
+                return null;
+            else
+                return new ApiSimpleResponse(response);
         }
     }
 

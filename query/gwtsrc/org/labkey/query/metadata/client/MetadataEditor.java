@@ -25,6 +25,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
+import org.labkey.api.gwt.client.ui.WebPartPanel;
 import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.Saveable;
@@ -141,7 +142,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         panel.add(_editor.getWidget());
 
         rootPanel.clear();
-        rootPanel.add(panel);
+        rootPanel.add(new WebPartPanel("Metadata Properties", panel));
         
         _editor.init(tableInfo);
     }

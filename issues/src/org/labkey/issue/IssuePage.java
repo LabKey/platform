@@ -191,7 +191,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _dataRegionSelectionKey = dataRegionSelectionKey;
     }
 
-    public String writeCustomColumn(Container container, HString tableColumnName, HString value, int keywordType) throws IOException
+    public String writeCustomColumn(Container container, HString tableColumnName, HString value, int keywordType, int tabIndex) throws IOException
     {
         final String caption = _ccc.getColumnCaptions().get(tableColumnName.getSource());
 
@@ -205,7 +205,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
             // If custom column has pick list, then show select with keywords, otherwise input box
             if (_ccc.getPickListColumns().contains(tableColumnName.getSource()))
-                sb.append(writeSelect(tableColumnName, value, getKeywordOptions(container, keywordType, true)));
+                sb.append(writeSelect(tableColumnName, value, getKeywordOptions(container, keywordType, true), tabIndex));
             else if (tableColumnName.startsWith("int"))
                 sb.append(writeIntegerInput(tableColumnName, value));
             else
@@ -253,12 +253,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return writeInput(field, value, null);
     }
 
-    public HString writeSelect(String field, HString value, HString display, HString options)
-    {
-        return writeSelect(new HString(field), value, display, options);
-    }
-    
-    public HString writeSelect(HString field, HString value, HString display, HString options)
+    public HString writeSelect(HString field, HString value, HString display, HString options, int tabIndex)
     {
         if (!isEditable(field.getSource()))
         {
@@ -269,6 +264,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         sb.append(PageFlowUtil.filter(field));
         sb.append("\" name=\"");
         sb.append(PageFlowUtil.filter(field));
+        sb.append("\" tabindex=\"");
+        sb.append(tabIndex);
         sb.append("\" onchange=\"LABKEY.setDirty(true);return true;\" >");
 
         if (null != display && 0 != display.length())
@@ -284,9 +281,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return sb.toHString();
     }
 
-    public HString writeSelect(HString field, HString value, HString options) throws IOException
+    public HString writeSelect(HString field, HString value, HString options, int tabIndex) throws IOException
     {
-        return writeSelect(field, value, value, options);
+        return writeSelect(field, value, value, options, tabIndex);
     }
 
     public boolean isEditable(String field)
@@ -395,7 +392,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         final HStringBuilder sb = new HStringBuilder();
 
         sb.append("<script type=\"text/javascript\">LABKEY.requiresScript('completion.js');</script>");
-        sb.append("<textarea name=\"notifyList\" id=\"notifyList\" cols=\"30\" rows=\"4\"" );
+        sb.append("<textarea name=\"notifyList\" id=\"notifyList\" cols=\"30\" rows=\"4\" tabindex=\"10\"");
         sb.append(" onKeyDown=\"return ctrlKeyCheck(event);\"");
         sb.append(" onBlur=\"hideCompletionDiv();\"");
         sb.append(" onchange=\"LABKEY.setDirty(true);return true;\"");

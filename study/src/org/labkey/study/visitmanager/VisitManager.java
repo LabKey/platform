@@ -199,9 +199,7 @@ public abstract class VisitManager
             String c = getStudy().getContainer().getId();
 
             DbSchema schema = StudySchema.getInstance().getSchema();
-            TableInfo tableStudyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), user);
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-            TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
 
             if (!changedDatasets.isEmpty())
             {
@@ -217,15 +215,8 @@ public abstract class VisitManager
 
                 Table.execute(schema, datasetParticipantsSQL);
             }
-            SQLFragment del = new SQLFragment();
-            del.append("DELETE FROM " + tableParticipant + " WHERE participantid IN (SELECT p.participantid FROM " +
-                            tableParticipant + " p LEFT OUTER JOIN ").append(tableStudyData.getFromSQL("sd")).append(" ON" +
-                            "   p.participantid = sd.participantid LEFT OUTER JOIN " + tableSpecimen + " s ON " +
-                            "p.container = s.container AND s.ptid = p.participantid WHERE sd.participantid IS NULL AND " +
-                            "s.ptid IS NULL AND p.container = ?) AND container = ?");
-            del.add(c);
-            del.add(c);
-            Table.execute(schema, del);
+
+            purgeParticipants();
 
             updateStartDates(user);
         }
@@ -234,6 +225,61 @@ public abstract class VisitManager
             throw new RuntimeSQLException(x);
         }
     }
+
+
+    public void purgeParticipants()
+    {
+        try
+        {
+            String c = getStudy().getContainer().getId();
+
+            DbSchema schema = StudySchema.getInstance().getSchema();
+            TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+            TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
+
+            SQLFragment ptids = new SQLFragment();
+            SQLFragment studyDataPtids = studyDataPtids();
+            if (null != studyDataPtids)
+            {
+                ptids.append(studyDataPtids);
+                ptids.append(" UNION\n");
+            }
+            ptids.append("SELECT ptid FROM " + tableSpecimen.getFromSQL("spec") + " WHERE spec.container=?");
+            ptids.add(c);
+
+            SQLFragment del = new SQLFragment();
+            del.append("DELETE FROM " + tableParticipant + " WHERE container=? ");
+            del.add(c);
+            del.append(" AND participantid NOT IN (\n");
+            del.append(ptids);
+            del.append(")");
+
+            Table.execute(schema, del);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+
+    private SQLFragment studyDataPtids()
+    {
+        List<DataSetDefinition> defs = getStudy().getDataSets();
+        SQLFragment f = new SQLFragment();
+        String union = "";
+        for (DataSetDefinition d : defs)
+        {
+            TableInfo sti = d.getStorageTableInfo();
+            if (null == sti)
+                continue;
+            f.append(union);
+            f.append("SELECT participantid FROM ").append(sti.toString());
+            union = " UNION\n";
+        }
+        return f.isEmpty() ? null : f;
+    }
+
 
     protected void updateStartDates(User user) throws SQLException
     {

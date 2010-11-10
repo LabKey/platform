@@ -27,6 +27,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.Saveable;
+import org.labkey.api.gwt.client.ui.WebPartPanel;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
@@ -73,34 +74,12 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         _propTable = new PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>(_root, this, getService(), null);
 
         _buttons = new HorizontalPanel();
+        _buttons.getElement().setClassName("gwt-ButtonBar");
         _buttons.add(_submitButton);
         _buttons.add(new HTML("&nbsp;"));
         _buttons.add(new CancelButton());
 
-/*
-        FlexTable form = new FlexTable();
-        form.setText(0,0,"Name");
-        form.setWidget(0,1,new TextBox());
-        form.setText(1,0,"Description");
-        form.setWidget(1,1,new TextBox());
-        _root.add(form);
-*/
         _root.add(_loading);
-
-/*        Button b = new Button("show", new ClickListener()
-        {
-            public void onClick(Widget sender)
-            {
-                String s = "";
-                for (int i=0 ; i<_propTable.getPropertyCount(); i++)
-                {
-                    GWTPropertyDescriptor p = _propTable.getPropertyDescriptor(i);
-                    s += p.debugString() + "\n";
-                }
-                Window.alert(s);
-            }
-        });
-        _root.add(b); */
 
         asyncGetDomainDescriptor(typeURI);
 
@@ -145,7 +124,8 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         {
             _root.remove(_loading);
             _root.add(_buttons);
-            _root.add(_propTable.getWidget());
+            _root.add(new HTML("<br/>"));
+            _root.add(new WebPartPanel("Field Properties", _propTable.getWidget()));
         }
     }
 

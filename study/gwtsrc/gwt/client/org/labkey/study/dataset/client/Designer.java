@@ -131,6 +131,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         _propTable = new PropertiesEditor.PD(_root, new DomainDatasetSaveable(this), getService());
 
         _buttons = new FlexTable();
+        _buttons.getElement().setClassName("gwt-ButtonBar");
 
         _saveButton = new SubmitButton();
 
@@ -205,6 +206,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             _propertiesPanel = new DatasetProperties();
             _root.add(new WebPartPanel("Dataset Properties", _propertiesPanel));
+            _root.add(new HTML("<br/>"));
 
             _schemaPanel = new DatasetSchema(_propTable);
             _root.add(new WebPartPanel("Dataset Fields", _schemaPanel));
@@ -755,8 +757,10 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                             "combination of participant, visit and key. " +
                             "<ul><li>None: No additional key</li>" +
                             "<li>Data Field: A user-managed key field</li>" +
-                            "<li>Managed Field: A numeric field defined below will be managed" +
-                            "by the server to make each new entry unique</li>" +
+                            "<li>Managed Field: A numeric or string field defined below will be managed" +
+                            "by the server to make each new entry unique. Numbers will be " +
+                            "assigned auto-incrementing integer values, strings will be assigned " +
+                            "globally unique identifiers (GUIDs).</li>" +
                             "</ul>"));
 
             cellFormatter.setStyleName(row, 0, labelStyleName);
@@ -947,7 +951,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 descriptors.add(_propTable.getPropertyDescriptor(i));
             }
             Map<String,String> fields = new HashMap<String,String>();
-            Map<String,String> numericFields = new HashMap<String,String>();
+            Map<String,String> manageableFields = new HashMap<String,String>();
 
             for (GWTPropertyDescriptor descriptor : descriptors)
             {
@@ -964,18 +968,18 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 fields.put(label, name);
 
                 String rangeURI = descriptor.getRangeURI();
-                if (rangeURI.endsWith("int") || rangeURI.endsWith("double"))
+                if (rangeURI.endsWith("int") || rangeURI.endsWith("double") || rangeURI.endsWith("string"))
                 {
-                    numericFields.put(label, name);
+                    manageableFields.put(label, name);
                 }
             }
             if (fields.size() == 0)
                 fields.put("","");
-            if (numericFields.size() == 0)
-                numericFields.put("","");
+            if (manageableFields.size() == 0)
+                manageableFields.put("","");
 
             dataFieldsBox.setColumns(fields);
-            managedFieldsBox.setColumns(numericFields);
+            managedFieldsBox.setColumns(manageableFields);
 
             String keyName = _dataset.getKeyPropertyName();
             if (keyName != null)

@@ -632,11 +632,29 @@ public class IssuesController extends SpringActionController
         issue.setArea(defaults.get(ISSUE_AREA));
         issue.setType(defaults.get(ISSUE_TYPE));
         issue.setMilestone(defaults.get(ISSUE_MILESTONE));
-        issue.setString1(defaults.get(ISSUE_STRING1));
-        issue.setString2(defaults.get(ISSUE_STRING2));
-        issue.setString3(defaults.get(ISSUE_STRING3));
-        issue.setString4(defaults.get(ISSUE_STRING4));
-        issue.setString5(defaults.get(ISSUE_STRING5));
+        IssueManager.CustomColumnConfiguration config = IssueManager.getCustomColumnConfiguration(getContainer());
+        // For each of the string configurable columns,
+        // only set the default if the column is currently configured as a pick list
+        if (config.getPickListColumns().contains("string1"))
+        {
+            issue.setString1(defaults.get(ISSUE_STRING1));
+        }
+        if (config.getPickListColumns().contains("string2"))
+        {
+            issue.setString2(defaults.get(ISSUE_STRING2));
+        }
+        if (config.getPickListColumns().contains("string3"))
+        {
+            issue.setString3(defaults.get(ISSUE_STRING3));
+        }
+        if (config.getPickListColumns().contains("string4"))
+        {
+            issue.setString4(defaults.get(ISSUE_STRING4));
+        }
+        if (config.getPickListColumns().contains("string5"))
+        {
+            issue.setString5(defaults.get(ISSUE_STRING5));
+        }
 
         HString priority = defaults.get(ISSUE_PRIORITY);
         issue.setPriority(null != priority ? priority.parseInt() : 3);
@@ -1733,15 +1751,22 @@ public class IssuesController extends SpringActionController
     }
 
 
-    static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String field, HString from, HString to)
+    static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String field, HString from, HString to, boolean newIssue)
     {
         from = from == null ? HString.EMPTY : from;
         to = to == null ? HString.EMPTY : to;
         if (!from.equals(to))
         {
             sbText.append(field);
-            sbText.append(" changed from ");
-            sbText.append(HString.EMPTY.equals(from) ? "blank" : from.getSource());
+            if (newIssue)
+            {
+                sbText.append(" was set ");
+            }
+            else
+            {
+                sbText.append(" changed from ");
+                sbText.append(HString.EMPTY.equals(from) ? "blank" : from.getSource());
+            }
             sbText.append(" to ");
             sbText.append(HString.EMPTY.equals(to) ? "blank" : to.getSource());
             sbText.append("\n");
@@ -1805,24 +1830,26 @@ public class IssuesController extends SpringActionController
         // CONSIDER: and postpone formatting until render
         if (null != previous)
         {
+            // Keep track of whether this issue is new
+            boolean newIssue = previous.getIssueId() == 0;
             // issueChanges is not defined yet, but it leaves things flexible
             sbHTMLChanges.append("<table class=issues-Changes>");
-            _appendChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle());
-            _appendChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus());
-            _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(context), issue.getAssignedToName(context));
-            _appendChange(sbHTMLChanges, sbTextChanges, "Notify", previous.getNotifyList(), issue.getNotifyList());
-            _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType());
-            _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea());
-            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", HString.valueOf(previous.getPriority()), HString.valueOf(issue.getPriority()));
-            _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone());
+            _appendChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(context), issue.getAssignedToName(context), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Notify", previous.getNotifyList(), issue.getNotifyList(), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType(), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", HString.valueOf(previous.getPriority()), HString.valueOf(issue.getPriority()), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), newIssue);
 
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", HString.valueOf(previous.getInt1()), HString.valueOf(issue.getInt1()), customColumns);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", HString.valueOf(previous.getInt2()), HString.valueOf(issue.getInt2()), customColumns);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string1", previous.getString1(), issue.getString1(), customColumns);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string2", previous.getString2(), issue.getString2(), customColumns);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string3", previous.getString3(), issue.getString3(), customColumns);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string4", previous.getString4(), issue.getString4(), customColumns);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string5", previous.getString5(), issue.getString5(), customColumns);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", HString.valueOf(previous.getInt1()), HString.valueOf(issue.getInt1()), customColumns, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", HString.valueOf(previous.getInt2()), HString.valueOf(issue.getInt2()), customColumns, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string1", previous.getString1(), issue.getString1(), customColumns, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string2", previous.getString2(), issue.getString2(), customColumns, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string3", previous.getString3(), issue.getString3(), customColumns, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string4", previous.getString4(), issue.getString4(), customColumns, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string5", previous.getString5(), issue.getString5(), customColumns, newIssue);
 
             sbHTMLChanges.append("</table>\n");
         }
@@ -1846,12 +1873,12 @@ public class IssuesController extends SpringActionController
         return new ChangeSummary(issue.addComment(user, formattedComment.toHString()), sbTextChanges.toString(), summary);
     }
 
-    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String field, HString from, HString to, Map<String, String> columnCaptions)
+    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String field, HString from, HString to, Map<String, String> columnCaptions, boolean newIssue)
     {
         String caption = columnCaptions.get(field);
 
         if (null != caption)
-            _appendChange(sbHtml, sbText, caption, from, to);
+            _appendChange(sbHtml, sbText, caption, from, to, newIssue);
     }
 
 

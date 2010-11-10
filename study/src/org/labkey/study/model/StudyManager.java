@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -86,6 +87,7 @@ import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
+import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
@@ -103,7 +105,6 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
-import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -145,7 +146,37 @@ public class StudyManager
                 {
                     return StudySchema.getInstance().getTableInfoStudy();
                 }
-            }, StudyImpl.class);
+            }, StudyImpl.class)
+        {
+            public StudyImpl[] get(final Container c, final SimpleFilter filterArg, final String sortString) throws SQLException
+            {
+                assert filterArg == null & sortString == null;
+                String cacheId = getCacheId(filterArg);
+                if (sortString != null)
+                    cacheId += "; sort = " + sortString;
+
+                CacheLoader<String,Object> loader = new CacheLoader<String,Object>()
+                {
+                    @Override
+                    public Object load(String key, Object argument)
+                    {
+                        try
+                        {
+                            StudyCachable[] objs = Table.executeQuery(StudyManager.getSchema(), "SELECT * FROM study.study WHERE Container = ?", new Object[]{c}, StudyImpl.class);
+                            for (StudyCachable obj : objs)
+                                obj.lock();
+                            return objs;
+                        }
+                        catch (SQLException x)
+                        {
+                            throw new RuntimeSQLException(x);
+                        }
+                    }
+                };
+                return (StudyImpl[]) StudyCache.get(getTableInfo(), c.getId(), cacheId, loader);
+            }
+
+        };
 
         _visitHelper = new QueryHelper<VisitImpl>(new TableInfoGetter()
             {
@@ -385,9 +416,37 @@ public class StudyManager
                 scope.beginTransaction();
                 fTransaction=true;
             }
-            DataSet old = getDataSetDefinition(dataSetDefinition.getStudy(), dataSetDefinition.getDataSetId());
+            DataSetDefinition old = getDataSetDefinition(dataSetDefinition.getStudy(), dataSetDefinition.getDataSetId());
             if (null == old)
                 throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+
+            Domain domain = dataSetDefinition.getDomain();
+
+            // Check if the extra key field has changed
+            if (domain != null && domain.getStorageTableName() != null && !PageFlowUtil.nullSafeEquals(old.getKeyPropertyName(), dataSetDefinition.getKeyPropertyName()))
+            {
+                // If so, we need to update the _key column and the LSID
+
+                // Set the _key column to be the value of the selected column
+                // Change how we build up tableName
+                String tableName = dataSetDefinition.getStorageTableInfo().toString();
+                SQLFragment updateKeySQL = new SQLFragment("UPDATE " + tableName + " SET _key = ");
+                if (dataSetDefinition.getKeyPropertyName() == null)
+                {
+                    // No column selected, so set it to be null
+                    updateKeySQL.append("NULL");
+                }
+                else
+                {
+                    updateKeySQL.append("\"" + dataSetDefinition.getKeyPropertyName().toLowerCase() + "\"");
+                }
+                Table.execute(getSchema(), updateKeySQL);
+
+                // Now update the LSID column. Note - this needs to be the same as DatasetImportHelper.getURI()
+                SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
+                updateLSIDSQL.append(dataSetDefinition.getLSIDSQL());
+                Table.execute(getSchema(), updateLSIDSQL);
+            }   
             Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
             _dataSetHelper.update(user, dataSetDefinition, pk);
 

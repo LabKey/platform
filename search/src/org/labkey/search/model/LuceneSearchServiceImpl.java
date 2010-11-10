@@ -617,10 +617,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (null == is)
                     return null;
             }
-            DocumentParser[] parsers = _documentParsers.get();
             is.skip(Long.MIN_VALUE);
             byte[] header = FileUtil.readHeader(is, 8*1024);
-            for (DocumentParser p : parsers)
+            for (DocumentParser p : _documentParsers)
             {
                 if (p.detect(r, header))
                     return p;

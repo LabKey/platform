@@ -54,6 +54,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -1423,27 +1424,35 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 int currentKey = getMaxKeyValue();
 
-                // Sadly, may have to create new maps, since TabLoader's aren't modifiable
-                for (Map<String, Object> dataMap : dataMaps)
+                for (int i = 0; i < dataMaps.size(); i++)
                 {
+                    Map<String, Object> dataMap = dataMaps.get(i);
                     // Only insert if there isn't already a value
                     if (dataMap.get(keyPropertyURI) == null)
                     {
                         currentKey++;
+                        // Create a new map because RowMaps don't work correctly doing put() in all scenarios.
+                        // TODO - once the RowMap implementation is fixed, remove this extra map creation
+                        dataMap = new HashMap<String, Object>(dataMap);
                         dataMap.put(keyPropertyURI, currentKey);
+                        dataMaps.set(i, dataMap);
                     }
                 }
                 if (logger != null) logger.debug("generated keys");
             }
             else if (getKeyManagementType() == KeyManagementType.GUID)
             {
-                // Sadly, may have to create new maps, since TabLoader's aren't modifiable
-                for (Map<String, Object> dataMap : dataMaps)
+                for (int i = 0; i < dataMaps.size(); i++)
                 {
+                    Map<String, Object> dataMap = dataMaps.get(i);
                     // Only insert if there isn't already a value
                     if (dataMap.get(keyPropertyURI) == null)
                     {
+                        // Create a new map because RowMaps don't work correctly doing put() in all scenarios.
+                        // TODO - once the RowMap implementation is fixed, remove this extra map creation
+                        dataMap = new HashMap<String, Object>(dataMap);
                         dataMap.put(keyPropertyURI, GUID.makeGUID());
+                        dataMaps.set(i, dataMap);
                     }
                 }
                 if (logger != null) logger.debug("generated keys");
@@ -1476,6 +1485,38 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
+    /** @return the LSID prefix to be used for this dataset's rows */
+    public String getURNPrefix()
+    {
+        return "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + getContainer().getRowId() + ":" + getDataSetId() + ".";
+    }
+
+     /** @return a SQL expression that generates the LSID for a dataset row */
+    public SQLFragment getLSIDSQL()
+    {
+        SQLFragment visitSQL;
+        if (_study.getTimepointType() != TimepointType.VISIT)
+        {
+            visitSQL = StudyManager.sequenceNumFromDateSQL("date");
+        }
+        else
+        {
+            visitSQL = new SQLFragment("CAST (sequencenum AS VARCHAR)");
+        }
+        SQLFragment sql = StudyManager.getSchema().getSqlDialect().concatenate(
+                new SQLFragment("?", getURNPrefix()),
+                visitSQL,
+                new SQLFragment("'.'"),
+                new SQLFragment("participantid"));
+        if (getKeyPropertyName() != null)
+        {
+            sql = StudyManager.getSchema().getSqlDialect().concatenate(
+                    sql, 
+                    new SQLFragment("'.'"),
+                    new SQLFragment("\"" + getKeyPropertyName().toLowerCase() + "\""));
+        }
+        return sql;
+    }
 
     /*
      * Actually persist rows to the database.  These maps are keyed by property URI.

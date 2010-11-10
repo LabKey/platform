@@ -1048,8 +1048,8 @@ public class StudyController extends BaseStudyController
         {
             Study study = getStudy();
             _bean = form;
-            String previousParticipantURL = null;
-            String nextParticipantURL = null;
+            ActionURL previousParticipantURL = null;
+            ActionURL nextParticipantURL = null;
 
             String viewName = (String) getViewContext().get("Dataset.viewName");
 
@@ -1067,17 +1067,15 @@ public class StudyController extends BaseStudyController
                     if (idx > 0)
                     {
                         final String ptid = participants.get(idx-1);
-                        ActionURL prevUrl = getViewContext().cloneActionURL();
-                        prevUrl.replaceParameter("participantId", ptid);
-                        previousParticipantURL = prevUrl.getEncodedLocalURIString();
+                        previousParticipantURL = getViewContext().cloneActionURL();
+                        previousParticipantURL.replaceParameter("participantId", ptid);
                     }
 
                     if (idx < participants.size()-1)
                     {
                         final String ptid = participants.get(idx+1);
-                        ActionURL nextUrl = getViewContext().cloneActionURL();
-                        nextUrl.replaceParameter("participantId", ptid);
-                        nextParticipantURL = nextUrl.getEncodedLocalURIString();
+                        nextParticipantURL = getViewContext().cloneActionURL();
+                        nextParticipantURL.replaceParameter("participantId", ptid);
                     }
                 }
             }
@@ -2762,7 +2760,7 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                Report.Results r = queryView.getResults();
+                Report.Results r = queryView.getResults(ShowRows.PAGINATED);
                 rs = r.getResultSet();
                 ColumnInfo ptidColumnInfo = r.getFieldMap().get(ptidKey);
                 int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
@@ -3629,7 +3627,7 @@ public class StudyController extends BaseStudyController
             DataRegion dr = new DataRegion();
             dr.setTable(tinfo);
 
-            Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "participantsequencekey", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
+            Set<String> ignoreColumns = new CaseInsensitiveHashSet("createdby", "modifiedby", "lsid", "participantsequencekey", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
             if (study.getTimepointType() != TimepointType.VISIT)
                 ignoreColumns.add("SequenceNum");
 
@@ -5192,6 +5190,11 @@ public class StudyController extends BaseStudyController
                         StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
                     }
 
+                    // NOTE getDisplayColumns() indirectly causes a query of the datasets,
+                    // Do this before provisionTable() so we don't query the dataset we are about to create
+                    // causes a problem on postgres (bug 11153)
+                    List<DisplayColumn> displayColumns = QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors);
+
                     // def may not be provisioned yet, create before we start adding properties
                     def.provisionTable();
 
@@ -5199,13 +5202,14 @@ public class StudyController extends BaseStudyController
                     OntologyManager.ensureDomainDescriptor(domainURI, form.getSnapshotName(), form.getViewContext().getContainer());
                     Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), domainURI);
 
-                    for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors))
+                    for (DisplayColumn dc : displayColumns)
                     {
                         ColumnInfo col = dc.getColumnInfo();
                         if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
                             DatasetSnapshotProvider.addAsDomainProperty(d, col);
                     }
                     d.save(getUser());
+                    //def.saveDomain(d, getUser());
                 }
             }
         }
@@ -5957,14 +5961,14 @@ public class StudyController extends BaseStudyController
      */
     public static class ParticipantNavView extends HttpView
     {
-        private String _prevURL;
-        private String _nextURL;
+        private ActionURL _prevURL;
+        private ActionURL _nextURL;
         private String _display;
         private String _currentParticipantId;
         private String _encodedQcState;
         private boolean _showCustomizeLink = true;
 
-        public ParticipantNavView(String prevURL, String nextURL, String currentPartitipantId, String encodedQCState, String display)
+        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentPartitipantId, String encodedQCState, String display)
         {
             _prevURL = prevURL;
             _nextURL = nextURL;
@@ -5973,7 +5977,7 @@ public class StudyController extends BaseStudyController
             _encodedQcState = encodedQCState;
         }
 
-        public ParticipantNavView(String prevURL, String nextURL, String currentPartitipantId, String encodedQCState)
+        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentPartitipantId, String encodedQCState)
         {
             this(prevURL, nextURL, currentPartitipantId,  encodedQCState, null);
         }
@@ -5984,24 +5988,25 @@ public class StudyController extends BaseStudyController
             Container container = getViewContext().getContainer();
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
+            String subjectNoun = PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer()));
             out.print("<table><tr><td align=\"left\">");
-            if (_prevURL == null)
-                out.print("[< Previous " + PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer())) + "]");
-            else
-                out.print("[<a href=\"" + _prevURL + "\">< Previous " + PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer())) + "</a>]");
-            out.print("&nbsp;");
+            if (_prevURL != null)
+            {
+                out.print(PageFlowUtil.textLink("Previous " + subjectNoun, _prevURL));
+                out.print("&nbsp;");
+            }
 
-            if (_nextURL == null)
-                out.print("[Next " + PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + " >]"));
-            else
-                out.print("[<a href=\"" + _nextURL + "\">Next " + PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer())) + " ></a>]");
-            out.print("&nbsp;");
+            if (_nextURL != null)
+            {
+                out.print(PageFlowUtil.textLink("Next " + subjectNoun, _nextURL));
+                out.print("&nbsp;");
+            }
 
             if (null != _currentParticipantId && null != ss)
             {
                 ActionURL search = new ActionURL("search", "search", container);
                 search.addParameter("q", "+" + ss.escapeTerm(_currentParticipantId));
-                out.print("[<a href=\"" + search.getEncodedLocalURIString() + "\">Search</a>]");
+                out.print(PageFlowUtil.textLink(PageFlowUtil.filter("Search for '" + _currentParticipantId + "'"), search));
                 out.print("&nbsp;");
             }
 

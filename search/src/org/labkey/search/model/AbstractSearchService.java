@@ -72,9 +72,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -386,8 +386,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     
     public final void clearLastIndexed()
     {
-        DocumentProvider[] documentProviders = _documentProviders.get();
-        for (DocumentProvider p : documentProviders)
+        for (DocumentProvider p : _documentProviders)
         {
             try
             {
@@ -1204,52 +1203,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    protected final AtomicReference<DocumentProvider[]> _documentProviders = new AtomicReference<DocumentProvider[]>();
+    protected final CopyOnWriteArrayList<DocumentProvider> _documentProviders = new CopyOnWriteArrayList<DocumentProvider>();
     
     public void addDocumentProvider(DocumentProvider provider)
     {
-        synchronized (_documentProviders)
-        {
-            DocumentProvider[] documentProviders = _documentProviders.get();
-            if (null == documentProviders)
-            {
-                documentProviders = new DocumentProvider[1];
-            }
-            else
-            {
-                DocumentProvider[] arr = new DocumentProvider[documentProviders.length+1];
-                System.arraycopy(documentProviders, 0, arr, 0, documentProviders.length);
-                documentProviders = arr;
-            }
-            documentProviders[documentProviders.length-1] = provider;
-            _documentProviders.set(documentProviders);
-        }
+        _documentProviders.add(provider);
     }
 
 
-    protected final AtomicReference<DocumentParser[]> _documentParsers = new AtomicReference<DocumentParser[]>();
-
+    protected final CopyOnWriteArrayList<DocumentParser> _documentParsers = new CopyOnWriteArrayList<DocumentParser>();
+    
     public void addDocumentParser(DocumentParser parser)
     {
-        synchronized (_documentParsers)
-        {
-            DocumentParser[] documentParsers = _documentParsers.get();
-            if (null == documentParsers)
-            {
-                documentParsers = new DocumentParser[1];
-            }
-            else
-            {
-                DocumentParser[] arr = new DocumentParser[documentParsers.length+1];
-                System.arraycopy(documentParsers, 0, arr, 0, documentParsers.length);
-                documentParsers = arr;
-            }
-            documentParsers[documentParsers.length-1] = parser;
-            _documentParsers.set(documentParsers);
-        }
+        _documentParsers.add(parser);
     }
-
-
 
     public IndexTask indexContainer(IndexTask in, final Container c, final Date since)
     {
@@ -1259,13 +1226,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             public void run()
             {
-                DocumentProvider[] documentProviders = _documentProviders.get();
-                if (null != documentProviders)
+                for (DocumentProvider p : _documentProviders)
                 {
-                    for (DocumentProvider p : documentProviders)
-                    {
-                        p.enumerateDocuments(task, c, since);
-                    }
+                    p.enumerateDocuments(task, c, since);
                 }
             }
         };

@@ -914,6 +914,10 @@ img.labkey-grid-filter-icon
     cursor: move;
 }
 
+.labkey-paperclip {
+    background-image: url(./_images/paperclip.png) !important;
+}
+
 /** Unortunately, gtheme doesn't include some of the x-tool-* styles, so I'm redefining them here. */
 
 .labkey-tool {
@@ -1103,6 +1107,13 @@ img.labkey-grid-filter-icon
 .labkey-header-panel td, .labkey-header-panel th
 {
     padding: 0;
+}
+
+/* Optional Top Menu */
+#topmenu
+{
+    vertical-align: top;
+    height: 26px;
 }
 
 /* Quick options (admin, help, my account, signout) table */
@@ -1892,6 +1903,9 @@ table.labkey-r-tsvout
 .gwt-StackPanel .gwt-StackPanelItem-selected {
 }
 
+.gwt-ButtonBar {
+    padding: 4px 0px;
+}
 
 
 /*

@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -80,9 +81,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             GWTDataset ds = new GWTDataset();
             PropertyUtils.copyProperties(ds, dd);
             ds.setDatasetId(dd.getDataSetId()); // upper/lowercase problem
-            // Need to support GUID type as well in the UI, but for now just handle
-            // RowId since that's all we let you save in the UI
-            ds.setKeyPropertyManaged(dd.getKeyManagementType() == DataSet.KeyManagementType.RowId);
+            ds.setKeyPropertyManaged(dd.getKeyManagementType() != DataSet.KeyManagementType.None);
 
             CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             Map<String, String> cohortMap = new HashMap<String, String>();
@@ -216,6 +215,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             DataSetDefinition updated = def.createMutable();
             BeanUtils.copyProperties(updated, ds);
 
+            // Default is no key management
+            DataSet.KeyManagementType keyType = DataSet.KeyManagementType.None;
             String keyPropertyName = null;
             if (ds.getKeyPropertyName() != null)
             {
@@ -226,13 +227,30 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                     if (dp.getName().equalsIgnoreCase(ds.getKeyPropertyName()))
                     {
                         keyPropertyName = dp.getName();
+                        // Be sure that the user really wants a managed key, not just that disabled select box still had a value
+                        if (ds.getKeyPropertyManaged())
+                        {
+                            if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.INTEGER || dp.getPropertyDescriptor().getPropertyType() == PropertyType.DOUBLE)
+                            {
+                                // Number fields must be RowIds
+                                keyType = DataSet.KeyManagementType.RowId;
+                            }
+                            else if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
+                            {
+                                // Strings can be managed as GUIDs
+                                keyType = DataSet.KeyManagementType.GUID;
+                            }
+                            else
+                            {
+                                throw new IllegalStateException("Unsupported column type for managed keys: " + dp.getPropertyDescriptor().getPropertyType());
+                            }
+                        }
                         break;
                     }
                 }
             }
             updated.setKeyPropertyName(keyPropertyName);
-            // Map boolean property to Enum value. Still need to add support for GUID managed keys
-            updated.setKeyManagementType(ds.getKeyPropertyManaged() ? DataSet.KeyManagementType.RowId : DataSet.KeyManagementType.None);
+            updated.setKeyManagementType(keyType);
 
             if (!def.getLabel().equals(updated.getLabel()))
             {

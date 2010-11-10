@@ -2372,11 +2372,20 @@ public class SpecimenController extends BaseStudyController
                 SampleRequestStatus newStatus = SampleManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), true);
                 request = request.createMutable();
                 request.setStatusId(newStatus.getRowId());
-                SampleManager.getInstance().updateRequest(getUser(), request);
-                SampleManager.getInstance().createRequestEvent(getUser(), request,
-                        SampleManager.RequestEventType.REQUEST_STATUS_CHANGED, "Request submitted for processing.", null);
-                if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
-                    getUtils().sendNewRequestNotifications(request);
+                try
+                {
+                    SampleManager.getInstance().updateRequest(getUser(), request);
+                    SampleManager.getInstance().createRequestEvent(getUser(), request,
+                            SampleManager.RequestEventType.REQUEST_STATUS_CHANGED, "Request submitted for processing.", null);
+                    if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
+                        getUtils().sendNewRequestNotifications(request);
+                }
+                catch (RequestabilityManager.InvalidRuleException e)
+                {
+                    errors.reject(ERROR_MSG, "The request could not be submitted because a requestability rule is configured incorrectly. " +
+                                "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+
+                }
                 return true;
             }
             else
@@ -2409,7 +2418,15 @@ public class SpecimenController extends BaseStudyController
             if (request.getStatusId() != cartStatus.getRowId())
                 HttpView.throwUnauthorized();
 
-            SampleManager.getInstance().deleteRequest(getUser(), request);
+            try
+            {
+                SampleManager.getInstance().deleteRequest(getUser(), request);
+            }
+            catch (RequestabilityManager.InvalidRuleException e)
+            {
+                errors.reject(ERROR_MSG, "The request could not be canceled because a requestability rule is configured incorrectly. " +
+                            "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+            }
             return true;
         }
 

@@ -2522,6 +2522,12 @@ public class ExperimentController extends SpringActionController
                     }
                 }
 
+                // 11138: IAE in org.labkey.api.reader.AbstractTabLoader.<init>()
+                if (StringUtils.isEmpty(form.getData()))
+                {
+                    errors.reject(ERROR_MSG, "Please paste data into the text field.");
+                }
+
                 if (errors.getErrorCount() == 0)
                 {
                     try

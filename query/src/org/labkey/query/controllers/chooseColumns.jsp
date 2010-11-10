@@ -318,36 +318,5 @@
     <% } %>
     </p>
     <labkey:button text="<%=form.isSaveInSession() ? \"Save Temporary View\" : \"Save\"%>" href="javascript:void(0);" onclick="designer.needToPrompt = false; return onSave();" />
-    <% if (canEdit && !form.isSaveInSession())
-    {
-        // UNDONE: support deleting view from session without navigating
-        if (view != null && ! view.isHidden())
-        {
-            ActionURL urlDeleteView = form.urlFor(QueryAction.deleteView);
-            ActionURL srcURL = form.getSourceURL();
-            if (null != srcURL)
-            {
-                srcURL = srcURL.clone();
-                srcURL.deleteParameter(form.getQuerySettings().param(QueryParam.viewName));
-                urlDeleteView.replaceParameter(QueryParam.srcURL.toString(), srcURL.toString());
-            }
-            String strButtonText;
-            if (view.getName() == null)
-            {
-                if (view.isShared())
-                    strButtonText = "Reset shared default view";
-                else
-                    strButtonText = "Reset my default view";
-            }
-            else
-            {
-                if (view.isShared())
-                    strButtonText = "Delete shared view '" + view.getName() + "'";
-                else
-                    strButtonText = "Delete my view '" + view.getName() + "'";
-            }
-        %><labkey:button href="<%=urlDeleteView%>" text="<%=strButtonText%>" /><%
-        }
-    } %>
     <br>
 </form>

@@ -73,6 +73,13 @@ public class TimeSeriesRenderer extends AbstractChartRenderer implements ChartRe
 
     public Plot createPlot(ChartReportDescriptor descriptor, ReportQueryView view) throws Exception
     {
+        String columnX = descriptor.getProperty(ChartReportDescriptor.Prop.columnXName);
+
+        // issue: 10818. Possibly a bug in jfree chart, but for time series plots, the collection must be ordered otherwise
+        // the chart may not render properly, this is epecially evident when lines are shown between points, xy
+        // charts do not seem to have the same problem.
+        
+        view.getSettings().getBaseSort().insertSortColumn(columnX);
         ResultSet rs = generateResultSet(view);
         if (rs != null)
         {
@@ -85,7 +92,6 @@ public class TimeSeriesRenderer extends AbstractChartRenderer implements ChartRe
                         datasets.put(columnName, new TimePeriodValues(getLabel(labels, columnName)));//, Day.class));
                 }
 
-                String columnX = descriptor.getProperty(ChartReportDescriptor.Prop.columnXName);
                 ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
                 // create a jfreechart dataset
