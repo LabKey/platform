@@ -71,7 +71,7 @@ public class AuthFilter implements Filter
         }
 
         // No startup failure, so check for SSL redirection
-        if (!req.getScheme().toLowerCase().equals("https") && AppProps.getInstance().isSSLRequired())
+        if (!req.getScheme().equalsIgnoreCase("https") && AppProps.getInstance().isSSLRequired())
         {
             // We can't redirect posts (we'll lose the post body), so return an error code
             if ("post".equalsIgnoreCase(req.getMethod()))
