@@ -910,14 +910,10 @@ LABKEY.Query = new function()
             if (config.queryName)
                 params.queryName = config.queryName;
 
-            if (Ext.isArray(config.viewName))
-                params.viewName = config.viewName.join(",");
-            else
+            if (config.viewName)
                 params.viewName = config.viewName;
 
-            if (Ext.isArray(config.fields))
-                params.fields = config.fields.join(",");
-            else
+            if (config.fields)
                 params.fields = config.fields;
 
             if (config.fk)

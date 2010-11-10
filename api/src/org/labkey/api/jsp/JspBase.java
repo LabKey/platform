@@ -131,14 +131,10 @@ abstract public class JspBase extends JspContext implements HasViewContext
      * Javascript inside of element event attributes (e.g. onclick="dosomething") needs to be HTML escaped.
      * Javascript inside of &lt;script> tags should NEVER be HTML escaped.
      */
-    protected String q(String str)
+    final protected String q(String str)
     {
         if (null == str) return "null";
-        str = StringUtils.replace(str, "\\", "\\\\");
-        str = StringUtils.replace(str, "'", "\\'");
-        str = StringUtils.replace(str, "\n", "\\n");
-        str = StringUtils.replace(str, "\r", "\\r");
-        return "'" + str + "'";
+        return PageFlowUtil.jsString(str);
     }
 
     protected String hq(String str)

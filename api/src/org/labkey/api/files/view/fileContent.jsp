@@ -98,7 +98,7 @@ var buttonActions = [];
 <%
     }
 %>
-function renderBrowser(rootPath, renderTo)
+function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot)
 {
     var fileSystem = new LABKEY.WebdavFileSystem({
         extraPropNames: ['description', 'actions'],
@@ -152,12 +152,12 @@ function renderBrowser(rootPath, renderTo)
         resizable: !Ext.isIE,
         showAddressBar: <%=bean.isShowAddressBar()%>,
         showFolderTree: <%=bean.isShowFolderTree()%>,
-        folderTreeCollapsed: <%=bean.isFolderTreeCollapsed()%>,
+        folderTreeCollapsed: isFolderTreeCollapsed,
         showProperties: false,
         showDetails: <%=bean.isShowDetails()%>,
         allowChangeDirectory: true,
         tbarItems: buttonActions,
-        isPipelineRoot: <%=bean.isPipelineRoot()%>,
+        isPipelineRoot: isPipelineRoot,
         adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
         statePrefix: prefix
     });
@@ -200,6 +200,8 @@ function renderBrowser(rootPath, renderTo)
 }
 
 <%  if (bean.isEnabled() && bean.isRootValid()) { %>
-        Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(bean.getContentId())%>);});
+        Ext.onReady(function(){
+            renderBrowser(<%=q(bean.getRootPath())%>, <%=q(bean.getContentId())%>, <%=bean.isFolderTreeCollapsed()%>, <%=bean.isPipelineRoot()%>);
+        });
 <%  } %>
 </script>

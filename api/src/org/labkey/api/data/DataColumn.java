@@ -36,6 +36,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Date;
 import java.util.Set;
 
 public class DataColumn extends DisplayColumn
@@ -411,6 +412,8 @@ public class DataColumn extends DisplayColumn
                 formatted = "&nbsp;";
             else if (_preserveNewlines)
                 formatted = formatted.replaceAll("\\n", "<br>\n");
+            else if (value instanceof Date)
+                formatted = "<nobr>" + formatted + "</nobr>";
 
             sb.append(formatted);
         }

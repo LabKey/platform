@@ -608,9 +608,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     @Override
     public int getInputRows()
     {
-        if (-1 == inputRows)
+        if (-1 == inputRows && isStringType())
             return 15;
-
         return inputRows;
     }
 

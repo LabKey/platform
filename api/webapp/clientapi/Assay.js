@@ -279,12 +279,14 @@ LABKEY.Assay = new function()
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
+            var successCallback = LABKEY.Utils.getOnSuccess(config);
+
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getNabRuns', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                    if(config.success)
-                        config.success.call(config.scope, data.runs);
+                    if(successCallback)
+                        successCallback.call(config.scope, data.runs);
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
                 params : dataObject
@@ -329,12 +331,14 @@ LABKEY.Assay = new function()
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
+            var successCallback = LABKEY.Utils.getOnSuccess(config);
+
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getStudyNabRuns', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                    if(config.success)
-                        config.success.call(config.scope, data.runs);
+                    if(successCallback)
+                        successCallback.call(config.scope, data.runs);
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
                 params : dataObject

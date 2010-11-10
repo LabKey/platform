@@ -93,7 +93,8 @@ public class MergedDirectoryResource extends AbstractResourceCollection
                     for (File f : files)
                     {
                         String name = f.getName();
-                        if (f.isHidden())
+                        // Issue 11189: default custom view .qview.xml file is hidden on MacOX or Linux
+                        if (!".qview.xml".equalsIgnoreCase(name) && f.isHidden())
                             continue;
 //                        if (_resolver.filter(name))
 //                            continue;

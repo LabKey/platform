@@ -31,6 +31,7 @@ import org.labkey.data.xml.view.ViewDocument;
 import org.labkey.data.xml.view.ViewType;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -60,14 +61,21 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         super(r);
         _name = r.getName().substring(0, r.getName().length() - HTML_VIEW_EXTENSION.length());
 
+        InputStream is = null;
         try
         {
-            _html = IOUtils.toString(r.getInputStream());
+            is = r.getInputStream();
+            if (is != null)
+                _html = IOUtils.toString(is);
         }
         catch(IOException e)
         {
             _log.error("Error trying to read HTML content from " + r.getPath(), e);
             throw new RuntimeException(e);
+        }
+        finally
+        {
+            try { if (is != null) is.close(); } catch (IOException _) { }
         }
 
         Resource parent = r.parent();

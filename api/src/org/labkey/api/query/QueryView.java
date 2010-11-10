@@ -973,16 +973,20 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+    protected String getChangeViewScript(String viewName)
+    {
+        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].changeView(" + PageFlowUtil.jsString(viewName) + ");";
+    }
+
     protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
-        String changeViewScript = "LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].changeView('<viewname>');";
         boolean isReport = getSettings().getReportId() != null;
 
         // default grid view stays at the top level
         //reports don't render a DataRegion JavaScript object, so we need to use an explicit href when this is a report
         NavTree item = new NavTree("default", (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), "").getLocalURIString() : "#"));
         if (!isReport)
-            item.setScript(changeViewScript.replace("<viewname>", ""));
+            item.setScript(getChangeViewScript(""));
 
         item.setId(getDataRegionName() + ":Views:default");
         if ("".equals(currentView))
@@ -1031,7 +1035,7 @@ public class QueryView extends WebPartView<Object>
 
             item = new NavTree(label, (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString(): "#"));
             if (!isReport)
-                item.setScript(changeViewScript.replace("<viewname>", label));
+                item.setScript(getChangeViewScript(label));
             item.setId(getDataRegionName() + ":Views:" + label);
             if (label.equals(currentView))
                 item.setStrong(true);
@@ -1397,6 +1401,7 @@ public class QueryView extends WebPartView<Object>
 
     public TSVGridWriter getTsvWriter() throws SQLException, IOException
     {
+        _initializeButtonBar = false;
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         getSettings().setShowRows(ShowRows.ALL);
@@ -1414,12 +1419,18 @@ public class QueryView extends WebPartView<Object>
 
     public Report.Results getResults() throws SQLException, IOException
     {
+        return getResults(ShowRows.ALL);
+    }
+
+    public Report.Results getResults(ShowRows showRows) throws SQLException, IOException
+    {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         ShowRows prevShowRows = getSettings().getShowRows();
         try
         {
-            getSettings().setShowRows(ShowRows.ALL);
+            // Set to the desired row policy
+            getSettings().setShowRows(showRows);
             rgn.setAllowAsync(false);
             view.getRenderContext().setCache(false);
             RenderContext ctx = view.getRenderContext();

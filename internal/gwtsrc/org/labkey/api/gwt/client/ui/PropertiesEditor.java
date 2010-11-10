@@ -166,6 +166,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         };
 
         _buttonPanel = new HorizontalPanel();
+        _buttonPanel.getElement().setClassName("gwt-ButtonBar");
 
         _addFieldButton = new ImageButton("Add Field", addListener);
 

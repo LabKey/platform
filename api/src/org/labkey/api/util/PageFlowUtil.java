@@ -286,6 +286,21 @@ public class PageFlowUtil
         return ret;
     }
 
+    /**
+     * Creates a JavaScript string literal of an HTML escaped value.
+     *
+     * Ext, for example, will use the 'id' config parameter as an attribute value in an XTemplate.
+     * The string value is inserted directly into the dom and so should be HTML encoded.
+     *
+     * @param s String to escaped
+     * @return The JavaScript string literal of the HTML escaped value.
+     */
+    // For example, given the string: "\"'>--></script><script type=\"text/javascript\">alert(\"8(\")</script>"
+    // the method will return: "'&quot;&#039;&gt;--&gt;&lt;/script&gt;&lt;script type=&quot;text/javascript&quot;&gt;alert(&quot;8(&quot;)&lt;/script&gt;'"
+    public static String qh(String s)
+    {
+        return PageFlowUtil.jsString(PageFlowUtil.filter(s));
+    }
 
     static public String jsString(CharSequence cs)
     {
@@ -965,6 +980,13 @@ public class PageFlowUtil
     }
 
 
+    // Fetch the contents of a file, and return it in a list.
+    public static List<String> getFileContentsAsList(File file) throws IOException
+    {
+        return getStreamContentsAsList(new FileInputStream(file));
+    }
+
+
     public static boolean empty(String str)
     {
         return null == str || str.trim().length() == 0;
@@ -1630,11 +1652,9 @@ public class PageFlowUtil
 
             ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
-            if (null != rootCustomStylesheetURL)
-                F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
-
             if (!c.isRoot())
             {
+                /* Add the themeStylesheet */
                 if (coreUrls.getThemeStylesheetURL(c) != null)
                     F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
                 else
@@ -1645,13 +1665,24 @@ public class PageFlowUtil
                 }
                 ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
+                /* Add the customStylesheet */
                 if (null != containerCustomStylesheetURL)
                     F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
+                else
+                {
+                    if (null != rootCustomStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+                }
             }
             else
             {
+                /* Add the root themeStylesheet */
                 if (coreUrls.getThemeStylesheetURL() != null)
                     F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+
+                /* Add the root customStylesheet */
+                if (null != rootCustomStylesheetURL)
+                    F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
             }
         }
 

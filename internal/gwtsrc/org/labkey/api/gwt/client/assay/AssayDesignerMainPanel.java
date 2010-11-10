@@ -163,7 +163,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             _rootPanel.add(panel);
         }
 
-        _rootPanel.add(new HTML("<br/><br/>"));
+        _rootPanel.add(new HTML("<br/>"));
         saveBarBottom = new SaveButtonBar(this);
         _rootPanel.add(saveBarBottom);
 

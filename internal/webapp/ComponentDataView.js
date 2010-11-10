@@ -121,7 +121,7 @@ Ext.ux.ComponentDataView = Ext.extend(Ext.DataView, {
      * Finds the index of the passed node.
      * @param nodeInfo {HTMLElement/String/Number/Record} nodeInfo An HTMLElement template node, index of a template node, the id of a template node, a component member of a template node
      * or a record associated with a node.
-     * @return {Number} The index of the node or -1
+     * @return {HTMLElement} The node or null if it wasn't found
      */
     // Extends DataView.getNode to allow one of the Components in the item's view as the 'nodeInfo' parameter.
     getNode : function (nodeInfo) {

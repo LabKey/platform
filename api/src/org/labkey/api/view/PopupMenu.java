@@ -135,7 +135,7 @@ public class PopupMenu extends DisplayElement
         StringBuilder sb = new StringBuilder();
 
         sb.append("{cls:'extContainer',");
-        sb.append("id:").append(PageFlowUtil.jsString(id)).append(",\n");
+        sb.append("id:").append(PageFlowUtil.qh(id)).append(",\n");
         sb.append("items:[");
         for (NavTree tree : trees)
         {
@@ -147,7 +147,7 @@ public class PopupMenu extends DisplayElement
                 continue;
             }
 
-            sb.append("{").append("text:").append(PageFlowUtil.jsString(tree.getKey()));
+            sb.append("{").append("text:").append(PageFlowUtil.qh(tree.getKey()));
             if (tree.isStrong() || tree.isEmphasis())
             {
                 sb.append(", cls:'");
@@ -158,17 +158,17 @@ public class PopupMenu extends DisplayElement
                 sb.append("'");
             }
             if (StringUtils.isNotEmpty(tree.getId()))
-                sb.append(", id:").append(PageFlowUtil.jsString(tree.getId()));
+                sb.append(", id:").append(PageFlowUtil.qh(tree.getId()));
             if (StringUtils.isNotEmpty(tree.getDescription()))
-                sb.append(", tooltip: ").append(PageFlowUtil.jsString(tree.getDescription()));
+                sb.append(", tooltip: ").append(PageFlowUtil.qh(tree.getDescription()));
             if (tree.isSelected())
                 sb.append(", checked:true");
             if (null != tree.getImageSrc())
-                sb.append(", icon:").append(PageFlowUtil.jsString(tree.getImageSrc()));
+                sb.append(", icon:").append(PageFlowUtil.qh(tree.getImageSrc()));
             if (tree.isDisabled())
                 sb.append(", disabled:true");
             if (null != tree.getValue())
-                sb.append(",").append("href:").append(PageFlowUtil.jsString(tree.getValue()));
+                sb.append(",").append("href:").append(PageFlowUtil.qh(tree.getValue()));
             if (null != tree.getScript())
                 sb.append(", handler:function(){").append(tree.getScript()).append("}");
             if (null != tree.getChildren() && tree.getChildren().length > 0)

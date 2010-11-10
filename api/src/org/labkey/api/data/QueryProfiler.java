@@ -356,7 +356,13 @@ public class QueryProfiler
 
             for (int i = 3; i < _stackTrace.length; i++)
             {
-                sb.append(_stackTrace[i]);
+                String line = _stackTrace[i].toString();
+
+                // Ignore all the servlet container stuff, #11159
+                if (line.startsWith("javax.servlet.http.HttpServlet.service"))
+                    break;
+
+                sb.append(line);
                 sb.append('\n');
             }
 

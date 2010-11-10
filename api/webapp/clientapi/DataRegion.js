@@ -1017,7 +1017,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                         schemaName: this.schemaName,
                         queryName: this.queryName,
                         viewName: (this.view && this.viewName) || "",
-                        fields: fields.join(","),
+                        fields: fields,
                         successCallback: function (json, response, options) {
                             if (hideMessage)
                                 this.hideMessage();
@@ -1256,7 +1256,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     var nameField = win.nameCompositeField.items.get(1);
                     if (!canEdit && viewName == nameField.getValue())
                     {
-                        Ext.Msg.error("You must save this view with an alternate name.");
+                        Ext.Msg.alert("Error saving", "You must save this view with an alternate name.");
                         return;
                     }
 

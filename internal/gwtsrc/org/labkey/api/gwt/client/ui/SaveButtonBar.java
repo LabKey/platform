@@ -36,6 +36,8 @@ public class SaveButtonBar extends HorizontalPanel
     {
         super();
         owner = s;
+                
+        getTable().setClassName("gwt-ButtonBar");
 
         finishButton = new ImageButton("Save & Close", new ClickHandler()
         {
