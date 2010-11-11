@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.Table;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;

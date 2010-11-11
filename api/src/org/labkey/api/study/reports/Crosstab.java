@@ -25,7 +25,6 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.reports.Report;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
 
@@ -46,7 +45,7 @@ public class Crosstab
     private FieldKey _rowFieldKey;
     private FieldKey _colFieldKey;
     private FieldKey _statFieldKey;
-    private Report.Results _results;
+    private Results _results;
     private StatType _statType = StatType.unknown;
 
     List colHeaders = new  ArrayList<Object>();
@@ -65,7 +64,7 @@ public class Crosstab
         unknown,
     }
 
-    public Crosstab(Report.Results results, FieldKey rowFieldKey, FieldKey colFieldKey, FieldKey statFieldKey, Set<Stats.StatDefinition> statSet) throws SQLException
+    public Crosstab(Results results, FieldKey rowFieldKey, FieldKey colFieldKey, FieldKey statFieldKey, Set<Stats.StatDefinition> statSet) throws SQLException
     {
         this.statSet = statSet;
         _results = results;
@@ -299,7 +298,7 @@ public class Crosstab
         return _statFieldKey;
     }
 
-    public Report.Results getResults()
+    public Results getResults()
     {
         return _results;
     }

@@ -16,12 +16,12 @@
 
 package org.labkey.api.util;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.io.IOException;
 
 /**
  * User: Matthew
@@ -30,7 +30,7 @@ import java.io.IOException;
  */
 public class LogPrintWriter extends PrintWriter
 {
-    public LogPrintWriter(Logger log, Priority level)
+    public LogPrintWriter(Logger log, Level level)
     {
         super(new LogWriter(log, level));
     }
@@ -38,10 +38,10 @@ public class LogPrintWriter extends PrintWriter
     private static class LogWriter extends Writer
     {
         Logger log;
-        Priority level;
+        Level level;
         String message = "";
 
-        LogWriter(Logger log, Priority level)
+        LogWriter(Logger log, Level level)
         {
             this.log = log;
             this.level = level;

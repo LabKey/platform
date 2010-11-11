@@ -1417,12 +1417,12 @@ public class QueryView extends WebPartView<Object>
         return tsv;
     }
 
-    public Report.Results getResults() throws SQLException, IOException
+    public Results getResults() throws SQLException, IOException
     {
         return getResults(ShowRows.ALL);
     }
 
-    public Report.Results getResults(ShowRows showRows) throws SQLException, IOException
+    public Results getResults(ShowRows showRows) throws SQLException, IOException
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
@@ -1436,7 +1436,7 @@ public class QueryView extends WebPartView<Object>
             RenderContext ctx = view.getRenderContext();
             if (null == rgn.getResultSet(ctx))
                 return null;
-            return new Report.Results(ctx);
+            return new Results(ctx);
         }
         finally
         {
@@ -1450,8 +1450,8 @@ public class QueryView extends WebPartView<Object>
 
     public ResultSet getResultSet() throws SQLException, IOException
     {
-        Report.Results r = getResults();
-        return r == null ? null : r.rs;
+        Results r = getResults();
+        return r == null ? null : r.getResultSet();
     }
 
 

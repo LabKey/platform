@@ -16,24 +16,16 @@
 
 package org.labkey.api.reports;
 
+import org.labkey.api.data.Results;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.query.FieldKey;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.ResultSet;
-import java.util.Map;
-import java.util.Collections;
 
 /**
  * Created by IntelliJ IDEA.
@@ -113,42 +105,11 @@ public interface Report
      * @param reportMetaFile - the original file containing the report meta-data
      */
     void afterDeserializeFromFile(File reportMetaFile) throws IOException;
-    
+
     /**
      * Reports which are query or result set oriented, can implement this interface to
      * generate the result set from which results are rendered.
      */
-
-    public class Results
-    {
-        public Results(ResultSet rs, Map<FieldKey,ColumnInfo> map)
-        {
-            this.rs = rs;
-            this.fieldMap = map;
-        }
-        
-        public Results(RenderContext ctx)
-        {
-            this.rs = ctx.getResultSet();
-            this.fieldMap = ctx.getFieldMap();
-        }
-
-        @NotNull
-        public Map<FieldKey,ColumnInfo> getFieldMap()
-        {
-            return null == fieldMap ? Collections.EMPTY_MAP : fieldMap;
-        }
-
-        @Nullable
-        public ResultSet getResultSet()
-        {
-            return rs;
-        }
-
-        public ResultSet rs;
-        public Map<FieldKey,ColumnInfo> fieldMap;
-    }
-
 
     public interface ResultSetGenerator
     {

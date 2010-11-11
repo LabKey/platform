@@ -16,23 +16,41 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.labkey.api.util.BreakpointThread;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.DateUtil;
 
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Calendar;
-import java.math.BigDecimal;
-import java.net.URL;
 import java.io.InputStream;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.NClob;
+import java.sql.ParameterMetaData;
+import java.sql.PreparedStatement;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Map;
 
 public class StatementWrapper implements Statement, PreparedStatement, CallableStatement
 {
@@ -1511,7 +1529,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         long elapsed = System.currentTimeMillis() - _msStart;
         QueryProfiler.track(sql, elapsed);
 
-        if (!_log.isEnabledFor(Priority.DEBUG))
+        if (!_log.isEnabledFor(Level.DEBUG))
             return;
 
         StringBuilder logEntry = new StringBuilder(sql.length() * 2);
@@ -1556,7 +1574,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         if (null != x)
             logEntry.append("\n    ").append(x);
         _appendTableStackTrace(logEntry, 5);
-        _log.log(Priority.DEBUG, logEntry);
+        _log.log(Level.DEBUG, logEntry);
 
         // check for deadlock or transaction related error
         if (x instanceof SQLException)

@@ -32,7 +32,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.collections15.map.CaseInsensitiveMap;
@@ -208,7 +207,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         if (context != null)
         {
             Results r = generateResults(context);
-            if (r != null && r.rs != null)
+            if (r != null && r.getResultSet() != null)
             {
                 TSVGridWriter tsv = createGridWriter(r);
                 tsv.write(resultFile);
@@ -292,7 +291,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
 
     protected TSVGridWriter createGridWriter(Results r) throws SQLException
     {
-        ResultSet rs = r.rs;
+        ResultSet rs = r.getResultSet();
         ResultSetMetaData md = rs.getMetaData();
         ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
         List<String> outputColumnNames = outputColumnNames(r);
@@ -311,7 +310,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
 
     protected List<String> outputColumnNames(Results r) throws SQLException
     {
-        assert null != r.rs;
+        assert null != r.getResultSet();
         CaseInsensitiveHashSet aliases = new CaseInsensitiveHashSet(); // output names
         Map<String,String> remap = new CaseInsensitiveMap<String>();       // resultset name to output name
                 
@@ -333,9 +332,9 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
             remap.put(col.getAlias(), alias);
         }
 
-        ArrayList<String> ret = new ArrayList<String>(r.rs.getMetaData().getColumnCount());
+        ArrayList<String> ret = new ArrayList<String>(r.getResultSet().getMetaData().getColumnCount());
         // now go through the resultset
-        ResultSetMetaData md = r.rs.getMetaData();
+        ResultSetMetaData md = r.getResultSet().getMetaData();
         for (int col=1, count=md.getColumnCount() ; col<=count ; col++)
         {
             String name = md.getColumnName(col);

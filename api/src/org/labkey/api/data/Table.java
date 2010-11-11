@@ -18,8 +18,8 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -317,7 +317,7 @@ public class Table
         {
             // For every SQLException log error, query SQL, and params, then throw
             _log.error("internalExecuteQuery", e);
-            _logQuery(Priority.ERROR, sql, parameters, conn);
+            _logQuery(Level.ERROR, sql, parameters, conn);
             queryFailed = true;
             throw(e);
         }
@@ -564,12 +564,12 @@ public class Table
         if (sql.startsWith("INSERT") && SqlDialect.isConstraintException(e))
         {
             _log.warn("SQL Exception", e);
-            _logQuery(Priority.WARN, sql, parameters, conn);
+            _logQuery(Level.WARN, sql, parameters, conn);
         }
         else
         {
             _log.error("SQL Exception", e);
-            _logQuery(Priority.ERROR, sql, parameters, conn);
+            _logQuery(Level.ERROR, sql, parameters, conn);
         }
     }
 
@@ -1742,9 +1742,9 @@ public class Table
     }
 
 
-    private static void _logQuery(Priority pri, String sql, Object[] parameters, Connection conn)
+    private static void _logQuery(Level level, String sql, Object[] parameters, Connection conn)
     {
-        if (!_log.isEnabledFor(pri))
+        if (!_log.isEnabledFor(level))
             return;
 
         StringBuilder logEntry = new StringBuilder(sql.length() * 2);
@@ -1765,7 +1765,7 @@ public class Table
 
         logEntry.append("\n");
         _appendTableStackTrace(logEntry, 5);
-        _log.log(pri, logEntry);
+        _log.log(level, logEntry);
     }
 
 

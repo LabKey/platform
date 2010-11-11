@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report;
 
+import org.labkey.api.data.Results;
 import org.labkey.api.reports.Report;
 import org.labkey.api.view.ViewContext;
 

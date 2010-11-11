@@ -548,20 +548,20 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         }
                         else if (column.isMvIndicator())
                         {
-                            int qcColumnIndex = getMvColumnIndex(column);
-                            if (qcColumnIndex != -1)
+                            int mvColumnIndex = getMvColumnIndex(column);
+                            if (mvColumnIndex != -1)
                             {
                                 // There's an mv column that matches
-                                if (values[qcColumnIndex] == null)
+                                if (values[mvColumnIndex] == null)
                                 {
                                     MvFieldWrapper mvWrapper = new MvFieldWrapper();
                                     mvWrapper.setMvIndicator("".equals(fld) ? null : fld.toString());
-                                    values[qcColumnIndex] = mvWrapper;
+                                    values[mvColumnIndex] = mvWrapper;
                                     values[i] = mvWrapper;
                                 }
                                 else
                                 {
-                                    MvFieldWrapper mvWrapper = (MvFieldWrapper)values[qcColumnIndex];
+                                    MvFieldWrapper mvWrapper = (MvFieldWrapper)values[mvColumnIndex];
                                     mvWrapper.setMvIndicator("".equals(fld) ? null : fld.toString());
                                 }
                                 if (_throwOnErrors && !MvUtil.isValidMvIndicator(fld.toString(), column.getMvContainer()))
