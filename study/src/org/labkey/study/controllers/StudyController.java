@@ -39,7 +39,6 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -2760,7 +2759,7 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                Report.Results r = queryView.getResults(ShowRows.PAGINATED);
+                Results r = queryView.getResults(ShowRows.PAGINATED);
                 rs = r.getResultSet();
                 ColumnInfo ptidColumnInfo = r.getFieldMap().get(ptidKey);
                 int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
