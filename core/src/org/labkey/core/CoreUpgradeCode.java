@@ -39,7 +39,6 @@ import java.util.*;
  * Date: Nov 21, 2008
  * Time: 9:57:49 PM
  */
-@SuppressWarnings({"UnusedDeclaration"})
 public class CoreUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(CoreUpgradeCode.class);
@@ -60,27 +59,8 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
 
-    // Invoked by core-8.20-8.30.sql
-    public void migrateLookAndFeelSettings(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            return;
-
-        String rootId = getRootId();
-        PropertyManager.PropertyMap configProps = PropertyManager.getWritableProperties(-1, getRootId(), "SiteConfig", true);
-        PropertyManager.PropertyMap lafProps = PropertyManager.getWritableProperties(-1, getRootId(), "LookAndFeel", true);
-
-        for (String settingName : new String[] {"systemDescription", "systemShortName", "themeName", "folderDisplayMode",
-                "navigationBarWidth", "logoHref", "themeFont", "companyName", "systemEmailAddress", "reportAProblemPath"})
-        {
-            migrateSetting(configProps, lafProps, settingName);
-        }
-
-        PropertyManager.saveProperties(configProps);
-        PropertyManager.saveProperties(lafProps);
-    }
-
-    public void installDefaultQcValues()
+    // After schema update, 9.11
+    public void installDefaultMvIndicators()
     {
         try
         {
@@ -119,36 +99,8 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
 
-    private void saveAuthenticationProviders(boolean enableLdap)
-    {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(0, getRootId(), "Authentication", true);
-        String activeAuthProviders = map.get("Authentication");
-
-        if (null == activeAuthProviders)
-            activeAuthProviders = "Database";
-
-        if (enableLdap)
-        {
-            if (!activeAuthProviders.contains("LDAP"))
-                activeAuthProviders = activeAuthProviders + ":LDAP";
-        }
-        else
-        {
-            activeAuthProviders = activeAuthProviders.replaceFirst("LDAP:", "").replaceFirst(":LDAP", "").replaceFirst("LDAP", "");
-        }
-
-        map.put("Authentication", activeAuthProviders);
-        PropertyManager.saveProperties(map);
-    }
-
-
-    private void migrateSetting(PropertyManager.PropertyMap configProps, PropertyManager.PropertyMap lafProps, String propertyName)
-    {
-        lafProps.put(propertyName, configProps.get(propertyName));
-        configProps.remove(propertyName);
-    }
-
     //invoked by core-9.10-9.20.sql
+    @SuppressWarnings({"ConstantConditions"})
     public void migrateAcls(ModuleContext context)
     {
         //8441: skip ACL migration if this is a brand-new install 
@@ -317,6 +269,7 @@ public class CoreUpgradeCode implements UpgradeCode
 
 
     // invoked by prop-9.30-9.31.sql
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setPasswordStrengthAndExpiration(ModuleContext context)
     {
         // If upgrading an existing installation, make sure the settings don't change.  New installations will require
@@ -331,6 +284,7 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     // invoked by prop-10.20-10.21.sql
+    @SuppressWarnings({"UnusedDeclaration"})
     public void migrateEmailTemplates(ModuleContext context)
     {
         // Change the replacement delimeter character and change to a different PropertyManager node

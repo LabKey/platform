@@ -709,31 +709,6 @@ public class SpecimenImporter
         return a.intValue() == b.intValue();
     }
 
-    public static void updateAllCalculatedSpecimenData(User user) throws SQLException
-    {
-        DbSchema schema = StudySchema.getInstance().getSchema();
-        DbScope scope = schema.getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
-        Study[] studies = StudyManager.getInstance().getAllStudies();
-        Logger logger = Logger.getLogger(SpecimenImporter.class);
-        for (Study study : studies)
-        {
-            try
-            {
-                if (transactionOwner)
-                    scope.beginTransaction();
-                updateCalculatedSpecimenData(study.getContainer(), user, logger);
-                if (transactionOwner)
-                    scope.commitTransaction();
-            }
-            finally
-            {
-                if (transactionOwner)
-                    scope.closeConnection();
-            }
-        }
-    }
-
     private static <T> boolean safeObjectEquals(T a, T b)
     {
         if (a == null && b == null)

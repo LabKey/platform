@@ -352,7 +352,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         if (moduleContext.getInstalledVersion() < 9.11)
         {
-            getUpgradeCode().installDefaultQcValues();
+            getUpgradeCode().installDefaultMvIndicators();
         }
     }
 
@@ -370,8 +370,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Role siteAdminRole = RoleManager.getRole(SiteAdminRole.class);
         Role readerRole = RoleManager.getRole(ReaderRole.class);
 
-        ContainerManager.bootstrapContainer("/",
-                siteAdminRole, noPermsRole, noPermsRole);
+        ContainerManager.bootstrapContainer("/", siteAdminRole, noPermsRole, noPermsRole);
 
         // Users & guests can read from /home
         ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, siteAdminRole, readerRole, readerRole);

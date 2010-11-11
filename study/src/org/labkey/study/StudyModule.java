@@ -506,9 +506,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             super("Study Protocol Summary");
         }
+
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
-            JspView view =  new JspView("/org/labkey/study/designer/view/studyDesignSummary.jsp");
+            JspView view = new JspView("/org/labkey/study/designer/view/studyDesignSummary.jsp");
             view.setTitle("Study Protocol Summary");
             view.setFrame(WebPartView.FrameType.PORTAL);
             return view;
@@ -528,16 +529,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         return new StudyUpgradeCode();
     }
-
-    @Override
-    public void afterUpdate(ModuleContext moduleContext)
-    {
-        super.afterUpdate(moduleContext);
-
-        StudyUpgradeCode.upgradeExtensibleTables_83(moduleContext);
-        StudyUpgradeCode.updateAllCalculatedSpecimenData(moduleContext);
-    }
-
 
     public void enumerateDocuments(@NotNull final SearchService.IndexTask task, final Container c, final Date modifiedSince)
     {

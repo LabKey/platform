@@ -259,10 +259,4 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         }
         return Arrays.asList("<a href=\"http://www.mulesource.com\" target=\"top\"><img src=\"http://www.mulesource.com/images/mulesource_license_logo.gif\" alt=\"MuleSource\" width=\"252\" height=\"52\"></a>");
     }
-
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new PipelineUpgradeCode();
-    }
 }
