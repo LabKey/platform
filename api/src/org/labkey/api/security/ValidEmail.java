@@ -124,7 +124,7 @@ public class ValidEmail
 
         public InvalidEmailException(String badEmail)
         {
-            super("'" + badEmail + " does not appear to be a valid email address!");
+            super("'" + badEmail + "' does not appear to be a valid email address!");
             _badEmail = badEmail;
         }
 
