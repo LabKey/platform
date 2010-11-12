@@ -94,17 +94,7 @@ public class SQLFragment
                 for (int i = 0; i < params.size(); i++)
                 {
                     Object o = params.get(i);
-                    Parameter param;
-                    // Create a Parameter if we don't already have one
-                    if (o instanceof Parameter)
-                    {
-                        param = (Parameter)o;
-                    }
-                    else
-                    {
-                        param = new Parameter(o);
-                    }
-                    Object value = param.getValueToBind();
+                    Object value = Parameter.getValueToBind(o);
                     if (value == null)
                     {
                         result.append("NULL");

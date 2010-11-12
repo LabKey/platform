@@ -205,9 +205,9 @@ public class Table
         if (null == parameters)
             return;
 
-        int i = 0;
+        int i = 1;
 
-        for (Object p : parameters)
+        for (Object value : parameters)
         {
             // UNDONE: this code belongs in Parameter._bind()
             //Parameter validation
@@ -217,24 +217,25 @@ public class Table
             {
                 //if the input parameter is NaN, throw a sql exception
                 boolean isInvalid = false;
-                if (p instanceof Float)
+                if (value instanceof Float)
                 {
-                    isInvalid = p.equals(Float.NaN);
+                    isInvalid = value.equals(Float.NaN);
                 }
-                else if (p instanceof Double)
+                else if (value instanceof Double)
                 {
-                    isInvalid = p.equals(Double.NaN);
+                    isInvalid = value.equals(Double.NaN);
                     if (!isInvalid)
-                        p = ResultSetUtil.mapJavaDoubleToDatabaseDouble(((Double) p).doubleValue());
+                        value = ResultSetUtil.mapJavaDoubleToDatabaseDouble(((Double) value).doubleValue());
                 }
 
                 if (isInvalid)
                 {
-                    throw new SQLException("Illegal argument (" + Integer.toString(i) + ") to SQL Statement:  " + p.toString() + " is not a valid parameter");
+                    throw new SQLException("Illegal argument (" + Integer.toString(i) + ") to SQL Statement:  " + value.toString() + " is not a valid parameter");
                 }
             }
 
-            Parameter.bindObject(stmt, i + 1, p);
+            Parameter p = new Parameter(stmt, i, Types.JAVA_OBJECT);
+            p.setValue(value);
             i++;
         }
     }
@@ -995,6 +996,89 @@ public class Table
         }
 
         return returnObject;
+    }
+
+
+    // Does not provide for overriding the built-in fields
+    public static Parameter.ParameterMap insertStatement(Connection conn, User user, TableInfo table) throws SQLException
+    {
+        SqlDialect d = table.getSqlDialect();
+        SQLFragment sqlf = new SQLFragment(" INSERT INTO " + table.toString() + " (");
+        SQLFragment cols = new SQLFragment();
+        SQLFragment values = new SQLFragment();
+        ArrayList<Parameter> parameters = new ArrayList<Parameter>();
+        Timestamp ts = new Timestamp(System.currentTimeMillis());
+
+        String comma = "";
+        CaseInsensitiveHashSet done = new CaseInsensitiveHashSet();
+
+        ColumnInfo col = table.getColumn("Owner");
+        if (null != col && null != user)
+        {
+            cols.append(comma).append("Owner");
+            values.append(comma).append(user.getUserId());
+            done.add("Owner");
+            comma = ",";
+        }
+        col = table.getColumn("CreatedBy");
+        if (null != col && null != user)
+        {
+            cols.append(comma).append("CreatedBy");
+            values.append(comma).append(user.getUserId());
+            done.add("CreatedBy");
+            comma = ",";
+        }
+        col = table.getColumn("Created");
+        if (null != col)
+        {
+            cols.append(comma).append("Created");
+            values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
+            done.add("Created");
+            comma = ",";
+        }
+        ColumnInfo colModifiedBy = table.getColumn("Modified");
+        if (null != colModifiedBy && null != user)
+        {
+            cols.append(comma).append("ModifiedBy");
+            values.append(comma).append(user.getUserId());
+            done.add("ModifiedBy");
+            comma = ",";
+        }
+        ColumnInfo colModified = table.getColumn("Modified");
+        if (null != colModified)
+        {
+            cols.append(comma).append("Modified");
+            values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
+            done.add("Modified");
+            comma = ",";
+        }
+        ColumnInfo colVersion = table.getVersionColumn();
+        if (null != colVersion && !done.contains(colVersion.getName()) && colVersion.getSqlTypeInt() == Types.TIMESTAMP)
+        {
+            cols.append(comma).append(colVersion.getSelectName());
+            values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
+            done.add(colVersion.getName());
+            comma = ",";
+        }
+
+        for (ColumnInfo column : table.getColumns())
+        {
+            if (column.isAutoIncrement())
+                continue;
+            if (done.contains(column.getName()))
+                continue;
+
+            cols.append(comma).append(column.getSelectName());
+            values.append(comma).append("?");
+            Parameter p = new Parameter(column.getName(), parameters.size()+1, column.getSqlTypeInt());
+            parameters.add(p);
+            comma = ", ";
+        }
+
+        sqlf.append(cols).append(") VALUES (").append(values).append(")");
+        
+        PreparedStatement stmt = conn.prepareStatement(sqlf.getSQL());
+        return new Parameter.ParameterMap(stmt, parameters);
     }
 
 
@@ -2002,23 +2086,23 @@ public class Table
 
                 String sql = "INSERT INTO " + name + " VALUES (?, ?)";
                 stmt = conn.prepareStatement(sql);
-                Parameter.bindObject(stmt, 1, 4);
-                Parameter.bindObject(stmt, 2, GregorianCalendar.getInstance());
-                stmt.execute();
-                Parameter.bindObject(stmt, 1, 1.234);
-                Parameter.bindObject(stmt, 2, new java.sql.Timestamp(System.currentTimeMillis()));
-                stmt.execute();
-                Parameter.bindObject(stmt, 1, "string");
-                stmt.execute();
-                Parameter.bindObject(stmt, 1, ContainerManager.getRoot());
-                Parameter.bindObject(stmt, 2, new java.util.Date());
-                stmt.execute();
-                Parameter.bindObject(stmt, 1, MyEnum.BETTY);
-                stmt.execute();
+                Parameter s = new Parameter(stmt, 1);
+                Parameter d = new Parameter(stmt, 2, Types.TIMESTAMP);
 
-                new Parameter("true", true, dialect).bind(stmt,1);
+                s.setValue(4);
+                d.setValue(GregorianCalendar.getInstance());
                 stmt.execute();
-                new Parameter("false", false, dialect).bind(stmt,1);
+                s.setValue(1.234);
+                d.setValue(new java.sql.Timestamp(System.currentTimeMillis()));
+                stmt.execute();
+                s.setValue("string");
+                d.setValue(null);
+                stmt.execute();
+                s.setValue(ContainerManager.getRoot());
+                d.setValue(new java.util.Date());
+                stmt.execute();
+                s.setValue(MyEnum.BETTY);
+                d.setValue(null);
                 stmt.execute();
             }
             finally

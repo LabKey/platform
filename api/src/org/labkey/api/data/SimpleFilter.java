@@ -479,12 +479,12 @@ public class SimpleFilter implements Filter
 
     public SimpleFilter addCondition(String colName, Object value)
     {
-        return addCondition(colName, value == null ? new Parameter(null) : value, CompareType.EQUAL);
+        return addCondition(colName, value == null ? Parameter.NULL_MARKER : value, CompareType.EQUAL);
     }
 
     public SimpleFilter addCondition(ColumnInfo column, Object value)
     {
-        return addCondition(column.getAlias(), value == null ? new Parameter(null) : value, CompareType.EQUAL);
+        return addCondition(column.getAlias(), value == null ? Parameter.NULL_MARKER : value, CompareType.EQUAL);
     }
 
     public SimpleFilter addCondition(ColumnInfo column, Object value, CompareType compare)

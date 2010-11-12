@@ -17,25 +17,28 @@
 package org.labkey.api.data;
 
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.StringExpression;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Collection;
 import java.util.GregorianCalendar;
+import java.util.Map;
 
 /**
  * User: matthewb
  * Date: Feb 13, 2007
  * Time: 9:01:58 AM
  *
- * parameter bound to a specific sql type, usually this is not necessary as
+ * Parameter is bound to a particular parameter of a particular PreparedStatement
+ *
+ * TypedValue is useful for dragging along a sqlType with a raw value, usually this is not necessary as
  * type can be inferred.  However, this can be useful for NULL parameters and
  * for distiguishing unicode, non-unicode types
  *
@@ -45,69 +48,85 @@ import java.util.GregorianCalendar;
 
 public class Parameter
 {
-    private final int _sqlType;
-    private final Object _value;
-
-    public Parameter(Object value)
+    public static class TypedValue
     {
-        this(value, Types.JAVA_OBJECT);
+        Object _value;
+        int    _sqlType;
+
+        public TypedValue(Object value, int sqlType)
+        {
+            this._value = value;
+            this._sqlType = sqlType;
+        }
+
+        public String toString()
+        {
+            return String.valueOf(_value);
+        }
     }
 
-    public Parameter(Object value, int sqlType)
-    {
-        // Use AttachmentFile instead
-        assert !(value instanceof File || value instanceof MultipartFile);
 
-        _value = value;
-        if ((value == null || value instanceof StringExpression) && sqlType == Types.JAVA_OBJECT)
+    public static Object NULL_MARKER = new TypedValue(null, Types.JAVA_OBJECT)
+    {
+        @Override
+        public String toString()
         {
-            sqlType = Types.VARCHAR;
+            return "NULL";
         }
+    };
+
+    
+    public static TypedValue nullParameter(int sqlType)
+    {
+        return new TypedValue(null, sqlType);
+    }
+
+
+    private final int _sqlType;
+    private PreparedStatement _stmt;
+    private final int _index;
+    private String _name;
+
+
+    public Parameter(PreparedStatement stmt, int index)
+    {
+        this(stmt, index, Types.JAVA_OBJECT);
+    }
+
+    public Parameter(PreparedStatement stmt, int index, int sqlType)
+    {
+        _stmt = stmt;
+        _index = index;
         _sqlType = sqlType;
     }
 
-
-    /**
-     * For the case of SQL Server VARCHAR (as opposed to NVARCHAR) useUnicode=false
-     * will convert the parameter (NVARCHAR parameter -> VARCHAR) so the database won't do the reverse
-     * conversion (VARCHAR column -> NVARCHAR).
-     *
-     * @param value
-     * @param useUnicode
-     */
-    public Parameter(Object value, boolean useUnicode, SqlDialect dialect)
+    public Parameter(String name, int index, int sqlType)
     {
-        if (!useUnicode && dialect.isSqlServer())
-        {
-            try
-            {
-                _value = String.valueOf(value).getBytes("ISO-8859-1");
-                _sqlType = Types.VARBINARY;
-            }
-            catch (UnsupportedEncodingException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-        else
-        {
-            _value = value;
-            _sqlType = Types.VARCHAR;
-        }
+        _name = name;
+        _index = index;
+        _sqlType = sqlType;
     }
 
-    public static Parameter nullParameter(int sqlType)
+    public void setName(String name)
     {
-        return new Parameter(null, sqlType);
+        _name = name;
     }
 
-    public void bind(PreparedStatement stmt, int index) throws SQLException
+    public void setValue(Object in) throws SQLException
     {
-        Object value = getValueToBind();
+        int sqlType = _sqlType;
+        if (sqlType == Types.JAVA_OBJECT)
+        {
+            if (in instanceof TypedValue)
+                sqlType = ((TypedValue)in)._sqlType;
+            else if (in instanceof StringExpression)
+                sqlType = Types.VARCHAR;
+        }
+        Object value = getValueToBind(in);
 
         if (null == value)
         {
-            stmt.setNull(index, _sqlType);
+            _stmt.setNull(_index, sqlType==Types.JAVA_OBJECT ? Types.VARCHAR : sqlType);
             return;
         }
 
@@ -120,7 +139,7 @@ public class Parameter
 
                 if (len > Integer.MAX_VALUE)
                     throw new IllegalArgumentException("File length exceeds " + Integer.MAX_VALUE);
-                stmt.setBinaryStream(index, is, (int)len);
+                _stmt.setBinaryStream(_index, is, (int)len);
                 return;
             }
             catch (Exception x)
@@ -130,64 +149,124 @@ public class Parameter
                 throw sqlx;
             }
         }
-
-        if (_sqlType == Types.JAVA_OBJECT)
-            stmt.setObject(index, value);
+                                         
+        if (sqlType == Types.JAVA_OBJECT)
+            _stmt.setObject(_index, value);
         else
-            stmt.setObject(index, value, _sqlType);
+           _stmt.setObject(_index, value, sqlType);
     }
 
-    public static void bindObject(PreparedStatement stmt, int index, Object value) throws SQLException
+    
+    public static Object getValueToBind(Object value)
     {
-        Parameter param;
-        if (value instanceof Parameter)
-            param = (Parameter)value;
-        else
-            param = new Parameter(value, Types.JAVA_OBJECT);
+        if (value instanceof TypedValue)
+            value = ((TypedValue)value)._value;
 
-        param.bind(stmt, index);
-    }
-
-    public Object getValueToBind()
-    {
-        if (_value == null)
-        {
+        if (value == null)
             return null;
+
+        if (value instanceof AttachmentFile)
+        {
+            return value;
         }
 
-        if (_value instanceof AttachmentFile)
+        if (value instanceof java.util.Date)
         {
-            return _value;
+            if (!(value instanceof java.sql.Date) && !(value instanceof java.sql.Time) && !(value instanceof java.sql.Timestamp))
+                return new java.sql.Timestamp(((java.util.Date) value).getTime());
         }
+        else if (value instanceof GregorianCalendar)
+            return new java.sql.Timestamp(((java.util.GregorianCalendar) value).getTimeInMillis());
+        else if (value instanceof HString)
+            return ((HString)value).getSource();
+        else if (value.getClass() == java.lang.Character.class || value instanceof CharSequence)
+            return value.toString();
+        else if (value instanceof StringExpression)
+            return ((StringExpression)value).getSource();
+        else if (value.getClass() == Container.class)
+            return ((Container) value).getId();
+        else if (value instanceof Enum)
+            return ((Enum)value).name();
+        else if (value instanceof UserPrincipal)
+            return ((UserPrincipal)value).getUserId();
+        else if (value instanceof Role)
+            return ((Role)value).getUniqueName();
 
-        if (_value instanceof java.util.Date)
-        {
-            if (!(_value instanceof java.sql.Date) && !(_value instanceof java.sql.Time) && !(_value instanceof java.sql.Timestamp))
-                return new java.sql.Timestamp(((java.util.Date) _value).getTime());
-        }
-        else if (_value instanceof GregorianCalendar)
-            return new java.sql.Timestamp(((java.util.GregorianCalendar) _value).getTimeInMillis());
-        else if (_value.getClass() == java.lang.Character.class || _value instanceof CharSequence)
-        {
-            if (_value instanceof HString)
-                return ((HString)_value).getSource();
-            else
-                return _value.toString();
-        }
-        else if (_value instanceof StringExpression)
-            return ((StringExpression)_value).getSource();
-        else if (_value.getClass() == Container.class)
-            return ((Container) _value).getId();
-        else if (_value instanceof Enum)
-            return ((Enum)_value).name();
-        else if (_value instanceof Role)
-            return ((Role)_value).getUniqueName();
-
-        return _value;
+        return value;
     }
+
 
     public String toString()
     {
-        return String.valueOf(_value);
+        return "[" + _index + (null==_name?"":":"+_name) + "]";
+    }
+
+
+    public static class ParameterMap
+    {
+        PreparedStatement _stmt;
+        CaseInsensitiveHashMap<Parameter> _map;
+
+        public ParameterMap(PreparedStatement stmt, Collection<Parameter> parameters)
+        {
+            _map = new CaseInsensitiveHashMap<Parameter>(parameters.size() * 2);
+            for (Parameter p : parameters)
+            {
+                if (null == p._name)
+                    throw new IllegalStateException();
+                p._stmt = stmt;
+                if (_map.containsKey(p._name))
+                    throw new IllegalArgumentException("duplicate parameter name");
+                _map.put(p._name, p);
+            }
+            _stmt = stmt;
+        }
+
+
+        public PreparedStatement getStatement()
+        {
+            return _stmt;
+        }
+
+
+        public void clearParameters() throws SQLException
+        {
+            _stmt.clearParameters();
+            for (Parameter p : _map.values())
+                p.setValue(null);
+        }
+
+
+        public void put(String name, Object value)
+        {
+            try
+            {
+                Parameter p = _map.get(name);
+                if (null != p)
+                    p.setValue(value);
+            }
+            catch (SQLException sqlx)
+            {
+                throw new RuntimeSQLException(sqlx);
+            }
+        }
+
+
+        public void putAll(Map<String,Object> values)
+        {
+            try
+            {
+                for (Map.Entry<String,Object> e : values.entrySet())
+                {
+                    Parameter p = _map.get(e.getKey());
+                    if (null != p)
+                        p.setValue(e.getValue());
+                }
+            }
+            catch (SQLException sqlx)
+            {
+                throw new RuntimeSQLException(sqlx);
+            }
+        }
     }
 }
