@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>                 
 <%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
@@ -35,18 +36,15 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
-<%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.search.SearchController.IndexAction" %>
 <%@ page import="org.labkey.search.SearchController.SearchForm" %>
 <%@ page import="org.labkey.search.SearchController.SearchForm.SearchScope" %>
-<%@ page import="org.labkey.search.model.LuceneSearchServiceImpl" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">

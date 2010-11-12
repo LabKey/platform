@@ -26,6 +26,7 @@ import org.labkey.issue.model.Issue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -302,7 +303,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         protected abstract Integer getUserId(Container c);
     }
 
-    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, String[] recipients)
+    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<String> recipients)
     {
         _newIssue = newIssue;
         _detailsURL = detailsURL;

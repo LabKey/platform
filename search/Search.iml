@@ -13,26 +13,27 @@
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module-library">
-      <library name="lucene-3.0.1">
+      <library name="lucene-3.0.2">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-core-3.0.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-core-3.0.2.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/lucene-3.0.1.zip!/lucene-3.0.1/docs/api" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-3.0.2.zip!/" />
         </JAVADOC>
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-3.0.1-src.zip!/lucene-3.0.1/contrib/snowball/src/java" />
-          <root url="jar://$MODULE_DIR$/lib/lucene-3.0.1-src.zip!/lucene-3.0.1/contrib/snowball/src/test" />
-          <root url="jar://$MODULE_DIR$/lib/lucene-3.0.1-src.zip!/lucene-3.0.1/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-3.0.2-src.zip!/lucene-3.0.2/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-3.0.2-src.zip!/lucene-3.0.2/contrib/snowball/src/java" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-snowball-3.0.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-snowball-3.0.2.jar!/" />
         </CLASSES>
-        <JAVADOC />
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/lib/lucene-snowball-3.0.2-javadoc.jar!/" />
+        </JAVADOC>
         <SOURCES />
       </library>
     </orderEntry>

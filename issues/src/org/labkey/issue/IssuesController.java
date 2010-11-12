@@ -1173,7 +1173,8 @@ public class IssuesController extends SpringActionController
 
     private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, Class<? extends Controller> action) throws ServletException
     {
-        final String[] allAddresses = getEmailAddresses(issue, prevIssue, action);
+        final Set<String> allAddresses = getEmailAddresses(issue, prevIssue, action);
+
         for (String to : allAddresses)
         {
             try
@@ -1208,7 +1209,7 @@ public class IssuesController extends SpringActionController
      * Builds the list of email addresses for notification based on the user
      * preferences and the explicit notification list.
      */
-    private String[] getEmailAddresses(Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
+    private Set<String> getEmailAddresses(Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
     {
         final Set<String> emailAddresses = new HashSet<String>();
         final Container c = getContainer();
@@ -1255,7 +1256,7 @@ public class IssuesController extends SpringActionController
         else
             emailAddresses.remove(current);
 
-        return emailAddresses.toArray(new String[emailAddresses.size()]);
+        return emailAddresses;
     }
 
     @RequiresPermissionClass(ReadPermission.class)
