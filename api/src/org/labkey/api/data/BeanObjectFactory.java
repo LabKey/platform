@@ -176,8 +176,6 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                     continue;
                 }
             }
-
-            return m;
         }
         catch (IllegalAccessException x)
         {
