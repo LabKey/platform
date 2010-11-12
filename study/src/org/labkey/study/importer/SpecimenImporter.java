@@ -42,6 +42,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -1403,117 +1405,154 @@ public class SpecimenImporter
 
         StringBuilder selectSql = new StringBuilder();
         StringBuilder insertSql = new StringBuilder();
+        List<Parameter> parametersInsert = new ArrayList<Parameter>();
+        Parameter.ParameterMap parameterMapInsert = null;
+        PreparedStatement stmtInsert = null;
+
         StringBuilder updateSql = new StringBuilder();
+        List<Parameter> parametersUpdate = new ArrayList<Parameter>();
+        Parameter.ParameterMap parameterMapUpdate = null;
+        PreparedStatement stmtUpdate = null;
 
-        int rowCount = 0;
-        int rowsAdded = 0;
-        int rowsUpdated = 0;
+        Connection conn = null;
 
-        while (iter.hasNext())
+        try
         {
-            Map row = iter.next();
-            rowCount++;
+            conn = schema.getScope().getConnection();
+            int rowCount = 0;
+            int rowsAdded = 0;
+            int rowsUpdated = 0;
 
-            if (1 == rowCount)
+            while (iter.hasNext())
             {
-                for (ImportableColumn column : potentialColumns)
+                Map row = iter.next();
+                rowCount++;
+
+                if (1 == rowCount)
                 {
-                    if (row.containsKey(column.getTsvColumnName()))
-                        availableColumns.add(column);
-                }
-
-                for (ImportableColumn col : availableColumns)
-                {
-                    if (col.isUnique())
-                        uniqueCols.add(col);
-                }
-
-                selectSql.append("SELECT * FROM study.").append(tableName).append(" WHERE Container = ? ");
-                for (ImportableColumn col : uniqueCols)
-                    selectSql.append(" AND ").append(col.getDbColumnName()).append(" = ? ");
-
-                insertSql.append("INSERT INTO study.").append(tableName).append(" (Container");
-                if (addEntityId)
-                    insertSql.append(", EntityId");
-                for (ImportableColumn col : availableColumns)
-                    insertSql.append(", ").append(col.getDbColumnName());
-                insertSql.append(") VALUES (?");
-                if (addEntityId)
-                    insertSql.append(", ?");
-                insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
-                insertSql.append(")");
-
-                updateSql.append("UPDATE study.").append(tableName).append(" SET ");
-                String separator = "";
-                for (ImportableColumn col : availableColumns)
-                {
-                    if (!col.isUnique())
+                    for (ImportableColumn column : potentialColumns)
                     {
-                        updateSql.append(separator).append(col.getDbColumnName()).append(" = ?");
-                        separator = ", ";
+                        if (row.containsKey(column.getTsvColumnName()))
+                            availableColumns.add(column);
+                    }
+
+                    for (ImportableColumn col : availableColumns)
+                    {
+                        if (col.isUnique())
+                            uniqueCols.add(col);
+                    }
+
+                    selectSql.append("SELECT * FROM study.").append(tableName).append(" WHERE Container = ? ");
+                    for (ImportableColumn col : uniqueCols)
+                        selectSql.append(" AND ").append(col.getDbColumnName()).append(" = ? ");
+
+                    int p = 1;
+                    insertSql.append("INSERT INTO study.").append(tableName).append(" (Container");
+                    parametersInsert.add(new Parameter("Container", p++, Types.VARCHAR));
+                    if (addEntityId)
+                    {
+                        insertSql.append(", EntityId");
+                        parametersInsert.add(new Parameter("EntityId", p++, Types.VARCHAR));
+                    }
+                    for (ImportableColumn col : availableColumns)
+                    {
+                        insertSql.append(", ").append(col.getDbColumnName());
+                        parametersInsert.add(new Parameter(col.getDbColumnName(), p++, col.getSQLType()));
+                    }
+                    insertSql.append(") VALUES (?");
+                    if (addEntityId)
+                        insertSql.append(", ?");
+                    insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
+                    insertSql.append(")");
+                    stmtInsert = conn.prepareStatement(insertSql.toString());
+                    parameterMapInsert = new Parameter.ParameterMap(stmtInsert, parametersInsert);
+
+                    p = 1;
+                    updateSql.append("UPDATE study.").append(tableName).append(" SET ");
+                    String separator = "";
+                    for (ImportableColumn col : availableColumns)
+                    {
+                        if (!col.isUnique())
+                        {
+                            updateSql.append(separator).append(col.getDbColumnName()).append(" = ?");
+                            separator = ", ";
+                            parametersUpdate.add(new Parameter(col.getDbColumnName(), p++, col.getSQLType()));
+                        }
+                    }
+                    updateSql.append(" WHERE Container = ?");
+                    parametersUpdate.add(new Parameter("Container", p++, Types.VARCHAR));
+                    separator = " AND ";
+                    for (ImportableColumn col : availableColumns)
+                    {
+                        if (col.isUnique())
+                        {
+                            updateSql.append(separator).append(col.getDbColumnName()).append(" = ?");
+                            parametersUpdate.add(new Parameter(col.getDbColumnName(), p++, col.getSQLType()));
+                        }
+                    }
+                    stmtUpdate = conn.prepareStatement(updateSql.toString());
+                    parameterMapUpdate = new Parameter.ParameterMap(stmtUpdate, parametersUpdate);
+                }
+
+                boolean rowExists = false;
+                if (!uniqueCols.isEmpty())
+                {
+                    ResultSet rs = null;
+                    try
+                    {
+                        Object[] params = new Object[uniqueCols.size() + 1];
+                        int colIndex = 0;
+                        params[colIndex++] = container.getId();
+                        for (ImportableColumn col : uniqueCols)
+                            params[colIndex++] = getValueParameter(col, row);
+
+                        rs = Table.executeQuery(schema, selectSql.toString(), params);
+                        if (rs.next())
+                            rowExists = true;
+                    }
+                    finally
+                    {
+                        if (rs != null) try { rs.close(); } catch (SQLException e) {}
                     }
                 }
-                updateSql.append(" WHERE Container = ?");
-                separator = " AND ";
-                for (ImportableColumn col : availableColumns)
-                {
-                    if (col.isUnique())
-                        updateSql.append(separator).append(col.getDbColumnName()).append(" = ?");
-                }
-            }
 
-            boolean rowExists = false;
-            if (!uniqueCols.isEmpty())
-            {
-                ResultSet rs = null;
-                try
+                if (!rowExists)
                 {
-                    Object[] params = new Object[uniqueCols.size() + 1];
+                    parameterMapInsert.clearParameters();
                     int colIndex = 0;
-                    params[colIndex++] = container.getId();
+                    parametersInsert.get(colIndex++).setValue(container.getId());
+                    if (addEntityId)
+                        parametersInsert.get(colIndex++).setValue(GUID.makeGUID());
+                    for (ImportableColumn col : availableColumns)
+                        parametersInsert.get(colIndex++).setValue(getValueParameter(col, row));
+                    stmtInsert.execute();
+                    rowsAdded++;
+                }
+                else
+                {
+                    parameterMapUpdate.clearParameters();
+                    int colIndex = 0;
+                    for (ImportableColumn col : availableColumns)
+                    {
+                        if (!col.isUnique())
+                            parametersInsert.get(colIndex++).setValue(getValueParameter(col, row));
+                    }
+                    parametersInsert.get(colIndex++).setValue(container.getId());
+
                     for (ImportableColumn col : uniqueCols)
-                        params[colIndex++] = getValueParameter(col, row);
-
-                    rs = Table.executeQuery(schema, selectSql.toString(), params);
-                    if (rs.next())
-                        rowExists = true;
-                }
-                finally
-                {
-                    if (rs != null) try { rs.close(); } catch (SQLException e) {}
+                        parametersInsert.get(colIndex++).setValue(getValueParameter(col, row));
+                    stmtUpdate.execute();
+                    rowsUpdated++;
                 }
             }
 
-            if (!rowExists)
-            {
-                Object[] params = new Object[availableColumns.size() + 1 + (addEntityId ? 1 : 0)];
-                int colIndex = 0;
-                params[colIndex++] = container.getId();
-                if (addEntityId)
-                    params[colIndex++] = GUID.makeGUID();
-                for (ImportableColumn col : availableColumns)
-                    params[colIndex++] = getValueParameter(col, row);
-                Table.execute(schema, insertSql.toString(), params);
-                rowsAdded++;
-            }
-            else
-            {
-                List<Object> params = new ArrayList<Object>();
-                for (ImportableColumn col : availableColumns)
-                {
-                    if (!col.isUnique())
-                        params.add(getValueParameter(col, row));
-                }
-                params.add(container.getId());
-
-                for (ImportableColumn col : uniqueCols)
-                    params.add(getValueParameter(col, row));
-                Table.execute(schema, updateSql.toString(), params.toArray());
-                rowsUpdated++;
-            }
+            info(tableName + ": inserted " + rowsAdded + " new rows, updated " + rowsUpdated + " rows.  (" + rowCount + " rows found in input file.)");
         }
-
-        info(tableName + ": inserted " + rowsAdded + " new rows, updated " + rowsUpdated + " rows.  (" + rowCount + " rows found in input file.)");
+        finally
+        {
+            if (null != conn)
+                schema.getScope().releaseConnection(conn);    
+        }
         assert cpuMergeTable.stop();
     }
 
@@ -1666,10 +1705,10 @@ public class SpecimenImporter
 
                 for (ImportableColumn col : SPECIMEN_COLUMNS)
                 {
-                    Parameter value = getValueParameter(col, properties);
+                    Object value = getValueParameter(col, properties);
                     if (col.getMaxSize() >= 0)
                     {
-                        Object valueToBind = value.getValueToBind();
+                        Object valueToBind = Parameter.getValueToBind(value);
                         if (valueToBind != null)
                         {
                             if (valueToBind.toString().length() > col.getMaxSize())
@@ -1830,12 +1869,12 @@ public class SpecimenImporter
         return loadedColumns;
     }
 
-    private Parameter getValueParameter(ImportableColumn col, Map tsvRow)
+    private Parameter.TypedValue getValueParameter(ImportableColumn col, Map tsvRow)
     {
         Object value = tsvRow.get(col.getTsvColumnName());
         if (value == null)
             return Parameter.nullParameter(col.getSQLType());
-        return new Parameter(value, col.getSQLType());
+        return new Parameter.TypedValue(value, col.getSQLType());
     }
 
     private static final boolean DEBUG = false;

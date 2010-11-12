@@ -72,6 +72,7 @@ import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -1535,14 +1536,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         List<String> imported = new ArrayList<String>(dataMaps.size());
         DatasetImportHelper helper = null;
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
         try
         {
+            conn = scope.getConnection();
             String typeURI = getTypeURI();
             Container c = study.getContainer();
 
             PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
-            helper = new DatasetImportHelper(user, scope.getConnection(), c, this, lastModified);
-            TableInfo table = getStorageTableInfo();
+            helper = new DatasetImportHelper(user, conn, c, this, lastModified);
 
             ValidatorContext validatorCache = new ValidatorContext(c, user);
 
@@ -1574,14 +1578,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 propertyTypeMap.put(pd, PropertyType.getFromURI(pd.getConceptURI(), pd.getRangeURI()));
 
             Pair<Object,String> valuePair = new Pair<Object,String>(null,null);
-            
+
+            TableInfo table = getStorageTableInfo();
+            scope = table.getSchema().getScope();
+            Parameter.ParameterMap parameterMap = Table.insertStatement(conn, user, table);
+            stmt = parameterMap.getStatement();
+
             for (Map row : dataMaps)
             {
                 if (Thread.currentThread().isInterrupted())
                     throw new CancellationException();
 
-                // create a new map with underlying column names
-                Map insertMap = new HashMap();
+                parameterMap.clearParameters();
+                
                 for (Map.Entry<String,Object> e : (Set<Map.Entry<String,Object>>)row.entrySet())
                 {
                     PropertyDescriptor pd = propertyNameMap.get(e.getKey());
@@ -1606,9 +1615,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
                         OntologyManager.convertValuePair(pd, type, valuePair);
 
-                        insertMap.put(name, valuePair.first);
-                        if (null != valuePair.second)
-                            insertMap.put(name + "_" + MvColumn.MV_INDICATOR_SUFFIX, valuePair.second);
+                        parameterMap.put(name, valuePair.first);
+                        parameterMap.put(name + "_" + MvColumn.MV_INDICATOR_SUFFIX, valuePair.second);
                     }
                     catch (ConversionException x)
                     {
@@ -1625,17 +1633,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 Integer qcState = helper.getQCState(row);
                 String sourceLsid = helper.getSourceLsid(row);
 
-                insertMap.put("participantsequencekey", participantSequenceKey);
-                insertMap.put("participantid", participantId);
-                insertMap.put("sequencenum", sequenceNum);
-                insertMap.put("_key", key==null ? "" : String.valueOf(key));
-                insertMap.put("lsid", lsid);
-                insertMap.put("qcstate", qcState);
-                insertMap.put("sourcelsid", sourceLsid);
+                parameterMap.put("participantsequencekey", participantSequenceKey);
+                parameterMap.put("participantid", participantId);
+                parameterMap.put("sequencenum", sequenceNum);
+                parameterMap.put("_key", key==null ? "" : String.valueOf(key));
+                parameterMap.put("lsid", lsid);
+                parameterMap.put("qcstate", qcState);
+                parameterMap.put("sourcelsid", sourceLsid);
                 if (timetype != TimepointType.VISIT)
-                    insertMap.put("date", visitDate);
+                    parameterMap.put("date", visitDate);
 
-                Table.insert(user, table, insertMap);
+                stmt.execute();
 
                 imported.add(lsid);
                 // UNDONE: OntologyManager.validateProperty
@@ -1645,6 +1653,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             if (null != helper)
                 helper.done();
+            ResultSetUtil.close(stmt);
+            if (null != conn)
+                scope.releaseConnection(conn);
         }
         return imported;
     }

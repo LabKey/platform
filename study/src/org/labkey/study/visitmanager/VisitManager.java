@@ -310,7 +310,7 @@ public abstract class VisitManager
         }
         //No demographic data, so just set to study start date.
         String sqlUpdateStartDates = "UPDATE " + tableParticipant + " SET StartDate = ? WHERE Container = ? AND StartDate IS NULL";
-        Parameter startDateParam = new Parameter(getStudy().getStartDate(), Types.TIMESTAMP);
+        Parameter.TypedValue startDateParam = new Parameter.TypedValue(getStudy().getStartDate(), Types.TIMESTAMP);
         Table.execute(schema, sqlUpdateStartDates, new Object[] {startDateParam, getStudy().getContainer()});
     }
 
