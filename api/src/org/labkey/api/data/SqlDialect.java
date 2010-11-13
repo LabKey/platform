@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
@@ -383,6 +384,30 @@ public abstract class SqlDialect
     // Do dialect-specific work for this data source (nothing by default)
     public void prepareNewDbScope(DbScope scope) throws SQLException
     {
+        Connection conn = null;
+
+        try
+        {
+            conn = scope.getConnection();
+            String keywords = conn.getMetaData().getSQLKeywords();
+            Set<String> keywordSet = new CaseInsensitiveHashSet(new CsvSet(keywords));
+
+            // TODO: Finish this work -- use getSQLKeywords to determine reserved words instead of a hard-coded list.
+            // Need to test this... the servers report a very different list of keywords.
+            Set<String> fromDatabase = new CaseInsensitiveHashSet(keywordSet);
+            fromDatabase.removeAll(reservedWordSet);
+
+            Set<String> fromCode = new CaseInsensitiveHashSet(reservedWordSet);
+            fromCode.removeAll(keywordSet);
+
+            _log.info("From database but not in code: " + fromDatabase);
+            _log.info("From code but not in database: " + fromCode);
+        }
+        finally
+        {
+            if (null != conn)
+                scope.releaseConnection(conn);
+        }
     }
 
     protected abstract String getProductName();
@@ -564,10 +589,16 @@ public abstract class SqlDialect
     // If necessary, escape quotes and quote the identifier
     public String makeLegalIdentifier(String id)
     {
-        if (reservedWordSet.contains(id) || !AliasManager.isLegalName(id))
+        if (shouldQuoteIdentifier(id))
             return "\"" + id.replaceAll("\"", "\"\"") + "\"";
         else
             return id;
+    }
+
+
+    protected boolean shouldQuoteIdentifier(String id)
+    {
+        return isReserved(id) || !AliasManager.isLegalName(id);
     }
 
 
@@ -582,15 +613,12 @@ public abstract class SqlDialect
 
     public final void checkSqlScript(String sql, double version) throws SQLSyntaxException
     {
-        if (version <= 2.10)
-            return;
-
         Collection<String> errors = new ArrayList<String>();
         String lower = sql.toLowerCase();
         String lowerNoWhiteSpace = lower.replaceAll("\\s", "");
 
         if (lowerNoWhiteSpace.contains("primarykey,"))
-            errors.add("Do not designate PRIMARY KEY on the column definition line; this creates a PK with an arbitrary name, making it more difficult to change it later.  Instead, create the PK as a named constraint (e.g., PK_MyTable).");
+            errors.add("Do not designate PRIMARY KEY on the column definition line; this creates a PK with an arbitrary name, making it more difficult to change later.  Instead, create the PK as a named constraint (e.g., PK_MyTable).");
 
         checkSqlScript(lower, lowerNoWhiteSpace, errors);
 
@@ -1052,7 +1080,7 @@ public abstract class SqlDialect
         return partName;
     }
 
-    public abstract List<String> getChangeStatements(TableChange change);  
+    public abstract List<String> getChangeStatements(TableChange change);
     public abstract void initializeConnection(Connection conn) throws SQLException;
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
     public abstract boolean isCaseSensitive();
@@ -1063,7 +1091,7 @@ public abstract class SqlDialect
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
 
     // Note: Tests must be safe to invoke on servers that can't connect to any datasources matching the dialect or
-    // may not even have the JDBC driver installed.
+    // don't even have the JDBC driver installed.
     public abstract Collection<? extends Class> getJUnitTests();
 
 

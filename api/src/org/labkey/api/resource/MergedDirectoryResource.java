@@ -17,6 +17,7 @@ package org.labkey.api.resource;
 
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.HeartBeat;
@@ -183,19 +184,5 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     public long getLastModified()
     {
         return exists() ? _dirs.get(0).lastModified() : Long.MIN_VALUE;
-    }
-
-
-    private static class CaseInsensitiveTreeMap<V> extends TreeMap<String,V>
-    {
-        private CaseInsensitiveTreeMap()
-        {
-            super(new Comparator<String>(){
-                    public int compare(String s1, String s2)
-                    {
-                        return s1.compareToIgnoreCase(s2);
-                    }
-                });
-        }
     }
 }

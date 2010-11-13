@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
@@ -42,12 +43,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -204,19 +203,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     public String toString()
     {
         return "static";
-    }
-
-    private class CaseInsensitiveTreeMap<V> extends TreeMap<String,V>
-    {
-        CaseInsensitiveTreeMap()
-        {
-            super(new Comparator<String>(){
-                    public int compare(String s1, String s2)
-                    {
-                        return s1.compareToIgnoreCase(s2);
-                    }
-                });
-        }
     }
 
     private abstract class _PublicResource extends AbstractWebdavResource
