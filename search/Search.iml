@@ -34,13 +34,15 @@
         <JAVADOC>
           <root url="jar://$MODULE_DIR$/lib/lucene-snowball-3.0.2-javadoc.jar!/" />
         </JAVADOC>
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/lucene-3.0.2-src.zip!/lucene-3.0.2/contrib/snowball/src/java" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
       <library name="Tika">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/tika-app-0.7.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/tika-app-0.8.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

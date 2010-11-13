@@ -47,6 +47,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -62,6 +63,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -630,17 +632,15 @@ public class AdminController extends SpringActionController
         //noinspection unchecked
         Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(_libPath);
         Set<String> filenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> internalJars = removeInternalJars ? new CsvSet("api.jar,schemas.jar,internal.jar") : Collections.<String>emptySet();
 
         // Remove path prefix and copy to a modifiable collection
         for (String filename : resources)
-            filenames.add(filename.substring(_libPath.length()));
-
-        if (removeInternalJars)
         {
-            filenames.remove("api.jar");            // Internal JAR
-            filenames.remove("schemas.jar");        // Internal JAR
-            filenames.remove("common.jar");         // Internal JAR
-            filenames.remove("internal.jar");       // Internal JAR
+            String name = filename.substring(_libPath.length());
+
+            if (DefaultModule.isRuntimeJar(name) && !internalJars.contains(name))
+                filenames.add(name);
         }
 
         return filenames;
