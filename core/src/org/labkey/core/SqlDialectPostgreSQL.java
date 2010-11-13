@@ -585,6 +585,8 @@ class SqlDialectPostgreSQL extends SqlDialect
     @Override
     public void prepareNewDbScope(DbScope scope) throws SQLException
     {
+        super.prepareNewDbScope(scope);
+
         Map<String, Integer> scales = new ConcurrentHashMap<String, Integer>();
         initializeUserDefinedTypes(scope, scales);
         DOMAIN_SCALES.put(scope, scales);

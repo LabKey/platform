@@ -15,3 +15,4 @@
  */
 
 -- The mothership schema has no views
+;
