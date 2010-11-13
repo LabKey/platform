@@ -121,7 +121,7 @@ public class SqlScriptManager
 
         try
         {
-            dialect.checkSqlScript(contents, script.getToVersion());
+            dialect.checkSqlScript(contents);
             Logger.getLogger(SqlScriptManager.class).info("start running script : " + script.getDescription());
             dialect.runSql(schema, contents, script.getProvider().getUpgradeCode(), moduleContext);
             Logger.getLogger(SqlScriptManager.class).info("finished running script : " + script.getDescription());

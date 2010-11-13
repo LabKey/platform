@@ -611,7 +611,7 @@ public abstract class SqlDialect
     }
 
 
-    public final void checkSqlScript(String sql, double version) throws SQLSyntaxException
+    public final void checkSqlScript(String sql) throws SQLSyntaxException
     {
         Collection<String> errors = new ArrayList<String>();
         String lower = sql.toLowerCase();
