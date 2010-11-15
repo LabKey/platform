@@ -230,6 +230,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         _object.setEntityId(entityId);
     }
 
+    public String getEntityId()
+    {
+        return _object.getEntityId();
+    }
+
 
     public void setContainer(Container container)
     {
