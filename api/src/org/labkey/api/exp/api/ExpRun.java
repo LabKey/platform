@@ -47,6 +47,7 @@ public interface ExpRun extends ExpObject
     void setComments(String comments);
 
     void setEntityId(String entityId);
+    String getEntityId();
 
     Map<ExpMaterial, String> getMaterialInputs();
 
