@@ -16,6 +16,8 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
@@ -35,7 +37,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
 
-public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
+public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun, AttachmentParent
 {
     private boolean _populated;
 
@@ -636,4 +638,15 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
 
+    @Override
+    public String getContainerId()
+    {
+        return _object.getContainer().getId();
+    }
+
+    @Override
+    public void setAttachments(Collection<Attachment> attachments)
+    {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.DatabaseCache;
@@ -968,6 +969,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
+
     /**
      * @return the data objects that were attached to the run that should be attached to the run in its new folder
      */
@@ -979,6 +981,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return datasToDelete;
     }
 
+
     private void deleteRun(int runId, ExpData[] datasToDelete, User user)
         throws SQLException
     {
@@ -987,6 +990,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             return;
         }
+
+        AttachmentService.get().deleteAttachments(run);
 
         run.deleteProtocolApplications(datasToDelete, user);
 
