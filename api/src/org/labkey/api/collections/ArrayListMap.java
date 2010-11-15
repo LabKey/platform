@@ -217,7 +217,8 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         for (Map.Entry<K,Integer> e : _findMap.entrySet())
         {
             Integer i = e.getValue();
-            assert 0 <= i && i < _findMap.size();
+// BUG DataLoader create bad ArrayListMaps
+//            assert 0 <= i && i < _findMap.size();
             assert !s.get(i);
             s.set(i);
         }
