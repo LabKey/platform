@@ -82,6 +82,18 @@ public class CPUTimer
     }
 
 
+    public long getTotalMilliseconds()
+    {
+        return (long)(_cumulative * msFactor);
+    }
+
+
+    public String getDuration()
+    {
+        return DateUtil.formatDuration(getTotalMilliseconds());
+    }
+    
+
     public static String dumpAllTimers()
     {
 		synchronized(timers)
