@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.security.UserPrincipal;
@@ -48,6 +49,8 @@ import java.util.Map;
 
 public class Parameter
 {
+    private static Logger LOG = Logger.getLogger(Parameter.class);
+
     public static class TypedValue
     {
         Object _value;
@@ -114,46 +117,55 @@ public class Parameter
 
     public void setValue(Object in) throws SQLException
     {
-        int sqlType = _sqlType;
-        if (sqlType == Types.JAVA_OBJECT)
-        {
-            if (in instanceof TypedValue)
-                sqlType = ((TypedValue)in)._sqlType;
-            else if (in instanceof StringExpression)
-                sqlType = Types.VARCHAR;
-        }
         Object value = getValueToBind(in);
+        int sqlType = _sqlType;
 
-        if (null == value)
+        try
         {
-            _stmt.setNull(_index, sqlType==Types.JAVA_OBJECT ? Types.VARCHAR : sqlType);
-            return;
-        }
-
-        if (value instanceof AttachmentFile)
-        {
-            try
+            if (sqlType == Types.JAVA_OBJECT)
             {
-                InputStream is = ((AttachmentFile) value).openInputStream();
-                long len = ((AttachmentFile) value).getSize();
+                if (in instanceof TypedValue)
+                    sqlType = ((TypedValue)in)._sqlType;
+                else if (in instanceof StringExpression)
+                    sqlType = Types.VARCHAR;
+            }
 
-                if (len > Integer.MAX_VALUE)
-                    throw new IllegalArgumentException("File length exceeds " + Integer.MAX_VALUE);
-                _stmt.setBinaryStream(_index, is, (int)len);
+            if (null == value)
+            {
+                _stmt.setNull(_index, sqlType==Types.JAVA_OBJECT ? Types.VARCHAR : sqlType);
                 return;
             }
-            catch (Exception x)
+
+            if (value instanceof AttachmentFile)
             {
-                SQLException sqlx = new SQLException();
-                sqlx.initCause(x);
-                throw sqlx;
+                try
+                {
+                    InputStream is = ((AttachmentFile) value).openInputStream();
+                    long len = ((AttachmentFile) value).getSize();
+
+                    if (len > Integer.MAX_VALUE)
+                        throw new IllegalArgumentException("File length exceeds " + Integer.MAX_VALUE);
+                    _stmt.setBinaryStream(_index, is, (int)len);
+                    return;
+                }
+                catch (Exception x)
+                {
+                    SQLException sqlx = new SQLException();
+                    sqlx.initCause(x);
+                    throw sqlx;
+                }
             }
+
+            if (sqlType == Types.JAVA_OBJECT)
+                _stmt.setObject(_index, value);
+            else
+                _stmt.setObject(_index, value, sqlType);
         }
-                                         
-        if (sqlType == Types.JAVA_OBJECT)
-            _stmt.setObject(_index, value);
-        else
-           _stmt.setObject(_index, value, sqlType);
+        catch (SQLException e)
+        {
+            LOG.error("Exception converting \"" + value + "\" to type " + _sqlType);
+            throw e;
+        }
     }
 
     
