@@ -666,7 +666,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     {
         List<String> colSpec = new ArrayList<String>();
         colSpec.add(prop.getName());
-        colSpec.add(sqlTypeNameFromSqlTypeInt(prop.getSqlTypeInt()));
+        colSpec.add(sqlTypeNameFromSqlType(prop.getSqlTypeInt()));
 
         if (prop.getSqlTypeInt() == Types.VARCHAR)
             colSpec.add("(" + prop.getSize() + ")");

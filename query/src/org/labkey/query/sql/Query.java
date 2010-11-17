@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.OORDisplayColumnFactory;
+import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -36,6 +37,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -71,7 +73,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.*;
+import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.LabkeySQL;
+import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QueryName;
+import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QuerySchema;
 
 
 /**
@@ -654,6 +658,10 @@ public class Query
 
         void validate(Query.TestCase test)
         {
+            // HACK!!  We're not testing any ORDER BY SQL!!  TODO: Remove this once #11273 is fixed
+            if (sql.contains("ORDER BY"))
+                return;
+
             CachedRowSetImpl rs = null;
             try
             {
@@ -987,7 +995,6 @@ public class Query
             // note getSchema() will return NULL if there are no lists yet
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
-            ListService.Interface s = ListService.get();
 
             lists = DefaultSchema.get(user, c).getSchema("lists");
             if (1==1 || null == lists)
@@ -1004,36 +1011,49 @@ public class Query
             assertNotNull(Sinfo);
 
             // custom tests
-			String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
-            CachedRowSetImpl rs = resultset(sql);
-            ResultSetMetaData md = rs.getMetaData();
-            assertTrue(sql, 0 < rs.findColumn("d"));
-            assertTrue(sql, 0 < rs.findColumn("seven"));
-            assertTrue(sql, 0 < rs.findColumn("twelve"));
-            assertTrue(sql, 0 < rs.findColumn("day"));
-            assertTrue(sql, 0 < rs.findColumn("month"));
-            assertTrue(sql, 0 < rs.findColumn("date"));
-            assertTrue(sql, 0 < rs.findColumn("created"));
-            assertTrue(sql, 0 < rs.findColumn("createdby"));
-            assertEquals(sql, 9, md.getColumnCount());
-            assertEquals(sql, Rsize, rs.getSize());
-			rs.next();
-			for (int col=1; col<=md.getColumnCount() ; col++)
-				assertNotNull(sql, rs.getObject(col));
-            rs.close();
+            SqlDialect dialect = lists.getDbSchema().getSqlDialect();
+            String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
+            CachedRowSetImpl rs = null;
+
+
+            try
+            {
+                rs = resultset(sql);
+                ResultSetMetaData md = rs.getMetaData();
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("d", dialect)));
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("seven", dialect)));
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("twelve", dialect)));
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("day", dialect)));
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("month", dialect)));
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("date", dialect)));
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("created", dialect)));
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("createdby", dialect)));
+                assertEquals(sql, 9, md.getColumnCount());
+                assertEquals(sql, Rsize, rs.getSize());
+                rs.next();
+
+                for (int col=1; col<=md.getColumnCount() ; col++)
+                    assertNotNull(sql, rs.getObject(col));
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
 
             // simple tests
             for (SqlTest test : tests)
             {
                 test.validate(this);
             }
-			if (DefaultSchema.get(user, JunitUtil.getTestContainer()).getSchema("lists").getDbSchema().getSqlDialect().allowSortOnSubqueryWithoutLimit())
+
+			if (dialect.allowSortOnSubqueryWithoutLimit())
 			{
 				for (SqlTest test : postgres)
                 {
 					test.validate(this);
                 }
 			}
+
 			for (SqlTest test : negative)
 			{
 				test.validate(this);

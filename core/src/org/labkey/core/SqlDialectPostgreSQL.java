@@ -20,11 +20,13 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.KeywordCandidates;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -44,6 +46,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 
 import javax.servlet.ServletException;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -55,6 +58,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -69,6 +73,8 @@ class SqlDialectPostgreSQL extends SqlDialect
 {
     private static final Map<DbScope, Map<String, Integer>> DOMAIN_SCALES = new ConcurrentHashMap<DbScope, Map<String, Integer>>();
     private static final SqlDialect INSTANCE = new SqlDialectPostgreSQL();
+
+    private final Set<String> oldReservedWordSet;
 
     public static SqlDialect get()
     {
@@ -92,7 +98,7 @@ class SqlDialectPostgreSQL extends SqlDialect
 
     private SqlDialectPostgreSQL()
     {
-        reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
+        oldReservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
                 "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC",
                 "AUTHORIZATION", "BETWEEN", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "CONSTRAINT",
                 "CREATE", "CROSS", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC",
@@ -104,6 +110,23 @@ class SqlDialectPostgreSQL extends SqlDialect
                 "REFERENCES", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "THEN",
                 "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VERBOSE", "WHEN", "WHERE"
         ));
+    }
+
+    @Override
+    protected Set<String> getKeywords(DbScope scope) throws SQLException, IOException
+    {
+        Set<String> set = super.getKeywords(scope);
+
+        Set<String> old = Sets.newCaseInsensitiveHashSet(oldReservedWordSet);
+        old.removeAll(set);
+        Set<String> new1 = Sets.newCaseInsensitiveHashSet(set);
+        new1.removeAll(oldReservedWordSet);
+
+        _log.info("In old set, but not new: " + old);
+        _log.info("In new set, but not old: " + new1);
+
+        assert KeywordCandidates.get().containsAll(oldReservedWordSet, "PostgreSQL");
+        return set;
     }
 
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
@@ -583,7 +606,7 @@ class SqlDialectPostgreSQL extends SqlDialect
 
 
     @Override
-    public void prepareNewDbScope(DbScope scope) throws SQLException
+    public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {
         super.prepareNewDbScope(scope);
 
@@ -900,7 +923,7 @@ class SqlDialectPostgreSQL extends SqlDialect
     {
         List<String> colSpec = new ArrayList<String>();
         colSpec.add(makePropertyIdentifier(prop.getName()));
-        colSpec.add(sqlTypeNameFromSqlTypeInt(prop.getSqlTypeInt()));
+        colSpec.add(sqlTypeNameFromSqlType(prop.getSqlTypeInt()));
         if (prop.getSqlTypeInt() == Types.VARCHAR)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getSqlTypeInt() == Types.NUMERIC)

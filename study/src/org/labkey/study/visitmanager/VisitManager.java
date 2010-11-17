@@ -72,7 +72,7 @@ public abstract class VisitManager
     public static String getParticipantSequenceKeyExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
     {
         SqlDialect dialect = schema.getSqlDialect();
-        String strType = dialect.sqlTypeNameFromSqlTypeInt(Types.VARCHAR);
+        String strType = dialect.sqlTypeNameFromSqlType(Types.VARCHAR);
 
         //CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType +
 

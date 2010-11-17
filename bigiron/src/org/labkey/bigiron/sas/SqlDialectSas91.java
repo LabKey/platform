@@ -58,7 +58,7 @@ public class SqlDialectSas91 extends SqlDialectSas
         @Override
         public String getSqlTypeName() throws SQLException
         {
-            return sqlTypeNameFromSqlTypeInt(getSqlType());
+            return sqlTypeNameFromSqlType(getSqlType());
         }
 
         public boolean isAutoIncrement() throws SQLException

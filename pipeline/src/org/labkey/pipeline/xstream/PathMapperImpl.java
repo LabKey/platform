@@ -60,7 +60,6 @@ public class PathMapperImpl implements PathMapper
 
     public Map<String, String> getPathMap()
     {
-        LinkedHashMap m = new LinkedHashMap();
         return _pathMap;
     }
 
