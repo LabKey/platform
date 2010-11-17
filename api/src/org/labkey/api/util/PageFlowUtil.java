@@ -962,6 +962,13 @@ public class PageFlowUtil
     // Fetch the contents of an input stream, and return it in a list.
     public static List<String> getStreamContentsAsList(InputStream is) throws IOException
     {
+        return getStreamContentsAsList(is, false);
+    }
+
+
+    // Fetch the contents of an input stream, and return it in a list, skipping comment lines is skipComments == true.
+    public static List<String> getStreamContentsAsList(InputStream is, boolean skipComments) throws IOException
+    {
         List<String> contents = new ArrayList<String>();
         BufferedReader input = new BufferedReader(new InputStreamReader(is));
 
@@ -969,7 +976,8 @@ public class PageFlowUtil
         {
             String line;
             while ((line = input.readLine()) != null)
-                contents.add(line);
+                if (!skipComments || !line.startsWith("#"))
+                    contents.add(line);
         }
         finally
         {

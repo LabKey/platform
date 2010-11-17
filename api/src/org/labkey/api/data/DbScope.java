@@ -194,9 +194,20 @@ public class DbScope
         if (isTransactionActive())
             throw new IllegalStateException("Existing transaction");
 
-        Connection conn = _getConnection(null);
-        conn.setAutoCommit(false);
-        _transaction.set(new Transaction(conn));
+        Connection conn = null;
+
+        // try/finally ensures that closeConnection() works even if setAutoCommit() throws 
+        try
+        {
+            conn = _getConnection(null);
+            conn.setAutoCommit(false);
+        }
+        finally
+        {
+            if (null != conn)
+                _transaction.set(new Transaction(conn));
+        }
+
         return conn;
     }
 

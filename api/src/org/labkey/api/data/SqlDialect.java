@@ -23,8 +23,8 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
@@ -32,6 +32,7 @@ import org.labkey.api.util.SystemMaintenance;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -41,7 +42,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
@@ -67,7 +67,7 @@ public abstract class SqlDialect
 
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
-    protected Set<String> reservedWordSet = new CaseInsensitiveHashSet();
+    protected Set<String> reservedWordSet = Sets.newCaseInsensitiveHashSet();
     private Map<String, Integer> sqlTypeNameMap = new CaseInsensitiveHashMap<Integer>();
     private Map<Integer, String> sqlTypeIntMap = new HashMap<Integer, String>();
 
@@ -262,17 +262,11 @@ public abstract class SqlDialect
     }
 
 
-    public String sqlTypeNameFromSqlTypeInt(int sqlTypeInt)
-    {
-        String sqlTypeName = sqlTypeIntMap.get(sqlTypeInt);
-
-        return null != sqlTypeName ? sqlTypeName : "OTHER";
-    }
-
-
     public String sqlTypeNameFromSqlType(int sqlType)
     {
-        return sqlTypeNameFromSqlTypeInt(sqlType);
+        String sqlTypeName = sqlTypeIntMap.get(sqlType);
+
+        return null != sqlTypeName ? sqlTypeName : "OTHER";
     }
 
 
@@ -382,7 +376,14 @@ public abstract class SqlDialect
     public abstract void prepareNewDbSchema(DbSchema schema);
 
     // Do dialect-specific work for this data source (nothing by default)
-    public void prepareNewDbScope(DbScope scope) throws SQLException
+    public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
+    {
+        reservedWordSet = getKeywords(scope);
+
+        assert KeywordCandidates.get().containsAll(reservedWordSet, getProductName());
+    }
+
+    protected Set<String> getKeywords(DbScope scope) throws SQLException, IOException
     {
         Connection conn = null;
 
@@ -390,18 +391,10 @@ public abstract class SqlDialect
         {
             conn = scope.getConnection();
             String keywords = conn.getMetaData().getSQLKeywords();
-            Set<String> keywordSet = new CaseInsensitiveHashSet(new CsvSet(keywords));
+            Set<String> keywordSet = Sets.newCaseInsensitiveHashSet(new CsvSet(keywords));
+            keywordSet.addAll(KeywordCandidates.get().getSql2003Keywords());
 
-            // TODO: Finish this work -- use getSQLKeywords to determine reserved words instead of a hard-coded list.
-            // Need to test this... the servers report a very different list of keywords.
-            Set<String> fromDatabase = new CaseInsensitiveHashSet(keywordSet);
-            fromDatabase.removeAll(reservedWordSet);
-
-            Set<String> fromCode = new CaseInsensitiveHashSet(reservedWordSet);
-            fromCode.removeAll(keywordSet);
-
-            _log.info("From database but not in code: " + fromDatabase);
-            _log.info("From code but not in database: " + fromCode);
+            return keywordSet;
         }
         finally
         {
@@ -561,7 +554,7 @@ public abstract class SqlDialect
         return "";
     }
 
-    private Set<String> systemTableSet = new CaseInsensitiveHashSet(Arrays.asList(getSystemTableNames().split(",")));
+    private Set<String> systemTableSet = Sets.newCaseInsensitiveHashSet(new CsvSet(getSystemTableNames()));
 
     public boolean isSystemTable(String tableName)
     {
