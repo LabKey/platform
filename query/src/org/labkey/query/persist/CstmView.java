@@ -16,9 +16,11 @@
 
 package org.labkey.query.persist;
 
+import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CacheKey;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 
@@ -47,7 +49,7 @@ public final class CstmView extends Entity implements Cloneable, Serializable
         }
         public void setQueryName(String queryName)
         {
-            addCondition(Column.queryname, queryName);
+            addCaseInsensitive(Column.queryname, queryName);
         }
         public void setName(String name)
         {
@@ -172,5 +174,35 @@ public final class CstmView extends Entity implements Cloneable, Serializable
         {
             throw UnexpectedException.wrap(cnse);
         }
+    }
+
+    static
+    {
+        ObjectFactory.Registry.register(CstmView.class, new CstmViewObjectFactory());
+    }
+
+    public static class CstmViewObjectFactory extends BeanObjectFactory<CstmView>
+    {
+        CstmViewObjectFactory()
+        {
+            super(CstmView.class);
+        }
+
+        // there is a UQ constraint on (container, schema, queryname, customviewowner, name)
+        // however UQ does not consider multiple nulls a problem...
+
+//        @Override
+//        protected void fixupMap(Map<String, Object> m, CstmView o)
+//        {
+//            if (null == StringUtils.trimToNull((String)m.get("name")))
+//                m.put("name", "");
+//        }
+//
+//        @Override
+//        protected void fixupBean(CstmView v)
+//        {
+//            if (null == StringUtils.trimToNull(v._name))
+//                v._name = null;
+//        }
     }
 }
