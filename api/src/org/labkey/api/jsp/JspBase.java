@@ -214,6 +214,16 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, url, id);
     }
 
+    public String generateBackButton()
+    {
+        return PageFlowUtil.generateBackButton();
+    }
+
+    public String generateBackButton(String text)
+    {
+        return PageFlowUtil.generateBackButton(text);
+    }
+
     /**
      * Consider: is there any way to name this method in such a way as to
      * make the order of parameters unambiguous?

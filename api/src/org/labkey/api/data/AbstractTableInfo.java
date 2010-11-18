@@ -29,6 +29,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.resource.Resource;
@@ -720,7 +721,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     ScriptReference tableScript;
 
-    protected ScriptReference getTableScript() throws ScriptException
+    protected ScriptReference getTableScript(Container c) throws ScriptException
     {
         if (tableScript != null)
             return tableScript;
@@ -730,25 +731,44 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         if (svc == null)
             return null;
 
-        // replace non-word characters
         if (getPublicSchemaName() == null || getName() == null)
             return null;
-        String dirname = getPublicSchemaName().replaceAll("\\W", "_");
-        String filename =  getName().replaceAll("\\W", "_") + ".js";
-        Path p = new Path("queries", dirname, filename);
+
+        // Create legal path name
+        Path pathNew = new Path("queries",
+                FileUtil.makeLegalName(getPublicSchemaName()),
+                FileUtil.makeLegalName(getName()) + ".js");
+
+        // For backwards compat with 10.2
+        Path pathOld = new Path("queries",
+                getPublicSchemaName().replaceAll("\\W", "_"),
+                getName().replaceAll("\\W", "_") + ".js");
+
+        Path[] paths = new Path[] { pathNew, pathOld };
+
         // UNDONE: get all table scripts instead of just first found
-        Resource r = ModuleLoader.getInstance().getResource(p);
+        Resource r = null;
+        OUTER: for (Module m : c.getActiveModules())
+        {
+            for (Path p : paths)
+            {
+                r = m.getModuleResource(p);
+                if (r != null)
+                    break OUTER;
+            }
+        }
         if (r == null)
             return null;
+        
         tableScript = svc.compile(r);
         return tableScript;
     }
 
-    protected <T> T invokeTableScript(Class<T> resultType, String methodName, Object... args)
+    protected <T> T invokeTableScript(Container c, Class<T> resultType, String methodName, Object... args)
     {
         try
         {
-            ScriptReference script = getTableScript();
+            ScriptReference script = getTableScript(c);
             if (script == null)
                 return null;
 
@@ -799,14 +819,14 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     private Object[] EMPTY_ARGS = new Object[0];
 
     @Override
-    public void fireBatchTrigger(TriggerType type, boolean before, ValidationException errors)
+    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors)
             throws ValidationException
     {
         assert errors != null;
         List<Map<String, Object>> list = errors.toList();
 
         String triggerMethod = (before ? "init" : "complete");
-        Boolean success = invokeTableScript(Boolean.class, triggerMethod, type.name().toLowerCase(), list);
+        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, type.name().toLowerCase(), list);
 
         errors = ValidationException.fromList(list);
         if (success != null && !success.booleanValue())
@@ -817,7 +837,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     }
 
     @Override
-    public void fireRowTrigger(TriggerType type, boolean before, int rowNumber,
+    public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
                                   Map<String, Object> newRow, Map<String, Object> oldRow)
             throws ValidationException
     {
@@ -845,7 +865,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                 case DELETE: args = new Object[] { oldRow, errors };         break;
             }
         }
-        Boolean success = invokeTableScript(Boolean.class, triggerMethod, args);
+        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, args);
         if (success != null && !success.booleanValue())
             errors.put(null, triggerMethod + " validation failed");
 

@@ -17,6 +17,7 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.extjs.gxt.ui.client.event.*;
+import com.extjs.gxt.ui.client.util.Size;
 import com.extjs.gxt.ui.client.widget.TabItem;
 import com.extjs.gxt.ui.client.widget.form.Field;
 import com.extjs.gxt.ui.client.widget.form.TextField;
@@ -430,9 +431,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _table.setVisible(!_rows.isEmpty());
         _noColumnsPanel.setVisible(_rows.isEmpty());
 
-        for (Row row : _rows)
+        for (int index=0 ; index < _rows.size() ; index++)
         {
-            refreshRow(row.edit);
+            Row row = _rows.get(index);
+            refreshRow(index, row);
         }
 
         select(_selectedPD, true);
@@ -688,7 +690,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 }
             });
             upButton.setEnabled(index > 0);
-            Tooltip.addTooltip(upButton, "Click to move up");
+            addTooltip(upButton, "Click to move up");
             _table.setWidget(tableRow, col++, upButton);
 
             PushButton downButton = getDownButton(index);
@@ -703,7 +705,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 }
             });
             downButton.setEnabled(index < _rows.size() - 1);
-            Tooltip.addTooltip(downButton, "Click to move down");
+            addTooltip(downButton, "Click to move down");
             _table.setWidget(tableRow, col++, downButton);
         }
         else
@@ -724,7 +726,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                         markUndeleted(index);
                     }
                 });
-                Tooltip.addTooltip(cancelButton, "Click to cancel deletion");
+                addTooltip(cancelButton, "Click to cancel deletion");
                 _table.setWidget(tableRow,col,cancelButton);
             }
             else
@@ -769,7 +771,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                         }
                     }
                 });
-                Tooltip.addTooltip(deleteButton, "Click to delete");
+                addTooltip(deleteButton, "Click to delete");
                 _table.setWidget(tableRow,col,deleteButton);
             }
         }
@@ -884,7 +886,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                         editLookup(index);
                    }
                 });
-                Tooltip.addTooltip(l, "Click to edit the lookup");
+                addTooltip(l, "Click to edit the lookup");
                 _table.setWidget(tableRow,col,l);
             }
             else
@@ -944,7 +946,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         String src = PropertyUtil.getContextPath() + "/_images/part" + status.toString().toLowerCase() + ".gif";
         Image i = new Image(src);
         DOM.setElementProperty(i.getElement(), "id", id);
-        Tooltip.addTooltip(i, status.getDescription());
+        addTooltip(i, status.getDescription());
         return i;
     }
 
@@ -1251,12 +1253,100 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
 
+    /** same as Tooltip except for override setPopupPosition()
+     * NOTE: can't extend Tooltip since the constructor is private
+     */
+    public class FirefoxTooltip extends PopupPanel implements MouseOverHandler, MouseOutHandler
+    {
+        private Label _label;
+        private Widget _sourceWidget;
+
+        private FirefoxTooltip(String text, Widget sourceWidget)
+        {
+            super(true);
+            _label = new Label(text);
+            add(_label);
+            setStyleName("gwt-ToolTip");
+            _sourceWidget = sourceWidget;
+        }
+
+        public void onMouseOver(MouseOverEvent event)
+        {
+            show();
+            int height = getOffsetHeight();
+            int width = getOffsetHeight();
+            int top = _sourceWidget.getAbsoluteTop() + height;
+            int left = _sourceWidget.getAbsoluteLeft() + 13;
+            int rightOverhang = left + width - (Window.getScrollLeft() + Window.getClientWidth());
+            if (rightOverhang > 0)
+            {
+                left -= rightOverhang;
+            }
+            setPopupPosition(left, top);
+        }
+
+        public void onMouseOut(MouseOutEvent event)
+        {
+            hide();
+        }
+
+        public void setText(String text)
+        {
+            _label.setText(text);
+        }
+
+        // PopPanel constructor calls setPopupPosition(), which calls getBodyOffsetLeft() which is SLOW
+        private boolean inConstructor = true;
+
+        @Override
+        public void setPopupPosition(int left, int top)
+        {
+            if (inConstructor)
+            {
+                inConstructor = false;
+                if (0==left && 0==top)
+                    return;
+            }
+            super.setPopupPosition(left, top);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+    }
+
+
+    void addTooltip(HasAllMouseHandlers widget, String text)
+    {
+        if (!isFirefox)
+        {
+            Tooltip.addTooltip(widget, text);
+        }
+        else
+        {
+            FirefoxTooltip tooltip = new FirefoxTooltip(text, (Widget)widget);
+            widget.addMouseOverHandler(tooltip);
+            widget.addMouseOutHandler(tooltip);
+        }
+    }
+
 
     private class _TextField<D> extends TextField<D>
     {
         public _TextField()
         {
+            // adjustSize==true causes getComputesStyle, SLOW ON FIREFOX
+            this.adjustSize = !isFirefox;
             sinkEvents(Event.ONCHANGE);
+        }
+
+        @Override
+        protected void onResize(int width, int height)
+        {
+//            super.onResize(width, height);
+            if (errorIcon != null && errorIcon.isAttached())
+            {
+              alignErrorIcon();
+            }
+            Size asize = adjustInputSize();
+            boolean adjust = !isFirefox;    // adjust==true causes getComputedStyle(), SLOW ON FIREFOX
+            getInputEl().setSize(width - asize.width, height - asize.height, adjust);
         }
 
         public void onComponentEvent(ComponentEvent ce)
@@ -1478,7 +1568,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
     private static native void _logConsole(String s) /*-{
-        console.log(s);
+        if ('console' in window) window.console.log(s);
     }-*/;
 
     private static void _logGwtDebug(String s)
@@ -1493,6 +1583,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
+    private static native boolean isFirefox() /*-{
+        var ua = navigator.userAgent.toLowerCase();
+        return !(/webkit/.test(ua)) && (/gecko/.test(ua));
+    }-*/;
+
+    private static final boolean isFirefox = isFirefox();
 
     private static boolean _empty(String s) {return null==s || s.length()==0;}
     private static String _string(Object o) {return null==o ? "" : o.toString();}

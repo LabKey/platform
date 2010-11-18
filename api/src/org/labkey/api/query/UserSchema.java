@@ -292,9 +292,9 @@ abstract public class UserSchema extends AbstractSchema
     }
 
     @Deprecated
-    public QueryView createView(ViewContext context, QuerySettings settings) throws ServletException
+    public final QueryView createView(ViewContext context, QuerySettings settings) throws ServletException
     {
-        return new QueryView(this, settings);
+        return createView(context, settings, null);
     }
 
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors) throws ServletException

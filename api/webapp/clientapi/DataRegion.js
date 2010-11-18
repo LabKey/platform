@@ -994,6 +994,11 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 "Ext.ux.dd.GridDragDropRowOrder.js"
             ];
 
+            var timerId = function () {
+                timerId = 0;
+                this.showLoadingMessage("Opening custom view designer...");
+            }.defer(500, this);
+
             LABKEY.requiresCss("groupTabPanel/GroupTab.css", true);
             LABKEY.requiresCss("groupTabPanel/UngroupedTab.css", true);
             LABKEY.requiresScript(dependencies, true, function () {
@@ -1019,7 +1024,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                         viewName: (this.view && this.viewName) || "",
                         fields: fields,
                         successCallback: function (json, response, options) {
-                            if (hideMessage)
+                            if (timerId > 0)
+                                clearTimeout(timerId);
+                            else
                                 this.hideMessage();
 
                             var minWidth = Math.max(700, headerOrFooter.getWidth(true));
@@ -1564,8 +1571,8 @@ function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, 
     {
         // Invoked as part of a regular filter dialog on a grid
         changeFilterCallback = changeFilter;
-        document.getElementById("filterPanelClearAllFiltersButton").style.display=undefined;
-        document.getElementById("filterPanelClearFilterButton").style.display=undefined;
+        document.getElementById("filterPanelClearAllFiltersButton").style.display="";
+        document.getElementById("filterPanelClearFilterButton").style.display="";
     }
     else
     {

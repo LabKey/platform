@@ -215,8 +215,8 @@ function showCompletionDiv(elem)
     }
 
     posTop += elem.offsetHeight;
-    div.style.top = posTop;
-    div.style.left = posLeft;
+    div.style.top = posTop + 'px';
+    div.style.left = posLeft + 'px';
     div.style.display = "block";
     return false;
 }

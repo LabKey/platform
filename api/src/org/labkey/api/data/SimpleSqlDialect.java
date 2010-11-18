@@ -193,6 +193,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
+    public String getGuidType()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
     public String getTempTableKeyword()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");

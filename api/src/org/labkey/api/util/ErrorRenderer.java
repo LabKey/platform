@@ -134,7 +134,7 @@ public class ErrorRenderer
                 {
                     out.print(PageFlowUtil.filter(e.getKey()));
                     out.print(" = ");
-                    out.print(PageFlowUtil.filter(e.getValue().replaceAll("\n", "<br>&nbsp;&nbsp;&nbsp;&nbsp;")));
+                    out.print(PageFlowUtil.filter(e.getValue()).replaceAll("\n", "<br>&nbsp;&nbsp;&nbsp;&nbsp;"));
                     out.println("<br>");
                 }
                 if (!decorations.isEmpty())

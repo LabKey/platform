@@ -217,6 +217,28 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             return null;
         }
 
+        if (fields || properties)
+        {
+            var count = fields ? fields.length : properties.length;
+            for (i=0 ; i<count ; i++)
+            {
+                var field = this.getFieldEditorConfig(
+                        {
+                            containerPath: (config.containerPath || LABKEY.container.path),
+                            lazyCreateStore: config.lazyCreateStore
+                        },
+                        fields?fields[i]:{},
+                        properties?properties[i]:{},
+                        columnModel?columnModel[i]:{}
+                        );
+                var name = field.originalConfig.name;
+                var d = defaults[name];
+                defaults[name] = Ext.applyIf(defaults[name] || {}, field);
+
+                items.push({name:name});
+            }
+        }
+
         if (config.values)
         {
             if (!Ext.isArray(config.values))
@@ -257,9 +279,8 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
 
                             // UNDONE: Ext checkboxes don't have an 'unset' state
                             // Don't require a value for this field.
-                            var col = findColumn(id);
-                            if (col)
-                                col.required = false;
+                            defaults[id].required = false;
+                            defaults[id].allowBlank = true;
                         }
                         else
                             defaults[id].checked = v;
@@ -273,34 +294,13 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
                             defaults[id].emptyText = "Selected rows have different values for this field.";
 
                             // Don't require a value for this field. Allows a '[none]' entry for ComboBox and empty text fields.
-                            var col = findColumn(id);
-                            if (col)
-                                col.required = false;
+                            defaults[id].required = false;
+                            defaults[id].allowBlank = true;
                         }
                         else
                             defaults[id].value = v;
                     }
                 }
-            }
-        }
-
-        if (fields || properties)
-        {
-            var count = fields ? fields.length : properties.length;
-            for (i=0 ; i<count ; i++)
-            {
-                var field = this.getFieldEditorConfig(
-                        {
-                            containerPath: (config.containerPath || LABKEY.container.path),
-                            lazyCreateStore: config.lazyCreateStore
-                        },
-                        fields?fields[i]:{},
-                        properties?properties[i]:{},
-                        columnModel?columnModel[i]:{}
-                        );
-                var name = field.originalConfig.name;
-                defaults[name] = Ext.applyIf(defaults[name] || {}, field);
-                items.push({name:name});
             }
         }
 

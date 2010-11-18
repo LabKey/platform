@@ -942,52 +942,50 @@ public class DataRegion extends DisplayElement
         out.write("Ext.onReady(\n");
         out.write("function () {\n");
         out.write("new LABKEY.DataRegion({\n");
-        out.write("'name' : " + PageFlowUtil.jsString(getName()) + ",\n");
+        out.write("'name' : " + PageFlowUtil.jsString(getName()) + "\n");
 
         if (getSettings() != null)
         {
-            out.write("'schemaName' : " + PageFlowUtil.jsString(getSettings().getSchemaName()) + ",\n");
-            out.write("'queryName' : " + PageFlowUtil.jsString(getSettings().getQueryName()) + ",\n");
-            out.write("'viewName' : " + PageFlowUtil.jsString(getSettings().getViewName()) + ",\n");
-//            out.write("'filter' : '" + new SimpleFilter(ctx.getBaseFilter()).toQueryString(getName()) + "',\n");
-//            out.write("'sort' : '" + ctx.getBaseSort() + "',\n");
+            out.write(",'schemaName' : " + PageFlowUtil.jsString(getSettings().getSchemaName()) + "\n");
+            out.write(",'queryName' : " + PageFlowUtil.jsString(getSettings().getQueryName()) + "\n");
+            out.write(",'viewName' : " + PageFlowUtil.jsString(getSettings().getViewName()) + "\n");
         }
         if (ctx.getView() != null)
         {
             CustomView view = ctx.getView();
             // UNDONE: use CustomViewUtil.propertyMap()
-            out.write("'view' : {\n");
-            out.write(" 'name' : " + PageFlowUtil.jsString(view.getName()) + ",");
-            out.write(" 'default' : " + String.valueOf(view.getName() == null) + ",");
+            out.write(",'view' : {\n");
+            out.write("'name' : " + PageFlowUtil.jsString(view.getName()));
+            out.write(", 'default' : " + String.valueOf(view.getName() == null));
             if (view.getOwner() != null)
-                out.write(" 'owner' : " + PageFlowUtil.jsString(view.getOwner().getDisplayNameOld(ctx.getViewContext())) + ",");
-            out.write(" 'shared' : " + view.isShared() + ",");
-            out.write(" 'inherit' : " + view.canInherit() + ",");
-            out.write(" 'session' : " + view.isSession() + ",");
-            out.write(" 'editable' : " + view.isEditable() + ",");
-            out.write(" 'hidden' : " + view.isHidden() + ",");
+                out.write(", 'owner' : " + PageFlowUtil.jsString(view.getOwner().getDisplayNameOld(ctx.getViewContext())));
+            out.write(", 'shared' : " + view.isShared());
+            out.write(", 'inherit' : " + view.canInherit());
+            out.write(", 'session' : " + view.isSession());
+            out.write(", 'editable' : " + view.isEditable());
+            out.write(", 'hidden' : " + view.isHidden());
             // module custom views have no container
-            out.write(" 'containerPath' : " + PageFlowUtil.jsString(view.getContainer() != null ? view.getContainer().getPath() : "") + ",");
-            out.write("}\n,");
+            out.write(", 'containerPath' : " + PageFlowUtil.jsString(view.getContainer() != null ? view.getContainer().getPath() : ""));
+            out.write("}");
         }
-        out.write("'complete' : " + _complete + ",\n");
-        out.write("'offset' : " + getOffset() + ",\n");
-        out.write("'maxRows' : " + getMaxRows() + ",\n");
-        out.write("'totalRows' : " + _totalRows + ",\n");
-        out.write("'rowCount' : " + _rowCount + ",\n");
-        out.write("'showRows' : '" + getShowRows().toString().toLowerCase() + "',\n");
-        out.write("'showRecordSelectors' : " + _showRecordSelectors + ",\n");
-        out.write("'showSelectMessage' : " + _showSelectMessage + ",\n");
-        out.write("'selectionKey' : " + PageFlowUtil.jsString(getSelectionKey()) + ",\n");
-        out.write("'requestURL' : " + PageFlowUtil.jsString(ctx.getViewContext().getActionURL().toString()) + ",\n");
-        out.write("'selectorCols' : " + PageFlowUtil.jsString(_recordSelectorValueColumns == null ? null : _recordSelectorValueColumns.toString()) + "\n,");
+        out.write(",'complete' : " + _complete + "\n");
+        out.write(",'offset' : " + getOffset() + "\n");
+        out.write(",'maxRows' : " + getMaxRows() + "\n");
+        out.write(",'totalRows' : " + _totalRows + "\n");
+        out.write(",'rowCount' : " + _rowCount + "\n");
+        out.write(",'showRows' : '" + getShowRows().toString().toLowerCase() + "'\n");
+        out.write(",'showRecordSelectors' : " + _showRecordSelectors + "\n");
+        out.write(",'showSelectMessage' : " + _showSelectMessage + "\n");
+        out.write(",'selectionKey' : " + PageFlowUtil.jsString(getSelectionKey()) + "\n");
+        out.write(",'requestURL' : " + PageFlowUtil.jsString(ctx.getViewContext().getActionURL().toString()) + "\n");
+        out.write(",'selectorCols' : " + PageFlowUtil.jsString(_recordSelectorValueColumns == null ? null : _recordSelectorValueColumns.toString()) + "\n");
 
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView
         List<ContainerFilter.Type> allowableContainerFilterTypes = (List<ContainerFilter.Type>)ctx.get("allowableContainerFilterTypes");
         if (allowableContainerFilterTypes != null && allowableContainerFilterTypes.size() > 0)
         {
-            out.write("'allowableContainerFilters' : [");
+            out.write(", 'allowableContainerFilters' : [");
             String sep = "";
             for (ContainerFilter.Type type : allowableContainerFilterTypes)
             {
@@ -999,7 +997,7 @@ public class DataRegion extends DisplayElement
                 out.write(PageFlowUtil.jsString(type.toString()));
                 out.write(" ]");
             }
-            out.write("],\n");
+            out.write("]\n");
         }
 
         out.write("});\n");

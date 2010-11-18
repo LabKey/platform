@@ -891,13 +891,13 @@ public class SchemaTableInfo implements TableInfo
     }
 
     @Override
-    public void fireBatchTrigger(TriggerType type, boolean before, ValidationException errors) throws ValidationException
+    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors) throws ValidationException
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }
 
     @Override
-    public void fireRowTrigger(TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow) throws ValidationException
+    public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow) throws ValidationException
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }

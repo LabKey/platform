@@ -361,10 +361,10 @@ public class QueryView extends WebPartView<Object>
         // Applying the base sort/filter to the url is lossy in that anyone consuming the url can't
         // determine if the sort/filter originated from QuerySettings or from a user applied sort/filter.
         if (getSettings().getBaseFilter() != null)
-            (getSettings().getBaseFilter()).applyToURL(ret, getDataRegionName());
+            (getSettings().getBaseFilter()).applyToURL(ret, DATAREGIONNAME_DEFAULT);
 
         if (getSettings().getBaseSort() != null)
-            getSettings().getBaseSort().applyToURL(ret, getDataRegionName());
+            getSettings().getBaseSort().applyToURL(ret, DATAREGIONNAME_DEFAULT);
 
         switch (action)
         {
@@ -1078,10 +1078,13 @@ public class QueryView extends WebPartView<Object>
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null))
             {
-                if (!views.containsKey(report.getType()))
-                    views.put(report.getType(), new ArrayList<Report>());
+                if (canViewReport(getUser(), getContainer(), report))
+                {
+                    if (!views.containsKey(report.getType()))
+                        views.put(report.getType(), new ArrayList<Report>());
 
-                views.get(report.getType()).add(report);
+                    views.get(report.getType()).add(report);
+                }
             }
         }
 
@@ -1101,6 +1104,11 @@ public class QueryView extends WebPartView<Object>
                 menu.addMenuItem(item);
             }
         }
+    }
+
+    protected boolean canViewReport(User user, Container c, Report report)
+    {
+        return true;
     }
 
     protected String textLink(String text, ActionURL url, String anchorElementId)
@@ -1547,22 +1555,39 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            DbScope scope = getSchema().getDbSchema().getScope();
-            try
+            // On PostgreSQL, wrap the TSV export in a transaction and change some obscure settings to coerce the JDBC driver
+            // to stream what could be very large results.  TODO: In 11.1, hide this bogosity inside the dialect.
+            if (getSqlDialect().isPostgreSQL())
             {
-                scope.beginTransaction();
-                scope.getConnection().setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
-                scope.getConnection().setAutoCommit(false);
-                TSVGridWriter tsv = getTsvWriter();
-                tsv.setExportAsWebPage(isExportAsWebPage);
-                tsv.write(response);
+                DbScope scope = getSchema().getDbSchema().getScope();
+
+                try
+                {
+                    scope.beginTransaction();
+                    scope.getConnection().setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+                    scope.getConnection().setAutoCommit(false);
+                    doExport(response, isExportAsWebPage);
+                }
+                finally
+                {
+                    scope.closeConnection();
+                }
             }
-            finally
+            else
             {
-                scope.closeConnection();
+                doExport(response, isExportAsWebPage);
             }
         }
     }
+
+
+    private void doExport(HttpServletResponse response, boolean isExportAsWebPage) throws ServletException, IOException, SQLException
+    {
+        TSVGridWriter tsv = getTsvWriter();
+        tsv.setExportAsWebPage(isExportAsWebPage);
+        tsv.write(response);
+    }
+
 
     public void exportToApiResponse(ApiQueryResponse response) throws Exception
     {

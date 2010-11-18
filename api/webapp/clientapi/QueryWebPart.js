@@ -346,13 +346,24 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             }
         }
 
+        var timerId = function () {
+            timerId = 0;
+            var el = Ext.fly(this.renderTo);
+            if (el)
+                el.mask("Loading...");
+        }.defer(500, this);
+
         Ext.Ajax.request({
             timeout: (this.timeout == undefined) ? 30000 : this.timeout,
             url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
             success: function(response) {
+                if (timerId > 0)
+                    clearTimeout(timerId);
+                
                 var targetElem = Ext.get(this.renderTo);
                 if(targetElem)
                 {
+                    targetElem.unmask();
                     targetElem.update(response.responseText, true); //execute scripts
 
                     //get the data region and subscribe to events

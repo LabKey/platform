@@ -33,7 +33,7 @@ public class WebThemeManager
 {
     private static final WebTheme BLUE = new WebTheme("Blue", "e1ecfc", "89a1b4", "ffdf8c", "336699", "ebf4ff", "89a1b4");
     private static final WebTheme BROWN = new WebTheme("Brown", "cccc99", "929146", "e1e1c4", "666633", "e1e1c4", "929146");
-    private static final WebTheme TEN_THREE = new WebTheme("10.3", "stylesheet103.css");
+    private static final WebTheme SEATTLE = new WebTheme("Seattle", "stylesheet103.css"); // Follows a new theming 'theme' of naming themes after LabKey related cities.
     
     // handle Web Theme color management
     private static final String THEME_NAMES_KEY = "themeNames";
@@ -110,13 +110,13 @@ public class WebThemeManager
             addToMap(BROWN);
         }
 
-        if (!_webThemeMap.containsKey(TEN_THREE.getFriendlyName()))
+        if (!_webThemeMap.containsKey(SEATTLE.getFriendlyName()))
         {
-            addToMap(TEN_THREE);
+            addToMap(SEATTLE);  // no pun intended
         }
     }
 
-    public final static WebTheme DEFAULT_THEME = TEN_THREE;
+    public final static WebTheme DEFAULT_THEME = SEATTLE;
 
     public static WebTheme getTheme(Container c)
     {

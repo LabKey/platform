@@ -140,7 +140,7 @@ class ErrorView extends HttpView
         }
         if (_includeBackButton)
         {
-            out.print(PageFlowUtil.generateButton("Back", "javascript:window.history.back();"));
+            out.print(PageFlowUtil.generateBackButton());
             out.print("&nbsp;");
         }
         if (_includeFolderButton && !c.isRoot())

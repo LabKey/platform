@@ -28,9 +28,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Copyright (c) 2010 LabKey Corporation
@@ -98,6 +101,9 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
     private File getSampleMetadata(HttpServletRequest request) throws ExperimentException
     {
+        if (_metadataFile != null)
+            return _metadataFile;
+
         if (METADATA_PROVIDER_OPTION_PREVUPLOAD.equals(request.getParameter(METADATA_PROVIDER_INPUT_NAME)))
         {
             String relativePath = request.getParameter(METADATA_PREVUPLOAD_LOCATION);
@@ -133,6 +139,34 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             try { if (is != null) is.close(); } catch (IOException e) {}
         }
         return _metadataFile;
+    }
+
+    private boolean domainPropertiesEqual(DomainProperty[] first, DomainProperty[] second)
+    {
+        if (first == second)
+            return true;
+        if (first == null || second == null)
+            return false;
+        if (first.length != second.length)
+            return false;
+        Set<DomainProperty> firstSet = new HashSet<DomainProperty>();
+        firstSet.addAll(Arrays.asList(first));
+        Set<DomainProperty> secondSet = new HashSet<DomainProperty>();
+        secondSet.addAll(Arrays.asList(second));
+        return firstSet.equals(secondSet);
+    }
+
+    @Override
+    public void setDomainProperties(DomainProperty[] domainProperties)
+    {
+        // short-circuit if the new properties are equal to the old properties; helpful for high-throughput NAb since
+        // there are many samples and property lookup can be expensive.
+        if (!domainPropertiesEqual(_domainProperties, domainProperties))
+        {
+            super.setDomainProperties(domainProperties);
+            // Force recalculation of sample properties if our set of domain properties changes:
+            _sampleProperties = null;
+        }
     }
 
     private static final int BUFFER_SIZE = 2048;
@@ -229,7 +263,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     private static final String METADATA_PROVIDER_INPUT_NAME = "metadataFileProvider";
     private static final String METADATA_PROVIDER_OPTION_NEWUPLOAD = "newMetadataUpload";
     private static final String METADATA_PROVIDER_OPTION_PREVUPLOAD = "prevMetadataUpload";
-        private static final String METADATA_PREVUPLOAD_LOCATION = "prevMetadataLocation";
+    private static final String METADATA_PREVUPLOAD_LOCATION = "prevMetadataLocation";
 
     @Override
     public void addSampleColumns(InsertView view, User user, final AssayRunUploadContext defaultValueContext, final boolean errorReshow) throws ExperimentException

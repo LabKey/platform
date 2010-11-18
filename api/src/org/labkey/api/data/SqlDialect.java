@@ -495,6 +495,8 @@ public abstract class SqlDialect
 
     public abstract String getUniqueIdentType();
 
+    public abstract String getGuidType();
+
     public abstract String getTempTableKeyword();
 
     public abstract String getTempTablePrefix();

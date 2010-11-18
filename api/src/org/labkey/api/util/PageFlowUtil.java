@@ -1047,6 +1047,16 @@ public class PageFlowUtil
     }
 
 
+    public static String generateBackButton()
+    {
+        return generateBackButton("Back");
+    }
+
+    public static String generateBackButton(String text)
+    {
+        return generateButton(text, "#", "window.history.back(); return false;");
+    }
+
     /*
      * Renders a span wrapped in a link (<a>)
      * Consider: is there any way to name this method in such a way as to

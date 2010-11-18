@@ -200,8 +200,9 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             autoScroll: true,
             border: false,
             //width: 230,
+            cls: "labkey-fieldmeta-tree",
             root: new Ext.tree.AsyncTreeNode({
-                id: "<root>",
+                id: "<ROOT>",
                 expanded: true,
                 expandable: false,
                 draggable: false
@@ -748,7 +749,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
 
     getFieldMetaRecord : function (fieldKey)
     {
-        return this.fieldMetaStore.getById(fieldKey);
+        return this.fieldMetaStore.getById(fieldKey.toUpperCase());
     },
 
     onListBeforeToolTipShow : function (list, qt, record, el)
@@ -896,9 +897,13 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         {
                             getFieldCaption : function (values) {
                                 var fieldKey = values.fieldKey;
-                                var fieldMeta = fieldMetaStore.getById(fieldKey);
+                                var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
                                 if (fieldMeta)
-                                    return fieldMeta.data.caption || fieldMeta.data.name;
+                                {
+                                    if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;")
+                                        return fieldMeta.data.caption;
+                                    return fieldMeta.data.name;
+                                }
                                 return values.name + " (not found)";
                             }
                         }
@@ -933,7 +938,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         {
             var o = {fieldKey: fieldKey};
             var fk = FieldKey.fromString(fieldKey);
-            var record = this.fieldMetaStore.getById(fieldKey);
+            var record = this.fieldMetaStore.getById(fieldKey.toUpperCase());
             if (record)
                 o.name = record.caption || fk.name;
             else
@@ -1061,9 +1066,13 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         {
                             getFieldCaption : function (values) {
                                 var fieldKey = values.fieldKey;
-                                var fieldMeta = fieldMetaStore.getById(fieldKey);
+                                var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
                                 if (fieldMeta)
-                                    return fieldMeta.data.caption || fieldMeta.data.name;
+                                {
+                                    if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;")
+                                        return fieldMeta.data.caption;
+                                    return fieldMeta.data.name;
+                                }
                                 return values.fieldKey + " (not found)";
                             }
                         }
@@ -1267,7 +1276,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         return false;
     },
 
-   updateValueTextFieldVisibility : function (combo) {
+    updateValueTextFieldVisibility : function (combo) {
         var record = combo.record;
         var clauseIndex = combo.clauseIndex;
 
@@ -1318,7 +1327,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 return false;
             }
 
-            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
+            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
             if (!fieldMetaRecord) {
                 alert("field not found for fieldKey '" + fieldKey + "'");
                 return false;
@@ -1326,9 +1335,9 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
             var jsonType = fieldMetaRecord.data.jsonType;
             var items = filterRecord.data.items;
-            for (var i = 0; i < items.length; i++)
+            for (var j = 0; j < items.length; j++)
             {
-                var filterOp = items[i].op;
+                var filterOp = items[j].op;
                 if (filterOp)
                 {
                     var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterOp);
@@ -1337,7 +1346,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         return false;
                     }
 
-                    var value = filterType.validate(items[i].value, jsonType, fieldKey);
+                    var value = filterType.validate(items[j].value, jsonType, fieldKey);
                     if (value == undefined)
                         return false;
                 }
@@ -1449,9 +1458,13 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         {
                             getFieldCaption : function (values) {
                                 var fieldKey = values.fieldKey;
-                                var fieldMeta = fieldMetaStore.getById(fieldKey);
+                                var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
                                 if (fieldMeta)
-                                    return fieldMeta.data.caption || fieldMeta.data.name;
+                                {
+                                    if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;")
+                                        return fieldMeta.data.caption;
+                                    return fieldMeta.data.name;
+                                }
                                 return values.fieldKey + " (not found)";
                             }
                         }
@@ -1783,7 +1796,7 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
         this.isLoading = false;
         this.remoteSort = true;
         this.reader = new Ext.data.JsonReader({
-            idProperty: "fieldKeyPath",
+            idProperty: function (json) { return json.fieldKeyPath.toUpperCase(); },
             root: 'columns',
             fields: LABKEY.ext.FieldMetaRecord
         });
@@ -1820,7 +1833,7 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
 
     /**
      * Loads records for the given lookup fieldKey.  The fieldKey is the full path relative to the base query.
-     * The special fieldKey '<root>' returns the records in the base query.
+     * The special fieldKey '<ROOT>' returns the records in the base query.
      *
      * @param options
      * @param {String} [options.fieldKey] Either fieldKey or record is required.
@@ -1845,9 +1858,10 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
         if (!this.lookupLoaded)
             this.lookupLoaded = {};
 
-        if (fieldKey == "<root>" || this.lookupLoaded[fieldKey])
+        var upperFieldKey = fieldKey.toUpperCase();
+        if (upperFieldKey == "<ROOT>" || this.lookupLoaded[upperFieldKey])
         {
-            var r = this.queryLookup(fieldKey);
+            var r = this.queryLookup(upperFieldKey);
             if (options.callback)
                 options.callback.call(options.scope || this, r, options, true);
         }
@@ -1855,20 +1869,19 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
         {
             var o = Ext.applyIf({
                 params: { fk: fieldKey },
-                callback: options.callback.createSequence(function () { this.lookupLoaded[fieldKey] = true; }, this),
+                callback: options.callback.createSequence(function () { this.lookupLoaded[upperFieldKey] = true; }, this),
                 add: true
             }, options);
 
-            this.      load(o);
+            this.load(o);
         }
     },
 
     queryLookup : function (fieldKey)
     {
-        // XXX: check we handle fieldKeys with '/' in them
-        var prefixMatch = fieldKey == "<root>" ? "" : (fieldKey + "/");
+        var prefixMatch = fieldKey == "<ROOT>" ? "" : (fieldKey + "/");
         var collection = this.queryBy(function (r, id) {
-            var recordFieldKey = id;//r.data.fieldKey;
+            var recordFieldKey = id;
             var idx = recordFieldKey.indexOf(prefixMatch);
             if (idx == 0 && recordFieldKey.substring(prefixMatch.length).indexOf("/") == -1)
                 return true;
@@ -1913,7 +1926,8 @@ LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
         var mvEnabled = false;
         if (this.record)
         {
-            var fieldMetaRecord = this.fieldMetaStore.getById(this.record.data.fieldKey);
+            var fieldKey = this.record.data.fieldKey;
+            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
             if (fieldMetaRecord)
             {
                 jsonType = fieldMetaRecord.data.jsonType;
@@ -2030,7 +2044,7 @@ LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
         //console.log(node);
         if (this.fireEvent("beforeload", this, node, callback) !== false) {
             this.store.loadLookup({
-                fieldKey: node.id || "<root>",
+                fieldKey: node.id || "<ROOT>",
                 callback: function (r, options, success) {
                     this.handleResponse({
                         records: r,

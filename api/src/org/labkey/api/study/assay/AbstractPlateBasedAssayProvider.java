@@ -321,27 +321,33 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
     {
         // Re-use the same PlateSamplePropertyHelper so it's able to utilize member variables across calls.
         PlateSamplePropertyHelper helper = context.getSamplePropertyHelper();
+        PlateTemplate template = getPlateTemplate(context.getContainer(), context.getProtocol());
+        Domain sampleDomain = getSampleWellGroupDomain(context.getProtocol());
+        DomainProperty[] allSampleProperties = sampleDomain.getProperties();
+        DomainProperty[] selectedSampleProperties = allSampleProperties;
+        if (filterInputsForType != null)
+        {
+            List<DomainProperty> selected = new ArrayList<DomainProperty>();
+            for (DomainProperty possible : allSampleProperties)
+            {
+                if (filterInputsForType.collectPropertyOnUpload(context, possible.getName()))
+                    selected.add(possible);
+            }
+            selectedSampleProperties = selected.toArray(new DomainProperty[selected.size()]);
+        }
+        // If we don't have a sample helper yet, create it here:
         if (helper == null)
         {
-            PlateTemplate template = getPlateTemplate(context.getContainer(), context.getProtocol());
-            Domain sampleDomain = getSampleWellGroupDomain(context.getProtocol());
-            DomainProperty[] allSampleProperties = sampleDomain.getProperties();
-            DomainProperty[] selectedSampleProperties = allSampleProperties;
-            if (filterInputsForType != null)
-            {
-                List<DomainProperty> selected = new ArrayList<DomainProperty>();
-                for (DomainProperty possible : allSampleProperties)
-                {
-                    if (filterInputsForType.collectPropertyOnUpload(context, possible.getName()))
-                        selected.add(possible);
-                }
-                selectedSampleProperties = selected.toArray(new DomainProperty[selected.size()]);
-            }
             if (isSampleMetadataFileBased())
                 helper = new PlateSampleFilePropertyHelper(context.getContainer(), context.getProtocol(), selectedSampleProperties, template);
             else
                 helper = new PlateSamplePropertyHelper(selectedSampleProperties, template);
             context.setSamplePropertyHelper(helper);
+        }
+        else
+        {
+            // We already have a sample helper, but the desired domain properties may have changed:
+            helper.setDomainProperties(selectedSampleProperties);
         }
         return helper;
     }

@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -85,7 +86,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
         ValidationException errors = new ValidationException();
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, true, errors);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, true, errors);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
@@ -94,12 +95,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 Map<String, Object> row = rows.get(i);
                 row = coerceTypes(row);
-                getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, true, i, row, null);
+                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, true, i, row, null);
                 row = insertRow(user, container, row);
                 if (row == null)
                     continue;
 
-                getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, false, i, row, null);
+                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, false, i, row, null);
                 result.add(row);
             }
             catch (ValidationException vex)
@@ -108,7 +109,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
         }
 
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, false, errors);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, false, errors);
 
         return result;
     }
@@ -139,7 +140,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
-    protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow)
+    protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys)
@@ -152,7 +153,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
 
         ValidationException errors = new ValidationException();
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, true, errors);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
@@ -166,12 +167,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 if (oldRow == null)
                     throw new NotFoundException("The existing row was not found.");
 
-                getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, true, i, row, oldRow);
+                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.UPDATE, true, i, row, oldRow);
                 Map<String, Object> updatedRow = updateRow(user, container, row, oldRow);
                 if (updatedRow == null)
                     continue;
 
-                getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow);
+                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow);
                 result.add(updatedRow);
             }
             catch (ValidationException vex)
@@ -180,7 +181,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
         }
 
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, false, errors);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, false, errors);
 
         return result;
     }
@@ -195,7 +196,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
 
         ValidationException errors = new ValidationException();
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.DELETE, true, errors);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
         for (int i = 0; i < keys.size(); i++)
@@ -208,12 +209,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 if (oldRow == null)
                     continue;
 
-                getQueryTable().fireRowTrigger(TableInfo.TriggerType.DELETE, true, i, null, oldRow);
+                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.DELETE, true, i, null, oldRow);
                 Map<String, Object> updatedRow = deleteRow(user, container, oldRow);
                 if (updatedRow == null)
                     continue;
 
-                getQueryTable().fireRowTrigger(TableInfo.TriggerType.DELETE, false, i, null, updatedRow);
+                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.DELETE, false, i, null, updatedRow);
                 result.add(updatedRow);
             }
             catch (ValidationException vex)
@@ -222,7 +223,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
         }
 
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.DELETE, false, errors);
+        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, false, errors);
 
         return result;
     }

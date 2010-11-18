@@ -235,7 +235,7 @@ public interface TableInfo
      * Example usage:
      * <pre>
      *   ValidationException errors = new ValidationException();
-     *   getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, true, errors);
+     *   getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors);
      *
      *   List&lt;Map&lt;String, Object>> result = new ArrayList&lt;Map&lt;String, Object>>(rows.size());
      *   for (int i = 0; i &lt; rows.size(); i++)
@@ -247,12 +247,12 @@ public interface TableInfo
      *           if (oldRow == null)
      *               throw new NotFoundException("The existing row was not found.");
      *
-     *           getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, true, i, row, oldRow);
+     *           getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.UPDATE, true, i, row, oldRow);
      *           Map<String, Object> updatedRow = updateRow(user, container, row, oldRow);
      *           if (updatedRow == null)
      *               continue;
      *
-     *           getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow);
+     *           getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow);
      *           result.add(updatedRow);
      *       }
      *       catch (ValidationException vex)
@@ -263,15 +263,16 @@ public interface TableInfo
      *
      *   // Firing the after batch trigger will throw a ValidationException if
      *   // any errors were generated during the row triggers or the during after batch trigger.
-     *   getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, false, errors);
+     *   getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, false, errors);
      * </pre>
      *
+     * @param c The current Container.
      * @param type The TriggerType for the event.
      * @param before true if the trigger is before the event, false if after the event.
      * @param errors Any errors created by the validation script will be added to the errors collection.
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    public void fireBatchTrigger(TriggerType type, boolean before, ValidationException errors)
+    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors)
             throws ValidationException;
 
     /**
@@ -301,13 +302,14 @@ public interface TableInfo
      *       </li>
      * </dl>
      *
+     * @param c The current Container.
      * @param type The TriggerType for the event.
      * @param before true if the trigger is before the event, false if after the event.
      * @param oldRow The previous row for UPDATE and DELETE
      * @param newRow The new row for INSERT and UPDATE.
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    public void fireRowTrigger(TriggerType type, boolean before, int rowNumber,
+    public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
                                   Map<String, Object> newRow, Map<String, Object> oldRow)
             throws ValidationException;
 

@@ -35,12 +35,19 @@ import java.util.*;
  */
 public abstract class SamplePropertyHelper<ObjectType>
 {
-    protected final DomainProperty[] _domainProperties;
+    protected DomainProperty[] _domainProperties;
     private Map<DomainProperty, DisplayColumnGroup> _groups;
 
     public SamplePropertyHelper(DomainProperty[] domainProperties)
     {
+        setDomainProperties(domainProperties);
+    }
+
+    public void setDomainProperties(DomainProperty[] domainProperties)
+    {
         _domainProperties = domainProperties;
+        // Force re-calculation of groups if domain properties change:
+        _groups = null;
     }
 
     public abstract List<String> getSampleNames();
