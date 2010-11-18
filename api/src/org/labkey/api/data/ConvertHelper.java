@@ -93,13 +93,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new ClassConverter()), Class.class);
         _register(new ColorConverter(), Color.class);
         _register(new ContainerConverter(), Container.class);
+        _register(new GuidConverter(), GUID.class);
         _register(new DoubleConverter(), Double.TYPE);
         _register(new NullSafeConverter(new DoubleConverter()), Double.class);
         _register(new NullSafeConverter(new DoubleArrayConverter()), double[].class);
         _register(new NullSafeConverter(new FloatConverter()), Float.class);
         _register(new FloatConverter(), Float.TYPE);
         _register(new FloatArrayConverter(), float[].class);
-        _register(new GuidString.Converter(), GuidString.class);
         _register(new HString.Converter(), HString.class);
         _register(new ReturnURLString.Converter(), ReturnURLString.class);
         _register(new IdentifierString.Converter(), IdentifierString.class);
@@ -313,6 +313,20 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 throw new ConversionException("Could not convert: " + str + " to container.");
 
             return c;
+        }
+    }
+
+
+    public static class GuidConverter implements Converter
+    {
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            if (null == value)
+                return null;
+            if (value instanceof GUID)
+                return value;
+            return new GUID(String.valueOf(value));
         }
     }
 

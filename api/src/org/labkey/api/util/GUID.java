@@ -15,8 +15,10 @@
  */
 package org.labkey.api.util;
 
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.security.Crypt;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -54,7 +56,7 @@ import java.io.InputStreamReader;
 
 
 @SuppressWarnings({"UnnecessarySemicolon"})
-public class GUID
+public class GUID implements Serializable
 {
     private static final int version  =       0x00001000;
     private static final int reserved =       0x00008000;
@@ -223,35 +225,39 @@ public class GUID
     }
 
 
-    public static void main(String[] args)
+    //
+    // INSTANCE
+    //
+    private final String _str;
+
+    public GUID()
     {
+        _str = GUID.makeGUID();
+    }
 
-        int count = 1;
-        if (args.length > 0)
-            count = Integer.parseInt(args[0]);
+    public GUID(String str)
+    {
+        if (!isGUID(str))
+            throw new IllegalArgumentException(str);
+        this._str = str;
+    }
 
-        if (true)
-        {
-            for (int i=0 ; i<count ; i++)
-                System.out.println(makeHash());
-        }
-        else
-        {
-            for (int i = 0; i < count; i++)
-            {
-                for (int j = 0; j < 1024; j++)
-                    System.out.println(makeGUID());
-                try
-                {
-                    Thread.sleep(100);
-                }
-                catch (Throwable t)
-                {
-                    continue;
-                }
-                System.out.println(makeGUID());
-            }
-        }
+    @Override
+    public String toString()
+    {
+        return _str;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        return (o instanceof GUID) && _str.equals(((GUID)o)._str);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _str.hashCode();
     }
 }
 

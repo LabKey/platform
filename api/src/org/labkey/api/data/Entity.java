@@ -30,12 +30,12 @@ import java.util.Date;
  */
 public class Entity implements java.io.Serializable, Ownable
 {
-    protected String entityId;
+    protected GUID entityId;
     private int createdBy;
     private long created = 0;
     private int modifiedBy;
     private long modified;
-    private String containerId;
+    private GUID containerId;
 
 
     protected void copyTo(Entity to)
@@ -70,8 +70,8 @@ public class Entity implements java.io.Serializable, Ownable
     public void beforeInsert(User user, String containerId)
     {
         if (null == entityId)
-            entityId = GUID.makeGUID();
-        this.containerId = containerId;
+            entityId = new GUID();
+        this.containerId = new GUID(containerId);
         if (user != null)
             createdBy = user.getUserId();
         created = System.currentTimeMillis();
@@ -136,29 +136,30 @@ public class Entity implements java.io.Serializable, Ownable
 
     public String getContainerId()
     {
-        return containerId;
+        return null==containerId?null:containerId.toString();
     }
 
 
     public void setContainerId(String containerId)
     {
-        this.containerId = containerId;
+        this.containerId = new GUID(containerId);
     }
 
 
     // for Table layer
     public void setContainer(String containerId)
     {
-        this.containerId = containerId;
+        this.containerId = new GUID(containerId);
     }
 
     public String getEntityId()
     {
-        return entityId;
+        return null==entityId ? null : entityId.toString();
     }
 
-    public void setEntityId(String entityId)
+    public void setEntityId(String entityIdStr)
     {
+        GUID entityId = new GUID(entityIdStr);
         if (this.entityId != null && !this.entityId.equals(entityId))
             throw new IllegalStateException("can't change entityid");
         this.entityId = entityId;

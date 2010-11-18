@@ -502,6 +502,11 @@ public class ContainerManager
         }
     }
 
+    public static Container getForId(@NotNull GUID id)
+    {
+        return getForId(id.toString());
+    }
+    
 
     public static Container getForId(String id)
     {
@@ -512,7 +517,7 @@ public class ContainerManager
         //if the input string is not a GUID, just return null,
         //so that we don't get a SQLException when the database
         //tries to convert it to a unique identifier.
-        if(null != id && !GUID.isGUID(id))
+        if (null != id && !GUID.isGUID(id))
             return null;
 
         boolean startTransaction = !core.getSchema().getScope().isTransactionActive();

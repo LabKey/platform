@@ -21,6 +21,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.StringExpression;
 
@@ -177,16 +178,15 @@ public class Parameter
         if (value == null)
             return null;
 
-        if (value instanceof AttachmentFile)
-        {
+        if (value instanceof Number || value instanceof String)
             return value;
-        }
-
-        if (value instanceof java.util.Date)
+        else if (value instanceof java.util.Date)
         {
             if (!(value instanceof java.sql.Date) && !(value instanceof java.sql.Time) && !(value instanceof java.sql.Timestamp))
                 return new java.sql.Timestamp(((java.util.Date) value).getTime());
         }
+        else if (value instanceof AttachmentFile)
+            return value;
         else if (value instanceof GregorianCalendar)
             return new java.sql.Timestamp(((java.util.GregorianCalendar) value).getTimeInMillis());
         else if (value instanceof HString)
@@ -203,6 +203,8 @@ public class Parameter
             return ((UserPrincipal)value).getUserId();
         else if (value instanceof Role)
             return ((Role)value).getUniqueName();
+        else if (value instanceof GUID)
+            return value.toString();
 
         return value;
     }
