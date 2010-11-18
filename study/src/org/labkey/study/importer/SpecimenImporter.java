@@ -1535,12 +1535,12 @@ public class SpecimenImporter
                     for (ImportableColumn col : availableColumns)
                     {
                         if (!col.isUnique())
-                            parametersInsert.get(colIndex++).setValue(getValueParameter(col, row));
+                            parametersUpdate.get(colIndex++).setValue(getValueParameter(col, row));
                     }
                     parametersInsert.get(colIndex++).setValue(container.getId());
 
                     for (ImportableColumn col : uniqueCols)
-                        parametersInsert.get(colIndex++).setValue(getValueParameter(col, row));
+                        parametersUpdate.get(colIndex++).setValue(getValueParameter(col, row));
                     stmtUpdate.execute();
                     rowsUpdated++;
                 }
