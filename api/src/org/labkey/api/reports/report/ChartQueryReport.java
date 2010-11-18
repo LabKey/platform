@@ -110,7 +110,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
             DataView dataView = view.createDataView();
             DataRegion rgn = dataView.getDataRegion();
             RenderContext ctx = dataView.getRenderContext();
-            return null == ctx.getResultSet() ? null : new Results(ctx);
+            return null == ctx.getResultSet() ? null : new ResultsImpl(ctx);
         }
         return null;
     }

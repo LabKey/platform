@@ -1436,7 +1436,7 @@ public class QueryView extends WebPartView<Object>
             RenderContext ctx = view.getRenderContext();
             if (null == rgn.getResultSet(ctx))
                 return null;
-            return new Results(ctx);
+            return new ResultsImpl(ctx);
         }
         finally
         {

@@ -164,7 +164,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
             }
             if (null == rgn.getResultSet(ctx))
                 return null;
-            return new Results(ctx);
+            return new ResultsImpl(ctx);
         }
         return null;
     }
