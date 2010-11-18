@@ -36,6 +36,12 @@
     <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId()%>">
     <table  class="labkey-manage-display">
         <tr>
+            <th align="right">Request Description</th>
+            <td>
+                <textarea rows="10" cols="50" name="requestDescription"><%= h(bean.getSampleRequest().getComments()) %></textarea>
+            </td>
+        </tr>
+        <tr>
             <th align="right">Status</th>
             <td>
                 <select name="status">

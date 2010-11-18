@@ -170,6 +170,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             List<String> lsids = OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(), properties, Collections.singletonList(values), true);
             String lsid = lsids.get(0);
 
+            // Add the new lsid to the row map.
             row.put(objectUriCol.getName(), lsid);
         }
 
@@ -181,7 +182,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         Map<String,Object> rowStripped = new CaseInsensitiveHashMap<Object>(row.size());
-        for(ColumnInfo col : getDbTable().getColumns())
+        for (ColumnInfo col : getQueryTable().getColumns())
         {
             String name = col.getName();
             if (!row.containsKey(name))
@@ -258,7 +259,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             // Note: copy lsid into newValues map so it will be found by the ImportHelper.beforeImportObject()
             newValues.put(objectUriCol.getName(), lsid);
             PropertyDescriptor[] properties = pds.toArray(new PropertyDescriptor[pds.size()]);
-            OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(), properties, Collections.singletonList(newValues), true);
+            List<String> lsids = OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(), properties, Collections.singletonList(newValues), true);
+
+            // Update the lsid in the row: the lsid may have not existed in the row before the update.
+            lsid = lsids.get(0);
+            row.put(objectUriCol.getName(), lsid);
         }
 
         return Table.update(user, getDbTable(), row, keys);

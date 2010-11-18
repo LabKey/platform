@@ -487,6 +487,10 @@
         <ns:datatype>numeric</ns:datatype>
       </ns:column>
         <!-- the actual column name is Date, should migrate this -->
+      <ns:column columnName="_VisitDate">
+        <ns:propertyURI>http://cpas.labkey.com/Study#VisitDate</ns:propertyURI>
+        <ns:datatype>date</ns:datatype>
+      </ns:column>
       <ns:column columnName="VisitDate">
         <ns:propertyURI>http://cpas.labkey.com/Study#VisitDate</ns:propertyURI>
         <ns:datatype>date</ns:datatype>

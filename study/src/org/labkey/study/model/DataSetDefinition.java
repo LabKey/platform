@@ -46,6 +46,7 @@ import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
@@ -780,9 +781,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
                 ColumnInfo wrapped = newDatasetColumnInfo(user, this, col, p.getPropertyDescriptor());
                 columns.add(wrapped);
+
+                // Set the FK if the property descriptor is configured as a lookup. DatasetSchemaTableInfos aren't
+                // cached, so it's safe to include the current user 
+                PropertyDescriptor pd = p.getPropertyDescriptor();
+                if (null != pd && pd.getLookupQuery() != null)
+                    wrapped.setFk(new PdLookupForeignKey(user, pd));
+
                 if (p.isMvEnabled())
                 {
                     ColumnInfo mvColumn = new ColumnInfo(wrapped.getName() + MvColumn.MV_INDICATOR_SUFFIX, this);
+                    // MV indicators are strings
+                    mvColumn.setSqlTypeName("VARCHAR");
                     mvColumn.setPropertyURI(wrapped.getPropertyURI());
                     mvColumn.setAlias(col.getAlias() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
                     mvColumn.setNullable(true);
@@ -819,7 +829,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // Dataset
 
-            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS VARCHAR)"), Types.VARCHAR);
+            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ")"), Types.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
                 public TableInfo getLookupTableInfo()
@@ -1459,7 +1469,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 if (logger != null) logger.debug("generated keys");
             }
 
+            long start = System.currentTimeMillis();
             List<String> imported = _insertPropertyMaps(study, user, dataMaps, lastModified, ensureObjects, logger, scope);
+            long end = System.currentTimeMillis();
+            _log.info("imported " + getName() + " : " + DateUtil.formatDuration(end-start));
 
             if (startedTransaction)
             {
@@ -1778,7 +1791,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         DataSetDefinition that = (DataSetDefinition) o;
 
         if (_dataSetId != that._dataSetId) return false;
-        if (_study != null ? !_study.equals(that._study) : that._study != null) return false;
+        // The _study member variable is populated lazily in the getter,
+        // so go through the getter instead of relying on the variable to be populated
+        if (getStudy() != null ? !getStudy().equals(that.getStudy()) : that.getStudy() != null) return false;
 
         return true;
     }
@@ -2004,7 +2019,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
                 else if (name.endsWith("_" + MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
                 {
-                    from = colMap.get(to.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                    from = colMap.get(name.substring(0,name.length()-(MvColumn.MV_INDICATOR_SUFFIX.length()+1)) + MvColumn.MV_INDICATOR_SUFFIX);
                     if (null == from)
                         continue;
                 }
@@ -2026,8 +2041,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             insertInto.append(j);
 
         ModuleUpgrader.getLogger().info("Migrating data for [" + getContainer().getPath() + "]  '" + getName() + "'");
+        ModuleUpgrader.getLogger().info(insertInto.toString());
         Table.execute(StudySchema.getInstance().getSchema(), insertInto);
     }
+
 
     @Deprecated
     private static class StudyDataTableInfoUpgrade extends SchemaTableInfo

@@ -18,6 +18,7 @@ package org.labkey.study.reports;
 
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
@@ -26,6 +27,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
@@ -34,8 +36,10 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.StudyController;
@@ -152,9 +156,20 @@ public class ReportQueryViewFactory
 
         public void addCustomizeViewItems(MenuButton button)
         {
-            button.addMenuItem("Customize View", urlFor(QueryAction.chooseColumns).toString());
+            NavTree customizeView = new NavTree("Customize View");
+            customizeView.setId(getDataRegionName() + ":Views:Customize View");
+            customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
+                    ".toggleShowCustomizeView();");
+
+            button.addMenuItem(customizeView);
         }
 
+        @Override
+        protected boolean canViewReport(User user, Container c, Report report)
+        {
+            return ReportManager.get().canReadReport(getUser(), getContainer(), report);
+        }
+        
         @Override
         public void addManageViewItems(MenuButton button, Map<String, String> params)
         {

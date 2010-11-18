@@ -627,6 +627,7 @@ String projectInfo(Container c, boolean returnID)
                 columns   : [90,90,90,100],
                 autoHeight: true,
                 defaults  : {
+                    name  : 'category',
                     listeners : {
                         afterrender: function(chkbox) {
                             var cats = LABKEY.ActionURL.getParameter('category');
@@ -646,36 +647,28 @@ String projectInfo(Container c, boolean returnID)
                 },
                 items : [{
                     boxLabel: 'Files',
-                    value   : 'File',
-                    name    : 'category'
+                    value   : 'File'
                 },{
                     boxLabel: 'Subjects',
-                    value   : 'Subject',
-                    name    : 'category'
+                    value   : 'Subject'
                 },{
                     boxLabel: 'Datasets',
-                    value   : 'Dataset',
-                    name    : 'category'
+                    value   : 'Dataset'
                 },{
                     boxLabel: 'Assays',
-                    value   : 'Assay',
-                    name    : 'category'
+                    value   : 'Assay'
                 },{
                     boxLabel: 'Wikis',
-                    value   : 'Wiki',
-                    name    : 'category'
+                    value   : 'Wiki'
                 },{
                     boxLabel: 'Lists',
-                    value   : 'List',
-                    name    : 'category'
+                    value   : 'List'
                 },{
                     boxLabel: 'Issues',
-                    value   : 'Issue',
-                    name    : 'category'
+                    value   : 'Issue'
                 },{
                     boxLabel: 'Messages',
-                    value   : 'Message',
-                    name    : 'category'
+                    value   : 'Message'
                 }]
             }
         };
@@ -801,18 +794,14 @@ String projectInfo(Container c, boolean returnID)
             if (adv && initOpen)
             {
                 initOpen = false;
-                ppanel.show();
             }
-            else
-            {
-                ppanel.slideIn();
-            }
+            ppanel.show();
             seen = true;
             document.getElementById('adv-search-btn').src = minus_img.src;
         }
         else if(ppanel){
-            ppanel.slideOut();
-            setTimeout("hidehelp()", 500);
+            ppanel.hide();
+            hidehelp();
             seen = false;
             document.getElementById('adv-search-btn').src = org_src;
         }

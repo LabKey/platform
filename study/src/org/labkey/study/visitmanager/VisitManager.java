@@ -1,5 +1,7 @@
 package org.labkey.study.visitmanager;
 
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
@@ -45,17 +47,38 @@ public abstract class VisitManager
 
     public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets)
     {
-        updateParticipants(user, changedDatasets);
+        updateParticipantVisits(user, changedDatasets, null, null);
+    }
+
+    /**
+     * Updates the participant, visit, and participant visit tables. Also updates automatic cohort assignments.
+     * @param changedDatasets the datasets that may have one or more rows modified
+     * @param potentiallyAddedParticipants optionally, the specific participants that may have been added to the study.
+     * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
+     * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
+     * study. If null, all participants will be checked to see if they are still in the study.
+     */
+    public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants)
+    {
+        updateParticipants(user, changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
         updateParticipantVisitTable(user);
         updateVisitTable(user);
 
-        try
+        Integer cohortDatasetId = _study.getParticipantCohortDataSetId();
+        // Only bother updating cohort assignment if we're doing automatic cohort assignment and there's an edit
+        // to the dataset that specifies the cohort
+        if (!_study.isManualCohortAssignment() &&
+                cohortDatasetId != null &&
+                changedDatasets.contains(StudyManager.getInstance().getDataSetDefinition(_study, cohortDatasetId.intValue())))
         {
-            CohortManager.getInstance().updateParticipantCohorts(user, getStudy());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
+            try
+            {
+                CohortManager.getInstance().updateParticipantCohorts(user, getStudy());
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
 
         StudyManager.getInstance().clearVisitCache(getStudy());
@@ -192,7 +215,7 @@ public abstract class VisitManager
     }
 
     /** Update the Participants table to match the entries in StudyData. */
-    protected void updateParticipants(User user, Collection<DataSetDefinition> changedDatasets)
+    protected void updateParticipants(User user, Collection<DataSetDefinition> changedDatasets, Set<String> potentiallyInsertedParticipants, Set<String> potentiallyDeletedParticipants)
     {
         try
         {
@@ -201,22 +224,35 @@ public abstract class VisitManager
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
 
-            if (!changedDatasets.isEmpty())
+            // Don't bother if we explicitly know that no participants were added, or that no datasets were edited
+            if (!changedDatasets.isEmpty() && (potentiallyInsertedParticipants == null || !potentiallyInsertedParticipants.isEmpty()))
             {
-                TableInfo tableFilteredStudyData = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), changedDatasets, user);
-
-                // UNDONE: performance, query each dataset separately instead of using StudyData union
                 SQLFragment datasetParticipantsSQL = new SQLFragment("INSERT INTO " + tableParticipant + " (container, participantid)\n" +
                         "SELECT DISTINCT ?, participantid\n" +
-                        "FROM ").append( tableFilteredStudyData.getFromSQL("SD")).append("\n" +
-                        "WHERE participantid NOT IN (SELECT participantid FROM " + tableParticipant + " WHERE container = ?)");
+                        "FROM (").append(studyDataPtids(changedDatasets)).append("\n" +
+                        ") x WHERE participantid NOT IN (SELECT participantid FROM " + tableParticipant + " WHERE container = ?)");
                 datasetParticipantsSQL.add(c);
                 datasetParticipantsSQL.add(c);
+
+                // Databases limit the size of IN clauses, so check that we won't blow the cap
+                if (potentiallyInsertedParticipants != null && potentiallyInsertedParticipants.size() < 450)
+                {
+                    // We have an explicit list of potentially added participants, so filter to only look at them
+                    datasetParticipantsSQL.append(" AND participantid IN (");
+                    datasetParticipantsSQL.append(StringUtils.repeat("?", ", ", potentiallyInsertedParticipants.size()));
+                    datasetParticipantsSQL.addAll(potentiallyInsertedParticipants);
+                    datasetParticipantsSQL.append(")");
+                }
 
                 Table.execute(schema, datasetParticipantsSQL);
             }
-
-            purgeParticipants();
+            
+            // If we don't know which participants might have been deleted, or we know and there are some,
+            // keep the participant list up to date
+            if (potentiallyDeletedParticipants == null || !potentiallyDeletedParticipants.isEmpty())
+            {
+                purgeParticipants(potentiallyDeletedParticipants);
+            }
 
             updateStartDates(user);
         }
@@ -226,8 +262,7 @@ public abstract class VisitManager
         }
     }
 
-
-    public void purgeParticipants()
+    public void purgeParticipants(Set<String> potentiallyDeletedParticipants)
     {
         try
         {
@@ -238,7 +273,7 @@ public abstract class VisitManager
             TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
 
             SQLFragment ptids = new SQLFragment();
-            SQLFragment studyDataPtids = studyDataPtids();
+            SQLFragment studyDataPtids = studyDataPtids(getStudy().getDataSets());
             if (null != studyDataPtids)
             {
                 ptids.append(studyDataPtids);
@@ -254,6 +289,16 @@ public abstract class VisitManager
             del.append(ptids);
             del.append(")");
 
+            // Databases limit the size of IN clauses, so check that we won't blow the cap
+            if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
+            {
+                // We have an explicit list of potentially deleted participants, so filter to only look at them
+                del.append(" AND participantid IN (");
+                del.append(StringUtils.repeat("?", ", ", potentiallyDeletedParticipants.size()));
+                del.addAll(potentiallyDeletedParticipants);
+                del.append(")");
+            }
+            
             Table.execute(schema, del);
         }
         catch (SQLException x)
@@ -262,10 +307,8 @@ public abstract class VisitManager
         }
     }
 
-
-    private SQLFragment studyDataPtids()
+    private SQLFragment studyDataPtids(Collection<DataSetDefinition> defs)
     {
-        List<DataSetDefinition> defs = getStudy().getDataSets();
         SQLFragment f = new SQLFragment();
         String union = "";
         for (DataSetDefinition d : defs)

@@ -141,7 +141,7 @@ public class UploadSamplesHelper
                 else
                 {
                     DomainProperty pd = descriptorsByName.get(cd.name);
-                    if (pd == null && source == null)
+                    if ((pd == null && _form.isCreateNewColumnsOnExistingSampleSet()) || source == null)
                     {
                         pd = domain.addProperty();
                         //todo :  name for domain?
@@ -167,7 +167,8 @@ public class UploadSamplesHelper
 
             if (addedProperty)
             {
-                assert source == null : "Can only add new columns if no sample set already exists";
+                if (source != null && !_form.isCreateNewColumnsOnExistingSampleSet())
+                    throw new ExperimentException("Can't create new columns on existing sample set.");
                 // Need to save the domain - it has at least one new property
                 domain.save(_form.getUser());
             }

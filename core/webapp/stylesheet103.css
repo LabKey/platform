@@ -180,8 +180,8 @@ table.labkey-expandable-nav th.labkey-header {
  a normal size bold header */
 .labkey-announcement-title
 {
-    padding-top: 14px;
-    padding-bottom: 2px;
+    padding-top: 30px;
+    padding-bottom: 5px;
 }
 
 .labkey-announcement-title span, .labkey-announcement-title a
@@ -192,12 +192,13 @@ table.labkey-expandable-nav th.labkey-header {
 
 .labkey-announcement-title a {
 	color:#126495;
+	font-size: 14px;
 }
 
 /* Used for the single pixel horizontal dividing lines across the site */
 .labkey-title-area-line
 {
-    background-color: #fff;
+    background-color: #e5e5e5;
     height: 1px;
     padding: 0;
 }
@@ -341,7 +342,7 @@ table.labkey-button-bar
     font-weight: bold;
 
 	line-height: 2.3em;
-    *line-height: 1.2em;
+    *line-height: 1.9em;
     *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
                     is required for IE to recognize its position attribute, which in
                     turn enables relative positioning of our menu button arrow gif. */
@@ -391,7 +392,7 @@ table.labkey-button-bar
     cursor: default;
 
     line-height: 2.3em;
-    *line-height: 1.2em;
+    *line-height: 1.9em;
     *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
                     is required for IE to recognize its position attribute, which in
                     turn enables relative positioning of our menu button arrow gif. */
@@ -430,13 +431,16 @@ a.labkey-menu-button:hover span
 
 /* This is the class for the down arrow that can be included in a button.
  The images src should be ./_images/button_arrow.gif */
-img.labkey-button-arrow {
+img.labkey-button-arrow
+{
     background-color:transparent;
 	width:0.728em;
     height:auto;
     position:absolute;
 	top:0.65em;
     right:0.3em;
+
+    *top: 1.1em;   /* IE7 needs the image to be pushed down */
 }
 
 /* This is the class for the missing value indicator icon that can be included in a table cell.
@@ -467,14 +471,15 @@ a.labkey-button:visited {
     font-size: 10px;
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
-    white-space: nowrap;
 
-    border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
+
+    *padding: 1px 5px 0px 5px;
 }
 
-a.labkey-button:hover {
+a.labkey-button:hover
+{
     padding: 2px 5px;
     border: 1px solid #676767;
     background-color: #fff;
@@ -487,15 +492,8 @@ a.labkey-button:hover {
     border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-}
 
-a.labkey-button span,
-a.labkey-button:visited span {
-    color: #126495;
-}
-
-a.labkey-button:hover span {
-    color: #000;
+    *padding: 1px 5px 0px 5px;
 }
 
 .labkey-disabled-button,
@@ -514,77 +512,24 @@ a.labkey-disabled-button {
     border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-}
 
-
-/* special span modifiers for IE: */
-span.labkey-button,
-span.labkey-disabled-button
-{
-    *height: 1em;
-    *margin-top: 0.0em;
-    *margin-bottom: 0.4em;
-    *padding-bottom: 0.0em;
-}
-
-a.labkey-button span
-{
-    color: #126495; /* need to override color at the link level because links within other containers (dataregions,
-                        for example) may have colors that override the default labkey-button colors. */
-    padding-bottom: 0.3em;
-}
-
-a.labkey-disabled-button span
-{
-    color: #808080; /* need to override color at the link level because links within other containers (dataregions,
-                        for example) may have colors that override the default labkey-button colors. */
-    padding-bottom: 0.3em;
-}
-
-span.labkey-button:active
-{
-    border: 1px solid black;
-    position: relative;
-    background-color: #BEBEBE;
-}
-
-span.labkey-button:hover
-{
-    background-color: #fff;
-    border: 1px solid #676767;
-
-    margin: 0.1em 0.8em 0.5em 0;
-    padding: 4px;
-    position: relative;
-    vertical-align: middle;
-    white-space: nowrap;
-
-    color: #000;
-    cursor:pointer;
-    border-radius: 5px;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
+    *padding: 1px 5px 0px 5px;
 }
 
 a.labkey-button:hover,
 a.labkey-text-link:hover
 {
-    border: 1px solid black;
+    border: 1px solid #676767;
     background-color: #fff;
     cursor: pointer;
 }
 
 a.labkey-button:active
 {
-    border: 1px solid black;
+    border: 1px solid #676767;
     position: relative;
-    background-color: #BEBEBE;
+    background-color: #fff;
 }
-
-
-
-
-
 
 /* Used across the site for simple indenting */
 .labkey-indented
@@ -1345,13 +1290,18 @@ table.labkey-proj
     width: 100%;
     height: 100%;
     vertical-align: top;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0;
     padding: 0 30px 30px 30px;
+    *border-collapse: collapse;
+    *width: 95%;
+    *margin-left: auto;
+    *margin-right: auto;
 }
 
 td.labkey-proj
 {
-    vertical-align: top; /* IE */
+    *vertical-align: top; /* IE */
+    height: 100%;
 }
 
 /* The icon in the header panel */
@@ -3273,6 +3223,16 @@ li.labkey-tab-inactive a
 {
     padding-right: 5px;
     white-space: nowrap;
+}
+
+/* Group Tabs (e.g. used in Export grid drop-down)*/
+.x-grouptabs-bwrap
+{
+}
+
+.x-grouptabs-panel-body
+{   
+    height: 120px;
 }
 
 /* gwt */

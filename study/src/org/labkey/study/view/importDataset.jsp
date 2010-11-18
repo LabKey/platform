@@ -30,7 +30,7 @@
 
 <form action="showImportDataset.post" method=POST>
     <%=PageFlowUtil.generateSubmitButton("Import Data")%>
-    <%=PageFlowUtil.generateButton("Cancel", "javascript:{}", "window.history.back();")%>
+    <%=PageFlowUtil.generateBackButton("Cancel")%>
     <table width="100%">
     <tr><td class=labkey-form-label width=150>Type URI</td><td><%=h(form.getTypeURI())%><input type=hidden name="typeURI" value="<%=h(form.getTypeURI())%>"></td></tr>
     <tr><td class=labkey-form-label width=150>Key Fields</td><td><%=h(form.getKeys())%><input type=hidden name="keys" value="<%=h(form.getKeys())%>"></td></tr>

@@ -95,7 +95,7 @@
             {
                 %><tr><td class="labkey-form-label">Duplicate</td><td>
                 <% if (bean.isEditable("duplicate")) { %>
-                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()))%>
+                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), 10)%>
                 <% } else { %>
                     <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
                 <% } %>

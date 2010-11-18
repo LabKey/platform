@@ -117,6 +117,11 @@
                 <labkey:radio name="insertUpdateChoice" id="insertIgnoreChoice" value="<%=InsertUpdateChoice.insertIgnore%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertIgnoreChoice">Insert only new samples; ignore any existing samples.</label><br>
                 <labkey:radio name="insertUpdateChoice" id="insertOrUpdateChoice" value="<%=InsertUpdateChoice.insertOrUpdate%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertOrUpdateChoice">Insert any new samples and update existing samples.</label><br>
                 <labkey:radio name="insertUpdateChoice" id="updateOnlyChoice" value="<%=InsertUpdateChoice.updateOnly%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="updateOnlyChoice">Update only existing samples with new values; error if sample doesn't already exist.</label><br>
+
+                <br>
+                By default, any additional columns in the uploaded sample data will be ignored.<br>
+                <labkey:checkbox name="createNewColumnsOnExistingSampleSet" id="createNewColumnsOnExistingSampleSet" value="true" />
+                <label for="createNewColumnsOnExistingSampleSet">Add any new columns found in the uploaded sample data to the existing sample set columns.</label>
             </td>
         </tr>
     <% } %>
@@ -126,8 +131,10 @@
             Sample set uploads must formatted as tab separated values (TSV). Copy/paste from Microsoft Excel works well.<br>
             The first row should contain column names, and subsequent rows should contain the data.
             <br>
-            <b>Note:</b> If there is a column <em>'Name'</em>, it will be chosen as the unique identifier for the sample set.
-            <br>
+            <% if (!form.isImportMoreSamples()) { %>
+                <b>Note:</b> If there is a column <em>'Name'</em>, it will be chosen as the unique identifier for the sample set.
+                <br>
+            <% } %>
             <textarea id="textbox" onchange="updateIds(this)" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
             <script type="text/javascript">
                 Ext.EventManager.on('textbox', 'keydown', handleTabsInTextArea);

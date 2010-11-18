@@ -207,9 +207,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             if (_ccc.getPickListColumns().contains(tableColumnName.getSource()))
                 sb.append(writeSelect(tableColumnName, value, getKeywordOptions(container, keywordType, true), tabIndex));
             else if (tableColumnName.startsWith("int"))
-                sb.append(writeIntegerInput(tableColumnName, value));
+                sb.append(writeIntegerInput(tableColumnName, value, tabIndex));
             else
-                sb.append(writeInput(tableColumnName, value));
+                sb.append(writeInput(tableColumnName, value, tabIndex));
 
             sb.append("</td></tr>");
 
@@ -243,14 +243,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     }
 
     // Limit number of characters in an integer field
-    public HString writeIntegerInput(HString field, HString value)
+    public HString writeIntegerInput(HString field, HString value, int tabIndex)
     {
-        return writeInput(field, value, new HString("maxlength=\"10\" size=\"8\"",false));
+        return writeInput(field, value, new HString("maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"",false));
     }
 
-    public HString writeInput(HString field, HString value)
+    public HString writeInput(HString field, HString value, int tabIndex)
     {
-        return writeInput(field, value, null);
+        return writeInput(field, value, new HString("tabIndex=\"" + tabIndex + "\"",false));
     }
 
     public HString writeSelect(HString field, HString value, HString display, HString options, int tabIndex)

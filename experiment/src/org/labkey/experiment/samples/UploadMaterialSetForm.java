@@ -34,6 +34,7 @@ public class UploadMaterialSetForm extends ViewForm
     private boolean importMoreSamples;
     private boolean nameReadOnly;
     private boolean createNewSampleSet = true;
+    private boolean createNewColumnsOnExistingSampleSet = false;
     private String data;
     private int idColumn1 = -1;
     private int idColumn2 = -1;
@@ -96,6 +97,16 @@ public class UploadMaterialSetForm extends ViewForm
     public void setCreateNewSampleSet(boolean createNewSampleSet)
     {
         this.createNewSampleSet = createNewSampleSet;
+    }
+
+    public boolean isCreateNewColumnsOnExistingSampleSet()
+    {
+        return createNewColumnsOnExistingSampleSet;
+    }
+
+    public void setCreateNewColumnsOnExistingSampleSet(boolean createNewColumnsOnExistingSampleSet)
+    {
+        this.createNewColumnsOnExistingSampleSet = createNewColumnsOnExistingSampleSet;
     }
 
     public void setData(String data)

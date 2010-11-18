@@ -34,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -69,8 +70,7 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
 
             try {
                 boolean isNewRoot = isNewRoot(_svc.getSiteDefaultRoot(), f);
-
-                if (!f.exists() && !f.isDirectory())
+                if (!NetworkDrive.exists(f) || !f.isDirectory())
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "File Root '" + webRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
                 }

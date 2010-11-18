@@ -70,15 +70,25 @@ public class StudyDataTable extends FilteredTable
         addColumn(dateColumn);
         defaultColumns.add(FieldKey.fromParts("Date"));
 
-//        ColumnInfo createdColumn = new AliasedColumn(this, "Created", _rootTable.getColumn("Created"));
-//        addColumn(createdColumn);
-//
-//        ColumnInfo modifiedColumn = new AliasedColumn(this, "Modified", _rootTable.getColumn("Modified"));
-//        addColumn(modifiedColumn);
+        ColumnInfo createdColumn = new AliasedColumn(this, "Created", _rootTable.getColumn("Created"));
+        addColumn(createdColumn);
+        ColumnInfo createdByColumn = new AliasedColumn(this, "CreatedBy", _rootTable.getColumn("CreatedBy"));
+        addColumn(createdByColumn);
+
+
+        ColumnInfo modifiedColumn = new AliasedColumn(this, "Modified", _rootTable.getColumn("Modified"));
+        addColumn(modifiedColumn);
+        ColumnInfo modifiedByColumn = new AliasedColumn(this, "ModifiedBy", _rootTable.getColumn("ModifiedBy"));
+        addColumn(modifiedByColumn);
 
         ColumnInfo lsidColumn = new AliasedColumn(this, "LSID", _rootTable.getColumn("lsid"));
         lsidColumn.setHidden(true);
         addColumn(lsidColumn);
+
+        ColumnInfo qcStateColumn = new AliasedColumn(this, "QCState", _rootTable.getColumn("qcstate"));
+        // isHidden doesn't get propagated like the other properties, so preserve its value separately
+        qcStateColumn.setHidden(_rootTable.getColumn("qcstate").isHidden());
+        addColumn(qcStateColumn);
 
         ColumnInfo sourceLsidColumn = new AliasedColumn(this, "Source LSID", _rootTable.getColumn("sourceLsid"));
         sourceLsidColumn.setHidden(true);

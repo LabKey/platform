@@ -157,6 +157,11 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "INT IDENTITY (1,1)";
     }
 
+    @Override
+    public String getGuidType()
+    {
+        return "UNIQUEIDENTIFIER";
+    }
 
     @Override
     public void appendStatement(StringBuilder sql, String statement)
@@ -322,7 +327,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     @Override
     public SQLFragment getSelectConcat(SQLFragment selectSql)
     {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+        return new SQLFragment("'NOT SUPPORTED'");
     }
 
     @Override

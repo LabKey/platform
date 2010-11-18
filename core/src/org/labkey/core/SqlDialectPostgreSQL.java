@@ -214,6 +214,11 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "SERIAL";
     }
 
+    public String getGuidType()
+    {
+        return "VARCHAR";
+    }
+
     @Override
     public boolean treatCatalogsAsSchemas()
     {

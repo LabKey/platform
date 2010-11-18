@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -54,7 +55,7 @@
         <td><a href="<%=detailsLink%>"><%=def.getDataSetId()%></a></td>
         <td><a href="<%=detailsLink%>"><%= h(def.getLabel()) %></a></td>
         <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %></td>
-        <td align="right"><%=StudyManager.getInstance().getNumDatasetRows(def)%></td>
+        <td align="right"><%=StudyManager.getInstance().getNumDatasetRows(HttpView.currentContext().getUser(), def)%></td>
     </tr>
     <%
         

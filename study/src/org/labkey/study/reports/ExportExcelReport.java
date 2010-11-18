@@ -156,7 +156,7 @@ public class ExportExcelReport extends RedirectReport
         if (siteId != 0)
         {
             siteFilter = new SimpleFilter();
-            siteFilter.addWhereClause("ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE CurrentSiteId=" + siteId + ")", new Object[0]);
+            siteFilter.addWhereClause(study.getSubjectColumnName() + " IN (SELECT ParticipantId FROM study.Participant WHERE CurrentSiteId=" + siteId + ")", new Object[0]);
         }
 
         ServletOutputStream outputStream = ExcelWriter.getOutputStream(response, study.getLabel());

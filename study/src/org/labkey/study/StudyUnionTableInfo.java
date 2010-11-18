@@ -46,6 +46,10 @@ public class StudyUnionTableInfo extends VirtualTable
             "participantid",
             "lsid",
             "sequencenum",
+            "modified",
+            "created",
+            "modifiedby",
+            "createdby",
             "sourcelsid",
             "_key",
             "_visitdate",
@@ -81,7 +85,7 @@ public class StudyUnionTableInfo extends VirtualTable
                 continue;
             count++;
             sqlf.append(unionAll);
-            sqlf.append("SELECT '" + def.getEntityId() + "' AS dataset, " + def.getDataSetId() + " AS datasetid");
+            sqlf.append("SELECT CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ") AS dataset, " + def.getDataSetId() + " AS datasetid");
 
             String visitPropertyName = def.getVisitDatePropertyName();
             ColumnInfo visitColumn = null==visitPropertyName ? null : ti.getColumn(visitPropertyName);
@@ -128,7 +132,7 @@ public class StudyUnionTableInfo extends VirtualTable
                         case Types.DOUBLE:
                         case Types.DECIMAL:
                         case Types.FLOAT:
-                            empty = "0";
+                            empty = "CAST(NULL AS " + getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()) + ")";
                             break;
                         default:
                             empty = "NULL";
@@ -144,15 +148,15 @@ public class StudyUnionTableInfo extends VirtualTable
 
         if (0==count)
         {
-            sqlf.append("SELECT CAST(NULL AS VARCHAR) as dataset, 0 as datasetid");
+            sqlf.append("SELECT CAST(NULL AS " + getSqlDialect().getGuidType() + ") as dataset, 0 as datasetid");
             for (String column : unionColumns)
             {
                 sqlf.append(", ");
-                if ("qcstate".equalsIgnoreCase(column) || "sequencenum".equalsIgnoreCase(column))
+                if ("qcstate".equalsIgnoreCase(column) || "sequencenum".equalsIgnoreCase(column) || "createdby".equalsIgnoreCase(column) || "modifiedby".equalsIgnoreCase(column))
                     sqlf.append("0");
                 else if ("participantid".equalsIgnoreCase(column))
                     sqlf.append("CAST(NULL as VARCHAR)");
-                else if ("_visitdate".equalsIgnoreCase(column))
+                else if ("_visitdate".equalsIgnoreCase(column) || "modified".equalsIgnoreCase(column) || "created".equalsIgnoreCase(column))
                     sqlf.append("CAST(NULL AS " + getSchema().getSqlDialect().getDefaultDateTimeDataType() + ")");
                 else
                     sqlf.append(" NULL");
@@ -196,7 +200,10 @@ public class StudyUnionTableInfo extends VirtualTable
             ColumnInfo ci = new ColumnInfo(name, this);
             ColumnInfo t = template.getColumn(name);
             if (null != t)
+            {
                 ci.setExtraAttributesFrom(t);
+                ci.setSqlTypeName(t.getSqlTypeName());
+            }
             addColumn(ci);
         }
 
@@ -204,11 +211,16 @@ public class StudyUnionTableInfo extends VirtualTable
         {
             ColumnInfo ci = new ColumnInfo(pd.getName(), this);
             PropertyColumn.copyAttributes(_user, ci, pd);
+            ci.setSqlTypeName(StudySchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()));
             addColumn(ci);
         }
 
-        addColumn(new ColumnInfo("dataset", this));
-        addColumn(new ColumnInfo("datasetid", this));
+        ColumnInfo datasetColumn = new ColumnInfo("dataset", this);
+        datasetColumn.setSqlTypeName("VARCHAR");
+        addColumn(datasetColumn);
+        ColumnInfo datasetIdColumn = new ColumnInfo("datasetid", this);
+        datasetColumn.setSqlTypeName("INT");
+        addColumn(datasetIdColumn);
     }
 
     @Override

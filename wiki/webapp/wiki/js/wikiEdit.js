@@ -596,13 +596,7 @@ function textContainsNonVisualElements(content)
 
 function setTabStripVisible(isVisible)
 {
-// alternate strategy: keep tab-strip just hide the 'visual' tab
-    Ext.get("wiki-tab-visual").setDisplayed(isVisible);
-//    Ext.get("wiki-tab-strip").setDisplayed(isVisible);
-//    if(isVisible)
-//        Ext.get("wiki-tab-content").addClass("labkey-wiki-tab-content");
-//    else
-//        Ext.get("wiki-tab-content").removeClass("labkey-wiki-tab-content");
+    Ext.get("wiki-tab-strip").setDisplayed(isVisible);
 }
 
 function updateExistingAttachments(attachments, encodeNames)

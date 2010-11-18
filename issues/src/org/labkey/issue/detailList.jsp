@@ -83,13 +83,14 @@
             {
 %>
                 <tr><td class="labkey-form-label">Duplicate</td><td>
-                <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()))%>
+                <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), 10)%>
                 </td></tr>
 <%
             }
 %>
             <%=bean.writeCustomColumn(c, new HString("int1"), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE, 10)%>
             <%=bean.writeCustomColumn(c, new HString("int2"), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE, 10)%>
+            <%=bean.writeCustomColumn(c, new HString("string1"), issue.getString1(), IssuesController.ISSUE_STRING1, 10)%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(context))%></td></tr>
@@ -97,7 +98,6 @@
             <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(context))%></td></tr>
             <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
 
-            <%=bean.writeCustomColumn(c, new HString("string1"), issue.getString1(), IssuesController.ISSUE_STRING1, 20)%>
             <%=bean.writeCustomColumn(c, new HString("string2"), issue.getString2(), IssuesController.ISSUE_STRING2, 20)%>
             <%=bean.writeCustomColumn(c, new HString("string3"), issue.getString3(), IssuesController.ISSUE_STRING3, 20)%>
             <%=bean.writeCustomColumn(c, new HString("string4"), issue.getString4(), IssuesController.ISSUE_STRING4, 20)%>

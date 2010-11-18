@@ -102,7 +102,7 @@
             </td>
         </tr>
         <tr>
-            <td><br><br><%= generateSubmitButton("Create Study")%>&nbsp;<%= generateButton("Back", "#", "window.history.back();return null;")%></td>
+            <td><br><br><%= generateSubmitButton("Create Study")%>&nbsp;<%= generateBackButton()%></td>
             <td>&nbsp;</td>
         </tr>
     </table>

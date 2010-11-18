@@ -458,6 +458,7 @@ public class ExperimentController extends SpringActionController
             uploadForm.setParentColumn(-1);
             uploadForm.setInsertUpdateChoice(UploadMaterialSetForm.InsertUpdateChoice.insertOrUpdate.name());
             uploadForm.setCreateNewSampleSet(false);
+            uploadForm.setCreateNewColumnsOnExistingSampleSet(false);
             uploadForm.setLoader(new MapLoader(form.getMaterials()));
 
             UploadSamplesHelper helper = new UploadSamplesHelper(uploadForm);
@@ -2590,6 +2591,10 @@ public class ExperimentController extends SpringActionController
             else if (getViewContext().getRequest().getParameter("rowId") != null)
             {
                 rowId = getViewContext().getRequest().getParameter("rowId");
+            }
+            else if (getViewContext().getRequest().getParameter("RowId") != null)
+            {
+                rowId = getViewContext().getRequest().getParameter("RowId");
             }
             else
             {

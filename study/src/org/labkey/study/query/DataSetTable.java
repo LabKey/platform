@@ -240,8 +240,10 @@ public class DataSetTable extends FilteredTable
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
 
         SQLFragment from = new SQLFragment();
-        from.append("(SELECT DS.*, PV.Day, PV.VisitRowId\n");
-        from.append("FROM ").append(super.getFromSQL("DS")).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
+        from.append("(SELECT DS.*, PV.VisitRowId");
+        if (_schema.getStudy().getTimepointType() == TimepointType.DATE)
+            from.append(", PV.Day");
+        from.append("\nFROM ").append(super.getFromSQL("DS")).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
                 " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = '" + _schema.getContainer().getId() + "') AS ").append(alias);
         return from;
     }   

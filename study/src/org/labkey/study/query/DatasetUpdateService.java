@@ -15,11 +15,11 @@
  */
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -43,6 +43,8 @@ import java.util.*;
 public class DatasetUpdateService extends AbstractQueryUpdateService
 {
     private final DataSetDefinition _dataset;
+    private Set<String> _potentiallyNewParticipants = new HashSet<String>();
+    private Set<String> _potentiallyDeletedParticipants = new HashSet<String>();
 
     public DatasetUpdateService(DataSetTable table)
     {
@@ -62,10 +64,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.insertRows(user, container, rows);
-        if (!isBulkLoad())
-        {
-            resyncStudy(user, container, true);
-        }
+        resyncStudy(user, container);
         return result;
     }
 
@@ -75,6 +74,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         List<String> errors = new ArrayList<String>();
         String newLsid = StudyService.get().insertDatasetRow(user, container, _dataset.getDataSetId(), row, errors);
+        _potentiallyNewParticipants.add(getParticipant(row));
         if(errors.size() > 0)
         {
             ValidationException e = new ValidationException();
@@ -88,51 +88,42 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return row;
     }
 
+    private @NotNull String getParticipant(Map<String, Object> row)
+    {
+        String columnName = _dataset.getStudy().getSubjectColumnName();
+        Object participant = row.get(columnName);
+        if (participant == null)
+        {
+            participant = row.get("ParticipantId");
+        }
+        assert participant != null : "All dataset rows should be associated with a participant/" + columnName;
+        return participant.toString();
+    }
+
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys);
-
-        Set<Object> changedLSIDs = new HashSet<Object>();
-        // Keep track of whether LSIDs changed based on this update
-        for (Map<String, Object> oldRowKeys : oldKeys)
-        {
-            changedLSIDs.add(oldRowKeys.get("lsid"));
-        }
-        for (Map<String, Object> updatedRows : result)
-        {
-            changedLSIDs.remove(updatedRows.get("lsid"));
-        }
-
-        if (!isBulkLoad())
-        {
-            resyncStudy(user, container, changedLSIDs.isEmpty());
-        }
-        
+        resyncStudy(user, container);
         return result;
     }
 
-    private void resyncStudy(User user, Container container, boolean lsidChanged)
+    private void resyncStudy(User user, Container container)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
-                PageFlowUtil.nullSafeEquals(_dataset.getDataSetId(), study.getParticipantCohortDataSetId()));
 
-        // If this results in a change to cohort assignments, the participant ID, or the visit,
-        // we need to recompute the participant-visit map:
-        if (recomputeCohorts || lsidChanged)
-        {
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset));
-        }
+        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset), _potentiallyNewParticipants, _potentiallyDeletedParticipants);
+        _potentiallyNewParticipants.clear();
+        _potentiallyDeletedParticipants.clear();
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow)
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<String> errors = new ArrayList<String>();
-        String lsid = null != oldRow ? keyFromMap(oldRow) : keyFromMap(row);
+        String lsid = keyFromMap(oldRow);
         String newLsid = StudyService.get().updateDatasetRow(user, container, _dataset.getDataSetId(), lsid, row, errors);
         if(errors.size() > 0)
         {
@@ -140,6 +131,16 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             for(String err : errors)
                 e.addError(new SimpleValidationError(err));
             throw e;
+        }
+
+        String oldParticipant = getParticipant(oldRow);
+        String newParticipant = getParticipant(row);
+        if (!oldParticipant.equals(newParticipant))
+        {
+            // Participant has changed - might be a reference to a new participant, or removal of the last reference to
+            // the old participant
+            _potentiallyNewParticipants.add(newParticipant);
+            _potentiallyDeletedParticipants.add(oldParticipant);
         }
 
         //update the lsid and return
@@ -152,10 +153,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.deleteRows(user, container, keys);
-        if (!isBulkLoad())
-        {
-            resyncStudy(user, container, true);
-        }
+        resyncStudy(user, container);
         return result;
     }
 
@@ -164,6 +162,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         StudyService.get().deleteDatasetRow(user, container, _dataset.getDataSetId(), keyFromMap(oldRow));
+        _potentiallyDeletedParticipants.add(getParticipant(oldRow));
         return oldRow;
     }
 

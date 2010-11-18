@@ -32,6 +32,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
@@ -296,43 +297,9 @@ public class DataSetQueryView extends QueryView
         button.addMenuItem("Manage Views", url);
     }
 
-    protected void addReportViews(MenuButton menu, ActionURL target)
+    @Override
+    protected boolean canViewReport(User user, Container c, Report report)
     {
-        String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
-        Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
-
-        for (Report report : ReportUtil.getReports(getContainer(), getUser(), reportKey, true))
-        {
-            // Filter out reports that don't match what this view is supposed to show. This can prevent
-            // reports that were created on the same schema and table/query from a different view from showing up on a
-            // view that's doing magic to add additional filters, for example.
-            if (getViewItemFilter().accept(report.getType(), null))
-            {
-                if (!ReportManager.get().canReadReport(getUser(), getContainer(), report))
-                    continue;
-
-                if (!views.containsKey(report.getType()))
-                    views.put(report.getType(), new ArrayList<Report>());
-
-                views.get(report.getType()).add(report);
-            }
-        }
-
-        if (views.size() > 0)
-            menu.addSeparator();
-
-        for (Map.Entry<String, List<Report>> entry : views.entrySet())
-        {
-            for (Report report : entry.getValue())
-            {
-                String reportId = report.getDescriptor().getReportId().toString();
-                NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.reportId), reportId).getLocalURIString());
-                item.setId("Views:" + report.getDescriptor().getReportName());
-                if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
-                    item.setStrong(true);
-                item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
-                menu.addMenuItem(item);
-            }
-        }
+        return ReportManager.get().canReadReport(getUser(), getContainer(), report);
     }
 }

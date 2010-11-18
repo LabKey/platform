@@ -230,7 +230,7 @@
                         "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) %></li>
                     <li>Email specimen lists to their providing locations: <%= textLink("Providing Location Specimen Lists",
                         "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString()) %></li>
-                    <li>Update request status to indicate completion: <%= textLink("Update Status", "manageRequestStatus.view?id=" + bean.getSampleRequest().getRowId()) %></li>
+                    <li>Update request status to indicate completion: <%= textLink("Update Request", "manageRequestStatus.view?id=" + bean.getSampleRequest().getRowId()) %></li>
                 </ul>
 <%
         }
@@ -320,7 +320,7 @@
                         <th valign="top" align="right">&nbsp;</th>
                         <td>
                             <%= textLink("View History", "requestHistory.view?id=" + bean.getSampleRequest().getRowId()) %>&nbsp;
-                            <%= bean.isRequestManager() ? textLink("Update Status", "manageRequestStatus.view?id=" + bean.getSampleRequest().getRowId()) : "" %>
+                            <%= bean.isRequestManager() ? textLink("Update Request", "manageRequestStatus.view?id=" + bean.getSampleRequest().getRowId()) : "" %>
                             <%= bean.isRequestManager() ? textLink("Originating Location Specimen Lists",
                                     "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) : "" %>
                             <%= bean.isRequestManager() ? textLink("Providing Location Specimen Lists",

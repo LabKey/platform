@@ -1467,10 +1467,10 @@ public class StudyManager
         }
     }
 
-    public int getNumDatasetRows(DataSet dataset)
+    public int getNumDatasetRows(User user, DataSet dataset)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        TableInfo sdTable = dataset.getTableInfo(null, false);
+        TableInfo sdTable = dataset.getTableInfo(user, false);
 
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS numRows FROM ");
         sql.append(sdTable.getFromSQL("ds"));

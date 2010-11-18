@@ -54,7 +54,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.files.FileContentService;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.ByteArrayAttachmentFile;
-import org.labkey.study.samples.SampleSearchBean;
 import org.labkey.study.samples.SampleSearchWebPart;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
@@ -1101,6 +1100,7 @@ public class SpecimenController extends BaseStudyController
     {
         private int _status;
         private String _comments;
+        private String _requestDescription;
         private String[] _notificationIdPairs;
 
         public int getStatus()
@@ -1132,6 +1132,16 @@ public class SpecimenController extends BaseStudyController
         {
             _notificationIdPairs = notificationIdPairs;
         }
+
+        public String getRequestDescription()
+        {
+            return _requestDescription;
+        }
+
+        public void setRequestDescription(String requestDescription)
+        {
+            _requestDescription = requestDescription;
+        }
     }
 
     @RequiresPermissionClass(RequestSpecimensPermission.class)
@@ -1158,27 +1168,39 @@ public class SpecimenController extends BaseStudyController
                 HttpView.throwNotFound();
 
             boolean statusChanged = form.getStatus() != _sampleRequest.getStatusId();
+            boolean detailsChanged = !nullSafeEqual(form.getRequestDescription(), _sampleRequest.getComments());
 
             List<AttachmentFile> files = getAttachmentFileList();
             boolean hasAttachments = !files.isEmpty();
 
             boolean hasComments = form.getComments() != null && form.getComments().length() > 0;
-            if (statusChanged || hasComments || hasAttachments)
+            if (statusChanged || detailsChanged || hasComments || hasAttachments)
             {
                 SampleManager.RequestEventType changeType;
-                String comment;
+                String comment = "";
                 String eventSummary;
-                if (statusChanged)
+                if (statusChanged || detailsChanged)
                 {
-                    SampleRequestStatus prevStatus = SampleManager.getInstance().getRequestStatus(getContainer(), _sampleRequest.getStatusId());
-                    SampleRequestStatus newStatus = SampleManager.getInstance().getRequestStatus(getContainer(), form.getStatus());
-                    comment = "Status changed from \"" + (prevStatus != null ? prevStatus.getLabel() : "N/A") + "\" to \"" +
-                            (newStatus != null ? newStatus.getLabel() : "N/A") + "\"";
+                    if (statusChanged)
+                    {
+                        SampleRequestStatus prevStatus = SampleManager.getInstance().getRequestStatus(getContainer(), _sampleRequest.getStatusId());
+                        SampleRequestStatus newStatus = SampleManager.getInstance().getRequestStatus(getContainer(), form.getStatus());
+                        comment += "Status changed from \"" + (prevStatus != null ? prevStatus.getLabel() : "N/A") + "\" to \"" +
+                                (newStatus != null ? newStatus.getLabel() : "N/A") + "\"\n";
+                    }
+                    if (detailsChanged)
+                    {
+                        String prevDetails = _sampleRequest.getComments();
+                        String newDetails = form.getRequestDescription();
+                        comment += "Description changed from \"" + (prevDetails != null ? prevDetails : "N/A") + "\" to \"" +
+                                (newDetails != null ? newDetails : "N/A") + "\"\n";
+                    }
                     eventSummary = comment;
                     if (hasComments)
-                        comment += ": " + form.getComments();
+                        comment += form.getComments();
                     _sampleRequest = _sampleRequest.createMutable();
                     _sampleRequest.setStatusId(form.getStatus());
+                    _sampleRequest.setComments(form.getRequestDescription());
                     _sampleRequest.setModified(new Date());
                     try
                     {
@@ -1229,7 +1251,7 @@ public class SpecimenController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             root = appendSpecimenRequestNavTrail(root, _sampleRequest.getRowId());
-            return root.addChild("Request Status");
+            return root.addChild("Update Request");
         }
     }
 

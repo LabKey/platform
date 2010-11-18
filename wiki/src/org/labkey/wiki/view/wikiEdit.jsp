@@ -122,7 +122,7 @@
                     <td class="labkey-form-label" title="This field is required">Name</td>
                     <td width="99%">
                         <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onkeypress="setWikiDirty()" onchange="onChangeName()"/>
-                        <span class="labkey-error">This field is required</span>
+                        <span>This field is required.</span>
                     </td>
                 </tr>
                 <tr>
@@ -156,7 +156,11 @@
                     </td>
                     <td width="99%">
                         <div>
-                            <ul id="wiki-tab-strip" class="labkey-tab-strip">
+                          <!--
+                             start the wiki-tab-strip out hidden, so that it does not appear and then disappear
+                             when wiki editor loads and hides it with javascript.
+                          -->
+                            <ul id="wiki-tab-strip" class="labkey-tab-strip" style="display: none;">
                                 <li id="wiki-tab-visual" class="labkey-tab-active"><a href="#" onclick="userSwitchToVisual()">Visual</a></li>
                                 <li id="wiki-tab-source" class="labkey-tab-inactive"><a href="#" onclick="userSwitchToSource()">Source</a></li>
                                 <div class="x-clear"></div>

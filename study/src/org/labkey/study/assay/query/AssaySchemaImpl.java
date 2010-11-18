@@ -39,6 +39,7 @@ import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 
 import javax.servlet.ServletException;
+import java.net.BindException;
 import java.sql.Types;
 import java.util.*;
 
@@ -274,8 +275,8 @@ public class AssaySchemaImpl extends AssaySchema
         return runTable;
     }
 
-
-    public QueryView createView(ViewContext context, QuerySettings settings) throws ServletException
+    @Override
+    public QueryView createView(ViewContext context, QuerySettings settings, org.springframework.validation.BindException errors) throws ServletException
     {
         String name = settings.getQueryName();
         for (ExpProtocol protocol : getProtocols())
@@ -290,7 +291,7 @@ public class AssaySchemaImpl extends AssaySchema
             }
         }
 
-        return super.createView(context, settings);
+        return super.createView(context, settings, errors);
     }
 
 

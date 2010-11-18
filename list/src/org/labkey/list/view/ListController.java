@@ -347,8 +347,8 @@ public class ListController extends SpringActionController
                 }
                 Object oldKey = item.getKey();
 
-                table.fireBatchTrigger(triggerType, true, validationErrors);
-                table.fireRowTrigger(triggerType, true, 0, tableForm.getTypedColumns(), oldValues);
+                table.fireBatchTrigger(getContainer(), triggerType, true, validationErrors);
+                table.fireRowTrigger(getContainer(), triggerType, true, 0, tableForm.getTypedColumns(), oldValues);
 
                 Domain domain = list.getDomain();
                 for (ColumnInfo column : tableForm.getTable().getColumns())
@@ -385,8 +385,8 @@ public class ListController extends SpringActionController
                     return false;
                 item.save(getUser());
 
-                table.fireRowTrigger(triggerType, false, 0, ListQueryUpdateService.toMap(list, item), oldValues);
-                table.fireBatchTrigger(triggerType, false, validationErrors);
+                table.fireRowTrigger(getContainer(), triggerType, false, 0, ListQueryUpdateService.toMap(list, item), oldValues);
+                table.fireBatchTrigger(getContainer(), triggerType, false, validationErrors);
 
                 if (transaction)
                 {

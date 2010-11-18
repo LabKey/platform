@@ -94,7 +94,7 @@ public class RelativeDateVisitManager extends VisitManager
                             "ORDER BY 1, 2");
                         sql.add(getStudy().getContainer());
                         sql.add(getStudy().getContainer());
-
+                        sql.add(cohortFilter.getCohortId());
                         break;
                 }
                 rows = Table.executeQuery(schema, sql, 0, false, false);

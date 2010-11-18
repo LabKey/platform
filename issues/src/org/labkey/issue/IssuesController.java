@@ -514,8 +514,10 @@ public class IssuesController extends SpringActionController
             }
 
             _issue.open(getContainer(), getUser());
-            if (!reshow)
+            if (!reshow || form.getSkipPost())
             {
+                // Set the defaults if we're not reshowing after an error, or if this is a request to open an issue
+                // from a mothership which comes in as a POST and is therefore considered a reshow 
                 setNewIssueDefaults(_issue);
             }
 
@@ -1078,6 +1080,12 @@ public class IssuesController extends SpringActionController
             validateRequired("string1", newFields.get("string1"), requiredFields, requiredErrors);
         if (newFields.containsKey("string2"))
             validateRequired("string2", newFields.get("string2"), requiredFields, requiredErrors);
+        if (newFields.containsKey("string3"))
+            validateRequired("string3", newFields.get("string3"), requiredFields, requiredErrors);
+        if (newFields.containsKey("string4"))
+            validateRequired("string4", newFields.get("string4"), requiredFields, requiredErrors);
+        if (newFields.containsKey("string5"))
+            validateRequired("string5", newFields.get("string5"), requiredFields, requiredErrors);
         if (newFields.containsKey("comment"))
             validateRequired("comment", newFields.get("comment"), requiredFields, requiredErrors);
 
@@ -1761,7 +1769,7 @@ public class IssuesController extends SpringActionController
             sbText.append(field);
             if (newIssue)
             {
-                sbText.append(" was set ");
+                sbText.append(" set");
             }
             else
             {

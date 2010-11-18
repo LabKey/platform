@@ -248,15 +248,12 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                 dbschema.getScope().beginTransaction();
 
             Map<String,Object> data = updateForm.getTypedColumns();
-            String newLsid;
 
             if (isInsert())
             {
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data));
                 if (insertedRows.size() == 0)
                     return false;
-                Map<String, Object> insertedValues = insertedRows.get(0);
-                newLsid = (String)insertedValues.get("lsid");
 
                 // save last inputs for use in default value population:
                 Domain domain = PropertyService.get().getDomain(c, ds.getTypeURI());
@@ -287,18 +284,6 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                         Collections.singletonList(Collections.<String, Object>singletonMap("lsid", form.getLsid())));
                 if (updatedRows.size() == 0)
                     return false;
-                Map<String, Object> updatedValues = updatedRows.get(0);
-                newLsid = (String)updatedValues.get("lsid");
-            }
-
-            boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
-                    PageFlowUtil.nullSafeEquals(datasetId, study.getParticipantCohortDataSetId()));
-
-            // If this results in a change to cohort assignments, the participant ID, or the visit,
-            // we need to recompute the participant-visit map:
-            if (recomputeCohorts || isInsert() || !newLsid.equals(form.getLsid()))
-            {
-                StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(user, Collections.singleton(ds));
             }
 
             if (ownTransaction)

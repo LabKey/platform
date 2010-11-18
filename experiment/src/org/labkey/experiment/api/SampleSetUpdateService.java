@@ -89,6 +89,7 @@ class SampleSetUpdateService implements QueryUpdateService
         form.setParentColumn(-1);
         form.setInsertUpdateChoice(insertUpdate.name());
         form.setCreateNewSampleSet(false);
+        form.setCreateNewColumnsOnExistingSampleSet(false);
 
         try
         {

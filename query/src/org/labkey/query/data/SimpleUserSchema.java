@@ -62,7 +62,13 @@ public class SimpleUserSchema extends UserSchema
         {
             for (SchemaTableInfo table : _dbSchema.getTables())
             {
-                if (!table.isHidden() && (null == filter || filter.accept(table)))
+                // If a filter is present, the admin has chosen to only allow tables that match the filter.
+                // Unmatched tables are excluded.  See 11269.
+                if (null != filter && !filter.accept(table))
+                    continue;
+
+                // Not visible tables are hidden from the UI but will still be addressible by Query (for fk lookups, etc.)
+                if (!table.isHidden())
                     _visible.add(table.getName());
                 _tables.put(table.getName(), table);
             }
@@ -134,6 +140,7 @@ public class SimpleUserSchema extends UserSchema
 
                 // ColumnInfo doesn't copy these attributes by default
                 wrap.setHidden(col.isHidden());
+                wrap.setReadOnly(col.isReadOnly());
 
                 final String colName = col.getName();
                 if (colName.equalsIgnoreCase("owner") ||

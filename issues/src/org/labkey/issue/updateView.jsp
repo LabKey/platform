@@ -154,6 +154,7 @@
         <% } %>
                         <%=bean.writeCustomColumn(c, new HString("int1",false), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE, 10)%>
                         <%=bean.writeCustomColumn(c, new HString("int2",false), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE, 10)%>
+                        <%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1, 20)%>
                     </table>
                 </td>
                 <td valign="top" rowspan="6"><table>
@@ -186,7 +187,6 @@
     <%
                 }
     %>
-                    <%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1, 20)%>
                     <%=bean.writeCustomColumn(c, new HString("string2",false), issue.getString2(), IssuesController.ISSUE_STRING2, 20)%>
                     <%=bean.writeCustomColumn(c, new HString("string3",false), issue.getString3(), IssuesController.ISSUE_STRING3, 20)%>
                     <%=bean.writeCustomColumn(c, new HString("string4",false), issue.getString4(), IssuesController.ISSUE_STRING4, 20)%>

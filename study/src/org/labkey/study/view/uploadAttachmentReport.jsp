@@ -91,7 +91,7 @@
 
 <br>
     <%=PageFlowUtil.generateSubmitButton("Submit")%>
-    <%=PageFlowUtil.generateButton("Cancel", "", "window.history.back()")%>
+    <%=PageFlowUtil.generateBackButton("Cancel")%>
     </form>
 <script type="text/javascript">
     function showUpload()
