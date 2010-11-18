@@ -5935,7 +5935,7 @@ public class StudyController extends BaseStudyController
 
             if (null == dr.getResultSet(ctx))
                 return null;
-            return new Results(ctx);
+            return new ResultsImpl(ctx);
         }
 
         public ChartReportDescriptor.LegendItemLabelGenerator getLegendItemLabelGenerator()
