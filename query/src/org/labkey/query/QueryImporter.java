@@ -151,7 +151,7 @@ public class QueryImporter implements ExternalStudyImporter
                 {
                     mgr.validateQuery(sname, qname, user, container);
                 }
-                catch(Exception e)
+                catch (Throwable e)
                 {
                     ctx.getLogger().warn("VALIDATION ERROR: Query " + sname + "." + qname + " failed validation!", e);
                     warnings.add(new PipelineJobWarning("Query " + sname + "." + qname + " failed validation!", e));
