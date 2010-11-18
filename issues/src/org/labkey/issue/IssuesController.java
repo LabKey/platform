@@ -65,7 +65,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.GuidString;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.HelpTopic;
@@ -771,17 +771,17 @@ public class IssuesController extends SpringActionController
     // SAME as AttachmentForm, just to demonstrate GuidString
     public static class _AttachmentForm
     {
-        private GuidString _entityId = null;
+        private GUID _entityId = null;
         private String _name = null;
 
 
-        public GuidString getEntityId()
+        public GUID getEntityId()
         {
             return _entityId;
         }
 
 
-        public void setEntityId(GuidString entityId)
+        public void setEntityId(GUID entityId)
         {
             _entityId = entityId;
         }
@@ -832,10 +832,10 @@ public class IssuesController extends SpringActionController
 
     public class IssueAttachmentParent extends AttachmentParentEntity
     {
-        public IssueAttachmentParent(Container c, GuidString entityId)
+        public IssueAttachmentParent(Container c, GUID entityId)
         {
             setContainer(c.getId());
-            setEntityId(entityId.toString());
+            setEntityId(null==entityId?null:entityId.toString());
         }
     }
 

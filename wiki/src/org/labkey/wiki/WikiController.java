@@ -2620,7 +2620,7 @@ public class WikiController extends SpringActionController
 
     public static class SaveWikiForm
     {
-        private GuidString _entityId;
+        private GUID _entityId;
         private HString _name;
         private HString _title;
         private String _body;
@@ -2630,12 +2630,12 @@ public class WikiController extends SpringActionController
         private int _index = -1;
         private boolean _showAttachments = true;
 
-        public GuidString getEntityId()
+        public GUID getEntityId()
         {
             return _entityId;
         }
 
-        public void setEntityId(GuidString entityId)
+        public void setEntityId(GUID entityId)
         {
             _entityId = entityId;
         }
@@ -2672,7 +2672,7 @@ public class WikiController extends SpringActionController
 
         public boolean isNew()
         {
-            return null == _entityId || _entityId.length() <= 0;
+            return null == _entityId;
         }
 
         public Integer getParent()
@@ -2764,7 +2764,7 @@ public class WikiController extends SpringActionController
             if (null != name && name.length() > 0)
             {
                 Wiki existingWiki = WikiManager.getWiki(container, name);
-                if (null != existingWiki && (null == form.getEntityId() || !HString.eq(existingWiki.getEntityId().toLowerCase(), form.getEntityId().toLowerCase())))
+                if (null != existingWiki && (null == form.getEntityId() || !HString.eq(existingWiki.getEntityId().toLowerCase(), form.getEntityId().toString().toLowerCase())))
                     errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
             }
 
@@ -2858,10 +2858,10 @@ public class WikiController extends SpringActionController
         protected ApiResponse updateWiki(SaveWikiForm form, BindException errors) throws Exception
         {
             User user = getViewContext().getUser();
-            if (null == form.getEntityId() || form.getEntityId().length() <= 0)
+            if (null == form.getEntityId())
                 throw new IllegalArgumentException("The entityId parameter must be supplied.");
 
-            Wiki wikiUpdate = WikiManager.getWikiByEntityId(getViewContext().getContainer(), form.getEntityId().getSource());
+            Wiki wikiUpdate = WikiManager.getWikiByEntityId(getViewContext().getContainer(), form.getEntityId().toString());
             if (wikiUpdate == null)
                 HttpView.throwNotFound("Could not find the wiki page matching the passed id; if it was a valid page, it may have been deleted by another user.");
 
