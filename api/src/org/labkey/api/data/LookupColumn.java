@@ -89,10 +89,8 @@ public class LookupColumn extends ColumnInfo
 
     public SQLFragment getJoinCondition(String tableAliasName)
     {
-        SQLFragment fkSql = _foreignKey.getValueSql(tableAliasName);
-        SQLFragment lkSql = _lookupKey.getValueSql(getTableAlias(tableAliasName));
         return getJoinConditionHelper(
-            _foreignKey.getTableAlias(tableAliasName), _foreignKey.getValueSql(tableAliasName), _foreignKey.getSqlTypeInt(),
+            tableAliasName, _foreignKey.getValueSql(tableAliasName), _foreignKey.getSqlTypeInt(),
             getTableAlias(tableAliasName), _lookupKey.getValueSql(getTableAlias(tableAliasName)), _lookupKey.getSqlTypeInt(),
             _joinOnContainer, getSqlDialect().isPostgreSQL()
         );
