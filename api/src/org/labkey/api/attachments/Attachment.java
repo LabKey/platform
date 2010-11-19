@@ -103,7 +103,7 @@ public class Attachment implements Serializable
 
 
     static MimeMap mime = new MimeMap();
-    private static final ConcurrentHashMap<String,String> icons = new ConcurrentHashMap<String, String>();
+    private static final ConcurrentHashMap<String, String> icons = new ConcurrentHashMap<String, String>();
 
     static String lookupIcon(String lookup)
     {
@@ -173,19 +173,6 @@ public class Attachment implements Serializable
         return icon;
     }
 
-
-/*    @Id()
-    public EntityName getEntityNamePK()
-        {
-        return entityNamePK;
-        }
-
-
-    public void setEntityNamePK(EntityName entityNamePK)
-        {
-        this.entityNamePK = entityNamePK;
-        }
-*/
 
     public String getName()
     {

@@ -479,7 +479,6 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             return false;
         addColumn(column);
         return true;
-
     }
 
 

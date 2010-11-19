@@ -16,6 +16,8 @@
 
 package org.labkey.api.attachments;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -68,12 +70,13 @@ public class AttachmentService
         public void deleteAttachment(AttachmentParent parent, String name);
         public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws IOException;
         public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException;
-        public List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
-        public Attachment[] getAttachments(AttachmentParent parent);
-        public List<Pair<String,String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince);
+        public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
+        // Returns an unmodifiable list of attachments for this parent
+        public @NotNull List<Attachment> getAttachments(AttachmentParent parent);
+        public List<Pair<String, String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince);
         public WebdavResource getAttachmentResource(Path path, AttachmentParent parent);
         public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
-        public Attachment getAttachment(AttachmentParent parent, String name);
+        public @Nullable Attachment getAttachment(AttachmentParent parent, String name);
         public void setAttachments(Collection<AttachmentParent> parents) throws SQLException;
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
         public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;

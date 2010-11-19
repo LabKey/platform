@@ -16,14 +16,12 @@
 package org.labkey.api.collections;
 
 import java.util.HashSet;
-import java.util.StringTokenizer;
 
 public class CsvSet extends HashSet<String>
 {
     public CsvSet(String str)
     {
-        StringTokenizer st = new StringTokenizer(str, ",");
-        while (st.hasMoreTokens())
-            add(st.nextToken());
+        for (String token : str.split(",\\s*"))
+            add(token);
     }
 } 

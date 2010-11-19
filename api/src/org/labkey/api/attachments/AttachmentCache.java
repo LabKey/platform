@@ -22,6 +22,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -77,7 +78,7 @@ public class AttachmentCache
     public static Attachment lookupLogoAttachment(Container c) throws SQLException
     {
         AttachmentParent parent = new ContainerParent(c);
-        Attachment[] attachments = AttachmentService.get().getAttachments(parent);
+        Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
         for (Attachment attachment : attachments)
         {
             if (attachment.getName().startsWith(LOGO_FILE_NAME_PREFIX))

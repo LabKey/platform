@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.cache;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Sep 16, 2010
  * Time: 4:40:24 PM
