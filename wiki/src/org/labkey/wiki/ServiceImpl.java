@@ -38,6 +38,7 @@ import org.radeox.macro.MacroRepository;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
@@ -156,14 +157,15 @@ public class ServiceImpl implements WikiService
         return getRenderer(rendererType, null, null, null, null);
     }
 
-    public WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Attachment[] attachments)
+    @Override
+    public WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Collection<? extends Attachment> attachments)
     {
         return getRenderer(rendererType, null, attachPrefix, null, attachments);
     }
 
     public WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
                                     String attachPrefix, Map<HString, WikiRenderer.WikiLinkable> pages,
-                                    Attachment[] attachments)
+                                    Collection<? extends Attachment> attachments)
     {
         WikiRenderer renderer;
         switch (rendererType)

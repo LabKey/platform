@@ -204,12 +204,7 @@ public class WikiManager
                     return null;
             }
 
-            Wiki wiki = wikis[0];
-
-            Collection<Attachment> att = AttachmentService.get().getAttachments(wiki);
-            wiki.setAttachments(att);
-
-            return wiki;
+            return wikis[0];
         }
         catch (SQLException x)
         {
@@ -674,10 +669,8 @@ public class WikiManager
 
         Map<HString, WikiLinkable> pages = getVersionMap(c);
 
-        Attachment[] attachments = wiki.getAttachments() == null ? null : wiki.getAttachments().toArray(new Attachment[wiki.getAttachments().size()]);
-
         //get formatter specified for this version
-        WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, pages, attachments);
+        WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, pages, wiki.getAttachments());
 
         return w.format(wikiversion.getBody());
     }

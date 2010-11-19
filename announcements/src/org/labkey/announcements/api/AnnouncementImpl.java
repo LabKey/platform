@@ -15,20 +15,16 @@
  */
 package org.labkey.announcements.api;
 
-import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.wiki.WikiRendererType;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Nick
  * Date: Jun 30, 2010
  * Time: 6:11:07 PM
@@ -44,21 +40,7 @@ public class AnnouncementImpl implements Announcement
 
     public Collection<Attachment> getAttachments()
     {
-        Collection<Attachment> attachments;
-        try
-        {
-            attachments = _model.getAttachments();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        return attachments;
-    }
-
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-        _model.setAttachments(attachments);
+        return _model.getAttachments();
     }
 
     public Date getExpires()

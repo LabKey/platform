@@ -18,6 +18,8 @@ package org.labkey.wiki.renderer;
 
 import org.apache.commons.lang.StringUtils;
 import static org.apache.commons.lang.StringUtils.trimToEmpty;
+
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.HString;
@@ -53,12 +55,13 @@ public class HtmlRenderer implements WikiRenderer
     }
 
 
-    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<HString, WikiLinkable> pages, Attachment[] attachments)
+    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<HString, WikiLinkable> pages, @Nullable Collection<? extends Attachment> attachments)
     {
         _hrefPrefix = hrefPrefix;
         _attachPrefix = attachPrefix;
-        _pages = pages == null ? new HashMap<HString,WikiLinkable>() : pages;
-        _attachments = new HashMap<String,Attachment>();
+        _pages = pages == null ? new HashMap<HString, WikiLinkable>() : pages;
+        _attachments = new HashMap<String, Attachment>();
+
         if (null != attachments)
             for (Attachment a : attachments)
                 _attachments.put(a.getName(), a);

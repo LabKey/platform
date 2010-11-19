@@ -643,10 +643,4 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         return _object.getContainer().getId();
     }
-
-    @Override
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-        throw new UnsupportedOperationException();
-    }
 }

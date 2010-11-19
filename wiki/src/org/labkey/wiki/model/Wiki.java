@@ -16,6 +16,7 @@
 package org.labkey.wiki.model;
 
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
@@ -26,7 +27,6 @@ import org.labkey.wiki.WikiManager;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -45,9 +45,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
     private int rowId;
     private HString name;
-
-    private Collection<Attachment> attachments = new ArrayList<Attachment>();
-
     private int parent = -1;
     private float displayOrder = 0;
     private Wiki _parentWiki;
@@ -184,12 +181,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
     public Collection<Attachment> getAttachments()
     {
-        return attachments;
-    }
-
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-        this.attachments = attachments;
+        return AttachmentService.get().getAttachments(this);
     }
 
     public List<Wiki> getChildren()

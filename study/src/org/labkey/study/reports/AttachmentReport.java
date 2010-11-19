@@ -16,6 +16,7 @@
 
 package org.labkey.study.reports;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -25,6 +26,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.controllers.reports.ReportsController;
 
 import java.util.Collection;
 import java.util.Date;
@@ -32,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jul 6, 2006
  * Time: 5:08:19 PM
@@ -42,8 +43,6 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
     public static final String TYPE = "Study.attachmentReport";
     public static final String FILE_PATH = "filePath";
     public static final String MODIFIED = "modified";
-
-    private Attachment[] attachments;
 
     public String getType()
     {
@@ -63,11 +62,6 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
     public String getContainerId()
     {
         return getDescriptor().getContainerId();
-    }
-
-    // Do nothing
-    public void setAttachments(Collection<Attachment> attachments)
-    {
     }
 
     @Override
@@ -100,7 +94,7 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
     }
     
     @Override
-    public String getUrl(ViewContext context)
+    public @Nullable String getUrl(ViewContext context)
     {
         Container c = getContainer();
         String entityId = getEntityId();
@@ -111,44 +105,27 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
 
         if (null != getFilePath())
         {
-            ActionURL url = new ActionURL("Study-Reports", "downloadReportFile.view", getContainer());
+            ActionURL url = new ActionURL(ReportsController.DownloadReportFileAction.class, getContainer());
             url.addParameter("reportId", getReportId().toString());
             return url.getLocalURIString();
         }
 
-        getAttachments(false);
+        Attachment latest = getLatestVersion();
 
-        if (null == attachments || attachments.length == 0)
-            return null;
-
-        return getLatestVersion().getDownloadUrl("Study-Reports");
+        return null != latest ? latest.getDownloadUrl("Study-Reports") : null;
     }
 
-    public Attachment getLatestVersion()
+    public @Nullable Attachment getLatestVersion()
     {
-        getAttachments(false);
-
-        if (null == attachments || attachments.length == 0)
-            return null;
-
-        return attachments[attachments.length - 1];
-    }
-
-    public Attachment[] getAttachments(boolean forceRefresh)
-    {
-        if (forceRefresh)
-            attachments = null;
-
-        if (null != attachments)
-            return attachments;
-
         if (null == getEntityId())
             return null;
 
-        // TODO: Migrate AttachmentReport to use List<Attachment> directly
-        List<Attachment> list = AttachmentService.get().getAttachments(this);
-        attachments = list.toArray(new Attachment[list.size()]);
-        return attachments;
+        List<Attachment> attachments = AttachmentService.get().getAttachments(this);
+
+        if (attachments.isEmpty())
+            return null;
+
+        return attachments.get(attachments.size() - 1);
     }
 
     public void setFilePath(String filePath)

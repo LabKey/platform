@@ -68,10 +68,6 @@ public class SampleRequestEvent extends AbstractStudyCachable<SampleRequestEvent
         _container = container;
     }
 
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-    }
-
     public Date getCreated()
     {
         return new Date(_created);

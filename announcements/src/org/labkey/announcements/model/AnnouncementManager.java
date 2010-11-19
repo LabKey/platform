@@ -26,7 +26,6 @@ import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -108,12 +107,6 @@ public class AnnouncementManager
     {
     }
 
-    protected static void attachAttachments(AnnouncementModel[] announcementModels) throws SQLException
-    {
-        AttachmentService.get().setAttachments(Arrays.<AttachmentParent>asList(announcementModels));
-    }
-
-
     protected static void attachResponses(Container c, AnnouncementModel[] announcementModels) throws SQLException
     {
         for (AnnouncementModel announcementModel : announcementModels)
@@ -145,7 +138,6 @@ public class AnnouncementManager
             if (limited)
                 recent = (AnnouncementModel[])ArrayUtils.subarray(recent, 0, rowLimit);
 
-            attachAttachments(recent);
             return new Pair<AnnouncementModel[], Boolean>(recent, limited);
         }
         catch (SQLException x)
@@ -194,10 +186,7 @@ public class AnnouncementManager
 
         try
         {
-            AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS, filter, sort, AnnouncementModel.class);
-
-            attachAttachments(ann);
-            return ann;
+            return Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS, filter, sort, AnnouncementModel.class);
         }
         catch (SQLException e)
         {
@@ -221,7 +210,6 @@ public class AnnouncementManager
             AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(),
                     Table.ALL_COLUMNS, filter, sort, AnnouncementModel.class);
 
-            attachAttachments(ann);
             return ann;
         }
         catch (SQLException x)
@@ -244,7 +232,7 @@ public class AnnouncementManager
                 null, AnnouncementModel.class);
         if (ann.length < 1)
             return null;
-        attachAttachments(ann);
+
         if (eager)
         {
             attachResponses(c, ann);
@@ -314,8 +302,6 @@ public class AnnouncementManager
         if (ann.length < 1)
             return null;
 
-        if ((mask & INCLUDE_ATTACHMENTS) != 0)
-            attachAttachments(ann);
         if ((mask & INCLUDE_RESPONSES) != 0)
             attachResponses(c, ann);
         if ((mask & INCLUDE_MEMBERLIST) != 0)

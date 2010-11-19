@@ -15,7 +15,9 @@
  */
 package org.labkey.announcements.model;
 
+import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
@@ -23,20 +25,18 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.announcements.AnnouncementsController;
 
 import java.io.Serializable;
-import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.ArrayList;
 
 
 /**
@@ -64,7 +64,6 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     private int _responseCount = 0;
 
-    private Collection<Attachment> _attachments = null;
     private Collection<AnnouncementModel> _responses = new ArrayList<AnnouncementModel>();
 
 
@@ -242,18 +241,9 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     }
 
 
-    public Collection<Attachment> getAttachments() throws SQLException
+    public Collection<Attachment> getAttachments()
     {
-        if (null == _attachments)
-            AnnouncementManager.attachAttachments(new AnnouncementModel[] {this});
-
-        return _attachments;
-    }
-
-
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-        _attachments = attachments;
+        return AttachmentService.get().getAttachments(this);
     }
 
 
@@ -277,9 +267,8 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     public String translateBody(Container container)
     {
         DownloadURL urlAttach = new DownloadURL("announcements", container.getPath(), getEntityId(), "");
-        Attachment[] attach = _attachments == null ? null : _attachments.toArray(new Attachment[_attachments.size()]);
 
-        WikiRenderer renderer = getRenderer(urlAttach.getLocalURIString(), attach);
+        WikiRenderer renderer = getRenderer(urlAttach.getLocalURIString());
         return renderer.format(_body).getHtml();
     }
 
@@ -302,10 +291,10 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     public WikiRenderer getRenderer()
     {
-        return getRenderer(null, null);
+        return getRenderer(null);
     }
 
-    public WikiRenderer getRenderer(String attachPrefix, Attachment[] attachments)
+    private WikiRenderer getRenderer(String attachPrefix)
     {
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
 
@@ -314,7 +303,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
             _rendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
         }
 
-        return null != wikiService ? wikiService.getRenderer(_rendererType, attachPrefix, attachments) : null;
+        return null != wikiService ? wikiService.getRenderer(_rendererType, attachPrefix, getAttachments()) : null;
     }
 
     public String getStatus()

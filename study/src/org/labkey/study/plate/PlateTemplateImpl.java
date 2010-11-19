@@ -265,10 +265,6 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return _container.getId();
     }
 
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-    }
-
     public int getWellGroupCount()
     {
         int size = 0;

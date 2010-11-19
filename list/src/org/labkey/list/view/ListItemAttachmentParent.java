@@ -59,10 +59,4 @@ public class ListItemAttachmentParent implements AttachmentParent
     {
         return _c.getId();
     }
-
-    // AttachmentServiceImpl uses this to retrieve the attachments of many parents with a single query.  Implementation
-    // is not necessary in most cases.
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-    }
 }

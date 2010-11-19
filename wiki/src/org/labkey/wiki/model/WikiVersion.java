@@ -28,6 +28,7 @@ import org.labkey.wiki.ServiceImpl;
 import org.labkey.wiki.WikiContentCache;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 
@@ -193,16 +194,10 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
         _rendererType = rendererType;
     }
 
-    //we're not currently calling this one....
-//    public WikiRenderer getRenderer()
-//    {
-//        return getRenderer(null, null, null, null);
-//    }
-
     public WikiRenderer getRenderer(String hrefPrefix,
                                     String attachPrefix,
                                     Map<HString, WikiRenderer.WikiLinkable> pages,
-                                    Attachment[] attachments)
+                                    Collection<? extends Attachment> attachments)
     {
         if (_rendererType == null)
             _rendererType = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;

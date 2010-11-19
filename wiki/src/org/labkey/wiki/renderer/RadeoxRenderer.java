@@ -16,6 +16,7 @@
 package org.labkey.wiki.renderer;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.HString;
@@ -56,6 +57,7 @@ import org.radeox.util.StringBufferWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -77,7 +79,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     private static final MessageFormat WIKI_IMG_FORMAT = new MessageFormat("<img class=\"{2}\" src=\"{0}\" title=\"{1}\">");
 
     private Map<HString, WikiLinkable> _pages;
-    private Attachment[] _attachments;
+    private Collection<? extends Attachment>  _attachments;
 
     public RadeoxRenderer()
     {
@@ -87,7 +89,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     // UNDONE: switch to format from prefix
     public RadeoxRenderer(String hrefPrefix, String attachPrefix,
-                          Map<HString, WikiLinkable> pages, Attachment[] attachments)
+                          Map<HString, WikiLinkable> pages, @Nullable Collection<? extends Attachment> attachments)
     {
         this();
         if (null != hrefPrefix)

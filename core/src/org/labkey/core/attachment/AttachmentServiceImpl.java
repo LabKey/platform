@@ -345,7 +345,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             }
 
             AttachmentCache.removeAttachments(parent);
-            setAttachments(Collections.singletonList(parent));
 
             if (!filesToSkip.isEmpty())
                 throw new AttachmentService.DuplicateFilenameException(filesToSkip);
@@ -356,28 +355,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
     }
 
-
-    public synchronized void insertAttachmentRecord(User user, AttachmentDirectory parent, AttachmentFile file)
-            throws SQLException
-    {
-        long size;
-        try
-        {
-            size = file.getSize();
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
-        HashMap<String, Object> hm = new HashMap<String, Object>();
-        hm.put("DocumentName", file.getFilename());
-        hm.put("DocumentSize", size);
-        hm.put("DocumentType", file.getContentType());
-        hm.put("Parent", parent.getEntityId());
-        hm.put("Container", parent.getContainerId());
-        Table.insert(user, coreTables().getTableInfoDocuments(), hm);
-    }
-    
 
     public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnURL)
     {
@@ -512,7 +489,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {
         DatabaseAttachmentFile file = new DatabaseAttachmentFile(a);
         file.setFilename(newName);
-        addAttachments(user, parent, Arrays.asList((AttachmentFile)file));
+        addAttachments(user, parent, Collections.singletonList((AttachmentFile)file));
     }
 
 
@@ -675,17 +652,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         return AttachmentCache.getAttachments(parent).get(name);
     }
 
-
-    public void setAttachments(Collection<AttachmentParent> parents) throws SQLException
-    {
-        for (AttachmentParent parent : parents)
-        {
-            // Retrive attachments for this parent, make a copy (internal collection is not serializable), and set it
-            Collection<Attachment> attachments = AttachmentCache.getAttachments(parent).values();
-            List<Attachment> copy = new LinkedList<Attachment>(attachments);
-            parent.setAttachments(copy);
-        }
-    }
 
     public void containerCreated(Container c, User user)
     {
