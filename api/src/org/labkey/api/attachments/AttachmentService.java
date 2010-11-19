@@ -65,7 +65,6 @@ public class AttachmentService
         public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
 
         public void addAttachments(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException;
-        public void insertAttachmentRecord(User user, AttachmentDirectory parent, AttachmentFile file) throws SQLException;
         public void deleteAttachments(AttachmentParent parent) throws SQLException;
         public void deleteAttachment(AttachmentParent parent, String name);
         public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws IOException;
@@ -77,7 +76,6 @@ public class AttachmentService
         public WebdavResource getAttachmentResource(Path path, AttachmentParent parent);
         public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
         public @Nullable Attachment getAttachment(AttachmentParent parent, String name);
-        public void setAttachments(Collection<AttachmentParent> parents) throws SQLException;
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
         public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
         public void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);

@@ -38,7 +38,7 @@ public class AttachmentCache
 
     private static Map<Container, CacheableWriter> _logoCache = new ConcurrentHashMap<Container, CacheableWriter>(100, 0.75f, 4);        // Site + project, so size to one per project
     private static Map<Container, CacheableWriter> _favIconCache = new ConcurrentHashMap<Container, CacheableWriter>(100, 0.75f, 4);     // Site + project, so size to one per project
-    private static Map<String, CacheableWriter> _authLogoMap = new ConcurrentHashMap<String, CacheableWriter>(5, 0.75f, 4);              // Site-wide
+    private static Map<String, CacheableWriter> _authLogoMap = new ConcurrentHashMap<String, CacheableWriter>(5, 0.75f, 4);           // Site-wide
 
     public static void clearLogoCache()
     {

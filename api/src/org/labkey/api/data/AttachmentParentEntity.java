@@ -28,8 +28,4 @@ import java.util.Collection;
  */
 public class AttachmentParentEntity extends Entity implements AttachmentParent
 {
-    // Do nothing by default
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-    }
 }

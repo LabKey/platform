@@ -727,10 +727,6 @@ public class ContainerManager
         {
             return _c;
         }
-
-        public void setAttachments(Collection<Attachment> attachments)
-        {
-        }
     }
 
     // Used for attaching system resources (favorite icon, logo) to the root container

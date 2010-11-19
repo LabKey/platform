@@ -312,10 +312,6 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         return getDescriptor().getContainerId();
     }
 
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-    }
-
     public HttpView renderDataView(ViewContext context) throws Exception
     {
         QueryView view = createQueryView(context, getDescriptor());
