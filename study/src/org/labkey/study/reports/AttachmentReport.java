@@ -28,6 +28,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -144,7 +145,9 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
         if (null == getEntityId())
             return null;
 
-        attachments = AttachmentService.get().getAttachments(this);
+        // TODO: Migrate AttachmentReport to use List<Attachment> directly
+        List<Attachment> list = AttachmentService.get().getAttachments(this);
+        attachments = list.toArray(new Attachment[list.size()]);
         return attachments;
     }
 

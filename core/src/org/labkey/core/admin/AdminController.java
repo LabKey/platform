@@ -833,7 +833,7 @@ public class AdminController extends SpringActionController
     static void deleteExistingLogo(Container c) throws SQLException
     {
         ContainerParent parent = new ContainerParent(c);
-        Attachment[] attachments = AttachmentService.get().getAttachments(parent);
+        Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
         for (Attachment attachment : attachments)
         {
             if (attachment.getName().startsWith(AttachmentCache.LOGO_FILE_NAME_PREFIX))

@@ -443,17 +443,19 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderAttachments(ViewContext context, AttachmentParent parent)
     {
-        Attachment[] attachments = AttachmentService.get().getAttachments(parent);
+        Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
         StringBuilder sb = new StringBuilder();
         boolean canEdit = isEditable("attachments");
 
-        if (attachments.length > 0)
+        if (attachments.size() > 0)
         {
             sb.append("<table>");
             sb.append("<tr><td>&nbsp;</td></tr>");
+
             for (Attachment a : attachments)
             {
                 sb.append("<tr><td>");
+
                 if (!canEdit)
                 {
                     sb.append("<a href=\"");

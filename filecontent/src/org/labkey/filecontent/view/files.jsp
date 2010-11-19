@@ -37,6 +37,10 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = HttpView.currentContext();
@@ -77,9 +81,11 @@
     }
 
     String fileSetName = parent.getLabel();
-    Attachment[] attachments = AttachmentService.get().getAttachments(parent);
 
-    Arrays.sort(attachments, new Comparator<Attachment>() {
+    // Make a copy to modify
+    List<Attachment> attachments = new ArrayList<Attachment>(AttachmentService.get().getAttachments(parent));
+
+    Collections.sort(attachments, new Comparator<Attachment>() {
         public int compare(Attachment a1, Attachment a2)
         {
             return a1.getName().compareToIgnoreCase(a2.getName());

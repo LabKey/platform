@@ -16,6 +16,7 @@
 
 package org.labkey.study.samples.notifications;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.model.SampleRequest;
@@ -23,9 +24,10 @@ import org.labkey.study.model.SampleRequestRequirement;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.query.SpecimenQueryView;
 
-import java.util.List;
-import java.sql.SQLException;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: brittp
@@ -62,9 +64,9 @@ public class DefaultRequestNotification implements RequestNotification
         return _request.getSpecimens();
     }
 
-    public Attachment[] getAttachments()
+    public @NotNull List<Attachment> getAttachments()
     {
-        return null;
+        return Collections.emptyList();
     }
 
     public String getComments()

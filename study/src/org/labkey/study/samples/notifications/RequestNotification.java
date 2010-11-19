@@ -16,6 +16,8 @@
 
 package org.labkey.study.samples.notifications;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.model.SampleRequest;
@@ -36,7 +38,7 @@ public interface RequestNotification
     SampleRequest getSampleRequest();
     String getComments();
     String getEventSummary();
-    Attachment[] getAttachments();
+    @NotNull List<Attachment> getAttachments();
     String getSpecimenListHTML(ViewContext context) throws SQLException, IOException;
     SampleRequestRequirement getRequirement();
 }

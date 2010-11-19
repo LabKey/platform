@@ -17,9 +17,27 @@
 package org.labkey.study.controllers.samples;
 
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ButtonBarLineBreak;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Site;
@@ -28,13 +46,30 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.ParticipantDataset;
+import org.labkey.study.model.SampleRequest;
+import org.labkey.study.model.SampleRequestActor;
+import org.labkey.study.model.SampleRequestEvent;
+import org.labkey.study.model.SampleRequestRequirement;
+import org.labkey.study.model.SampleRequestStatus;
+import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.Specimen;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.samples.notifications.DefaultRequestNotification;
@@ -57,7 +92,16 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -477,7 +521,7 @@ public class SpecimenUtils
             _specimenList = specimenList;
         }
 
-        public Attachment[] getAttachments()
+        public @NotNull List<Attachment> getAttachments()
         {
             return _notification.getAttachments();
         }
@@ -825,9 +869,9 @@ public class SpecimenUtils
         {
             Map cols = ctx.getRow();
             SampleRequestEvent event = ObjectFactory.Registry.getFactory(SampleRequestEvent.class).fromMap(cols);
-            Attachment[] attachments = AttachmentService.get().getAttachments(event);
+            Collection<Attachment> attachments = AttachmentService.get().getAttachments(event);
 
-            if (attachments != null && attachments.length > 0)
+            if (!attachments.isEmpty())
             {
                 for (Attachment attachment : attachments)
                 {

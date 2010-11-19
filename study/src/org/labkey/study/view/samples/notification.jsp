@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenUtils.NotificationBean> me =
@@ -48,14 +49,15 @@
         <td align="left"><%= bean.getEventDescription() != null ? h(bean.getEventDescription()).replaceAll("\\n", "<br>\n") : "" %></td>
     </tr>
     <%
-        if (bean.getAttachments() != null && bean.getAttachments().length > 0)
+        List<Attachment> attachments = bean.getAttachments();
+        if (!attachments.isEmpty())
         {
     %>
     <tr>
         <td valign="top"><b>Attachments</b></td>
         <td align="left">
             <%
-                for (Attachment att : bean.getAttachments()) {
+                for (Attachment att : attachments) {
             %>
             <a href="<%= bean.getBaseServerURI() %><%= PageFlowUtil.filter(att.getDownloadUrl("Study-Samples")) %>">
                 <%= h(att.getName()) %>

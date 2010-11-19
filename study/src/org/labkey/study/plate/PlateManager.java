@@ -680,11 +680,11 @@ public class PlateManager implements PlateService.Service
         PlateImpl plate = (PlateImpl) iplate;
         if (plate.getDataFileId() != null)
         {
-            Attachment[] attachments = AttachmentService.get().getAttachments(plate);
-            if (attachments != null && attachments.length > 0)
+            List<Attachment> attachments = AttachmentService.get().getAttachments(plate);
+            if (!attachments.isEmpty())
             {
-                assert attachments.length == 1 : "Expected only one data file per plate";
-                return new DownloadURL(pageFlow, plate.getContainer().getPath(), plate.getDataFileId(), attachments[0].getName());
+                assert attachments.size() == 1 : "Expected only one data file per plate";
+                return new DownloadURL(pageFlow, plate.getContainer().getPath(), plate.getDataFileId(), attachments.get(0).getName());
             }
         }
         return null;

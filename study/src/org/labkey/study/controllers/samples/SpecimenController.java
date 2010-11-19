@@ -20,6 +20,7 @@ import jxl.Range;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.*;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.*;
@@ -1224,11 +1225,11 @@ public class SpecimenController extends BaseStudyController
                 SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), _sampleRequest, changeType,
                         comment, files);
                 List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
-                final Attachment[] attachments = AttachmentService.get().getAttachments(event);
+                final List<Attachment> attachments = AttachmentService.get().getAttachments(event);
                 getUtils().sendNotification(new DefaultRequestNotification(_sampleRequest, recipients, eventSummary)
                 {
                     @Override
-                    public Attachment[] getAttachments()
+                    public @NotNull List<Attachment> getAttachments()
                     {
                         return attachments;
                     }
@@ -2044,7 +2045,8 @@ public class SpecimenController extends BaseStudyController
                     eventType, comment.toString(), files);
 
             List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
-            final Attachment[] attachments = AttachmentService.get().getAttachments(event);
+            final List<Attachment> attachments = AttachmentService.get().getAttachments(event);
+
             getUtils().sendNotification(new DefaultRequestNotification(_sampleRequest, recipients, eventSummary)
             {
                 @Override
@@ -2060,7 +2062,7 @@ public class SpecimenController extends BaseStudyController
                 }
 
                 @Override
-                public Attachment[] getAttachments()
+                public @NotNull List<Attachment> getAttachments()
                 {
                     return attachments;
                 }
@@ -2550,7 +2552,7 @@ public class SpecimenController extends BaseStudyController
                             SampleManager.RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
 
                     List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingSite);
-                    final Attachment[] attachments = AttachmentService.get().getAttachments(event);
+                    final List<Attachment> attachments = AttachmentService.get().getAttachments(event);
                     getUtils().sendNotification(new DefaultRequestNotification(request, emailRecipients, header)
                     {
                         @Override
@@ -2561,7 +2563,7 @@ public class SpecimenController extends BaseStudyController
                         }
 
                         @Override
-                        public Attachment[] getAttachments()
+                        public @NotNull List<Attachment> getAttachments()
                         {
                             return attachments;
                         }

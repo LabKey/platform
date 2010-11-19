@@ -22,11 +22,29 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.DocumentWriter;
+import org.labkey.api.attachments.DownloadURL;
+import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.search.SearchService;
@@ -36,10 +54,27 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.api.webdav.*;
+import org.labkey.api.webdav.AbstractDocumentResource;
+import org.labkey.api.webdav.AbstractWebdavResourceCollection;
+import org.labkey.api.webdav.FileSystemAuditViewFactory;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
@@ -48,13 +83,30 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.PropertyChangeEvent;
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: adam
@@ -64,21 +116,10 @@ import java.util.*;
 public class AttachmentServiceImpl implements AttachmentService.Service, ContainerManager.ContainerListener
 {
     private static Logger _log = Logger.getLogger(AttachmentServiceImpl.class);
-    private static HashSet<String> _attachmentColumns = new HashSet<String>();
     private static MimeMap _mimeMap = new MimeMap();
     private static final String UPLOAD_LOG = ".upload.log";
 
-    static
-    {
-        _attachmentColumns.add("Parent");
-        _attachmentColumns.add("Container");
-        _attachmentColumns.add("DocumentName");
-        _attachmentColumns.add("DocumentSize");
-        _attachmentColumns.add("DocumentType");
-        _attachmentColumns.add("Created");
-        _attachmentColumns.add("CreatedBy");
-        _attachmentColumns.add("LastIndexed");
-    }
+    static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
 
     public AttachmentServiceImpl()
     {
@@ -120,6 +161,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         if (parent instanceof AttachmentDirectory)
             ((AttachmentDirectory)parent).deleteAttachment(user, name);
         addAuditEvent(user, parent, name, "The attachment: " + name + " was deleted");
+        AttachmentCache.removeAttachments(parent);
         return new RefreshParentView();
     }
 
@@ -143,13 +185,17 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {
         if (user == null)
         {
-            try {
+            try
+            {
                 ViewContext context = HttpView.currentContext();
                 if (context != null)
                     user = context.getUser();
             }
-            catch (RuntimeException e){}
+            catch (RuntimeException e)
+            {
+            }
         }
+
         if (user != null && parent != null)
         {
             {
@@ -298,6 +344,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 addAuditEvent(user, parent, file.getFilename(), "The attachment: " + file.getFilename() + " was added");
             }
 
+            AttachmentCache.removeAttachments(parent);
             setAttachments(Collections.singletonList(parent));
 
             if (!filesToSkip.isEmpty())
@@ -386,17 +433,16 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public void deleteAttachments(AttachmentParent parent) throws SQLException
     {
-        Attachment[] atts = getAttachments(parent);
-        if (atts != null && atts.length > 0)
-        {
-            SearchService ss = ServiceRegistry.get(SearchService.class);
-            for (Attachment att : atts)
-                ss.deleteResource(makeDocId(parent,att.getName()));
-        }
+        List<Attachment> atts = getAttachments(parent);
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+
+        for (Attachment att : atts)
+            ss.deleteResource(makeDocId(parent,att.getName()));
 
         Table.execute(coreTables().getSchema(), sqlCascadeDelete(), new Object[]{parent.getEntityId()});
         if (parent instanceof AttachmentDirectory)
             ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
+        AttachmentCache.removeAttachments(parent);
     }
 
 
@@ -405,15 +451,18 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         try
         {
             Attachment att = getAttachment(parent,name);
+
             if (null != att)
             {
                 SearchService ss = ServiceRegistry.get(SearchService.class);
-                ss.deleteResource(makeDocId(parent,att.getName()));
+                ss.deleteResource(makeDocId(parent, att.getName()));
             }
 
             Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
             if (parent instanceof AttachmentDirectory)
                 ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), name);
+
+            AttachmentCache.removeAttachments(parent);
         }
         catch (SQLException x)
         {
@@ -467,7 +516,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException
+    public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException
     {
         List<AttachmentFile> files = new ArrayList<AttachmentFile>(attachments.size());
 
@@ -489,37 +538,18 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     private boolean exists(AttachmentParent parent, String filename)
     {
-        try
-        {
-            Integer count = Table.executeSingleton(coreTables().getSchema(), sqlExists(), new Object[]{parent.getEntityId(), filename}, Integer.class);
-            return count.intValue() > 0;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return null != getAttachment(parent, filename);
     }
 
 
-    public Attachment[] getAttachments(AttachmentParent parent)
+    @Override
+    public @NotNull List<Attachment> getAttachments(AttachmentParent parent)
     {
-        Attachment[] attachments;
-
-        try
-        {
-            attachments = Table.select(coreTables().getTableInfoDocuments(),
-                    _attachmentColumns,
-                    new SimpleFilter("Parent", parent.getEntityId()),
-                    new Sort("+Created"),
-                    Attachment.class
-            );
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        Map<String, Attachment> mapFromDatabase = AttachmentCache.getAttachments(parent);
+        List<Attachment> attachmentsFromDatabase = Collections.unmodifiableList(new ArrayList<Attachment>(mapFromDatabase.values()));
 
         File parentDir = null;
+
         try
         {
             parentDir = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
@@ -528,38 +558,42 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             /* no problem */
         }
-        if (null == parentDir || !parentDir.exists())
-            return attachments;
 
-        for (Attachment att : attachments)
+        if (null == parentDir || !parentDir.exists())
+            return attachmentsFromDatabase;
+
+        for (Attachment att : attachmentsFromDatabase)
             att.setFile(new File(parentDir, att.getName()));
 
         //OK, make sure that the list really reflects what is in the file system.
         List<Attachment> attList = new ArrayList<Attachment>();
+
         File[] fileList = parentDir.listFiles(new FileFilter()
         {
             public boolean accept(File file)
             {
-//                return !(file.getName().charAt(0) == '.') && !file.isHidden();
                 return !file.isDirectory() && !(file.getName().charAt(0) == '.') && !file.isHidden();
             }
         });
 
         Set<String> attachmentNames = new CaseInsensitiveHashSet();
-        for (Attachment attachment : attachments)
+
+        for (Attachment attachment : attachmentsFromDatabase)
         {
             attachmentNames.add(attachment.getName());
             attList.add(attachment);
         }
 
         if (null != fileList)
+        {
             for (File file : fileList)
             {
                 if (!attachmentNames.contains(file.getName()))
                     attList.add(attachmentFromFile(parent, file));
             }
+        }
 
-        return attList.toArray(new Attachment[attList.size()]);
+        return Collections.unmodifiableList(attList);
     }
 
 
@@ -636,62 +670,20 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public Attachment getAttachment(AttachmentParent parent, String name)
+    public @Nullable Attachment getAttachment(AttachmentParent parent, String name)
     {
-        Attachment[] attachments = getAttachments(parent);
-
-        for (Attachment attachment : attachments)
-            if (name.equals(attachment.getName()))
-                return attachment;
-
-        return null;
+        return AttachmentCache.getAttachments(parent).get(name);
     }
 
 
     public void setAttachments(Collection<AttachmentParent> parents) throws SQLException
     {
-        if (parents.size() == 0)
-            return;
-        
-        List<String> parentIds = new ArrayList<String>(parents.size());
-
-        for (AttachmentParent parent : parents)
-            parentIds.add(parent.getEntityId());
-
-        SimpleFilter filter = new SimpleFilter();
-        filter.addInClause("Parent", parentIds);
-
-        Attachment[] attachments;
-        attachments = Table.select(coreTables().getTableInfoDocuments(),
-                _attachmentColumns,
-                filter,
-                new Sort("Parent,Created"),
-                Attachment.class
-        );
-
-        Map<String, List<Attachment>> parentToAttachments = new HashMap<String, List<Attachment>>();
-
-        for (Attachment attachment : attachments)
-        {
-            List<Attachment> list = parentToAttachments.get(attachment.getParent());
-
-            if (null == list)
-            {
-                list = new ArrayList<Attachment>();
-                parentToAttachments.put(attachment.getParent(), list);
-            }
-
-            list.add(attachment);
-        }
-
         for (AttachmentParent parent : parents)
         {
-            List<Attachment> attachmentsForParent = parentToAttachments.get(parent.getEntityId());
-
-            if (null != attachmentsForParent)
-                parent.setAttachments(attachmentsForParent);
-            else
-                parent.setAttachments(Collections.<Attachment>emptyList());
+            // Retrive attachments for this parent, make a copy (internal collection is not serializable), and set it
+            Collection<Attachment> attachments = AttachmentCache.getAttachments(parent).values();
+            List<Attachment> copy = new LinkedList<Attachment>(attachments);
+            parent.setAttachments(copy);
         }
     }
 
@@ -709,6 +701,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         try
         {
             ContainerUtil.purgeTable(coreTables().getTableInfoDocuments(), c, null);
+            AttachmentCache.removeAttachments(c);
         }
         catch (SQLException x)
         {
@@ -914,11 +907,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 newName, parent.getContainerId(), parent.getEntityId(), oldName);
     }
 
-    private String sqlExists()
-    {
-        return "SELECT COUNT(*) FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
-    }
-
     private static class ResponseWriter implements DocumentWriter
     {
         private HttpServletResponse _response;
@@ -990,23 +978,12 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
 
-
-
         public WebdavResource find(String name)
         {
             Attachment a = getAttachment(_parent, name);
-            if (null != a)
-            {
-/*
-                if (a.getFile() != null && a.getFile().isDirectory())
-                {
 
-                    return new FileSystemResource(this, name, a.getFile(), org.labkey.api.security.SecurityManager.getPolicy(ContainerManager.getForId(_parent.getContainerId())));
-                }
-                else
-*/
-                    return new AttachmentResource(this, _parent, a);
-            }
+            if (null != a)
+                return new AttachmentResource(this, _parent, a);
             else
                 return new AttachmentResource(this, _parent, name);
         }
@@ -1014,28 +991,32 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
         public Collection<String> listNames()
         {
-            Attachment[] attachments = getAttachments(_parent);
-            ArrayList<String> names = new ArrayList<String>(attachments.length);
+            List<Attachment> attachments = getAttachments(_parent);
+            ArrayList<String> names = new ArrayList<String>(attachments.size());
+
             for (Attachment a : attachments)
             {
                 if (null != a.getFile() && !a.getFile().exists())
                     continue;
                 names.add(a.getName());
             }
+
             return names;
         }
 
 
         public Collection<? extends WebdavResource> list()
         {
-            Attachment[] attachments = getAttachments(_parent);
-            ArrayList<WebdavResource> resources = new ArrayList<WebdavResource>(attachments.length);
+            List<Attachment> attachments = getAttachments(_parent);
+            ArrayList<WebdavResource> resources = new ArrayList<WebdavResource>(attachments.size());
+
             for (Attachment a : attachments)
             {
                 if (null != a.getFile() && !a.getFile().exists())
                     continue;
                 resources.add(new AttachmentResource(this, _parent, a));
             }
+
             return resources;
         }
     }
@@ -1432,9 +1413,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             List<AttachmentFile> files = SpringAttachmentFile.createList(fileMap);
 
             svc.addAttachments(HttpView.currentContext().getUser(), attachParent, files);
-            Attachment[] att = svc.getAttachments(attachParent);
-            assertEquals(att.length, 1);
-            assertTrue(att[0].getFile().exists());
+            List<Attachment> att = svc.getAttachments(attachParent);
+            assertEquals(att.size(), 1);
+            assertTrue(att.get(0).getFile().exists());
 
             assertTrue(new File(attachDir, UPLOAD_LOG).exists());
 
@@ -1448,9 +1429,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             svc.addAttachments(HttpView.currentContext().getUser(), namedParent, files);
             att = svc.getAttachments(namedParent);
-            assertEquals(att.length, 1);
-            assertTrue(att[0].getFile().exists());
-            assertSameFile(new File(otherDir, "file.txt"), att[0].getFile());
+            assertEquals(att.size(), 1);
+            assertTrue(att.get(0).getFile().exists());
+            assertSameFile(new File(otherDir, "file.txt"), att.get(0).getFile());
             assertTrue(new File(otherDir, UPLOAD_LOG).exists());
 
             fileService.unregisterDirectory(folder, "test");
@@ -1468,9 +1449,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             svc.addAttachments(HttpView.currentContext().getUser(), relativeParent, files);
             att = svc.getAttachments(relativeParent);
-            assertEquals(att.length, 1);
+            assertEquals(att.size(), 1);
 
-            File expectedFile1 = att[0].getFile();
+            File expectedFile1 = att.get(0).getFile();
             File expectedFile2 = new File(relativeDir, UPLOAD_LOG);
 
             assertTrue(expectedFile1.exists());
@@ -1512,20 +1493,20 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 			service.deleteAttachment(root, file1.getName());
             service.deleteAttachment(root, file2.getName());
 
-            Attachment[] attachments = service.getAttachments(root);
-            int originalCount = attachments.length;
+            List<Attachment> attachments = service.getAttachments(root);
+            int originalCount = attachments.size();
 
             service.add(HttpView.currentContext().getUser(), root, Arrays.asList(aFile1, aFile2));
             attachments = service.getAttachments(root);
-            assertTrue((originalCount + 2) == attachments.length);
+            assertTrue((originalCount + 2) == attachments.size());
 
             service.deleteAttachment(root, file1.getName());
             attachments = service.getAttachments(root);
-            assertTrue((originalCount + 1) == attachments.length);
+            assertTrue((originalCount + 1) == attachments.size());
 
             service.deleteAttachment(root, file2.getName());
             attachments = service.getAttachments(root);
-            assertTrue(originalCount == attachments.length);
+            assertTrue(originalCount == attachments.size());
         }
     }
 }

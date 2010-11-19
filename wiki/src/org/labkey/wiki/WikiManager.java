@@ -206,8 +206,8 @@ public class WikiManager
 
             Wiki wiki = wikis[0];
 
-            Attachment[] att = AttachmentService.get().getAttachments(wiki);
-            wiki.setAttachments(Arrays.asList(att));
+            Collection<Attachment> att = AttachmentService.get().getAttachments(wiki);
+            wiki.setAttachments(att);
 
             return wiki;
         }

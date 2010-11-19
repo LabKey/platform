@@ -529,6 +529,7 @@ core/src/org/labkey/core/admin/webTheme.jsp -text
 core/src/org/labkey/core/analytics/AnalyticsController.java -text
 core/src/org/labkey/core/analytics/AnalyticsServiceImpl.java -text
 core/src/org/labkey/core/analytics/analyticsSettings.jsp -text
+core/src/org/labkey/core/attachment/AttachmentCache.java -text
 core/src/org/labkey/core/attachment/AttachmentServiceImpl.java -text
 core/src/org/labkey/core/attachment/DatabaseAttachmentFile.java -text
 core/src/org/labkey/core/attachment/confirmDelete.jsp -text

@@ -64,11 +64,8 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     private int _responseCount = 0;
 
-
-    Collection<Attachment> _attachments = null;
-    Collection<AnnouncementModel> _responses = new ArrayList<AnnouncementModel>();
-
-//    static AnnouncementModel[] noResponses = new AnnouncementModel[0];
+    private Collection<Attachment> _attachments = null;
+    private Collection<AnnouncementModel> _responses = new ArrayList<AnnouncementModel>();
 
 
     /**
@@ -77,38 +74,6 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     public AnnouncementModel()
     {
     }
-
-/*
-    public static AnnouncementModel[] loadAnnouncements(String container, String parent) throws SQLException
-        {
-        SimpleFilter filter = _dialect.createSimpleFilter("container", container);
-        if (null != parent)
-            filter.addCondition("parent", parent);
-        else
-            filter.addCondition("parent", null, CompareType.ISBLANK);
-        
-        AnnouncementModel[] announcementModels = (AnnouncementModel[]) Table.select(_tinfo,
-                        Table.ALL_COLUMNS,
-                        filter,
-                        new Sort("Created"),
-                        AnnouncementModel.class);
-        
-        return announcementModels;
-        }
-        
-    public static AnnouncementModel loadParentAnnouncement(String parent) throws SQLException
-        {
-        SimpleFilter filter = _dialect.createSimpleFilter("entityId", parent);
-        
-        AnnouncementModel[] announcementModels = (AnnouncementModel[]) Table.select(_tinfo,
-                        Table.ALL_COLUMNS,
-                        filter,
-                        null,
-                        AnnouncementModel.class);
-        
-        return (announcementModels.length == 0 ? null : announcementModels[0]);
-        }
-*/
 
     /**
      * Returns the rowId
@@ -288,7 +253,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     public void setAttachments(Collection<Attachment> attachments)
     {
-        this._attachments = attachments;
+        _attachments = attachments;
     }
 
 
@@ -300,7 +265,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     public void setResponses(Collection<AnnouncementModel> responses)
     {
-        this._responses = responses;
+        _responses = responses;
     }
 
 
@@ -314,7 +279,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         DownloadURL urlAttach = new DownloadURL("announcements", container.getPath(), getEntityId(), "");
         Attachment[] attach = _attachments == null ? null : _attachments.toArray(new Attachment[_attachments.size()]);
 
-        WikiRenderer renderer = this.getRenderer(urlAttach.getLocalURIString(), attach);
+        WikiRenderer renderer = getRenderer(urlAttach.getLocalURIString(), attach);
         return renderer.format(_body).getHtml();
     }
 
@@ -343,6 +308,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     public WikiRenderer getRenderer(String attachPrefix, Attachment[] attachments)
     {
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+
         if (_rendererType == null)
         {
             _rendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;

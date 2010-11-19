@@ -28,7 +28,6 @@ import java.util.Map;
 
 public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable
 {
-    private String _containerId;
     private Container _container;
     
 
@@ -58,12 +57,13 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable
     {
         if (containerId == null)
             return;
+
         ColumnInfo colContainer = getRealTable().getColumn("container");
+
         if (colContainer != null)
         {
             getColumn("container").setReadOnly(true);
             addCondition(colContainer, containerId);
-            _containerId = containerId;
             _container = ContainerManager.getForId(containerId);
         }
     }
