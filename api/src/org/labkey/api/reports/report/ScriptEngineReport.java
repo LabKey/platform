@@ -38,6 +38,7 @@ import org.apache.commons.collections15.map.CaseInsensitiveMap;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.ResultSetMetaData;
@@ -413,6 +414,8 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         return processScript(context, getDescriptor().getProperty(RReportDescriptor.Prop.script), inputDataTsv, outputSubst);
     }
 
+    public abstract String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws ScriptException;
+
     /**
      * Takes a script source, adds a prolog, processes any input and output replacement parameters
      * @param script
@@ -426,9 +429,10 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         {
             script = StringUtils.defaultString(getScriptProlog(context, inputFile)) + script;
 
-            script = processInputReplacement(script, inputFile);
+            if (inputFile != null)
+                script = processInputReplacement(script, inputFile);
             script = processOutputReplacements(script, outputSubst);
-      }
+        }
         return script;
     }
 

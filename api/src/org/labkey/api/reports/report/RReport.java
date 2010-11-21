@@ -96,7 +96,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
     {
         StringBuffer labkey = new StringBuffer();
 
-        if (inputFile.exists())
+        if (inputFile != null && inputFile.exists())
         {
             labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\", comment.char=\"\")\n");
         }

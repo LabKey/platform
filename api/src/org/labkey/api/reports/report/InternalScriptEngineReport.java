@@ -83,6 +83,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
         return view;
     }
 
+    @Override
     public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine();
