@@ -26,9 +26,9 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.controllers.reports.ReportsController.DownloadAction;
+import org.labkey.study.controllers.reports.ReportsController.DownloadReportFileAction;
 
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -105,14 +105,14 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
 
         if (null != getFilePath())
         {
-            ActionURL url = new ActionURL(ReportsController.DownloadReportFileAction.class, getContainer());
+            ActionURL url = new ActionURL(DownloadReportFileAction.class, getContainer());
             url.addParameter("reportId", getReportId().toString());
             return url.getLocalURIString();
         }
 
         Attachment latest = getLatestVersion();
 
-        return null != latest ? latest.getDownloadUrl("Study-Reports") : null;
+        return null != latest ? latest.getDownloadUrl(DownloadAction.class).getLocalURIString() : null;
     }
 
     public @Nullable Attachment getLatestVersion()

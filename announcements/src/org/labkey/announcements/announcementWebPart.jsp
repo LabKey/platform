@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart.MessagesBean" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.DownloadAction" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -87,11 +88,11 @@
         for (Attachment d : a.getAttachments())
         {
     %>
-        <a href="<%=h(d.getDownloadUrl("announcements"))%>"><img src="<%=request.getContextPath()%><%=d.getFileIcon()%>">&nbsp;<%=d.getName()%></a>&nbsp;<%
+        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=d.getFileIcon()%>">&nbsp;<%=d.getName()%></a>&nbsp;<%
             }
         %>
     </td></tr>
-<%      } %>    <tr><td style="padding-bottom:4;" colspan=3 align="left"><%=textLink("view " + bean.settings.getConversationName().toLowerCase() + (null != bean.insertURL ? " or respond" : ""), a.getThreadURL(c) + "rowId=" + a.getRowId())%></td></tr>
+<%      } %>    <tr><td style="padding-bottom:4px;" colspan=3 align="left"><%=textLink("view " + bean.settings.getConversationName().toLowerCase() + (null != bean.insertURL ? " or respond" : ""), a.getThreadURL(c) + "rowId=" + a.getRowId())%></td></tr>
 <%
     }
 %></table>

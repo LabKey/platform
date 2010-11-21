@@ -79,6 +79,7 @@ import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -102,7 +103,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -253,9 +253,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         return template;
     }
 
-    public HttpView getConfirmDeleteView(Container container, ActionURL currentURL, AttachmentParent parent, String filename)
+    public HttpView getConfirmDeleteView(Container container, Class<? extends Controller> deleteActionClass, AttachmentParent parent, String filename)
     {
-        HttpView view = new ConfirmDeleteView(currentURL, container, parent, filename);
+        DownloadURL deleteURL = new DownloadURL(deleteActionClass, container, parent.getEntityId(), filename);
+        HttpView view = new ConfirmDeleteView(deleteURL, filename);
         DialogTemplate template = new DialogTemplate(view);
         template.getModelBean().setTitle("Delete Attachment?");
         template.getModelBean().setShowHeader(false);
@@ -292,12 +293,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         public DownloadURL deleteURL;
         public String name;
 
-        private ConfirmDeleteView(ActionURL currentURL, Container c, AttachmentParent parent, String name)
+        private ConfirmDeleteView(DownloadURL deleteURL, String name)
         {
             super("/org/labkey/core/attachment/confirmDelete.jsp");
-            String pageFlow = currentURL.getPageFlow();
-            deleteURL = new DownloadURL(pageFlow, c.getPath(), parent.getEntityId(), name);
-            deleteURL.setAction("deleteAttachment");
+            this.deleteURL = deleteURL;
             this.name = name;
             setFrame(FrameType.NONE);
         }

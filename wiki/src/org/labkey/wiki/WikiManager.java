@@ -661,7 +661,7 @@ public class WikiManager
 
     public static FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion) throws SQLException
     {
-        String hrefPrefix = wiki.getWikiLink("page", HString.EMPTY).toString();
+        String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, HString.EMPTY).toString();
 
         String attachPrefix = null;
         if (null != wiki.getEntityId())

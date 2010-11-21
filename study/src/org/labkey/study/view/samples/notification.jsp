@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenUtils.NotificationBean> me =
@@ -59,7 +60,7 @@
             <%
                 for (Attachment att : attachments) {
             %>
-            <a href="<%= bean.getBaseServerURI() %><%= PageFlowUtil.filter(att.getDownloadUrl("Study-Samples")) %>">
+            <a href="<%= bean.getBaseServerURI() %><%= PageFlowUtil.filter(att.getDownloadUrl(SpecimenController.DownloadAction.class)) %>">
                 <%= h(att.getName()) %>
             </a><br>
             <%

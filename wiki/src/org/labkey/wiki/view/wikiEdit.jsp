@@ -16,14 +16,15 @@
  */
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
+<%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
-<%@ page import="org.labkey.api.util.HString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %> 
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
@@ -67,7 +68,7 @@
                 %>
                     <%=sep%>{name: <%=PageFlowUtil.jsString(att.getName())%>,
                              iconUrl: <%=PageFlowUtil.jsString(me.getViewContext().getContextPath() + att.getFileIcon())%>,
-                             downloadUrl: <%=PageFlowUtil.jsString(att.getDownloadUrl("wiki"))%>
+                             downloadUrl: <%=PageFlowUtil.jsString(att.getDownloadUrl(DownloadAction.class).toString())%>
                             }
                 <%
                 sep = ",";

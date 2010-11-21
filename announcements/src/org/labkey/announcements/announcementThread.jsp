@@ -17,6 +17,11 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.DeleteThreadAction" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.DownloadAction" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.RespondAction" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.ThreadView" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.ThreadViewBean" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
@@ -32,10 +37,10 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
-    AnnouncementsController.ThreadView me = (AnnouncementsController.ThreadView) HttpView.currentView();
+    ThreadView me = (ThreadView) HttpView.currentView();
     ViewContext context = me.getViewContext();
     Container c = context.getContainer();
-    AnnouncementsController.ThreadViewBean bean = me.getModelBean();
+    ThreadViewBean bean = me.getModelBean();
     AnnouncementModel announcementModel = bean.announcementModel;
     DiscussionService.Settings settings = bean.settings;
     String contextPath = context.getContextPath();
@@ -153,7 +158,7 @@ if (0 < announcementModel.getAttachments().size())
 
         for (Attachment d : announcementModel.getAttachments())
         { %>
-        <a href="<%=h(d.getDownloadUrl("announcements"))%>"><img alt="" src="<%=request.getContextPath() + d.getFileIcon()%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
+        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=request.getContextPath() + d.getFileIcon()%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
         } %>
     </div></td>
 </tr><%
@@ -235,7 +240,7 @@ if (0 < announcementModel.getResponses().size())
                 <td colspan="2"><div><%
                 for (Attachment rd : r.getAttachments())
                 { %>
-                    <a href="<%=h(rd.getDownloadUrl("announcements"))%>"><img alt="" src="<%=request.getContextPath()+ rd.getFileIcon()%>">&nbsp;<%=rd.getName()%></a>&nbsp;<%
+                    <a href="<%=h(rd.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=request.getContextPath()+ rd.getFileIcon()%>">&nbsp;<%=rd.getName()%></a>&nbsp;<%
                 }
                 %>
                 </div></td>
@@ -273,7 +278,7 @@ if (!bean.isResponse && !bean.print)
         }
         else
         {
-            ActionURL respond = announcementURL(c, AnnouncementsController.RespondAction.class, "parentId", announcementModel.getEntityId());
+            ActionURL respond = announcementURL(c, RespondAction.class, "parentId", announcementModel.getEntityId());
             respond.addReturnURL(bean.currentURL);
             %>
         <%=PageFlowUtil.generateButton("Post Response", respond)%>&nbsp;<%
@@ -281,7 +286,7 @@ if (!bean.isResponse && !bean.print)
     }
     if (bean.perm.allowDeleteMessage(announcementModel))
     {
-        ActionURL deleteThread = announcementURL(c, AnnouncementsController.DeleteThreadAction.class, "entityId", announcementModel.getEntityId());
+        ActionURL deleteThread = announcementURL(c, DeleteThreadAction.class, "entityId", announcementModel.getEntityId());
         deleteThread.addParameter("cancelUrl", bean.currentURL.getLocalURIString());
         if (embedded)
         {

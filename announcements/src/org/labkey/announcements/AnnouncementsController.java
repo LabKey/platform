@@ -822,7 +822,7 @@ public class AnnouncementsController extends SpringActionController
     {
         public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
         {
-            return AttachmentService.get().getConfirmDeleteView(getContainer(), getViewContext().getActionURL(), parent, form.getName());
+            return AttachmentService.get().getConfirmDeleteView(getContainer(), DeleteAttachmentAction.class, parent, form.getName());
         }
     }
 

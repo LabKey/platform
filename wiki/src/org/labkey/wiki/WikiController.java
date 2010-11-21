@@ -595,15 +595,6 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
-    public class ShowConfirmDeleteAction extends AttachmentAction
-    {
-        public ModelAndView getAttachmentView(AttachmentForm form, Wiki wiki) throws Exception
-        {
-            return AttachmentService.get().getConfirmDeleteView(getContainer(), getViewContext().getActionURL(), wiki, form.getName());
-        }
-    }
-
     @RequiresPermissionClass(ReadPermission.class)
     public class PrintAllAction extends SimpleViewAction
     {
@@ -2995,7 +2986,7 @@ public class WikiController extends SpringActionController
                     Map<String, Object> attProps = new HashMap<String,Object>();
                     attProps.put("name", att.getName());
                     attProps.put("iconUrl", getViewContext().getContextPath() + att.getFileIcon());
-                    attProps.put("downloadUrl", att.getDownloadUrl("wiki"));
+                    attProps.put("downloadUrl", att.getDownloadUrl(DownloadAction.class).toString());
                     attachments.add(attProps);
                 }
             }

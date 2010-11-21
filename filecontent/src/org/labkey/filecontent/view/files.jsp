@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.attachments.Attachment"%>
-<%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
+<%@ page import="org.labkey.api.attachments.AttachmentDirectory"%>
 <%@ page import="org.labkey.api.attachments.AttachmentService" %>
 <%@ page import="org.labkey.api.attachments.DownloadURL" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -34,12 +33,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
+<%@ page import="org.labkey.filecontent.FileContentController.BeginAction" %>
+<%@ page import="org.labkey.filecontent.FileContentController.DeleteAttachmentAction" %>
+<%@ page import="org.labkey.filecontent.FileContentController.RenderStyle" %>
+<%@ page import="org.labkey.filecontent.FileContentController.ShowAdminAction" %>
 <%@ page import="java.io.File" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.Comparator" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -61,7 +62,7 @@
         out.println("The file set for this directory is not configured properly.");
         if (me.isShowAdmin() && context.getUser().isAdministrator())
         {
-            %><%=textLink("Configure Directories", new ActionURL(FileContentController.ShowAdminAction.class, c))%><%
+            %><%=textLink("Configure Directories", new ActionURL(ShowAdminAction.class, c))%><%
         }
     return;
     }
@@ -118,13 +119,11 @@
 
     for (Attachment a : attachments)
     {
-        DownloadURL deleteUrl = new DownloadURL("FileContent", c.getPath(), parent.getEntityId(), a.getName());
-        deleteUrl.setAction("deleteAttachment.view");
+        DownloadURL deleteUrl = new DownloadURL(DeleteAttachmentAction.class, c, parent.getEntityId(), a.getName());
         URLHelper viewUrl = showFileUrl(fileUrl, a);
         URLHelper downloadUrl = downloadFileUrl(fileUrl, a);
         File file = a.getFile();
         boolean exists = null != file && file.exists();
-        String contentType = PageFlowUtil.getContentTypeFor(a.getName());
     %>
             <tr>
             <td><%
@@ -170,21 +169,21 @@
 }
 if (context.hasPermission(UpdatePermission.class))
 {
-    ActionURL manage = new ActionURL("FileContent", "begin", c);
+    ActionURL manage = new ActionURL(BeginAction.class, c);
     if (null != fileSetName)
-        manage.addParameter("fileSetName",fileSetName);
+        manage.addParameter("fileSetName", fileSetName);
     %><%=textLink("Manage Files", manage)%>&nbsp;<%
 }
 if (me.isShowAdmin() && context.getUser().isAdministrator())
 {
-    %><%=textLink("Configure", new ActionURL(FileContentController.ShowAdminAction.class, c))%>&nbsp;<%
+    %><%=textLink("Configure", new ActionURL(ShowAdminAction.class, c))%>&nbsp;<%
 }%>
 <%!
     URLHelper showFileUrl(URLHelper u, Attachment a)
     {
         URLHelper url = u.clone();
         url.setFile(a.getName());
-        FileContentController.RenderStyle render = FileContentController.defaultRenderStyle(a.getName());
+        RenderStyle render = FileContentController.defaultRenderStyle(a.getName());
         url.replaceParameter("renderAs", render.name());
         return url;
     }
@@ -193,7 +192,7 @@ if (me.isShowAdmin() && context.getUser().isAdministrator())
     {
         URLHelper url = u.clone();
         url.setFile(a.getName());
-        url.replaceParameter("renderAs", FileContentController.RenderStyle.ATTACHMENT.name());
+        url.replaceParameter("renderAs", RenderStyle.ATTACHMENT.name());
         return url;
     }
 
@@ -202,7 +201,7 @@ if (me.isShowAdmin() && context.getUser().isAdministrator())
         StringBuilder sb = new StringBuilder();
         if (context.getUser().isAdministrator())
         {
-            ActionURL url = new ActionURL("FileContent", "begin.view", context.getContainer().getProject());
+            ActionURL url = new ActionURL(BeginAction.class, context.getContainer().getProject());
             sb.append("<a href=\"").append(url).append("\">Configure root</a>");
         }
         else

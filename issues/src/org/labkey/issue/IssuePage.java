@@ -16,28 +16,37 @@
 
 package org.labkey.issue;
 
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.*;
-import static org.labkey.api.util.PageFlowUtil.filter;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.HStringBuilder;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.issue.IssuesController.*;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.model.IssueManager.*;
+import org.labkey.issue.model.IssueManager.Keyword;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 
 /**
@@ -459,7 +468,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 if (!canEdit)
                 {
                     sb.append("<a href=\"");
-                    sb.append(PageFlowUtil.filter(a.getDownloadUrl("issues")));
+                    sb.append(PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class)));
                     sb.append("\"><img src=\"");
                     sb.append(context.getRequest().getContextPath());
                     sb.append(PageFlowUtil.filter(a.getFileIcon()));

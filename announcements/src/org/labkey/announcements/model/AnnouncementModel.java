@@ -15,7 +15,7 @@
  */
 package org.labkey.announcements.model;
 
-import org.labkey.announcements.AnnouncementsController;
+import org.labkey.announcements.AnnouncementsController.*;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
@@ -261,12 +261,12 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     public ActionURL getThreadURL(Container container)
     {
-        return new ActionURL(AnnouncementsController.ThreadAction.class, container);
+        return new ActionURL(ThreadAction.class, container);
     }
 
     public String translateBody(Container container)
     {
-        DownloadURL urlAttach = new DownloadURL("announcements", container.getPath(), getEntityId(), "");
+        DownloadURL urlAttach = new DownloadURL(DownloadAction.class, container, getEntityId(), "");
 
         WikiRenderer renderer = getRenderer(urlAttach.getLocalURIString());
         return renderer.format(_body).getHtml();

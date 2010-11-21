@@ -23,7 +23,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.ActionURL;
+import org.labkey.wiki.WikiController.*;
 import org.labkey.wiki.WikiManager;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.Serializable;
 import java.sql.SQLException;
@@ -43,19 +45,15 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     // rowId for update form (it's the PK)
     // name because that's what's on the URL
 
-    private int rowId;
-    private HString name;
-    private int parent = -1;
-    private float displayOrder = 0;
+    private int _rowId;
+    private HString _name;
+    private int _parent = -1;
+    private float _displayOrder = 0;
     private Wiki _parentWiki;
-
-    private Integer pageVersionId;
-
+    private Integer _pageVersionId;
     private int _depth;
     private List<Wiki> _children;
     private boolean _showAttachments = true;
-
-    protected transient ActionURL url = null;
 
 
     public Wiki()
@@ -66,78 +64,84 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     public Wiki(Container c, HString name)
     {
         setContainerId(c.getId());
-        this.name = name;
+        _name = name;
     }
 
 
-    public synchronized ActionURL getWikiLink(String action, HString name)
+    public ActionURL getWikiURL(Class<? extends Controller> actionClass, HString name)
     {
-        if (null == url)
-            url = new ActionURL("wiki", "page", getContainerPath());
-        url.setAction(action);
+        ActionURL url = new ActionURL(actionClass, lookupContainer());
+
         if (null == name)
             url.deleteFilterParameters("name");
         else
             url.replaceParameter("name", name.getSource());
-        return url.clone();
+
+        return url;
     }
+
+
+    public String getPageLink()
+    {
+        return getWikiURL(PageAction.class, _name).getLocalURIString();
+    }
+
+
+    public String getVersionsLink()
+    {
+        if (null == _name)
+            return "";
+        return getWikiURL(VersionsAction.class, _name).getLocalURIString();
+    }
+
 
     public String getDeleteLink()
     {
-        if (null == name)
+        if (null == _name)
             return "";
-        ActionURL deleteLink = getWikiLink("delete", name);
+        ActionURL deleteLink = getWikiURL(DeleteAction.class, _name);
 
         return deleteLink.getLocalURIString();
     }
 
+
     public String getManageLink()
     {
-        if (null == name)
+        if (null == _name)
             return "";
-        ActionURL manageLink = getWikiLink("manage", name);
+        ActionURL manageLink = getWikiURL(ManageAction.class, _name);
 
         return manageLink.getLocalURIString();
     }
 
+
     public String getAttachmentLink(String document)
     {
-        DownloadURL urlDownload = new DownloadURL("Wiki", getContainerPath(), getEntityId(), document);
+        DownloadURL urlDownload = new DownloadURL(DownloadAction.class, lookupContainer(), getEntityId(), document);
         return urlDownload.getLocalURIString();
-    }
-
-    public String getVersionsLink()
-    {
-        if (null == name)
-            return "";
-        return getWikiLink("versions", name).getLocalURIString();
-    }
-
-    public String getPageLink()
-    {
-        return getWikiLink("page", this.name).getLocalURIString();
     }
 
 
     public int getRowId()
     {
-        return rowId;
+        return _rowId;
     }
 
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setRowId(int rowId)
     {
-        this.rowId = rowId;
+        _rowId = rowId;
     }
 
     public float getDisplayOrder()
     {
-        return displayOrder;
+        return _displayOrder;
     }
 
     public void setDisplayOrder(float displayOrder)
     {
-        this.displayOrder = displayOrder;
+        _displayOrder = displayOrder;
     }
 
     public Wiki getParentWiki()
@@ -149,24 +153,24 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
     public int getParent()
     {
-        return parent;
+        return _parent;
     }
 
     public void setParent(int parent)
     {
-        this.parent = parent;
+        _parent = parent;
     }
 
 
     public HString getName()
     {
-        return name;
+        return _name;
     }
 
 
     public void setName(HString name)
     {
-        this.name = name;
+        _name = name;
     }
 
     public WikiVersion latestVersion()
@@ -207,12 +211,12 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
     public Integer getPageVersionId()
     {
-        return pageVersionId;
+        return _pageVersionId;
     }
 
     public void setPageVersionId(Integer pageVersionId)
     {
-        this.pageVersionId = pageVersionId;
+        _pageVersionId = pageVersionId;
     }
 
     public boolean isShowAttachments()
@@ -228,6 +232,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     @Override
     public String toString()
     {
-        return "Wiki: \"" + getName() + "\" (rowId:" + rowId + ")";
+        return "Wiki: \"" + getName() + "\" (rowId:" + _rowId + ")";
     }
 }

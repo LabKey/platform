@@ -36,6 +36,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.plate.query.PlateSchema;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -675,7 +676,7 @@ public class PlateManager implements PlateService.Service
         AttachmentService.get().addAttachments(user, plate, Collections.singletonList(file));
     }
 
-    public ActionURL getDataFileURL(Plate iplate, String pageFlow)
+    public ActionURL getDataFileURL(Plate iplate, Class<? extends Controller> downloadClass)
     {
         PlateImpl plate = (PlateImpl) iplate;
         if (plate.getDataFileId() != null)
@@ -684,7 +685,7 @@ public class PlateManager implements PlateService.Service
             if (!attachments.isEmpty())
             {
                 assert attachments.size() == 1 : "Expected only one data file per plate";
-                return new DownloadURL(pageFlow, plate.getContainer().getPath(), plate.getDataFileId(), attachments.get(0).getName());
+                return new DownloadURL(downloadClass, plate.getContainer(), plate.getDataFileId(), attachments.get(0).getName());
             }
         }
         return null;

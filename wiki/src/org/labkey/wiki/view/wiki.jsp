@@ -24,11 +24,12 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
+<%@ page import="org.labkey.wiki.WikiController.PrintBranchAction" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="javax.servlet.http.HttpServletResponse" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--wiki-->
 <%
@@ -38,7 +39,7 @@
     Wiki wiki = (Wiki) context.get("wiki");
     String formattedHtml = (String) context.get("formattedHtml");
     Container c = (wiki != null && wiki.getContainerId() != null) ? ContainerManager.getForId(wiki.getContainerId()) : context.getContainer();
-    ActionURL printBranchUrl = new ActionURL(WikiController.PrintBranchAction.class, c);
+    ActionURL printBranchUrl = new ActionURL(PrintBranchAction.class, c);
     printBranchUrl.addParameter("name", wiki.getName());
     if(null == c)
     {
@@ -179,7 +180,7 @@ else
 
         for (Attachment a : wiki.getAttachments())
         {
-            %><a href="<%=PageFlowUtil.filter(a.getDownloadUrl("Wiki"))%>"><img src="<%=request.getContextPath()%><%=PageFlowUtil.filter(a.getFileIcon())%>">&nbsp;<%=PageFlowUtil.filter(a.getName())%></a><br><%
+            %><a href="<%=PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=PageFlowUtil.filter(a.getFileIcon())%>">&nbsp;<%=PageFlowUtil.filter(a.getName())%></a><br><%
         }
     }
 }

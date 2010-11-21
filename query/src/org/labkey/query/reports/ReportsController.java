@@ -53,6 +53,7 @@ import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -155,6 +156,12 @@ public class ReportsController extends SpringActionController
         public ActionURL urlCustomizeView(Container c)
         {
             return new ActionURL(CustomizeQueryAction.class, c);
+        }
+
+        @Override
+        public Class<? extends Controller> getDownloadClass()
+        {
+            return DownloadAction.class;
         }
     }
 

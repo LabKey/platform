@@ -875,7 +875,7 @@ public class SpecimenUtils
             {
                 for (Attachment attachment : attachments)
                 {
-                    out.write("<a href=\"" + PageFlowUtil.filter(attachment.getDownloadUrl("Study-Samples")) + "\">");
+                    out.write("<a href=\"" + PageFlowUtil.filter(attachment.getDownloadUrl(SpecimenController.DownloadAction.class)) + "\">");
                     out.write("<img src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">&nbsp;");
                     out.write(PageFlowUtil.filter(attachment.getName()));
                     out.write("</a><br>");
