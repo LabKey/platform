@@ -30,6 +30,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
 import org.springframework.validation.BindException;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -58,7 +59,7 @@ public class AttachmentService
         public void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;
         public HttpView getAddAttachmentView(Container container, AttachmentParent parent);
         public HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors);
-        public HttpView getConfirmDeleteView(Container container, ActionURL currentUrl, AttachmentParent parent, String filename);
+        public HttpView getConfirmDeleteView(Container container, Class<? extends Controller> deleteActionClass, AttachmentParent parent, String filename);
         public HttpView getHistoryView(ViewContext context, AttachmentParent parent);
 
         public HttpView add(User user, AttachmentParent parent, List<AttachmentFile> files);

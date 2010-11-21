@@ -70,7 +70,7 @@ public abstract class DownloadOutputView extends ROutputView
                     if (getFile().getName().equals(a.getName()))
                     {
                         out.write("<a href=\"");
-                        out.write(a.getDownloadUrl("reports"));
+                        out.write(PageFlowUtil.filter(PageFlowUtil.urlProvider(ReportUrls.class).getDownloadClass()));
                         out.write("\">");
                         out.write(_fileType);
                         out.write(" output file (click to download)</a>");

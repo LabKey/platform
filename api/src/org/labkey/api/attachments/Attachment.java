@@ -23,9 +23,11 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletContext;
 import java.io.File;
@@ -57,11 +59,11 @@ public class Attachment implements Serializable
         assert MemTracker.put(this);
     }
 
-    public String getDownloadUrl(String pageFlow)
+
+    public ActionURL getDownloadUrl(Class<? extends Controller> actionClass)
     {
         Container c = ContainerManager.getForId(getContainer());
-        DownloadURL url = new DownloadURL(pageFlow, c.getPath(), getParent(), getName());
-        return url.getLocalURIString();
+        return new DownloadURL(actionClass, c, getParent(), getName());
     }
 
 

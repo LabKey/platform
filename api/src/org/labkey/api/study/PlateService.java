@@ -23,10 +23,10 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -213,10 +213,10 @@ public class PlateService
         /**
          * Gets the download URL for the associated plate's data file.
          * @param plate The plate associated with the data file to be downloaded.
-         * @param pageFlow The pageflow that contains the 'download' action.
+         * @param downloadClass The controller class that implements the 'download' action.
          * @return A ActionURL containing the download URL.
          */
-        ActionURL getDataFileURL(Plate plate, String pageFlow);
+        ActionURL getDataFileURL(Plate plate, Class<? extends Controller> downloadClass);
 
         /**
          * Copies a plate template from one container to another.

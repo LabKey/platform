@@ -19,6 +19,7 @@ package org.labkey.api.reports.report;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
+import org.springframework.web.servlet.mvc.Controller;
 
 /**
  * Created by IntelliJ IDEA.
@@ -43,4 +44,6 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlDeleteReport(Container c);
     ActionURL urlExportCrosstab(Container c);
     ActionURL urlCustomizeView(Container c);
+
+    Class<? extends Controller> getDownloadClass();
 }

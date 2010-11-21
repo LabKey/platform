@@ -16,8 +16,8 @@
 
 package org.labkey.api.attachments;
 
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
 
@@ -31,36 +31,12 @@ public class DownloadURL extends ActionURL
     public DownloadURL(Class<? extends Controller> actionClass, Container c, String entityId, String filename)
     {
         super(actionClass, c);
-        init(c, entityId, filename);
-    }
 
-    @Deprecated
-    public DownloadURL(String pageFlow, String containerPath, String entityId, String filename)
-    {
-        super(pageFlow, "download.view", containerPath);
-        init(containerPath, entityId, filename);
-    }
-
-    private void init(String containerPath, String entityId, String filename)
-    {
-        if (null == containerPath)
-            throw new IllegalArgumentException();
-
-        init(entityId, filename);
-    }
-
-    private void init(Container c, String entityId, String filename)
-    {
         if (null == c)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Container is null");
 
-        init(entityId, filename);
-    }
-
-    private void init(String entityId, String filename)
-    {
         if (null == entityId)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("EntityId is null");
 
         addParameter("entityId", entityId);
         setFileName(filename);
@@ -70,11 +46,13 @@ public class DownloadURL extends ActionURL
     {
         if (null == filename)
         {
-            this.deleteParameter("name");
+            deleteParameter("name");
             return;
         }
+
         if (-1 != filename.indexOf("/"))
             throw new IllegalArgumentException();
-        this.replaceParameter("name", filename);
+
+        replaceParameter("name", filename);
     }
 }

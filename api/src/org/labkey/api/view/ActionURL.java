@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
@@ -60,19 +61,6 @@ public class ActionURL extends URLHelper implements Cloneable
         _controller = pageFlow;
         _action = actionName;
         setContainer(container);
-    }
-
-
-    /**
-     * Worse old page flow constructor
-     */
-    @Deprecated
-    public ActionURL(String pageFlow, String actionName, String extraPath)
-    {
-        this(true);
-        _controller = pageFlow;
-        _action = actionName;
-        setExtraPath(extraPath);
     }
 
 
@@ -554,7 +542,7 @@ public class ActionURL extends URLHelper implements Cloneable
         {
             String s;
 
-            ActionURL a = new ActionURL("PageFlow", "action", "path");
+            ActionURL a = new ActionURL("PageFlow", "action", ContainerManager.getHomeContainer());
             a.addParameter("key", "a");
             ActionURL b = a.clone();
 
