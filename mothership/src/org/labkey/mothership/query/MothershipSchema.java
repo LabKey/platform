@@ -17,8 +17,10 @@
 package org.labkey.mothership.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.mothership.MothershipController;
@@ -315,7 +317,8 @@ public class MothershipSchema extends UserSchema
                 " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId)"), Types.INTEGER);
         result.addColumn(minRevisionColumn);
 
-        ActionURL issueURL = new ActionURL("Issues", "details.view", MothershipManager.get().getIssuesContainer(getContainer()));
+        String path = MothershipManager.get().getIssuesContainer(getContainer());
+        ActionURL issueURL = PageFlowUtil.urlProvider(IssuesUrls.class).getDetailsURL(ContainerManager.getForPath(path));
         issueURL.addParameter("issueId", "${BugNumber}");
         result.getColumn("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
 

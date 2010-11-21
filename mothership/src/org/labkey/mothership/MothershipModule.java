@@ -31,6 +31,7 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.mothership.query.MothershipSchema;
@@ -87,7 +88,7 @@ public class MothershipModule extends DefaultModule
     {
         try
         {
-            Container c = ContainerManager.ensureContainer("/_mothership");
+            Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH);
             Group mothershipGroup = SecurityManager.createGroup(c, "Mothership");
             MutableSecurityPolicy policy = new MutableSecurityPolicy(c, SecurityManager.getPolicy(c));
             Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);

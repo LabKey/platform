@@ -43,6 +43,7 @@ import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
@@ -144,6 +145,16 @@ public class IssuesController extends SpringActionController
     public IssuesController() throws Exception
     {
         setActionResolver(_actionResolver);
+    }
+
+
+    public static class IssuesUrlsImpl implements IssuesUrls
+    {
+        @Override
+        public ActionURL getDetailsURL(Container c)
+        {
+            return new ActionURL(DetailsAction.class, c);
+        }
     }
 
 

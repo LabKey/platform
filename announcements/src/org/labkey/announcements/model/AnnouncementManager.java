@@ -244,7 +244,7 @@ public class AnnouncementManager
 
     public static AnnouncementModel getAnnouncement(Container c, int rowId) throws SQLException
     {
-        return getAnnouncement(c, rowId, INCLUDE_ATTACHMENTS);
+        return getAnnouncement(c, rowId, INCLUDE_NOTHING);
     }
 
     public static void saveEmailPreference(User user, Container c, int emailPreference) throws SQLException
@@ -290,7 +290,7 @@ public class AnnouncementManager
     }
 
 
-    public static final int INCLUDE_ATTACHMENTS = 1;
+    public static final int INCLUDE_NOTHING = 0;
     public static final int INCLUDE_RESPONSES = 2;
     public static final int INCLUDE_MEMBERLIST = 4;
 
@@ -1130,7 +1130,7 @@ public class AnnouncementManager
             }
 
             {
-                AnnouncementModel a = AnnouncementManager.getAnnouncement(c, rowA, INCLUDE_ATTACHMENTS + INCLUDE_RESPONSES);
+                AnnouncementModel a = AnnouncementManager.getAnnouncement(c, rowA, INCLUDE_RESPONSES);
                 assertNotNull(a);
                 assertEquals("new announcementModel", a.getTitle());
                 AnnouncementModel[] responses = a.getResponses().toArray(new AnnouncementModel[a.getResponses().size()]);

@@ -4365,6 +4365,12 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(ShowMaterialAction.class, material.getContainer()).addParameter("rowId", material.getRowId());
         }
 
+        @Override
+        public ActionURL getShowUploadMaterialsURL(Container container)
+        {
+            return new ActionURL(ShowUploadMaterialsAction.class, container);
+        }
+
         public ActionURL getDataDetailsURL(ExpData data)
         {
             return new ActionURL(ShowDataAction.class, data.getContainer()).addParameter("rowId", data.getRowId());

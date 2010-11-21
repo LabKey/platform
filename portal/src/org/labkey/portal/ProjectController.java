@@ -142,6 +142,15 @@ public class ProjectController extends SpringActionController
 
             return url;
         }
+
+        @Override
+        public ActionURL getFileBrowserURL(Container c, String path)
+        {
+            ActionURL url = new ActionURL(FileBrowserAction.class, c);
+            url.addParameter("path", path);
+
+            return url;
+        }
     }
 
 

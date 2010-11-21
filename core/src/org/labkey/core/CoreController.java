@@ -146,6 +146,16 @@ public class CoreController extends SpringActionController
             Container s = LookAndFeelProperties.getSettingsContainer(c);
             return getRevisionURL(CombinedStylesheetAction.class, s);
         }
+
+        @Override
+        public ActionURL getContainerRedirectURL(Container c, String pageFlow, String action)
+        {
+            ActionURL url = new ActionURL(ContainerRedirectAction.class, c);
+            url.addParameter("pageflow", pageFlow);
+            url.addParameter("action", action);
+
+            return url;
+        }
     }
 
     abstract class BaseStylesheetAction extends ExportAction
@@ -154,7 +164,7 @@ public class CoreController extends SpringActionController
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
         {
             // Stylesheets can be retrieved always by anyone.  This do-nothing override is even more permissive than
-            //  using ACL.PERM_NONE and @IgnoresTermsOfUse since it also allows access in the root container even
+            //  using @RequiresNoPermission and @IgnoresTermsOfUse since it also allows access in the root container even
             //  when impersonation is limited to a specific project.
         }
 

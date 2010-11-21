@@ -63,6 +63,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.Module;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
@@ -2922,7 +2923,7 @@ public class StudyManager
             Study study = StudyManager.getInstance().getStudy(c);
             if (null == study)
                 return;
-            String nav = NavTree.toJS(Collections.singleton(new NavTree("study", new ActionURL("project","begin",c.getId()))), null, false).toString();
+            String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false).toString();
 
             SQLFragment f = new SQLFragment("SELECT container, participantid FROM " + StudySchema.getInstance().getTableInfoParticipant());
             if (null != c)

@@ -208,7 +208,7 @@ public class RRF_Loader extends Job
     private int loadTextIndex() throws InterruptedException
     {
         SearchService ss = ServiceRegistry.get(SearchService.class);
-        String sharedId = ContainerManager.getSharedContainer().getId();
+        Container shared = ContainerManager.getSharedContainer();
 
         Iterator<Definition> defs = _reader.getDefinitions(null); // new Filter<RRF_Reader.Definition>(){ public boolean accept(RRF_Reader.Definition def) { return !"Y".equals(def.SUPPRESS); } });
         Iterator<SemanticType> types = _reader.getTypes(null);
@@ -279,7 +279,7 @@ public class RRF_Loader extends Job
             String title = CUI + " " + StringUtils.defaultString(preferredSTR, STR);
             String body = sbSemanticTypes.toString() + "\n" + sbDefinition.toString();
 
-            Map map = new HashMap();
+            Map<String, Object> map = new HashMap<String, Object>();
             map.put(SearchService.PROPERTY.categories.toString(), UmlsController.umlsCategory.toString());
             map.put(SearchService.PROPERTY.displayTitle.toString(), title);
             if (!links.isEmpty())
@@ -290,9 +290,9 @@ public class RRF_Loader extends Job
             SimpleDocumentResource r = new SimpleDocumentResource(
                     new Path("CUI", CUI),
                     "umls:" + CUI,
-                    sharedId,
+                    shared.getId(),
                     "text/plain", body.getBytes(),
-                    new ActionURL("umls", "concept", sharedId).addParameter("cui", CUI),
+                    new ActionURL(UmlsController.ConceptAction.class, shared).addParameter("cui", CUI),
                     map
             );
 
@@ -300,9 +300,9 @@ public class RRF_Loader extends Job
             if (0 == (count % 1000))
             {
                 JSONObject o = new JSONObject();
-                o.put("status","indexing");
-                o.put("count",count);
-                o.put("estimate",2178000); // umls 2009
+                o.put("status", "indexing");
+                o.put("count", count);
+                o.put("estimate", 2178000); // umls 2009
                 _pollStatus.setJson(o);
                 if (ss.isBusy())
                     try {ss.waitForIdle();}catch(InterruptedException x){};

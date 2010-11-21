@@ -457,6 +457,12 @@ public class AdminController extends SpringActionController
 
             return url;
         }
+
+        @Override
+        public ActionURL getSessionLoggingURL()
+        {
+            return new ActionURL(SessionLoggingAction.class, ContainerManager.getRoot());
+        }
     }
 
 

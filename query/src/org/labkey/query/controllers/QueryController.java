@@ -198,6 +198,14 @@ public class QueryController extends SpringActionController
             return new ActionURL(BeginAction.class, c);
         }
 
+        @Override
+        public ActionURL urlSchemaBrowser(Container c, String schemaName)
+        {
+            ActionURL ret = urlSchemaBrowser(c);
+            ret.addParameter(QueryParam.schemaName.toString(), schemaName);
+            return ret;
+        }
+
         public ActionURL urlExternalSchemaAdmin(Container c)
         {
             return urlExternalSchemaAdmin(c, null);
@@ -422,7 +430,6 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             return new JspView<QueryForm>(QueryController.class, "browse.jsp", form);
-
         }
 
         public NavTree appendNavTrail(NavTree root)

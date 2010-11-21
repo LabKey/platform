@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.query.persist.CstmView" %>
 <%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page import="java.util.*" %>
+<%@ page import="org.labkey.query.controllers.QueryController.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%! String userIdToString(Integer userId)
@@ -105,10 +106,10 @@
         <td><%=userIdToString(view.getCustomViewOwner())%>
         </td>
         <td><%=mgr.canInherit(view.getFlags()) ? "yes" : ""%></td>
-        <td><% ActionURL urlDelete = new ActionURL("query", "internalDeleteView", c);
+        <td><% ActionURL urlDelete = new ActionURL(InternalDeleteView.class, c);
         urlDelete.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>
             <labkey:link href="<%=urlDelete%>" text="delete" />
-            <% ActionURL urlSource = new ActionURL("query", "internalSourceView", c);
+            <% ActionURL urlSource = new ActionURL(InternalSourceViewAction.class, c);
             urlSource.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>
             <labkey:link href="<%=urlSource%>" text="edit" />
         </td>
@@ -118,5 +119,5 @@
         }%>
 </table>
 
-<% ActionURL urlNewView = new ActionURL("query", "internalNewView", c); %>
+<% ActionURL urlNewView = new ActionURL(InternalNewViewAction.class, c); %>
 <labkey:button text="create new view" href="<%=urlNewView%>"/>

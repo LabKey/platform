@@ -91,6 +91,12 @@ public class ReportsController extends SpringActionController
             return new ActionURL(SaveRReportStateAction.class, c);
         }
 
+        @Override
+        public ActionURL urlSaveRReport(Container c)
+        {
+            return new ActionURL(SaveRReportAction.class, c);
+        }
+
         public ActionURL urlUpdateRReportState(Container c)
         {
             return new ActionURL(UpdateRReportStateAction.class, c);

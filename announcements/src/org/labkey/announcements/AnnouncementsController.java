@@ -2652,7 +2652,7 @@ public class AnnouncementsController extends SpringActionController
         try
         {
             if (0 != rowId)
-                return AnnouncementManager.getAnnouncement(c, rowId, AnnouncementManager.INCLUDE_ATTACHMENTS + AnnouncementManager.INCLUDE_RESPONSES + AnnouncementManager.INCLUDE_MEMBERLIST);
+                return AnnouncementManager.getAnnouncement(c, rowId, AnnouncementManager.INCLUDE_RESPONSES + AnnouncementManager.INCLUDE_MEMBERLIST);
             else if (null == entityId)
                 throwThreadNotFound(c);
 

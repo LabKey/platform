@@ -45,6 +45,7 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -437,7 +438,7 @@ NavTree getDocumentContext(Container c, org.labkey.api.search.SearchService.Sear
                         text = path.toString("/","");
 
                         if (rel.size() > 0) rel = rel.getParent();
-                        url = new ActionURL("project","fileBrowser",c).addParameter("path",rel.toString("/",""));
+                        url = urlProvider(ProjectUrls.class).getFileBrowserURL(c, rel.toString("/",""));
                     }
                 }
             }

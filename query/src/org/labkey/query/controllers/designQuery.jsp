@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.query.controllers.DesignForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.query.controllers.QueryController.*" %>
 <%@ page extends="org.labkey.query.controllers.Page" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -30,8 +31,8 @@
 <%
     DesignForm form = (DesignForm) HttpView.currentModel();
     contextPath = request.getContextPath();
-    ActionURL urlCheckSyntax = new ActionURL("query", "checkSyntax", getContainer());
-    ActionURL urlTableInfo = new ActionURL("query", "tableInfo", getContainer());
+    ActionURL urlCheckSyntax = new ActionURL(CheckSyntaxAction.class, getContainer());
+    ActionURL urlTableInfo = new ActionURL(TableInfoAction.class, getContainer());
     urlTableInfo.addParameter(QueryParam.queryName.toString(), form.getQueryName());
     urlTableInfo.addParameter(QueryParam.schemaName.toString(), form.getSchemaName());
     urlTableInfo.addParameter("design", "1");

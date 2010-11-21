@@ -50,6 +50,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reader.ExcelLoader;
@@ -668,7 +669,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             properties.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
         properties.put(SearchService.PROPERTY.displayTitle.toString(), displayTitle);
         properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
-        ActionURL startURL = new ActionURL("project","start",c);
+        ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         startURL.setExtraPath(c.getId());
         WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
                 "link:" + c.getId(),

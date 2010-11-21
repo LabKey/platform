@@ -516,11 +516,10 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
         private Issue issue;
         private int commentId;
-        HString comment;
+        private HString comment;
 
         public Comment()
         {
-
         }
 
         public Comment(String comment)

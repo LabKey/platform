@@ -487,7 +487,7 @@ public class WikiManager
         }
     }
 
-    //does not include attachments, does include depth
+    // includes depth
     public static List<Wiki> getSubTreePageList(Container c, Wiki parentPage) throws SQLException
     {
         List<Wiki> pageList = new ArrayList<Wiki>();
@@ -507,7 +507,7 @@ public class WikiManager
         return nameList;
     }
 
-    //does not include attachments
+
     public static Wiki getWikiByRowId(Container c, int rowId)
     {
         List<Wiki> pages = getPageList(c);
@@ -525,7 +525,7 @@ public class WikiManager
     }
 
 
-    //get wiki with specified version, with attachments
+    //get wiki with specified version
     public static Wiki getWiki(Container c, HString name, boolean forceRefresh)
     {
         WikiAndVersion wikipair = getLatestWikiAndVersion(c, name, forceRefresh);
@@ -691,7 +691,6 @@ public class WikiManager
         };
 
 
-    //does not include attachments, does include depth
     public static List<Wiki> getPageList(Container c)
     {
         return WikiCache.getOrderedPageList(c, PAGE_LIST_CACHE_LOADER);

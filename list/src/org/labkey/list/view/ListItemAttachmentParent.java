@@ -16,13 +16,10 @@
 
 package org.labkey.list.view;
 
-import org.labkey.api.exp.list.ListItem;
-import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.Attachment;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.list.ListItem;
 import org.labkey.list.model.ListItm;
-
-import java.util.Collection;
 
 /**
  * User: adam
@@ -31,8 +28,8 @@ import java.util.Collection;
  */
 public class ListItemAttachmentParent implements AttachmentParent
 {
-    private String _entityId;
-    private Container _c;
+    private final String _entityId;
+    private final Container _c;
 
     public ListItemAttachmentParent(ListItem item, Container c)
     {

@@ -19,13 +19,14 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.query.persist.CstmView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.query.controllers.QueryController.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     InternalSourceViewForm form = (InternalSourceViewForm) HttpView.currentModel();
-    ActionURL urlPost = new ActionURL("query", "internalSourceView", getViewContext().getContainer());
+    ActionURL urlPost = new ActionURL(InternalSourceViewAction.class, getViewContext().getContainer());
     urlPost.addParameter("customViewId", Integer.toString(form.getCustomViewId()));
-    ActionURL urlCancel = new ActionURL("query", "manageViews", getViewContext().getContainer());
+    ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getViewContext().getContainer());
     CstmView view = form.getViewAndCheckPermission();
 
 %>

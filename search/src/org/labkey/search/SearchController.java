@@ -34,6 +34,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -82,6 +83,21 @@ public class SearchController extends SpringActionController
     {
         setActionResolver(_actionResolver);
     }
+
+
+    public static class SearchUrlsImpl implements SearchUrls
+    {
+        @Override
+        public ActionURL getSearchURL(String query, String category)
+        {
+            ActionURL url = new ActionURL(SearchAction.class, ContainerManager.getRoot());
+            url.addParameter("q", query);
+            url.addParameter("category", category);
+
+            return url;
+        }
+    }
+
 
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
