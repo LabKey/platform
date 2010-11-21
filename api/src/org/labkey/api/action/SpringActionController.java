@@ -778,7 +778,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 if (actionClass.getConstructors().length == 0)
                     throw new ServletException(actionClass.getName() + " has no public constructors");
 
-                this._actionClass = actionClass;
+                _actionClass = actionClass;
 
                 // @ActionNames("name1, name2") annotation overrides default behavior of using class name to generate name
                 ActionNames actionNames = actionClass.getAnnotation(ActionNames.class);

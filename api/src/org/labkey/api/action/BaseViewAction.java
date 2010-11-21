@@ -73,7 +73,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     {
         setValidator(this);
         setCommandName("form");
-        this.setCacheSeconds(0);
+        setCacheSeconds(0);
     }
 
 

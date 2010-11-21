@@ -34,4 +34,5 @@ public interface ProjectUrls extends UrlProvider
     ActionURL getMoveWebPartURL(Container c, Portal.WebPart webPart, int direction, ActionURL returnURL);
     ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL);
     ActionURL getExpandCollapseURL(Container c, String path, String treeId);
+    ActionURL getFileBrowserURL(Container c, String path);
 }

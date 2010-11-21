@@ -16,10 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
-
-import java.util.Collection;
 
 /**
  * User: adam

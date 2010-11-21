@@ -26,14 +26,13 @@ import org.labkey.api.view.ViewServlet;
 import java.util.Locale;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Feb 6, 2009
  * Time: 11:42:52 AM
  *
  * HString is short for HttpString (other suggestions FormString, TaintedSting, ValidatedString)
  *
- * HSting should act as much as possible like a regulare java.lang.String.  It has two differences.
+ * HSting should act as much as possible like a regular java.lang.String.  It has two differences.
  * It implements Taintable, and if tainted it will try to hide its dirty data (depending on the subclass).
  *
  * The HString base class will html encode (PageFlowUtil.filter()) tainted data.  Subclasses may just return "".

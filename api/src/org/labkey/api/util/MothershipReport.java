@@ -25,7 +25,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.view.ActionURL;
 
 import javax.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
@@ -36,6 +35,7 @@ import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -56,12 +56,47 @@ public class MothershipReport implements Runnable
     public static final String MOTHERSHIP_STATUS_HEADER_NAME = "MothershipStatus";
     public static final String MOTHERSHIP_STATUS_SUCCESS = "Success";
 
-    public MothershipReport(String action) throws MalformedURLException
+    public static final String CONTAINER_PATH = "/_mothership";
+    public static final String BASE_URL = "/mothership" + CONTAINER_PATH;
+
+    public enum Type
     {
-        ActionURL url = new ActionURL("Mothership", action + ".post", "/_mothership");
+        ReportException
+        {
+            @Override
+            String getAction()
+            {
+                return "reportException";
+            }},
+        CheckForUpdates
+        {
+            @Override
+            String getAction()
+            {
+                return "checkForUpdates";
+            }};
+
+        URLHelper getURL() throws URISyntaxException
+        {
+            return new URLHelper(BASE_URL + "/" + getAction() + ".post");
+        }
+
+        abstract String getAction();
+    }
+
+    public static boolean isMothershipExceptionReport(String url)
+    {
+        return url.toLowerCase().contains((BASE_URL + "/" + Type.ReportException.getAction()).toLowerCase());
+    }
+
+    public MothershipReport(Type type) throws MalformedURLException, URISyntaxException
+    {
+        URLHelper url = type.getURL();
+
         if (AppProps.getInstance().isDevMode())
         {
             // Don't submit to the mothership server, go to the local machine
+            url.setContextPath(AppProps.getInstance().getContextPath());
             _url = new URL(AppProps.getInstance().getScheme(), "localhost", AppProps.getInstance().getServerPort(), url.toString());
         }
         else

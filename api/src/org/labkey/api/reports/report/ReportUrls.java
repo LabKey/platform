@@ -30,6 +30,7 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlDownloadData(Container c);
     ActionURL urlRunReport(Container c);
     ActionURL urlSaveRReportState(Container c);
+    ActionURL urlSaveRReport(Container c);
     ActionURL urlUpdateRReportState(Container c);
     ActionURL urlDesignChart(Container c);
     ActionURL urlCreateRReport(Container c);

@@ -15,17 +15,16 @@
  */
 package org.labkey.api.util;
 
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.security.Crypt;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.Random;
-import java.io.InputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**

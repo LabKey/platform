@@ -24,6 +24,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -286,9 +287,7 @@ abstract public class UserSchema extends AbstractSchema
 
     public ActionURL urlSchemaDesigner()
     {
-        ActionURL ret = new ActionURL("query", "schema", getContainer());
-        ret.addParameter(QueryParam.schemaName.toString(), getSchemaName());
-        return ret;
+        return PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), getSchemaName());
     }
 
     @Deprecated

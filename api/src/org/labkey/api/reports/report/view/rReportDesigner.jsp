@@ -31,28 +31,30 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     JspView<RReportBean> me = (JspView<RReportBean>) HttpView.currentView();
+    ViewContext context = me.getViewContext();
     RReportBean bean = me.getModelBean();
-    List<Report> sharedReports = ReportUtil.getAvailableSharedRScripts(HttpView.currentContext(), bean);
+    List<Report> sharedReports = ReportUtil.getAvailableSharedRScripts(context, bean);
     List<String> includedReports = bean.getIncludedReports();
-    String renderAction = (String)HttpView.currentRequest().getAttribute("renderAction");
-    ViewContext context = HttpView.currentContext();
+    String renderAction = (String)context.getRequest().getAttribute("renderAction");
+    Container c = context.getContainer();
 
     // the url for the execute script button
     ActionURL executeUrl = context.cloneActionURL().replaceParameter(TabStripView.TAB_PARAM, RunReportView.TAB_VIEW).
             replaceParameter(RunReportView.CACHE_PARAM, String.valueOf(bean.getReportId()));
 
-    boolean readOnly = (Boolean)HttpView.currentRequest().getAttribute("readOnly");
+    boolean readOnly = (Boolean)context.getRequest().getAttribute("readOnly");
     boolean isAdmin = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
 
     // is this report associated with a query view
     boolean hasData = bean.getQueryName() != null || bean.getSchemaName() != null;
 
-    PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(HttpView.currentContext().getContainer());
+    PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
 %>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/_yui/build/container/assets/container.css" type="text/css"/>
@@ -89,7 +91,7 @@
         var saveDiv = YAHOO.util.Dom.get('saveDialog');
         saveDiv.style.display = "";
 
-        document.getElementById('renderReport').action = '<%=new ActionURL("reports", "saveRReport", HttpView.currentContext().getContainer())%>';
+        document.getElementById('renderReport').action = '<%=urlProvider(ReportUrls.class).urlSaveRReport(c)%>';
 
         var reportName = YAHOO.util.Dom.get('reportName');
         if (reportName.value == null || reportName.value.length == 0)
@@ -135,7 +137,7 @@
     function downloadData()
     {
         LABKEY.setSubmit(true);
-        window.location = '<%=bean.getReport().getDownloadDataURL(HttpView.currentContext())%>';
+        window.location = '<%=bean.getReport().getDownloadDataURL(context)%>';
         LABKEY.setSubmit(false);
     }
 
@@ -220,7 +222,7 @@
     <% if(null != bean.getReportId()) { %>
         <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
     <% } %>
-    <input type="hidden" name="cacheKey" value="<%=RunRReportView.getReportCacheKey(bean.getReportId(), HttpView.currentContext().getContainer())%>">
+    <input type="hidden" name="cacheKey" value="<%=RunRReportView.getReportCacheKey(bean.getReportId(), c)%>">
     <input type="hidden" name="showDebug" value="true">
     <input type="hidden" name="<%=RReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
 
@@ -301,7 +303,7 @@
 
         this.send = function()
         {
-            req.open("POST", "<%=PageFlowUtil.urlProvider(ReportUrls.class).urlSaveRReportState(HttpView.currentContext().getContainer()).getLocalURIString()%>");
+            req.open("POST", "<%=PageFlowUtil.urlProvider(ReportUrls.class).urlSaveRReportState(c).getLocalURIString()%>");
             req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             req.send(url);
         }

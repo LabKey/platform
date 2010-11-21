@@ -3309,7 +3309,7 @@ public class OntologyManager
                         StringUtils.trimToEmpty(label) + " " +
                         StringUtils.trimToEmpty(desc);
 
-                ActionURL url = new ActionURL("experiment-types","findConcepts",shared.getId());
+                ActionURL url = new ActionURL("experiment-types", "findConcepts", shared);
                 url.addParameter("concept",propertyURI);
                 WebdavResource r = new org.labkey.api.webdav.SimpleDocumentResource(
                     new Path(propertyURI),

@@ -31,4 +31,5 @@ public interface CoreUrls extends UrlProvider
     ActionURL getCustomStylesheetURL();
     ActionURL getCustomStylesheetURL(Container c);
     ActionURL getCombinedStylesheetURL(Container c);
+    ActionURL getContainerRedirectURL(Container c, String pageFlow, String action);
 }

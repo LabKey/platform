@@ -36,6 +36,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -178,12 +179,12 @@ public class ExceptionUtil
 
         // Need this extra check to make sure we're not in an infinite loop if there's
         // an exception when trying to submit an exception
-        if (originalURL != null && originalURL.toLowerCase().contains("/Mothership/_mothership/reportException".toLowerCase()))
+        if (originalURL != null && MothershipReport.isMothershipExceptionReport(originalURL))
             return;
 
         try
         {
-            MothershipReport report = new MothershipReport("reportException");
+            MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException);
 
             if (!decorations.isEmpty() && (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH))
                 report.addParam("exceptionMessage", getExtendedMessage(ex));
@@ -273,6 +274,10 @@ public class ExceptionUtil
             _jobRunner.execute(report);
         }
         catch (MalformedURLException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (URISyntaxException e)
         {
             throw new RuntimeException(e);
         }

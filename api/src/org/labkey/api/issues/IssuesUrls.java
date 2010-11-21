@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2009 LabKey Corporation
+ * Copyright (c) 2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.query;
+
+package org.labkey.api.issues;
 
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
-/*
- * User: Karl Lum
- * Date: Jul 15, 2008
- * Time: 2:53:11 PM
- */
+import org.labkey.api.view.ActionURL;
 
-public interface QueryUrls extends UrlProvider
+/*
+* User: adam
+* Date: Nov 19, 2010
+* Time: 9:38:34 PM
+*/
+public interface IssuesUrls extends UrlProvider
 {
-    ActionURL urlCreateSnapshot(Container c);
-    ActionURL urlCustomizeSnapshot(Container c);
-    ActionURL urlUpdateSnapshot(Container c);
-    ActionURL urlSchemaBrowser(Container c);
-    ActionURL urlSchemaBrowser(Container c, String schemaName);
+    public ActionURL getDetailsURL(Container c);
 }

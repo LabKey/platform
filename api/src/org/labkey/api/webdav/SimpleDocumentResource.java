@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 25, 2009
  * Time: 5:31:23 PM
@@ -41,7 +40,7 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     byte[] _body;
     URLHelper _executeUrl;
 
-    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, byte[] body, URLHelper executeUrl, Map<String,Object> properties)
+    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, byte[] body, URLHelper executeUrl, Map<String, Object> properties)
     {
         super(path);
         _containerId = containerId;

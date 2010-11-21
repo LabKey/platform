@@ -63,6 +63,8 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getMaterialDetailsURL(ExpMaterial material);
 
+    ActionURL getShowUploadMaterialsURL(Container container);
+
     ActionURL getDataDetailsURL(ExpData data);
 
     ActionURL getShowFileURL(Container container);

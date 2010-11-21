@@ -362,6 +362,7 @@ api/src/org/labkey/api/files/view/FilesWebPart.java -text
 api/src/org/labkey/api/files/view/customizeWebPart.jsp -text
 api/src/org/labkey/api/files/view/fileContent.jsp -text
 api/src/org/labkey/api/flow/api/FlowService.java -text
+api/src/org/labkey/api/issues/IssuesUrls.java -text
 api/src/org/labkey/api/iterator/BeanIterator.java -text
 api/src/org/labkey/api/iterator/CloseableFilteredIterator.java -text
 api/src/org/labkey/api/iterator/CloseableIterator.java -text
@@ -687,6 +688,7 @@ api/src/org/labkey/api/script/ScriptService.java -text
 api/src/org/labkey/api/search/AbstractDocumentParser.java -text
 api/src/org/labkey/api/search/AbstractXMLDocumentParser.java -text
 api/src/org/labkey/api/search/SearchService.java -text
+api/src/org/labkey/api/search/SearchUrls.java -text
 api/src/org/labkey/api/search/SearchUtils.java -text
 api/src/org/labkey/api/security/ActionNames.java -text
 api/src/org/labkey/api/security/AdminConsoleAction.java -text

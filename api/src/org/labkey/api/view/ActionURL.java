@@ -50,6 +50,32 @@ public class ActionURL extends URLHelper implements Cloneable
     private String _action = "begin";
 
     
+    /**
+     * Old pageflow constructor
+     */
+    @Deprecated
+    public ActionURL(String pageFlow, String actionName, Container container)
+    {
+        this(true);
+        _controller = pageFlow;
+        _action = actionName;
+        setContainer(container);
+    }
+
+
+    /**
+     * Worse old page flow constructor
+     */
+    @Deprecated
+    public ActionURL(String pageFlow, String actionName, String extraPath)
+    {
+        this(true);
+        _controller = pageFlow;
+        _action = actionName;
+        setExtraPath(extraPath);
+    }
+
+
     private void ensureBaseServerProps()
     {
         if (_baseServerPropsInitialized)
@@ -118,32 +144,6 @@ public class ActionURL extends URLHelper implements Cloneable
         _controller = SpringActionController.getPageFlowName(actionClass);
         _action = SpringActionController.getActionName(actionClass);
         setContainer(container);
-    }
-
-
-    /**
-     * Old pageflow constructor
-     */
-    @Deprecated
-    public ActionURL(String pageFlow, String actionName, Container container)
-    {
-        this(true);
-        _controller = pageFlow;
-        _action = actionName;
-        setContainer(container);
-    }
-
-
-    /**
-     * Worse old page flow constructor 
-     */
-    @Deprecated
-    public ActionURL(String pageFlow, String actionName, String extraPath)
-    {
-        this(true);
-        _controller = pageFlow;
-        _action = actionName;
-        setExtraPath(extraPath);
     }
 
 

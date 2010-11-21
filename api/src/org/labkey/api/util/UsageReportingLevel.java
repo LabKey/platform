@@ -24,6 +24,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -148,7 +149,7 @@ public enum UsageReportingLevel
         {
             try
             {
-                MothershipReport report = new MothershipReport("checkForUpdates");
+                MothershipReport report = new MothershipReport(MothershipReport.Type.CheckForUpdates);
                 report.addServerSessionParams();
                 addExtraParams(report);
                 report.run();
@@ -163,6 +164,10 @@ public enum UsageReportingLevel
                 }
             }
             catch (MalformedURLException e)
+            {
+                throw new RuntimeException(e);
+            }
+            catch (URISyntaxException e)
             {
                 throw new RuntimeException(e);
             }

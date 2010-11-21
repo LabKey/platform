@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.util.PageFlowUtil;
@@ -49,7 +50,7 @@ public class PopupDeveloperView extends PopupMenuView
         ArrayList<NavTree> items = new ArrayList<NavTree>();
         if (!container.isRoot())
             items.add(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(container)));
-        String console =  new ActionURL("admin","sessionLogging","/").getLocalURIString(false);
+        String console = PageFlowUtil.urlProvider(AdminUrls.class).getSessionLoggingURL().getLocalURIString(false);
         NavTree nt = new NavTree("Server Javascript Console");
         nt.setScript("window.open('" + console + "','javascriptconsole','width=400,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
         items.add(nt);
