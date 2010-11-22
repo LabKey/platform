@@ -33,8 +33,7 @@ public class TSVGridWriter extends TSVWriter
 {
     public enum ColumnHeaderType {caption, propertyName, queryColumnName}
 
-    private ResultSet _rs;
-    private Map<FieldKey,ColumnInfo> _fieldMap;
+    private Results _rs;
     private List<String> _fileHeader = null;
     private List<DisplayColumn> _displayColumns;
     private boolean _captionRowVisible = true;
@@ -51,8 +50,8 @@ public class TSVGridWriter extends TSVWriter
     {
         List<ColumnInfo> selectCols = RenderContext.getSelectColumns(displayColumns, tinfo);
         LinkedHashMap<FieldKey, ColumnInfo> fieldMap = QueryService.get().getColumns(tinfo, Collections.<FieldKey>emptySet(), selectCols);
-        ResultSet rs = ctx.getResultSet(fieldMap, tinfo, 0, 0, name, false);
-        init(rs, ctx.getFieldMap(), displayColumns);
+        Results rs = ctx.getResultSet(fieldMap, tinfo, 0, 0, name, false);
+        init(rs, displayColumns);
     }
 
 
@@ -62,35 +61,23 @@ public class TSVGridWriter extends TSVWriter
         init(rs);
     }
 
-
-    @Deprecated
-    public TSVGridWriter(ResultSet rs, List<DisplayColumn> displayColumns)
-    {
-        init(rs, null, displayColumns);
-    }
-
     /**
-     * Create a TSVGridWriter for a ResultSet, fieldMap, and set of displayColumns.
+     * Create a TSVGridWriter for a Results (ResultSet/fieldMap) and a set of DisplayColumns.
      * You can use use {@link QueryService#getColumns(TableInfo, Collection<FieldKey>, Collection<ColumnInfo>)}
      * to obtain a fieldMap which will include any extra ColumnInfo required by the selected DisplayColumns.
      *
-     * @param rs ResultSet.
-     * @param fieldMap map of FieldKey to ColumnInfo.
+     * @param rs Results (ResultSet/Map<FieldKey,ColumnInfo>).
      * @param displayColumns The DisplayColumns.
      */
-    public TSVGridWriter(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns)
-    {
-        init(rs, fieldMap, displayColumns);
-    }
 
-    public TSVGridWriter(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap, Collection<ColumnInfo> columns)
+    public TSVGridWriter(Results rs, List<DisplayColumn> displayColumns)
     {
-        init(rs, fieldMap, columns);
+        init(rs, displayColumns);
     }
 
     protected TSVGridWriter(List<DisplayColumn> displayColumns)
     {
-        init(null, null, displayColumns);
+        init(null, displayColumns);
     }
 
 
@@ -105,36 +92,32 @@ public class TSVGridWriter extends TSVWriter
             cols.add(new ColumnInfo(md, sqlColumn));
         }
 
-        init(rs, null, cols);
+        Results results = new ResultsImpl(rs, cols);
+        init(results, cols);
     }
 
 
-    private void init(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap, Collection<ColumnInfo> cols)
+    private void init(Results rs, Collection<ColumnInfo> cols)
     {
         List<DisplayColumn> dataColumns = new LinkedList<DisplayColumn>();
 
         for (ColumnInfo col : cols)
             dataColumns.add(new DataColumn(col));
 
-        init(rs, fieldMap, dataColumns);
+        init(rs, dataColumns);
     }
 
 
-    private void init(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap, List<DisplayColumn> displayColumns)
+    private void init(Results rs, List<DisplayColumn> displayColumns)
     {
         _rs = rs;
-        _fieldMap = fieldMap;
         _displayColumns = displayColumns;
     }
 
+
     public Map<FieldKey, ColumnInfo> getFieldMap()
     {
-        return _fieldMap;
-    }
-
-    public void setResultSet(ResultSet rs)
-    {
-        _rs = rs;
+        return _rs.getFieldMap();
     }
 
 
@@ -181,7 +164,7 @@ public class TSVGridWriter extends TSVWriter
 
         try
         {
-            writeResultSet(_rs, _fieldMap);
+            writeResultSet(_rs);
         }
         catch (SQLException e)
         {
@@ -192,24 +175,15 @@ public class TSVGridWriter extends TSVWriter
     }
 
 
-    @Deprecated
-    public void writeResultSet(ResultSet rs) throws SQLException
+    public void writeResultSet(Results rs) throws SQLException
     {
         RenderContext context = new RenderContext(HttpView.currentContext());
-        context.setResultSet(rs, null);
+        context.setResults(rs);
         writeResultSet(context, rs);
     }
 
 
-    public void writeResultSet(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap) throws SQLException
-    {
-        RenderContext context = new RenderContext(HttpView.currentContext());
-        context.setResultSet(rs, fieldMap);
-        writeResultSet(context, rs);
-    }
-
-
-    public void writeResultSet(RenderContext ctx, ResultSet rs) throws SQLException
+    public void writeResultSet(RenderContext ctx, Results rs) throws SQLException
     {
         // Output all the data cells
         ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
@@ -220,6 +194,7 @@ public class TSVGridWriter extends TSVWriter
             writeRow(_pw, ctx, _displayColumns);
         }
     }
+
 
     @Override
     public void close() throws ServletException

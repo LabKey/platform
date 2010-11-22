@@ -47,7 +47,6 @@ public class RenderContext extends BoundMap // extends ViewContext
     private TableViewForm _form;
     private DataRegion _currentRegion;
     private Filter _baseFilter;
-    private ResultSet _rs;
     private Map<String, Object> _row;
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
@@ -57,7 +56,9 @@ public class RenderContext extends BoundMap // extends ViewContext
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
     private CustomView _view;
-    private Map<FieldKey, ColumnInfo> _fieldMap;
+
+    private Results _rs;
+//    private Map<FieldKey, ColumnInfo> _fieldMap;
 
     public RenderContext(ViewContext context)
     {
@@ -155,20 +156,30 @@ public class RenderContext extends BoundMap // extends ViewContext
         _baseSort = sort;
     }
 
+    public Results getResults()
+    {
+        return _rs;
+    }
+
+    @Deprecated // use getResults()
     public ResultSet getResultSet()
     {
         return _rs;
     }
 
-    public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
+    public void setResults(Results rs)
     {
         _rs = rs;
+    }
 
+    @Deprecated // use setResults()
+    public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
+    {
         if (fieldMap == null)
         {
             if (AppProps.getInstance().isDevMode())
                 _log.warn("Call to RenderContext.setResultSet() without a field map"); // , new Throwable());
-            _fieldMap = new LinkedHashMap<FieldKey, ColumnInfo>();
+            fieldMap = new LinkedHashMap<FieldKey, ColumnInfo>();
 
             try
             {
@@ -180,7 +191,7 @@ public class RenderContext extends BoundMap // extends ViewContext
                         String name = rsmd.getColumnName(i);
                         ColumnInfo col = new ColumnInfo(name);
                         col.setAlias(name);
-                        _fieldMap.put(col.getFieldKey(), col);
+                        fieldMap.put(col.getFieldKey(), col);
                     }
                 }
             }
@@ -189,10 +200,8 @@ public class RenderContext extends BoundMap // extends ViewContext
                 throw new RuntimeSQLException(x);
             }
         }
-        else
-        {
-            _fieldMap = fieldMap;
-        }
+
+        _rs = new ResultsImpl(rs, fieldMap);
     }
     
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
@@ -251,10 +260,10 @@ public class RenderContext extends BoundMap // extends ViewContext
     /** valid after call to getResultSet() */
     public Map<FieldKey, ColumnInfo> getFieldMap()
     {
-        return _fieldMap;
+        return _rs.getFieldMap();
     }
 
-    public ResultSet getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url = getViewContext().cloneActionURL();
 
@@ -265,7 +274,6 @@ public class RenderContext extends BoundMap // extends ViewContext
         if (null != QueryService.get())
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, _ignoredColumnFilters);
 
-        _fieldMap = fieldMap;
         _rs = selectForDisplay(tinfo, cols, filter, sort, maxRows, offset, async);
         return _rs;
     }
@@ -392,7 +400,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         filter.addClause(clause);
     }
 
-    protected ResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         if (async)
         {
@@ -452,13 +460,10 @@ public class RenderContext extends BoundMap // extends ViewContext
     {
         if (key instanceof FieldKey)
         {
-            if (null != _fieldMap)
+            if (null != _rs)
             {
-                ColumnInfo col = _fieldMap.get(key);
-                if (col != null && _row.containsKey(col.getAlias()))
-                {
+                if (_rs.hasColumn((FieldKey)key))
                     return true;
-                }
             }
             // <UNDONE>
             FieldKey f = (FieldKey)key;
@@ -538,10 +543,18 @@ public class RenderContext extends BoundMap // extends ViewContext
 
         if (key instanceof FieldKey)
         {
-            if (null != _fieldMap)
+
+            if (_rs.hasColumn((FieldKey)key))
             {
-                ColumnInfo col = _fieldMap.get(key);
-                return col == null ? null : col.getValue(_row);
+                try
+                {
+                    ColumnInfo col = _rs.findColumnInfo((FieldKey)key);
+                    return col == null ? null : col.getValue(_row);
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
             }
             // <UNDONE>
             FieldKey f = (FieldKey)key;

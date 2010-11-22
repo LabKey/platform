@@ -141,7 +141,7 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public ResultSet getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async)
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async)
             throws SQLException, IOException
     {
         return _ctx.getResultSet(fieldMap, tinfo, maxRows, offset, name, async);
@@ -173,7 +173,7 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public ResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
+    public Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
             throws SQLException, IOException
     {
         return _ctx.selectForDisplay(table, columns, filter, sort, maxRows, offset, async);

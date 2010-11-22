@@ -596,7 +596,7 @@ public class DataRegion extends DisplayElement
      * @throws SQLException SQLException
      * @throws IOException IOException
      */
-    final public ResultSet getResultSet(RenderContext ctx) throws SQLException, IOException
+    final public Results getResultSet(RenderContext ctx) throws SQLException, IOException
     {
         if (!ctx.getViewContext().hasPermission(ReadPermission.class))
             return null;
@@ -607,7 +607,7 @@ public class DataRegion extends DisplayElement
 
         try
         {
-            ResultSet rs = ctx.getResultSet();
+            Results rs = ctx.getResults();
             if (null == rs)
             {
                 TableInfo tinfoMain = getTable();
@@ -632,7 +632,7 @@ public class DataRegion extends DisplayElement
     }
 
 
-    protected ResultSet getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
+    protected Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
         LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
         return ctx.getResultSet(selectKeyMap, getTable(), getMaxRows(), getOffset(), getName(), async);
@@ -1331,7 +1331,9 @@ public class DataRegion extends DisplayElement
      */
     protected int renderTableContents(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
     {
-        ResultSet rs = ctx.getResultSet();
+        Results results = ctx.getResults();
+        // unwrap for efficient use of ResultSetRowMapFactory
+        ResultSet rs = results.getResultSet();
         ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
         int rowIndex = 0;
 
@@ -1577,7 +1579,7 @@ public class DataRegion extends DisplayElement
 
     private void initDetailsResultSet(RenderContext ctx) throws SQLException
     {
-        ResultSet rs = ctx.getResultSet();
+        Results rs = ctx.getResults();
         if (null != rs)
             return;
 
@@ -1592,7 +1594,7 @@ public class DataRegion extends DisplayElement
         {
             LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
             rs = Table.selectForDisplay(tinfoMain, selectKeyMap.values(), ctx.getBaseFilter(), ctx.getBaseSort(), getMaxRows(), getOffset());
-            ctx.setResultSet(rs, selectKeyMap);
+            ctx.setResults(rs);
         }
     }
 
@@ -1653,7 +1655,7 @@ public class DataRegion extends DisplayElement
         TableViewForm viewForm = ctx.getForm();
         Map valueMap = ctx.getRow();
         LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
-        ctx.setResultSet(null, selectKeyMap);
+        ctx.setResults(new ResultsImpl(null, selectKeyMap));
         if (null == valueMap)
         {
             //For updates, the rowMap is the OLD version of the data.
@@ -1751,7 +1753,7 @@ public class DataRegion extends DisplayElement
         TableInfo t = viewForm.getTable();
         ApiQueryResponse json = new ApiQueryResponse();
         ApiJsonWriter jsonOut = new ApiJsonWriter(out);
-        json.initialize(null, ctx.getFieldMap(), t, _displayColumns, null);
+        json.initialize(new ResultsImpl(null, ctx.getFieldMap()), t, _displayColumns, null);
 
         out.write("<script type='text/javascript'>\n");
         out.write("Ext.namespace('DataRegionForm');\n");

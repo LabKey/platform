@@ -63,14 +63,26 @@ public abstract class DataView extends WebPartView<RenderContext>
         this(null, form, errors);
     }
 
-    public ResultSet getResultSet()
+    public Results getResults()
     {
-        return getRenderContext().getResultSet();
+        return getRenderContext().getResults();
     }
 
+    @Deprecated
+    public ResultSet getResultSet()
+    {
+        return getRenderContext().getResults();
+    }
+
+    public void setResults(Results rs)
+    {
+        getRenderContext().setResults(rs);
+    }
+
+    @Deprecated
     public void setResultSet(ResultSet rs)
     {
-        getRenderContext().setResultSet(rs, null);
+        getRenderContext().setResults(new ResultsImpl(rs));
     }
 
     public RenderContext getRenderContext()

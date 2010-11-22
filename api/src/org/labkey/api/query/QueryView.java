@@ -1417,9 +1417,8 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(false);
         RenderContext rc = view.getRenderContext();
         rc.setCache(false);
-        ResultSet rs = rgn.getResultSet(rc);
-        Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
-        TSVGridWriter tsv = new TSVGridWriter(rs, map, getExportColumns(rgn.getDisplayColumns()));
+        Results rs = rgn.getResultSet(rc);
+        TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
         tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
         tsv.setColumnHeaderType(getColumnHeaderType());
         return tsv;
@@ -1609,14 +1608,14 @@ public class QueryView extends WebPartView<Object>
                 }
             }
 
-            ResultSet rs = null;
+            Results rs = null;
 
             try
             {
                 rgn.setAllowAsync(false);
                 RenderContext rc = view.getRenderContext();
                 rs = rgn.getResultSet(rc);
-                response.initialize(rs, rc.getFieldMap(), table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());
+                response.initialize(rs, table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());
             }
             finally
             {

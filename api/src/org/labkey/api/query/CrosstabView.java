@@ -173,7 +173,7 @@ public class CrosstabView extends QueryView
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
-        ResultSet rs = rgn.getResultSet(view.getRenderContext());
+        Results rs = rgn.getResultSet(view.getRenderContext());
 
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
         List<DisplayColumn> displayColumns = rgn.getDisplayColumns();

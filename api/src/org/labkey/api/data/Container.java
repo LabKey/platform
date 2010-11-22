@@ -37,6 +37,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
@@ -56,7 +57,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 {
     private static final Logger _log = Logger.getLogger(Container.class);
 
-    private String _id;
+    private GUID _id;
     private Path _path;
     private Date _created;
     private int _rowId; //Unique for this installation
@@ -89,7 +90,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created, boolean searchable)
     {
         _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
-        _id = id;
+        _id = new GUID(id);
         _parent = new WeakReference<Container>(dirParent);
         _rowId = rowId;
         _sortOrder = sortOrder;
@@ -175,6 +176,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
 
     public String getId()
+    {
+        return _id.toString();
+    }
+
+    public GUID getEntityId()
     {
         return _id;
     }
@@ -980,7 +986,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @NotNull
     public String getResourceId()
     {
-        return _id;
+        return _id.toString();
     }
 
     @NotNull

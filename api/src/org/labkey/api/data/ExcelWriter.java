@@ -46,7 +46,7 @@ public class ExcelWriter
 {
     public static final int MAX_ROWS = 65535;
 
-    protected ResultSet _rs;
+    protected Results _rs;
     Map<FieldKey,ColumnInfo> _fieldMap;
 
     private static Logger _log = Logger.getLogger(ExcelWriter.class);
@@ -78,16 +78,16 @@ public class ExcelWriter
     }
 
 
-    public ExcelWriter(ResultSet rs) throws SQLException
+    public ExcelWriter(Results rs) throws SQLException
     {
-        setResultSet(rs);
+        setResults(rs);
         createColumns(rs.getMetaData());
     }
 
 
-    public ExcelWriter(ResultSet rs, List<DisplayColumn> displayColumns)
+    public ExcelWriter(Results rs, List<DisplayColumn> displayColumns)
     {
-        setResultSet(rs);
+        setResults(rs);
         addDisplayColumns(displayColumns);
     }
 
@@ -122,15 +122,21 @@ public class ExcelWriter
     }
 
 
-    public void setResultSet(ResultSet rs)
+    public void setResults(Results rs)
     {
         _rs = rs;
     }
 
+    @Deprecated
+    public void setResultSet(ResultSet rs)
+    {
+        _rs = new ResultsImpl(rs);
+    }
+
+    @Deprecated
     public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
     {
-        _rs = rs;
-        _fieldMap = fieldMap;
+        _rs = new ResultsImpl(rs, fieldMap);
     }
 
     // Sheet names must be 31 characters or shorter, and must not contain \:/[]? or *
@@ -579,9 +585,15 @@ public class ExcelWriter
     {
         //TODO: Figure out how to pass this through...
         RenderContext ctx = new RenderContext(HttpView.currentContext());
-        renderGrid(sheet, getVisibleColumns(ctx), rs);
+        renderGrid(sheet, getVisibleColumns(ctx), new ResultsImpl(rs));
     }
 
+    public void renderGrid(WritableSheet sheet, Results rs) throws SQLException, WriteException, MaxRowsExceededException
+    {
+        //TODO: Figure out how to pass this through...
+        RenderContext ctx = new RenderContext(HttpView.currentContext());
+        renderGrid(sheet, getVisibleColumns(ctx), rs);
+    }
 
     // Initialize non-wrapping text format for this worksheet
     protected WritableCellFormat getWrappingTextFormat() throws WriteException
@@ -682,7 +694,8 @@ public class ExcelWriter
         renderGrid(sheet, visibleColumns, _rs);
     }
 
-    public void renderGrid(WritableSheet sheet, List<ExcelColumn> visibleColumns, ResultSet rs) throws SQLException, WriteException, MaxRowsExceededException
+
+    public void renderGrid(WritableSheet sheet, List<ExcelColumn> visibleColumns, Results rs) throws SQLException, WriteException, MaxRowsExceededException
     {
         if (null == rs)
             return;
@@ -691,7 +704,7 @@ public class ExcelWriter
         {
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             RenderContext ctx = new RenderContext(HttpView.currentContext());
-            ctx.setResultSet(rs, _fieldMap);
+            ctx.setResults(rs);
 
             // Output all the rows
             while (rs.next())

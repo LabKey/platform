@@ -39,8 +39,10 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class ResultsImpl implements Results
@@ -50,15 +52,44 @@ public class ResultsImpl implements Results
 
     private final Map<FieldKey, Integer> _fieldIndexMap;
 
-    public ResultsImpl(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
+
+    @Deprecated // provide a fieldmap
+    public ResultsImpl(ResultSet rs)
     {
         _rs = rs;
-        _fieldMap = null == fieldMap ? Collections.<FieldKey, ColumnInfo>emptyMap() : fieldMap;
-        _fieldIndexMap = new HashMap<FieldKey, Integer>(_fieldMap.size()*2);
         try
         {
-            for (Map.Entry<FieldKey, ColumnInfo> e : _fieldMap.entrySet())
-                _fieldIndexMap.put(e.getKey(), rs.findColumn(e.getValue().getAlias()));
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int count = rsmd.getColumnCount();
+            _fieldMap = new HashMap<FieldKey,ColumnInfo>(count*2);
+            _fieldIndexMap = new HashMap<FieldKey, Integer>(count*2);
+            for (int i=1 ; i<=count ; i++)
+            {
+                String name = rsmd.getColumnName(i);
+                ColumnInfo col = new ColumnInfo(rsmd,i);
+                _fieldMap.put(col.getFieldKey(), col);
+                _fieldIndexMap.put(col.getFieldKey(), i);
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+
+    public ResultsImpl(ResultSet rs,  @NotNull Collection<ColumnInfo> cols)
+    {
+        _rs = rs;
+        _fieldMap = new HashMap<FieldKey, ColumnInfo>(cols.size()*2);
+        _fieldIndexMap = new HashMap<FieldKey, Integer>(cols.size()*2);
+        try
+        {
+            for (ColumnInfo col : cols)
+            {
+                _fieldMap.put(col.getFieldKey(), col);
+                _fieldIndexMap.put(col.getFieldKey(), rs.findColumn(col.getAlias()));
+            }
         }
         catch (SQLException x)
         {
@@ -66,11 +97,53 @@ public class ResultsImpl implements Results
         }
     }
 
+    public ResultsImpl(ResultSet rs,  @NotNull Map<FieldKey, ColumnInfo> fieldMap)
+    {
+        _rs = rs;
+        _fieldMap = null == fieldMap ? Collections.<FieldKey, ColumnInfo>emptyMap() : fieldMap;
+        _fieldIndexMap = new HashMap<FieldKey, Integer>(_fieldMap.size()*2);
+        try
+        {
+            if (null != rs)
+            {
+                for (Map.Entry<FieldKey, ColumnInfo> e : _fieldMap.entrySet())
+                    _fieldIndexMap.put(e.getKey(), rs.findColumn(e.getValue().getAlias()));
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new IllegalArgumentException("Column not found in resultset");
+        }
+    }
+
+
     public ResultsImpl(RenderContext ctx)
     {
         this(ctx.getResultSet(), ctx.getFieldMap());
     }
 
+
+    public ResultsImpl(ResultsImpl rs)
+    {
+        this._rs = rs._rs;
+        this._fieldMap = rs._fieldMap;
+        this._fieldIndexMap = rs._fieldIndexMap;
+    }
+
+
+    public ResultsImpl wrap(Results rs)
+    {
+        if (rs instanceof ResultsImpl)
+        {
+            return new ResultsImpl((ResultsImpl)rs);
+        }
+        else
+        {
+            return new ResultsImpl(rs.getResultSet(), rs.getFieldMap());
+        }
+    }
+
+    
     @Override
     @NotNull
     public Map<FieldKey, ColumnInfo> getFieldMap()
@@ -95,9 +168,63 @@ public class ResultsImpl implements Results
         return i;
     }
 
+    @Override
+    public boolean hasColumn(FieldKey key)
+    {
+        return _fieldIndexMap.containsKey(key);
+    }
 
+
+    @Override
+    public ColumnInfo findColumnInfo(FieldKey key) throws SQLException
+    {
+        ColumnInfo col = _fieldMap.get(key);
+        if (null == col)
+            throw new SQLException(key.toString() + " not found.");
+        return col;
+    }
+
+
+    //
+    // Table.TableResultSet
+    //
+
+    // should these implement if NYI by wrapped resultset? instead of ClassCastException?
+
+    @Override
+    public boolean isComplete()
+    {
+        return ((Table.TableResultSet)_rs).isComplete();
+    }
+
+    @Override
+    public Map<String, Object> getRowMap() throws SQLException
+    {
+        return ((Table.TableResultSet)_rs).getRowMap();
+    }
+
+    @Override
+    public Iterator<Map<String, Object>> iterator()
+    {
+        return ((Table.TableResultSet)_rs).iterator();
+    }
+
+    @Override
+    public String getTruncationMessage(int maxRows)
+    {
+        return ((Table.TableResultSet)_rs).getTruncationMessage(maxRows);
+    }
+
+    @Override
+    public int getSize()
+    {
+        return ((Table.TableResultSet)_rs).getSize();
+    }
+
+
+    //
     // FieldKey getters
-
+    //
 
     @Override
     public String getString(FieldKey f)

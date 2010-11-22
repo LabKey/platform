@@ -22,6 +22,7 @@ import org.labkey.api.data.CrosstabMember;
 import jxl.write.WritableSheet;
 import jxl.write.WriteException;
 import jxl.write.Label;
+import org.labkey.api.data.Results;
 
 import java.util.List;
 import java.sql.ResultSet;
@@ -40,7 +41,7 @@ public class CrosstabExcelWriter extends ExcelWriter
     private int _numRowAxisCols = 0;
     private int _numMeasures = 0;
 
-    public CrosstabExcelWriter(ResultSet rs, List<DisplayColumn> displayColumns, List<CrosstabMember> colMembers, int numRowAxisCols, int numMeasures)
+    public CrosstabExcelWriter(Results rs, List<DisplayColumn> displayColumns, List<CrosstabMember> colMembers, int numRowAxisCols, int numMeasures)
     {
         super(rs, displayColumns);
         _colMembers = colMembers;

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -31,6 +32,7 @@ import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Join;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -1000,8 +1002,17 @@ public class Table
 
 
     // Does not provide for overriding the built-in fields
-    public static Parameter.ParameterMap insertStatement(Connection conn, User user, TableInfo table) throws SQLException
+    public static Parameter.ParameterMap insertStatement(Connection conn, User user, TableInfo tableInsert) throws SQLException
     {
+        TableInfo table = tableInsert;
+//        if (!(tableInsert instanceof UpdateableTableInfo))
+//            throw new IllegalArgumentException();
+//
+//        TableInfo table = tableInsert; // ((UpdateableTableInfo)tableInsert).getSchemaTableInfo();
+//        DomainKind domainKind = table.getDomainKind();
+//        if (null != domainKind && !StringUtils.isEmpty(domainKind.getStorageSchemaName()))
+//            throw new IllegalArgumentException("OntologyManager tables are NYI");
+
         SqlDialect d = table.getSqlDialect();
         SQLFragment sqlf = new SQLFragment(" INSERT INTO " + table.toString() + " (");
         SQLFragment cols = new SQLFragment();
@@ -1360,11 +1371,10 @@ public class Table
     }
 
 
-    public static TableResultSet select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort)
+    public static Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort)
             throws SQLException
     {
-        SQLFragment sql = getSelectSQL(table, columns, filter, sort);
-        return (TableResultSet) executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), Table.ALL_ROWS, true);
+        return 	QueryService.get().select(table, columns, filter, sort);
     }
 
 
@@ -1409,14 +1419,14 @@ public class Table
     }
 
 
-    public static TableResultSet selectForDisplay(TableInfo table, Set<String> select, Filter filter, Sort sort, int rowCount, long offset)
+    public static Results selectForDisplay(TableInfo table, Set<String> select, Filter filter, Sort sort, int rowCount, long offset)
             throws SQLException
     {
         return selectForDisplay(table, columnInfosList(table, select), filter, sort, rowCount, offset);
     }
 
 
-    public static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset)
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset)
             throws SQLException
     {
         return selectForDisplay(table, select, filter, sort, rowCount, offset, true, false);
@@ -1486,14 +1496,14 @@ public class Table
     }
 
 
-    public static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable)
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable)
             throws SQLException
     {
         return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, scrollable, null, null);
     }
 
 
-    private static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log)
+    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
@@ -1511,17 +1521,19 @@ public class Table
         int decideRowCount = decideRowCount(queryRowCount, null);
         SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount, queryOffset);
         Integer statementRowCount = (table.getSqlDialect().requiresStatementMaxRows() ? decideRowCount : null);  // TODO: clean this all up
-        return (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, scrollable, asyncRequest, log, statementRowCount);
+        Table.TableResultSet rs = (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, scrollable, asyncRequest, log, statementRowCount);
+
+        return new ResultsImpl(rs, columns.values());
     }
 
 
-    public static TableResultSet selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
+    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
     {
         final Logger log = ConnectionWrapper.getConnectionLogger();
-        final AsyncQueryRequest<TableResultSet> asyncRequest = new AsyncQueryRequest<TableResultSet>(response);
-        return asyncRequest.waitForResult(new Callable<TableResultSet>()
+        final AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response);
+        return asyncRequest.waitForResult(new Callable<Results>()
 		{
-            public TableResultSet call() throws Exception
+            public Results call() throws Exception
             {
                 return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, scrollable, asyncRequest, log);
             }
@@ -1992,18 +2004,18 @@ public class Table
         {
             TableInfo tinfo = _core.getTableInfoPrincipals();
 
-            TableResultSet rsAll = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, 0, 0);
+            Results rsAll = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, 0, 0);
             rsAll.last();
             int rowCount = rsAll.getRow();
-            assertTrue(rsAll.isComplete());
+            assertTrue(((Table.TableResultSet)rsAll.getResultSet()).isComplete());
             rsAll.close();
 
             rowCount -= 2;
-            TableResultSet rs = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, rowCount, 0);
+            Results rs = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, rowCount, 0);
             rs.last();
             int row = rs.getRow();
             assertTrue(row == rowCount);
-            assertFalse(rs.isComplete());
+            assertFalse(((Table.TableResultSet)rs.getResultSet()).isComplete());
             rs.close();
         }
 

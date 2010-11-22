@@ -73,24 +73,6 @@ public abstract class AbstractScriptRunner implements RScriptRunner
         _deleteTempFiles = deleteTempFiles;
     }
 
-    protected static TSVGridWriter createGridWriter(ResultSet rs) throws SQLException
-    {
-        ResultSetMetaData md = rs.getMetaData();
-        ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
-
-        List<DisplayColumn> dataColumns = new ArrayList<DisplayColumn>();
-        for (int i = 0; i < cols.length; i++)
-        {
-            int sqlColumn = i + 1;
-            dataColumns.add(new RDisplayColumn( new ColumnInfo(md, sqlColumn)));
-        }
-        TSVGridWriter tsv = new TSVGridWriter(rs, dataColumns);
-        tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
-
-        return tsv;
-    }
-
-
     protected String labkeyObjectProlog()
     {
         StringBuffer labkey = new StringBuffer();

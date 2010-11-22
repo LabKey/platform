@@ -416,13 +416,15 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return iface.isAssignableFrom(_connection.getClass());
     }
 
 
     public <T> T unwrap(Class<T> iface) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        if (iface.isAssignableFrom(_connection.getClass()))
+            return (T)_connection;
+        return null;
     }
 
 

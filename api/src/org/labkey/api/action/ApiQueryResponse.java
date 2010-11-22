@@ -117,7 +117,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return _fieldKeys;
     }
 
-    public void initialize(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount)
+    public void initialize(Results rs, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount)
     {
         _rs = rs;
         _tinfo = table;
@@ -126,9 +126,11 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
             _rowCount = rowCount.longValue();
 
         _ctx = new RenderContext(_viewContext);
-        _ctx.setResultSet(_rs, fieldMap);
+        _ctx.setResults(rs);
+
     }
 
+    
     protected double getFormatVersion()
     {
         return 8.3;

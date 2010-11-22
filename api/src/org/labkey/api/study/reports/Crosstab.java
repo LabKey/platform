@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
 
@@ -72,21 +73,21 @@ public class Crosstab
         _colFieldKey = colFieldKey;
         _statFieldKey = statFieldKey;
 
-        String rowFieldAlias = null;
-        String colFieldAlias = null;
-        String statFieldAlias = null;
+        int rowFieldIndex = 0;
+        int colFieldIndex = 0;
+        int statFieldIndex = 0;
         String statCol = null;
 
         // map the row, column and stat FieldKey names to result set aliases
         Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
 
         if (fieldMap.containsKey(rowFieldKey))
-            rowFieldAlias = fieldMap.get(rowFieldKey).getAlias();
+            rowFieldIndex = _results.findColumn(_rowFieldKey);
         if (fieldMap.containsKey(colFieldKey))
-            colFieldAlias = fieldMap.get(colFieldKey).getAlias();
+            colFieldIndex = _results.findColumn(_colFieldKey);
         if (fieldMap.containsKey(statFieldKey))
         {
-            statFieldAlias = fieldMap.get(statFieldKey).getAlias();
+            statFieldIndex = _results.findColumn(_statFieldKey);
             ColumnInfo col = fieldMap.get(statFieldKey);
             if (Number.class.isAssignableFrom(col.getJavaClass()) || col.getJavaClass().isPrimitive())
                 _statType = StatType.numeric;
@@ -94,24 +95,24 @@ public class Crosstab
                 _statType = StatType.string;
         }
 
-        ResultSet rs = _results.getResultSet();
+//        ResultSet rs = _results.getResultSet();
 
         try {
             //TODO: Use DisplayField for display & value extraction. Support Grouping fields with custom groupings
-            while (rs.next())
+            while (_results.next())
             {
                 Object rowVal = null;
                 List<Object> cellValues = null;
                 List<Object> colDataset = null;
-                if (null != rowFieldAlias)
+                if (0 != rowFieldIndex)
                 {
-                    rowVal = rs.getObject(rowFieldAlias);
+                    rowVal = _results.getObject(rowFieldIndex);
                     Map<Object, List<Object>> rowMap = crossTab.get(rowVal);
                     if (null == rowMap)
                     {
                         rowMap = new HashMap<Object, List<Object>>();
                         crossTab.put(rowVal, rowMap);
-                        if (null == colFieldAlias)
+                        if (0 == colFieldIndex)
                             rowMap.put(statCol, new ArrayList<Object>());
 
                         rowDatasets.put(rowVal, new ArrayList<Object>());
@@ -119,9 +120,9 @@ public class Crosstab
 
                     cellValues = null;
                     colDataset = null;
-                    if (null != colFieldAlias)
+                    if (0 != colFieldIndex)
                     {
-                        Object colVal = rs.getObject(colFieldAlias);
+                        Object colVal = _results.getObject(colFieldIndex);
                         cellValues = rowMap.get(colVal);
                         if (null == cellValues)
                         {
@@ -139,7 +140,7 @@ public class Crosstab
                     }
                 }
 
-                Object statFieldVal = rs.getObject(statFieldAlias);
+                Object statFieldVal = _results.getObject(statFieldIndex);
                 if (statFieldVal == null)
                 {
                     if (getStatType() == StatType.string)
@@ -155,13 +156,13 @@ public class Crosstab
                 Collections.sort(colHeaders, new GenericComparator());
 
                 grandTotalDataset.add(statFieldVal);
-                if (null != rowFieldAlias)
+                if (0 != rowFieldIndex)
                     rowDatasets.get(rowVal).add(statFieldVal);
             }
         }
         finally
         {
-            try { rs.close(); } catch (SQLException e) {}
+            ResultSetUtil.close(_results);
         }
     }
 

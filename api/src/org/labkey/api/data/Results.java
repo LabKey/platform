@@ -35,7 +35,7 @@ import java.util.Map;
  * Date: Nov 18, 2010
  * Time: 11:26:39 AM
  */
-public interface Results extends ResultSet
+public interface Results extends ResultSet, Table.TableResultSet
 {
     @NotNull
     Map<FieldKey, ColumnInfo> getFieldMap();
@@ -43,7 +43,11 @@ public interface Results extends ResultSet
     @Nullable
     ResultSet getResultSet();
 
+    boolean hasColumn(FieldKey key);
+
     int findColumn(FieldKey key) throws SQLException;
+
+    ColumnInfo findColumnInfo(FieldKey key) throws SQLException;
 
     String getString(FieldKey f)
             throws SQLException;

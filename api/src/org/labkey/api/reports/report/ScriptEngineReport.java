@@ -292,8 +292,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
 
     protected TSVGridWriter createGridWriter(Results r) throws SQLException
     {
-        ResultSet rs = r.getResultSet();
-        ResultSetMetaData md = rs.getMetaData();
+        ResultSetMetaData md = r.getMetaData();
         ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
         List<String> outputColumnNames = outputColumnNames(r);
         List<DisplayColumn> dataColumns = new ArrayList<DisplayColumn>();
@@ -302,7 +301,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
             int sqlColumn = i + 1;
             dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new ColumnInfo(md, sqlColumn)));
         }
-        TSVGridWriter tsv = new TSVGridWriter(rs, dataColumns);
+        TSVGridWriter tsv = new TSVGridWriter(r, dataColumns);
         tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
 
         return tsv;
