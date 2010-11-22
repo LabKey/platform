@@ -92,7 +92,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                     // we have enough PK values to uniquely identify the row
                     if (expr != null && pks.keySet().containsAll(table.getPkColumnNames()))
                     {
-                        Table.TableResultSet rs = null;
+                        Results rs = null;
                         try
                         {
                             SimpleFilter filter = new SimpleFilter();
@@ -104,7 +104,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                             if (rs.next())
                             {
                                 RenderContext ctx = new RenderContext(null);
-                                ctx.setResultSet(rs, selectCols);
+                                ctx.setResults(rs);
                                 ctx.setRow(rs.getRowMap());
                                 return new ActionURL(expr.eval(ctx));
                             }

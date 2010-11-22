@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
@@ -160,7 +161,7 @@ class DatasetWriter implements InternalStudyWriter
         {
             TableInfo ti = def.getTableInfo(ctx.getUser());
             Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false);
-            ResultSet rs = QueryService.get().select(ti, columns, null, null);
+            Results rs = QueryService.get().select(ti, columns, null, null);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);       // TODO: Add columns?
             tsvWriter.setApplyFormats(false);
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);

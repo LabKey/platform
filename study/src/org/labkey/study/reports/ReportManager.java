@@ -243,7 +243,7 @@ public class ReportManager implements StudyManager.DataSetListener
     }
 
 
-    public ResultSet getReportResultSet(ViewContext ctx, int datasetId, int visitRowId) throws ServletException, SQLException
+    public Results getReportResultSet(ViewContext ctx, int datasetId, int visitRowId) throws ServletException, SQLException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         DataSetDefinition def = study.getDataSet(datasetId);
@@ -284,7 +284,7 @@ public class ReportManager implements StudyManager.DataSetListener
         columns.add(tinfo.getColumn("SequenceNum"));
         columns.addAll(Arrays.asList(propertyColumns));
 
-        ResultSet rs;
+        Results rs;
         rs = Table.selectForDisplay(tinfo, columns, filter, null, 0, 0);
         return rs;
     }

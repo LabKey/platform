@@ -177,7 +177,7 @@ public class ExternalReport extends AbstractReport
             dataFile = File.createTempFile(getFilePrefix(), DATA_FILE_SUFFIX, getReportDir(viewContext));
             String dataFileName = dataFile.getName();
 
-            ResultSet rs;
+            Results rs;
             if (null == getQueryName())
                 rs = ReportManager.get().getReportResultSet(viewContext, getDatasetId(), getVisitRowId());
             else

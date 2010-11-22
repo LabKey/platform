@@ -57,6 +57,7 @@
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.collections.MultiValueMap" %>
+<%@ page import="org.labkey.api.data.Results" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -239,26 +240,25 @@
             TableInfo table = dataset.getTableInfo(user);
             Map<Double,Map<Object,Map>> seqKeyRowMap = new HashMap();
             String keyCol = dataset.getKeyPropertyName();
-            int rowCount = 0;
 
             if (!datasetSet.contains(datasetId))
                 continue;
             Map<FieldKey,ColumnInfo> allColumns = getQueryColumns(table);
             ColumnInfo sourceLsidColumn = allColumns.get(new FieldKey(null, "sourceLsid"));
-            rs = Table.select(table, allColumns.values(), filter, sort);
-            rowCount = ((CachedRowSetImpl)rs).getSize();
-            while (rs.next())
+            Results dsResults = Table.select(table, allColumns.values(), filter, sort);
+            int rowCount = dsResults.getSize();
+            while (dsResults.next())
             {
-                double sequenceNum = rs.getDouble("SequenceNum");
-                Object key = null==keyCol ? "" : rs.getObject(keyCol);
+                double sequenceNum = dsResults.getDouble("SequenceNum");
+                Object key = null==keyCol ? "" : dsResults.getObject(keyCol);
 
                 Map keyMap = seqKeyRowMap.get(sequenceNum);
                 if (null == keyMap)
                     seqKeyRowMap.put(sequenceNum, keyMap = new HashMap());
 
-                keyMap.put(key, ((CachedRowSetImpl)rs).getRowMap());
+                keyMap.put(key, dsResults.getRowMap());
             }
-            ResultSetUtil.close(rs);
+            ResultSetUtil.close(dsResults);
             if (rowCount == 0)
                 continue;
 

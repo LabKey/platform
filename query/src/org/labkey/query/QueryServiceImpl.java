@@ -889,10 +889,11 @@ public class QueryServiceImpl extends QueryService
 	}
 
 
-    public ResultSet select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
+    public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0);
-		return Table.executeQuery(table.getSchema(), sql);
+		ResultSet rs = Table.executeQuery(table.getSchema(), sql);
+        return new ResultsImpl(rs, columns);
     }
 
 

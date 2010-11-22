@@ -32,6 +32,7 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -929,9 +930,9 @@ public class SpecimenUtils
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcSite, type));
-        ResultSet rs = dr.getResultSet(ctx);
+        Results rs = dr.getResultSet(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
-        TSVGridWriter tsv = new TSVGridWriter(rs, ctx.getFieldMap(), cols);
+        TSVGridWriter tsv = new TSVGridWriter(rs, cols);
         tsv.setFilenamePrefix(getSpecimenListFileName(srcSite, destSite));
         tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
         return tsv;
@@ -948,7 +949,7 @@ public class SpecimenUtils
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcSite, type));
-        ResultSet rs = dr.getResultSet(ctx);
+        Results rs = dr.getResultSet(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
         ExcelWriter xl = new ExcelWriter(rs, cols);
         xl.setFilenamePrefix(getSpecimenListFileName(srcSite, destSite));

@@ -3675,7 +3675,7 @@ public class StudyController extends BaseStudyController
             ctx.setContainer(getContainer());
             ctx.setBaseFilter(filter);
 
-            ResultSet rs = dr.getResultSet(ctx);
+            Results rs = dr.getResultSet(ctx);
             List<DisplayColumn> cols = dr.getDisplayColumns();
             ExcelWriter xl = new ExcelWriter(rs, cols);
             xl.write(response);
