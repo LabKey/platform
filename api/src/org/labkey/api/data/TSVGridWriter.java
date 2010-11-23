@@ -117,7 +117,7 @@ public class TSVGridWriter extends TSVWriter
 
     public Map<FieldKey, ColumnInfo> getFieldMap()
     {
-        return _rs.getFieldMap();
+        return null==_rs ? null : _rs.getFieldMap();
     }
 
 
