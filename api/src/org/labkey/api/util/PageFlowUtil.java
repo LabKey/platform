@@ -2207,14 +2207,6 @@ public class PageFlowUtil
     //  From PFUtil
     //
 
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    static public ActionURL urlFor(Enum action, Container container)
-    {
-        String pageFlowName = ModuleLoader.getInstance().getPageFlowForPackage(action.getClass().getPackage());
-        return new ActionURL(pageFlowName, action.toString(), container);
-    }
-
     /**
      * Returns a specified <code>UrlProvider</code> interface implementation, for use
      * in writing URLs implemented in other modules.

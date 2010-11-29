@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.*;
 import org.labkey.api.study.TimepointType;

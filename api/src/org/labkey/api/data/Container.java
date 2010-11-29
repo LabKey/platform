@@ -277,15 +277,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private Set<Class<? extends Permission>> getPermissionsForIntPerm(int perm)
     {
         Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
-        if((perm & ACL.PERM_READ) > 0 || (perm & ACL.PERM_READOWN) > 0)
+        if ((perm & ACL.PERM_READ) > 0 || (perm & ACL.PERM_READOWN) > 0)
             perms.add(ReadPermission.class);
-        if((perm & ACL.PERM_INSERT) > 0)
+        if ((perm & ACL.PERM_INSERT) > 0)
             perms.add(InsertPermission.class);
-        if((perm & ACL.PERM_UPDATE) > 0 || (perm & ACL.PERM_UPDATEOWN) > 0)
+        if ((perm & ACL.PERM_UPDATE) > 0 || (perm & ACL.PERM_UPDATEOWN) > 0)
             perms.add(UpdatePermission.class);
-        if((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETEOWN) > 0)
+        if ((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETEOWN) > 0)
             perms.add(DeletePermission.class);
-        if((perm & ACL.PERM_ADMIN) > 0)
+        if ((perm & ACL.PERM_ADMIN) > 0)
             perms.add(AdminPermission.class);
 
         return perms;
@@ -330,12 +330,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return false;
 
         String name = _path.getName();
-        if(name.length() == 0)
+        if (name.length() == 0)
             return true; // Um, I guess we should display it?
         char c = name.charAt(0);
         if (c == '_' || c == '.')
         {
-            return user != null && (user.isAdministrator() || this.hasPermission(user, AdminPermission.class));
+            return user != null && (user.isAdministrator() || hasPermission(user, AdminPermission.class));
         }
         else
         {
@@ -411,7 +411,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             for(Report report : reports)
             {
                 SecurityPolicy policy = SecurityManager.getPolicy(report.getDescriptor());
-                if(policy.hasPermission(user, AdminPermission.class))
+                if (policy.hasPermission(user, AdminPermission.class))
                     ret.add(report.getDescriptor());
             }
         }
@@ -422,10 +422,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         //add pipeline root
         PipeRoot root = PipelineService.get().findPipelineRoot(this);
-        if(null != root)
+        if (null != root)
         {
             SecurityPolicy policy = SecurityManager.getPolicy(root);
-            if(policy.hasPermission(user, AdminPermission.class))
+            if (policy.hasPermission(user, AdminPermission.class))
                 ret.add(root);
         }
 
@@ -452,10 +452,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @Nullable
     public SecurableResource findSecurableResource(String resourceId, User user)
     {
-        if(null == resourceId)
+        if (null == resourceId)
             return null;
 
-        if(this.getResourceId().equals(resourceId))
+        if (getResourceId().equals(resourceId))
             return this;
 
         //recurse down all non-container resources
@@ -467,11 +467,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         for(Container child : getChildren())
         {
             //only look in child containers where the user has read perm
-            if(child.hasPermission(user, ReadPermission.class))
+            if (child.hasPermission(user, ReadPermission.class))
             {
                 resource = child.findSecurableResource(resourceId, user);
 
-                if(null != resource)
+                if (null != resource)
                     return resource;
             }
         }
@@ -600,7 +600,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 if (defaultModuleName.compareToIgnoreCase("Portal") == 0)
                 {
                     Set<Module> modules = new HashSet<Module>(getActiveModules());
-                    if(!modules.contains(defaultModule))
+                    if (!modules.contains(defaultModule))
                     {
                         modules.add(defaultModule);
                         setActiveModules(modules);
@@ -631,6 +631,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (folderType.equals(oldType))
             return;
 
+        _log.info("Setting folder type of " + System.identityHashCode(this) + " to " + folderType.getName());
         oldType.unconfigureContainer(this);
         folderType.configureContainer(this);
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), FOLDER_TYPE_PROPERTY_SET_NAME, true);
@@ -651,6 +652,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (null != name)
         {
             _folderType = ModuleLoader.getInstance().getFolderType(name);
+
             if (null == _folderType)
             {
                 // If we're upgrading then folder types won't be defined yet... don't warn in that case.
@@ -683,14 +685,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-
     public void setActiveModules(Set<Module> modules) throws SQLException
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), "activeModules", true);
         props.clear();
         for (Module module : modules)
         {
-            if(null != module)
+            if (null != module)
                 props.put(module.getName(), Boolean.TRUE.toString());
         }
         PropertyManager.saveProperties(props);
@@ -716,13 +717,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         {
             Portal.saveParts(getId(), partList.toArray(new Portal.WebPart[partList.size()]));
         }
-    }
-
-    @Deprecated
-    public ActionURL urlFor(Enum action)
-    {
-        //noinspection deprecation
-        return PageFlowUtil.urlFor(action, this);
     }
 
     // UNDONE: (MAB) getActiveModules() and setActiveModules()
@@ -804,7 +798,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     {
                         //set the default module for the subfolder to be the default module of the parent.
                         Module parentDefault = getParent().getDefaultModule();
-                        if(module.equals(parentDefault))
+
+                        if (module.equals(parentDefault))
                             setDefaultModule(module);
 
                         propsWritable.put(module.getName(), Boolean.TRUE.toString());
@@ -852,7 +847,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (null == container)
             return false;
 
-        Container cur = this.getParent();
+        Container cur = getParent();
         while (null != cur)
         {
             if (cur.equals(container))

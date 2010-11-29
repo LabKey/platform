@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;

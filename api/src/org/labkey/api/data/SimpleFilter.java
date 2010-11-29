@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.CompareType.CompareClause;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;

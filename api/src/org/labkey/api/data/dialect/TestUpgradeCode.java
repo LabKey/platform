@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 LabKey Corporation
+ * Copyright (c) 2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.query;
 
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.JspView;
+package org.labkey.api.data.dialect;
 
-/**
- * User: adam
- * Date: Jan 27, 2009
- * Time: 2:34:48 PM
- */
-public class RExportScriptFactory implements ExportScriptFactory
+import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.module.ModuleContext;
+
+public class TestUpgradeCode implements UpgradeCode
 {
-    public String getScriptType()
+    private int _counter = 0;
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void upgradeCode(ModuleContext moduleContext)
     {
-        return "r";
+        _counter++;
     }
 
-    public String getMenuText()
+    public int getCounter()
     {
-        return "R";
-    }
-
-    public WebPartView getView(QueryView queryView)
-    {
-        return new JspView<RExportScriptModel>("/org/labkey/api/query/exportRScript.jsp", new RExportScriptModel(queryView));
+        return _counter;
     }
 }
-
-

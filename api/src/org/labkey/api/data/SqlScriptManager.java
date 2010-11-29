@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.module.ModuleContext;
 

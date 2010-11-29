@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.data.dialect.SqlDialect;
+
 /**
  * Created by IntelliJ IDEA.
  * User: arauch

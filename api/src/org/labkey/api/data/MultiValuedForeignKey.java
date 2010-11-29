@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 

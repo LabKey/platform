@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
@@ -42,7 +43,7 @@ abstract public class AbstractSchema implements QuerySchema
         return _dbSchema;
     }
 
-    public QuerySchema getSchema(String name)
+    public @Nullable QuerySchema getSchema(String name)
     {
         return null;
     }

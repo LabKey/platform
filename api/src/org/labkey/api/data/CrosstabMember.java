@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.view.ActionURL;

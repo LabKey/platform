@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.data.dialect.SqlDialect;
+
 /**
  * User: arauch
  * Date: Sep 24, 2005

@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;

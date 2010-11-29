@@ -128,7 +128,7 @@ public class QueryProfiler
     {
     }
 
-    static void track(String sql, long elapsed)
+    public static void track(String sql, long elapsed)
     {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         boolean isRequestThread = ViewServlet.isRequestThread();

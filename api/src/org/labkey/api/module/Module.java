@@ -15,12 +15,11 @@
  */
 package org.labkey.api.module;
 
-import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;

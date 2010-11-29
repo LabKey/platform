@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ShutdownListener;

@@ -19,7 +19,7 @@ package org.labkey.api.query;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
 
 import java.util.Collection;

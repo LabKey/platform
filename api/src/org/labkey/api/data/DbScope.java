@@ -18,10 +18,13 @@ package org.labkey.api.data;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.MemTracker;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -93,7 +96,8 @@ public class DbScope
 
             try
             {
-                _dialect = SqlDialect.getFromMetaData(dbmd);
+                _dialect = SqlDialectManager.getFromMetaData(dbmd);
+                assert MemTracker.remove(_dialect);
             }
             finally
             {
@@ -617,7 +621,7 @@ public class DbScope
         // 2) get the name of the "master" database
         //
         // Only way to get the right dialect is to look up based on the driver class name.
-        SqlDialect dialect = SqlDialect.getFromDataSourceProperties(props);
+        SqlDialect dialect = SqlDialectManager.getFromDataSourceProperties(props);
 
         SQLException lastException = null;
 
@@ -700,7 +704,7 @@ public class DbScope
         {
             conn = DriverManager.getConnection(masterUrl, props.getUsername(), props.getPassword());
             // get version specific dialect
-            dialect = SqlDialect.getFromMetaData(conn.getMetaData());
+            dialect = SqlDialectManager.getFromMetaData(conn.getMetaData());
             createSql = dialect.getCreateDatabaseSql(dbName);
             stmt = conn.prepareStatement(createSql);
             stmt.execute();

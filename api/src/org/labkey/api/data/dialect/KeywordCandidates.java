@@ -1,4 +1,4 @@
-package org.labkey.api.data;
+package org.labkey.api.data.dialect;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.Sets;

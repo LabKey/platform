@@ -14,20 +14,27 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data;
+package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableChange;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SystemMaintenance;
 
 import javax.servlet.ServletException;
@@ -35,7 +42,6 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,11 +51,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,35 +63,42 @@ import java.util.regex.Pattern;
  * Time: 8:58:25 AM
  */
 
-// Isolate the big SQL differences between database servers
+// Isolate the big SQL differences between database servers. A new SqlDialect instance is created for each DbScope; the
 public abstract class SqlDialect
 {
-    protected static final Logger _log = Logger.getLogger(SqlDialect.class);
-    private static List<SqlDialect> _dialects = new CopyOnWriteArrayList<SqlDialect>();
+    private static final Logger _log = Logger.getLogger(SqlDialect.class);
+    private static final Pattern s_patStringLiteral = Pattern.compile("\\'([^\\']|(\'\'))*\\'");
+    private static final Pattern s_patQuotedIdentifier = Pattern.compile("\\\"([^\\\"]|(\\\"\\\"))*\\\"");
+    private static final Pattern s_patParameter = Pattern.compile("\\?");
 
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
-    public static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
-    protected Set<String> reservedWordSet = Sets.newCaseInsensitiveHashSet();
-    private Map<String, Integer> sqlTypeNameMap = new CaseInsensitiveHashMap<Integer>();
-    private Map<Integer, String> sqlTypeIntMap = new HashMap<Integer, String>();
+    protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
 
-    static final private Pattern s_patStringLiteral = Pattern.compile("\\'([^\\']|(\'\'))*\\'");
-    static final private Pattern s_patQuotedIdentifier = Pattern.compile("\\\"([^\\\"]|(\\\"\\\"))*\\\"");
-    static final private Pattern s_patParameter = Pattern.compile("\\?");
+    protected final Set<String> reservedWordSet = Sets.newCaseInsensitiveHashSet();
+    @Deprecated
+    protected final Set<String> oldReservedWordSet = Sets.newCaseInsensitiveHashSet();
 
-    public static void register(SqlDialect dialect)
+    private final Map<String, Integer> sqlTypeNameMap = new CaseInsensitiveHashMap<Integer>();
+    private final Map<Integer, String> sqlTypeIntMap = new HashMap<Integer, String>();
+
+    protected SqlDialect()
     {
-        _dialects.add(dialect);
+        initializeSqlTypeNameMap();
+        initializeSqlTypeIntMap();
+        assert MemTracker.put(this);
     }
+
 
     protected String getOtherDatabaseThreads()
     {
         StringBuilder sb = new StringBuilder();
+
         for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet())
         {
             Thread thread = entry.getKey();
             // Dump out any thread that was talking to the database
             Set<Integer> spids = ConnectionWrapper.getSPIDsForThread(thread);
+
             if (!spids.isEmpty())
             {
                 if (sb.length() == 0)
@@ -98,10 +109,12 @@ public abstract class SqlDialect
                 {
                     sb.append("\n");
                 }
+
                 sb.append(thread.getName());
                 sb.append(", SPIDs = ");
                 sb.append(spids);
                 sb.append("\n");
+
                 for (StackTraceElement stackTraceElement : entry.getValue())
                 {
                     sb.append("\t");
@@ -110,6 +123,7 @@ public abstract class SqlDialect
                 }
             }
         }
+
         return sb.length() > 0 ? sb.toString() : "No other threads with active database connections to report.";
     }
 
@@ -118,65 +132,6 @@ public abstract class SqlDialect
     static
     {
         SystemMaintenance.addTask(new DatabaseMaintenanceTask());
-    }
-
-
-    private static class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
-    {
-        public String getMaintenanceTaskName()
-        {
-            return "Database maintenance";
-        }
-
-        public void run()
-        {
-            DbScope scope = DbScope.getLabkeyScope();
-
-            Connection conn = null;
-            String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
-            DataSource ds = scope.getDataSource();
-
-            String url = null;
-
-            try
-            {
-                DataSourceProperties props = new DataSourceProperties(scope.getDataSourceName(), ds);
-                url = props.getUrl();
-                _log.info("Database maintenance on " + url + " started");
-            }
-            catch (Exception e)
-            {
-                // Shouldn't happen, but we can survive without the url
-                _log.error("Exception retrieving url", e);
-            }
-
-            try
-            {
-                if (null != sql)
-                {
-                    conn = scope.getConnection();
-                    Table.execute(conn, sql, null);
-                }
-            }
-            catch(SQLException e)
-            {
-                // Nothing to do here... table layer will log any errors
-            }
-            finally
-            {
-                if (null != conn) scope.releaseConnection(conn);
-            }
-
-            if (null != url)
-                _log.info("Database maintenance on " + url + " complete");
-        }
-    }
-
-
-    protected SqlDialect()
-    {
-        initializeSqlTypeNameMap();
-        initializeSqlTypeIntMap();
     }
 
 
@@ -276,81 +231,6 @@ public abstract class SqlDialect
     }
 
 
-    public static class SqlDialectNotSupportedException extends ConfigurationException
-    {
-        private SqlDialectNotSupportedException(String advice)
-        {
-            super("JDBC database driver is not supported.", advice);
-        }
-    }
-
-
-    public static class DatabaseNotSupportedException extends ConfigurationException
-    {
-        public DatabaseNotSupportedException(String message)
-        {
-            super(message);
-        }
-    }
-
-
-    /**
-     * Getting the SqlDialect from the driver class name won't return the version
-     * specific dialect -- use getFromMetaData() if possible.
-     * @param props
-     * @return SqlDialect
-     */
-    public static SqlDialect getFromDataSourceProperties(DataSourceProperties props) throws ServletException
-    {
-        String driverClassName = props.getDriverClassName();
-
-        for (SqlDialect dialect : _dialects)
-            if (dialect.claimsDriverClassName(driverClassName))
-                return dialect;
-
-        throw new SqlDialectNotSupportedException("The database driver \"" + props.getDriverClassName() + "\" specified in data source \"" + props.getDataSourceName() + "\" is not supported in your installation.");
-    }
-
-
-    public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
-    {
-        // SAS/SHARE drivers throw when requesting database version, so catch and set to 0
-
-        int databaseMajorVersion;
-
-        try
-        {
-            databaseMajorVersion = md.getDatabaseMajorVersion();
-        }
-        catch (SQLException e)
-        {
-            databaseMajorVersion = 0;
-        }
-
-        int databaseMinorVersion;
-
-        try
-        {
-            databaseMinorVersion = md.getDatabaseMinorVersion();
-        }
-        catch (SQLException e)
-        {
-            databaseMinorVersion = 0;
-        }
-
-        return getFromProductName(md.getDatabaseProductName(), databaseMajorVersion, databaseMinorVersion, md.getDriverVersion(), true);
-    }
-
-
-    private static SqlDialect getFromProductName(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
-    {
-        for (SqlDialect dialect : _dialects)
-            if (dialect.claimsProductNameAndVersion(dataBaseProductName, databaseMajorVersion, databaseMinorVersion, jdbcDriverVersion, logWarnings))
-                return dialect;
-
-        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + databaseMajorVersion + "." + databaseMinorVersion + " -- is not supported by your LabKey installation.");
-    }
-
     /**
      * @return any additional information that should be sent to the mothership in the case of a SQLException
      */
@@ -367,18 +247,13 @@ public abstract class SqlDialect
         return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
     }
 
-    protected abstract boolean claimsDriverClassName(String driverClassName);
-
-    // Implementation should throw only if it's responsible for the specified database server but doesn't support the specified version
-    protected abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException;
-
     // Do dialect-specific work after schema load
     public abstract void prepareNewDbSchema(DbSchema schema);
 
-    // Do dialect-specific work for this data source (nothing by default)
+    // Do dialect-specific work for this data source
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {
-        reservedWordSet = getKeywords(scope);
+        reservedWordSet.addAll(getKeywords(scope));
 
         assert KeywordCandidates.get().containsAll(reservedWordSet, getProductName());
     }
@@ -390,9 +265,12 @@ public abstract class SqlDialect
         try
         {
             conn = scope.getConnection();
-            String keywords = conn.getMetaData().getSQLKeywords();
-            Set<String> keywordSet = Sets.newCaseInsensitiveHashSet(new CsvSet(keywords));
+            Set<String> keywordSet = Sets.newCaseInsensitiveHashSet();
             keywordSet.addAll(KeywordCandidates.get().getSql2003Keywords());
+            String keywords = conn.getMetaData().getSQLKeywords();
+
+            if (!keywords.isEmpty())
+                keywordSet.addAll(new CsvSet(keywords));
 
             return keywordSet;
         }
@@ -728,36 +606,6 @@ public abstract class SqlDialect
 
     public abstract JdbcHelper getJdbcHelper();
 
-    public static interface JdbcHelper
-    {
-        public String getDatabase(String url) throws ServletException;
-    }
-
-    public static class StandardJdbcHelper implements JdbcHelper
-    {
-        private final String _prefix;
-
-        public StandardJdbcHelper(String prefix)
-        {
-            _prefix = prefix;
-        }
-
-        @Override
-        public String getDatabase(String url) throws ServletException
-        {
-            if (!url.startsWith(_prefix))
-                throw new ServletException("Unsupported connection url: " + url);
-
-            int dbEnd = url.indexOf('?');
-            if (-1 == dbEnd)
-                dbEnd = url.length();
-            int dbDelimiter = url.lastIndexOf('/', dbEnd);
-            if (-1 == dbDelimiter)
-                dbDelimiter = url.lastIndexOf(':', dbEnd);
-            return url.substring(dbDelimiter + 1, dbEnd);
-        }
-    }
-
     /**
      * Drop a schema if it exists.
      * Throws an exception if schema exists, and could not be dropped. 
@@ -920,112 +768,15 @@ public abstract class SqlDialect
     }
 
 
-    // Handles standard reading of column meta data
-    public static abstract class ColumnMetaDataReader
-    {
-        protected final ResultSet _rsCols;
-        protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey;
-
-        public ColumnMetaDataReader(ResultSet rsCols)
-        {
-            _rsCols = rsCols;
-        }
-
-        public String getName() throws SQLException
-        {
-            return _rsCols.getString(_nameKey);
-        }
-
-        public int getSqlType() throws SQLException
-        {
-            int sqlType = _rsCols.getInt(_sqlTypeKey);
-
-            if (Types.OTHER == sqlType)
-                return Types.NULL;
-            else
-                return sqlType;
-        }
-
-        public String getSqlTypeName() throws SQLException
-        {
-            return _rsCols.getString(_sqlTypeNameKey);
-        }
-
-        public int getScale() throws SQLException
-        {
-            // TODO: Use type int instead?
-            String typeName = getSqlTypeName();
-
-            if (typeName.equalsIgnoreCase("ntext") || typeName.equalsIgnoreCase("text"))
-                return 0x7FFF;
-            else
-                return _rsCols.getInt(_scaleKey);
-        }
-
-        public boolean isNullable() throws SQLException
-        {
-            return _rsCols.getInt(_nullableKey) == 1;
-        }
-
-        public int getPosition() throws SQLException
-        {
-            return _rsCols.getInt(_postionKey);
-        }
-
-        public abstract boolean isAutoIncrement() throws SQLException;
-
-        public @Nullable String getLabel() throws SQLException
-        {
-            return null;
-        }
-
-        public @Nullable String getDescription() throws SQLException
-        {
-            // Default is to put REMARKS into description.  Note: SQL Server has "remarks" column, but it's always empty??
-            return StringUtils.trimToNull(_rsCols.getString("REMARKS"));
-        }
-
-        public @Nullable String getDatabaseFormat() throws SQLException
-        {
-            return null;
-        }
-    }
-
-
-    // Handles standard reading of pk meta data
-    public static class PkMetaDataReader
-    {
-        private final ResultSet _rsCols;
-        private final String _nameKey, _seqKey;
-
-        public PkMetaDataReader(ResultSet rsCols, String nameKey, String seqKey)
-        {
-            _rsCols = rsCols;
-            _nameKey = nameKey;
-            _seqKey = seqKey;
-        }
-
-        public String getName() throws SQLException
-        {
-            return _rsCols.getString(_nameKey);
-        }
-
-        public int getKeySeq() throws SQLException
-        {
-            return _rsCols.getInt(_seqKey);
-        }
-    }
-
-
     // All statement creation passes through these two methods.  We return our standard statement wrappers in most
     // cases, but dialects can return their own subclasses of StatementWrapper to work around JDBC driver bugs.
-    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
+    public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
     {
         return new StatementWrapper(conn, stmt);
     }
 
 
-    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+    public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
         return new StatementWrapper(conn, stmt, sql);
     }
@@ -1084,84 +835,4 @@ public abstract class SqlDialect
     public abstract boolean isPostgreSQL();
     public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
-
-    // Note: Tests must be safe to invoke on servers that can't connect to any datasources matching the dialect or
-    // don't even have the JDBC driver installed.
-    public abstract Collection<? extends Class> getJUnitTests();
-
-
-    public static Collection<? extends Class> getAllJUnitTests()
-    {
-        Set<Class> classes = new HashSet<Class>();
-
-        for (SqlDialect dialect : _dialects)
-            classes.addAll(dialect.getJUnitTests());
-
-        return classes;
-    }
-
-
-    public static class TestUpgradeCode implements UpgradeCode
-    {
-        private int _counter = 0;
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void upgradeCode(ModuleContext moduleContext)
-        {
-            _counter++;
-        }
-
-        public int getCounter()
-        {
-            return _counter;
-        }
-    }
-
-
-    protected static abstract class AbstractDialectRetrievalTestCase extends Assert
-    {
-        @Test
-        public abstract void testDialectRetrieval();
-
-        protected void good(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, Class<? extends SqlDialect> expectedDialectClass)
-        {
-            testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, expectedDialectClass, null);
-        }
-
-        protected void badProductName(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion)
-        {
-            testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, null, SqlDialectNotSupportedException.class);
-        }
-
-        protected void badVersion(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion)
-        {
-            testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, null, DatabaseNotSupportedException.class);
-        }
-
-        private void testRange(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
-        {
-            int begin = (int)Math.round(beginVersion * 10);
-            int end = (int)Math.round(endVersion * 10);
-
-            for (int i = begin; i < end; i++)
-            {
-                int majorVersion = i / 10;
-                int minorVersion = i % 10;
-
-                String description = databaseName + " version " + majorVersion + "." + minorVersion;
-
-                try
-                {
-                    SqlDialect dialect = getFromProductName(databaseName, majorVersion, minorVersion, jdbcDriverVersion, false);
-                    assertNotNull(description + " returned " + dialect.getClass().getSimpleName() + "; expected failure", expectedDialectClass);
-                    assertEquals(description + " returned " + dialect.getClass().getSimpleName() + "; expected " + expectedDialectClass.getSimpleName(), dialect.getClass(), expectedDialectClass);
-                }
-                catch (Exception e)
-                {
-                    assertTrue(description + " failed; expected success", null == expectedDialectClass);
-                    assertEquals(description + " resulted in a " + e.getClass().getSimpleName() + "; expected " + expectedExceptionClass, e.getClass(), expectedExceptionClass);
-                }
-            }
-        }
-    }
 }

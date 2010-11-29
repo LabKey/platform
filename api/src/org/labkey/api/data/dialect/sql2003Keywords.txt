@@ -55,7 +55,7 @@ current_time
 current_timestamp
 current_user
 cursor
-#date  // TODO: re-enable once ColumnInfo.getSelectName() is fixed
+date
 day
 deallocate
 dec

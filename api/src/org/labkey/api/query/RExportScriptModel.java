@@ -25,9 +25,9 @@ import java.util.List;
 * Date: Aug 13, 2008
 * Time: 1:21:48 PM
 */
-public class ExportRScriptModel extends ExportScriptModel
+public class RExportScriptModel extends ExportScriptModel
 {
-    public ExportRScriptModel(QueryView view)
+    public RExportScriptModel(QueryView view)
     {
         super(view);
     }

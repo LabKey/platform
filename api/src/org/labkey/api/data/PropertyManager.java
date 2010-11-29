@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;

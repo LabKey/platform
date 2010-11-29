@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
@@ -23,7 +24,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.search.SearchService;
@@ -37,8 +37,6 @@ import java.io.FileNotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
-
-import junit.framework.TestCase;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

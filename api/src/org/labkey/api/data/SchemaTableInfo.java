@@ -23,6 +23,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.*;
@@ -457,7 +459,7 @@ public class SchemaTableInfo implements TableInfo
         // Use TreeMap to order columns by keySeq
         Map<Integer, String> pkMap = new TreeMap<Integer, String>();
         int columnCount = 0;
-        SqlDialect.PkMetaDataReader reader = getSqlDialect().getPkMetaDataReader(rs);
+        PkMetaDataReader reader = getSqlDialect().getPkMetaDataReader(rs);
 
         try
         {

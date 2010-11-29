@@ -15,8 +15,8 @@
  */
 package org.labkey.api.exp;
 
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;

@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.DateUtil;
 
@@ -261,7 +262,7 @@ public class SQLFragment
         return this;
     }
 
-    protected CharSequence getSqlCharSequence()
+    public CharSequence getSqlCharSequence()
     {
         if (null != sb)
         {

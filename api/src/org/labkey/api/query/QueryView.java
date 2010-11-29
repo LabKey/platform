@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;

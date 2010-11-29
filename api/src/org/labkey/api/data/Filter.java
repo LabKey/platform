@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.data.dialect.SqlDialect;
+
 import java.util.Set;
 import java.util.Map;
 import java.util.List;

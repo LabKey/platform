@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.data.*;
@@ -30,16 +31,16 @@ final public class DefaultSchema extends AbstractSchema
 {
     static public abstract class SchemaProvider
     {
-        abstract public QuerySchema getSchema(DefaultSchema schema);
+        abstract public @Nullable QuerySchema getSchema(DefaultSchema schema);
     }
-    static final Map<String, SchemaProvider> _providers = Collections.synchronizedMap(new CaseInsensitiveHashMap<SchemaProvider>());
+
+    private static final Map<String, SchemaProvider> _providers = Collections.synchronizedMap(new CaseInsensitiveHashMap<SchemaProvider>());
 
     static public void registerProvider(String name, SchemaProvider provider)
     {
         _providers.put(name, provider);
     }
 
-    final Map<String, QuerySchema> _schemas;
     static
     {
         registerProvider("Folder", new FolderSchemaProvider()
@@ -74,7 +75,6 @@ final public class DefaultSchema extends AbstractSchema
     private DefaultSchema(User user, Container container)
     {
         super(CoreSchema.getInstance().getSchema(), user, container);
-        _schemas = new CaseInsensitiveHashMap<QuerySchema>();       // TODO: Nothing ever gets put in this map!
     }
 
     public TableInfo getTable(String name)
@@ -84,9 +84,6 @@ final public class DefaultSchema extends AbstractSchema
 
     public QuerySchema getSchema(String name)
     {
-        QuerySchema ret = _schemas.get(name);
-        if (ret != null)
-            return ret;
         SchemaProvider provider = _providers.get(name);
 
         if (provider == null && name != null && name.startsWith("/"))
@@ -102,12 +99,20 @@ final public class DefaultSchema extends AbstractSchema
         {
             return QueryService.get().getExternalSchema(this, name);
         }
+
         return provider.getSchema(this);
     }
 
     public Set<String> getSchemaNames()
     {
-        Set<String> ret = new TreeSet<String>(_providers.keySet());
+        Set<String> ret;
+
+        // Must sychronize when (implicitly) iterating keys
+        synchronized (_providers)
+        {
+            ret = new TreeSet<String>(_providers.keySet());
+        }
+
         ret.addAll(QueryService.get().getExternalSchemas(this).keySet());
         return Collections.unmodifiableSet(ret);
     }

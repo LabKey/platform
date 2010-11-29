@@ -614,6 +614,7 @@ raiserror
 range
 rank
 read
+read_only
 read_write
 reads
 readtext
@@ -893,6 +894,7 @@ work
 wrapper
 write
 writetext
+x509
 xml
 xmlagg
 xmlattributes

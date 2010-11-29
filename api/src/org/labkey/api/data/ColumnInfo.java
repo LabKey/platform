@@ -22,6 +22,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
@@ -345,7 +347,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (selectName == null)
         {
-            selectName = getSqlDialect().getColumnSelectName(getAlias());
+            if (null == getMetaDataName())
+                selectName = getSqlDialect().getColumnSelectName(getName());
+            else
+                selectName = getSqlDialect().getColumnSelectName(getMetaDataName());
         }
         return selectName;
     }
@@ -1104,7 +1109,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         else
             rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);
 
-        SqlDialect.ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols, parentTable.getSchema().getScope());
+        ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols, parentTable.getSchema().getScope());
 
         while (rsCols.next())
         {

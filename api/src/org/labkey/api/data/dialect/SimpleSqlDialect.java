@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.data;
+package org.labkey.api.data.dialect;
 
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableChange;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -35,12 +40,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
 {
     // The following methods must be implemented by all dialects.  Standard implementations are provided; override them
     // if your dialect requires it.
-
-    @Override
-    public Collection<? extends Class> getJUnitTests()
-    {
-        return Collections.emptyList();
-    }
 
     @Override
     public boolean isSqlServer()
@@ -301,12 +300,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     // The following methods should never be called on a simple dialect.
-
-    @Override
-    protected boolean claimsDriverClassName(String driverClassName)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
 
     @Override
     public String getSQLScriptPath()

@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data;
+package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.QueryProfiler;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;

@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,15 +78,19 @@ public interface ListDefinition extends Comparable<ListDefinition>
                     return PropertyType.STRING;
                 }
             };
+
         final String label;
+
         KeyType(String label)
         {
             this.label = label;
         }
+
         public String getLabel()
         {
             return label;
         }
+
         public Object convertKey(Object key)
         {
             try
@@ -191,14 +196,12 @@ public interface ListDefinition extends Comparable<ListDefinition>
     TableInfo getTable(User user);
 
     ActionURL urlShowDefinition();
-    ActionURL urlEditDefinition();
-
     ActionURL urlUpdate(Object pk, URLHelper returnUrl);
     ActionURL urlDetails(Object pk);
     ActionURL urlShowData();
     ActionURL urlShowHistory();
 
-    ActionURL urlFor(Enum action);
+    ActionURL urlFor(Class<? extends Controller> actionClass);
 
     DiscussionSetting getDiscussionSetting();
     void setDiscussionSetting(DiscussionSetting discussionSetting);

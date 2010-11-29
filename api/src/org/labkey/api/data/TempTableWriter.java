@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.Loader;
 

@@ -26,7 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
@@ -80,7 +80,7 @@ public abstract class DefaultModule implements Module
     public static final String CORE_MODULE_NAME = "Core";
 
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
-    private static final Set<Pair<Class,String>> INSTANTIATED_MODULES = new HashSet<Pair<Class, String>>();
+    private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<Pair<Class, String>>();
 
     protected static final FilenameFilter rReportFilter = new FilenameFilter(){
         public boolean accept(File dir, String name)
@@ -608,8 +608,8 @@ public abstract class DefaultModule implements Module
             List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
             for(File file : keyDir.listFiles(rReportFilter))
             {
-                ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor) REPORT_DESCRIPTOR_CACHE.get(file.getAbsolutePath());
-                if(null == descriptor || descriptor.isStale())
+                ModuleRReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getAbsolutePath());
+                if (null == descriptor || descriptor.isStale())
                 {
                     descriptor = createReportDescriptor(key, file);
                     REPORT_DESCRIPTOR_CACHE.put(file.getAbsolutePath(), descriptor);

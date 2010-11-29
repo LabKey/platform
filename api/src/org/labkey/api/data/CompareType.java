@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.queryCustomView.OperatorType;
