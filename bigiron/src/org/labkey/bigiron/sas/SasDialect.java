@@ -19,8 +19,9 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleSqlDialect;
-import org.labkey.api.data.StatementWrapper;
+import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.SimpleSqlDialect;
+import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
@@ -40,12 +41,11 @@ import java.util.Set;
  * Date: Jan 21, 2009
  * Time: 3:15:40 PM
  */
-public abstract class SqlDialectSas extends SimpleSqlDialect
+public abstract class SasDialect extends SimpleSqlDialect
 {
-    public SqlDialectSas()
+    public SasDialect()
     {
-        // TODO: Add more keywords
-        reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
+        oldReservedWordSet.addAll(PageFlowUtil.set(
             "LEFT", "RIGHT"
         ));
     }
@@ -70,11 +70,6 @@ public abstract class SqlDialectSas extends SimpleSqlDialect
         sqlTypeIntMap.put(Types.VARCHAR, "VARCHAR");
         sqlTypeIntMap.put(Types.DATE, "DATE");
         sqlTypeIntMap.put(Types.DOUBLE, "DOUBLE");
-    }
-
-    protected boolean claimsDriverClassName(String driverClassName)
-    {
-        return driverClassName.equals("com.sas.net.sharenet.ShareNetDriver");
     }
 
     public boolean requiresStatementMaxRows()
@@ -176,13 +171,13 @@ public abstract class SqlDialectSas extends SimpleSqlDialect
     }
 
     @Override
-    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
+    public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
     {
         return new SasStatementWrapper(conn, stmt);
     }
 
     @Override
-    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+    public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
         return new SasStatementWrapper(conn, stmt, sql);
     }

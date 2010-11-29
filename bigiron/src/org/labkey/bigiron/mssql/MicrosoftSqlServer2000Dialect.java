@@ -17,20 +17,22 @@
 package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.SqlScriptParser;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.PageFlowUtil;
@@ -42,7 +44,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -57,34 +58,29 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for Microsoft SQL Server
-public class SqlDialectMicrosoftSQLServer extends SqlDialect
+public class MicrosoftSqlServer2000Dialect extends SqlDialect
 {
-    private static final SqlDialect INSTANCE = new SqlDialectMicrosoftSQLServer();
+    private static final Logger _log = Logger.getLogger(MicrosoftSqlServer2000Dialect.class);
 
-    public static SqlDialect get()
+    protected MicrosoftSqlServer2000Dialect()
     {
-        return INSTANCE;
-    }
-
-    protected SqlDialectMicrosoftSQLServer()
-    {
-        reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
-                "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK", "BROWSE", "BULK",
-                "BY", "CASCADE", "CASE", "CHECK", "CHECKPOINT", "CLOSE", "CLUSTERED", "COALESCE", "COLLATE", "COLUMN", "COMMIT", "COMPUTE",
-                "CONSTRAINT", "CONTAINS", "CONTAINSTABLE", "CONTINUE", "CONVERT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE",
-                "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATABASE", "DBCC", "DEALLOCATE", "DECLARE", "DEFAULT",
-                "DELETE", "DENY", "DESC", "DISK", "DISTINCT", "DISTRIBUTED", "DOUBLE", "DROP", "DUMMY", "DUMP", "ELSE", "END", "ERRLVL",
-                "ESCAPE", "EXCEPT", "EXEC", "EXECUTE", "EXISTS", "EXIT", "FETCH", "FILE", "FILLFACTOR", "FOR", "FOREIGN", "FREETEXT",
-                "FREETEXTTABLE", "FROM", "FULL", "FUNCTION", "GOTO", "GRANT", "GROUP", "HAVING", "HOLDLOCK", "IDENTITY", "IDENTITY_INSERT",
-                "IDENTITYCOL", "IF", "IN", "INDEX", "INNER", "INSERT", "INTERSECT", "INTO", "IS", "JOIN", "KEY", "KILL", "LEFT", "LIKE",
-                "LINENO", "LOAD", "NATIONAL", "NOCHECK", "NONCLUSTERED", "NOT", "NULL", "NULLIF", "OF", "OFF", "OFFSETS", "ON", "OPEN",
-                "OPENDATASOURCE", "OPENQUERY", "OPENROWSET", "OPENXML", "OPTION", "OR", "ORDER", "OUTER", "OVER", "PERCENT", "PLAN",
-                "PRECISION", "PRIMARY", "PRINT", "PROC", "PROCEDURE", "PUBLIC", "RAISERROR", "READ", "READTEXT", "RECONFIGURE",
-                "REFERENCES", "REPLICATION", "RESTORE", "RESTRICT", "RETURN", "REVOKE", "RIGHT", "ROLLBACK", "ROWCOUNT", "ROWGUIDCOL",
-                "RULE", "SAVE", "SCHEMA", "SELECT", "SESSION_USER", "SET", "SETUSER", "SHUTDOWN", "SOME", "STATISTICS", "SYSTEM_USER",
-                "TABLE", "TEXTSIZE", "THEN", "TO", "TOP", "TRAN", "TRANSACTION", "TRIGGER", "TRUNCATE", "TSEQUAL", "UNION", "UNIQUE",
-                "UPDATE", "UPDATETEXT", "USE", "USER", "VALUES", "VARYING", "VIEW", "WAITFOR", "WHEN", "WHERE", "WHILE", "WITH",
-                "WRITETEXT"
+        oldReservedWordSet.addAll(PageFlowUtil.set(
+            "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK", "BROWSE", "BULK",
+            "BY", "CASCADE", "CASE", "CHECK", "CHECKPOINT", "CLOSE", "CLUSTERED", "COALESCE", "COLLATE", "COLUMN", "COMMIT", "COMPUTE",
+            "CONSTRAINT", "CONTAINS", "CONTAINSTABLE", "CONTINUE", "CONVERT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE",
+            "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATABASE", "DBCC", "DEALLOCATE", "DECLARE", "DEFAULT",
+            "DELETE", "DENY", "DESC", "DISK", "DISTINCT", "DISTRIBUTED", "DOUBLE", "DROP", "DUMMY", "DUMP", "ELSE", "END", "ERRLVL",
+            "ESCAPE", "EXCEPT", "EXEC", "EXECUTE", "EXISTS", "EXIT", "FETCH", "FILE", "FILLFACTOR", "FOR", "FOREIGN", "FREETEXT",
+            "FREETEXTTABLE", "FROM", "FULL", "FUNCTION", "GOTO", "GRANT", "GROUP", "HAVING", "HOLDLOCK", "IDENTITY", "IDENTITY_INSERT",
+            "IDENTITYCOL", "IF", "IN", "INDEX", "INNER", "INSERT", "INTERSECT", "INTO", "IS", "JOIN", "KEY", "KILL", "LEFT", "LIKE",
+            "LINENO", "LOAD", "NATIONAL", "NOCHECK", "NONCLUSTERED", "NOT", "NULL", "NULLIF", "OF", "OFF", "OFFSETS", "ON", "OPEN",
+            "OPENDATASOURCE", "OPENQUERY", "OPENROWSET", "OPENXML", "OPTION", "OR", "ORDER", "OUTER", "OVER", "PERCENT", "PLAN",
+            "PRECISION", "PRIMARY", "PRINT", "PROC", "PROCEDURE", "PUBLIC", "RAISERROR", "READ", "READTEXT", "RECONFIGURE",
+            "REFERENCES", "REPLICATION", "RESTORE", "RESTRICT", "RETURN", "REVOKE", "RIGHT", "ROLLBACK", "ROWCOUNT", "ROWGUIDCOL",
+            "RULE", "SAVE", "SCHEMA", "SELECT", "SESSION_USER", "SET", "SETUSER", "SHUTDOWN", "SOME", "STATISTICS", "SYSTEM_USER",
+            "TABLE", "TEXTSIZE", "THEN", "TO", "TOP", "TRAN", "TRANSACTION", "TRIGGER", "TRUNCATE", "TSEQUAL", "UNION", "UNIQUE",
+            "UPDATE", "UPDATETEXT", "USE", "USER", "VALUES", "VARYING", "VIEW", "WAITFOR", "WHEN", "WHERE", "WHILE", "WITH",
+            "WRITETEXT"
         ));
     }
 
@@ -111,20 +107,6 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         sqlTypeIntMap.put(Types.TIMESTAMP, "DATETIME");
         sqlTypeIntMap.put(Types.DOUBLE, "FLOAT");
         sqlTypeIntMap.put(Types.FLOAT, "FLOAT");
-    }
-
-    protected boolean claimsDriverClassName(String driverClassName)
-    {
-        return "net.sourceforge.jtds.jdbc.Driver".equals(driverClassName);
-    }
-
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings)
-    {
-        boolean ret = dataBaseProductName.equals("Microsoft SQL Server") && (databaseMajorVersion < 9);
-        if (ret && logWarnings)
-            _log.warn("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");
-
-        return ret;
     }
 
     public boolean isSqlServer()
@@ -753,123 +735,5 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     protected String getDatabaseMaintenanceSql()
     {
         return "EXEC sp_updatestats;";
-    }
-
-    public Collection<? extends Class> getJUnitTests()
-    {
-        return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
-    }
-
-
-    public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
-    {
-        public void testDialectRetrieval()
-        {
-            // These should result in bad database exception
-            badProductName("Gobbledygood", 1.0, 12.0, "");
-            badProductName("SQL Server", 1.0, 12.0, "");
-            badProductName("sqlserver", 1.0, 12.0, "");
-
-            // < 9.0 should result in SqlDialectMicrosoftSQLServer -- no bad versions at the moment
-            good("Microsoft SQL Server", 0.0, 8.9, "", SqlDialectMicrosoftSQLServer.class);
-
-            // >= 9.0 should result in SqlDialectMicrosoftSQLServer9
-            good("Microsoft SQL Server", 9.0, 11.0, "", SqlDialectMicrosoftSQLServer9.class);
-        }
-    }
-
-
-    public static class JavaUpgradeCodeTestCase extends Assert
-    {
-        @Test
-        public void testJavaUpgradeCode()
-        {
-            String goodSql =
-                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
-                            "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
-                            "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
-                            "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
-                            "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
-                            "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
-                            "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
-                            "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
-                            "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
-                            "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
-
-            String badSql =
-                    "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
-                            "   more comment\n" +
-                            "*/" +
-                            "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
-                            "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
-                            "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
-                            "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
-                            "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
-                            "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
-                            "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
-
-            try
-            {
-                TestUpgradeCode good = new TestUpgradeCode();
-                INSTANCE.runSql(null, goodSql, good, null);
-                assertEquals(10, good.getCounter());
-
-                TestUpgradeCode bad = new TestUpgradeCode();
-                INSTANCE.runSql(null, badSql, bad, null);
-                assertEquals(0, bad.getCounter());
-            }
-            catch (SQLException e)
-            {
-                fail("SQL Exception running test: " + e.getMessage());
-            }
-        }
-    }
-
-
-    public static class JdbcHelperTestCase extends Assert
-    {
-        @Test
-        public void testJdbcHelper()
-        {
-            JdbcHelper helper = INSTANCE.getJdbcHelper();
-
-            try
-            {
-                String goodUrls = "jdbc:jtds:sqlserver://localhost/database\n" +
-                        "jdbc:jtds:sqlserver://localhost:1433/database\n" +
-                        "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor\n" +
-                        "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor\n" +
-                        "jdbc:jtds:sqlserver://www.host.com/database\n" +
-                        "jdbc:jtds:sqlserver://www.host.com:1433/database\n" +
-                        "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor\n" +
-                        "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor";
-
-                for (String url : goodUrls.split("\n"))
-                    assertEquals(helper.getDatabase(url), "database");
-            }
-            catch (Exception e)
-            {
-                fail("Exception running JdbcHelper test: " + e.getMessage());
-            }
-
-            String badUrls = "jdb:jtds:sqlserver://localhost/database\n" +
-                    "jdbc:jts:sqlserver://localhost/database\n" +
-                    "jdbc:jtds:sqlerver://localhost/database\n" +
-                    "jdbc:jtds:sqlserver://localhostdatabase\n" +
-                    "jdbc:jtds:sqlserver:database";
-
-            for (String url : badUrls.split("\n"))
-            {
-                try
-                {
-                    if (helper.getDatabase(url).equals("database"))
-                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
-                }
-                catch (ServletException e)
-                {
-                    // Skip -- we expect to fail on some of these
-                }
-            }
-        }
     }
 }

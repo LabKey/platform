@@ -17,7 +17,7 @@ package org.labkey.query.sql;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;

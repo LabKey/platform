@@ -33,12 +33,12 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.XMLWriterTest;
+import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.FolderType;
@@ -183,7 +183,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     protected void init()
     {
-        SqlDialect.register(SqlDialectPostgreSQL.get());
+        SqlDialectManager.register(new PostgreSqlDialectFactory());
 
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
@@ -539,7 +539,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             //,RateLimiter.TestCase.class
         ));
 
-        testClasses.addAll(SqlDialect.getAllJUnitTests());
+        testClasses.addAll(SqlDialectManager.getAllJUnitTests());
 
         return testClasses;
     }

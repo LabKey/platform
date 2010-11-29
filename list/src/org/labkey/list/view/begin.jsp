@@ -69,7 +69,7 @@
         if (policy.hasPermission(user, DesignListPermission.class))
         { %>
             <td>
-                <labkey:link href="<%=def.urlFor(ListController.Action.deleteListDefinition)%>" text="delete list" />
+                <labkey:link href="<%=def.urlFor(ListController.DeleteListDefinitionAction.class)%>" text="delete list" />
             </td><%
         } %>
             <td>

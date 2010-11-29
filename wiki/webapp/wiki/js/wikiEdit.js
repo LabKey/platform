@@ -303,7 +303,7 @@ function onSuccess(response)
             updateControls(_wikiProps);
         }
 
-        if(_attachments.isDirty)
+        if (_attachments.isDirty)
         {
             setStatus("Saving file attachments...");
             Ext.Ajax.request({

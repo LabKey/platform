@@ -26,7 +26,7 @@
     UploadListItemsForm form = (UploadListItemsForm) __form;
     ActionURL templateURL = new ActionURL("query", QueryAction.exportExcelTemplate.name(), getContainer()).addParameter("query.queryName", form.getList().getName()).addParameter("schemaName", "lists");
 %>
-<form action="<%=h(form.getList().urlFor(ListController.Action.uploadListItems))%>" method="POST">
+<form action="<%=h(form.getList().urlFor(ListController.UploadListItemsAction.class))%>" method="POST">
     <table>
         <tr>
             <td class="labkey-form-label" nowrap="true">List Data</td>

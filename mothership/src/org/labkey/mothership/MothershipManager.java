@@ -18,6 +18,7 @@ package org.labkey.mothership;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 
 import java.net.InetAddress;

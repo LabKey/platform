@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.*;
 import org.labkey.api.util.*;
 import org.labkey.api.settings.AppProps;

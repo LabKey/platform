@@ -3862,7 +3862,7 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                FolderType folderType= ModuleLoader.getInstance().getFolderType(form.getFolderType());
+                FolderType folderType = ModuleLoader.getInstance().getFolderType(form.getFolderType());
                 c.setFolderType(folderType, activeModules);
             }
 

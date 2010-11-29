@@ -16,15 +16,17 @@
 
 package org.labkey.bigiron;
 
-import org.labkey.api.data.SqlDialect;
-import org.labkey.bigiron.mysql.SqlDialectMySql;
-import org.labkey.bigiron.sas.*;
-import org.labkey.bigiron.mssql.SqlDialectMicrosoftSQLServer;
-import org.labkey.bigiron.mssql.SqlDialectMicrosoftSQLServer9;
+import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.bigiron.mssql.MicrosoftSqlServer2000DialectFactory;
+import org.labkey.bigiron.mssql.MicrosoftSqlServer2005DialectFactory;
+import org.labkey.bigiron.mysql.MySqlDialectFactory;
+import org.labkey.bigiron.sas.Sas91DialectFactory;
+import org.labkey.bigiron.sas.Sas92DialectFactory;
+import org.labkey.bigiron.sas.SasExportScriptFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -53,11 +55,12 @@ public class BigIronModule extends DefaultModule
 
     protected void init()
     {
-        SqlDialect.register(SqlDialectMicrosoftSQLServer.get());
-        SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
-        SqlDialect.register(new SqlDialectSas91());
-        SqlDialect.register(new SqlDialectSas92());
-        SqlDialect.register(new SqlDialectMySql());
+        SqlDialectManager.register(new MicrosoftSqlServer2000DialectFactory());
+        SqlDialectManager.register(new MicrosoftSqlServer2005DialectFactory());
+        SqlDialectManager.register(new MySqlDialectFactory());
+        SqlDialectManager.register(new Sas91DialectFactory());
+        SqlDialectManager.register(new Sas92DialectFactory());
+
         QueryView.register(new SasExportScriptFactory());
     }
 

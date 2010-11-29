@@ -16,7 +16,7 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 
 import java.sql.Types;
 

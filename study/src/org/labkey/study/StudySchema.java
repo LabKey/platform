@@ -17,10 +17,9 @@
 package org.labkey.study;
 
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.study.Study;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;

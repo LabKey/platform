@@ -22,8 +22,6 @@ import org.labkey.pipeline.status.PipelineQueryView;
 
 import java.io.PrintWriter;
 
-/**
- */
 public class PipelineWebPart extends WebPartView
 {
     private static final String partName = "Data Pipeline";
@@ -55,6 +53,5 @@ public class PipelineWebPart extends WebPartView
             gridView.setCustomizeLinks(getCustomizeLinks());
             include(gridView);
         }
-
     }
 }

@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.query.ExpExperimentTable;

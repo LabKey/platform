@@ -18,6 +18,8 @@ package org.labkey.bigiron.sas;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.PkMetaDataReader;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,31 +30,25 @@ import java.sql.SQLException;
 * Time: 6:31:43 PM
 */
 
-// Supports the SAS 9.1 SAS/SHARE JDBC driver
-public class SqlDialectSas91 extends SqlDialectSas
+// Supports the SAS 9.2 SAS/SHARE JDBC driver
+public class Sas92Dialect extends SasDialect
 {
-    // SAS/SHARE driver throws when invoking DatabaseMetaData database version methods, so use the jdbcDriverVersion to determine dialect version
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings)
-    {
-        return dataBaseProductName.equals(getProductName()) && jdbcDriverVersion.startsWith("9.1");
-    }
-
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
     {
-        return new Sas91ColumnMetaDataReader(rsCols);
+        return new Sas92ColumnMetaDataReader(rsCols);
     }
 
-    private class Sas91ColumnMetaDataReader extends ColumnMetaDataReader
+    private class Sas92ColumnMetaDataReader extends ColumnMetaDataReader
     {
-        private Sas91ColumnMetaDataReader(ResultSet rsCols)
+        private Sas92ColumnMetaDataReader(ResultSet rsCols)
         {
             super(rsCols);
 
-            _nameKey = "NAME";
-            _sqlTypeKey = "SQLTYPE";
-            _scaleKey = "SIZE";
+            _nameKey = "COLUMN_NAME";
+            _sqlTypeKey = "DATA_TYPE";
+            _scaleKey = "COLUMN_SIZE";
             _nullableKey = "NULLABLE";
-            _postionKey = "POSITION";
+            _postionKey = "ORDINAL_POSITION";
         }
 
         @Override
@@ -67,16 +63,10 @@ public class SqlDialectSas91 extends SqlDialectSas
         }
 
         @Override
-        public String getDatabaseFormat() throws SQLException
-        {
-            return StringUtils.trimToNull(_rsCols.getString("type"));
-        }
-
-        @Override
         public String getLabel() throws SQLException
         {
-            // With SAS 9.1 driver, variable labels show up in "remarks" -- treat as label instead of description
-            return StringUtils.trimToNull(_rsCols.getString("COMMENT"));
+            // With SAS 9.2 driver, variable labels show up in "remarks" -- treat as label instead of description
+            return StringUtils.trimToNull(_rsCols.getString("REMARKS"));
         }
 
         @Override
@@ -88,12 +78,12 @@ public class SqlDialectSas91 extends SqlDialectSas
 
     public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
     {
-        return new PkMetaDataReader(rs, "NAME", "SEQ") {
+        return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ") {
             @Override
             public String getName() throws SQLException
             {
                 return super.getName().trim();
             }
         };
-    }    
+    }
 }

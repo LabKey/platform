@@ -18,6 +18,7 @@ package org.labkey.study.reports;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;

@@ -25,7 +25,6 @@ import org.labkey.api.view.WebPartView;
  * Date: Jan 27, 2009
  * Time: 2:36:04 PM
  */
-
 public class SasExportScriptFactory implements ExportScriptFactory
 {
     public String getScriptType()
@@ -40,6 +39,6 @@ public class SasExportScriptFactory implements ExportScriptFactory
 
     public WebPartView getView(QueryView queryView)
     {
-        return new JspView<ExportSasScriptModel>("/org/labkey/bigiron/sas/exportSasScript.jsp", new ExportSasScriptModel(queryView));
+        return new JspView<SasExportScriptModel>("/org/labkey/bigiron/sas/sasExportScript.jsp", new SasExportScriptModel(queryView));
     }
 }

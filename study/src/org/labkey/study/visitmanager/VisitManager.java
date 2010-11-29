@@ -3,6 +3,7 @@ package org.labkey.study.visitmanager;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.ResultSetUtil;

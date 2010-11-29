@@ -41,6 +41,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListImportHelper;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.io.IOException;
@@ -449,28 +450,6 @@ public class ListDefinitionImpl implements ListDefinition
         if (null != progress)
             progress.setTotalRows(rows.size());
 
-        // TODO: Remove this, now that we're setting the ColumnDescriptors instead of inferring them
-        switch (getKeyType())
-        {
-            // All cdKey.clazz values are okay
-            case Varchar:
-                break;
-
-            // Fine if it's missing, otherwise fall through
-            case AutoIncrementInteger:
-                if (null == cdKey)
-                    break;
-
-            // cdKey must be class Integer if auto-increment key exists or normal Integer key column
-            case Integer:
-                if (Integer.class.equals(cdKey.clazz))
-                    break;
-
-            default:
-                errors.add("Expected values in key field \"" + cdKey.name + "\" to all be of type Integer but found values of type " + cdKey.clazz.getSimpleName());
-                return errors;
-        }
-
         Set<Object> keyValues = new HashSet<Object>();
         Set<String> missingValues = new HashSet<String>();
         Set<String> wrongTypes = new HashSet<String>();
@@ -665,22 +644,17 @@ public class ListDefinitionImpl implements ListDefinition
 
     public ActionURL urlShowDefinition()
     {
-        return urlFor(ListController.Action.editListDefinition);
-    }
-
-    public ActionURL urlEditDefinition()
-    {
-        return urlFor(ListController.Action.editListDefinition);
+        return urlFor(ListController.EditListDefinitionAction.class);
     }
 
     public ActionURL urlShowData()
     {
-        return urlFor(ListController.Action.grid);
+        return urlFor(ListController.GridAction.class);
     }
 
     public ActionURL urlUpdate(Object pk, URLHelper returnUrl)
     {
-        ActionURL url = urlFor(ListController.Action.update);
+        ActionURL url = urlFor(ListController.UpdateAction.class);
 
         // Can be null if caller will be filling in pk (e.g., grid edit column)
         if (null != pk)
@@ -694,7 +668,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public ActionURL urlDetails(Object pk)
     {
-        ActionURL url = urlFor(ListController.Action.details);
+        ActionURL url = urlFor(ListController.DetailsAction.class);
         // Can be null if caller will be filling in pk (e.g., grid edit column)
 
         if (null != pk)
@@ -705,12 +679,12 @@ public class ListDefinitionImpl implements ListDefinition
 
     public ActionURL urlShowHistory()
     {
-        return urlFor(ListController.Action.history);
+        return urlFor(ListController.HistoryAction.class);
     }
 
-    public ActionURL urlFor(Enum action)
+    public ActionURL urlFor(Class<? extends Controller> actionClass)
     {
-        ActionURL ret = getContainer().urlFor(action);
+        ActionURL ret = new ActionURL(actionClass, getContainer());
         ret.addParameter("listId", Integer.toString(getListId()));
         return ret;
     }

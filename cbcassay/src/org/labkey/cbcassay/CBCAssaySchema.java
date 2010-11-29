@@ -17,7 +17,7 @@
 package org.labkey.cbcassay;
 
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 
 public class CBCAssaySchema
 {

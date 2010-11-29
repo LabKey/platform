@@ -26,6 +26,7 @@ import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.defaults.SetDefaultValuesListAction;
@@ -178,7 +179,7 @@ public class ListController extends SpringActionController
         {
             _list = null;
 
-            boolean createList = (null==form.getListId() || 0 == form.getListId().intValue());
+            boolean createList = (null == form.getListId() || 0 == form.getListId());
             if (!createList)
                 _list = form.getList();
 
@@ -484,7 +485,7 @@ public class ListController extends SpringActionController
             }
             view.setFocusId("firstInputField");
             getPageConfig().setFocusId(view.getFocusId());
-            view.getDataRegion().setButtonBar(getButtonBar(_list.urlFor(Action.insert).addParameter("returnUrl", returnURL.getLocalURIString()), returnURL));
+            view.getDataRegion().setButtonBar(getButtonBar(_list.urlFor(InsertAction.class).addParameter("returnUrl", returnURL.getLocalURIString()), returnURL));
 
             return view;
         }
@@ -626,7 +627,7 @@ public class ListController extends SpringActionController
                 Object title = (null != titleProperty ? item.getProperty(titleProperty) : null);
                 String discussionTitle = (null != title ? title.toString() : "Item " + tableForm.getPkVal());
 
-                ActionURL linkBackURL = _list.urlFor(Action.resolve).addParameter("entityId", entityId);
+                ActionURL linkBackURL = _list.urlFor(ResolveAction.class).addParameter("entityId", entityId);
                 DiscussionService.Service service = DiscussionService.get();
                 boolean multiple = _list.getDiscussionSetting() == ListDefinition.DiscussionSetting.ManyPerItem;
 
@@ -683,7 +684,7 @@ public class ListController extends SpringActionController
         {
             ListDefinition list = form.getList();
             ListItem item = list.getListItemForEntityId(getViewContext().getActionURL().getParameter("entityId")); // TODO: Use proper form, validate
-            ActionURL url = getViewContext().cloneActionURL().setAction(Action.details.name());   // Clone to preserve discussion params
+            ActionURL url = getViewContext().cloneActionURL().setAction(DetailsAction.class);   // Clone to preserve discussion params
             url.deleteParameter("entityId");
             url.addParameter("pk", item.getKey().toString());
 
@@ -866,7 +867,7 @@ public class ListController extends SpringActionController
         {
             if (_isEncoded)
             {
-                _renderViewEncoded(model, out);
+                _renderViewEncoded(out);
             }
             else
             {
@@ -900,7 +901,7 @@ public class ListController extends SpringActionController
             }
         }
 
-        private void _renderViewEncoded(Object model, PrintWriter out)
+        private void _renderViewEncoded(PrintWriter out)
         {
             Map<String, String> prevProps = ListAuditViewFactory.decodeFromDataMap(_oldRecord);
             Map<String, String> newProps = ListAuditViewFactory.decodeFromDataMap(_newRecord);
@@ -1062,20 +1063,5 @@ public class ListController extends SpringActionController
         {
             return appendRootNavTrail(root).addChild("Import List Archive");
         }
-    }
-
-
-    public enum Action
-    {
-        deleteListDefinition,
-        showListDefinition,
-        editListDefinition,
-        grid,
-        details,
-        insert,
-        update,
-        uploadListItems,
-        history,
-        resolve
     }
 }

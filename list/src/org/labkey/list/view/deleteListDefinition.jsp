@@ -24,10 +24,10 @@
     ListDefinitionForm form = (ListDefinitionForm) __form;
     ListDefinition list = form.getList();
 %>
-<form action="<%=list.urlFor(ListController.Action.deleteListDefinition)%>" method="POST">
+<form action="<%=list.urlFor(ListController.DeleteListDefinitionAction.class)%>" method="POST">
     <p>Are you sure you want to delete the list '<%=h(list.getName())%>'?<br>
         <labkey:button text="OK" />
-        <labkey:button text="Cancel" href="<%=list.urlFor(ListController.Action.showListDefinition)%>"/>
+        <labkey:button text="Cancel" href="<%=list.urlShowDefinition()%>"/>
     </p>
 
 </form>

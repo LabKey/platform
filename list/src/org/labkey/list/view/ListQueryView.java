@@ -62,14 +62,16 @@ public class ListQueryView extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar, _exportAsWebPage);
+
         if (getViewContext().hasPermission(UpdatePermission.class) && _list.getAllowUpload())
         {
-            ActionButton btnUpload = new ActionButton("Import Data", getList().urlFor(ListController.Action.uploadListItems));
+            ActionButton btnUpload = new ActionButton("Import Data", getList().urlFor(ListController.UploadListItemsAction.class));
             bar.add(btnUpload);
         }
+
         if (getViewContext().hasPermission(DesignListPermission.class))
         {
-            ActionURL designURL = getList().urlFor(ListController.Action.editListDefinition);
+            ActionURL designURL = getList().urlShowDefinition();
             designURL.addReturnURL(getViewContext().getActionURL());
             ActionButton btnUpload = new ActionButton("View Design", designURL);
             bar.add(btnUpload);

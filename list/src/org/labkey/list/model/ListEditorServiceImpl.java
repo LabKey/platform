@@ -18,7 +18,7 @@ package org.labkey.list.model;
 import org.apache.axis.utils.StringUtils;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;

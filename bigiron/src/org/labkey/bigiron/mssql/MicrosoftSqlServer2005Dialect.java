@@ -23,29 +23,13 @@ import org.labkey.api.data.SQLFragment;
  * User: kevink
  * Date: Jan 28, 2008 2:56:27 PM
  */
-public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
+public class MicrosoftSqlServer2005Dialect extends MicrosoftSqlServer2000Dialect
 {
-    public SqlDialectMicrosoftSQLServer9()
+    public MicrosoftSqlServer2005Dialect()
     {
-        super();
-        reservedWordSet.addAll(PageFlowUtil.set(
+        oldReservedWordSet.addAll(PageFlowUtil.set(
            "EXTERNAL", "PIVOT", "REVERT", "SECURITYAUDIT", "TABLESAMPLE", "UNPIVOT"
         ));
-    }
-
-
-    // JTDS driver always gets mapped to base SQL Server dialect, not this one
-    @Override
-    protected boolean claimsDriverClassName(String driverClassName)
-    {
-        return false;
-    }
-
-
-    @Override
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings)
-    {
-        return dataBaseProductName.equals("Microsoft SQL Server") && (databaseMajorVersion >= 9);
     }
 
 

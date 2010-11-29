@@ -17,6 +17,7 @@ package org.labkey.query.sql;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;

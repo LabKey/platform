@@ -98,7 +98,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     // And a single threaded queue for actually writing to the index (can this be multi-threaded?)
     BlockingQueue<Item> _indexQueue = null;
 
-    final List<IndexTask> _tasks = Collections.synchronizedList(new ArrayList<IndexTask>());
+    private final List<IndexTask> _tasks = new CopyOnWriteArrayList<IndexTask>();
 
     final _IndexTask _defaultTask = new _IndexTask("default");
 
@@ -440,8 +440,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public List<IndexTask> getTasks()
     {
-        IndexTask[] arr = _tasks.toArray(new IndexTask[_tasks.size()]);
-        return Arrays.asList(arr);
+        return new LinkedList<IndexTask>(_tasks);
     }
 
 
@@ -1203,7 +1202,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    protected final CopyOnWriteArrayList<DocumentProvider> _documentProviders = new CopyOnWriteArrayList<DocumentProvider>();
+    protected final List<DocumentProvider> _documentProviders = new CopyOnWriteArrayList<DocumentProvider>();
     
     public void addDocumentProvider(DocumentProvider provider)
     {
@@ -1211,7 +1210,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    protected final CopyOnWriteArrayList<DocumentParser> _documentParsers = new CopyOnWriteArrayList<DocumentParser>();
+    protected final List<DocumentParser> _documentParsers = new CopyOnWriteArrayList<DocumentParser>();
     
     public void addDocumentParser(DocumentParser parser)
     {

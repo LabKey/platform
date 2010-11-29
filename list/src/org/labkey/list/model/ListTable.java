@@ -16,7 +16,13 @@
 
 package org.labkey.list.model;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MVDisplayColumnFactory;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -28,11 +34,13 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.util.StringExpression;
 import org.labkey.list.view.AttachmentDisplayColumn;
 import org.labkey.list.view.ListController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class ListTable extends FilteredTable
 {
@@ -135,7 +143,7 @@ public class ListTable extends FilteredTable
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
 
-        DetailsURL insertURL = new DetailsURL(_list.urlFor(ListController.Action.insert), Collections.<String, String>emptyMap());
+        DetailsURL insertURL = new DetailsURL(_list.urlFor(ListController.InsertAction.class), Collections.<String, String>emptyMap());
         setInsertURL(insertURL);
 
         DetailsURL updateURL = new DetailsURL(_list.urlUpdate(null, null), Collections.singletonMap("pk", _list.getKeyName()));

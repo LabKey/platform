@@ -216,7 +216,7 @@ public class WikiController extends SpringActionController
         Collection<Container> arrCont = mm.get(c);
 
         //check for children
-        if(arrCont != null)
+        if (arrCont != null)
         {
             for (Container cChild : arrCont)
             {
@@ -270,10 +270,10 @@ public class WikiController extends SpringActionController
         Wiki wiki = WikiManager.getWiki(c, new HString("default"));
         //handle case where no page named "default" exists by getting first page in ordered list
         //note that this does not automatically display page selected on web part customize. should it?
-        if(wiki == null)
+        if (wiki == null)
         {
             List<Wiki> pageList = WikiManager.getPageList(c);
-            if(pageList.size() == 0)
+            if (pageList.size() == 0)
                 wiki = new Wiki(c, new HString("default"));
             else
                 wiki = pageList.get(0);
@@ -299,7 +299,7 @@ public class WikiController extends SpringActionController
                 HttpView.throwNotFound();
 
             BaseWikiPermissions perms = getPermissions();
-            if(!perms.allowDelete(_wiki))
+            if (!perms.allowDelete(_wiki))
                 HttpView.throwUnauthorized("You do not have permissions to delete this wiki page");
 
             return new JspView<Wiki>("/org/labkey/wiki/view/wikiDelete.jsp", _wiki);
@@ -313,7 +313,7 @@ public class WikiController extends SpringActionController
                 HttpView.throwNotFound();
 
             BaseWikiPermissions perms = getPermissions();
-            if(!perms.allowDelete(_wiki))
+            if (!perms.allowDelete(_wiki))
                 HttpView.throwUnauthorized("You do not have permissions to delete this wiki page");
 
             //delete page and all versions
@@ -369,7 +369,7 @@ public class WikiController extends SpringActionController
                 HttpView.throwNotFound();
 
             BaseWikiPermissions perms = getPermissions();
-            if(!perms.allowUpdate(_wiki))
+            if (!perms.allowUpdate(_wiki))
                 HttpView.throwUnauthorized("You do not have permissions to manage this wiki page");
 
             HttpView manageView = new JspView("/org/labkey/wiki/view/wikiManage.jsp");
@@ -635,7 +635,7 @@ public class WikiController extends SpringActionController
                 throw new NotFoundException("You must supply a page name!");
 
             Wiki rootWiki = WikiManager.getWiki(c, form.getName());
-            if(null == rootWiki)
+            if (null == rootWiki)
                 throw new NotFoundException("The wiki page named '" + form.getName() + "' was not found.");
 
             //build a list of wiki pages that are descendants of the root page
@@ -1435,7 +1435,7 @@ public class WikiController extends SpringActionController
             _wikiversion = WikiManager.getLatestVersion(_wiki);
 
             BaseWikiPermissions perms = getPermissions();
-            if(!perms.allowUpdate(_wiki))
+            if (!perms.allowUpdate(_wiki))
                 throw new UnauthorizedException("You do not have permissions to view the history for this page!");
 
             TableInfo tinfoVersions = CommSchema.getInstance().getTableInfoPageVersions();
@@ -1546,7 +1546,7 @@ public class WikiController extends SpringActionController
             //user with update perms could just as easily update the page to be the
             //same as some previous version
             BaseWikiPermissions perms = getPermissions();
-            if(!perms.allowUpdate(_wiki))
+            if (!perms.allowUpdate(_wiki))
                 HttpView.throwUnauthorized("You do not have permission to set the current version of this page.");
 
             //update wiki & insert new wiki version
@@ -1706,7 +1706,7 @@ public class WikiController extends SpringActionController
             //check name
             HString newName = getName();
             HString oldName = getOriginalName();
-            if(newName == null)
+            if (newName == null)
                 errors.rejectValue("name", ERROR_MSG, "You must provide a name for this page.");
             else
             {
@@ -1810,7 +1810,7 @@ public class WikiController extends SpringActionController
             //check body
             String body = StringUtils.trimToEmpty(getBody());
             setBody(body);
-            if(body.length() == 0)
+            if (body.length() == 0)
                 errors.rejectValue("body", ERROR_MSG, "Page body cannot be empty. Delete page if you wish to remove page content.");
             else
             {
@@ -1961,7 +1961,7 @@ public class WikiController extends SpringActionController
             //get stored property value for source container for toc
             Object id = context.get("webPartContainer");
             //if no value is stored, use the current container
-            if(id == null)
+            if (id == null)
                 cToc = context.getContainer();
             else
             {
@@ -1992,7 +1992,7 @@ public class WikiController extends SpringActionController
 
             //set specified web part title
             Object title = context.get("title");
-            if(title == null)
+            if (title == null)
                 title = "Pages";
             setTitle(title.toString());
         }
@@ -2115,18 +2115,18 @@ public class WikiController extends SpringActionController
                 //UNDONE: consolidate wiki code so wiki object is always the same
                 //(so we can use pageList here rather than creating a second list)
                 List<HString> nameList = WikiManager.getWikiNameList(cToc);
-                if(nameList.contains(selectedPage.getName()))
+                if (nameList.contains(selectedPage.getName()))
                 {
                     //determine where this page is in the ordered wiki page list
                     int pageIndex = nameList.indexOf(selectedPage.getName());
                     //if it's not the first page in the list, display the previous link
-                    if(pageIndex > 0)
+                    if (pageIndex > 0)
                     {
                         Wiki wikiPrev = WikiManager.getWiki(cToc, nameList.get(pageIndex - 1));
                         prevLink = wikiPrev.getPageLink();
                     }
                     //if it's not the last page in the list, display the next link
-                    if(pageIndex < nameList.size() - 1)
+                    if (pageIndex < nameList.size() - 1)
                     {
                         Wiki wikiNext = WikiManager.getWiki(cToc, nameList.get(pageIndex + 1));
                         nextLink = wikiNext.getPageLink();
@@ -2429,15 +2429,15 @@ public class WikiController extends SpringActionController
     {
         public ApiResponse execute(ContainerForm form, BindException errors) throws Exception
         {
-            if(null == form.getId() || form.getId().length() == 0)
+            if (null == form.getId() || form.getId().length() == 0)
                 throw new IllegalArgumentException("The id parameter must be set to a valid container id!");
 
             Container container = ContainerManager.getForId(form.getId());
-            if(null == container)
+            if (null == container)
                 throw new IllegalArgumentException("The container id '" + form.getId() + "' is not valid.");
             
             List<Wiki> wikiList = WikiManager.getPageList(container);
-            if(null == wikiList)
+            if (null == wikiList)
                 return new ApiSimpleResponse("pages", null);
 
             List<Map<String,String>> pages = new ArrayList<Map<String,String>>(wikiList.size());
@@ -2445,7 +2445,7 @@ public class WikiController extends SpringActionController
             {
                 Map<String,String> pageMap = new HashMap<String,String>();
                 pageMap.put("name", wiki.getName().getSource());
-                if(wiki.latestVersion() != null)
+                if (wiki.latestVersion() != null)
                     pageMap.put("title", wiki.latestVersion().getTitle().getSource());
                 pages.add(pageMap);
             }
@@ -2547,15 +2547,15 @@ public class WikiController extends SpringActionController
             Wiki wiki = null;
             WikiVersion curVersion = null;
 
-            if(null != form.getName() && form.getName().length() > 0)
+            if (null != form.getName() && form.getName().length() > 0)
             {
                 wiki = WikiManager.getWiki(getViewContext().getContainer(), form.getName());
-                if(null == wiki)
+                if (null == wiki)
                     throw new NotFoundException("There is no wiki in the current folder named '" + form.getName() + "'!");
 
                 //get the current version
                 curVersion = wiki.latestVersion();
-                if(null == curVersion)
+                if (null == curVersion)
                     throw new NotFoundException("Could not locate the current version of the wiki named '" + form.getName() + "'!");
             }
 
@@ -2563,16 +2563,17 @@ public class WikiController extends SpringActionController
             Container container = getViewContext().getContainer();
             User user = getViewContext().getUser();
             BaseWikiPermissions perms = new BaseWikiPermissions(user, container);
-            if(null == wiki)
+
+            if (null == wiki)
             {
                 //if no wiki, this is an insert, so user must have insert perms
-                if(!perms.allowInsert())
+                if (!perms.allowInsert())
                     throw new UnauthorizedException("You do not have permissions to create new wiki pages in this folder!");
             }
             else
             {
                 //updating wiki--use BaseWikiPermissions
-                if(!perms.allowUpdate(wiki))
+                if (!perms.allowUpdate(wiki))
                     throw new UnauthorizedException("You do not have permissions to edit this wiki page!");
             }
 
@@ -2581,7 +2582,7 @@ public class WikiController extends SpringActionController
                     getContainer().getId(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
             boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
             String defFormat = properties.get(SaveWikiAction.PROP_DEFAULT_FORMAT);
-            if((null == form.getFormat() || form.getFormat().length() == 0)
+            if ((null == form.getFormat() || form.getFormat().length() == 0)
                     && null != defFormat && defFormat.length() > 0)
                 form.setFormat(defFormat);
 
@@ -2598,7 +2599,7 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            if(null != _wiki && null != _wikiVer)
+            if (null != _wiki && null != _wikiVer)
             {
                 ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getViewContext().getContainer());
                 pageUrl.addParameter("name", _wiki.getName());
@@ -2768,7 +2769,7 @@ public class WikiController extends SpringActionController
                 String body = form.getBody();
                 ArrayList<String> tidyErrors = new ArrayList<String>();
 
-                if(UserManager.mayWriteScript(user))
+                if (UserManager.mayWriteScript(user))
                     contextualRoles.add(RoleManager.getRole(DeveloperRole.class));
 
                 PageFlowUtil.validateHtml(body, tidyErrors,
@@ -2858,7 +2859,7 @@ public class WikiController extends SpringActionController
 
             SecurityPolicy policy = SecurityManager.getPolicy(getViewContext().getContainer());
             Set<Role> contextualRoles = new HashSet<Role>();
-            if(wikiUpdate.getCreatedBy() == user.getUserId())
+            if (wikiUpdate.getCreatedBy() == user.getUserId())
                 contextualRoles.add(RoleManager.getRole(OwnerRole.class));
 
             if (!policy.hasPermission(user, UpdatePermission.class, contextualRoles))
@@ -2960,12 +2961,13 @@ public class WikiController extends SpringActionController
                 names = Arrays.asList(deleteNames);
 
             String message = WikiManager.updateAttachments(getUser(), wiki, names, getAttachmentFileList());
+
             if (null != message)
             {
                 warnings.put("files", message);
             }
 
-            // uncache just this wiki TODO: check this... previous code uncached the whole container at this point
+            // uncache just this wiki
             WikiCache.uncache(getViewContext().getContainer(), wiki, false);
 
             //build the response
@@ -2976,7 +2978,6 @@ public class WikiController extends SpringActionController
 
             Wiki wikiUpdated = WikiManager.getWiki(getViewContext().getContainer(), wiki.getName());
             assert(null != wikiUpdated);
-
             List<Object> attachments = new ArrayList<Object>();
 
             if (null != wikiUpdated.getAttachments())
@@ -2990,6 +2991,7 @@ public class WikiController extends SpringActionController
                     attachments.add(attProps);
                 }
             }
+
             resp.put("attachments", attachments);
             return resp;
         }

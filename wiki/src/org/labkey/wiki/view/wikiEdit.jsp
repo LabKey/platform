@@ -60,10 +60,10 @@
     var _editableProps = ['name', 'title', 'body', 'parent', 'showAttachments'];
     var _attachments = [
         <%
-        if(model.hasAttachments())
+        if (model.hasAttachments())
         {
             sep = "";
-            for(Attachment att : model.getWiki().getAttachments())
+            for (Attachment att : model.getWiki().getAttachments())
             {
                 %>
                     <%=sep%>{name: <%=PageFlowUtil.jsString(att.getName())%>,
@@ -79,7 +79,7 @@
     var _formats = {
         <%
             sep = "";
-            for(WikiRendererType format : WikiRendererType.values())
+            for (WikiRendererType format : WikiRendererType.values())
             {
         %>
             <%=sep%>
@@ -107,7 +107,7 @@
             <%=PageFlowUtil.generateSubmitButton("Cancel", "onCancel();")%>
         </td>
         <td width="50%" align="right" nowrap="true">
-            <% if(model.canUserDelete()) { %>
+            <% if (model.canUserDelete()) { %>
                 <%=PageFlowUtil.generateDisabledSubmitButton("Delete Page", "return false;", "id=\"" + ID_PREFIX + "button-delete\"")%>
             <% } %>
             <%=PageFlowUtil.generateSubmitButton("Convert To...", "showConvertWindow()", "id=\"" + ID_PREFIX + "button-change-format\"")%>
@@ -139,14 +139,14 @@
                             <option <%= model.getParent() == -1 ? "selected='1'" : "" %> value="-1">[none]</option>
                             <%
                                 for (Wiki possibleParent : model.getPossibleParents())
-                                    {
+                                {
                                     String indent = "";
                                     int depth = possibleParent.getDepth();
                                     HString parentTitle = possibleParent.latestVersion().getTitle();
                                     while (depth-- > 0)
-                                      indent = indent + "&nbsp;&nbsp;";
+                                        indent = indent + "&nbsp;&nbsp;";
                                     %><option <%= possibleParent.getRowId() == model.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= h(parentTitle) %> (<%= possibleParent.getName() %>)</option><%
-                                    }
+                                }
                             %>
                         </select>
                     </td>

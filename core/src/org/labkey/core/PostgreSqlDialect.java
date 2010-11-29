@@ -17,8 +17,7 @@
 package org.labkey.core;
 
 import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
@@ -26,14 +25,18 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.KeywordCandidates;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.KeywordCandidates;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.SqlScriptParser;
-import org.labkey.api.data.StatementWrapper;
+import org.labkey.api.data.dialect.StandardJdbcHelper;
+import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
@@ -53,7 +56,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
@@ -69,47 +71,44 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for PostgreSQL
-class SqlDialectPostgreSQL extends SqlDialect
+class PostgreSqlDialect extends SqlDialect
 {
-    private static final Map<DbScope, Map<String, Integer>> DOMAIN_SCALES = new ConcurrentHashMap<DbScope, Map<String, Integer>>();
-    private static final SqlDialect INSTANCE = new SqlDialectPostgreSQL();
+    private static final Logger _log = Logger.getLogger(PostgreSqlDialect.class);
 
+    private final Map<String, Integer> DOMAIN_SCALES = new ConcurrentHashMap<String, Integer>();
     private final Set<String> oldReservedWordSet;
 
-    public static SqlDialect get()
+    PostgreSqlDialect()
     {
-        return INSTANCE;
+        oldReservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
+            "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BETWEEN",
+            "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "CONSTRAINT", "CREATE", "CROSS",
+            "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT",
+            "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FOR", "FOREIGN", "FREEZE",
+            "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS",
+            "ISNULL", "JOIN", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NEW",
+            "NOT", "NOTNULL", "NULL", "OFF", "OFFSET", "OLD", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS",
+            "PLACING", "PRIMARY", "REFERENCES", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC",
+            "TABLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VERBOSE", "WHEN", "WHERE"
+        ));
     }
 
     @Override
-    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+    public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
         StatementWrapper statementWrapper = super.getStatementWrapper(conn, stmt, sql);
+
         try
         {
             //pgSQL JDBC driver will load all results locally unless this is set along with autoCommit=false on the connection
             statementWrapper.setFetchSize(1000);
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
-        return statementWrapper;
-    }
 
-    private SqlDialectPostgreSQL()
-    {
-        oldReservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
-                "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC",
-                "AUTHORIZATION", "BETWEEN", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "CONSTRAINT",
-                "CREATE", "CROSS", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC",
-                "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FOR", "FOREIGN", "FREEZE",
-                "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER",
-                "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LEADING", "LEFT", "LIKE", "LIMIT",
-                "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NEW", "NOT", "NOTNULL", "NULL", "OFF", "OFFSET",
-                "OLD", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY",
-                "REFERENCES", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "THEN",
-                "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VERBOSE", "WHEN", "WHERE"
-        ));
+        return statementWrapper;
     }
 
     @Override
@@ -157,31 +156,6 @@ class SqlDialectPostgreSQL extends SqlDialect
         sqlTypeIntMap.put(Types.TIMESTAMP, "TIMESTAMP");
         sqlTypeIntMap.put(Types.DOUBLE, "DOUBLE PRECISION");
         sqlTypeIntMap.put(Types.FLOAT, "DOUBLE PRECISION");
-    }
-
-    protected boolean claimsDriverClassName(String driverClassName)
-    {
-        return "org.postgresql.Driver".equals(driverClassName);
-    }
-
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
-    {
-        if (!getProductName().equals(dataBaseProductName))
-            return false;
-
-        int version = databaseMajorVersion * 10 + databaseMinorVersion;   // 8.2 => 82, 8.3 => 83, 8.4 => 84, 9.0 => 90, etc.
-
-        // Version 8.2 or greater is allowed...
-        if (version >= 82)
-        {
-            // ...but warn for anything greater than 9.0
-            if (logWarnings && version > 90)
-                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + ".  PostgreSQL 9.0 is the recommended version.");
-
-            return true;
-        }
-
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 8.2 or greater.");
     }
 
     public boolean isSqlServer()
@@ -615,16 +589,14 @@ class SqlDialectPostgreSQL extends SqlDialect
     {
         super.prepareNewDbScope(scope);
 
-        Map<String, Integer> scales = new ConcurrentHashMap<String, Integer>();
-        initializeUserDefinedTypes(scope, scales);
-        DOMAIN_SCALES.put(scope, scales);
+        initializeUserDefinedTypes(scope);
     }
 
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
     // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
     // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
 
-    private void initializeUserDefinedTypes(DbScope scope, Map<String, Integer> scales) throws SQLException
+    private void initializeUserDefinedTypes(DbScope scope) throws SQLException
     {
         // No synchronization on scales, but there's no harm if we execute this query twice.
         Connection conn = null;
@@ -642,9 +614,9 @@ class SqlDialectPostgreSQL extends SqlDialect
                 String domainName = rs.getString("domain_name");
 
                 if ("integer".equals(rs.getString("data_type")))
-                    scales.put(domainName, 4);
+                    DOMAIN_SCALES.put(domainName, 4);
                 else
-                    scales.put(domainName, Integer.parseInt(rs.getString("character_maximum_length")));
+                    DOMAIN_SCALES.put(domainName, Integer.parseInt(rs.getString("character_maximum_length")));
             }
         }
         finally
@@ -685,6 +657,7 @@ class SqlDialectPostgreSQL extends SqlDialect
                 String src = rsSeq.getString("adsrc");
                 int start = src.indexOf('\'');
                 int end = src.lastIndexOf('\'');
+
                 if (end > start)
                 {
                     String sequence = src.substring(start + 1, end);
@@ -717,10 +690,30 @@ class SqlDialectPostgreSQL extends SqlDialect
      */
     public void overrideAutoIncrement(StringBuilder statements, TableInfo tinfo)
     {
-        // Nothing special to do for the Postgres dialect
+        // Nothing special to do for the PostgreSQL dialect
     }
 
 
+/*  Comment out for now -- too many cases where we hard-code mixed case column names in hand-coded SQL TODO: enable
+
+    @Override
+    protected boolean shouldQuoteIdentifier(String id)
+    {
+        // In addition to quoting keywords and ids with special characters, quote any id with an upper case character
+        // on PostgreSQL. PostgreSQL normally stores column/table names in all lower case, so an upper case character
+        // means the identifier must have been quoted at creation time. #11181
+        return super.shouldQuoteIdentifier(id) || hasUpperCase(id);
+    }
+
+    private boolean hasUpperCase(String id)
+    {
+        for (int i = 0; i < id.length(); i++)
+            if (Character.isUpperCase(id.charAt(i)))
+                return true;
+
+        return false;
+    }
+*/
     private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.executeJavaUpgradeCode\\s*\\(\\s*'(.+)'\\s*\\)\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
@@ -1015,15 +1008,13 @@ class SqlDialectPostgreSQL extends SqlDialect
 
     private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
     {
-        private final Map<String, Integer> _domainScales;
         private final DbScope _scope;
 
         public PostgreSQLColumnMetaDataReader(ResultSet rsCols, DbScope scope)
         {
             super(rsCols);
             _scope = scope;
-            _domainScales = DOMAIN_SCALES.get(_scope);
-            assert null != _domainScales;
+            assert null != DOMAIN_SCALES;
 
             _nameKey = "COLUMN_NAME";
             _sqlTypeKey = "DATA_TYPE";
@@ -1059,13 +1050,13 @@ class SqlDialectPostgreSQL extends SqlDialect
             if (Types.DISTINCT == sqlType)
             {
                 String typeName = getSqlTypeName();
-                Integer scale = _domainScales.get(typeName);
+                Integer scale = DOMAIN_SCALES.get(typeName);
 
                 if (null == scale)
                 {
                     // Some domain wasn't there when we initialized the datasource, so reload now.  This will happpen at bootstrap.
-                    initializeUserDefinedTypes(_scope, _domainScales);
-                    scale = _domainScales.get(typeName);
+                    initializeUserDefinedTypes(_scope);
+                    scale = DOMAIN_SCALES.get(typeName);
                 }
 
                 assert scale != null;
@@ -1092,114 +1083,5 @@ class SqlDialectPostgreSQL extends SqlDialect
             return getOtherDatabaseThreads();
         }
         return null;
-    }
-
-    public Collection<? extends Class> getJUnitTests()
-    {
-        return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
-    }
-
-    public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
-    {
-        public void testDialectRetrieval()
-        {
-            // These should result in bad database exception
-            badProductName("Gobbledygood", 8.0, 8.5, "");
-            badProductName("Postgres", 8.0, 8.5, "");
-            badProductName("postgresql", 8.0, 8.5, "");
-
-            // 8.1 or lower should result in bad version number
-            badVersion("PostgreSQL", -5.0, 8.1, null);
-
-            //  > 8.1 should be good
-            good("PostgreSQL", 8.2, 11.0, "", SqlDialectPostgreSQL.class);
-        }
-    }
-
-    public static class JavaUpgradeCodeTestCase extends Assert
-    {
-        @Test
-        public void testJavaUpgradeCode()
-        {
-            String goodSql =
-                    "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
-                            "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
-                            "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
-                            "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
-
-
-            String badSql =
-                    "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
-                            "   more comment\n" +
-                            "*/" +
-                            "    -- SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +   // Inside single-line comment
-                            "SELECTcore.executeJavaUpgradeCode('upgradeCode');\n" +           // Bad syntax
-                            "SELECT core. executeJavaUpgradeCode('upgradeCode');\n" +         // Bad syntax
-                            "SEECT core.executeJavaUpgradeCode('upgradeCode');\n" +           // Misspell SELECT
-                            "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
-                            "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
-
-            try
-            {
-                TestUpgradeCode good = new TestUpgradeCode();
-                INSTANCE.runSql(null, goodSql, good, null);
-                assertEquals(4, good.getCounter());
-
-                TestUpgradeCode bad = new TestUpgradeCode();
-                INSTANCE.runSql(null, badSql, bad, null);
-                assertEquals(0, bad.getCounter());
-            }
-            catch (SQLException e)
-            {
-                fail("SQL Exception running test: " + e.getMessage());
-            }
-        }
-    }
-
-    public static class JdbcHelperTestCase extends Assert
-    {
-        @Test
-        public void testJdbcHelper()
-        {
-            JdbcHelper helper = INSTANCE.getJdbcHelper();
-
-            try
-            {
-                String goodUrls = "jdbc:postgresql:database\n" +
-                        "jdbc:postgresql://localhost/database\n" +
-                        "jdbc:postgresql://localhost:8300/database\n" +
-                        "jdbc:postgresql://www.host.com/database\n" +
-                        "jdbc:postgresql://www.host.com:8499/database\n" +
-                        "jdbc:postgresql:database?user=fred&password=secret&ssl=true\n" +
-                        "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true\n" +
-                        "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true\n" +
-                        "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true\n" +
-                        "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true";
-
-                for (String url : goodUrls.split("\n"))
-                    assertEquals(helper.getDatabase(url), "database");
-            }
-            catch (Exception e)
-            {
-                fail("Exception running JdbcHelper test: " + e.getMessage());
-            }
-
-            String badUrls = "jddc:postgresql:database\n" +
-                    "jdbc:postgres://localhost/database\n" +
-                    "jdbc:postgresql://www.host.comdatabase";
-
-            for (String url : badUrls.split("\n"))
-            {
-                try
-                {
-                    if (helper.getDatabase(url).equals("database"))
-                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
-                }
-                catch (ServletException e)
-                {
-                    // Skip -- we expect to fail on these
-                }
-            }
-        }
     }
 }

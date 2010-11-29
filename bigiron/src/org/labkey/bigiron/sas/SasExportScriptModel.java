@@ -26,9 +26,9 @@ import java.util.List;
  * Date: Jan 27, 2009
  * Time: 3:13:06 PM
  */
-public class ExportSasScriptModel extends ExportScriptModel
+public class SasExportScriptModel extends ExportScriptModel
 {
-    public ExportSasScriptModel(QueryView view)
+    public SasExportScriptModel(QueryView view)
     {
         super(view);
     }

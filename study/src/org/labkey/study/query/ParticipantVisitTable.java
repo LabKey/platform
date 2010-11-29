@@ -17,7 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;

@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 
 /**
  * Column which has the data for both the participant and the visit in a single value.

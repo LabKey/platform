@@ -17,7 +17,7 @@
 package org.labkey.cabig;
 
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
 
 public class caBIGSchema

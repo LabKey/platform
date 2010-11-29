@@ -16,10 +16,15 @@
 package org.labkey.bigiron.mysql;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleSqlDialect;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.StandardJdbcHelper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,8 +35,10 @@ import java.util.Map;
  * Date: Aug 17, 2010
  * Time: 3:53:40 PM
  */
-public class SqlDialectMySql extends SimpleSqlDialect
+public class MySqlDialect extends SimpleSqlDialect
 {
+    private static final Logger _log = Logger.getLogger(MySqlDialect.class);
+
     @Override
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
@@ -46,27 +53,6 @@ public class SqlDialectMySql extends SimpleSqlDialect
     protected String getProductName()
     {
         return "MySQL";
-    }
-
-    @Override
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
-    {
-        if (!getProductName().equals(dataBaseProductName))
-            return false;
-
-        int version = databaseMajorVersion * 10 + databaseMinorVersion;   // 5.1 => 51, 5.5 => 55, etc.
-
-        // Version 5.1 or greater is allowed...
-        if (version >= 51)
-        {
-            // ...but warn for anything greater than 5.1
-            if (logWarnings && version > 51)
-                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + ".  " +  getProductName() + " 5.1 is the recommended version.");
-
-            return true;
-        }
-
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 5.1 or greater.");
     }
 
     @Override
@@ -199,4 +185,15 @@ public class SqlDialectMySql extends SimpleSqlDialect
     {
         return "INFORMATION_SCHEMA".equalsIgnoreCase(schemaName);
     }
+
+    // If necessary, escape quotes and quote the identifier -- standard MySQL quote character is back tick (`)
+    @Override
+    public String makeLegalIdentifier(String id)
+    {
+        if (shouldQuoteIdentifier(id))
+            return "`" + id.replaceAll("`", "``") + "`";
+        else
+            return id;
+    }
+
 }
