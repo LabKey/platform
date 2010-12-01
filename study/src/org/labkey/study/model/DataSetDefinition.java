@@ -795,7 +795,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     // MV indicators are strings
                     mvColumn.setSqlTypeName("VARCHAR");
                     mvColumn.setPropertyURI(wrapped.getPropertyURI());
-                    mvColumn.setAlias(col.getAlias() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
+                    mvColumn.setMetaDataName(col.getAlias() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
                     mvColumn.setNullable(true);
                     mvColumn.setUserEditable(false);
                     mvColumn.setHidden(true);
@@ -926,8 +926,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    static ColumnInfo newDatasetColumnInfo(TableInfo tinfo, ColumnInfo from, final String propertyURI)
+    static ColumnInfo newDatasetColumnInfo(TableInfo tinfo, final ColumnInfo from, final String propertyURI)
     {
+        // TODO: Yuck
         ColumnInfo result = new ColumnInfo(from, tinfo)
         {
             @Override
@@ -938,6 +939,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         };
         // Hidden doesn't get copied with the default set of properties
         result.setHidden(from.isHidden());
+        result.setMetaDataName(from.getMetaDataName());
         return result;
     }
 
