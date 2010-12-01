@@ -16,11 +16,14 @@
 
 package org.labkey.api.reports.report.r.view;
 
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.PrintWriter;
@@ -51,7 +54,6 @@ public abstract class DownloadOutputView extends ROutputView
         {
             if (_parent.getEntityId() != null)
             {
-                MimeMap mimeMap = new MimeMap();
                 AttachmentFile form = new FileAttachmentFile(getFile());
                 AttachmentService.get().deleteAttachment(_parent, getFile().getName());
                 AttachmentService.get().addAttachments(getViewContext().getUser(), _parent, Collections.singletonList(form));
@@ -70,7 +72,7 @@ public abstract class DownloadOutputView extends ROutputView
                     if (getFile().getName().equals(a.getName()))
                     {
                         out.write("<a href=\"");
-                        out.write(PageFlowUtil.filter(PageFlowUtil.urlProvider(ReportUrls.class).getDownloadClass()));
+                        out.write(PageFlowUtil.filter(a.getDownloadUrl(PageFlowUtil.urlProvider(ReportUrls.class).getDownloadClass())));
                         out.write("\">");
                         out.write(_fileType);
                         out.write(" output file (click to download)</a>");

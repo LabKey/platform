@@ -337,6 +337,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
+    public void setMetaDataName(String metaDataName)
+    {
+        this.metaDataName = metaDataName;
+    }
+
     public String getMetaDataName()
     {
         return metaDataName;      // Actual name returned by metadata; use to query meta data or to select columns enclosed in quotes
