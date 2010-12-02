@@ -69,11 +69,16 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      *
      * @param dirData mass spec data directory
      * @param protocolName name of protocol for analysis
+     * @param root pipeline root under which the files are stored
      * @return analysis directory
      */
-    public File getAnalysisDir(File dirData, String protocolName)
+    public File getAnalysisDir(File dirData, String protocolName, PipeRoot root)
     {
-        return new File(new File(dirData, getName()), protocolName);
+        File defaultFile = new File(new File(dirData, getName()), protocolName);
+        // Check if the pipeline root wants us to write somewhere else, because the source file might be in a read-only
+        // pipeline location
+        String relativePath = root.relativePath(defaultFile);
+        return root.resolvePath(relativePath);
     }
 
     /**
@@ -89,15 +94,20 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      *
      * @param dirData mass spec data directory
      * @param protocolName name of protocol for analysis
+     * @param root pipeline root under which the files are stored
      * @return parameters file
      */
-    public File getParametersFile(File dirData, String protocolName)
+    public File getParametersFile(File dirData, String protocolName, PipeRoot root)
     {
         if (dirData == null)
         {
             return null;
         }
-        return new File(getAnalysisDir(dirData, protocolName), getParametersFileName());
+        File defaultFile = new File(getAnalysisDir(dirData, protocolName, root), getParametersFileName());
+        // Check if the pipeline root wants us to write somewhere else, because the source file might be in a read-only
+        // pipeline location
+        String relativePath = root.relativePath(defaultFile);
+        return root.resolvePath(relativePath);
     }
 
     /**

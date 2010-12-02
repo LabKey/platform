@@ -90,6 +90,13 @@ public abstract class ContainerFilter
                 return new CurrentPlusProjectAndShared(user);
             }
         },
+        WorkbookAssay("Current folder, project, and Shared project")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new WorkbookAssay(user);
+            }
+        },
         AllFolders("All folders")
         {
             public ContainerFilter create(User user)
@@ -278,6 +285,31 @@ public abstract class ContainerFilter
         public Type getType()
         {
             return Type.CurrentAndParents;
+        }
+    }
+
+    public static class WorkbookAssay extends CurrentPlusProjectAndShared
+    {
+        public WorkbookAssay(User user)
+        {
+            super(user);
+        }
+
+        @Override
+        public Collection<String> getIds(Container currentContainer)
+        {
+            Collection<String> result = super.getIds(currentContainer);
+            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, ReadPermission.class))
+            {
+                result.add(currentContainer.getParent().getId());
+            }
+            return result;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.WorkbookAssay;
         }
     }
 

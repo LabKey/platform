@@ -88,7 +88,7 @@ LABKEY.Pipeline = new function(){
                 method: 'POST',
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                        onSuccess(data.protocols, data.defaultProtocolName, response);
+                        onSuccess.call(this, data.protocols, data.defaultProtocolName, response);
                 }, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
@@ -134,7 +134,7 @@ LABKEY.Pipeline = new function(){
                 timeout: 60000000,
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
-                        onSuccess(data.files, data.submitType, response);
+                        onSuccess.call(this, data.files, data.submitType, response);
                 }, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });

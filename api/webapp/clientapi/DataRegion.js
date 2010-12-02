@@ -1320,14 +1320,19 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                         this.showLoadingMessage("Saving custom view...");
                     }.defer(500, self);
 
+                    var jsonData = {
+                        schemaName: self.schemaName,
+                        "query.queryName": self.queryName,
+                        "query.viewName": self.viewName,
+                        newName: o.name,
+                        inherit: o.inherit,
+                        shared: o.shared
+                    };
+
                     Ext.Ajax.request({
                         url: LABKEY.ActionURL.buildURL("query", "saveSessionView"),
                         method: "POST",
-                        jsonData: {
-                            schemaName: self.schemaName,
-                            "query.queryName": self.queryName,
-                            "query.viewName": self.viewName
-                        },
+                        jsonData: jsonData,
                         headers : {
                             'Content-Type' : 'application/json'
                         },
@@ -1336,7 +1341,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                             if (timerId > 0)
                                 clearTimeout(timerId);
                             self.showSuccessMessage();
-                            self.changeView(self.viewName);
+                            self.changeView(o.name);
                         }, self),
                         failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
                             if (timerId > 0)

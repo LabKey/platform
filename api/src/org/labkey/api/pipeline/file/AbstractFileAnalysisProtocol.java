@@ -97,14 +97,14 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         return ft.getDefaultFileType().getBaseName(file);
     }
 
-    public File getAnalysisDir(File dirData)
+    public File getAnalysisDir(File dirData, PipeRoot root)
     {
-        return getFactory().getAnalysisDir(dirData, getName());
+        return getFactory().getAnalysisDir(dirData, getName(), root);
     }
 
-    public File getParametersFile(File dirData)
+    public File getParametersFile(File dirData, PipeRoot root)
     {
-        return getFactory().getParametersFile(dirData, getName());
+        return getFactory().getParametersFile(dirData, getName(), root);
     }
 
     @Override

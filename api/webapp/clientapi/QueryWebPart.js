@@ -90,8 +90,12 @@
  *      </ul>
  *  </li>
  * </ul>
- * @param {String} [config.sort] A base sort order to use. This may be a comma-separated list of column names, each of
- * which may have a - prefix to indicate a descending sort.
+ * @param {String} [config.sort] A base sort order to use. This is a comma-separated list of column names, each of
+ * which may have a - prefix to indicate a descending sort. It will be treated as the final sort, after any that the user
+ * has defined in a custom view or through interacting with the grid column headers.
+ * @param {String} [config.removeableSort] An additional sort order to use. This is a comma-separated list of column names, each of
+ * which may have a - prefix to indicate a descending sort. It will be treated as the first sort, before any that the user
+ * has defined in a custom view or through interacting with the grid column headers.
  * @param {Array} [config.filters] A base set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
  * each of which is created using the {@link LABKEY.Filter.create} method. These filters cannot be removed by the user
  * interacting with the UI.
@@ -209,8 +213,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         events: false,
         filterOptRe: false,
         userFilters: false,
+        userSort: false,
         qsParamsToIgnore: false,
         buttonBar: false,
+        maxRows: false,
+        offset: false,
         scope: false,
         _customizeViewWin: false
     },
@@ -232,6 +239,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             var translatedFilters = {};
             LABKEY.Filter.appendFilterParams(translatedFilters, config.removeableFilters, this.dataRegionName);
             this.userFilters = translatedFilters;
+        }
+        if (config.removeableSort)
+        {
+            this.userSort = config.removeableSort;
         }
         this.qsParamsToIgnore = {};
 
@@ -261,6 +272,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             params[this.dataRegionName + ".viewName"] = this.viewName;
         if (this.containerFilter)
             params[this.dataRegionName + ".containerFilterName"] = this.containerFilter;
+        if (this.maxRows)
+            params[this.dataRegionName + ".maxRows"] = this.maxRows;
+        if (this.offset)
+            params[this.dataRegionName + ".offset"] = this.offset;
+        // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
+        if (this.userSort)
+            params[this.dataRegionName + ".sort"] = this.userSort;
 
         //add user filters (already in encoded form)
         if (this.userFilters)
@@ -332,6 +350,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         if (this.filters)
             LABKEY.Filter.appendFilterParams(json.filters, this.filters, this.dataRegionName);
 
+        // Non-removeable sorts. We need to pass these as JSON, not on the URL.
         if (this.sort)
             json.filters[this.dataRegionName + ".sort"] = this.sort;
 
@@ -527,13 +546,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     },
 
     beforeSortChange : function(dataRegion, columnName, sortDirection) {
-        this.sort = dataRegion.alterSortString(this.sort, columnName, sortDirection);
+        this.userSort = dataRegion.alterSortString(this.userSort, columnName, sortDirection);
         this.render();
         return false;
     },
 
     beforeClearSort : function(dataRegion, columnName) {
-        this.sort = dataRegion.alterSortString(this.sort, columnName, null);
+        this.userSort = dataRegion.alterSortString(this.userSort, columnName, null);
         this.render();
         return false;
     },
@@ -575,7 +594,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         this.cleanupDesignerWin();
         delete this.offset;
         delete this.userFilters;
-        delete this.sort;
+        delete this.userSort;
         if (viewName)
             this.viewName = viewName;
         else

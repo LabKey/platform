@@ -285,7 +285,11 @@ Ext.ux.form.LovCombo = Ext.extend(Ext.form.ComboBox, {
 	,setValue:function(v) {
 		if(v) {
 			v = '' + v;
-			if(this.valueField) {
+            // Issue 11300: Don't set LovCombo value unless store has been populated.
+            // During .initValue(), first .setValue() is called then originalValue is set to .getValue().
+            // If the store hasn't been populated yet, the originalValue will be set to "" and .isDirty()
+            // will incorrectly consider this a dirty field.
+			if(this.valueField && this.store.getCount()) {
                 this.store.suspendEvents(true);
 				this.store.clearFilter();
 				this.store.each(function(r) {
