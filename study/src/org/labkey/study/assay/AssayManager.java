@@ -142,23 +142,6 @@ public class AssayManager implements AssayService.Interface
         return AssaySchemaImpl.getResultsTableName(protocol);
     }
 
-    public boolean hasAssayProtocols(Container container)
-    {
-        ExpProtocol[] containerProtocols = ExperimentService.get().getExpProtocols(container);
-        if (containerProtocols != null && containerProtocols.length > 0)
-            return true;
-
-        Container project = container.getProject();
-        if (project != null && !container.equals(project))
-        {
-            ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(container.getProject());
-            if (projectProtocols != null && projectProtocols.length > 0)
-                return true;
-        }
-
-        return false;
-    }
-
     public List<ExpProtocol> getAssayProtocols(Container container)
     {
         List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
@@ -175,6 +158,11 @@ public class AssayManager implements AssayService.Interface
         {
             ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(sharedContainer);
             addTopLevelProtocols(projectProtocols, protocols);
+        }
+        if (container.isWorkbook() && !container.getParent().equals(project))
+        {
+            ExpProtocol[] workbookParentProtocols = ExperimentService.get().getExpProtocols(container.getParent());
+            addTopLevelProtocols(workbookParentProtocols, protocols);
         }
         return protocols;
     }
@@ -272,7 +260,14 @@ public class AssayManager implements AssayService.Interface
             {
                 containers.remove(currentContainer);
                 ActionURL url = provider.getImportURL(currentContainer, protocol);
-                uploadButton.addMenuItem("Current Folder (" + currentContainer.getPath() + ")", url);
+                if (currentContainer.isWorkbook())
+                {
+                    uploadButton.addMenuItem("Current Workbook (" + currentContainer.getTitle() + ")", url);
+                }
+                else
+                {
+                    uploadButton.addMenuItem("Current Folder (" + currentContainer.getPath() + ")", url);
+                }
             }
             for(Container container : containers)
             {

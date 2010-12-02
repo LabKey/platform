@@ -167,7 +167,7 @@
                                 <div class="x-clear"></div>
                             </ul>
                             <div class="labkey-tab-strip-spacer"></div>
-                            <div id="wiki-tab-content" class="labkey-tab-strip-content">
+                            <div id="wiki-tab-content" class="labkey-tab-strip-content" style="padding: 0;">
                                 <form action="">
                                 <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body"
                                           name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>

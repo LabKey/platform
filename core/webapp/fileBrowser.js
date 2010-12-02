@@ -1019,14 +1019,13 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                 }
             },
             {name: 'name', mapping: 'propstat/prop/displayname', sortType:'asUCString'},
-            {name: 'fileExt', mapping: 'propstt/prop/displayname', type: 'asUCString',
+            {name: 'fileExt', mapping: 'propstat/prop/displayname',
                 convert : function (v, rec)
                 {
-                    // UNDONE: look for <collection>
-                    var uri = getURI(v, rec);
-                    var idx = uri.pathname.lastIndexOf('.');
+                    // parse the file extension from the file name
+                    var idx = v.lastIndexOf('.');
                     if (idx != -1)
-                        return uri.pathname.substring(idx+1);
+                        return v.substring(idx+1);
                     return '';
                 }
             },

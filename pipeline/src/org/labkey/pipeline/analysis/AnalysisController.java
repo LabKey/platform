@@ -76,7 +76,7 @@ public class AnalysisController extends SpringActionController
     {
         try
         {
-            File protocolFile = factory.getParametersFile(dirData, protocolName);
+            File protocolFile = factory.getParametersFile(dirData, protocolName, root);
             FileAnalysisProtocol result;
             if (NetworkDrive.exists(protocolFile))
             {
@@ -190,7 +190,7 @@ public class AnalysisController extends SpringActionController
 
             protocol.getFactory().ensureDefaultParameters(root);
 
-            File fileParameters = protocol.getParametersFile(dirData);
+            File fileParameters = protocol.getParametersFile(dirData, root);
             // Make sure configure.xml file exists for the job when it runs.
             if (!fileParameters.exists())
             {
@@ -224,7 +224,7 @@ public class AnalysisController extends SpringActionController
                 throw new NotFoundException("No protocol specified");
             }
             FileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
-            File dirAnalysis = factory.getAnalysisDir(dirData, form.getProtocolName());
+            File dirAnalysis = factory.getAnalysisDir(dirData, form.getProtocolName(), root);
             form.initStatus(protocol, dirData, dirAnalysis);
 
             boolean isRetry = false;

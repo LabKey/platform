@@ -312,7 +312,7 @@ public class ListItemImpl implements ListItem
             }
             if (_new)
             {
-                if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
+                if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger) && null == _itm.getKey())
                     _itm.setKey(_keyIncrementer.getNextKey(_list));
                 _itm = Table.insert(user, _list.getIndexTable(), _itm);
 

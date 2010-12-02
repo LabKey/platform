@@ -261,6 +261,7 @@ public class SimpleUserSchema extends UserSchema
             return SimpleTableDomainKind.getDomainURI(_userSchema.getName(), getName(), getContainer(), _userSchema.getUser());
         }
 
+        // XXX: rename 'createObjectURI'
         protected String createPropertyURI()
         {
             if (_objectUriCol == null)
@@ -281,7 +282,7 @@ public class SimpleUserSchema extends UserSchema
             // UNDONE: add an 'isUserEditable' bit to the schema and table?
             TableInfo table = getRealTable();
             if (table != null && table.getTableType() == TableInfo.TABLE_TYPE_TABLE)
-                return new DefaultQueryUpdateService(this, table);
+                return new SimpleQueryUpdateService(this, table);
             return null;
         }
 

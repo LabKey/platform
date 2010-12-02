@@ -30,7 +30,7 @@
     Container c = getViewContext().getContainer();
     User user = getViewContext().getUser();
 
-    boolean hasAssayProtocols = AssayManager.get().hasAssayProtocols(c);
+    boolean hasAssayProtocols = !AssayManager.get().getAssayProtocols(c).isEmpty();
     boolean canDesignAssays = c.hasPermission(user, DesignAssayPermission.class);
 
     PipelineService pipeService = PipelineService.get();

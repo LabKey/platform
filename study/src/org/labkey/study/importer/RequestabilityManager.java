@@ -333,9 +333,11 @@ public class RequestabilityManager
             _container = container;
         }
 
+        public abstract String getAvailabilityReason();
+
         public int updateRequestability(User user, Specimen[] specimens) throws InvalidRuleException
         {
-            String reason = getMarkType().getLabel() + " based on " + getName() + ".";
+            String reason = getAvailabilityReason();
             SQLFragment updateSQL = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoVial() + " SET ");
             updateSQL.append(getAvailableAssignmentSQL());
             updateSQL.append(", AvailabilityReason = ? WHERE Container = ? AND ");
@@ -505,6 +507,12 @@ public class RequestabilityManager
             return updateFilter;
         }
 
+        @Override
+        public String getAvailabilityReason()
+        {
+            return "This vial is " + getMarkType().getLabel().toLowerCase() + " because it was found in the set called \"" + _queryName + "\".";
+        }
+
         public String getExtraName()
         {
             return _schemaName + "." + _queryName + (_viewName != null ? ", view " + _viewName : "");
@@ -537,6 +545,12 @@ public class RequestabilityManager
         {
             return RuleType.AT_REPOSITORY;
         }
+
+        @Override
+        public String getAvailabilityReason()
+        {
+            return "This vial is unavailable because it is not currently held by a repository.";
+        }
     }
 
     private static class AdminOverrideRule extends RequestableRule
@@ -544,6 +558,12 @@ public class RequestabilityManager
         public AdminOverrideRule(Container container)
         {
             super(container);
+        }
+
+        @Override
+        public String getAvailabilityReason()
+        {
+            return "This vial's availability status was set by an administrator. Please contact an administrator for more information.";
         }
 
         @Override
@@ -586,6 +606,12 @@ public class RequestabilityManager
         public RuleType getType()
         {
             return RuleType.LOCKED_IN_REQUEST;
+        }
+
+        @Override
+        public String getAvailabilityReason()
+        {
+            return "This vial is unavailable because it is locked in a specimen request.";
         }
     }
 

@@ -134,9 +134,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             List<String> required = super.getRequiredColumns();
             required.add("GlobalUniqueId");
-            required.add("AtRepository");
-            required.add("LockedInRequest");
             required.add("Available");
+            required.add("AvailabilityReason");
             return required;
         }
 
@@ -150,24 +149,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             if (!isAvailable(ctx))
             {
-                if (!isAtRepository(ctx))
-                {
-                    out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
-                            "This specimen is unavailable because it is not currently held by a repository.<br><br>" +
-                                    "Click " + PageFlowUtil.textLink("history", getHistoryLink(ctx)) + " for more information.", true));
-                }
-                else if (isInActiveRequest(ctx))
-                {
-                    out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
-                            "This specimen is unavailable because it is part of an active specimen request.<br><br>" +
-                                    "Click " + PageFlowUtil.textLink("history", getHistoryLink(ctx)) + " for more information.", true));
-                }
-                else
-                {
-                    out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
-                            "This specimen is unavailable because an administrator has overridden its availability status.<br><br>" +
-                                    "Contact a system administrator for more information.", true));
-                }
+                String reasonAlias = getRequiredColumnAlias("AvailabilityReason");
+                Object reason = ctx.getRow().get(reasonAlias);
+
+                out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
+                            (reason instanceof String ? reason : "Specimen Unavailable.") + "<br><br>" +
+                            "Click " + PageFlowUtil.textLink("history", getHistoryLink(ctx)) + " for more information.", true));
             }
         }
 
@@ -177,16 +164,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 _historyLinkBase = getHistoryLinkBase(ctx.getViewContext());
             Integer specimenId = (Integer) ctx.getRow().get("RowId");
             return _historyLinkBase + specimenId;
-        }
-
-        private boolean isAtRepository(RenderContext ctx)
-        {
-            return SpecimenUtils.isFieldTrue(ctx, getRequiredColumnAlias("AtRepository"));
-        }
-
-        private boolean isInActiveRequest(RenderContext ctx)
-        {
-            return SpecimenUtils.isFieldTrue(ctx, getRequiredColumnAlias("LockedInRequest"));
         }
 
         private boolean isAvailable(RenderContext ctx)

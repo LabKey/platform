@@ -763,6 +763,10 @@ public class IssuesController extends SpringActionController
             //    ...if someone other than "created by" is closing a bug
             //    ...if someone other than "assigned to" is updating, reopening, or resolving a bug
             String change = ReopenAction.class.equals(form.getAction()) ? "reopened" : getActionName(form.getAction()) + "d";
+            if ("resolved".equalsIgnoreCase(change) && issue.getResolution() != null)
+            {
+                change += " as " + issue.getResolution();
+            }
             sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, form.getAction());
             return true;
         }

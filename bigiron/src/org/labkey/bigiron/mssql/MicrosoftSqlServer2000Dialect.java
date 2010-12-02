@@ -632,7 +632,7 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
         List<String> sqlParts = new ArrayList<String>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
-            sqlParts.add(prop.getName());
+            sqlParts.add(makeLegalIdentifier(prop.getName()));
         }
 
         return String.format("ALTER TABLE %s DROP COLUMN %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n"));
@@ -652,7 +652,7 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
     private String getSqlColumnSpec(PropertyStorageSpec prop)
     {
         List<String> colSpec = new ArrayList<String>();
-        colSpec.add(prop.getName());
+        colSpec.add(makeLegalIdentifier(prop.getName()));
         colSpec.add(sqlTypeNameFromSqlType(prop.getSqlTypeInt()));
 
         if (prop.getSqlTypeInt() == Types.VARCHAR)

@@ -3530,8 +3530,19 @@ public class QueryController extends SpringActionController
 
     public static class SaveSessionViewForm extends QueryForm
     {
+        private String newName;
         private boolean inherit;
         private boolean shared;
+
+        public String getNewName()
+        {
+            return newName;
+        }
+
+        public void setNewName(String newName)
+        {
+            this.newName = newName;
+        }
 
         public boolean isInherit()
         {
@@ -3581,15 +3592,18 @@ public class QueryController extends SpringActionController
                     HttpView.throwUnauthorized();
             }
 
+            // Delete the session view.
             view.delete(getUser(), getViewContext().getRequest());
 
-            // Get any non-session view
-            CustomView shadowedView = form.getQueryDef().getCustomView(getUser(), null, form.getViewName());
-            if (shadowedView == null)
+            // Get any previously existing non-session view.
+            // The session custom view and the view-to-be-saved may have different names.
+            // UNDONE: If the view has a different name, we will clobber it without asking.
+            CustomView existingView = form.getQueryDef().getCustomView(getUser(), null, form.getNewName());
+            if (existingView == null)
             {
                 User owner = form.isShared() ? null : getUser();
 
-                CustomViewImpl viewCopy = new CustomViewImpl(form.getQueryDef(), owner, form.getQuerySettings().getViewName());
+                CustomViewImpl viewCopy = new CustomViewImpl(form.getQueryDef(), owner, form.getNewName());
                 viewCopy.setColumns(view.getColumns());
                 viewCopy.setCanInherit(form.isInherit());
                 viewCopy.setFilterAndSort(view.getFilterAndSort());
@@ -3601,11 +3615,11 @@ public class QueryController extends SpringActionController
             else
             {
                 // UNDONE: changing shared and inherit properties is unimplemented.  Not sure if it makes sense from a usability point of view.
-                shadowedView.setColumns(view.getColumns());
-                shadowedView.setFilterAndSort(view.getFilterAndSort());
-                shadowedView.setColumnProperties(view.getColumnProperties());
+                existingView.setColumns(view.getColumns());
+                existingView.setFilterAndSort(view.getFilterAndSort());
+                existingView.setColumnProperties(view.getColumnProperties());
                 
-                shadowedView.save(getUser(), getViewContext().getRequest());
+                existingView.save(getUser(), getViewContext().getRequest());
             }
 
             return new ApiSimpleResponse("success", true);

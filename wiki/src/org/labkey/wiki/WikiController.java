@@ -431,15 +431,18 @@ public class WikiController extends SpringActionController
             if (!perms.allowUpdate(_wiki))
                 HttpView.throwUnauthorized("You do not have permissions to manage this wiki page");
 
+            // Get the latest version based on previous properties
+            WikiVersion versionOld = WikiManager.getLatestVersion(_wiki);
+
+            // Now update wiki with newly submitted properties  TODO: Should clone wiki instead of changing cached copy (e.g., for concurrency and in case something goes wrong with update)
             _wiki.setName(newName);
             _wiki.setParent(form.getParent());
             HString title = form.getTitle() == null ? newName : form.getTitle();
-            WikiVersion versionOld = WikiManager.getLatestVersion(_wiki);
 
             //update version only if title has changed
             if (versionOld.getTitle().compareTo(title) != 0)
             {
-                // Make a copy, otherwise we're chaning the cached copy, and updateWiki() will think nothing changed.
+                // Make a copy, otherwise we're changing the cached copy, and updateWiki() will think nothing changed.
                 _wikiVersion = new WikiVersion(versionOld);
                 _wikiVersion.setTitle(title);
             }

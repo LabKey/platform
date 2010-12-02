@@ -89,7 +89,7 @@ public class SequenceVisitManager extends VisitManager
                     case PTID_CURRENT:
                     case PTID_INITIAL:
                         sql.append("SELECT DatasetId, SequenceNum, CAST(COUNT(*) AS INT)\n" +
-                            "FROM " + studyData + " SD, " + participantTable + " P\n" +
+                            "FROM ").append(studyData.getFromSQL("SD")).append(", " + participantTable + " P\n" +
                             "WHERE P.ParticipantId = SD.ParticipantId AND P.Container = ? AND P." +
                                 (cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId") + " = ?\n" +
                             (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +

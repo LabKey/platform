@@ -22,9 +22,9 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
@@ -152,6 +152,54 @@ public class ParticipantVisitDataSetTable extends VirtualTable
     }
 
 
+    private static class PVDatasetLookupColumn extends LookupColumn
+    {
+        private final Study _study;
+        private final VisitImpl _visit;
+        private final double _sequenceNum;
+        
+        PVDatasetLookupColumn(Study study, VisitImpl visit, double sequenceNum, ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
+        {
+            super(foreignKey, lookupKey, lookupColumn);
+            copyAttributesFrom(lookupColumn);
+            copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);
+            setLabel(foreignKey.getLabel() + " " + lookupColumn.getLabel());
+            _study = study;
+            _visit = visit;
+            _sequenceNum = sequenceNum;
+        }
+
+        @Override
+        public SQLFragment getJoinCondition(String baseAliasName)
+        {
+            SQLFragment sqlf = super.getJoinCondition(baseAliasName);
+            if (_study.getTimepointType() == TimepointType.DATE)
+            {
+                sqlf.append(" AND ");
+                sqlf.append(getTableAlias(baseAliasName)).append(".SequenceNum = (select pv.sequencenum " +
+                    "from " +
+                    "study.participantvisit pv " +
+                    "where " +
+                    "pv.participantid = (");
+                sqlf.append(baseAliasName + "." + _study.getSubjectColumnName());
+                sqlf.append(") and pv.visitrowid = ?)");
+                sqlf.add(_visit.getRowId());
+            }
+            else if (_study.getTimepointType() == TimepointType.VISIT)
+            {
+                sqlf.append(" AND ");
+                sqlf.append(getTableAlias(baseAliasName)).append(".SequenceNum=CAST(? AS NUMERIC(15,4))");
+                sqlf.add(_sequenceNum);
+            }
+            else
+            {
+                // XXX: continuous date based studies?
+            }
+            return sqlf;
+        }
+    }
+
+
     private static boolean _inSequence(VisitImpl v, double seq)
     {
         assert v.getSequenceNumMin() <= v.getSequenceNumMax();
@@ -183,8 +231,9 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                     // Data Set tables don't have an interesting title column.
                     return null;
                 }
-                String subjectColumnName = StudyService.get().getSubjectColumnName(_dataset.getContainer());
-                return LookupColumn.create(parent, table.getColumn(subjectColumnName), table.getColumn(displayField), true);
+                return new PVDatasetLookupColumn(
+                        _study, visit, sequenceNum,
+                        parent, table.getColumn(_study.getSubjectColumnName()), table.getColumn(displayField));
             }
 
             public TableInfo getLookupTableInfo()
@@ -193,32 +242,6 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                 {
                     DataSetTable dsTable = new DataSetTable(_schema, _dataset);
                     dsTable.hideParticipantLookups();
-                    if (_study.getTimepointType() == TimepointType.DATE)
-                    {
-                        SQLFragment sequenceSelector = new SQLFragment("SequenceNum = (select pv.sequencenum\n" +
-                            "from \n" +
-                            "study.participantvisit pv\n" +
-                            "where\n" +
-                            "pv.participantid = (");
-
-                        sequenceSelector.append(dsTable.getFromTable().toString() + "." + StudyService.get().getSubjectColumnName(_dataset.getContainer()));
-
-                        sequenceSelector.append(")\n" +
-                            "and\n" +
-                            "pv.visitrowid = ?)");
-
-                        sequenceSelector.add(visit.getRowId());
-
-                        dsTable.addCondition(sequenceSelector);
-                    }
-                    else if (_study.getTimepointType() == TimepointType.VISIT)
-                    {
-                        dsTable.addCondition(new SQLFragment("SequenceNum=" + sequenceNum));
-                    }
-                    else
-                    {
-                        // XXX: continuous date based studies?
-                    }
                     return dsTable;
                 }
                 catch (UnauthorizedException e)

@@ -49,7 +49,11 @@ public class AnnouncementSchema extends UserSchema
         {
             public QuerySchema getSchema(DefaultSchema schema)
             {
-                return new AnnouncementSchema(schema.getUser(), schema.getContainer());
+                // Brute force fix for #3453 -- no query access to secure message board  TODO: Filter based on permissions instead.
+                if (AnnouncementsController.getSettings(schema.getContainer()).isSecure())
+                    return null;
+                else
+                    return new AnnouncementSchema(schema.getUser(), schema.getContainer());
             }
         });
     }

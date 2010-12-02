@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -1691,46 +1692,53 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (selectedMaterialIds.length == 0)
             return;
 
-        String materialIds = StringUtils.join(toIntegers(selectedMaterialIds), ",");
-
-        String sql = "SELECT * FROM exp.Material WHERE RowId IN (" + materialIds + ");";
         boolean containingTrans = getExpSchema().getScope().isTransactionActive();
 
         try
         {
-            Material[] materials = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Material.class);
-
             if (!containingTrans)
                 getExpSchema().getScope().beginTransaction();
 
-            for (Material material : materials)
+            for (int from = 0, to; from < selectedMaterialIds.length; from = to)
             {
-                if (!material.getContainer().equals(container))
-                {
-                    throw new SQLException("Attemping to delete a Material from another container");
-                }
-                OntologyManager.deleteOntologyObjects(container, material.getLSID());
-            }
-            Table.execute(getExpSchema(),
-                    "DELETE FROM exp.MaterialInput WHERE MaterialId IN (" + materialIds + ")",
-                    new Object[0]);
+                to = from + 1000;
+                if (to > selectedMaterialIds.length)
+                    to = selectedMaterialIds.length;
 
-            Table.execute(getExpSchema(),
-                    "DELETE FROM exp.Material WHERE RowId IN (" + materialIds + ")",
-                    new Object[]{});
+                String materialIds = StringUtils.join(new ArrayIterator(selectedMaterialIds, from, to), ",");
+                String sql = "SELECT * FROM exp.Material WHERE RowId IN (" + materialIds + ");";
+
+                Material[] materials = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Material.class);
+
+                for (Material material : materials)
+                {
+                    if (!material.getContainer().equals(container))
+                    {
+                        throw new SQLException("Attemping to delete a Material from another container");
+                    }
+                    OntologyManager.deleteOntologyObjects(container, material.getLSID());
+                }
+                Table.execute(getExpSchema(),
+                        "DELETE FROM exp.MaterialInput WHERE MaterialId IN (" + materialIds + ")",
+                        new Object[0]);
+
+                Table.execute(getExpSchema(),
+                        "DELETE FROM exp.Material WHERE RowId IN (" + materialIds + ")",
+                        new Object[]{});
+
+                // Remove from search index
+                SearchService ss = ServiceRegistry.get(SearchService.class);
+                if (null != ss)
+                {
+                    for (Material material : materials)
+                    {
+                        ss.deleteResource(new ExpMaterialImpl(material).getDocumentId());
+                    }
+                }
+            }
 
             if (!containingTrans)
                 getExpSchema().getScope().commitTransaction();
-
-            // Remove from search index
-            SearchService ss = ServiceRegistry.get(SearchService.class);
-            if (null != ss)
-            {
-                for (Material material : materials)
-                {
-                    ss.deleteResource(new ExpMaterialImpl(material).getDocumentId());
-                }
-            }
         }
         catch (SQLException e)
         {
@@ -1748,18 +1756,22 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (selectedDataIds.length == 0)
             return;
 
-        String dataIds = StringUtils.join(toIntegers(selectedDataIds), ",");
-
-        String sql = "SELECT * FROM exp.Data WHERE RowId IN (" + dataIds + ");";
+        boolean containingTrans = getExpSchema().getScope().isTransactionActive();
         try
         {
-            Data[] datas = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Data.class);
-            boolean containingTrans = getExpSchema().getScope().isTransactionActive();
+            if (!containingTrans)
+                getExpSchema().getScope().beginTransaction();
 
-            try
+            for (int from = 0, to; from < selectedDataIds.length; from = to)
             {
-                if (!containingTrans)
-                    getExpSchema().getScope().beginTransaction();
+                to = from + 1000;
+                if (to > selectedDataIds.length)
+                    to = selectedDataIds.length;
+
+                String dataIds = StringUtils.join(new ArrayIterator(selectedDataIds, from, to), ",");
+                String sql = "SELECT * FROM exp.Data WHERE RowId IN (" + dataIds + ");";
+                
+                Data[] datas = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Data.class);
 
                 beforeDeleteData(ExpDataImpl.fromDatas(datas));
                 for (Data data : datas)
@@ -1775,19 +1787,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                 sql = "DELETE FROM exp.Data WHERE RowId IN (" + dataIds + ");";
                 Table.execute(getExpSchema(), sql, new Object[]{});
+            }
 
-                if (!containingTrans)
-                    getExpSchema().getScope().commitTransaction();
-            }
-            finally
-            {
-                if (!containingTrans)
-                    getExpSchema().getScope().closeConnection();
-            }
+            if (!containingTrans)
+                getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (!containingTrans)
+                getExpSchema().getScope().closeConnection();
         }
     }
 

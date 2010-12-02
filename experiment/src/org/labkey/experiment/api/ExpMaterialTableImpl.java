@@ -317,7 +317,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
     public Domain getDomain()
     {
-        return _ss.getType();
+        return _ss == null ? null : _ss.getType();
     }
 
     private void addSampleSetColumns(ExpSampleSet ss, List<FieldKey> visibleColumns)
