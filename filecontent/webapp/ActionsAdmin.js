@@ -544,6 +544,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 new LABKEY.ext.ux.ToolbarReorderer({defaultReorderable: false})
             ],
             items: buttons,
+            cls: 'test-custom-toolbar',
             enableOverflow: true,
             scope: this,
             border: true
