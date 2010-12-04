@@ -25,6 +25,7 @@ import org.json.JSONWriter;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.DataType;
@@ -33,13 +34,34 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.*;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
@@ -68,11 +90,48 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.DataOutput;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilterInputStream;
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -2690,7 +2749,7 @@ public class DavController extends SpringActionController
     }
 
 
-    static Map<Path,Boolean> hasZipMap = Collections.synchronizedMap(new HashMap<Path,Boolean>());
+    private static final Map<Path, Boolean> hasZipMap = new ConcurrentHashMap<Path, Boolean>();
 
     InputStream getGzipStream(WebdavResource r) throws DavException, IOException
     {
@@ -4455,8 +4514,8 @@ public class DavController extends SpringActionController
     }
 
 
-    static Set<String> _tempFiles = Collections.synchronizedSet(new TreeSet<String>());
-    static Set<Path> _tempResources = Collections.synchronizedSet(new HashSet<Path>());
+    private static final Set<String> _tempFiles = new ConcurrentSkipListSet<String>();
+    private static final Set<Path> _tempResources = new ConcurrentHashSet<Path>();
 
     private void markTempFile(WebdavResource r)
     {

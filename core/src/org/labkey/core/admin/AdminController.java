@@ -47,6 +47,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
@@ -179,7 +180,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -590,7 +590,7 @@ public class AdminController extends SpringActionController
 
         private String getErrors(String wikiSource, String creditsFilename, Collection<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
         {
-            Set<String> documentedFilenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
             Set<String> documentedFilenamesCopy = new HashSet<String>();
 
             Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
@@ -637,7 +637,7 @@ public class AdminController extends SpringActionController
 
         //noinspection unchecked
         Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(_libPath);
-        Set<String> filenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> filenames = new CaseInsensitiveTreeSet();
         Set<String> internalJars = removeInternalJars ? new CsvSet("api.jar,schemas.jar,internal.jar") : Collections.<String>emptySet();
 
         // Remove path prefix and copy to a modifiable collection
@@ -663,7 +663,7 @@ public class AdminController extends SpringActionController
         if (!common.exists())
             return null;
 
-        Set<String> filenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> filenames = new CaseInsensitiveTreeSet();
 
         addAllChildren(common, filenames);
 
@@ -681,7 +681,7 @@ public class AdminController extends SpringActionController
         if (!binRoot.exists())
             return null;
 
-        Set<String> filenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> filenames = new CaseInsensitiveTreeSet();
 
         addAllChildren(binRoot, filenames);
 

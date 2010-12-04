@@ -2072,7 +2072,7 @@ public class WikiController extends SpringActionController
             //remember the link to the selected page so we can highlight it appropriately if we are not in
             //a web-part context
             if (null != selectedPage && !isInWebPart)
-                this._selectedLink = selectedPage.getPageLink();
+                _selectedLink = selectedPage.getPageLink();
 
 
             //Make sure the path to the current page is expanded
@@ -2085,10 +2085,11 @@ public class WikiController extends SpringActionController
                 Stack<HString> stkPages = new Stack<HString>();
 
                 page = page.getParentWiki ();
-                 while (null != page )
+
+                while (null != page)
                 {
                     stkPages.push(page.latestVersion().getTitle());
-                    page = page.getParentWiki ();
+                    page = page.getParentWiki();
                 }
 
                 while (!stkPages.empty())

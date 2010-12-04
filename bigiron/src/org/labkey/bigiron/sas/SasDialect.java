@@ -16,7 +16,6 @@
 package org.labkey.bigiron.sas;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -45,7 +44,7 @@ public abstract class SasDialect extends SimpleSqlDialect
 {
     public SasDialect()
     {
-        oldReservedWordSet.addAll(PageFlowUtil.set(
+        _oldReservedWordSet.addAll(PageFlowUtil.set(
             "LEFT", "RIGHT"
         ));
     }

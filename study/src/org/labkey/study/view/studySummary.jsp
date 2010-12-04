@@ -16,51 +16,53 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.security.SecurityPolicy"%>
-<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.pipeline.PipelineService"%>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls"%>
+<%@ page import="org.labkey.api.security.SecurityPolicy" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.study.importer.StudyReload" %>
-<%@ page import="org.labkey.api.study.Visit" %><%@ page import="org.labkey.api.pipeline.PipelineService" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     User user = (User)request.getUserPrincipal();
     Container c = getViewContext().getContainer();
 
-if (null == getStudy())
-{
-    out.println("A study has not yet been created in this folder.<br>");
-    if (c.hasPermission(user, AdminPermission.class))
+    if (null == getStudy())
     {
-        ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
-        out.println(generateButton("Create Study", createURL));
+        out.println("A study has not yet been created in this folder.<br>");
+        if (c.hasPermission(user, AdminPermission.class))
+        {
+            ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
+            out.println(generateButton("Create Study", createURL));
 
-        if (PipelineService.get().hasValidPipelineRoot(c))
-        {
-            ActionURL importStudyURL = new ActionURL(StudyController.ImportStudyAction.class, c);
-            out.println(generateButton("Import Study", importStudyURL));
+            if (PipelineService.get().hasValidPipelineRoot(c))
+            {
+                ActionURL importStudyURL = new ActionURL(StudyController.ImportStudyAction.class, c);
+                out.println(generateButton("Import Study", importStudyURL));
+            }
+            else if(PipelineService.get().canModifyPipelineRoot(user, c))
+            {
+                ActionURL pipelineURL = urlProvider(PipelineUrls.class).urlSetup(c);
+                out.println(generateButton("Pipeline Setup", pipelineURL));
+            }
         }
-        else if(PipelineService.get().canModifyPipelineRoot(user, c))
+        else
         {
-            ActionURL pipelineURL = urlProvider(PipelineUrls.class).urlSetup(c);
-            out.println(generateButton("Pipeline Setup", pipelineURL));
-        }
-    }
-    else
-    {
 %>
     Contact an administrator to create a study.
 <%
+        }
+
+        return;
     }
-    return;
-}
+
     TimepointType timepointType = getStudy().getTimepointType();
     SecurityPolicy policy = c.getPolicy();
     boolean isAdmin = policy.hasPermission(user, AdminPermission.class);
@@ -101,14 +103,15 @@ if (null == getStudy())
         out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
         out.write("&nbsp;");
 
-        // if there is a pipeline override, show the pipeline view, else show the files webpart
+        // if there is a pipeline override, show the pipeline view, else show the file browser
         ActionURL pipelineUrl;
+
         if (PipelineService.get().hasSiteDefaultRoot(c))
             pipelineUrl = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline");
         else
             pipelineUrl = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(c);
 
-        out.write(textLink("Manage Files", pipelineUrl.toString()));
+        out.write(textLink("Manage Files", pipelineUrl));
     }
     else if (policy.hasPermission(user, ManageRequestSettingsPermission.class) &&
             getStudy().getRepositorySettings().isEnableRequests())

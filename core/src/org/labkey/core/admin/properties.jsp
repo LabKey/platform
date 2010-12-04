@@ -15,26 +15,22 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveTreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Map<String, String>> me = (JspView<Map<String, String>>) HttpView.currentView();
     Map<String, String> properties = me.getModelBean();
-    Map<String, String> sortedProperties = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
-    sortedProperties.putAll(properties);
-
+    Map<String, String> sortedProperties = new CaseInsensitiveTreeMap<String>(properties);
 %>
 <table>
     <% for (Map.Entry<String, String> entry : sortedProperties.entrySet())
     { %>
         <tr>
-            <td  class='labkey-form-label' valign="top"><%= PageFlowUtil.filter(entry.getKey())%></td>
+            <td class='labkey-form-label' valign="top"><%= PageFlowUtil.filter(entry.getKey())%></td>
             <td><%= PageFlowUtil.filter(entry.getValue())%></td>
         </tr>
     <% }

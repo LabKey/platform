@@ -217,6 +217,7 @@ public class WikiManager
             throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
         DbScope scope = comm.getSchema().getScope();
+
         try
         {
             scope.beginTransaction();
@@ -301,6 +302,7 @@ public class WikiManager
                 wikiNew.setPageVersionId(versionNew.getRowId());
                 Table.update(user, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
             }
+
             scope.commitTransaction();
         }
         finally
@@ -825,6 +827,7 @@ public class WikiManager
         {
             newWikiPage = new Wiki(cDest, destName);
             newWikiPage.setDisplayOrder(srcPage.getDisplayOrder());
+            newWikiPage.setShowAttachments(srcPage.isShowAttachments());
 
             //look up parent page via map
             if (pageIdMap != null)

@@ -58,6 +58,7 @@ public class SimpleUserSchema extends UserSchema
         super(name, description, user, container, dbschema);
         _visible = new HashSet<String>();
         _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
+
         if (_dbSchema != null)
         {
             for (SchemaTableInfo table : _dbSchema.getTables())

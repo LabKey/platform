@@ -72,6 +72,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -545,7 +546,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    Map<String, ResourceResolver> _resolvers = Collections.synchronizedMap(new HashMap<String,ResourceResolver>());
+    Map<String, ResourceResolver> _resolvers = new ConcurrentHashMap<String, ResourceResolver>();
 
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
     {

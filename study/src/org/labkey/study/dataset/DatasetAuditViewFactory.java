@@ -145,8 +145,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                             return;
                         }
 
-                        ActionURL url = new ActionURL(StudyController.DatasetAction.class,
-                                container);
+                        ActionURL url = new ActionURL(StudyController.DatasetAction.class, container);
                         url.addParameter("datasetId", datasetId.toString());
 
                         out.write("<a href=\"");
@@ -154,7 +153,6 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                         out.write("\">");
                         out.write(def.getName());
                         out.write("</a>");
-
                     }
                 };
             }

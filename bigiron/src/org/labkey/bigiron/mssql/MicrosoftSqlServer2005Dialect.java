@@ -27,7 +27,7 @@ public class MicrosoftSqlServer2005Dialect extends MicrosoftSqlServer2000Dialect
 {
     public MicrosoftSqlServer2005Dialect()
     {
-        oldReservedWordSet.addAll(PageFlowUtil.set(
+        _oldReservedWordSet.addAll(PageFlowUtil.set(
            "EXTERNAL", "PIVOT", "REVERT", "SECURITYAUDIT", "TABLESAMPLE", "UNPIVOT"
         ));
     }

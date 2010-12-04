@@ -70,7 +70,7 @@ import java.util.*;
 
 public class ReportsController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
 
     public static final String TAB_SOURCE = "source";
     public static final String TAB_VIEW = "view";

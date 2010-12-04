@@ -18,7 +18,6 @@ package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -64,7 +63,7 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
 
     protected MicrosoftSqlServer2000Dialect()
     {
-        oldReservedWordSet.addAll(PageFlowUtil.set(
+        _oldReservedWordSet.addAll(PageFlowUtil.set(
             "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK", "BROWSE", "BULK",
             "BY", "CASCADE", "CASE", "CHECK", "CHECKPOINT", "CLOSE", "CLUSTERED", "COALESCE", "COLLATE", "COLUMN", "COMMIT", "COMPUTE",
             "CONSTRAINT", "CONTAINS", "CONTAINSTABLE", "CONTINUE", "CONVERT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE",

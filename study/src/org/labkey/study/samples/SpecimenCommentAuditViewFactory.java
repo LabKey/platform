@@ -122,7 +122,6 @@ public class SpecimenCommentAuditViewFactory extends SimpleAuditViewFactory
                         out.write("\">");
                         out.write(PageFlowUtil.filter(globalUniqueId));
                         out.write("</a>");
-
                     }
                 };
             }

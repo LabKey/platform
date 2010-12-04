@@ -18,30 +18,27 @@ package org.labkey.core;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.dialect.ColumnMetaDataReader;
-import org.labkey.api.data.dialect.JdbcHelper;
-import org.labkey.api.data.dialect.KeywordCandidates;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.dialect.PkMetaDataReader;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.SqlScriptParser;
-import org.labkey.api.data.dialect.StandardJdbcHelper;
-import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.StandardJdbcHelper;
+import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
@@ -60,7 +57,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -75,12 +71,11 @@ class PostgreSqlDialect extends SqlDialect
 {
     private static final Logger _log = Logger.getLogger(PostgreSqlDialect.class);
 
-    private final Map<String, Integer> DOMAIN_SCALES = new ConcurrentHashMap<String, Integer>();
-    private final Set<String> oldReservedWordSet;
+    private final Map<String, Integer> _userDefinedTypeScales = new ConcurrentHashMap<String, Integer>();
 
     PostgreSqlDialect()
     {
-        oldReservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
+        _oldReservedWordSet.addAll(PageFlowUtil.set(
             "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BETWEEN",
             "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "CONSTRAINT", "CREATE", "CROSS",
             "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT",
@@ -109,23 +104,6 @@ class PostgreSqlDialect extends SqlDialect
         }
 
         return statementWrapper;
-    }
-
-    @Override
-    protected Set<String> getKeywords(DbScope scope) throws SQLException, IOException
-    {
-        Set<String> set = super.getKeywords(scope);
-
-        Set<String> old = Sets.newCaseInsensitiveHashSet(oldReservedWordSet);
-        old.removeAll(set);
-        Set<String> new1 = Sets.newCaseInsensitiveHashSet(set);
-        new1.removeAll(oldReservedWordSet);
-
-        _log.info("In old set, but not new: " + old);
-        _log.info("In new set, but not old: " + new1);
-
-        assert KeywordCandidates.get().containsAll(oldReservedWordSet, "PostgreSQL");
-        return set;
     }
 
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
@@ -470,7 +448,7 @@ class PostgreSqlDialect extends SqlDialect
 
     public String getCreateSchemaSql(String schemaName)
     {
-        if (!AliasManager.isLegalName(schemaName) || reservedWordSet.contains(schemaName))
+        if (!AliasManager.isLegalName(schemaName) || _reservedWordSet.contains(schemaName))
             throw new IllegalArgumentException("Not a legal schema name: " + schemaName);
         //Quoted schema names are bad news
         return "CREATE SCHEMA " + schemaName;
@@ -614,9 +592,9 @@ class PostgreSqlDialect extends SqlDialect
                 String domainName = rs.getString("domain_name");
 
                 if ("integer".equals(rs.getString("data_type")))
-                    DOMAIN_SCALES.put(domainName, 4);
+                    _userDefinedTypeScales.put(domainName, 4);
                 else
-                    DOMAIN_SCALES.put(domainName, Integer.parseInt(rs.getString("character_maximum_length")));
+                    _userDefinedTypeScales.put(domainName, Integer.parseInt(rs.getString("character_maximum_length")));
             }
         }
         finally
@@ -1014,7 +992,7 @@ class PostgreSqlDialect extends SqlDialect
         {
             super(rsCols);
             _scope = scope;
-            assert null != DOMAIN_SCALES;
+            assert null != _userDefinedTypeScales;
 
             _nameKey = "COLUMN_NAME";
             _sqlTypeKey = "DATA_TYPE";
@@ -1050,13 +1028,13 @@ class PostgreSqlDialect extends SqlDialect
             if (Types.DISTINCT == sqlType)
             {
                 String typeName = getSqlTypeName();
-                Integer scale = DOMAIN_SCALES.get(typeName);
+                Integer scale = _userDefinedTypeScales.get(typeName);
 
                 if (null == scale)
                 {
                     // Some domain wasn't there when we initialized the datasource, so reload now.  This will happpen at bootstrap.
                     initializeUserDefinedTypes(_scope);
-                    scale = DOMAIN_SCALES.get(typeName);
+                    scale = _userDefinedTypeScales.get(typeName);
                 }
 
                 assert scale != null;

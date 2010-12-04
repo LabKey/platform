@@ -60,5 +60,4 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     {
         return (SimpleTable)super.getQueryTable();
     }
-
 }
