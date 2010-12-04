@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.*;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -861,7 +862,8 @@ public class ModuleLoader implements Filter
             List<Module> allModules = ModuleLoader.getInstance().getModules();
             for (Module module : allModules)
             {
-                TreeSet<String> set = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+                TreeSet<String> set = new CaseInsensitiveTreeSet();
+
                 for (Map.Entry<String, Class<? extends Controller>> entry : module.getPageFlowNameToClass().entrySet())
                 {
                     String key = entry.getKey();

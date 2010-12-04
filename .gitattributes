@@ -120,7 +120,11 @@ api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapTest.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapWrapper.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveTreeMap.java -text
+api/src/org/labkey/api/collections/CaseInsensitiveTreeSet.java -text
 api/src/org/labkey/api/collections/CompareMap.java -text
+api/src/org/labkey/api/collections/ConcurrentCaseInsensitiveSortedMap.java -text
+api/src/org/labkey/api/collections/ConcurrentCaseInsensitiveSortedSet.java -text
+api/src/org/labkey/api/collections/ConcurrentHashSet.java -text
 api/src/org/labkey/api/collections/Join.java -text
 api/src/org/labkey/api/collections/MapWrapper.java -text
 api/src/org/labkey/api/collections/MultiValueMap.java -text
@@ -129,6 +133,7 @@ api/src/org/labkey/api/collections/OldCaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/ResultSetRowMapFactory.java -text
 api/src/org/labkey/api/collections/RowMap.java -text
 api/src/org/labkey/api/collections/RowMapFactory.java -text
+api/src/org/labkey/api/collections/SetFromMap.java -text
 api/src/org/labkey/api/collections/Sets.java -text
 api/src/org/labkey/api/data/AbstractForeignKey.java -text
 api/src/org/labkey/api/data/AbstractTableInfo.java -text

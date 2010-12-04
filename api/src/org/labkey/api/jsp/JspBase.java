@@ -16,7 +16,6 @@
 
 package org.labkey.api.jsp;
 
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;

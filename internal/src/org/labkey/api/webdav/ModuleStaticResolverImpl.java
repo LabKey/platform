@@ -43,10 +43,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -84,7 +84,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
     // DavController has a per request cache, but we want to aggressively cache static file resources
     StaticResource _root = null;
-    Map<Path, WebdavResource> _allStaticFiles = Collections.synchronizedMap(new HashMap<Path, WebdavResource>());
+    Map<Path, WebdavResource> _allStaticFiles = new ConcurrentHashMap<Path, WebdavResource>();
 
 
     public boolean requiresLogin()

@@ -17,12 +17,17 @@
 package org.labkey.api.view;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.cache.StringKeyCache;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.security.User;
 
 import javax.servlet.http.HttpSession;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: Mark Igra
@@ -34,10 +39,11 @@ public class NavTreeManager
     private static final String EXPAND_CONTAINERS_KEY = NavTreeManager.class.getName() + "/expandedContainers";
     private static final String CACHE_PREFIX = NavTreeManager.class.getName() + "/";
     private static final Logger _log = Logger.getLogger(NavTreeManager.class);
+    private static final String NULL_MARKER = "__null marker representing the root__";   // ConcurrentHashMap does not support null keys
 
     private static final StringKeyCache<Collapsible> NAV_TREE_CACHE = CacheManager.getSharedCache();
     
-    public static void expandCollapsePath(ViewContext viewContext, String navTreeId, String path, boolean collapse)
+    public static void expandCollapsePath(ViewContext viewContext, String navTreeId, @Nullable String path, boolean collapse)
     {
         if (null == navTreeId)
             return;
@@ -46,9 +52,11 @@ public class NavTreeManager
         saveExpandState(viewContext, navTreeId, path, collapse);
     }
 
-    private static void saveExpandState(ViewContext viewContext, String navTreeId, String path, boolean collapse)
+    private static void saveExpandState(ViewContext viewContext, String navTreeId, @Nullable String path, boolean collapse)
     {
+        path = null == path ? NULL_MARKER : path;
         Set<String> expandedPaths = getExpandedPaths(viewContext, navTreeId);
+
         if (collapse)
             expandedPaths.remove(path);
         else
@@ -58,6 +66,7 @@ public class NavTreeManager
     private static void collapseAll(Collapsible tree)
     {
         tree.setCollapsed(true);
+
         if (tree.getChildren() != null)
         {
             for (Collapsible child : tree.getChildren())
@@ -70,22 +79,24 @@ public class NavTreeManager
         //Each navtreeid has a set of expanded paths...
         HttpSession session = viewContext.getRequest().getSession(true);
         Map<String, Set<String>> treeMap = (Map<String, Set<String>>) session.getAttribute(EXPAND_CONTAINERS_KEY);
+
         if (null == treeMap)
         {
             //FIX: 5389
             //It's possible to get two requests on two different threads under
             //the same session (e.g., nav tree embedded in a wiki web part). So these
-            //collections must use the syncrhronized wrappers.
-            treeMap = Collections.synchronizedMap(new HashMap<String, Set<String>>());
+            //collections be concurrent.
+            treeMap = new ConcurrentHashMap<String, Set<String>>();
             // Don't track. These stick around in session, so are new?
             // assert MemTracker.put(treeMap);
             session.setAttribute(EXPAND_CONTAINERS_KEY, treeMap);
         }
 
         Set<String> expandedPaths = treeMap.get(navTreeId);
+
         if (null == expandedPaths)
         {
-            expandedPaths = Collections.synchronizedSet(new HashSet<String>());
+            expandedPaths = new ConcurrentHashSet<String>();
             //assert MemTracker.put(expandedPaths);
             treeMap.put(navTreeId, expandedPaths);
         }
@@ -93,9 +104,11 @@ public class NavTreeManager
         return expandedPaths;
     }
 
-    private static void _expandCollapseSubtree(Collapsible tree, String path, boolean collapse)
+    private static void _expandCollapseSubtree(Collapsible tree, @NotNull String path, boolean collapse)
     {
-        Collapsible subtree = tree.findSubtree(path);
+        @SuppressWarnings({"StringEquality"})
+        Collapsible subtree = tree.findSubtree(NULL_MARKER == path ? null : path);
+
         if (null != subtree)
             subtree.setCollapsed(collapse);
     }
@@ -107,21 +120,14 @@ public class NavTreeManager
     {
         Set<String> expandedPaths = getExpandedPaths(viewContext, tree.getId());
 
-        //FIX: 5389
-        //according to the javadoc for Collections, iterating over a synchronized set still
-        //requires a synchronized block. See:
-        //http://java.sun.com/j2se/1.5.0/docs/api/java/util/Collections.html#synchronizedSet(java.util.Set)
-        synchronized(expandedPaths)
-        {
-            for (String p : expandedPaths)
-                _expandCollapseSubtree(tree, p, false);
-        }
+        for (String p : expandedPaths)
+            _expandCollapseSubtree(tree, p, false);
     }
 
     /*
      * Cache a tree for the current user. User may be null
      */
-    public static void cacheTree(Collapsible navTree, User user)
+    public static void cacheTree(Collapsible navTree, @Nullable User user)
     {
         collapseAll(navTree);
         NAV_TREE_CACHE.put(getCacheKey(navTree.getId(), user), navTree, CacheManager.MINUTE);
@@ -151,7 +157,7 @@ public class NavTreeManager
         return cached;
     }
 
-    private static String getCacheKey(String navTreeId, User user)
+    private static String getCacheKey(String navTreeId, @Nullable User user)
     {
         assert null != navTreeId;
         String key;

@@ -29,6 +29,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
@@ -486,7 +487,7 @@ public class ContainerManager
                     CACHE.put(_containerChildrenPrefix + parent.getId(), emptyStringArray);
                     return Collections.emptyMap();
                 }
-                Map<String,Container> ret = new TreeMap<String,Container>(String.CASE_INSENSITIVE_ORDER);
+                Map<String, Container> ret = new CaseInsensitiveTreeMap<Container>();
                 childIds = new String[children.length];
                 for (int i=0 ; i<children.length ; i++)
                 {

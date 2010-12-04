@@ -15,23 +15,23 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AssayUrls;
-import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: migra
@@ -40,7 +40,7 @@ import java.util.Map;
  */
 public class LsidManager
 {
-    private static Map<String, Map<String, LsidHandler>> authorityMap = Collections.synchronizedMap(new HashMap<String, Map<String, LsidHandler>>());
+    private static Map<String, Map<String, LsidHandler>> authorityMap = new ConcurrentHashMap<String, Map<String, LsidHandler>>();
     private static LsidManager _instance = new LsidManager();
 
     private LsidManager()
@@ -110,6 +110,7 @@ public class LsidManager
     public void registerHandler(String prefix, LsidHandler handler, String authority)
     {
         Map<String, LsidHandler> handlerMap = authorityMap.get(authority);
+
         if (null == handlerMap)
         {
             handlerMap = new HashMap<String, LsidHandler>();

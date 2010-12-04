@@ -47,7 +47,7 @@ import java.lang.ref.WeakReference;
 public class PollingUtil
 {
     private static final String ATTR_NAME = "PollingUtil.map";
-    private static final Map<String,PollKey> globalMap = newMap();
+    private static final Map<String,PollKey> globalMap = newSynchronizedMap();
 
 
     public static PollKey createKey(@Nullable HttpSession session)
@@ -157,7 +157,7 @@ public class PollingUtil
     {
         PollingMap()
         {
-            super(10,0.5F,true);
+            super(10, 0.5F, true);
         }
 
         @Override
@@ -178,13 +178,13 @@ public class PollingUtil
     }
     
 
-    private static Map<String,PollKey>  newMap()
+    private static Map<String, PollKey> newSynchronizedMap()
     {
         return Collections.synchronizedMap(new PollingMap());
     }
 
 
-    private static Map<String,PollKey> getMap(HttpSession session)
+    private static Map<String, PollKey> getMap(HttpSession session)
     {
         if (null == session)
             return globalMap;
@@ -194,8 +194,8 @@ public class PollingUtil
             Map<String,PollKey> m = (Map<String,PollKey>)session.getAttribute(ATTR_NAME);
             if (null == m)
             {
-                m = newMap();
-                session.setAttribute(ATTR_NAME, Collections.synchronizedMap(m));
+                m = newSynchronizedMap();
+                session.setAttribute(ATTR_NAME, m);
             }
             return m;
         }

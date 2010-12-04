@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package org.labkey.api.view;
+package org.labkey.api.collections;
 
-import org.jetbrains.annotations.Nullable;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
-/**
- * User: brittp
- * Date: Apr 10, 2007
- * Time: 1:54:56 PM
- */
-public interface Collapsible
+/*
+* User: adam
+* Date: Nov 30, 2010
+* Time: 8:32:21 AM
+*/
+public class CaseInsensitiveTreeSet extends TreeSet<String>
 {
-    void setCollapsed(boolean collapsed);
-    boolean isCollapsed();
-    Collapsible[] getChildren();
-    Collapsible findSubtree(@Nullable String path);
-    String getId();
+    public CaseInsensitiveTreeSet()
+    {
+        super(String.CASE_INSENSITIVE_ORDER);
+    }
 }

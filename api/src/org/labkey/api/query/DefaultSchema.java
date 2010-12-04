@@ -17,12 +17,19 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.data.*;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A schema, scoped to a particular container
@@ -34,7 +41,7 @@ final public class DefaultSchema extends AbstractSchema
         abstract public @Nullable QuerySchema getSchema(DefaultSchema schema);
     }
 
-    private static final Map<String, SchemaProvider> _providers = Collections.synchronizedMap(new CaseInsensitiveHashMap<SchemaProvider>());
+    private static final Map<String, SchemaProvider> _providers = new ConcurrentCaseInsensitiveSortedMap<SchemaProvider>();
 
     static public void registerProvider(String name, SchemaProvider provider)
     {
@@ -105,21 +112,15 @@ final public class DefaultSchema extends AbstractSchema
 
     public Set<String> getSchemaNames()
     {
-        Set<String> ret;
-
-        // Must sychronize when (implicitly) iterating keys
-        synchronized (_providers)
-        {
-            ret = new TreeSet<String>(_providers.keySet());
-        }
-
+        Set<String> ret = new TreeSet<String>(_providers.keySet());    // TODO: Return a set in case-insensitive order?
         ret.addAll(QueryService.get().getExternalSchemas(this).keySet());
         return Collections.unmodifiableSet(ret);
     }
 
     public Set<String> getUserSchemaNames()
     {
-        Set<String> ret = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> ret = new CaseInsensitiveTreeSet();
+
         for (String schemaName : getSchemaNames())
         {
             QuerySchema schema = getSchema(schemaName);
@@ -132,6 +133,7 @@ final public class DefaultSchema extends AbstractSchema
                 continue;
             ret.add(schemaName);
         }
+
         return ret;
     }
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -260,7 +261,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
      * @param path Path of folders to expand
      * @return Named subtree
      */
-    public NavTree findSubtree(String path)
+    public NavTree findSubtree(@Nullable String path)
     {
         if (null == path || path.length() == 0 || "/".equals(path))
             return this;
@@ -286,6 +287,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
             childKey = path;
         else
             childKey = path.substring(0, slash);
+
         for (NavTree childTree : getChildren())
         {
             if (childKey.equals(childTree.getEscapedKey()))

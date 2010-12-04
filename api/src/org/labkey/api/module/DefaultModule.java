@@ -23,14 +23,15 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -68,7 +69,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * User: migra
@@ -894,7 +894,7 @@ public abstract class DefaultModule implements Module
         if (!lib.exists())
             return null;
 
-        Set<String> filenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> filenames = new CaseInsensitiveTreeSet();
 
         filenames.addAll(Arrays.asList(lib.list(getJarFilenameFilter())));
 

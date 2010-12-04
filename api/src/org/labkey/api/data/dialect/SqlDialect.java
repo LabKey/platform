@@ -64,22 +64,24 @@ import java.util.regex.Pattern;
  */
 
 // Isolate the big SQL differences between database servers. A new SqlDialect instance is created for each DbScope; the
+// dialect holds state specific to each database, for example, reserved words, user defined type information, etc.
 public abstract class SqlDialect
 {
-    private static final Logger _log = Logger.getLogger(SqlDialect.class);
-    private static final Pattern s_patStringLiteral = Pattern.compile("\\'([^\\']|(\'\'))*\\'");
-    private static final Pattern s_patQuotedIdentifier = Pattern.compile("\\\"([^\\\"]|(\\\"\\\"))*\\\"");
+    private static final Logger LOG = Logger.getLogger(SqlDialect.class);
+    private static final Pattern s_patStringLiteral = Pattern.compile("'([^']|(''))*'");
+    private static final Pattern s_patQuotedIdentifier = Pattern.compile("\"([^\"]|(\"\"))*\"");
     private static final Pattern s_patParameter = Pattern.compile("\\?");
 
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
 
-    protected final Set<String> reservedWordSet = Sets.newCaseInsensitiveHashSet();
-    @Deprecated
-    protected final Set<String> oldReservedWordSet = Sets.newCaseInsensitiveHashSet();
+    protected final Set<String> _reservedWordSet = Sets.newCaseInsensitiveHashSet();
 
-    private final Map<String, Integer> sqlTypeNameMap = new CaseInsensitiveHashMap<Integer>();
-    private final Map<Integer, String> sqlTypeIntMap = new HashMap<Integer, String>();
+    @Deprecated
+    protected final Set<String> _oldReservedWordSet = Sets.newCaseInsensitiveHashSet();
+
+    private final Map<String, Integer> _sqlTypeNameMap = new CaseInsensitiveHashMap<Integer>();
+    private final Map<Integer, String> _sqlTypeIntMap = new HashMap<Integer, String>();
 
     protected SqlDialect()
     {
@@ -137,66 +139,66 @@ public abstract class SqlDialect
 
     private void initializeSqlTypeNameMap()
     {
-        sqlTypeNameMap.put("ARRAY", Types.ARRAY);
-        sqlTypeNameMap.put("BIGINT", Types.BIGINT);
-        sqlTypeNameMap.put("BINARY", Types.BINARY);
-        sqlTypeNameMap.put("BIT", Types.BIT);
-        sqlTypeNameMap.put("BLOB", Types.BLOB);
-        sqlTypeNameMap.put("BOOLEAN", Types.BOOLEAN);
-        sqlTypeNameMap.put("CHAR", Types.CHAR);
-        sqlTypeNameMap.put("CLOB", Types.CLOB);
-        sqlTypeNameMap.put("DATALINK", Types.DATALINK);
-        sqlTypeNameMap.put("DATE", Types.DATE);
-        sqlTypeNameMap.put("DECIMAL", Types.DECIMAL);
-        sqlTypeNameMap.put("DISTINCT", Types.DISTINCT);
-        sqlTypeNameMap.put("DOUBLE", Types.DOUBLE);
-        sqlTypeNameMap.put("DOUBLE PRECISION", Types.DOUBLE);
-        sqlTypeNameMap.put("INTEGER", Types.INTEGER);
-        sqlTypeNameMap.put("INT", Types.INTEGER);
-        sqlTypeNameMap.put("JAVA_OBJECT", Types.JAVA_OBJECT);
-        sqlTypeNameMap.put("LONGVARBINARY", Types.LONGVARBINARY);
-        sqlTypeNameMap.put("LONGVARCHAR", Types.LONGVARCHAR);
-        sqlTypeNameMap.put("NULL", Types.NULL);
-        sqlTypeNameMap.put("NUMERIC", Types.NUMERIC);
-        sqlTypeNameMap.put("OTHER", Types.OTHER);
-        sqlTypeNameMap.put("REAL", Types.REAL);
-        sqlTypeNameMap.put("REF", Types.REF);
-        sqlTypeNameMap.put("SMALLINT", Types.SMALLINT);
-        sqlTypeNameMap.put("STRUCT", Types.STRUCT);
-        sqlTypeNameMap.put("TIME", Types.TIME);
-        sqlTypeNameMap.put("TINYINT", Types.TINYINT);
-        sqlTypeNameMap.put("VARBINARY", Types.VARBINARY);
-        sqlTypeNameMap.put("VARCHAR", Types.VARCHAR);
+        _sqlTypeNameMap.put("ARRAY", Types.ARRAY);
+        _sqlTypeNameMap.put("BIGINT", Types.BIGINT);
+        _sqlTypeNameMap.put("BINARY", Types.BINARY);
+        _sqlTypeNameMap.put("BIT", Types.BIT);
+        _sqlTypeNameMap.put("BLOB", Types.BLOB);
+        _sqlTypeNameMap.put("BOOLEAN", Types.BOOLEAN);
+        _sqlTypeNameMap.put("CHAR", Types.CHAR);
+        _sqlTypeNameMap.put("CLOB", Types.CLOB);
+        _sqlTypeNameMap.put("DATALINK", Types.DATALINK);
+        _sqlTypeNameMap.put("DATE", Types.DATE);
+        _sqlTypeNameMap.put("DECIMAL", Types.DECIMAL);
+        _sqlTypeNameMap.put("DISTINCT", Types.DISTINCT);
+        _sqlTypeNameMap.put("DOUBLE", Types.DOUBLE);
+        _sqlTypeNameMap.put("DOUBLE PRECISION", Types.DOUBLE);
+        _sqlTypeNameMap.put("INTEGER", Types.INTEGER);
+        _sqlTypeNameMap.put("INT", Types.INTEGER);
+        _sqlTypeNameMap.put("JAVA_OBJECT", Types.JAVA_OBJECT);
+        _sqlTypeNameMap.put("LONGVARBINARY", Types.LONGVARBINARY);
+        _sqlTypeNameMap.put("LONGVARCHAR", Types.LONGVARCHAR);
+        _sqlTypeNameMap.put("NULL", Types.NULL);
+        _sqlTypeNameMap.put("NUMERIC", Types.NUMERIC);
+        _sqlTypeNameMap.put("OTHER", Types.OTHER);
+        _sqlTypeNameMap.put("REAL", Types.REAL);
+        _sqlTypeNameMap.put("REF", Types.REF);
+        _sqlTypeNameMap.put("SMALLINT", Types.SMALLINT);
+        _sqlTypeNameMap.put("STRUCT", Types.STRUCT);
+        _sqlTypeNameMap.put("TIME", Types.TIME);
+        _sqlTypeNameMap.put("TINYINT", Types.TINYINT);
+        _sqlTypeNameMap.put("VARBINARY", Types.VARBINARY);
+        _sqlTypeNameMap.put("VARCHAR", Types.VARCHAR);
 
-        addSqlTypeNames(sqlTypeNameMap);
+        addSqlTypeNames(_sqlTypeNameMap);
     }
 
 
     private void initializeSqlTypeIntMap()
     {
-        sqlTypeIntMap.put(Types.ARRAY, "ARRAY");
-        sqlTypeIntMap.put(Types.BIGINT, "BIGINT");
-        sqlTypeIntMap.put(Types.BINARY, "BINARY");
-        sqlTypeIntMap.put(Types.BLOB, "BLOB");
-        sqlTypeIntMap.put(Types.CLOB, "CLOB");
-        sqlTypeIntMap.put(Types.DATALINK, "DATALINK");
-        sqlTypeIntMap.put(Types.DATE, "DATE");
-        sqlTypeIntMap.put(Types.DECIMAL, "DECIMAL");
-        sqlTypeIntMap.put(Types.DISTINCT, "DISTINCT");
-        sqlTypeIntMap.put(Types.INTEGER, "INTEGER");
-        sqlTypeIntMap.put(Types.JAVA_OBJECT, "JAVA_OBJECT");
-        sqlTypeIntMap.put(Types.NULL, "NULL");
-        sqlTypeIntMap.put(Types.NUMERIC, "NUMERIC");
-        sqlTypeIntMap.put(Types.OTHER, "OTHER");
-        sqlTypeIntMap.put(Types.REAL, "REAL");
-        sqlTypeIntMap.put(Types.REF, "REF");
-        sqlTypeIntMap.put(Types.SMALLINT, "SMALLINT");
-        sqlTypeIntMap.put(Types.STRUCT, "STRUCT");
-        sqlTypeIntMap.put(Types.TIME, "TIME");
-        sqlTypeIntMap.put(Types.TINYINT, "TINYINT");
-        sqlTypeIntMap.put(Types.VARBINARY, "VARBINARY");
+        _sqlTypeIntMap.put(Types.ARRAY, "ARRAY");
+        _sqlTypeIntMap.put(Types.BIGINT, "BIGINT");
+        _sqlTypeIntMap.put(Types.BINARY, "BINARY");
+        _sqlTypeIntMap.put(Types.BLOB, "BLOB");
+        _sqlTypeIntMap.put(Types.CLOB, "CLOB");
+        _sqlTypeIntMap.put(Types.DATALINK, "DATALINK");
+        _sqlTypeIntMap.put(Types.DATE, "DATE");
+        _sqlTypeIntMap.put(Types.DECIMAL, "DECIMAL");
+        _sqlTypeIntMap.put(Types.DISTINCT, "DISTINCT");
+        _sqlTypeIntMap.put(Types.INTEGER, "INTEGER");
+        _sqlTypeIntMap.put(Types.JAVA_OBJECT, "JAVA_OBJECT");
+        _sqlTypeIntMap.put(Types.NULL, "NULL");
+        _sqlTypeIntMap.put(Types.NUMERIC, "NUMERIC");
+        _sqlTypeIntMap.put(Types.OTHER, "OTHER");
+        _sqlTypeIntMap.put(Types.REAL, "REAL");
+        _sqlTypeIntMap.put(Types.REF, "REF");
+        _sqlTypeIntMap.put(Types.SMALLINT, "SMALLINT");
+        _sqlTypeIntMap.put(Types.STRUCT, "STRUCT");
+        _sqlTypeIntMap.put(Types.TIME, "TIME");
+        _sqlTypeIntMap.put(Types.TINYINT, "TINYINT");
+        _sqlTypeIntMap.put(Types.VARBINARY, "VARBINARY");
 
-        addSqlTypeInts(sqlTypeIntMap);
+        addSqlTypeInts(_sqlTypeIntMap);
     }
 
 
@@ -205,13 +207,13 @@ public abstract class SqlDialect
 
     public int sqlTypeIntFromSqlTypeName(String sqlTypeName)
     {
-        Integer i = sqlTypeNameMap.get(sqlTypeName);
+        Integer i = _sqlTypeNameMap.get(sqlTypeName);
 
         if (null != i)
             return i.intValue();
         else
         {
-            _log.info("Unknown SQL Type Name \"" + sqlTypeName + "\"; using String instead.");
+            LOG.info("Unknown SQL Type Name \"" + sqlTypeName + "\"; using String instead.");
             return Types.OTHER;
         }
     }
@@ -219,7 +221,7 @@ public abstract class SqlDialect
 
     public String sqlTypeNameFromSqlType(int sqlType)
     {
-        String sqlTypeName = sqlTypeIntMap.get(sqlType);
+        String sqlTypeName = _sqlTypeIntMap.get(sqlType);
 
         return null != sqlTypeName ? sqlTypeName : "OTHER";
     }
@@ -253,9 +255,18 @@ public abstract class SqlDialect
     // Do dialect-specific work for this data source
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {
-        reservedWordSet.addAll(getKeywords(scope));
+        _reservedWordSet.addAll(getKeywords(scope));
 
-        assert KeywordCandidates.get().containsAll(reservedWordSet, getProductName());
+        Set<String> old = Sets.newCaseInsensitiveHashSet(_oldReservedWordSet);
+        old.removeAll(_reservedWordSet);
+        Set<String> new1 = Sets.newCaseInsensitiveHashSet(_reservedWordSet);
+        new1.removeAll(_oldReservedWordSet);
+
+        LOG.info("In old set, but not new: " + old);
+        LOG.info("In new set, but not old: " + new1);
+
+        assert KeywordCandidates.get().containsAll(_oldReservedWordSet, getProductName());
+        assert KeywordCandidates.get().containsAll(_reservedWordSet, getProductName());
     }
 
     protected Set<String> getKeywords(DbScope scope) throws SQLException, IOException
@@ -445,7 +456,7 @@ public abstract class SqlDialect
 
     public boolean isReserved(String word)
     {
-        return reservedWordSet.contains(word);
+        return _reservedWordSet.contains(word);
     }
 
 

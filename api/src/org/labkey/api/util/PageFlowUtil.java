@@ -523,14 +523,6 @@ public class PageFlowUtil
     }
 
 
-    public static Set<String> insensitiveSet(String... strs)
-    {
-        TreeSet<String> set = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-        set.addAll(Arrays.asList(strs));
-        return set;
-    }
-
-    
     public static ArrayList pairs(Object... args)
     {
         ArrayList<Pair> list = new ArrayList<Pair>();

@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Creates a DynaClass for a table where all of the properties are
@@ -31,7 +32,7 @@ import java.util.List;
 public class TableWrapperDynaClass extends StringWrapperDynaClass
 {
     private TableInfo _tinfo;
-    private static Map<TableInfo, TableWrapperDynaClass> _dynClasses = Collections.synchronizedMap(new HashMap<TableInfo, TableWrapperDynaClass>());
+    private static final Map<TableInfo, TableWrapperDynaClass> _dynClasses = new ConcurrentHashMap<TableInfo, TableWrapperDynaClass>();
 
     private TableWrapperDynaClass(TableInfo tinfo)
     {

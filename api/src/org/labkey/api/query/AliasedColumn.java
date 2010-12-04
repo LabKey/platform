@@ -49,7 +49,7 @@ public class AliasedColumn extends ColumnInfo
 
     public SQLFragment getValueSql(String tableAlias)
     {
-            return _column.getValueSql(tableAlias);
+        return _column.getValueSql(tableAlias);
     }
 
     @Override
