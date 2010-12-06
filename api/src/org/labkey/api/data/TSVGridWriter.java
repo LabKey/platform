@@ -27,7 +27,12 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class TSVGridWriter extends TSVWriter
 {
@@ -200,7 +205,6 @@ public class TSVGridWriter extends TSVWriter
     public void close() throws ServletException
     {
         if (_rs != null) try { _rs.close(); } catch (SQLException e) {}
-        _rs = null;
         super.close();
     }
 
