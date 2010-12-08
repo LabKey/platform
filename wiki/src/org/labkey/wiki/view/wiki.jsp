@@ -20,36 +20,35 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
 <%@ page import="org.labkey.wiki.WikiController.PrintBranchAction" %>
+<%@ page import="org.labkey.wiki.model.BaseWikiView" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="javax.servlet.http.HttpServletResponse" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--wiki-->
 <%
-    HttpView me = HttpView.currentView();
-    ViewContext context = me.getViewContext();
+    BaseWikiView view = (BaseWikiView)HttpView.currentView();
+    ViewContext context = view.getViewContext();
     User user = context.getUser();
-    Wiki wiki = (Wiki) context.get("wiki");
-    String formattedHtml = (String) context.get("formattedHtml");
+    Wiki wiki = view.wiki;
     Container c = (wiki != null && wiki.getContainerId() != null) ? ContainerManager.getForId(wiki.getContainerId()) : context.getContainer();
-    ActionURL printBranchUrl = new ActionURL(PrintBranchAction.class, c);
-    printBranchUrl.addParameter("name", wiki.getName());
+    ActionURL printBranchURL = new ActionURL(PrintBranchAction.class, c);
+    printBranchURL.addParameter("name", wiki.getName());
+
     if(null == c)
     {
         %><p><span class="labkey-error">This wiki page has an invalid parent container. Please delete this page.</span></p><%
         return;
     }
-    boolean hasContent = (Boolean) context.get("hasContent");
-    boolean includeLinks = (Boolean)context.get("includeLinks");
-    boolean isEmbedded = (Boolean)context.get("isEmbedded");
-    int wikiPageCount = ((Integer)context.get("wikiPageCount")).intValue();
+
+    boolean includeLinks = !(view.isEmbedded() && view.getFrame() == WebPartView.FrameType.NONE);
     Map<String, String> printProperty = new HashMap<String, String>();
     printProperty.put("target", "_blank");
 
@@ -68,62 +67,62 @@ if (!c.hasPermission(user, ReadPermission.class))
 }
 
 //if page has content, write out commands
-if (hasContent && includeLinks)
+if (view.hasContent && includeLinks)
 {
     %><table class="labkey-wp-link-panel"><tr><td align="right"><%
 
-    if (null != context.get("updateContentLink"))
+    if (null != view.updateContentURL)
     {
-        %><%=textLink("edit", context.get("updateContentLink").toString())%><%
+        %><%=textLink("edit", view.updateContentURL)%><%
     }
 
     //user must have update perms
-    if (null != context.get("manageLink"))
+    if (null != view.manageURL)
     {
-        %>&nbsp;<%=textLink("manage", context.get("manageLink").toString())%><%
+        %>&nbsp;<%=textLink("manage", view.manageURL)%><%
     }
 
     //user must have update perms
-    if (null != context.get("versionsLink"))
+    if (null != view.versionsURL)
     {
-        %>&nbsp;<%=textLink("history", context.get("versionsLink").toString())%><%
+        %>&nbsp;<%=textLink("history", view.versionsURL)%><%
     }
 
-    if (null != context.get("printLink"))
+    if (null != view.printURL)
     {
-        %>&nbsp;<%=textLink("print", context.get("printLink").toString(), null, null, printProperty)%><%
+        %>&nbsp;<%=textLink("print", view.printURL.toString(), null, null, printProperty)%><%
     }
 
-    if (null != context.get("printLink") && null != wiki.getChildren() && wiki.getChildren().size() > 0)
+    if (null != view.printURL && null != wiki.getChildren() && wiki.getChildren().size() > 0)
     {
-        %>&nbsp;<%=textLink("print branch", printBranchUrl.getLocalURIString(), null, null, printProperty)%><%
+        %>&nbsp;<%=textLink("print branch", printBranchURL.getLocalURIString(), null, null, printProperty)%><%
     }
     %>
     </td></tr></table><%
 }
 
 //if page has no content, write out message and add content command
-if (!hasContent)
+if (!view.hasContent)
 {
     //if this is a web part and user has update perms
-    if (Boolean.TRUE.equals(context.get("isInWebPart")))
+    if (view.isWebPart())
     {%>
         <%
-        if (wikiPageCount == 0 && Boolean.TRUE.equals(context.get("hasInsertPermission")) && !isEmbedded)
+        if (view.pageCount == 0 && view.hasInsertPermission && !view.isEmbedded())
         {%>
             The Wiki web part displays a single wiki page.
             This folder does not currently contain any wiki pages to display. You can:<br>
             <ul>
-                <li><a href="<%=PageFlowUtil.filter(context.get("insertLink"))%>">Create a new wiki page</a> to display in this web part.</li>
+                <li><a href="<%=h(view.insertURL)%>">Create a new wiki page</a> to display in this web part.</li>
             </ul>
         <%}
-        else if (wikiPageCount > 0 && Boolean.TRUE.equals(context.get("hasAdminPermission")) && !isEmbedded)
+        else if (view.pageCount > 0 && view.hasAdminPermission && !view.isEmbedded())
         {%>
             The Wiki web part displays a single wiki page.
             Currently there is no page selected to display. You can:<br>
             <ul>
-                <li><a href="<%=PageFlowUtil.filter(context.get("customizeLink"))%>">Choose an existing page to display</a> from this project or a different project.</li>
-                <li><a href="<%=PageFlowUtil.filter(context.get("insertLink"))%>">Create a new wiki page</a> to display in this web part.</li>
+                <li><a href="<%=h(view.customizeURL)%>">Choose an existing page to display</a> from this project or a different project.</li>
+                <li><a href="<%=h(view.insertURL)%>">Create a new wiki page</a> to display in this web part.</li>
             </ul><%
         }
         else
@@ -136,10 +135,10 @@ if (!hasContent)
         // No page here, so set the response code to 404
         context.getResponse().setStatus(HttpServletResponse.SC_NOT_FOUND);
 
-        if (wikiPageCount == 0 && null != context.get("insertLink"))
+        if (view.pageCount == 0 && null != view.insertURL)
         {%>
             This Wiki currently does not contain any pages.<br><br>
-            <%=textLink("add a new page", context.get("insertLink").toString())%>
+            <%=textLink("add a new page", view.insertURL)%>
         <%}
         else
         {
@@ -147,16 +146,16 @@ if (!hasContent)
             This page has no content.<br><br>
             <%
 
-            if (null != context.get("insertLink"))
+            if (null != view.insertURL)
             {%>
-                <%=textLink("add content", context.get("insertLink").toString())%>
+                <%=textLink("add content", view.insertURL)%>
             <%}
         }
     }
 }
 else
 {
-    out.print(formattedHtml);
+    out.print(view.html);
 
     if (null != wiki.getAttachments() && wiki.getAttachments().size() > 0 && wiki.isShowAttachments())
     {
@@ -180,16 +179,16 @@ else
 
         for (Attachment a : wiki.getAttachments())
         {
-            %><a href="<%=PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=PageFlowUtil.filter(a.getFileIcon())%>">&nbsp;<%=PageFlowUtil.filter(a.getName())%></a><br><%
+            %><a href="<%=h(a.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=h(a.getFileIcon())%>">&nbsp;<%=h(a.getName())%></a><br><%
         }
     }
 }
 %>
 <p/>
 <%
-if (hasContent && null != me.getView("discussion") && !user.isGuest())
+if (view.hasContent && null != view.getView("discussion") && !user.isGuest())
 {
-    me.include(me.getView("discussion"), out);
+    view.include(view.getView("discussion"), out);
 }
 %>
 <!--/wiki-->

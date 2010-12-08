@@ -18,12 +18,15 @@ package org.labkey.wiki.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.wiki.BaseWikiPermissions;
+import org.labkey.wiki.WikiSelectManager;
 import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiManager;
 
@@ -35,39 +38,34 @@ import java.sql.SQLException;
  * Time: 3:29:31 PM
  */
 
-abstract class BaseWikiView extends JspView<Object>
+public abstract class BaseWikiView extends JspView<Object>
 {
+    public Wiki wiki;
+    public String html;
+    public boolean hasContent = true;
+    public boolean hasAdminPermission;
+    public boolean hasInsertPermission;
+    public int pageCount;
+
+    public ActionURL insertURL = null;
+    public ActionURL versionsURL = null;
+    public ActionURL updateContentURL = null;
+    public ActionURL manageURL = null;
+    public ActionURL customizeURL = null;
+    public ActionURL printURL = null;
+
+    protected WikiVersion wikiVersion = null; // TODO: Used internally only?  Pass to init()?
+
     protected String _pageId = null;
     protected int _index = 0;
-    protected Wiki _wiki = null;
-    protected WikiVersion _wikiVersion = null;
 
     protected BaseWikiView()
     {
         super("/org/labkey/wiki/view/wiki.jsp");
-        addObject("hasReadPermission", Boolean.TRUE);
-        addObject("hasAdminPermission", Boolean.FALSE);
-        addObject("hasInsertPermission", Boolean.FALSE);
-        addObject("updateContentLink", null);
-        addObject("insertLink", null);
-        addObject("manageLink", null);
-        addObject("versionsLink", null);
-        addObject("wiki", null);
-        addObject("wikiversion", null);
-        addObject("redirect", "");
-        addObject("wikiPageCount", 0);
-        addObject("customizeLink", null);
-        addObject("printLink", null);
-        addObject("startDiscussion", Boolean.FALSE);
-        addObject("hasContent", Boolean.TRUE);
-        addObject("includeLinks", Boolean.TRUE);
-        addObject("isEmbedded", Boolean.FALSE);
     }
 
 
-    // Was prepareWebPart -- now moving all initialization to creation time.  e.g., Portal.populatePortalView needs to see title hrefs before prepare.
-    // TODO: Refactor this into Base, WikiView, and WikiWebPart (e.g., eliminate isInWebPart)
-    protected void init(Container c, HString name, boolean isInWebPart)
+    protected void init(Container c, HString name)
     {
         ViewContext context = getViewContext();
         User user = context.getUser();
@@ -75,15 +73,13 @@ abstract class BaseWikiView extends JspView<Object>
 
         BaseWikiPermissions perms = new BaseWikiPermissions(user, c);
 
-        context.put("isInWebPart", isInWebPart);
-
         //current number of pages in container
-        int pageCount = WikiManager.getPageList(c).size();
-        context.put("wikiPageCount", pageCount);
+        pageCount = WikiSelectManager.getPageList(c).size();
 
         //set initial page title
         HString title;
-        if (isInWebPart)
+
+        if (isWebPart())
             title = new HString("Wiki Web Part");
         else
         {
@@ -95,36 +91,34 @@ abstract class BaseWikiView extends JspView<Object>
 
         if (name == null)
         {
-            _wiki = new Wiki(c, new HString("default",false));
-            addObject("hasContent", false);
+            wiki = new Wiki(c, new HString("default", false));
+            hasContent = false;
         }
         else
         {
-            if (null == _wiki)
-                _wiki = WikiManager.getWiki(c, name);
+            if (null == wiki)
+                wiki = WikiManager.getWiki(c, name);
 
             //this is a non-existent wiki
-            if (null == _wiki)
+            if (null == wiki)
             {
-                _wiki = new Wiki(c, name);
-                addObject("hasContent", false); 
+                wiki = new Wiki(c, name);
+                hasContent = false;
             }
 
-            assert _wiki.getName() != null;
+            assert wiki.getName() != null;
 
-            if (null == _wikiVersion)
-                _wikiVersion = WikiManager.getLatestVersion(_wiki);
+            if (null == wikiVersion)
+                wikiVersion = WikiManager.getLatestVersion(wiki);
 
-            if (null == _wikiVersion)
-                _wikiVersion = new WikiVersion(name);
+            if (null == wikiVersion)
+                wikiVersion = new WikiVersion(name);
 
-            String html;
-
-            if (perms.allowRead(_wiki))
+            if (perms.allowRead(wiki))
             {
                 try
                 {
-                    html = _wikiVersion.getHtml(c, _wiki);
+                    html = wikiVersion.getHtml(c, wiki);
                 }
                 catch (SQLException e)
                 {
@@ -138,73 +132,69 @@ abstract class BaseWikiView extends JspView<Object>
             else
                 html = ""; //wiki.jsp will display appropriate message if user doesn't have read perms
 
-            context.put("wiki", _wiki);
-            context.put("name", _wiki.getName());
-            context.put("formattedHtml", html);
-
             //set title if page has content and user has permission to see it
-            if (html != null && perms.allowRead(_wiki))
-                title = getTitle() == null ? _wikiVersion.getTitle() : new HString(getTitle());
+            if (html != null && perms.allowRead(wiki))
+                title = getTitle() == null ? wikiVersion.getTitle() : new HString(getTitle());
 
             //what does "~" represent?
-            if (!_wiki.getName().startsWith("~"))
+            if (!wiki.getName().startsWith("~"))
             {
-                if (perms.allowUpdate(_wiki))
+                if (perms.allowUpdate(wiki))
                 {
-                    context.put("manageLink", _wiki.getManageLink());
+                    manageURL = wiki.getManageURL();
                 }
             }
         }
 
-        context.put("hasReadPermission", Boolean.valueOf(perms.allowRead(_wiki)));
-        context.put("hasAdminPermission", Boolean.valueOf(perms.allowAdmin()));
-        context.put("hasInsertPermission", Boolean.valueOf(perms.allowInsert()));
+        hasAdminPermission = perms.allowAdmin();
+        hasInsertPermission = perms.allowInsert();
 
-        if (perms.allowInsert())
+        if (hasInsertPermission)
         {
-            ActionURL insertLink = new ActionURL(WikiController.EditWikiAction.class, c);
-            insertLink.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
-            if (isInWebPart)
+            insertURL = new ActionURL(WikiController.EditWikiAction.class, c);
+            insertURL.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
+
+            if (isWebPart())
             {
-                insertLink.addParameter("redirect", url.getLocalURIString());
-                insertLink.addParameter("pageId", _pageId);
-                insertLink.addParameter("index", Integer.toString(_index));
+                insertURL.addParameter("redirect", url.getLocalURIString());
+                insertURL.addParameter("pageId", _pageId);
+                insertURL.addParameter("index", Integer.toString(_index));
             }
-            if(null != _wiki)
-                insertLink.addParameter("defName", _wiki.getName());
-            context.put("insertLink", insertLink.toString());
 
+            if (null != wiki)
+                insertURL.addParameter("defName", wiki.getName());
         }
 
-        if (perms.allowUpdate(_wiki))
+        if (perms.allowUpdate(wiki))
         {
-            String versionsLink = _wiki.getVersionsLink();
-            context.put("versionsLink", versionsLink);
+            versionsURL = wiki.getVersionsURL();
 
-            ActionURL updateContentLink =  new ActionURL(WikiController.EditWikiAction.class, c);
-            updateContentLink.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
-
-            updateContentLink.addParameter("name", _wiki.getName());
-            updateContentLink.addParameter("redirect", url.getLocalURIString());
-            context.put("updateContentLink", updateContentLink);
+            updateContentURL = new ActionURL(WikiController.EditWikiAction.class, c);
+            updateContentURL.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
+            updateContentURL.addParameter("name", wiki.getName());
+            updateContentURL.addParameter("redirect", url.getLocalURIString());
         }
 
-        if (isInWebPart)
+        if (isWebPart())
         {
-            ActionURL customizeUrl = url.clone();
-            customizeUrl.setAction("customizeWebPart");
-            customizeUrl.addParameter("pageId", _pageId);
-            customizeUrl.addParameter("index", Integer.toString(_index));
-            context.put("customizeLink", customizeUrl.toString());
-            setTitleHref(WikiController.getPageURL(_wiki, c));
+            customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c);
+            customizeURL.addParameter("pageId", _pageId);
+            customizeURL.addParameter("index", _index);
+
+            setTitleHref(WikiController.getPageURL(wiki, c));
         }
 
-        if (!isInWebPart || perms.allowInsert())
+        if (!isWebPart() || perms.allowInsert())
         {
             if (null == context.getRequest().getParameter("_print"))
-                context.put("printLink", _wiki.getPageLink() + "&_print=1");
+            {
+                printURL = wiki.getPageURL();
+                printURL.addParameter("_print", 1);
+            }
         }
 
         setTitle(title.getSource());
     }
+
+    public abstract boolean isWebPart();
 }

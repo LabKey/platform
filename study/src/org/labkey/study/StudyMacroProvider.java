@@ -16,21 +16,17 @@
 
 package org.labkey.study;
 
+import org.labkey.api.reports.Report;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.wiki.MacroProvider;
-import org.labkey.api.reports.Report;
-import org.labkey.api.security.User;
-
-import java.util.Map;
-
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.view.DatasetsWebPartView;
 
-import javax.servlet.ServletException;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -50,7 +46,7 @@ public class StudyMacroProvider implements MacroProvider
             {
                 Report report = null;
                 String reportName = params.get("name");
-                String reportIdStr = null;
+                String reportIdStr;
 
                 reportIdStr = params.get("id");
                 int reportId;

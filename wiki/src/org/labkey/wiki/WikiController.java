@@ -118,7 +118,6 @@ public class WikiController extends SpringActionController
     public static class CustomizeWikiPartView extends JspView<Portal.WebPart>
     {
         private List<Container> _containerList;
-        private Map<Container, List<Wiki>> _mapEntries;
         private List<Wiki> _containerWikiList;
 
         public CustomizeWikiPartView(Portal.WebPart webPart)
@@ -140,17 +139,6 @@ public class WikiController extends SpringActionController
                 if (!_containerList.contains(context.getContainer()))
                     _containerList.add(0, context.getContainer());
 
-                //build map of containers and their associated sets of wiki pages
-                Map<Container, List<Wiki>> containerMap = new LinkedHashMap<Container, List<Wiki>>();
-                for (Container c : _containerList)
-                {
-                    //get list of wiki pages for this container
-                    List<Wiki> containerPageList = WikiManager.getPageList(c);
-                    containerMap.put(c, containerPageList);
-                }
-
-                _mapEntries = containerMap;
-
                 //get wiki page list for the currently stored container (or current container if null)
                 Container cStored;
 
@@ -163,7 +151,7 @@ public class WikiController extends SpringActionController
                     //also use the current container if the stored container doesn't
                     //have any pages left in it
                     cStored = id == null ? context.getContainer() : ContainerManager.getForId(id);
-                    if (cStored == null || null == containerMap.get(cStored))
+                    if (cStored == null || !_containerList.contains(cStored))
                     {
                         cStored = context.getContainer();
 
@@ -172,7 +160,7 @@ public class WikiController extends SpringActionController
                     }
                 }
 
-                _containerWikiList = containerMap.get(cStored);
+                _containerWikiList = WikiSelectManager.getPageList(cStored);
             }
             catch(SQLException e)
             {
@@ -183,11 +171,6 @@ public class WikiController extends SpringActionController
         public List<Container> getContainerList()
         {
             return _containerList;
-        }
-
-        public Map<Container, List<Wiki>> getMapEntries()
-        {
-            return _mapEntries;
         }
 
         public List<Wiki> getContainerWikiList()
@@ -223,7 +206,7 @@ public class WikiController extends SpringActionController
                 //does user have permissions to read this container?
                 //add this container if it contains any wiki pages or if it's the current container
                 if (cChild.hasPermission(context.getUser(), ReadPermission.class) &&
-                        (cChild.getId().equals(context.getContainer().getId()) || WikiManager.getPageList(cChild).size() > 0))
+                        (cChild.getId().equals(context.getContainer().getId()) || WikiSelectManager.getPageList(cChild).size() > 0))
                 {
                     children.add(cChild);
                 }
@@ -272,7 +255,7 @@ public class WikiController extends SpringActionController
         //note that this does not automatically display page selected on web part customize. should it?
         if (wiki == null)
         {
-            List<Wiki> pageList = WikiManager.getPageList(c);
+            List<Wiki> pageList = WikiSelectManager.getPageList(c);
             if (pageList.size() == 0)
                 wiki = new Wiki(c, new HString("default"));
             else
@@ -346,9 +329,10 @@ public class WikiController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class) //will test explicitly below
     public class ManageAction extends FormViewAction<WikiManageForm>
     {
-        Wiki _wiki = null;
-        WikiVersion _wikiVersion = null;
+        private Wiki _wiki = null;
+        private WikiVersion _wikiVersion = null;
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public ManageAction()
         {
         }
@@ -374,7 +358,7 @@ public class WikiController extends SpringActionController
 
             HttpView manageView = new JspView("/org/labkey/wiki/view/wikiManage.jsp");
 
-            List<Wiki> allWikis = WikiManager.getPageList(getContainer());
+            List<Wiki> allWikis = WikiSelectManager.getPageList(getContainer());
             List<Wiki> descendents = WikiManager.getDescendents(_wiki, true);
             List<Wiki> possibleParents = new ArrayList<Wiki>(allWikis.size() - descendents.size());
 
@@ -405,12 +389,14 @@ public class WikiController extends SpringActionController
             manageView.addObject("possibleParents", possibleParents);
             manageView.addObject("showChildren", SHOW_CHILD_REORDERING);
             manageView.addObject("_errors", errors);
+
             if (perms.allowDelete(_wiki))
                 manageView.addObject("deleteLink", _wiki.getDeleteLink());
             else
                 manageView.addObject("deleteLink", null);
 
             getPageConfig().setFocusId("name");
+
             return manageView;
         }
 
@@ -459,12 +445,15 @@ public class WikiController extends SpringActionController
                 if (childOrder.length > 0)
                     updateDisplayOrder(_wiki.getChildren(), childOrder);
             }
+
             int[] siblingOrder = form.getSiblingOrderArray();
+
             if (siblingOrder.length > 0)
             {
                 List<Wiki> siblings = WikiManager.getWikisByParentId(getContainer().getId(), _wiki.getParent());
                 updateDisplayOrder(siblings, siblingOrder);
             }
+
             return true;
         }
 
@@ -607,7 +596,7 @@ public class WikiController extends SpringActionController
 
             //get a list of wiki pages. Each wiki object contains only partial wiki data.
             //undone: change getPageList() to return simple list of full wiki pages, rather than half-assed wiki pages
-            List<Wiki> wikiPageList = WikiManager.getPageList(c);
+            List<Wiki> wikiPageList = WikiSelectManager.getPageList(c);
 
             //get wiki page with html and store in second list.
             List<Wiki> wikiContentList = new ArrayList<Wiki>();
@@ -655,7 +644,7 @@ public class WikiController extends SpringActionController
         {
             List<Wiki> ret = new ArrayList<Wiki>();
             ret.add(rootWiki);
-            for(Wiki child : rootWiki.getChildren())
+            for (Wiki child : rootWiki.getChildren())
             {
                 ret.addAll(buildPageList(child));
             }
@@ -673,7 +662,7 @@ public class WikiController extends SpringActionController
     {
         public List<Wiki> wikiPageList;
         public List<Wiki> wikiContentList;
-        public String displayName = getUser().getDisplayNameOld(getViewContext());
+        public String displayName = getUser().getDisplayName(getUser());
 
         private PrintAllBean(List<Wiki> wikiPageList, List<Wiki> wikiContentList)
         {
@@ -718,7 +707,7 @@ public class WikiController extends SpringActionController
         {
             Container c = getContainer();
             //get a list of wiki pages. Each wiki object contains only partial wiki data.
-            List<Wiki> wikiList = WikiManager.getPageList(c);
+            List<Wiki> wikiList = WikiSelectManager.getPageList(c);
             JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiList));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -741,7 +730,7 @@ public class WikiController extends SpringActionController
         private PrintRawBean(List<Wiki> wikiList)
         {
             this.wikiList = wikiList;
-            displayName = getUser().getDisplayNameOld(getViewContext());
+            displayName = getUser().getDisplayName(getUser());
         }
     }
 
@@ -779,6 +768,7 @@ public class WikiController extends SpringActionController
             return _sourceContainer;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setSourceContainer(String sourceContainer)
         {
             _sourceContainer = sourceContainer;
@@ -789,6 +779,7 @@ public class WikiController extends SpringActionController
             return _destContainer;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setDestContainer(String destContainer)
         {
             _destContainer = destContainer;
@@ -911,14 +902,14 @@ public class WikiController extends SpringActionController
             if (cDest != null && cDest.hasPermission(getUser(), AdminPermission.class))
             {
                 //get existing destination wiki pages
-                Map<HString, Wiki> destPageMap = WikiManager.getPageMap(cDest);
+                Map<HString, Wiki> destPageMap = WikiSelectManager.getPageMap(cDest);
 
                 //get source wiki pages
                 List<Wiki> srcWikiPageList;
                 if (parentPage != null)
                     srcWikiPageList = WikiManager.getSubTreePageList(cSrc, parentPage);
                 else
-                    srcWikiPageList = WikiManager.getPageList(cSrc);
+                    srcWikiPageList = WikiSelectManager.getPageList(cSrc);
 
                 //map source page row ids to new page row ids
                 Map<Integer, Integer> pageIdMap = new HashMap<Integer, Integer>();
@@ -926,7 +917,7 @@ public class WikiController extends SpringActionController
                 pageIdMap.put(-1, -1);
 
                 //copy each page in the list
-                for(Wiki srcWikiPage : srcWikiPageList)
+                for (Wiki srcWikiPage : srcWikiPageList)
                 {
                     copyPage(cSrc, srcWikiPage, cDest, destPageMap, pageIdMap);
                 }
@@ -971,7 +962,7 @@ public class WikiController extends SpringActionController
                 HttpView.throwNotFound();
 
             //get existing destination wiki pages
-            Map<HString, Wiki> destPageMap = WikiManager.getPageMap(cDest);
+            Map<HString, Wiki> destPageMap = WikiSelectManager.getPageMap(cDest);
 
             //copy single page
             Wiki newWikiPage = WikiManager.copyPage(getUser(), cSrc, srcPage, cDest, destPageMap, null, form.isOverwrite());
@@ -1134,6 +1125,7 @@ public class WikiController extends SpringActionController
             else
             {
                 WebPartView v = new WikiView(_wiki, _wikiversion, existing);
+
                 // get discussion view
                 if (existing)
                 {
@@ -1141,8 +1133,8 @@ public class WikiController extends SpringActionController
                     String discussionTitle = "discuss page - " +  _wikiversion.getTitle();
                     HttpView discussionView = getDiscussionView(_wiki.getEntityId(), pageUrl, discussionTitle);
                     v.setView("discussion", discussionView);
-                    v.addObject("hasContent", existing);
                 }
+
                 return v;
             }
         }
@@ -1201,6 +1193,7 @@ public class WikiController extends SpringActionController
         Wiki _wiki = null;
         WikiVersion _wikiversion = null;
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public VersionAction()
         {
         }
@@ -1262,28 +1255,29 @@ public class WikiController extends SpringActionController
 
     public class VersionBean
     {
-        public Wiki wiki;
-        public HString title;
-        public WikiVersion wikiVersion;
-        public String pageLink;      // TODO: ActionURL
-        public String versionsLink;  // TODO: ActionURL
-        public String makeCurrentLink;
-        public boolean hasReadPermission;
-        public boolean hasAdminPermission;
-        public boolean hasSetCurVersionPermission;
-        public String createdBy;
-        public String created;
-        public String versionLink;            //base url for different versions of this page
-        public String compareLink;            //base url for comparing to another version
+        public final Wiki wiki;
+        public final HString title;
+        public final WikiVersion wikiVersion;
+        public final ActionURL pageURL;
+        public final ActionURL versionsURL;
+        public final ActionURL makeCurrentURL;
+        public final boolean hasReadPermission;
+        public final boolean hasAdminPermission;
+        public final boolean hasSetCurVersionPermission;
+        public final String createdBy;
+        public final String created;
+        public final String versionLink;            //base url for different versions of this page
+        public final String compareLink;            //base url for comparing to another version
 
         private VersionBean(Wiki wiki, WikiVersion wikiVersion, BaseWikiPermissions perms)
         {
             this.wiki = wiki;
-            title = wikiVersion.getTitle();
             this.wikiVersion = wikiVersion;
-            pageLink = wiki.getPageLink();
-            versionsLink = wiki.getVersionsLink();
-            makeCurrentLink = getViewContext().cloneActionURL().setAction("makeCurrent").toString();  // TODO: Fix
+
+            title = wikiVersion.getTitle();
+            pageURL = wiki.getPageURL();
+            versionsURL = wiki.getVersionsURL();
+            makeCurrentURL = getMakeCurrentURL(wiki.getName(), wikiVersion.getVersion());
             hasReadPermission = perms.allowRead(wiki);
             hasAdminPermission = perms.allowAdmin();
             hasSetCurVersionPermission = perms.allowUpdate(wiki);
@@ -1365,26 +1359,31 @@ public class WikiController extends SpringActionController
             return name;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setName(HString name)
         {
             this.name = name;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public int getVersion1()
         {
             return version1;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setVersion1(int version1)
         {
             this.version1 = version1;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public int getVersion2()
         {
             return version2;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setVersion2(int version2)
         {
             this.version2 = version2;
@@ -1525,6 +1524,16 @@ public class WikiController extends SpringActionController
     }
 
 
+    private ActionURL getMakeCurrentURL(HString pageName, int version)
+    {
+        ActionURL url = new ActionURL(MakeCurrentAction.class, getContainer());
+        url.addParameter("name", pageName);
+        url.addParameter("version", version);
+
+        return url;
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class) //will check in code below
     public class MakeCurrentAction extends FormViewAction<WikiNameForm>
     {
@@ -1605,6 +1614,7 @@ public class WikiController extends SpringActionController
             return _containerPath;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setContainerPath(HString containerPath)
         {
             _containerPath = containerPath;
@@ -1620,14 +1630,16 @@ public class WikiController extends SpringActionController
             _childOrder = childIdList;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public HString getSiblingOrder()
         {
             return _siblingOrder;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setSiblingOrder(HString siblingIdList)
         {
-            _siblingOrder = siblingIdList;
+             _siblingOrder = siblingIdList;
         }
 
         private int[] breakIdList(HString list)
@@ -1659,6 +1671,7 @@ public class WikiController extends SpringActionController
             return _name;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setName(HString name)
         {
             _name = name;
@@ -1669,6 +1682,7 @@ public class WikiController extends SpringActionController
             return _title;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setTitle(HString title)
         {
             _title = title;
@@ -1679,6 +1693,7 @@ public class WikiController extends SpringActionController
             return _originalName;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setOriginalName(HString name)
         {
             _originalName = name;
@@ -1689,6 +1704,7 @@ public class WikiController extends SpringActionController
             return _parent;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setParent(int parent)
         {
             _parent = parent;
@@ -1699,6 +1715,7 @@ public class WikiController extends SpringActionController
             return _nextAction;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setNextAction(HString nextAction)
         {
             _nextAction = nextAction;
@@ -1734,6 +1751,7 @@ public class WikiController extends SpringActionController
              return _version;
          }
 
+         @SuppressWarnings({"UnusedDeclaration"})
          public void setVersion(int version)
          {
              _version = version;
@@ -1754,6 +1772,7 @@ public class WikiController extends SpringActionController
              return _name;
          }
 
+         @SuppressWarnings({"UnusedDeclaration"})
          public void setName(HString name)
          {
              _name = name;
@@ -1769,120 +1788,6 @@ public class WikiController extends SpringActionController
              _redirect = redirect;
          }
      }
-
-     public static class WikiDataForm extends WikiNameForm
-     {
-         private String _title;
-         private String _body;
-         private String _rendererType;
-         private String _nextAction;
-         private boolean _reshow;
-
-         public String getBody()
-         {
-             return _body;
-         }
-
-         public void setBody(String body)
-         {
-             _body = body;
-         }
-
-         public String getTitle()
-         {
-             return _title;
-         }
-
-         public void setTitle(String title)
-         {
-             _title = title;
-         }
-
-         public String getRendererType()
-         {
-             return _rendererType;
-         }
-
-         public void setRendererType(String rendererType)
-         {
-             _rendererType = rendererType;
-         }
-
-         public void validate(Errors errors, boolean allowMaliciousContent)
-         {
-            //check body
-            String body = StringUtils.trimToEmpty(getBody());
-            setBody(body);
-            if (body.length() == 0)
-                errors.rejectValue("body", ERROR_MSG, "Page body cannot be empty. Delete page if you wish to remove page content.");
-            else
-            {
-                // TODO: this validation call should move onto the renderer enum, but that's
-                // too big a change for this point in our release cycle:
-                ArrayList<String> tidyErrors = new ArrayList<String>();
-
-                WikiRendererType renderer = WikiRendererType.valueOf(getRendererType());
-                if (renderer == WikiRendererType.HTML)
-                    body = PageFlowUtil.validateHtml(body, tidyErrors, allowMaliciousContent);
-
-                for (String err : tidyErrors)
-                    errors.rejectValue("body", ERROR_MSG, err);
-
-                if (tidyErrors.isEmpty())
-                {
-                    // uncomment to replace with tidy output
-                    // setBody(body);
-                }
-            }
-         }
-
-         public String getNextAction()
-         {
-             return _nextAction;
-         }
-
-         public void setNextAction(String nextAction)
-         {
-             _nextAction = nextAction;
-         }
-
-         public boolean isReshow()
-         {
-             return _reshow;
-         }
-
-         public void setReshow(boolean reshow)
-         {
-             _reshow = reshow;
-         }
-    }
-
-
-    public static class WikiInsertForm extends WikiDataForm
-    {
-        String _pageId;
-        int _index;
-
-        public int getIndex()
-        {
-            return _index;
-        }
-
-        public void setIndex(int index)
-        {
-            _index = index;
-        }
-
-        public String getPageId()
-        {
-            return _pageId;
-        }
-
-        public void setPageId(String pageId)
-        {
-            _pageId = pageId;
-        }
-    }
 
 
     public static class CollapseExpandForm
@@ -1925,7 +1830,6 @@ public class WikiController extends SpringActionController
     @RequiresNoPermission
     public class CollapseExpandAction extends FormViewAction<CollapseExpandForm>
     {
-
         public void validateCommand(CollapseExpandForm target, Errors errors)
         {
         }
@@ -1984,7 +1888,7 @@ public class WikiController extends SpringActionController
         static public NavTree[] getNavTree(ViewContext context)
         {
             Container cToc = getTocContainer(context);
-            return WikiManager.getNavTree(cToc);
+            return WikiSelectManager.getNavTree(cToc);
         }
 
         public WikiTOC(ViewContext context)
@@ -2004,7 +1908,7 @@ public class WikiController extends SpringActionController
         {
             Container cToc = getTocContainer(context);
             //get the page list for the toc container
-            List<Wiki> pageList = WikiManager.getPageList(cToc);
+            List<Wiki> pageList = WikiSelectManager.getPageList(cToc);
 
             //are there pages in page list?
             if (pageList.size() > 0)
@@ -2035,7 +1939,6 @@ public class WikiController extends SpringActionController
         {
             ViewContext context = getViewContext();
             User user = context.getUser();
-            Container c = context.getContainer();
             setId(getNavTreeId(context));
             setElements(context, getNavTree(context));
 
@@ -2074,14 +1977,12 @@ public class WikiController extends SpringActionController
             if (null != selectedPage && !isInWebPart)
                 _selectedLink = selectedPage.getPageLink();
 
-
             //Make sure the path to the current page is expanded
             //FIX: per 5246, we will no longer expand the children of the current page by default
             if (null != selectedPage)
             {
                 HString path = HString.EMPTY;
                 Wiki page = selectedPage;
-                boolean expandLeaf =  selectedPage.getChildren().size() != 0 ? true : false;
                 Stack<HString> stkPages = new Stack<HString>();
 
                 page = page.getParentWiki ();
@@ -2111,8 +2012,8 @@ public class WikiController extends SpringActionController
             //Apply the current expand state
             NavTreeManager.applyExpandState(root, context);
 
-
             String nextLink = null, prevLink = null;
+
             if (null != selectedPage)
             {
                 //get next and previous links
@@ -2123,12 +2024,14 @@ public class WikiController extends SpringActionController
                 {
                     //determine where this page is in the ordered wiki page list
                     int pageIndex = nameList.indexOf(selectedPage.getName());
+
                     //if it's not the first page in the list, display the previous link
                     if (pageIndex > 0)
                     {
                         Wiki wikiPrev = WikiManager.getWiki(cToc, nameList.get(pageIndex - 1));
                         prevLink = wikiPrev.getPageLink();
                     }
+
                     //if it's not the last page in the list, display the next link
                     if (pageIndex < nameList.size() - 1)
                     {
@@ -2139,9 +2042,9 @@ public class WikiController extends SpringActionController
             }
 
             //output only this one if wiki contains no pages
-            boolean bHasInsert = cToc.hasPermission(user, InsertPermission.class),
-                    bHasCopy = (cToc.hasPermission(user, AdminPermission.class) && getElements().length > 0),
-                    bHasPrint = ((!isInWebPart || cToc.hasPermission(user, InsertPermission.class)) && getElements().length > 0);
+            boolean bHasInsert = cToc.hasPermission(user, InsertPermission.class);
+            boolean bHasCopy = cToc.hasPermission(user, AdminPermission.class) && getElements().length > 0;
+            boolean bHasPrint = (!isInWebPart || bHasInsert) && getElements().length > 0;
 
             if (bHasInsert || bHasCopy || bHasPrint)
             {
@@ -2275,7 +2178,7 @@ public class WikiController extends SpringActionController
 
     private static void testLinksForAllPages(Container c, ActionURL baseURL, StringBuilder sb, boolean recurse) throws SQLException
     {
-        List<Wiki> wikis = WikiManager.getPageList(c);
+        List<Wiki> wikis = WikiSelectManager.getPageList(c);
 
         for (Wiki wiki2 : wikis)
         {
@@ -2422,6 +2325,7 @@ public class WikiController extends SpringActionController
             return _id;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setId(String id)
         {
             _id = id;
@@ -2440,14 +2344,14 @@ public class WikiController extends SpringActionController
             if (null == container)
                 throw new IllegalArgumentException("The container id '" + form.getId() + "' is not valid.");
             
-            List<Wiki> wikiList = WikiManager.getPageList(container);
+            List<Wiki> wikiList = WikiSelectManager.getPageList(container);
             if (null == wikiList)
                 return new ApiSimpleResponse("pages", null);
 
-            List<Map<String,String>> pages = new ArrayList<Map<String,String>>(wikiList.size());
-            for(Wiki wiki : wikiList)
+            List<Map<String, String>> pages = new ArrayList<Map<String, String>>(wikiList.size());
+            for (Wiki wiki : wikiList)
             {
-                Map<String,String> pageMap = new HashMap<String,String>();
+                Map<String, String> pageMap = new HashMap<String, String>();
                 pageMap.put("name", wiki.getName().getSource());
                 if (wiki.latestVersion() != null)
                     pageMap.put("title", wiki.latestVersion().getTitle().getSource());
@@ -2473,6 +2377,7 @@ public class WikiController extends SpringActionController
             return _name;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setName(HString name)
         {
             _name = name;
@@ -2483,6 +2388,7 @@ public class WikiController extends SpringActionController
             return _redirect;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setRedirect(String redir)
         {
             _redirect = redir;
@@ -2493,6 +2399,7 @@ public class WikiController extends SpringActionController
             return _cancel;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setCancel(String cancel)
         {
             _cancel = cancel;
@@ -2513,6 +2420,7 @@ public class WikiController extends SpringActionController
             return _defName;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setDefName(String defName)
         {
             _defName = defName;
@@ -2523,6 +2431,7 @@ public class WikiController extends SpringActionController
             return _pageId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setPageId(String pageId)
         {
             _pageId = pageId;
@@ -2533,6 +2442,7 @@ public class WikiController extends SpringActionController
             return _index;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setIndex(int index)
         {
             _index = index;
@@ -2631,6 +2541,7 @@ public class WikiController extends SpringActionController
             return _entityId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setEntityId(GUID entityId)
         {
             _entityId = entityId;
@@ -2641,6 +2552,7 @@ public class WikiController extends SpringActionController
             return _name;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setName(HString name)
         {
             _name = name;
@@ -2651,6 +2563,7 @@ public class WikiController extends SpringActionController
             return _title;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setTitle(HString title)
         {
             _title = title;
@@ -2661,6 +2574,7 @@ public class WikiController extends SpringActionController
             return _body;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setBody(String body)
         {
             _body = body;
@@ -2671,11 +2585,13 @@ public class WikiController extends SpringActionController
             return null == _entityId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})   // Used for bean population; our code uses getParentId() TODO: Merge these?
         public Integer getParent()
         {
             return _parent;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setParent(Integer parent)
         {
             _parent = parent;
@@ -2683,7 +2599,7 @@ public class WikiController extends SpringActionController
 
         public int getParentId()
         {
-            return null == _parent ? -1 : _parent.intValue();
+            return null == _parent ? -1 : _parent;
         }
 
         public String getRendererType()
@@ -2691,6 +2607,7 @@ public class WikiController extends SpringActionController
             return _rendererType;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setRendererType(String rendererType)
         {
             _rendererType = rendererType;
@@ -2701,6 +2618,7 @@ public class WikiController extends SpringActionController
             return _pageId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setPageId(String pageId)
         {
             _pageId = pageId;
@@ -2711,6 +2629,7 @@ public class WikiController extends SpringActionController
             return _index;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setIndex(int index)
         {
             _index = index;
@@ -2721,6 +2640,7 @@ public class WikiController extends SpringActionController
             return _showAttachments;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setShowAttachments(boolean showAttachments)
         {
             _showAttachments = showAttachments;
@@ -2736,9 +2656,9 @@ public class WikiController extends SpringActionController
         {
             //if no entityId was passed, insert it
             if (form.isNew())
-                return insertWiki(form, errors);
+                return insertWiki(form);
             else
-                return updateWiki(form, errors);
+                return updateWiki(form);
         }
 
         public void validateForm(SaveWikiForm form, Errors errors)
@@ -2779,12 +2699,12 @@ public class WikiController extends SpringActionController
                 PageFlowUtil.validateHtml(body, tidyErrors,
                         policy.hasPermission(user, IncludeScriptPermission.class, contextualRoles));
 
-                for(String err : tidyErrors)
+                for (String err : tidyErrors)
                     errors.rejectValue("body", ERROR_MSG, err);
             }
         }
 
-        protected ApiResponse insertWiki(SaveWikiForm form, BindException errors) throws Exception
+        protected ApiResponse insertWiki(SaveWikiForm form) throws Exception
         {
             Container c = getViewContext().getContainer();
             User user = getViewContext().getUser();
@@ -2813,6 +2733,7 @@ public class WikiController extends SpringActionController
             //web part to show the newly inserted page
             String pageId = StringUtils.trimToEmpty(form.getPageId());
             int index = form.getIndex();
+
             if (pageId != null && index > 0)
             {
                 //get web part referenced by page id and index
@@ -2839,7 +2760,7 @@ public class WikiController extends SpringActionController
 
         protected HashMap<String, Object> getWikiProps(Wiki wiki, WikiVersion wikiversion)
         {
-            HashMap<String,Object> wikiProps = new HashMap<String,Object>();
+            HashMap<String, Object> wikiProps = new HashMap<String,Object>();
             wikiProps.put("entityId", wiki.getEntityId());
             wikiProps.put("rowId", wiki.getRowId());
             wikiProps.put("name", wiki.getName().getSource()); //HString source will be JS encoded
@@ -2848,10 +2769,11 @@ public class WikiController extends SpringActionController
             wikiProps.put("rendererType", wikiversion.getRendererType());
             wikiProps.put("parent", wiki.getParent());
             wikiProps.put("showAttachments", wiki.isShowAttachments());
+
             return wikiProps;
         }
 
-        protected ApiResponse updateWiki(SaveWikiForm form, BindException errors) throws Exception
+        private ApiResponse updateWiki(SaveWikiForm form) throws Exception
         {
             User user = getViewContext().getUser();
             if (null == form.getEntityId())
@@ -2899,7 +2821,6 @@ public class WikiController extends SpringActionController
             resp.put("wikiProps", getWikiProps(wikiUpdate, wikiversion));
             return resp;
         }
-
     }
 
     public static class AttachFilesForm
@@ -2912,6 +2833,7 @@ public class WikiController extends SpringActionController
             return _entityId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setEntityId(String entityId)
         {
             _entityId = entityId;
@@ -2931,6 +2853,7 @@ public class WikiController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class AttachFilesAction extends ApiAction<AttachFilesForm>
     {
+        @SuppressWarnings({"UnusedDeclaration"})
         public AttachFilesAction()
         {
             super();
@@ -3002,7 +2925,6 @@ public class WikiController extends SpringActionController
     }
 
 
-
     public static class TransformWikiForm
     {
         private String _body;
@@ -3014,6 +2936,7 @@ public class WikiController extends SpringActionController
             return _body;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setBody(String body)
         {
             _body = body;
@@ -3024,6 +2947,7 @@ public class WikiController extends SpringActionController
             return _fromFormat;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setFromFormat(String fromFormat)
         {
             _fromFormat = fromFormat;
@@ -3034,6 +2958,7 @@ public class WikiController extends SpringActionController
             return _toFormat;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setToFormat(String toFormat)
         {
             _toFormat = toFormat;
@@ -3095,16 +3020,16 @@ public class WikiController extends SpringActionController
 
             Container container = getViewContext().getContainer();
 
-            NavTree[] toc = WikiManager.getNavTree(container);
+            NavTree[] toc = WikiSelectManager.getNavTree(container);
 
-            List<Map<String,Object>> pageProps = getChildrenProps(toc);
+            List<Map<String, Object>> pageProps = getChildrenProps(toc);
             response.put("pages", pageProps);
 
             Set<String> expandedPaths = NavTreeManager.getExpandedPaths(getViewContext(), WikiTOC.getNavTreeId(getViewContext()));
             applyExpandedState(pageProps, expandedPaths, form.getCurrentPage());
 
             //include info about the current container
-            Map<String,Object> containerProps = new HashMap<String,Object>();
+            Map<String, Object> containerProps = new HashMap<String,Object>();
             containerProps.put("name", container.getName());
             containerProps.put("id", container.getId());
             containerProps.put("path", container.getPath());
@@ -3124,7 +3049,7 @@ public class WikiController extends SpringActionController
         {
             if (null != expandedPaths)
             {
-                for(String path : expandedPaths)
+                for (String path : expandedPaths)
                 {
                     if (null != path)
                         expandPath(path.split("/"), 1, pages, false); //start at index 1 since these paths all start with /
@@ -3149,14 +3074,14 @@ public class WikiController extends SpringActionController
             }
         }
 
-        protected void expandPath(String[] path, int idx, List<Map<String,Object>> pages, boolean expandAncestors)
+        protected void expandPath(String[] path, int idx, List<Map<String, Object>> pages, boolean expandAncestors)
         {
             if (null == pages || null == path || path.length == 0 || idx >= path.length)
                 return;
 
             //find the propset in pages that matches the current path part
             path[idx] = PageFlowUtil.decode(path[idx]); //decode path part before comparing!
-            for(Map<String,Object> pageProps : pages)
+            for (Map<String, Object> pageProps : pages)
             {
                 if (path[idx].equals(pageProps.get("title").toString()))
                 {
@@ -3165,17 +3090,18 @@ public class WikiController extends SpringActionController
                         pageProps.put("expanded", true);
 
                     //recurse children
-                    expandPath(path, idx + 1, (List<Map<String,Object>>)pageProps.get("children"), expandAncestors);
+                    expandPath(path, idx + 1, (List<Map<String, Object>>)pageProps.get("children"), expandAncestors);
                 }
             }
         }
 
-        public List<Map<String,Object>> getChildrenProps(NavTree[] pages)
+        public List<Map<String, Object>> getChildrenProps(NavTree[] pages)
         {
-            List<Map<String,Object>> ret = new ArrayList<Map<String,Object>>();
-            for(NavTree page : pages)
+            List<Map<String, Object>> ret = new ArrayList<Map<String,Object>>();
+
+            for (NavTree page : pages)
             {
-                Map<String,Object> props = new HashMap<String,Object>();
+                Map<String, Object> props = new HashMap<String,Object>();
                 ActionURL pageLink = new ActionURL(page.getValue());
                 props.put("name", pageLink.getParameter("name"));
                 props.put("title", page.getKey());
@@ -3187,6 +3113,7 @@ public class WikiController extends SpringActionController
 
                 ret.add(props);
             }
+
             return ret;
         }
     }
@@ -3200,6 +3127,7 @@ public class WikiController extends SpringActionController
             return _useVisual;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setUseVisual(boolean useVisual)
         {
             _useVisual = useVisual;
@@ -3234,6 +3162,7 @@ public class WikiController extends SpringActionController
             return _displayed;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setDisplayed(boolean displayed)
         {
             _displayed = displayed;

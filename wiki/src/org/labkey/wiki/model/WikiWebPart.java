@@ -16,13 +16,11 @@
 
 package org.labkey.wiki.model;
 
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Container;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.NotFoundException;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.HString;
+import org.labkey.api.view.NotFoundException;
 
-import javax.servlet.ServletException;
 import java.util.Map;
 
 /**
@@ -47,18 +45,13 @@ public class WikiWebPart extends BaseWikiView
         String name = props.get("name");
         name = (name != null) ? name : "default";
 
-        init(c, new HString(name), true);
+        init(c, new HString(name));
     }
 
 
     @Override
-    protected void prepareWebPart(Object model) throws ServletException
+    public boolean isWebPart()
     {
-        ViewContext context = getViewContext();
-        boolean removeLinks = isEmbedded() && getFrame() == FrameType.NONE;
-        context.put("includeLinks", !removeLinks);
-        context.put("isEmbedded", isEmbedded());
-
-        super.prepareWebPart(model);
+        return true;
     }
 }

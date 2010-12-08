@@ -63,22 +63,22 @@ public class WikiCache
         return get(c, name, loader);
     }
 
-    public static Map<HString, Wiki> getPageMap(Container c, WikiCacheLoader<Map<HString, Wiki>> loader) throws SQLException
+    static Map<HString, Wiki> getPageMap(Container c, WikiCacheLoader<Map<HString, Wiki>> loader) throws SQLException
     {
         return get(c, PAGES_NAME, loader);
     }
 
-    public static List<Wiki> getOrderedPageList(Container c, WikiCacheLoader<List<Wiki>> loader)
+    static List<Wiki> getOrderedPageList(Container c, WikiCacheLoader<List<Wiki>> loader)
     {
         return get(c, ORDERED_PAGE_LIST, loader);
     }
 
-    public static Map<HString, WikiLinkable> getVersionMap(Container c, WikiCacheLoader<Map<HString, WikiLinkable>> loader)
+    static Map<HString, WikiLinkable> getVersionMap(Container c, WikiCacheLoader<Map<HString, WikiLinkable>> loader)
     {
         return get(c, VERSIONS_NAME, loader);
     }
 
-    public static NavTree[] getNavTree(Container c, WikiCacheLoader<NavTree[]> loader)
+    static NavTree[] getNavTree(Container c, WikiCacheLoader<NavTree[]> loader)
     {
         return get(c, TOC_NAME, loader);
     }

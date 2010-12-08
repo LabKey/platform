@@ -26,10 +26,16 @@ public class WikiView extends BaseWikiView
     public WikiView(Wiki wiki, WikiVersion wikiversion, boolean hasContent)
     {
         super();
-        _wiki = wiki;
-        _wikiVersion = wikiversion;
-        addObject("hasContent", hasContent);
+        this.wiki = wiki;
+        this.wikiVersion = wikiversion;
+        this.hasContent = hasContent;
 
-        init(getViewContext().getContainer(), wiki.getName(), false);
+        init(getViewContext().getContainer(), wiki.getName());
+    }
+
+    @Override
+    public boolean isWebPart()
+    {
+        return false;
     }
 }

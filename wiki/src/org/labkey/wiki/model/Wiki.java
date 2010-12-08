@@ -15,6 +15,7 @@
  */
 package org.labkey.wiki.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
@@ -81,17 +82,24 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
+    @Deprecated
     public String getPageLink()
     {
-        return getWikiURL(PageAction.class, _name).getLocalURIString();
+        return getPageURL().getLocalURIString();
     }
 
 
-    public String getVersionsLink()
+    public ActionURL getPageURL()
+    {
+        return getWikiURL(PageAction.class, _name);
+    }
+
+
+    public @Nullable ActionURL getVersionsURL()
     {
         if (null == _name)
-            return "";
-        return getWikiURL(VersionsAction.class, _name).getLocalURIString();
+            return null;
+        return getWikiURL(VersionsAction.class, _name);
     }
 
 
@@ -105,13 +113,12 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
-    public String getManageLink()
+    public ActionURL getManageURL()
     {
         if (null == _name)
-            return "";
-        ActionURL manageLink = getWikiURL(ManageAction.class, _name);
+            return null;
 
-        return manageLink.getLocalURIString();
+        return getWikiURL(ManageAction.class, _name);
     }
 
 

@@ -57,7 +57,6 @@ import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRenderer.WikiLinkable;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.wiki.WikiCache.WikiCacheLoader;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
@@ -74,7 +73,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 
 /**
@@ -92,10 +90,6 @@ public class WikiManager
     private static CoreSchema core = CoreSchema.getInstance();
 
     private static final int LATEST = -1;
-
-//    private static SessionFactory _sessionFactory = DataSourceSessionFactory.create(_schema,
-//            new Class[]{Wiki.class, Attachment.class},
-//            CacheMode.NORMAL);
 
 
     public static class WikiAndVersion extends Pair<Wiki, WikiVersion>
@@ -163,7 +157,7 @@ public class WikiManager
     // Used to verify that entityId is a wiki and belongs in the specified container
     public static Wiki getWikiByEntityId(Container c, String entityId) throws SQLException
     {
-        if(null == c || c.getId().length() == 0 || null == entityId || entityId.length() == 0)
+        if (null == c || c.getId().length() == 0 || null == entityId || entityId.length() == 0)
             return null;
 
         Wiki[] wikis = Table.select(comm.getTableInfoPages(),
@@ -175,43 +169,6 @@ public class WikiManager
         else
             return wikis[0];
     }
-
-    // CONSIDER: move caching and wiki processing into this layer...
-    //get wiki with attachments
-    private static Wiki getWikiByName(Container c, HString name)
-    {
-        try
-        {
-            if (name == null)
-                return null;
-
-            Wiki[] wikis = Table.select(comm.getTableInfoPages(),
-                    Table.ALL_COLUMNS,
-                    new SimpleFilter("container", c.getId()).addCondition("name", name),
-                    null, Wiki.class);
-
-            if (0 == wikis.length)
-            {
-                //Didn't find it with case-sensitive lookup, try case-sensitive (in case the
-                //underlying database is case sensitive)
-                //Bug 2225
-                wikis = Table.select(comm.getTableInfoPages(),
-                        Table.ALL_COLUMNS,
-                        new SimpleFilter("container", c.getId()).addWhereClause("LOWER(name) = LOWER(?)", new Object[] { name }),
-                        null, Wiki.class);
-
-                if (0 == wikis.length)
-                    return null;
-            }
-
-            return wikis[0];
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
 
     public static boolean insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files)
             throws SQLException, IOException, AttachmentService.DuplicateFilenameException
@@ -391,7 +348,7 @@ public class WikiManager
             }
 
             //get next sibling to parent
-            if(wikiPosition < siblings.size() - 1)
+            if (wikiPosition < siblings.size() - 1)
                 nextWiki = siblings.get(wikiPosition + 1);
 
             //children need to fit between parent wiki and next wiki
@@ -468,18 +425,7 @@ public class WikiManager
     }
 
 
-    private static Map<HString, Wiki> generatePageMap(Container c) throws SQLException
-    {
-        Map<HString, Wiki> tree = new TreeMap<HString, Wiki>();
-        List<Wiki> l = getPageList(c);
-        for (Wiki wiki : l)
-        {
-            tree.put(wiki.getName(), wiki);
-        }
-        return tree;
-    }
-
-    private static void addAllChildren(List<Wiki> pages, Wiki current)
+    static void addAllChildren(List<Wiki> pages, Wiki current)
     {
         pages.add(current);
         if (current.getChildren() != null)
@@ -500,7 +446,7 @@ public class WikiManager
 
     public static List<HString> getWikiNameList(Container c) throws SQLException
     {
-        List<Wiki> pageList = getPageList(c);
+        List<Wiki> pageList = WikiSelectManager.getPageList(c);
         List<HString> nameList = new ArrayList<HString>();
 
         for (Wiki page : pageList)
@@ -512,7 +458,7 @@ public class WikiManager
 
     public static Wiki getWikiByRowId(Container c, int rowId)
     {
-        List<Wiki> pages = getPageList(c);
+        List<Wiki> pages = WikiSelectManager.getPageList(c);
         for (Wiki page : pages)
         {
             if (page.getRowId() == rowId)
@@ -530,7 +476,7 @@ public class WikiManager
     //get wiki with specified version
     public static Wiki getWiki(Container c, HString name, boolean forceRefresh)
     {
-        WikiAndVersion wikipair = getLatestWikiAndVersion(c, name, forceRefresh);
+        WikiAndVersion wikipair = WikiSelectManager.getLatestWikiAndVersion(c, name, forceRefresh);
         if (null == wikipair)
             return null;
         return wikipair.getWiki();
@@ -585,60 +531,17 @@ public class WikiManager
     {
         Container c = ContainerManager.getForId(wiki.getContainerId());
 
-        WikiAndVersion wikipair = getLatestWikiAndVersion(c, new HString(wiki.getName(),false), forceRefresh);
+        WikiAndVersion wikipair = WikiSelectManager.getLatestWikiAndVersion(c, new HString(wiki.getName(), false), forceRefresh);
         if (null == wikipair)
             return null;
         return wikipair.getWikiVersion();
     }
 
 
-    // UNDONE: consider exposing this method, or exposing wiki.getLatestVersion()
-    private static WikiAndVersion getLatestWikiAndVersion(Container c, final HString name, boolean forceRefresh)
-    {
-        // TODO: This ignores forceRefresh entirely... is it really necessary?
-
-        return WikiCache.getWikiAndVersion(c, name.getSource(), new WikiCacheLoader<WikiAndVersion>()
-        {
-            @Override
-            public WikiAndVersion load(String key, Container c)
-            {
-                Wiki wiki = getWikiByName(c, name);
-
-                if (wiki == null)
-                {
-                    return null;
-                }
-
-                WikiAndVersion wikipair;
-
-                try
-                {
-                    WikiVersion wikiversion = Table.selectObject(comm.getTableInfoPageVersions(),
-                                Table.ALL_COLUMNS,
-                                new SimpleFilter("RowId", wiki.getPageVersionId()),
-                                null,
-                                WikiVersion.class);
-
-                    if (wikiversion == null)
-                        throw new IllegalStateException("Cannot retrieve a valid version for page " + wiki.getName());
-
-                    // always cache wiki and version -- we defer formatting until WikiVersion.getHtml() is called
-                    wikipair = new WikiAndVersion(wiki, wikiversion);
-                }
-                catch (SQLException x)
-                {
-                    throw new RuntimeSQLException(x);
-                }
-
-                return wikipair;
-            }
-        });
-    }
-
     public static WikiVersion[] getAllVersions(Wiki wiki)
     {
         //fail if wiki has no entityid
-        if(null == wiki.getEntityId())
+        if (null == wiki.getEntityId())
             throw new IllegalStateException("Cannot retrieve version for non-existent wiki page.");
 
         try
@@ -669,120 +572,12 @@ public class WikiManager
         if (null != wiki.getEntityId())
             attachPrefix = wiki.getAttachmentLink("");
 
-        Map<HString, WikiLinkable> pages = getVersionMap(c);
+        Map<HString, WikiLinkable> pages = WikiSelectManager.getVersionMap(c);
 
         //get formatter specified for this version
         WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, pages, wiki.getAttachments());
 
         return w.format(wikiversion.getBody());
-    }
-
-
-    private static final WikiCacheLoader<List<Wiki>> PAGE_LIST_CACHE_LOADER = new WikiCacheLoader<List<Wiki>>() {
-            @Override
-            public List<Wiki> load(String key, Container c)
-            {
-                List<Wiki> pageList = new ArrayList<Wiki>();
-                List<Wiki> rootTopics = getWikisByParentId(c.getId(), -1);
-
-                for (Wiki rootTopic : rootTopics)
-                    addAllChildren(pageList, rootTopic);
-
-                return pageList;
-            }
-        };
-
-
-    public static List<Wiki> getPageList(Container c)
-    {
-        return WikiCache.getOrderedPageList(c, PAGE_LIST_CACHE_LOADER);
-    }
-
-
-    private static final WikiCacheLoader<Map<HString, Wiki>> PAGE_MAP_CACHE_LOADER = new WikiCacheLoader<Map<HString, Wiki>>() {
-            @Override
-            Map<HString, Wiki> load(String key, Container c)
-            {
-                try
-                {
-                    return generatePageMap(c);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
-            }
-        };
-
-
-    public static Map<HString, Wiki> getPageMap(Container c) throws SQLException
-    {
-        return WikiCache.getPageMap(c, PAGE_MAP_CACHE_LOADER);
-    }
-
-
-    private static final WikiCacheLoader<Map<HString, WikiLinkable>> VERSIONS_MAP_CACHE_LOADER = new WikiCacheLoader<Map<HString, WikiLinkable>>() {
-            @Override
-            Map<HString, WikiLinkable> load(String key, Container c)
-            {
-                Map<HString, WikiLinkable> tree = new TreeMap<HString, WikiLinkable>();
-                List<Wiki> list = getPageList(c);
-
-                for (Wiki wiki : list)
-                    tree.put(wiki.getName(), getLatestVersion(wiki, false));
-
-                return tree;
-            }
-        };
-
-
-    private static Map<HString, WikiLinkable> getVersionMap(Container c) throws SQLException
-    {
-        return WikiCache.getVersionMap(c, VERSIONS_MAP_CACHE_LOADER);
-    }
-
-
-    private static final WikiCacheLoader<NavTree[]> NAV_TREE_CACHE_LOADER = new WikiCacheLoader<NavTree[]>() {
-            @Override
-            NavTree[] load(String key, Container c)
-            {
-                return createNavTree(WikiManager.getWikisByParentId(c.getId(), -1), "Wiki-TOC-" + c.getId());
-            }
-        };
-
-
-    public static NavTree[] getNavTree(Container c)
-    {
-        NavTree[] toc = WikiCache.getNavTree(c, NAV_TREE_CACHE_LOADER);
-
-        //need to make a deep copy of the NavTree so that
-        //the caller can apply per-session expand state
-        //and per-request selection state
-        NavTree[] copy = new NavTree[toc.length];
-
-        for (int idx = 0; idx < toc.length; ++idx)
-        {
-            copy[idx] = new NavTree(toc[idx]);
-        }
-
-        return copy;
-    }
-
-
-    private static NavTree[] createNavTree(List<Wiki> pageList, String rootId)
-    {
-        ArrayList<NavTree> elements = new ArrayList<NavTree>();
-
-        //add all pages to the nav tree
-        for (Wiki page : pageList)
-        {
-            NavTree node = new NavTree(page.latestVersion().getTitle().getSource(), page.getPageLink(), true);
-            node.addChildren(createNavTree(page.getChildren(), rootId));
-            node.setId(rootId);
-            elements.add(node);
-        }
-
-        return elements.toArray(new NavTree[elements.size()]);
     }
 
 
@@ -968,10 +763,10 @@ public class WikiManager
     {
         try
         {
-        Table.execute(comm.getSchema(), 
-                "UPDATE comm.pages SET lastIndexed=? WHERE container=? AND name=?",
-                new Object[] {new Timestamp(ms), c, name}
-                );
+            Table.execute(comm.getSchema(),
+                    "UPDATE comm.pages SET lastIndexed=? WHERE container=? AND name=?",
+                    new Object[] {new Timestamp(ms), c, name}
+                    );
         }
         catch (SQLException sql)
         {
@@ -1194,19 +989,19 @@ public class WikiManager
             //
             // CREATE
             //
-            Wiki wikiA = new Wiki(c, new HString("pageA",false));
+            Wiki wikiA = new Wiki(c, new HString("pageA", false));
             WikiVersion wikiversion = new WikiVersion();
-            wikiversion.setTitle(new HString("Topic A",false));
+            wikiversion.setTitle(new HString("Topic A", false));
             wikiversion.setBody("[pageA]");
 
             insertWiki(user, c, wikiA, wikiversion, null);
 
             // verify objects
-            wikiA = getWikiByName(c, new HString("pageA",false));
+            wikiA = WikiSelectManager.getWikiByName(c, new HString("pageA", false));
             wikiversion = getVersion(wikiA, LATEST);
             assertTrue(HString.eq("Topic A", wikiversion.getTitle()));
 
-            assertNull(getWikiByName(c, new HString("pageNA",false)));
+            assertNull(WikiSelectManager.getWikiByName(c, new HString("pageNA", false)));
 
             //
             // DELETE
@@ -1214,8 +1009,7 @@ public class WikiManager
             deleteWiki(user, c, wikiA);
 
             // verify
-            assertNull(getWikiByName(c, new HString("pageA",false)));
-
+            assertNull(WikiSelectManager.getWikiByName(c, new HString("pageA", false)));
 
             purgePages(c, true);
         }

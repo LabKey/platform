@@ -749,7 +749,7 @@ public class ReportsController extends SpringActionController
 
                 User user = UserManager.getUser(_report.getDescriptor().getCreatedBy());
                 if (user != null)
-                    addRow(out, "Created By", PageFlowUtil.filter(user.getDisplayNameOld(getViewContext())));
+                    addRow(out, "Created By", PageFlowUtil.filter(user.getDisplayName(getViewContext().getUser())));
 
                 addRow(out, "Key", PageFlowUtil.filter(_report.getDescriptor().getReportKey()));
                 for (Map.Entry<String, Object> prop : _report.getDescriptor().getProperties().entrySet())

@@ -22,7 +22,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.ServiceImpl;
-import org.labkey.wiki.WikiManager;
+import org.labkey.wiki.WikiSelectManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -150,7 +150,7 @@ public class WikiEditModel
 
     public List<Wiki> getPossibleParents()
     {
-        List<Wiki> parents = new ArrayList<Wiki>(WikiManager.getPageList(_container));
+        List<Wiki> parents = new ArrayList<Wiki>(WikiSelectManager.getPageList(_container));
 
         //remove the current wiki from the list
         //so that it can't become its own parent

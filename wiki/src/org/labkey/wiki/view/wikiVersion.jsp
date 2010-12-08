@@ -15,22 +15,22 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.wiki.WikiManager"%>
-<%@ page import="org.labkey.wiki.WikiController" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.wiki.model.WikiVersion" %>
-<%@ page import="org.labkey.api.data.MenuButton" %>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.data.MenuButton"%>
 <%@ page import="org.labkey.api.data.RenderContext" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
+<%@ page import="org.labkey.wiki.WikiManager" %>
+<%@ page import="org.labkey.wiki.model.WikiVersion" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<WikiController.VersionBean> me = (JspView<WikiController.VersionBean>) HttpView.currentView();
-    WikiController.VersionBean bean = me.getModelBean();
+    JspView<VersionBean> me = (JspView<VersionBean>) HttpView.currentView();
+    VersionBean bean = me.getModelBean();
     ViewContext ctx = me.getViewContext();
     User user = ctx.getUser();
     Container c = ctx.getContainer();
@@ -71,7 +71,7 @@ else
 
         if (fOutputMakeCurrent)
         {
-            %><tr><td align=right colspan="2"><form method=POST action="<%=h(bean.makeCurrentLink)%>">
+            %><tr><td align=right colspan="2"><form method=POST action="<%=h(bean.makeCurrentURL)%>">
                 <%=PageFlowUtil.generateSubmitButton("Make Current")%></form></td></tr><%
         }%>
 
@@ -82,7 +82,7 @@ else
                <i>date:</i> <%=bean.created%><br>
            </td>
            <td align=right>
-               <%=textLink("page", bean.pageLink)%>&nbsp;<%=textLink("history", bean.versionsLink)%>&nbsp;<%
+               <%=textLink("page", bean.pageURL)%>&nbsp;<%=textLink("history", bean.versionsURL)%>&nbsp;<%
 
         WikiVersion[] versions = WikiManager.getAllVersions(bean.wiki);
 
@@ -100,7 +100,7 @@ else
                 if (n != bean.wikiVersion.getVersion())
                 {
                     // Show the author who created the version if available, or skip if that user's been deleted
-                    compare.addMenuItem((n == nLatestVersion ? "Latest Version" : "Version " + n) + (author == null ? "" : " (" + author.getDisplayNameOld(ctx) + ")"), baseCompareLink + "&version2=" + n);
+                    compare.addMenuItem((n == nLatestVersion ? "Latest Version" : "Version " + n) + (author == null ? "" : " (" + author.getDisplayName(user) + ")"), baseCompareLink + "&version2=" + n);
                 }
             }
 
@@ -118,7 +118,7 @@ else
             }
             else
             {%>
-                <a href="<%=bean.versionLink + "&version=" + n%>"><%=n%></a><%
+                <a href="<%=h(bean.versionLink + "&version=" + n)%>"><%=n%></a><%
             }
         }
         out.print("]");
