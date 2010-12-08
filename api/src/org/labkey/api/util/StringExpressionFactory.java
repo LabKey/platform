@@ -419,9 +419,10 @@ public class StringExpressionFactory
         String getValue(Map map)
         {
             Object lookupKey = key;
+
             if (!map.containsKey(lookupKey))
             {
-                LOG.warn("No replacement value found for FieldKey " + lookupKey + ". Could be a FieldKey vs. alias/column name mismatch. Attemping lookup by as string");
+                LOG.warn("No replacement value found for FieldKey " + lookupKey + ". Could be a FieldKey vs. alias/column name mismatch. Attemping lookup by string.");
                 lookupKey = key.getParent() == null ? key.getName() : key.encode();
             }
 
