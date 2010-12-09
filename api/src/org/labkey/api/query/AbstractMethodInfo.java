@@ -23,11 +23,13 @@ import java.util.ArrayList;
 
 abstract public class AbstractMethodInfo implements MethodInfo
 {
-    int _sqlType;
+    protected int _sqlType;
+    
     public AbstractMethodInfo(int sqlType)
     {
         _sqlType = sqlType;
     }
+
     protected int getSqlType(ColumnInfo[] arguments)
     {
         return _sqlType;
@@ -36,6 +38,11 @@ abstract public class AbstractMethodInfo implements MethodInfo
     public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
     {
         return new ExprColumn(parentTable, alias, getSQL(ExprColumn.STR_TABLE_ALIAS, parentTable.getSchema(), getSQLFragments(arguments)), getSqlType(arguments));
+    }
+
+    public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias, int sqlType)
+    {
+        return new ExprColumn(parentTable, alias, getSQL(ExprColumn.STR_TABLE_ALIAS, parentTable.getSchema(), getSQLFragments(arguments)), sqlType);
     }
 
     protected SQLFragment[] getSQLFragments(ColumnInfo[] arguments)
