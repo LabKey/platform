@@ -356,7 +356,6 @@ public class WikiController extends SpringActionController
             if (!perms.allowUpdate(_wiki))
                 HttpView.throwUnauthorized("You do not have permissions to manage this wiki page");
 
-            HttpView manageView = new JspView("/org/labkey/wiki/view/wikiManage.jsp");
 
             List<Wiki> allWikis = WikiSelectManager.getPageList(getContainer());
             List<Wiki> descendents = WikiManager.getDescendents(_wiki, true);
@@ -368,6 +367,7 @@ public class WikiController extends SpringActionController
             for (Wiki page : allWikis)
             {
                 boolean isDescendent = false;
+
                 for (Wiki descendent : descendents)
                 {
                     if (page.getRowId() == descendent.getRowId())
@@ -376,37 +376,42 @@ public class WikiController extends SpringActionController
                         break;
                     }
                 }
+
                 if (!isDescendent)
                     possibleParents.add(page);
             }
 
-            List<Wiki> siblings = WikiManager.getWikisByParentId(getContainer().getId(), _wiki.getParent());
-            manageView.addObject("wiki", _wiki);
-            manageView.addObject("title", _wiki.latestVersion().getTitle().getSource());
-            manageView.addObject("containerPath", getContainer().getPath());
-            manageView.addObject("pages", allWikis);
-            manageView.addObject("siblings", siblings);
-            manageView.addObject("possibleParents", possibleParents);
-            manageView.addObject("showChildren", SHOW_CHILD_REORDERING);
-            manageView.addObject("_errors", errors);
+            ManageBean bean = new ManageBean();
+            bean.wiki = _wiki;
+            bean.pages = allWikis;
+            bean.siblings = WikiManager.getWikisByParentId(getContainer().getId(), _wiki.getParent());
+            bean.possibleParents = possibleParents;
+            bean.showChildren = SHOW_CHILD_REORDERING;
 
-            if (perms.allowDelete(_wiki))
-                manageView.addObject("deleteLink", _wiki.getDeleteLink());
-            else
-                manageView.addObject("deleteLink", null);
-
+            HttpView manageView = new JspView<ManageBean>("/org/labkey/wiki/view/wikiManage.jsp", bean, errors);
             getPageConfig().setFocusId("name");
 
             return manageView;
         }
 
+
+        public class ManageBean
+        {
+            public Wiki wiki;
+            public List<Wiki> pages;
+            public List<Wiki> siblings;
+            public List<Wiki> possibleParents;
+            public boolean showChildren;
+        }
+
+
         public boolean handlePost(WikiManageForm form, BindException errors) throws Exception
         {
             HString originalName = form.getOriginalName();
             HString newName = form.getName();
-
             Container c = getContainer();
             _wiki = WikiManager.getWiki(c, originalName);
+
             if (null == _wiki)
             {
                 HttpView.throwNotFound();
@@ -818,8 +823,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    private Container getDestContainer(String destContainer, String path)
-            throws SQLException
+    private Container getDestContainer(String destContainer, String path) throws SQLException
     {
         if (destContainer == null)
         {
@@ -828,17 +832,16 @@ public class WikiController extends SpringActionController
                 return null;
         }
 
-        //get the destination container
-        Container cDest = ContainerManager.ensureContainer(destContainer);
-        return cDest;
+        //get the destination container  TODO: ensure?!?
+        return ContainerManager.ensureContainer(destContainer);
     }
 
 
-    private void displayWikiModuleInDestContainer(Container cDest)
-            throws SQLException
+    private void displayWikiModuleInDestContainer(Container cDest) throws SQLException
     {
         Set<Module> activeModules = new HashSet<Module>(cDest.getActiveModules());
         Module module = ModuleLoader.getInstance().getModule("Wiki");
+
         if (module != null)
         {
             //add wiki to active modules
@@ -1790,73 +1793,6 @@ public class WikiController extends SpringActionController
      }
 
 
-    public static class CollapseExpandForm
-    {
-        private boolean collapse;
-        private String path;
-        private String treeId;
-
-        public boolean isCollapse()
-        {
-            return collapse;
-        }
-
-        public void setCollapse(boolean collapse)
-        {
-            this.collapse = collapse;
-        }
-
-        public String getTreeId()
-        {
-            return treeId;
-        }
-
-        public void setTreeId(String treeId)
-        {
-            this.treeId = treeId;
-        }
-
-        public String getPath()
-        {
-            return path;
-        }
-
-        public void setPath(String path)
-        {
-            this.path = path;
-        }
-    }
-
-    @RequiresNoPermission
-    public class CollapseExpandAction extends FormViewAction<CollapseExpandForm>
-    {
-        public void validateCommand(CollapseExpandForm target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(CollapseExpandForm form, boolean reshow, BindException errors) throws Exception
-        {
-            NavTreeManager.expandCollapsePath(getViewContext(), form.getTreeId(), form.getPath(), form.isCollapse());
-            return null;
-        }
-
-        public boolean handlePost(CollapseExpandForm form, BindException errors) throws Exception
-        {
-            NavTreeManager.expandCollapsePath(getViewContext(), form.getTreeId(), form.getPath(), form.isCollapse());
-            return true;
-        }
-
-        public ActionURL getSuccessURL(CollapseExpandForm collapseExpandForm)
-        {
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
     public static class WikiTOC extends NavTreeMenu
     {
         String _selectedLink;
@@ -2150,6 +2086,8 @@ public class WikiController extends SpringActionController
     }
 
 
+    // TODO: Delete this and all supporting code?
+
     @RequiresPermissionClass(AdminPermission.class)
     public class CheckForBrokenLinksAction extends SimpleViewAction<BrokenLinkForm>
     {
@@ -2173,133 +2111,133 @@ public class WikiController extends SpringActionController
         {
             return null;
         }
-    }
 
 
-    private static void testLinksForAllPages(Container c, ActionURL baseURL, StringBuilder sb, boolean recurse) throws SQLException
-    {
-        List<Wiki> wikis = WikiSelectManager.getPageList(c);
-
-        for (Wiki wiki2 : wikis)
+        private void testLinksForAllPages(Container c, ActionURL baseURL, StringBuilder sb, boolean recurse) throws SQLException
         {
-            // We want a full wiki with attachments so rendering doesn't end up caching bogus HTML (e.g., lacking links
-            // to attached content)
-            Wiki fullWiki = WikiManager.getWiki(c, wiki2.getName());
+            List<Wiki> wikis = WikiSelectManager.getPageList(c);
 
-            // Could be null if wikis have been deleted/renamed while link checker is running
-            if (null == fullWiki)
-                continue;
-
-            WikiVersion latest = fullWiki.latestVersion();
-            String html = latest.getHtml(c, fullWiki);
-            Collection<String> errorStrings = new ArrayList<String>();
-            Document doc = PageFlowUtil.convertHtmlToDocument(html, errorStrings);
-
-            List<Pair<String, String>> unreachableLinks = new ArrayList<Pair<String, String>>();
-            testLinks(doc.getDocumentElement(), baseURL, unreachableLinks);
-
-            if (!unreachableLinks.isEmpty())
+            for (Wiki wiki2 : wikis)
             {
-                sb.append("<tr><td colspan=2><b>").append(recurse ? c.getPath() + ": " : "").append(latest.getTitle()).append(" (").append(fullWiki.getName()).append(")").append("</b><br></td></tr>\n");
+                // We want a full wiki with attachments so rendering doesn't end up caching bogus HTML (e.g., lacking links
+                // to attached content)
+                Wiki fullWiki = WikiManager.getWiki(c, wiki2.getName());
 
-                for (Pair<String, String> link : unreachableLinks)
-                    sb.append("<tr><td>").append(link.first).append("</td><td>").append(link.second).append("</td></tr>\n");
+                // Could be null if wikis have been deleted/renamed while link checker is running
+                if (null == fullWiki)
+                    continue;
 
-                sb.append("<tr><td colspan=2>&nbsp;</td></tr>\n");
+                WikiVersion latest = fullWiki.latestVersion();
+                String html = latest.getHtml(c, fullWiki);
+                Collection<String> errorStrings = new ArrayList<String>();
+                Document doc = PageFlowUtil.convertHtmlToDocument(html, errorStrings);
+
+                List<Pair<String, String>> unreachableLinks = new ArrayList<Pair<String, String>>();
+                testLinks(doc.getDocumentElement(), baseURL, unreachableLinks);
+
+                if (!unreachableLinks.isEmpty())
+                {
+                    sb.append("<tr><td colspan=2><b>").append(recurse ? c.getPath() + ": " : "").append(latest.getTitle()).append(" (").append(fullWiki.getName()).append(")").append("</b><br></td></tr>\n");
+
+                    for (Pair<String, String> link : unreachableLinks)
+                        sb.append("<tr><td>").append(link.first).append("</td><td>").append(link.second).append("</td></tr>\n");
+
+                    sb.append("<tr><td colspan=2>&nbsp;</td></tr>\n");
+                }
+            }
+
+            if (recurse)
+            {
+                for (Container child : c.getChildren())
+                    testLinksForAllPages(child, baseURL.clone().setContainer(child), sb, true);
             }
         }
 
-        if (recurse)
+        private void testLinks(Node node, ActionURL baseURL, List<Pair<String, String>> unreachableLinks)
         {
-            for (Container child : c.getChildren())
-                testLinksForAllPages(child, baseURL.clone().setContainer(child), sb, true);
-        }
-    }
-
-
-    private static void testLinks(Node node, ActionURL baseURL, List<Pair<String, String>> unreachableLinks)
-    {
-        if ("a".equals(node.getLocalName()))
-        {
-            String failureMessage = null;
-            HttpMethod method = null;
-            String sourceHref = null;
-
-            try
+            if ("a".equals(node.getLocalName()))
             {
-                sourceHref = node.getAttributes().getNamedItem("href").getNodeValue();
-                URI uri = new URI(sourceHref);
-                String urlString;
+                String failureMessage = null;
+                HttpMethod method = null;
+                String sourceHref = null;
 
-                if (uri.isAbsolute())
+                try
                 {
-                    urlString = sourceHref;
-                }
-                else
-                {
-                    // Add base server to /<context path>/wiki/container/page
-                    if (sourceHref.startsWith("/"))
+                    sourceHref = node.getAttributes().getNamedItem("href").getNodeValue();
+                    URI uri = new URI(sourceHref);
+                    String urlString;
+
+                    if (uri.isAbsolute())
                     {
-                        urlString = AppProps.getInstance().getBaseServerUrl() + sourceHref;
+                        urlString = sourceHref;
                     }
-                    // Add base server, context path, controller & container to ../xyz
                     else
                     {
-                        urlString = baseURL.getURIString() + sourceHref;
+                        // Add base server to /<context path>/wiki/container/page
+                        if (sourceHref.startsWith("/"))
+                        {
+                            urlString = AppProps.getInstance().getBaseServerUrl() + sourceHref;
+                        }
+                        // Add base server, context path, controller & container to ../xyz
+                        else
+                        {
+                            urlString = baseURL.getURIString() + sourceHref;
+                        }
                     }
-                }
 
-                // Ignore javascript: & mailto: links
-                if (urlString.startsWith("javascript:") || urlString.startsWith("mailto:"))
-                    return;
+                    // Ignore javascript: & mailto: links
+                    if (urlString.startsWith("javascript:") || urlString.startsWith("mailto:"))
+                        return;
 
-                HttpClient client = new HttpClient();
-                HttpMethodParams params = new HttpMethodParams();
-                params.setSoTimeout(30000);    // Wait no more than 30 seconds
-                method = new GetMethod(urlString);
-                method.setParams(params);
-                method.setFollowRedirects(true);
-                int statusCode = client.executeMethod(method);
-                String contents = method.getResponseBodyAsString();
+                    HttpClient client = new HttpClient();
+                    HttpMethodParams params = new HttpMethodParams();
+                    params.setSoTimeout(30000);    // Wait no more than 30 seconds
+                    method = new GetMethod(urlString);
+                    method.setParams(params);
+                    method.setFollowRedirects(true);
+                    int statusCode = client.executeMethod(method);
+                    String contents = method.getResponseBodyAsString();
 
-                if (HttpStatus.SC_OK != statusCode)
-                {
-                    failureMessage = method.getStatusLine().toString();
-                }
-                else
-                {
-                    if (contents.indexOf("This page has no content.") != -1)
+                    if (HttpStatus.SC_OK != statusCode)
                     {
-                        failureMessage = "Wiki page does not exist";
+                        failureMessage = method.getStatusLine().toString();
+                    }
+                    else
+                    {
+                        if (contents.indexOf("This page has no content.") != -1)
+                        {
+                            failureMessage = "Wiki page does not exist";
+                        }
                     }
                 }
-            }
-            catch(Exception e)
-            {
-                failureMessage = e.toString();
-            }
-            finally
-            {
-                if (null != method)
-                    method.releaseConnection();
+                catch(Exception e)
+                {
+                    failureMessage = e.toString();
+                }
+                finally
+                {
+                    if (null != method)
+                        method.releaseConnection();
 
-                if (null != failureMessage)
-                    unreachableLinks.add(new Pair<String, String>(sourceHref, failureMessage));
+                    if (null != failureMessage)
+                        unreachableLinks.add(new Pair<String, String>(sourceHref, failureMessage));
+                }
             }
-        }
-        else
-        {
-            NodeList children = node.getChildNodes();
-
-            for (int i = 0; i < children.getLength(); i++)
+            else
             {
-                Node child = children.item(i);
+                NodeList children = node.getChildNodes();
 
-                if (null != child)
-                    testLinks(child, baseURL, unreachableLinks);
+                for (int i = 0; i < children.getLength(); i++)
+                {
+                    Node child = children.item(i);
+
+                    if (null != child)
+                        testLinks(child, baseURL, unreachableLinks);
+                }
             }
         }
     }
+
 
     public static class BrokenLinkForm
     {
@@ -2315,6 +2253,7 @@ public class WikiController extends SpringActionController
             _recurse = recurse;
         }
     }
+
 
     public static class ContainerForm
     {

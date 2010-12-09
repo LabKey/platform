@@ -103,16 +103,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
-    public String getDeleteLink()
-    {
-        if (null == _name)
-            return "";
-        ActionURL deleteLink = getWikiURL(DeleteAction.class, _name);
-
-        return deleteLink.getLocalURIString();
-    }
-
-
     public ActionURL getManageURL()
     {
         if (null == _name)

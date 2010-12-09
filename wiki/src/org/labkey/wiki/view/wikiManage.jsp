@@ -15,85 +15,96 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.springframework.validation.FieldError" %>
+<%@ page import="org.labkey.wiki.WikiController.ManageAction.ManageBean" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
-<%@ page import="java.util.List" %>
+<%@ page import="org.springframework.validation.Errors" %>
+<%@ page import="org.springframework.validation.FieldError" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
+    ManageBean bean = ((HttpView<ManageBean>)HttpView.currentView()).getModelBean();
     ViewContext context = HttpView.currentContext();
-    BindException errors = (BindException)context.get("_errors");
-    Wiki wiki = (Wiki)context.get("wiki");
+    Container c = context.getContainer();
+    Errors errors = getErrors("form");
+    Wiki wiki = bean.wiki;
 %>
-<script>
-function saveWikiList(listName, targetName)
-  {
-  var wikiSelect = document.manage[listName];
-  var wikiList = "";
-  for (var i = 0; i < wikiSelect.length; i++)
+<script type="text/javascript">
+    function saveWikiList(listName, targetName)
     {
-    wikiList += wikiSelect.item(i).value;
-    if (i < wikiSelect.length - 1)
-      wikiList += ",";
-    }
-  document.manage[targetName].value = wikiList;
-  }
+        var wikiSelect = document.manage[listName];
+        var wikiList = "";
 
-function orderModule(listName, down, targetName)
-{
-  var wikiSelect = document.manage[listName];
-  var selWikiIndex = wikiSelect.selectedIndex;
-  if (selWikiIndex != -1)
+        for (var i = 0; i < wikiSelect.length; i++)
+        {
+            wikiList += wikiSelect.item(i).value;
+            if (i < wikiSelect.length - 1)
+                wikiList += ",";
+        }
+
+        document.manage[targetName].value = wikiList;
+    }
+
+    function orderModule(listName, down, targetName)
     {
-    var swapWiki = null;
-    if (selWikiIndex > 0 && down == 0)
-      {
-      swapWiki = wikiSelect.item(selWikiIndex - 1);
-      wikiSelect.selectedIndex--;
-      }
-    else if (selWikiIndex < wikiSelect.length-1 && down == 1)
-      {
-      swapWiki = wikiSelect.item(selWikiIndex + 1);
-      wikiSelect.selectedIndex++;
-      }
-    if (swapWiki != null)
-      {
-      var selWiki = wikiSelect.item(selWikiIndex);
-      var selText = selWiki.text;
-      var selValue = selWiki.value;
-      selWiki.text = swapWiki.text;
-      selWiki.value = swapWiki.value;
-      swapWiki.text = selText;
-      swapWiki.value = selValue;
-      saveWikiList(listName, targetName);
-      document.manage.nextAction.value = "manage";
-      return false;
-      }
-  } else {
-    alert("Please select a page first.");
-  }
-  return false;
-}
+        var wikiSelect = document.manage[listName];
+        var selWikiIndex = wikiSelect.selectedIndex;
+
+        if (selWikiIndex != -1)
+        {
+            var swapWiki = null;
+
+            if (selWikiIndex > 0 && down == 0)
+            {
+                swapWiki = wikiSelect.item(selWikiIndex - 1);
+                wikiSelect.selectedIndex--;
+            }
+            else if (selWikiIndex < wikiSelect.length-1 && down == 1)
+            {
+                swapWiki = wikiSelect.item(selWikiIndex + 1);
+                wikiSelect.selectedIndex++;
+            }
+
+            if (swapWiki != null)
+            {
+                var selWiki = wikiSelect.item(selWikiIndex);
+                var selText = selWiki.text;
+                var selValue = selWiki.value;
+                selWiki.text = swapWiki.text;
+                selWiki.value = swapWiki.value;
+                swapWiki.text = selText;
+                swapWiki.value = selValue;
+                saveWikiList(listName, targetName);
+                document.manage.nextAction.value = "manage";
+                return false;
+            }
+        }
+        else
+        {
+            alert("Please select a page first.");
+        }
+
+        return false;
+    }
 </script>
 
-
 <form method="post" name="manage" action="manage.post" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
-<input type="hidden" name="containerPath" value="<%=context.get("containerPath")%>">
+<input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
 <table>
 
 <%
     FieldError nameError = errors.getFieldError("name");
 	if (null != nameError)
-		{
+    {
 		%><tr><td colspan=2><span class="labkey-error"><%=context.getMessage(nameError)%></span></td></tr><%
-		}
+    }
   %>
   <tr>
     <td class='labkey-form-label'>Name</td>
-    <td><input type="text" size="40" id="name" name="name" value="<%= PageFlowUtil.filter(wiki.getName()) %>"></td>
+    <td><input type="text" size="40" id="name" name="name" value="<%=h(wiki.getName()) %>"></td>
   </tr>
   <tr>
     <td></td>
@@ -101,26 +112,26 @@ function orderModule(listName, down, targetName)
   </tr>
   <tr>
     <td class='labkey-form-label'>Title</td>
-    <td><input type="text" size="40" name="title" value="<%= PageFlowUtil.filter(wiki.latestVersion().getTitle()) %>"></td>
+    <td><input type="text" size="40" name="title" value="<%=h(wiki.latestVersion().getTitle()) %>"></td>
   </tr>
   <tr>
     <td class='labkey-form-label'>Parent</td>
     <td><select name="parent" onChange="document.manage.nextAction.value = 'manage'; submit();">
         <option <%= wiki.getParent() == -1 ? "selected" : "" %> value="-1">[none]</option>
 <%
-    for (Wiki possibleParent : (List<Wiki>)context.get("possibleParents"))
-        {
+    for (Wiki possibleParent : bean.possibleParents)
+    {
         if (possibleParent.getRowId() != wiki.getRowId())
-            {
-                String indent = "";
-                int depth = possibleParent.getDepth();
-                while (depth-- > 0)
-                    indent = indent + "&nbsp;&nbsp;";
+        {
+            String indent = "";
+            int depth = possibleParent.getDepth();
+            while (depth-- > 0)
+                indent = indent + "&nbsp;&nbsp;";
 %>
         <option <%= possibleParent.getRowId() == wiki.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= possibleParent.latestVersion().getTitle() %> (<%= possibleParent.getName() %>)</option>
 <%
-            }
         }
+    }
 %>
     </select></td>
 
@@ -133,12 +144,12 @@ function orderModule(listName, down, targetName)
                 <td>
                     <select name="siblings" size="10">
 <%
-        for (Wiki sibling : (List<Wiki>)context.get("siblings"))
-            {
+        for (Wiki sibling : bean.siblings)
+        {
 %>
                       <option <%= sibling.getRowId() == wiki.getRowId() ? "selected" : "" %> value="<%= sibling.getRowId() %>"><%= sibling.latestVersion().getTitle() %> (<%= sibling.getName() %>)</option>
 <%
-            }
+        }
 %>
                     </select>
                 </td>
@@ -152,8 +163,8 @@ function orderModule(listName, down, targetName)
     </td>
   </tr>
 <%
-    if (Boolean.TRUE.equals(context.get("showChildren")) && wiki.getChildren() != null && wiki.getChildren().size() > 0)
-        {
+    if (bean.showChildren && wiki.getChildren() != null && wiki.getChildren().size() > 0)
+    {
 %>
   <tr>
     <td class='labkey-form-label'>Child Order</td>
@@ -163,11 +174,11 @@ function orderModule(listName, down, targetName)
                     <select name="children" size="10">
 <%
         for (Wiki child : wiki.getChildren())
-            {
+        {
 %>
                       <option value="<%= child.getRowId() %>"><%= child.latestVersion().getTitle() %> (<%= child.getName() %>)</option>
 <%
-            }
+        }
 %>
                     </select>
                 </td>
@@ -181,7 +192,7 @@ function orderModule(listName, down, targetName)
     </td>
   </tr>
 <%
-        }
+    }
 %>
 </table>
 <input type="hidden" name="originalName" value="<%= wiki.getName() %>">
@@ -191,15 +202,17 @@ function orderModule(listName, down, targetName)
 <%=PageFlowUtil.generateSubmitButton("Edit Content", "document.manage.nextAction.value = 'editWiki'; return true;", "title=\"Edit Content and Attachments\"")%>
 
 <script type="text/javascript">
-existingWikiPages = [<% for (Wiki p : (List<Wiki>)context.get("pages")) out.print(PageFlowUtil.jsString(p.getName()) + ","); %>];
-function checkWikiName(name)
+    existingWikiPages = [<% for (Wiki p : bean.pages) out.print(PageFlowUtil.jsString(p.getName()) + ","); %>];
+
+    function checkWikiName(name)
     {
-    if (!name)
+        if (!name)
         {
-        window.alert("Please choose a name for this wiki page.");
-        return false;
+            window.alert("Please choose a name for this wiki page.");
+            return false;
         }
-    return true;
+
+        return true;
     }
 </script>
 </form>

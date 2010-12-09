@@ -15,14 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.springframework.validation.BindException" %>
+<%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-
 <table>
 <%
     BindException errors = (BindException)request.getAttribute("errors");
