@@ -18,7 +18,9 @@ package org.labkey.query.sql;
 
 import antlr.TokenStreamRecognitionException;
 import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.MissingTokenException;
 import org.antlr.runtime.ParserRuleReturnScope;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.Token;
@@ -353,12 +355,169 @@ public class SqlParser
         }
         if (e instanceof RecognitionException)
         {
-            RecognitionException re = (RecognitionException) e;
-// TODO
-//            return new QueryParseException(re.getMessage(), re, re.getLine(), re.getColumn());
-            return new QueryParseException(re.getMessage(), re, 0, 0);
+            RecognitionException re = (RecognitionException)e;
+            String message = formatRecognitionException(re);
+            return new QueryParseException(message, re, re.line, re.charPositionInLine);
         }
         return new QueryParseException("Unexpected exception", e, 0, 0);
+    }
+
+
+    static String formatRecognitionException(RecognitionException re)
+    {
+        String message = re.getMessage();
+        if (null != message)
+            return message;
+
+        String missing = null;
+        String near = null;
+        
+        if (null != re.token)
+            near = re.token.getText();
+        if (re instanceof MissingTokenException)
+        {
+            MissingTokenException mte = (MissingTokenException)re;
+            if (null != mte.inserted)
+            missing = tokenName(((CommonToken)mte.inserted).getType());
+        }
+
+        if (null != near)
+            message = "Syntax error near '" + near + "'";
+        else
+            message = "Syntax error";
+        if (null != missing)
+            message += ", expected '" + missing + "'";
+        return message;
+    }
+
+
+    public static String tokenName(int type)
+    {
+        switch (type)
+        {
+            case EOF: return "EOF";
+            case AGGREGATE: return "AGGREGATE FUNCTION";
+            case ALIAS: return "ALIAS";
+            case EXPR_LIST: return "EXPR LIST";
+            case FILTER_ENTITY: return "FILTER ENTITY";
+            case IN_LIST: return "IN LIST";
+            case IS_NOT: return "IS NOT";
+            case METHOD_CALL: return "METHOD CALL";
+            case NOT_BETWEEN: return "NOT BETWEEN";
+            case NOT_IN: return "NOT IN";
+            case NOT_LIKE: return "NOT LIKE";
+            case ORDER_ELEMENT: return "ORDER ELEMENT";
+            case QUERY: return "QUERY";
+            case RANGE: return "RANGE";
+            case ROW_STAR: return "*";
+            case SELECT_FROM: return "SELECT FROM";
+            case UNARY_MINUS: return "-";
+            case UNARY_PLUS: return "+";
+            case UNION_ALL: return "UNION ALL";
+            case VECTOR_EXPR: return "VECTOR EXPR";
+            case WEIRD_IDENT: return "WEIRD IDENT";
+            case ALL: return "ALL";
+            case ANY: return "ANY";
+            case AND: return "AND";
+            case AS: return "AS";
+            case ASCENDING: return "ASCENDING";
+            case AVG: return "AVG";
+            case BETWEEN: return "BETWEEN";
+            case CASE: return "CASE";
+            case CAST: return "CAST";
+            case CLASS: return "CLASS";
+            case COUNT: return "COUNT";
+            case DELETE: return "DELETE";
+            case DESCENDING: return "DESCENDING";
+            case DISTINCT: return "DISTINCT";
+            case DOT: return "DOT";
+            case ELEMENTS: return "ELEMENTS";
+            case ELSE: return "ELSE";
+            case END: return "END";
+            case ESCAPE: return "ESCAPE";
+            case EXISTS: return "EXISTS";
+            case FALSE: return "FALSE";
+            case FETCH: return "FETCH";
+            case FROM: return "FROM";
+            case FULL: return "FULL";
+            case GROUP: return "GROUP";
+            case HAVING: return "HAVING";
+            case IN: return "IN";
+            case INDICES: return "INDICES";
+            case INNER: return "INNER";
+            case INSERT: return "INSERT";
+            case INTO: return "INTO";
+            case IS: return "IS";
+            case JOIN: return "JOIN";
+            case LEFT: return "LEFT";
+            case LIKE: return "LIKE";
+            case LIMIT: return "LIMIT";
+            case MAX: return "MAX";
+            case GROUP_CONCAT: return "GROUP_CONCAT";
+            case MIN: return "MIN";
+            case NEW: return "NEW";
+            case NOT: return "NOT";
+            case NULL: return "NULL";
+            case ON: return "ON";
+            case OR: return "OR";
+            case ORDER: return "ORDER";
+            case OUTER: return "OUTER";
+            case RIGHT: return "RIGHT";
+            case SELECT: return "SELECT";
+            case SET: return "SET";
+            case SOME: return "SOME";
+            case STDDEV: return "STDDEV";
+            case SUM: return "SUM";
+            case THEN: return "THEN";
+            case TRUE: return "TRUE";
+            case UNION: return "UNION";
+            case UPDATE: return "UPDATE";
+            case VERSIONED: return "VERSIONED";
+            case WHERE: return "WHERE";
+            case WHEN: return "WHEN";
+            case BOTH: return "BOTH";
+            case EMPTY: return "EMPTY";
+            case LEADING: return "LEADING";
+            case MEMBER: return "MEMBER";
+            case OF: return "OF";
+            case TRAILING: return "TRAILING";
+            case COMMA: return ",";
+            case EQ: return "=";
+            case OPEN: return "(";
+            case CLOSE: return ")";
+            case NUM_INT: return "NUMBER";
+            case BIT_OR: return "|";
+            case BIT_XOR: return "^";
+            case NE: return "!=";
+            case SQL_NE: return "<>";
+            case LT: return "<";
+            case GT: return ">";
+            case LE: return "<=";
+            case GE: return ">=";
+            case CONCAT: return "||";
+            case PLUS: return "+";
+            case MINUS: return "-";
+            case BIT_AND: return "&";
+            case STAR: return "*";
+            case DIV: return "/";
+            case PARAM: return "?";
+            case QUOTED_STRING: return "QUOTED STRING";
+            case NUM_LONG: return "NUMBER";
+            case NUM_DOUBLE: return "NUMBER";
+            case NUM_FLOAT: return "NUMBER";
+            case IDENT: return "IDENTIFIER";
+            case QUOTED_IDENTIFIER: return "QUOTED IDENTIFIER";
+            case COLON: return ":";
+            case ID_START_LETTER: return "ID_START_LETTER";
+            case ID_LETTER: return "ID_LETTER";
+            case WS: return "WHITE SPACE";
+            case EXPONENT: return "EXPONENT";
+            case FLOAT_SUFFIX: return "FLOAT_SUFFIX";
+            case HEX_DIGIT: return "HEX_DIGIT";
+            case COMMENT: return "COMMENT";
+            case LINE_COMMENT: return "LINE COMMENT";
+        }
+        return null;
     }
 
 
@@ -438,14 +597,17 @@ public class SqlParser
                 try
                 {
                     Method m = Method.valueOf(name);
-                    int count = exprList.childList().size();
-                    if (count < m._minArgs || count > m._maxArgs)
+                    if (null != m)
                     {
-                        if (m._minArgs == m._maxArgs)
-                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " argument" + (m._minArgs==1?"":"s"), null, node.getLine(), node.getCharPositionInLine()));
-                        else
-                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " to " + m._maxArgs + " arguments", null, node.getLine(), node.getCharPositionInLine()));
-                    }
+                        int count = exprList.childList().size();
+                        if (count < m._minArgs || count > m._maxArgs)
+                        {
+                            if (m._minArgs == m._maxArgs)
+                                _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " argument" + (m._minArgs==1?"":"s"), null, node.getLine(), node.getCharPositionInLine()));
+                            else
+                                _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " to " + m._maxArgs + " arguments", null, node.getLine(), node.getCharPositionInLine()));
+                        }
+                        }
                 }
                 catch (Exception x)
                 {
