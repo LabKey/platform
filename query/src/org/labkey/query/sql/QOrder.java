@@ -16,9 +16,9 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.query.sql.SqlTokenTypes;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
+import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.util.Map;
 import java.util.List;
@@ -43,9 +43,9 @@ public class QOrder extends QNode
                     fComma = true;
                     node.appendSource(builder);
                     break;
-                case SqlTokenTypes.ASCENDING:
+                case SqlBaseParser.ASCENDING:
                     break;
-                case SqlTokenTypes.DESCENDING:
+                case SqlBaseParser.DESCENDING:
                     builder.append(" DESC");
                     break;
             }
@@ -68,11 +68,11 @@ public class QOrder extends QNode
                     }
                     entry = new Pair((QExpr) child, Boolean.TRUE);
                     break;
-                case SqlTokenTypes.DESCENDING:
+                case SqlBaseParser.DESCENDING:
                     assert entry != null;
                     entry.setValue(Boolean.FALSE);
                     break;
-                case SqlTokenTypes.ASCENDING:
+                case SqlBaseParser.ASCENDING:
                     assert entry != null;
                     entry.setValue(Boolean.TRUE);
                     break;
@@ -107,7 +107,7 @@ public class QOrder extends QNode
         if (!ascending)
         {
             QNode desc = new QUnknownNode();
-            desc.setTokenType(SqlTokenTypes.DESCENDING);
+            desc.setTokenType(SqlBaseParser.DESCENDING);
             appendChild(desc);
         }
     }

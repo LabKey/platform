@@ -22,8 +22,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
-import static org.labkey.query.sql.SqlTokenTypes.UNION;
-import static org.labkey.query.sql.SqlTokenTypes.UNION_ALL;
+import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -87,7 +86,7 @@ public class QueryUnion extends QueryRelation
                 QuerySelect select = new QuerySelect(_query, (QQuery)n);
                 _termList.add(select);
             }
-            else if (n instanceof QUnion && (_qunion.getTokenType() == UNION || n.getTokenType() == UNION_ALL))
+            else if (n instanceof QUnion && (_qunion.getTokenType() == SqlBaseParser.UNION || n.getTokenType() == SqlBaseParser.UNION_ALL))
 			{
                 collectUnionTerms((QUnion)n);
 			}
@@ -187,7 +186,7 @@ public class QueryUnion extends QueryRelation
 			unionSql.append("(");
 			unionSql.append(sql);
 			unionSql.append(")");
-			unionOperator = _qunion.getTokenType() == UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
+			unionOperator = _qunion.getTokenType() == SqlBaseParser.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
 		}
 
         List<Map.Entry<QExpr,Boolean>> sort = null == _qorderBy ? null : _qorderBy.getSort();
@@ -327,7 +326,7 @@ public class QueryUnion extends QueryRelation
 			sb.append("(");
 			sb.append(sql);
 			sb.append(")");
-			unionOperator = _qunion.getTokenType() == UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
+			unionOperator = _qunion.getTokenType() == SqlBaseParser.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
 		}
 
 		return sb.toString();

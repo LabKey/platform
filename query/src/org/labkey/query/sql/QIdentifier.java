@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 
 import org.labkey.api.query.FieldKey;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.query.sql.antlr.SqlBaseParser;
 
 public class QIdentifier extends QFieldKey
 {
@@ -29,11 +30,11 @@ public class QIdentifier extends QFieldKey
     {
         if (SqlParser.isLegalIdentifier(str))
         {
-            setTokenType(SqlTokenTypes.IDENT);
+            setTokenType(SqlBaseParser.IDENT);
             setTokenText(str);
             return;
         }
-        setTokenType(SqlTokenTypes.QUOTED_IDENTIFIER);
+        setTokenType(SqlBaseParser.QUOTED_IDENTIFIER);
         setTokenText(quote(str));
     }
 
@@ -44,7 +45,7 @@ public class QIdentifier extends QFieldKey
 
     public String getIdentifier()
     {
-        if (getTokenType() == SqlTokenTypes.IDENT)
+        if (getTokenType() == SqlBaseParser.IDENT)
             return getTokenText();
         return unquote(getTokenText());
     }

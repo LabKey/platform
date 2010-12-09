@@ -16,62 +16,100 @@
 
 package org.labkey.query.sql;
 
-import antlr.CommonAST;
-import antlr.Token;
+import org.antlr.runtime.RecognitionException;
+import org.antlr.runtime.Token;
+import org.antlr.runtime.TokenStream;
+import org.antlr.runtime.tree.CommonTree;
+import org.apache.log4j.Category;
 import org.labkey.api.util.UnexpectedException;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
-public class Node extends CommonAST implements Cloneable
+public class Node extends CommonTree implements Cloneable
 {
-    int _line;
-    int _column;
-
-    public Node getFirstChild()
+    public Node()
     {
-        return (Node) down;
     }
 
-    public Node getNextSibling()
+    public Node(Token t)
     {
-        return (Node) right;
+        super(t);
+//        _line = t.getLine();
+//        _column = t.getCharPositionInLine();
     }
 
-    public void setFirstChild(Node node)
+
+    public Node(Node node)
     {
-        down = node;
+        super(node);
     }
 
-    public void setNextSibling(Node node)
+    public static class Error extends Node
     {
-        right = node;
-    }
+        RecognitionException e;
 
-    public void initialize(Token token)
-    {
-        super.initialize(token);
-        _line = token.getLine();
-        _column = token.getColumn();
-    }
-
-    public void setType(int type)
-    {
-        if (type == getType())
-            return;
-		super.setType(type);
-    }
-
-    public void insertChild(Node child)
-    {
-        if (getFirstChild() == null)
-            setFirstChild(child);
-        else
+        Error(TokenStream input, Token start, Token end, RecognitionException e)
         {
-            Node firstChild = getFirstChild();
-            setFirstChild(child);
-            child.setNextSibling(firstChild);
+            this.e = e;        
+        }
+
+        @Override
+        public int getType()
+        {
+            return Token.INVALID_TOKEN_TYPE;
         }
     }
+
+//    int _line;
+//    int _column;
+
+//    public Node getFirstChild()
+//    {
+//        return (Node) down;
+//    }
+//
+//    public Node getNextSibling()
+//    {
+//        return (Node) right;
+//    }
+//
+//    public void setFirstChild(Node node)
+//    {
+//        down = node;
+//    }
+//
+//    public void setNextSibling(Node node)
+//    {
+//        right = node;
+//    }
+
+//    public void initialize(Token token)
+//    {
+//        super.
+//        super.initialize(token);
+//        _line = token.getLine();
+//        _column = token.getColumn();
+//    }
+//
+//    public void setType(int type)
+//    {
+//        if (type == getType())
+//            return;
+//		super.setType(type);
+//    }
+//
+//    public void insertChild(Node child)
+//    {
+//        if (getFirstChild() == null)
+//            setFirstChild(child);
+//        else
+//        {
+//            Node firstChild = getFirstChild();
+//            setFirstChild(child);
+//            child.setNextSibling(firstChild);
+//        }
+//    }
 
 
     public Node clone()
@@ -86,27 +124,10 @@ public class Node extends CommonAST implements Cloneable
         }
     }
 
-    public int getLine()
-    {
-        return _line;
-    }
-
     public int getColumn()
     {
-        return _column;
+        return getCharPositionInLine();
     }
 
 
-    public void dump(PrintWriter out)
-    {
-        dump(out, "\n");
-        out.println();
-    }
-
-    protected void dump(PrintWriter out, String nl)
-    {
-        out.printf("%s%s: %s", nl, getClass().getSimpleName(), getText());
-		for (Node c = getFirstChild() ; null != c ; c = c.getNextSibling())
-            c.dump(out, nl + "    |");
-    }
 }

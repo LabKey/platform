@@ -21,17 +21,19 @@ import org.labkey.api.data.SQLFragment;
 
 import java.util.*;
 
+import static org.labkey.query.sql.antlr.SqlBaseParser.*;
+
 public enum Operator
 {
-    eq("=", Precedence.comparison, SqlTokenTypes.EQ, ResultType.bool),
-    ne("<>", Precedence.comparison, SqlTokenTypes.NE, ResultType.bool),
-    gt(">", Precedence.comparison, SqlTokenTypes.GT, ResultType.bool),
-    lt("<", Precedence.comparison, SqlTokenTypes.LT, ResultType.bool),
-    ge(">=", Precedence.comparison, SqlTokenTypes.GE, ResultType.bool),
-    le("<=", Precedence.comparison, SqlTokenTypes.LE, ResultType.bool),
-    is(" IS ", Precedence.comparison, SqlTokenTypes.IS, ResultType.bool),
-    is_not(" IS NOT ", Precedence.comparison, SqlTokenTypes.IS_NOT, ResultType.bool),
-    between(" BETWEEN ", Precedence.comparison, SqlTokenTypes.BETWEEN, ResultType.bool)
+    eq("=", Precedence.comparison, EQ, ResultType.bool),
+    ne("<>", Precedence.comparison, NE, ResultType.bool),
+    gt(">", Precedence.comparison, GT, ResultType.bool),
+    lt("<", Precedence.comparison, LT, ResultType.bool),
+    ge(">=", Precedence.comparison, GE, ResultType.bool),
+    le("<=", Precedence.comparison, LE, ResultType.bool),
+    is(" IS ", Precedence.comparison, IS, ResultType.bool),
+    is_not(" IS NOT ", Precedence.comparison, IS_NOT, ResultType.bool),
+    between(" BETWEEN ", Precedence.comparison, BETWEEN, ResultType.bool)
     {
         public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
@@ -54,25 +56,48 @@ public enum Operator
             builder.popPrefix("");
         }
     },
-    add("+", Precedence.addition, SqlTokenTypes.PLUS, ResultType.arg),
-    subtract("-", Precedence.addition, SqlTokenTypes.MINUS, ResultType.arg),
-    plus("+", Precedence.unary, SqlTokenTypes.UNARY_PLUS, ResultType.arg)
+    notBetween(" NOT BETWEEN ", Precedence.comparison, NOT_BETWEEN, ResultType.bool)
+    {
+        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+        {
+            builder.pushPrefix("");
+            int i=0;
+            for (QNode operand : operands)
+            {
+                boolean paren = needsParentheses((QExpr)operand, true);
+                if (paren)
+                    builder.pushPrefix("(");
+                ((QExpr)operand).appendSql(builder);
+                if (paren)
+                    builder.popPrefix(")");
+                if (i==0)
+                    builder.append(" NOT BETWEEN ");
+                else if (i==1)
+                    builder.append(" AND ");
+                ++i;
+            }
+            builder.popPrefix("");
+        }
+    },
+    add("+", Precedence.addition, PLUS, ResultType.arg),
+    subtract("-", Precedence.addition, MINUS, ResultType.arg),
+    plus("+", Precedence.unary, UNARY_PLUS, ResultType.arg)
     {
         public String getPrefix()
         {
             return "+";
         }
     },
-    minus("-", Precedence.unary, SqlTokenTypes.UNARY_MINUS, ResultType.arg)
+    minus("-", Precedence.unary, UNARY_MINUS, ResultType.arg)
     {
         public String getPrefix()
         {
             return "-";
         }
     },
-    multiply("*", Precedence.multiplication, SqlTokenTypes.STAR, ResultType.arg),
-    divide("/", Precedence.multiplication, SqlTokenTypes.DIV, ResultType.arg),
-    concat("||", Precedence.addition, SqlTokenTypes.CONCAT, ResultType.string)
+    multiply("*", Precedence.multiplication, STAR, ResultType.arg),
+    divide("/", Precedence.multiplication, DIV, ResultType.arg),
+    concat("||", Precedence.addition, CONCAT, ResultType.string)
     {
         public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
@@ -83,7 +108,7 @@ public enum Operator
             builder.append(f);
         }
     },
-    not(" NOT ", Precedence.not, SqlTokenTypes.NOT, ResultType.bool)
+    not(" NOT ", Precedence.not, NOT, ResultType.bool)
     {
         public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
@@ -97,15 +122,15 @@ public enum Operator
             builder.append(")");
         }
     },
-    and(" AND ", Precedence.and, SqlTokenTypes.AND, ResultType.bool),
-    or(" OR ", Precedence.like, SqlTokenTypes.OR, ResultType.bool),
-    like(" LIKE ", Precedence.like, SqlTokenTypes.LIKE, ResultType.bool),
-    notLike(" NOT LIKE ", Precedence.like, SqlTokenTypes.NOT_LIKE, ResultType.bool),
-    in(" IN ", Precedence.like, SqlTokenTypes.IN, ResultType.bool),
-    notIn(" NOT IN ", Precedence.like, SqlTokenTypes.NOT_IN, ResultType.bool),
-    bit_and("&", Precedence.addition, SqlTokenTypes.BIT_AND, ResultType.arg),
-    bit_or("|", Precedence.bitwiseor, SqlTokenTypes.BIT_OR, ResultType.arg),
-    bit_xor("^", Precedence.bitwiseor, SqlTokenTypes.BIT_XOR, ResultType.arg),
+    and(" AND ", Precedence.and, AND, ResultType.bool),
+    or(" OR ", Precedence.like, OR, ResultType.bool),
+    like(" LIKE ", Precedence.like, LIKE, ResultType.bool),
+    notLike(" NOT LIKE ", Precedence.like, NOT_LIKE, ResultType.bool),
+    in(" IN ", Precedence.like, IN, ResultType.bool),
+    notIn(" NOT IN ", Precedence.like, NOT_IN, ResultType.bool),
+    bit_and("&", Precedence.addition, BIT_AND, ResultType.arg),
+    bit_or("|", Precedence.bitwiseor, BIT_OR, ResultType.arg),
+    bit_xor("^", Precedence.bitwiseor, BIT_XOR, ResultType.arg),
 
     ;
 

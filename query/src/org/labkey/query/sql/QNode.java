@@ -16,10 +16,10 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.tree.CommonTree;
 import org.labkey.api.util.UnexpectedException;
 
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.IdentityHashMap;
@@ -39,12 +39,12 @@ abstract public class QNode implements Cloneable
 	{
 	}
 
-	protected QNode(Node n)
+	protected QNode(CommonTree n)
 	{
 		from(n);
 	}
 
-	protected void from(Node n)
+	protected void from(CommonTree n)
 	{
 		setTokenType(n.getType());
 		setTokenText(n.getText());
@@ -185,12 +185,12 @@ abstract public class QNode implements Cloneable
         _column = other.getColumn();
     }
 
-	public void setLineAndColumn(Node other)
+	public void setLineAndColumn(CommonTree other)
 	{
 		if (other == null)
 			return;
 		_line = other.getLine();
-		_column = other.getColumn();
+		_column = other.getCharPositionInLine();
 	}
 
 

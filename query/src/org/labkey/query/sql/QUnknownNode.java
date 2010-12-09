@@ -16,6 +16,8 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.tree.CommonTree;
+
 public class QUnknownNode extends QNode
 {
     int _type = 0;
@@ -25,7 +27,7 @@ public class QUnknownNode extends QNode
         _type = 0;
     }
 
-    public QUnknownNode(Node n)
+    public QUnknownNode(CommonTree n)
     {
 		super(n);
     }

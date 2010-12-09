@@ -1937,11 +1937,10 @@ query/src/org/labkey/query/sql/QueryTableInfo.java -text
 query/src/org/labkey/query/sql/QueryUnion.java -text
 query/src/org/labkey/query/sql/SQLTableInfo.java -text
 query/src/org/labkey/query/sql/SourceBuilder.java -text
+query/src/org/labkey/query/sql/SqlBase.g -text
 query/src/org/labkey/query/sql/SqlBuilder.java -text
 query/src/org/labkey/query/sql/SqlParser.java -text
-query/src/org/labkey/query/sql/SqlTokenTypes.java -text
 query/src/org/labkey/query/sql/UnionTableInfoImpl.java -text
-query/src/org/labkey/query/sql/sql.g -text
 query/src/org/labkey/query/view/CustomViewSetKey.java -text
 query/src/org/labkey/query/view/EditQueryPage.java -text
 query/src/org/labkey/query/view/EditQueryView.java -text

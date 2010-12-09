@@ -16,9 +16,16 @@
 
 package org.labkey.query.sql;
 
-import antlr.ASTFactory;
-import antlr.RecognitionException;
 import antlr.TokenStreamRecognitionException;
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.ParserRuleReturnScope;
+import org.antlr.runtime.RecognitionException;
+import org.antlr.runtime.Token;
+import org.antlr.runtime.TokenStream;
+import org.antlr.runtime.tree.CommonTree;
+import org.antlr.runtime.tree.CommonTreeAdaptor;
+import org.antlr.runtime.tree.Tree;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,19 +33,18 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 import org.labkey.query.sql.antlr.SqlBaseParser;
-import org.labkey.query.sql.antlr.SqlBaseTokenTypes;
 
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.*;
+import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 
 
 /**
@@ -52,7 +58,7 @@ import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.*;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored","ThrowableInstanceNeverThrown"})
 public class SqlParser
 {
-	private static Logger _log = Logger.getLogger(QuerySelect.class);
+	private static Logger _log = Logger.getLogger(SqlParser.class);
 
     ArrayList<Exception> _parseErrors;
 
@@ -64,20 +70,20 @@ public class SqlParser
     {
     }
 
-
 	public QNode parseQuery(String str, List<? super QueryParseException> errors)
 	{
 		_parseErrors = new ArrayList<Exception>();
 		try
 		{
-			_SqlParser parser = new _SqlParser(str, _parseErrors);
+ 			_SqlParser parser = new _SqlParser(str, _parseErrors);
+            ParserRuleReturnScope selectScope = null;
 			try
 			{
-				parser.selectStatement();
-				int last = parser.LA(1);
-				if (SqlBaseTokenTypes.EOF != last)
+				selectScope = parser.selectStatement();
+                int last = parser.getTokenStream().LA(1);
+				if (EOF != last)
 					//noinspection ThrowableInstanceNeverThrown
-					_parseErrors.add(new RecognitionException("EOF expected"));
+					_parseErrors.add(new QueryParseException("EOF expected", null, 0, 0));
 			}
 			catch (Exception x)
 			{
@@ -87,9 +93,10 @@ public class SqlParser
 			QNode ret = null;
 			if (_parseErrors.size() == 0)
 			{
-				Node parseRoot = (Node) parser.getAST();
+				CommonTree parseRoot = (CommonTree) selectScope.getTree();
 				assert parseRoot != null;
-
+                assert dump(parseRoot);
+                
 				QNode qnodeRoot = convertParseTree(parseRoot);
 				assert dump(qnodeRoot);
 				assert MemTracker.put(qnodeRoot);
@@ -120,13 +127,14 @@ public class SqlParser
         try
         {
             _SqlParser parser = new _SqlParser(str, _parseErrors);
+            ParserRuleReturnScope exprScope = null;
             try
             {
-                parser.expression();
-                int last = parser.LA(1);
-                if (SqlBaseTokenTypes.EOF != last)
+                exprScope = parser.expression();
+                int last = parser.getTokenStream().LA(1);
+                if (EOF != last)
                     //noinspection ThrowableInstanceNeverThrown
-                    _parseErrors.add(new RecognitionException("EOF expected"));
+                    _parseErrors.add(new QueryParseException("EOF expected", null, 0, 0));
             }
             catch (Exception x)
             {
@@ -135,7 +143,7 @@ public class SqlParser
             if (_parseErrors.size() != 0)
                 return null;
 
-            Node parseRoot = (Node) parser.getAST();
+            CommonTree parseRoot = (CommonTree)exprScope.getTree();
             assert MemTracker.put(parseRoot);
             if (null == parseRoot)
                 return null;
@@ -157,6 +165,95 @@ public class SqlParser
             return null;
         }
     }
+
+
+    public static String toPrefixString(CommonTree tree)
+    {
+        StringBuilder sb = new StringBuilder();
+        _prefix(tree, sb);
+        return sb.toString();
+    }
+
+
+    private static void _prefix(Tree tree, StringBuilder sb)
+    {
+        if (tree.getChildCount() == 0)
+            sb.append(tree.getText());
+        else
+        {
+            sb.append("(");
+            sb.append(tree.getText());
+            for (int i=0 ; i<tree.getChildCount() ; i++)
+            {
+                sb.append(" ");
+                _prefix(tree.getChild(i),sb);
+            }
+            sb.append(")");
+        }
+    }
+
+    public static String toPrefixString(QNode tree)
+    {
+        StringBuilder sb = new StringBuilder();
+        _prefix(tree, sb);
+        return sb.toString();
+    }
+
+
+    private static void _prefix(QNode tree, StringBuilder sb)
+    {
+        if (tree.getFirstChild() == null)
+            sb.append(_text(tree));
+        else
+        {
+            sb.append("(");
+            sb.append(_text(tree));
+            for (QNode child : tree.children())
+            {
+                sb.append(" ");
+                _prefix(child,sb);
+            }
+            sb.append(")");
+        }
+    }
+
+    private static String _text(QNode q)
+    {
+        if (q.getTokenType() == METHOD_CALL)
+            return "METHOD_CALL";
+        return q.getTokenText();
+    }
+
+
+    public boolean dump(CommonTree tree)
+    {
+        if (!_log.isDebugEnabled())
+            return true;
+        StringWriter sw = new StringWriter();
+        dump(tree, new PrintWriter(sw), "\n");
+        _log.debug(sw.toString());
+        return true;
+    }
+
+
+    public void dump(CommonTree tree, PrintWriter out)
+    {
+        dump(tree, out, "\n");
+        out.println();
+    }
+
+
+    protected void dump(Tree tree, PrintWriter out, String nl)
+    {
+        out.printf("%s%s: %s", nl, getClass().getSimpleName(), tree.getText());
+        for (int i=0 ; i<tree.getChildCount() ; i++)
+        {
+            Tree c = tree.getChild(i);
+            dump(c, out, nl + "    |");
+        }
+    }
+
+
 
 
 	private boolean dump(QNode node)
@@ -257,18 +354,20 @@ public class SqlParser
         if (e instanceof RecognitionException)
         {
             RecognitionException re = (RecognitionException) e;
-            return new QueryParseException(re.getMessage(), re, re.getLine(), re.getColumn());
+// TODO
+//            return new QueryParseException(re.getMessage(), re, re.getLine(), re.getColumn());
+            return new QueryParseException(re.getMessage(), re, 0, 0);
         }
         return new QueryParseException("Unexpected exception", e, 0, 0);
     }
 
 
-	private QNode convertParseTree(Node node)
+	private QNode convertParseTree(CommonTree node)
 	{
-		Node child = node.getFirstChild();
 		LinkedList<QNode> l = new LinkedList<QNode>();
-		for ( ; null != child ; child = child.getNextSibling())
+		for (int i=0 ; i<node.getChildCount() ; i++)
 		{
+            CommonTree child = (CommonTree)node.getChild(i);
 			QNode q = convertParseTree(child);
 			if (q != null)
 				l.add(q);
@@ -279,7 +378,7 @@ public class SqlParser
 	}
 
 	
-	private QNode convertNode(Node node, LinkedList<QNode> children)
+	private QNode convertNode(CommonTree node, LinkedList<QNode> children)
 	{
 		switch (node.getType())
 		{
@@ -294,7 +393,7 @@ public class SqlParser
                 {
                     if (!(exprList instanceof QExprList) || exprList.childList().size() != 2)
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getColumn()));
+                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getCharPositionInLine()));
                         break;
                     }
                     LinkedList<QNode> args = new LinkedList<QNode>();
@@ -307,7 +406,7 @@ public class SqlParser
                 {
                     if (!(exprList instanceof QExprList) || exprList.childList().size() != 3)
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 3 arguments", null, node.getLine(), node.getColumn()));
+                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
                         break;
                     }
                     assert exprList.childList().size() == 3;
@@ -322,7 +421,7 @@ public class SqlParser
                 {
                     if (!(exprList instanceof QExprList) || exprList.childList().size() < 2 || exprList.childList().size() > 3)
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 or 3 arguments", null, node.getLine(), node.getColumn()));
+                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 or 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
                         break;
                     }
                     assert exprList.childList().size() == 2 || exprList.childList().size() == 3;
@@ -343,9 +442,9 @@ public class SqlParser
                     if (count < m._minArgs || count > m._maxArgs)
                     {
                         if (m._minArgs == m._maxArgs)
-                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " argument" + (m._minArgs==1?"":"s"), null, node.getLine(), node.getColumn()));
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " argument" + (m._minArgs==1?"":"s"), null, node.getLine(), node.getCharPositionInLine()));
                         else
-                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " to " + m._maxArgs + " arguments", null, node.getLine(), node.getColumn()));
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " to " + m._maxArgs + " arguments", null, node.getLine(), node.getCharPositionInLine()));
                     }
                 }
                 catch (Exception x)
@@ -454,13 +553,31 @@ public class SqlParser
 	}
 
 
-    static private ASTFactory _factory = new ASTFactory()
+    public static class CaseInsensitiveStringStream extends ANTLRStringStream
     {
-        public Class getASTNodeType(int tokenType)
+        public CaseInsensitiveStringStream(String s)
         {
-            return Node.class;
+            super(s);
         }
-    };
+
+        @Override
+        public int LA(int i)
+        {
+            int r = super.LA(i);
+            return 'A' <= r && r <= 'Z' ? r + ('a'-'A') : r;
+        }
+    }
+
+
+    private static class AdaptorWrapper extends CommonTreeAdaptor
+    {
+        @Override
+        public Object errorNode(TokenStream input, Token start, Token stop, RecognitionException e)
+        {
+            return super.errorNode(input, start, stop, e);
+        }
+    }
+    
 
     private static class _SqlParser extends SqlBaseParser
 	{
@@ -468,10 +585,18 @@ public class SqlParser
         
 		public _SqlParser(String str, ArrayList<Exception> errors)
 		{
-			super(new SqlBaseLexer(new StringReader(str)));
-            setASTFactory(_factory);
+			super(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
+            setTreeAdaptor(new AdaptorWrapper());
             _errors = errors;
             assert MemTracker.put(this);
+
+//            CommonTokenStream s = new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str)));
+//            while (SqlBaseParser.EOF != s.LA(1))
+//            {
+//                Token t = s.LT(1);
+//                System.out.println(t.getType() + ": " + t.getText());
+//                s.consume();
+//            }
 		}
 
 		@Override
@@ -482,7 +607,7 @@ public class SqlParser
 	}
 
 
-	QNode qnode(Node n, LinkedList<QNode> children)
+	QNode qnode(CommonTree n, LinkedList<QNode> children)
 	{
 		QNode q = qnode(n);
 		if (q != null)
@@ -492,7 +617,7 @@ public class SqlParser
 
 
 
-	QNode qnode(Node node)
+	QNode qnode(CommonTree node)
     {
 		int type = node.getType();
 		QNode q = null;
@@ -560,7 +685,6 @@ public class SqlParser
                 q = new QOrder();
 				break;
             case CASE:
-            case CASE2:
                 q = new QCase();
 				break;
             case WHEN:
@@ -594,15 +718,16 @@ public class SqlParser
 			case RANGE:
 				return new QUnknownNode(node);
 
-            case EQ: case NE: case GT: case LT: case GE: case LE: case IS: case IS_NOT: case BETWEEN:
+            case EQ: case NE: case GT: case LT: case GE: case LE: case IS: case IS_NOT:
+            case BETWEEN: case NOT_BETWEEN:
             case PLUS: case MINUS: case UNARY_MINUS: case STAR: case DIV: case CONCAT:
             case NOT: case AND: case OR: case LIKE: case NOT_LIKE: case IN: case NOT_IN:
-            case BIT_AND: case BIT_OR: case BIT_XOR:
+            case BIT_AND: case BIT_OR: case BIT_XOR: case UNARY_PLUS:
                 Operator op = Operator.ofTokenType(type);
 				assert op != null;
                 if (op == null)
 				{
-					_parseErrors.add(new RecognitionException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getColumn()));
+					_parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
 			    	return null;
 				}
 				q = op.expr();
@@ -611,16 +736,16 @@ public class SqlParser
 			case ANY:
 			case SOME:
 			case ALL:
-				_parseErrors.add(new RecognitionException("EXISTS,ANY,ALL, and SOME are not supported"));
+				_parseErrors.add(new QueryParseException("EXISTS,ANY,ALL, and SOME are not supported", null, node.getLine(), node.getCharPositionInLine()));
 				 return null;
 			case ESCAPE:
-				_parseErrors.add(new RecognitionException("LIKE ESCAPE is not supported"));
+				_parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
 				 return null;
 			case TRAILING:
 			case LEADING:
 			case BOTH:
 			default:
-	            _parseErrors.add(new RecognitionException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getColumn()));
+	            _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
 				return null;
         }
 
@@ -733,14 +858,73 @@ public class SqlParser
     };
 
 
-    static String[] exprs = new String[]
-    {
-            "a", "a+b", "a.b", "((a))*b"
-    };
-
     
     public static class TestCase extends Assert
     {
+        Pair<String,String>[] exprs = new Pair[]
+        {
+            // IDENT
+            new Pair("a", "a"),
+            new Pair("_a", "_a"),
+            new Pair("$a", "$a"),
+            new Pair("$_0", "$_0"),
+            // QUOTED_IDENTIFIER
+            new Pair("\"abcd\"", "\"abcd\""),
+            new Pair("\"ab\"\"cd\"", "\"ab\"\"cd\""),
+            // QUOTED_STRING
+            new Pair("'abcdef'", "'abcdef'"),
+            new Pair("'abc''def'", "'abc''def'"),
+            // NUM_INT
+            new Pair("123","123"),
+            new Pair("-123.45","(- 123.45)"),
+// HEX?           new Pair("0xff","0x00ff"),
+            new Pair("1234567890L","1234567890"),
+            new Pair("1.2e4","12000.0"),
+            // OPERATORS and precedence
+            new Pair("a = b","(= a b)"),
+            new Pair("a < b","(< a b)"),
+            new Pair("a > b","(> a b)"),
+            new Pair("a <> b","(<> a b)"),
+            new Pair("a != b","(!= a b)"),
+            new Pair("a <= b","(<= a b)"),
+            new Pair("a >= b","(>= a b)"),
+            new Pair("a || b","(|| a b)"),
+            new Pair("a + b","(+ a b)"),
+            new Pair("a - b","(- a b)"),
+            new Pair("a * b","(* a b)"),
+            new Pair("a / b","(/ a b)"),
+            new Pair("a | b","(| a b)"),
+            new Pair("a ^ b","(^ a b)"),
+            new Pair("a & b","(& a b)"),
+            new Pair("-a","(- a)"),
+            new Pair("+a","(+ a)"),
+            new Pair("(a)","a"),
+            new Pair("a IN (b)","(in a (IN_LIST b))"),
+            new Pair("a IN (b,c)","(in a (IN_LIST b c))"),
+            new Pair("a NOT IN (b,c)","(not in a (IN_LIST b c))"),
+            new Pair("a BETWEEN 4 and 5", "(between a 4 5)"),
+            new Pair("a NOT BETWEEN 4 and 5", "(not between a 4 5)"),
+            new Pair("a LIKE 'b'", "(like a 'b')"),
+            new Pair("a NOT LIKE 'b'", "(not like a 'b')"),
+
+            new Pair("'a' || ('b' + 'c')", "(|| 'a' (+ 'b' 'c'))"),
+            new Pair("a ^ -3 & 256", "(^ a (& (- 3) 256))"),
+// CONCAT           new Pair("a OR b AND NOT b | c = d < e || f + g * -h", "")
+            new Pair("a OR b AND NOT b | c = d < e + g * -h",
+                     "(OR a (AND b (NOT (| b (= c (< d (+ e (* g (- h)))))))))"),
+            new Pair("-a * b + c < d = e | f AND NOT b OR a",
+                    "(OR (AND (| (= (< (+ (* (- a) b) c) d) e) f) (NOT b)) a)"),
+
+            // identPrimary functions aggregates
+            new Pair("a.b","(. a b)"),
+            new Pair("a.b.fn(5)","(METHOD_CALL (. (. a b) fn) (EXPR_LIST 5))"),
+            new Pair("CURDATE()","(METHOD_CALL CURDATE EXPR_LIST)"),
+            new Pair("LCASE('a')","(METHOD_CALL LCASE (EXPR_LIST 'a'))"),
+            new Pair("AGE(a,b)", "(METHOD_CALL AGE (EXPR_LIST a b))"),
+            new Pair("SUM(a+b)","(SUM (+ a b))"),
+            new Pair("CAST(a AS VARCHAR)", "(METHOD_CALL CAST (EXPR_LIST a 'VARCHAR'))")
+        };
+
         private void good(String sql)
         {
             List<QueryParseException> errors = new ArrayList<QueryParseException>();
@@ -764,6 +948,16 @@ public class SqlParser
         @Test
         public void test()
         {
+            for (Pair<String,String> test : exprs)
+            {
+                List<QueryParseException> errors = new ArrayList<QueryParseException>();
+                QExpr e = new SqlParser().parseExpr(test.first,errors);
+                assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
+                assertTrue(test.first + " has parse errors", errors.isEmpty());
+                assertNotNull(test.first + " did not parse", e);
+                String prefix = toPrefixString(e);
+                assertEquals(test.second,prefix);
+            }
             for (String sql : testSql)
             {
                 try
@@ -789,13 +983,6 @@ public class SqlParser
                 {
                     fail(sql);
                 }
-            }
-            for (String expr : exprs)
-            {
-                List<QueryParseException> errors = new ArrayList<QueryParseException>();
-                QExpr e = new SqlParser().parseExpr(expr,errors);
-                assertTrue(errors.isEmpty());
-                assertNotNull(e);
             }
         }
     }

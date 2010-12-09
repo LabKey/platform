@@ -21,9 +21,10 @@ import org.labkey.api.query.*;
 import org.labkey.api.util.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.query.design.*;
-import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.ON;
+import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 import org.labkey.data.xml.ColumnType;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.util.*;
 
@@ -336,7 +337,7 @@ public class QuerySelect extends QueryRelation
 
             JoinType joinType = JoinType.root;
 
-            if (parent.getTokenType() == SqlTokenTypes.JOIN)
+            if (parent.getTokenType() == SqlBaseParser.JOIN)
             {
                 joinType = JoinType.inner;
 loop:
@@ -345,19 +346,19 @@ loop:
 					node = children[inode];
                     switch (node.getTokenType())
                     {
-                        case SqlTokenTypes.LEFT:
+                        case SqlBaseParser.LEFT:
                             joinType = JoinType.left;
                             break;
-                        case SqlTokenTypes.RIGHT:
+                        case SqlBaseParser.RIGHT:
                             joinType = JoinType.right;
                             break;
-                        case SqlTokenTypes.INNER:
+                        case SqlBaseParser.INNER:
                             joinType = JoinType.inner;
                             break;
-                        case SqlTokenTypes.OUTER:
+                        case SqlBaseParser.OUTER:
                             joinType = JoinType.outer;
                             break;
-                        case SqlTokenTypes.FULL:
+                        case SqlBaseParser.FULL:
                             joinType = JoinType.full;
                             break;
                         default:
@@ -405,7 +406,7 @@ loop:
 
             for (QNode node : from.children())
             {
-                if (_tables.size() > 0 && node.getTokenType() == SqlTokenTypes.RANGE)
+                if (_tables.size() > 0 && node.getTokenType() == SqlBaseParser.RANGE)
                 {
                     parseError("Tables in the parse clause separated by commas are not yet supported.", node);
                     break;

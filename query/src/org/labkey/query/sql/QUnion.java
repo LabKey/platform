@@ -16,8 +16,10 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.tree.CommonTree;
 import org.labkey.api.data.Table;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.util.List;
 import java.util.LinkedList;
@@ -27,7 +29,7 @@ public class QUnion extends QExpr
 {
     QueryUnion _union;
 
-    public QUnion(Node node)
+    public QUnion(CommonTree node)
     {
 		super(QNode.class);
         from(node);
@@ -46,7 +48,7 @@ public class QUnion extends QExpr
         {
             node.appendSource(builder);
 			builder.popPrefix();
-            if (getTokenType() == SqlTokenTypes.UNION_ALL)
+            if (getTokenType() == SqlBaseParser.UNION_ALL)
                 builder.pushPrefix(") UNION ALL (");
             else
 			    builder.pushPrefix(") UNION (");

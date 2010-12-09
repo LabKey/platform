@@ -16,7 +16,9 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.sql.Types;
 import java.math.BigInteger;
@@ -37,7 +39,7 @@ public class QNumber extends QExpr implements IConstant
 	}
 
 	
-    public QNumber(Node n)
+    public QNumber(CommonTree n)
     {
 		super(false);
 		from(n);
@@ -46,12 +48,12 @@ public class QNumber extends QExpr implements IConstant
 		{
 			switch (getTokenType())
 			{
-				case SqlTokenTypes.NUM_DOUBLE:
-				case SqlTokenTypes.NUM_FLOAT:
+				case SqlBaseParser.NUM_DOUBLE:
+				case SqlBaseParser.NUM_FLOAT:
 					setValue(convertDouble(getTokenText()));
 					break;
-				case SqlTokenTypes.NUM_LONG:
-				case SqlTokenTypes.NUM_INT:
+				case SqlBaseParser.NUM_LONG:
+				case SqlBaseParser.NUM_INT:
 					setValue(convertInteger(getTokenText()));
 					break;
 				default:
@@ -120,6 +122,8 @@ public class QNumber extends QExpr implements IConstant
 		}
 		try
 		{
+            if (s.endsWith("l") || s.endsWith("L"))
+                s = s.substring(0,s.length()-1);
 			return Long.parseLong(s, base);
 		}
 		catch (NumberFormatException x)
