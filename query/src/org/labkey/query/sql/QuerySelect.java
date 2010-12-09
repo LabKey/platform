@@ -675,7 +675,7 @@ loop:
         if (key != null)
         {
             QField ret = getField(key, expr);
-            QueryParseException error = ret.fieldCheck(parent);
+            QueryParseException error = ret.fieldCheck(parent, getSqlDialect());
             if (error != null)
                 getParseErrors().add(error);
             return ret;
@@ -702,7 +702,7 @@ loop:
                 ret.appendChild(resolveFields((QExpr)child, expr));
         }
 
-        QueryParseException error = ret.fieldCheck(parent);
+        QueryParseException error = ret.fieldCheck(parent, getSqlDialect());
         if (error != null)
             getParseErrors().add(error);
         return ret;

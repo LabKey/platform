@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.data.*;
@@ -34,7 +35,7 @@ public class QMethodCall extends QExpr
 
     public void appendSql(SqlBuilder builder)
     {
-        MethodInfo method = getMethod();
+        MethodInfo method = getMethod(builder.getDbSchema().getSqlDialect());
         if (method == null)
         {
             builder.appendStringLiteral("Unrecognized method " + getField().getFieldKey());
@@ -55,7 +56,7 @@ public class QMethodCall extends QExpr
 
     public ColumnInfo createColumnInfo(SQLTableInfo table, String alias)
     {
-        MethodInfo method = getMethod();
+        MethodInfo method = getMethod(table.getSqlDialect());
         if (method == null)
         {
             return super.createColumnInfo(table, alias);
@@ -70,9 +71,9 @@ public class QMethodCall extends QExpr
         return method.createColumnInfo(table, arguments.toArray(new ColumnInfo[0]), alias);
     }
 
-    public MethodInfo getMethod()
+    public MethodInfo getMethod(SqlDialect d)
     {
-        return getField().getMethod();
+        return getField().getMethod(d);
     }
 
     public void appendSource(SourceBuilder builder)
@@ -100,9 +101,9 @@ public class QMethodCall extends QExpr
         return (QField) getFirstChild();
     }
 
-    public QueryParseException fieldCheck(QNode parent)
+    public QueryParseException fieldCheck(QNode parent, SqlDialect d)
     {
-        if (getMethod() == null)
+        if (getMethod(d) == null)
         {
             return new QueryParseException("Unknown method " + getField().getName(), null, getLine(), getColumn());
         }

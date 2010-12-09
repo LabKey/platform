@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.ExprColumn;
@@ -135,24 +136,26 @@ public class QField extends QInternalExpr
     }
 
 
-    public MethodInfo getMethod()
+    public MethodInfo getMethod(SqlDialect d)
     {
         if (_table == null || !(_table instanceof QueryTable))
         {
             try
             {
-                return Method.valueOf(_name.toLowerCase()).getMethodInfo();
+                Method m = Method.resolve(d, _name.toLowerCase());
+                if (null != m)
+                    return m.getMethodInfo();
             }
             catch (IllegalArgumentException iae)
             {
-                return null; 
             }
+            return null;
         }
 
         return _table.getTableInfo().getMethod(FieldKey.fromString(_name).getName());
     }
 
-    public QueryParseException fieldCheck(QNode parent)
+    public QueryParseException fieldCheck(QNode parent, SqlDialect d)
     {
         if (parent instanceof QMethodCall)
             return null;

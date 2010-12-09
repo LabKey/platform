@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryParseException;
@@ -89,7 +90,7 @@ abstract public class QExpr extends QNode
         return new ExprColumn(table, name, sql, getSqlType());
     }
 
-    public QueryParseException fieldCheck(QNode parent)
+    public QueryParseException fieldCheck(QNode parent, SqlDialect d)
     {
         return null;
     }
