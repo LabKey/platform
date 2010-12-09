@@ -17,48 +17,91 @@
 package org.labkey.wiki;
 
 import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExtFormAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.*;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.*;
+import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.ContainerTreeSelected;
+import org.labkey.api.util.DiffMatchPatch;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.TextExtractor;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.LinkBarView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.NavTreeMenu;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.wiki.model.*;
+import org.labkey.wiki.model.Wiki;
+import org.labkey.wiki.model.WikiEditModel;
+import org.labkey.wiki.model.WikiVersion;
+import org.labkey.wiki.model.WikiView;
 import org.labkey.wiki.permissions.IncludeScriptPermission;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -66,10 +109,19 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.net.URI;
 import java.sql.SQLException;
 import java.text.DateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 
 public class WikiController extends SpringActionController
 {
@@ -1947,7 +1999,6 @@ public class WikiController extends SpringActionController
 
             //Apply the current expand state
             NavTreeManager.applyExpandState(root, context);
-
             String nextLink = null, prevLink = null;
 
             if (null != selectedPage)
@@ -1956,6 +2007,7 @@ public class WikiController extends SpringActionController
                 //UNDONE: consolidate wiki code so wiki object is always the same
                 //(so we can use pageList here rather than creating a second list)
                 List<HString> nameList = WikiManager.getWikiNameList(cToc);
+
                 if (nameList.contains(selectedPage.getName()))
                 {
                     //determine where this page is in the ordered wiki page list
@@ -2021,6 +2073,7 @@ public class WikiController extends SpringActionController
             out.println("<div id=\"NavTree-"+ getId() +"\">");
             super.renderView(model, out);
             out.println("</div>");
+
             if (getElements().length > 1)
             {
                 out.println("<br>");
@@ -2034,7 +2087,9 @@ public class WikiController extends SpringActionController
                     out.println("\">[previous]</a>");
                 }
                 else
+                {
                     out.println("[previous]");
+                }
 
                 if (nextLink != null)
                 {
@@ -2043,7 +2098,9 @@ public class WikiController extends SpringActionController
                     out.println("\">[next]</a>");
                 }
                 else
+                {
                     out.println("[next]");
+                }
 
                 if (showExpandOption)
                 {
@@ -2051,6 +2108,7 @@ public class WikiController extends SpringActionController
                     out.println(PageFlowUtil.textLink("expand all", "javascript:;", "adjustAllTocEntries('" + getId() + "', true, true)", ""));
                     out.println(PageFlowUtil.textLink("collapse all", "javascript:;", "adjustAllTocEntries('" + getId() + "', true, false)", ""));
                 }
+
                 out.println("</td>\n</tr>\n</table>");
             }
         }
@@ -2082,175 +2140,6 @@ public class WikiController extends SpringActionController
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             out.write(getValue(ctx).toString());
-        }
-    }
-
-
-    // TODO: Delete this and all supporting code?
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class CheckForBrokenLinksAction extends SimpleViewAction<BrokenLinkForm>
-    {
-        public ModelAndView getView(BrokenLinkForm form, BindException errors) throws Exception
-        {
-            ActionURL baseURL = getViewContext().cloneActionURL().deleteParameters().setAction((String)null);
-            StringBuilder sb = new StringBuilder();
-            testLinksForAllPages(getContainer(), baseURL, sb, form.getRecurse());
-
-            if (0 == sb.length())
-                sb.append("No broken links found");
-
-            sb.insert(0, "<table>\n");
-            sb.append("</table>\n");
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new HtmlView(sb.toString());
-        }
-
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-
-
-        private void testLinksForAllPages(Container c, ActionURL baseURL, StringBuilder sb, boolean recurse) throws SQLException
-        {
-            List<Wiki> wikis = WikiSelectManager.getPageList(c);
-
-            for (Wiki wiki2 : wikis)
-            {
-                // We want a full wiki with attachments so rendering doesn't end up caching bogus HTML (e.g., lacking links
-                // to attached content)
-                Wiki fullWiki = WikiManager.getWiki(c, wiki2.getName());
-
-                // Could be null if wikis have been deleted/renamed while link checker is running
-                if (null == fullWiki)
-                    continue;
-
-                WikiVersion latest = fullWiki.latestVersion();
-                String html = latest.getHtml(c, fullWiki);
-                Collection<String> errorStrings = new ArrayList<String>();
-                Document doc = PageFlowUtil.convertHtmlToDocument(html, errorStrings);
-
-                List<Pair<String, String>> unreachableLinks = new ArrayList<Pair<String, String>>();
-                testLinks(doc.getDocumentElement(), baseURL, unreachableLinks);
-
-                if (!unreachableLinks.isEmpty())
-                {
-                    sb.append("<tr><td colspan=2><b>").append(recurse ? c.getPath() + ": " : "").append(latest.getTitle()).append(" (").append(fullWiki.getName()).append(")").append("</b><br></td></tr>\n");
-
-                    for (Pair<String, String> link : unreachableLinks)
-                        sb.append("<tr><td>").append(link.first).append("</td><td>").append(link.second).append("</td></tr>\n");
-
-                    sb.append("<tr><td colspan=2>&nbsp;</td></tr>\n");
-                }
-            }
-
-            if (recurse)
-            {
-                for (Container child : c.getChildren())
-                    testLinksForAllPages(child, baseURL.clone().setContainer(child), sb, true);
-            }
-        }
-
-        private void testLinks(Node node, ActionURL baseURL, List<Pair<String, String>> unreachableLinks)
-        {
-            if ("a".equals(node.getLocalName()))
-            {
-                String failureMessage = null;
-                HttpMethod method = null;
-                String sourceHref = null;
-
-                try
-                {
-                    sourceHref = node.getAttributes().getNamedItem("href").getNodeValue();
-                    URI uri = new URI(sourceHref);
-                    String urlString;
-
-                    if (uri.isAbsolute())
-                    {
-                        urlString = sourceHref;
-                    }
-                    else
-                    {
-                        // Add base server to /<context path>/wiki/container/page
-                        if (sourceHref.startsWith("/"))
-                        {
-                            urlString = AppProps.getInstance().getBaseServerUrl() + sourceHref;
-                        }
-                        // Add base server, context path, controller & container to ../xyz
-                        else
-                        {
-                            urlString = baseURL.getURIString() + sourceHref;
-                        }
-                    }
-
-                    // Ignore javascript: & mailto: links
-                    if (urlString.startsWith("javascript:") || urlString.startsWith("mailto:"))
-                        return;
-
-                    HttpClient client = new HttpClient();
-                    HttpMethodParams params = new HttpMethodParams();
-                    params.setSoTimeout(30000);    // Wait no more than 30 seconds
-                    method = new GetMethod(urlString);
-                    method.setParams(params);
-                    method.setFollowRedirects(true);
-                    int statusCode = client.executeMethod(method);
-                    String contents = method.getResponseBodyAsString();
-
-                    if (HttpStatus.SC_OK != statusCode)
-                    {
-                        failureMessage = method.getStatusLine().toString();
-                    }
-                    else
-                    {
-                        if (contents.indexOf("This page has no content.") != -1)
-                        {
-                            failureMessage = "Wiki page does not exist";
-                        }
-                    }
-                }
-                catch(Exception e)
-                {
-                    failureMessage = e.toString();
-                }
-                finally
-                {
-                    if (null != method)
-                        method.releaseConnection();
-
-                    if (null != failureMessage)
-                        unreachableLinks.add(new Pair<String, String>(sourceHref, failureMessage));
-                }
-            }
-            else
-            {
-                NodeList children = node.getChildNodes();
-
-                for (int i = 0; i < children.getLength(); i++)
-                {
-                    Node child = children.item(i);
-
-                    if (null != child)
-                        testLinks(child, baseURL, unreachableLinks);
-                }
-            }
-        }
-    }
-
-
-    public static class BrokenLinkForm
-    {
-        private boolean _recurse = false;
-
-        public boolean getRecurse()
-        {
-            return _recurse;
-        }
-
-        public void setRecurse(boolean recurse)
-        {
-            _recurse = recurse;
         }
     }
 
@@ -3020,6 +2909,7 @@ public class WikiController extends SpringActionController
 
             //find the propset in pages that matches the current path part
             path[idx] = PageFlowUtil.decode(path[idx]); //decode path part before comparing!
+
             for (Map<String, Object> pageProps : pages)
             {
                 if (path[idx].equals(pageProps.get("title").toString()))
