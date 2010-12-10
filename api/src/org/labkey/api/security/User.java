@@ -17,7 +17,6 @@
 package org.labkey.api.security;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.Container;
 
 import java.io.Serializable;
@@ -27,7 +26,7 @@ import java.util.Date;
 
 public class User extends UserPrincipal implements Serializable, Cloneable
 {
-    static Logger _log = Logger.getLogger(User.class);
+    private static final Logger _log = Logger.getLogger(User.class);
 
     private static final int[] _guestGroups = new int[]{Group.groupGuests};
 
@@ -107,12 +106,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _lastName;
     }
 
-    @Deprecated // Use getDisplayName(User) instead
-    public String getDisplayNameOld(ViewContext context)
-    {
-        return getDisplayName(null == context ? null : context.getUser());
-    }
-
     /**
      * Returns the display name of this user. Requires a User
      * in order to check if the current web browser is logged in.
@@ -121,6 +114,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable
      * @param currentUser
      * @return The display name, possibly sanitized
      */
+
+    // TODO: Check that currentUser really is the current user. Add a property to User that is set only by AuthFilter,
+    // and a couple other places where treating an arbitrary user as currentUser is valid (e.g., email notifications)
     public String getDisplayName(User currentUser)
     {
         if (null == currentUser || currentUser.isGuest())

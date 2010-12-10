@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.webdav.FileSystemResource" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.files.FileContentEmailPref" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.webdav.FileSystemResource" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -33,7 +33,7 @@
     int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 %>
 
-User: <%=user.getDisplayNameOld(context)%>
+User: <%=user.getDisplayName(user)%>
 File: <%=bean.getResource().getName()%>
 Action: <%=bean.getAction()%>
 

@@ -38,16 +38,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class UserManager
 {
-    private static Logger _log = Logger.getLogger(UserManager.class);
-    private static CoreSchema _core = CoreSchema.getInstance();
+    private static final Logger LOG = Logger.getLogger(UserManager.class);
+    private static final CoreSchema CORE = CoreSchema.getInstance();
 
     // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed.  It's a trivial amount of data, though.
-    private static final Map<Integer, Long> _activeUsers = new HashMap<Integer, Long>(100);
+    private static final Map<Integer, Long> ACTIVE_USERS = new HashMap<Integer, Long>(100);
 
-    private final static String _userListLookup = "UserList";
-    private final static String _userObjectListLookup = "UserObjectList";
+    private static final String USER_LIST_LOOKUP = "UserList";
+    private static final String USER_OBJECT_LIST_LOOKUP = "UserObjectList";
     private static final String USER_PREF_MAP = "UserPreferencesMap";
     private static final String USER_REQUIRED_FIELDS = "UserInfoRequiredFields";
+
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
 
     private static Long _userCount = null;
@@ -91,7 +92,7 @@ public class UserManager
             }
             catch (Throwable t)
             {
-                _log.error("fireAddPrincipalToGroup", t);
+                LOG.error("fireAddPrincipalToGroup", t);
             }
         }
     }
@@ -109,7 +110,7 @@ public class UserManager
             }
             catch (Throwable t)
             {
-                _log.error("fireDeletePrincipalFromGroup", t);
+                LOG.error("fireDeletePrincipalFromGroup", t);
                 errors.add(t);
             }
         }
@@ -129,7 +130,7 @@ public class UserManager
             }
             catch (Throwable t)
             {
-                _log.error("fireUserDisabled", t);
+                LOG.error("fireUserDisabled", t);
                 errors.add(t);
             }
         }
@@ -149,7 +150,7 @@ public class UserManager
             }
             catch (Throwable t)
             {
-                _log.error("fireUserEnabled", t);
+                LOG.error("fireUserEnabled", t);
                 errors.add(t);
             }
         }
@@ -161,14 +162,14 @@ public class UserManager
         if (userId == User.guest.getUserId())
             return User.guest;
 
-        User user = (User)DbCache.get(_core.getTableInfoUsers(), "" + userId);
+        User user = (User)DbCache.get(CORE.getTableInfoUsers(), "" + userId);
         if (null == user)
-            user = Table.selectObject(_core.getTableInfoUsers(), userId, User.class);
+            user = Table.selectObject(CORE.getTableInfoUsers(), userId, User.class);
 
         if (null == user)
             return null;
 
-        DbCache.put(_core.getTableInfoUsers(), "" + userId, user, CacheManager.HOUR);
+        DbCache.put(CORE.getTableInfoUsers(), "" + userId, user, CacheManager.HOUR);
 
         // these should really be readonly
         return user.cloneUser();
@@ -182,7 +183,7 @@ public class UserManager
         try
         {
             // TODO: Index on Principals.Name?
-            User[] users = Table.executeQuery(_core.getSchema(), "SELECT * FROM " + _core.getTableInfoUsers() + " WHERE Email=?", new Object[]{email.getEmailAddress()}, User.class);
+            User[] users = Table.executeQuery(CORE.getSchema(), "SELECT * FROM " + CORE.getTableInfoUsers() + " WHERE Email=?", new Object[]{email.getEmailAddress()}, User.class);
 
             if (0 < users.length)
                 user = users[0];
@@ -203,7 +204,7 @@ public class UserManager
         try
         {
             User[] users = Table.select(
-                    _core.getTableInfoUsers(),
+                    CORE.getTableInfoUsers(),
                     Table.ALL_COLUMNS,
                     new SimpleFilter("DisplayName", displayName),
                     null,
@@ -224,18 +225,18 @@ public class UserManager
 
     public static void updateActiveUser(User user)
     {
-        synchronized(_activeUsers)
+        synchronized(ACTIVE_USERS)
         {
-            _activeUsers.put(user.getUserId(), HeartBeat.currentTimeMillis());
+            ACTIVE_USERS.put(user.getUserId(), HeartBeat.currentTimeMillis());
         }
     }
 
 
     private static void removeActiveUser(User user)
     {
-        synchronized(_activeUsers)
+        synchronized(ACTIVE_USERS)
         {
-            _activeUsers.remove(user.getUserId());
+            ACTIVE_USERS.remove(user.getUserId());
         }
     }
 
@@ -245,7 +246,7 @@ public class UserManager
     {
         try
         {
-            return Table.executeSingleton(_core.getSchema(), "SELECT COUNT(*) FROM " + _core.getTableInfoUsersData() + " WHERE LastLogin >= ?", new Object[] { since }, Integer.class);
+            return Table.executeSingleton(CORE.getSchema(), "SELECT COUNT(*) FROM " + CORE.getTableInfoUsersData() + " WHERE LastLogin >= ?", new Object[] { since }, Integer.class);
         }
         catch (SQLException e)
         {
@@ -256,14 +257,14 @@ public class UserManager
     /** Returns users that have logged in during this server session */
     public static List<Pair<String, Long>> getActiveUsers(long since)
     {
-        synchronized(_activeUsers)
+        synchronized(ACTIVE_USERS)
         {
             long now = System.currentTimeMillis();
-            List<Pair<String, Long>> recentUsers = new ArrayList<Pair<String, Long>>(_activeUsers.size());
+            List<Pair<String, Long>> recentUsers = new ArrayList<Pair<String, Long>>(ACTIVE_USERS.size());
 
-            for (int id : _activeUsers.keySet())
+            for (int id : ACTIVE_USERS.keySet())
             {
-                long lastActivity = _activeUsers.get(id);
+                long lastActivity = ACTIVE_USERS.get(id);
 
                 if (lastActivity >= since)
                 {
@@ -295,20 +296,20 @@ public class UserManager
 
 
     // Return display name if user id != null and user exists, otherwise return null
-    public static String getDisplayName(Integer userId, ViewContext context)
+    public static String getDisplayName(Integer userId, User currentUser)
     {
-        return getDisplayName(userId, false, context);
+        return getDisplayName(userId, false, currentUser);
     }
 
 
     // If userIdIfDeleted = true, then return "<userId>" if user doesn't exist
-    public static String getDisplayNameOrUserId(Integer userId, ViewContext context)
+    public static String getDisplayNameOrUserId(Integer userId, User currentUser)
     {
-        return getDisplayName(userId, true, context);        
+        return getDisplayName(userId, true, currentUser);
     }
 
 
-    private static String getDisplayName(Integer userId, boolean userIdIfDeleted, ViewContext context)
+    private static String getDisplayName(Integer userId, boolean userIdIfDeleted, User currentUser)
     {
         if (userId == null)
             return null;
@@ -325,7 +326,7 @@ public class UserManager
                 return null;
         }
 
-        return user.getDisplayNameOld(context);
+        return user.getDisplayName(currentUser);
     }
 
 
@@ -344,18 +345,18 @@ public class UserManager
 
     public static User[] getActiveUsers() throws SQLException
     {
-        User[] userList = (User[]) DbCache.get(_core.getTableInfoActiveUsers(),_userObjectListLookup);
+        User[] userList = (User[]) DbCache.get(CORE.getTableInfoActiveUsers(), USER_OBJECT_LIST_LOOKUP);
         if (userList != null)
             return userList;
-        userList = Table.select(_core.getTableInfoActiveUsers(), Table.ALL_COLUMNS, null, new Sort("Email"), User.class);
-        DbCache.put(_core.getTableInfoActiveUsers(),_userObjectListLookup, userList, CacheManager.HOUR);
+        userList = Table.select(CORE.getTableInfoActiveUsers(), Table.ALL_COLUMNS, null, new Sort("Email"), User.class);
+        DbCache.put(CORE.getTableInfoActiveUsers(), USER_OBJECT_LIST_LOOKUP, userList, CacheManager.HOUR);
         return userList;
     }
 
 
     private static Map<Integer, UserName> getUserEmailDisplayNameMap()
     {
-        Map<Integer, UserName> userList = (Map<Integer, UserName>) DbCache.get(_core.getTableInfoActiveUsers(), _userListLookup);
+        Map<Integer, UserName> userList = (Map<Integer, UserName>) DbCache.get(CORE.getTableInfoActiveUsers(), USER_LIST_LOOKUP);
 
         if (null == userList)
         {
@@ -365,7 +366,7 @@ public class UserManager
 
             try
             {
-                rs = Table.executeQuery(_core.getSchema(), "SELECT UserId, Email, DisplayName FROM " + _core.getTableInfoActiveUsers(), new Object[]{});
+                rs = Table.executeQuery(CORE.getSchema(), "SELECT UserId, Email, DisplayName FROM " + CORE.getTableInfoActiveUsers(), new Object[]{});
 
                 while (rs.next())
                 {
@@ -387,12 +388,12 @@ public class UserManager
                     }
                     catch(SQLException e)
                     {
-                        _log.error("Error closing ResultSet", e);
+                        LOG.error("Error closing ResultSet", e);
                     }
                 }
             }
 
-            DbCache.put(_core.getTableInfoActiveUsers(), _userListLookup, userList, CacheManager.HOUR);
+            DbCache.put(CORE.getTableInfoActiveUsers(), USER_LIST_LOOKUP, userList, CacheManager.HOUR);
         }
 
         return userList;
@@ -449,10 +450,10 @@ public class UserManager
 
     static void clearUserList(int userId)
     {
-        DbCache.remove(_core.getTableInfoActiveUsers(),_userListLookup);
-        DbCache.remove(_core.getTableInfoActiveUsers(),_userObjectListLookup);
+        DbCache.remove(CORE.getTableInfoActiveUsers(), USER_LIST_LOOKUP);
+        DbCache.remove(CORE.getTableInfoActiveUsers(), USER_OBJECT_LIST_LOOKUP);
         if (0 != userId)
-            DbCache.remove(_core.getTableInfoUsers(), "" + userId);
+            DbCache.remove(CORE.getTableInfoUsers(), "" + userId);
         _userCount = null;
     }
 
@@ -505,7 +506,7 @@ public class UserManager
 
     public static int getUserCount(Date registeredBefore) throws SQLException
     {
-        return Table.executeSingleton(_core.getSchema(), "SELECT COUNT(*) FROM " + _core.getTableInfoUsersData() + " WHERE Created <= ?", new Object[] { registeredBefore }, Integer.class);
+        return Table.executeSingleton(CORE.getSchema(), "SELECT COUNT(*) FROM " + CORE.getTableInfoUsersData() + " WHERE Created <= ?", new Object[] { registeredBefore }, Integer.class);
     }
 
     public static int getUserCount()
@@ -514,7 +515,7 @@ public class UserManager
         {
             try
             {
-                _userCount = Table.rowCount(_core.getTableInfoActiveUsers());
+                _userCount = Table.rowCount(CORE.getTableInfoActiveUsers());
             }
             catch (SQLException e)
             {
@@ -569,7 +570,7 @@ public class UserManager
     {
         try
         {
-            Table.execute(_core.getSchema(), "UPDATE " + _core.getTableInfoUsersData() + " SET LastLogin=? WHERE UserId=?", new Object[]{new Date(), new Integer(user.getUserId())});
+            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin=? WHERE UserId=?", new Object[]{new Date(), new Integer(user.getUserId())});
         }
         catch (SQLException e)
         {
@@ -583,7 +584,7 @@ public class UserManager
         typedValues.put("phone", PageFlowUtil.formatPhoneNo((String) typedValues.get("phone")));
         typedValues.put("mobile", PageFlowUtil.formatPhoneNo((String) typedValues.get("mobile")));
         typedValues.put("pager", PageFlowUtil.formatPhoneNo((String) typedValues.get("pager")));
-        Table.update(currentUser, _core.getTableInfoUsers(), typedValues, pkVal);
+        Table.update(currentUser, CORE.getTableInfoUsers(), typedValues, pkVal);
         clearUserList(currentUser.getUserId());
 
         User principal = UserManager.getUser((Integer)pkVal);
@@ -604,17 +605,17 @@ public class UserManager
 
         try
         {
-            Table.execute(_core.getSchema(), "UPDATE " + _core.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", new Object[]{newEmail.getEmailAddress(), userId});
+            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", new Object[]{newEmail.getEmailAddress(), userId});
 
             if (SecurityManager.loginExists(oldEmail))
-                Table.execute(_core.getSchema(), "UPDATE " + _core.getTableInfoLogins() + " SET Email=? WHERE Email=?", new Object[]{newEmail.getEmailAddress(), oldEmail.getEmailAddress()});
+                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", new Object[]{newEmail.getEmailAddress(), oldEmail.getEmailAddress()});
 
             UserManager.addToUserHistory(UserManager.getUser(userId), currentUser + " changed email from " + oldEmail.getEmailAddress() + " to " + newEmail.getEmailAddress() + ".");
             clearUserList(userId);
         }
         catch (SQLException e)
         {
-            _log.error("changeEmail: " + e);
+            LOG.error("changeEmail: " + e);
             return (e.getMessage());
         }
 
@@ -643,19 +644,19 @@ public class UserManager
 
         try
         {
-            Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoRoleAssignments() + " WHERE UserId=?", new Object[]{userId});            
-            Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoMembers() + " WHERE UserId=?", new Object[]{userId});
-            Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoUserHistory() + " WHERE UserId=?", new Object[]{userId});
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", new Object[]{userId});
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", new Object[]{userId});
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoUserHistory() + " WHERE UserId=?", new Object[]{userId});
             // TODO: now that user history is managed by the audit service, should we allow audit records to be deleted?
             UserManager.addToUserHistory(user, user.getEmail() + " was deleted from the system");
 
-            Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoUsersData() + " WHERE UserId=?", new Object[]{userId});
-            Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoLogins() + " WHERE Email=?", new Object[]{user.getEmail()});
-            Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoPrincipals() + " WHERE UserId=?", new Object[]{userId});
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", new Object[]{userId});
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", new Object[]{user.getEmail()});
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", new Object[]{userId});
         }
         catch (SQLException e)
         {
-            _log.error("deleteUser: " + e);
+            LOG.error("deleteUser: " + e);
             throw new SecurityManager.UserManagementException(user.getEmail(), e);
         }
         finally
@@ -701,7 +702,7 @@ public class UserManager
         }
         catch(SQLException e)
         {
-            _log.error("setUserActive: " + e);
+            LOG.error("setUserActive: " + e);
             throw new SecurityManager.UserManagementException(userToAdjust.getEmail(), e);
         }
         finally
@@ -732,22 +733,24 @@ public class UserManager
     }
 
     // Get completions from list of all site users
-    public static List<AjaxCompletion> getAjaxCompletions(String prefix, ViewContext context) throws SQLException
+    public static List<AjaxCompletion> getAjaxCompletions(String prefix, User currentUser) throws SQLException
     {
-        return UserManager.getAjaxCompletions(prefix, Arrays.asList(UserManager.getActiveUsers()), context);
+        return UserManager.getAjaxCompletions(prefix, Arrays.asList(UserManager.getActiveUsers()), currentUser);
     }
 
     // Get completions from specified list of users
-    public static List<AjaxCompletion> getAjaxCompletions(String prefix, Collection<User> users, ViewContext context)
+    public static List<AjaxCompletion> getAjaxCompletions(String prefix, Collection<User> users, User currentUser)
     {
         List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
 
         if (prefix != null && prefix.length() != 0)
         {
             String lowerPrefix = prefix.toLowerCase();
+
             for (User user : users)
             {
                 final String fullName = StringUtils.defaultString(user.getFirstName()) + " " + StringUtils.defaultString(user.getLastName());
+
                 if (fullName.toLowerCase().startsWith(lowerPrefix) ||
                     user.getLastName() != null && user.getLastName().toLowerCase().startsWith(lowerPrefix))
                 {
@@ -761,14 +764,17 @@ public class UserManager
                         display = builder.toString();
                     }
                     else
+                    {
                         display = user.getEmail();
+                    }
+
                     completions.add(new AjaxCompletion(display, user.getEmail()));
                 }
-                else if (user.getDisplayNameOld(context).compareToIgnoreCase(user.getEmail()) != 0 &&
-                        user.getDisplayNameOld(context).toLowerCase().startsWith(lowerPrefix))
+                else if (user.getDisplayName(currentUser).compareToIgnoreCase(user.getEmail()) != 0 &&
+                        user.getDisplayName(currentUser).toLowerCase().startsWith(lowerPrefix))
                 {
                     StringBuilder builder = new StringBuilder();
-                    builder.append(user.getDisplayNameOld(context)).append(" ");
+                    builder.append(user.getDisplayName(currentUser)).append(" ");
                     builder.append(" (").append(user.getEmail()).append(")");
                     completions.add(new AjaxCompletion(builder.toString(), user.getEmail()));
                 }

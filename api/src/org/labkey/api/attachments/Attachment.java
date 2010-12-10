@@ -18,6 +18,7 @@ package org.labkey.api.attachments;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MemTracker;
@@ -218,9 +219,9 @@ public class Attachment implements Serializable
     }
 
 
-    public String getCreatedByName(ViewContext context)
+    public String getCreatedByName(User currentUser)
     {
-        return UserManager.getDisplayName(createdBy, context);
+        return UserManager.getDisplayName(createdBy, currentUser);
     }
 
 

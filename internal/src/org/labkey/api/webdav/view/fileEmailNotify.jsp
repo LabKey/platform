@@ -15,35 +15,26 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.webdav.FileSystemResource" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.notification.EmailService" %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.files.FileContentEmailPref" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.apache.commons.lang.NumberUtils" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.files.FileUrls" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.webdav.FileSystemResource" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     FileSystemResource.FileEmailForm bean = ((JspView<FileSystemResource.FileEmailForm>)HttpView.currentView()).getModelBean();
     ViewContext context = HttpView.currentContext();
-    Container c = context.getContainer();
     User user = context.getUser();
     int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 %>
 
 <table>
     <tr class="labkey-alternate-row">
-        <td>User</td><td><%=user.getDisplayNameOld(context)%></td></tr>
+        <td>User</td><td><%=user.getDisplayName(user)%></td></tr>
 <%
     if (bean.getResource().getFile().exists()) {
 %>
