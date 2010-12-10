@@ -55,7 +55,7 @@
         int attachmentCount = ann.getAttachments().size();
 
         %>
-            <tr><td><%=ann.getCreatedByName(includeGroups, HttpView.currentContext())%><% if (null == ann.getParent()) { %> created this <%=conversationName%><% } else { %> responded <% } %> at <%=DateUtil.formatDateTime(ann.getCreated())%><%=(attachmentCount > 0 ? " and attached " + attachmentCount + " document" + (attachmentCount > 1 ? "s" : "") : "")%></td></tr><%
+            <tr><td><%=ann.getCreatedByName(includeGroups, HttpView.currentContext().getUser())%><% if (null == ann.getParent()) { %> created this <%=conversationName%><% } else { %> responded <% } %> at <%=DateUtil.formatDateTime(ann.getCreated())%><%=(attachmentCount > 0 ? " and attached " + attachmentCount + " document" + (attachmentCount > 1 ? "s" : "") : "")%></td></tr><%
 
         if (!settings.isSecure())
         {

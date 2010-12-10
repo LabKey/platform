@@ -1009,7 +1009,7 @@ public class PipelineController extends SpringActionController
     {
         public List<AjaxCompletion> getCompletions(CompleteUserForm form, BindException errors) throws Exception
         {
-            return UserManager.getAjaxCompletions(form.getPrefix(), getViewContext());
+            return UserManager.getAjaxCompletions(form.getPrefix(), getViewContext().getUser());
         }
     }
 

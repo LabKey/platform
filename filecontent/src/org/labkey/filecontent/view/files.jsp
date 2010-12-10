@@ -137,7 +137,7 @@
             </td>
             <td align="right"><%if (exists){%><%=file.length()%><%}%></td>
             <td align="right"><%=a.getCreated()%></td>
-            <td><%=a.getCreatedBy() != 0 ? a.getCreatedByName(context) : ""%></td>
+            <td><%=a.getCreatedBy() != 0 ? a.getCreatedByName(context.getUser()) : ""%></td>
             <td><%if (exists){%>[<a href="<%=h(downloadUrl)%>" class="labkey-message">Download</a>]<%}%></td>
             <td><%
             if (canDelete)

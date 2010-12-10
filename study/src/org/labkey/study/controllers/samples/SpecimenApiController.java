@@ -147,7 +147,7 @@ public class SpecimenApiController extends BaseStudyController
         User user = UserManager.getUser(request.getCreatedBy());
         Map<String, Object> userMap = new HashMap<String, Object>();
         userMap.put("userId", request.getCreatedBy());
-        userMap.put("displayName", user.getDisplayNameOld(context));
+        userMap.put("displayName", user.getDisplayName(context.getUser()));
         map.put("createdBy", userMap);
         map.put("destination", request.getDestinationSiteId() != null ? getLocation(getContainer(), request.getDestinationSiteId().intValue()) : null);
         map.put("statusId", request.getStatusId());

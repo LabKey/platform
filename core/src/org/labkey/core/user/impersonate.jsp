@@ -20,11 +20,10 @@
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.user.UserController" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<UserController.ImpersonateBean> me = (HttpView<UserController.ImpersonateBean>) HttpView.currentView();
@@ -45,7 +44,7 @@
             if (user.isImpersonated())
             {
         %>
-        Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request))%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayNameOld(context))%>.<%
+        Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request))%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayName(user))%>.<%
             }
             else
             {

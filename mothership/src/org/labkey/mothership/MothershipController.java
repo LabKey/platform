@@ -810,13 +810,15 @@ public class MothershipController extends SpringActionController
             PageFlowUtil.textLink("Configure Mothership", "editUpgradeMessage.view") + " " +
             PageFlowUtil.textLink("List of Releases", "showReleases.view") + " " +
             PageFlowUtil.textLink("Reports", "reports.view") + " ");
+
         if (getUser() != null && !getUser().isGuest())
         {
             builder.append("<a class=\"labkey-text-link\" href=\"");
             builder.append("showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=");
-            builder.append(getUser().getDisplayNameOld(getViewContext()));
+            builder.append(getUser().getDisplayName(getViewContext().getUser()));
             builder.append("\">My Exceptions</a><br>");
         }
+
         return builder.toString();
     }
 

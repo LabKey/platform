@@ -17,15 +17,15 @@
 %>
 
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.data.DataRegion"%>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.util.HString"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.issue.IssuePage"%>
-<%@ page import="org.labkey.issue.IssuesController"%>
+<%@ page import="org.labkey.issue.IssuePage" %>
+<%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -34,6 +34,7 @@
     IssuePage bean = me.getModelBean();
     final Issue issue = bean.getIssue();
     final Container c = context.getContainer();
+    final User user = context.getUser();
     final String issueId = Integer.toString(issue.getIssueId());
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
@@ -80,16 +81,16 @@
     <tr>
         <td valign="top"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
-            <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
             <tr><td class="labkey-form-label">Type</td><td><%=h(issue.getType())%></td></tr>
             <tr><td class="labkey-form-label">Area</td><td><%=h(issue.getArea())%></td></tr>
             <tr><td class="labkey-form-label">Priority</td><td><%=bean._toString(issue.getPriority())%></td></tr>
             <tr><td class="labkey-form-label">Milestone</td><td><%=h(issue.getMilestone())%></td></tr>
         </table></td>
         <td valign="top"><table>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(context))%></td></tr>
-            <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(context))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>
+            <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(user))%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Resolution</td><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
@@ -110,7 +111,7 @@
             <%=bean.writeCustomColumn(c, new HString("int2"), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE, 10)%>
         </table></td>
         <td valign="top" width="33%"><table>
-            <tr><td class="labkey-form-label">Closed</td><td nowrap="true"><%=bean.writeDate(issue.getClosed())%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Closed</td><td nowrap="true"><%=bean.writeDate(issue.getClosed())%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(user))%></td></tr>
 
             <%
                 if (hasUpdatePerms)
@@ -136,7 +137,7 @@
         %><hr><table width="100%"><tr><td align="left"><b>
         <%=bean.writeDate(comment.getCreated())%>
         </b></td><td align="right"><b>
-        <%=h(comment.getCreatedByName(context))%>
+        <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>
         <%=comment.getComment().getSource()%>
         <%=bean.renderAttachments(context, comment)%><%

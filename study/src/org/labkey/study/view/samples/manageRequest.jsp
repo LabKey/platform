@@ -15,17 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.UserManager"%>
+<%@ page import="org.labkey.api.study.Site"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.*"%>
-<%@ page import="org.labkey.study.model.StudyManager"%>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.study.SampleManager"%>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.study.SampleManager"%>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
-<%@ page import="org.labkey.api.study.Site" %>
+<%@ page import="org.labkey.study.model.SampleRequestActor" %>
+<%@ page import="org.labkey.study.model.SampleRequestRequirement" %>
+<%@ page import="org.labkey.study.model.SampleRequestStatus" %>
+<%@ page import="org.labkey.study.model.SiteImpl" %>
+<%@ page import="org.labkey.study.model.Specimen" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -285,7 +288,7 @@
         else
         {
 %>
-                Only the request creator (<%= creatingUser.getDisplayNameOld(context) %>) or an administrator may submit or cancel this request.
+                Only the request creator (<%= creatingUser.getDisplayName(context.getUser()) %>) or an administrator may submit or cancel this request.
 <%
         }
     }
@@ -298,7 +301,7 @@
                 <table>
                     <tr>
                         <th valign="top" align="right">Requester</th>
-                        <td><%= creatingUser != null ? h(creatingUser.getDisplayNameOld(context)) : "Unknown" %></td>
+                        <td><%= creatingUser != null ? h(creatingUser.getDisplayName(context.getUser())) : "Unknown" %></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Requesting Location</th>

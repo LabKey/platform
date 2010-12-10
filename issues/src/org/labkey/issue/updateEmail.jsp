@@ -39,7 +39,7 @@
 
     if (lastComment != null)
     {
-        modifiedBy = lastComment.getCreatedByName(me.getViewContext());
+        modifiedBy = lastComment.getCreatedByName(me.getViewContext().getUser());
         changeComment = lastComment.getComment();
     }
 

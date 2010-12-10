@@ -23,12 +23,14 @@
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView<IssuesController.RssBean> me = (JspView<IssuesController.RssBean>) HttpView.currentView();
     IssuesController.RssBean bean = me.getModelBean();
     ViewContext ctx = getViewContext();
     Container c = ctx.getContainer();
+    User user = ctx.getUser();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     AppProps app = AppProps.getInstance();
 
@@ -43,12 +45,12 @@
 for (Issue issue : bean.issues)
 { %>
     <item>
-        <title><%=issue.getIssueId()%>: <%=h(issue.getMilestone()) %> <%=h(issue.getStatus())%> <%=h(issue.getAssignedToName(ctx))%> <%=h(issue.getTitle())%></title>
+        <title><%=issue.getIssueId()%>: <%=h(issue.getMilestone()) %> <%=h(issue.getStatus())%> <%=h(issue.getAssignedToName(user))%> <%=h(issue.getTitle())%></title>
         <link><%=bean.filteredURLString%><%=issue.getIssueId()%></link>
         <guid><%=bean.filteredURLString%><%=issue.getIssueId()%></guid>
         <pubDate><%=issue.getCreated()%></pubDate>
         <description>
-openedby <%=h(issue.getCreatedByName(ctx))%>
+openedby <%=h(issue.getCreatedByName(user))%>
 priority <%=issue.getPriority()%>
 type <%=h(issue.getType())%>
 area <%=h(issue.getArea())%>

@@ -583,7 +583,7 @@ public class IssuesController extends SpringActionController
                 Issue orig = new Issue();
                 orig.open(getContainer(), getUser());
 
-                changeSummary = createChangeSummary(_issue, orig, null, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
+                changeSummary = createChangeSummary(_issue, orig, null, user, form.getAction(), form.getComment(), getColumnCaptions(), getUser());
                 IssueManager.saveIssue(user, c, _issue);
                 AttachmentService.get().addAttachments(user, changeSummary.getComment(), getAttachmentFileList());
                 if (ownsTransaction)
@@ -607,7 +607,7 @@ public class IssuesController extends SpringActionController
 
             ActionURL url = new DetailsAction(_issue, getViewContext()).getURL();
 
-            final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), getViewContext());
+            final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), user);
             if (assignedTo != null)
                 sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened and assigned to " + assignedTo, form.getAction());
             else
@@ -714,9 +714,9 @@ public class IssuesController extends SpringActionController
             }
 
             ChangeSummary changeSummary;
-
             DbScope scope = IssuesSchema.getInstance().getSchema().getScope();
             boolean ownsTransaction = !scope.isTransactionActive();
+
             try
             {
                 if (ownsTransaction)
@@ -732,7 +732,7 @@ public class IssuesController extends SpringActionController
                 else
                     issue.change(user);
 
-                changeSummary = createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
+                changeSummary = createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnCaptions(), getUser());
                 IssueManager.saveIssue(user, c, issue);
                 AttachmentService.get().addAttachments(user, changeSummary.getComment(), getAttachmentFileList());
 
@@ -1176,7 +1176,7 @@ public class IssuesController extends SpringActionController
     {
         public List<AjaxCompletion> getCompletions(CompleteUserForm form, BindException errors) throws Exception
         {
-            return UserManager.getAjaxCompletions(form.getPrefix(), getViewContext());
+            return UserManager.getAjaxCompletions(form.getPrefix(), getViewContext().getUser());
         }
     }
 
@@ -1829,11 +1829,12 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    static ChangeSummary createChangeSummary(Issue issue, Issue previous, Issue duplicateOf, User user, Class<? extends Controller> action, String comment, Map<String, String> customColumns, ViewContext context)
+    static ChangeSummary createChangeSummary(Issue issue, Issue previous, Issue duplicateOf, User user, Class<? extends Controller> action, String comment, Map<String, String> customColumns, User currentUser)
     {
         StringBuilder sbHTMLChanges = new StringBuilder();
         StringBuilder sbTextChanges = new StringBuilder();
         String summary = null;
+
         if (!action.equals(InsertAction.class) && !action.equals(UpdateAction.class))
         {
             summary = getActionName(action).toLowerCase();
@@ -1860,7 +1861,7 @@ public class IssuesController extends SpringActionController
             sbHTMLChanges.append("<table class=issues-Changes>");
             _appendChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(context), issue.getAssignedToName(context), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(currentUser), issue.getAssignedToName(currentUser), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Notify", previous.getNotifyList(), issue.getNotifyList(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), newIssue);

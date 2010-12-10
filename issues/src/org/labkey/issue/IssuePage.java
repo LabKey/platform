@@ -368,7 +368,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return getKeywordOptionsWithDefault(c, IssuesController.ISSUE_PRIORITY, HString.array(false,"0", "1", "2", "3", "4"), new HString("3",false));
     }
 
-    public HString getUserOptions(Container c, Issue issue, ViewContext context)
+    public HString getUserOptions(Container c, Issue issue, User currentUser)
     {
         Collection<User> members = IssueManager.getAssignedToList(c, issue);
         HStringBuilder select = new HStringBuilder();
@@ -377,7 +377,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         for (User member : members)
         {
             select.append("<option value=").append(member.getUserId()).append(">");
-            select.append(member.getDisplayNameOld(context));
+            select.append(member.getDisplayName(currentUser));
             select.append("</option>\n");
         }
 

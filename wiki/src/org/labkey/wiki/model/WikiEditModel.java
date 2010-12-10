@@ -19,7 +19,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.ServiceImpl;
 import org.labkey.wiki.WikiSelectManager;
@@ -30,24 +29,23 @@ import java.util.List;
 /**
  * Model bean for the wikiEdit.jsp view
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Mar 17, 2008
  * Time: 2:25:41 PM
  */
 public class WikiEditModel
 {
-    private Wiki _wiki;
-    private WikiVersion _wikiVersion;
-    private String _redir;
-    private String _cancelRedir;
-    private Container _container;
-    private String _format;
-    private String _defName;
-    private boolean _useVisualEditor = false;
-    private String _pageId;
-    private int _index;
-    private User _user;
+    private final Wiki _wiki;
+    private final WikiVersion _wikiVersion;
+    private final String _redir;
+    private final String _cancelRedir;
+    private final Container _container;
+    private final String _format;
+    private final String _defName;
+    private final boolean _useVisualEditor;
+    private final String _pageId;
+    private final int _index;
+    private final User _user;
 
     public WikiEditModel(Container container, Wiki wiki, WikiVersion wikiVersion, String redir,
                          String cancelRedir, String format, String defName, boolean useVisualEditor,
@@ -71,29 +69,9 @@ public class WikiEditModel
         return _wiki;
     }
 
-    public void setWiki(Wiki wiki)
-    {
-        _wiki = wiki;
-    }
-
-    public WikiVersion getWikiVersion()
-    {
-        return _wikiVersion;
-    }
-
-    public void setWikiVersion(WikiVersion wikiVersion)
-    {
-        _wikiVersion = wikiVersion;
-    }
-
     public String getRedir()
     {
         return PageFlowUtil.jsString(_redir);
-    }
-
-    public void setRedir(String redir)
-    {
-        _redir = redir;
     }
 
     public String getCancelRedir()
@@ -133,19 +111,11 @@ public class WikiEditModel
 
     public String getRendererType()
     {
-        if(null == _wikiVersion)
+        if (null == _wikiVersion)
             return _format != null ? PageFlowUtil.jsString(_format)
                     : PageFlowUtil.jsString(ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE.name());
         else
             return PageFlowUtil.jsString(_wikiVersion.getRendererType());
-    }
-
-    public boolean isCurrentRendererType(WikiRendererType type)
-    {
-        if(null == _wikiVersion)
-            return ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE == type;
-        else
-            return type == _wikiVersion.getRendererTypeEnum();
     }
 
     public List<Wiki> getPossibleParents()
@@ -155,18 +125,19 @@ public class WikiEditModel
         //remove the current wiki from the list
         //so that it can't become its own parent
         Wiki toRemove = null;
-        if(null != _wiki)
+
+        if (null != _wiki)
         {
-            for(Wiki wiki : parents)
+            for (Wiki wiki : parents)
             {
-                if(wiki.getRowId() == _wiki.getRowId())
+                if (wiki.getRowId() == _wiki.getRowId())
                 {
                     toRemove = wiki;
                     break;
                 }
             }
 
-            if(null != toRemove)
+            if (null != toRemove)
                 parents.remove(toRemove);
         }
 
@@ -200,8 +171,10 @@ public class WikiEditModel
 
     public boolean canUserDelete()
     {
-        if(null == _wiki)
+        if (null == _wiki)
+        {
             return _container.hasPermission(_user, DeletePermission.class);
+        }
         else
         {
             BaseWikiPermissions perms = new BaseWikiPermissions(_user, _container);

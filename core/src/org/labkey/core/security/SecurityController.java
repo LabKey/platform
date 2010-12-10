@@ -382,27 +382,6 @@ public class SecurityController extends SpringActionController
             return _expandedGroupPath != null && _expandedGroupPath.equals(groupPath);
         }
 
-        public List<String> getCompletionNames() throws SQLException
-        {
-            User[] users = UserManager.getActiveUsers();
-            List<String> names = new ArrayList<String>();
-            for (User user : users)
-            {
-                String shortName = user.getEmail();
-                if (user.getFirstName() != null && user.getFirstName().length() > 0)
-                {
-                    names.add(user.getFirstName() + " " + user.getLastName() + " (" + user.getEmail() + ")");
-                    names.add(user.getLastName() + ", " + user.getFirstName() + " (" + user.getEmail() + ")");
-                    shortName += " (" + user.getFirstName() + " " + user.getLastName() + ")";
-                }
-                if (user.getDisplayNameOld(_context).compareToIgnoreCase(user.getEmail()) != 0)
-                    names.add(user.getDisplayNameOld(_context) + " (" + user.getEmail() + ")");
-
-                names.add(shortName);
-            }
-            return names;
-        }
-
         public List<String> getMessages()
         {
             return _messages;
@@ -929,7 +908,7 @@ public class SecurityController extends SpringActionController
     {
         public ModelAndView getView(CompleteUserForm form, BindException errors) throws Exception
         {
-            List<AjaxCompletion> completions = UserManager.getAjaxCompletions(form.getPrefix(), HttpView.currentContext());
+            List<AjaxCompletion> completions = UserManager.getAjaxCompletions(form.getPrefix(), getViewContext().getUser());
             PageFlowUtil.sendAjaxCompletions(getViewContext().getResponse(), completions);
             return null;
         }

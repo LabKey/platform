@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
@@ -40,6 +41,7 @@
     ThreadView me = (ThreadView) HttpView.currentView();
     ViewContext context = me.getViewContext();
     Container c = context.getContainer();
+    User user = context.getUser();
     ThreadViewBean bean = me.getModelBean();
     AnnouncementModel announcementModel = bean.announcementModel;
     DiscussionService.Settings settings = bean.settings;
@@ -92,7 +94,7 @@ if (!bean.print && null != discussionSrc)
 <table style="table-layout:fixed;width:100%">
 <tr>
     <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcementModel.getTitle())%></span></td>
-    <td class="labkey-announcement-title" width="33%" align=center><%=h(announcementModel.getCreatedByName(bean.includeGroups, context))%></td>
+    <td class="labkey-announcement-title" width="33%" align=center><%=h(announcementModel.getCreatedByName(bean.includeGroups, user))%></td>
     <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
 
 if (false && !bean.print && null != discussionSrc)
@@ -135,7 +137,7 @@ if (settings.hasExpires() && null != announcementModel.getExpires())
 if (settings.hasAssignedTo() && null != announcementModel.getAssignedTo())
 { %>
 <tr>
-    <td colspan="3">Assigned&nbsp;To: <%=h(announcementModel.getAssignedToName(context))%></td>
+    <td colspan="3">Assigned&nbsp;To: <%=h(announcementModel.getAssignedToName(user))%></td>
 </tr><%
 }
 
@@ -182,7 +184,7 @@ if (0 < announcementModel.getResponses().size())
         for (AnnouncementModel r : announcementModel.getResponses())
         {%>
             <tr class="labkey-alternate-row">
-                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=h(r.getCreatedByName(bean.includeGroups, context)) + " responded:"%></td>
+                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=h(r.getCreatedByName(bean.includeGroups, user)) + " responded:"%></td>
                 <td class="labkey-bordered" style="border-left: 0 none" align="right"><%
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {
@@ -221,7 +223,7 @@ if (0 < announcementModel.getResponses().size())
             if (settings.hasAssignedTo() && !PageFlowUtil.nullSafeEquals(r.getAssignedTo(), prev.getAssignedTo()))
             { %>
             <tr>
-                <td colspan="2">Assigned&nbsp;To: <%=h(r.getAssignedToName(context))%></td>
+                <td colspan="2">Assigned&nbsp;To: <%=h(r.getAssignedToName(user))%></td>
             </tr><%
             }
 

@@ -885,7 +885,7 @@ public class AnnouncementsController extends SpringActionController
 
             bean.settings = getSettings();   // TODO: Just use form?
             bean.returnURL = form.getReturnURLHelper();
-            bean.assignedToSelect = getAssignedToSelect(getContainer(), bean.settings.getDefaultAssignedTo(), "defaultAssignedTo", getViewContext());
+            bean.assignedToSelect = getAssignedToSelect(getContainer(), bean.settings.getDefaultAssignedTo(), "defaultAssignedTo", getUser());
 
             if (hasEditorPerm(Group.groupGuests))
                 bean.securityWarning = "Warning: guests have been granted editor permissions in this folder.  As a result, any anonymous user will be able to view, create, and respond to posts, regardless of the security setting below.  You may want to change permissions in this folder.";
@@ -1202,7 +1202,7 @@ public class AnnouncementsController extends SpringActionController
 
 
     // AssignedTo == null => assigned to no one.
-    private static String getAssignedToSelect(Container c, Integer assignedTo, String name, final ViewContext context)
+    private static String getAssignedToSelect(Container c, Integer assignedTo, String name, final User currentUser)
     {
         List<User> possibleAssignedTo;
 
@@ -1221,7 +1221,7 @@ public class AnnouncementsController extends SpringActionController
         {
             public int compare(User u1, User u2)
             {
-                return u1.getDisplayNameOld(context).compareToIgnoreCase(u2.getDisplayNameOld(context));
+                return u1.getDisplayName(currentUser).compareToIgnoreCase(u2.getDisplayName(currentUser));
             }
         });
 
@@ -1239,7 +1239,7 @@ public class AnnouncementsController extends SpringActionController
                 select.append(" selected");
 
             select.append(">");
-            select.append(user.getDisplayNameOld(context));
+            select.append(user.getDisplayName(currentUser));
             select.append("</option>\n");
         }
 
@@ -1264,7 +1264,7 @@ public class AnnouncementsController extends SpringActionController
             Set<Class<? extends Permission>> perms = new TreeSet<Class<? extends Permission>>();
             perms.add(ReadPermission.class);
             List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), perms);
-            return UserManager.getAjaxCompletions(form.getPrefix(), completionUsers, getViewContext());
+            return UserManager.getAjaxCompletions(form.getPrefix(), completionUsers, getViewContext().getUser());
         }
     }
 
@@ -1380,7 +1380,7 @@ public class AnnouncementsController extends SpringActionController
                 currentRendererType = WikiRendererType.valueOf(latestPost.getRendererType());
             }
 
-            bean.assignedToSelect = getAssignedToSelect(c, assignedTo, "assignedTo", getViewContext());
+            bean.assignedToSelect = getAssignedToSelect(c, assignedTo, "assignedTo", getViewContext().getUser());
             bean.settings = settings;
             bean.statusSelect = getStatusSelect(settings, (String)form.get("status"));
             bean.memberList = getMemberListTextArea(form.getUser(), c, latestPost, (String)(reshow ? form.get("emailList") : null));
@@ -2709,7 +2709,7 @@ public class AnnouncementsController extends SpringActionController
                 deleteURL = attachmentURL;
                 addAttachmentURL = attachmentURL.clone().setAction(ShowAddAttachmentAction.class);
                 statusSelect = getStatusSelect(settings, ann.getStatus());
-                assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext());
+                assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
                 returnURL = form.getReturnUrl();// getThreadUrl(c, annModel.getEntityId(), annModel.getRowId());  // TODO: Use URL to object instead
             }
         }

@@ -332,9 +332,9 @@ public class UserController extends SpringActionController
         {
             User user = getUser();
             DeactivateUsersBean bean = new DeactivateUsersBean(_active, null == form.getRedirUrl() ? null : new ActionURL(form.getRedirUrl()));
-            if(null != form.getUserId())
+            if (null != form.getUserId())
             {
-                for(Integer userId : form.getUserId())
+                for (Integer userId : form.getUserId())
                 {
                     if (null != userId && userId.intValue() != user.getUserId())
                         bean.addUser(UserManager.getUser(userId.intValue()));
@@ -344,10 +344,10 @@ public class UserController extends SpringActionController
             {
                 //try to get a user selection list from the dataregion
                 Set<String> userIds = DataRegionSelection.getSelected(getViewContext(), true);
-                if(null == userIds || userIds.size() == 0)
+                if (null == userIds || userIds.size() == 0)
                     throw new RedirectException(new UserUrlsImpl().getSiteUsersURL().getLocalURIString());
 
-                for(String userId : userIds)
+                for (String userId : userIds)
                 {
                     int id = Integer.parseInt(userId);
                     if (id != user.getUserId())
@@ -355,7 +355,7 @@ public class UserController extends SpringActionController
                 }
             }
 
-            if(bean.getUsers().size() == 0)
+            if (bean.getUsers().size() == 0)
                 throw new RedirectException(bean.getRedirUrl().getLocalURIString());
 
             return new JspView<DeactivateUsersBean>("/org/labkey/core/user/deactivateUsers.jsp", bean, errors);
@@ -363,11 +363,11 @@ public class UserController extends SpringActionController
 
         public boolean handlePost(UserIdForm form, BindException errors) throws Exception
         {
-            if(null == form.getUserId())
+            if (null == form.getUserId())
                 return false;
 
             User curUser = getViewContext().getUser();
-            for(Integer userId : form.getUserId())
+            for (Integer userId : form.getUserId())
             {
                 if (null != userId && userId.intValue() != curUser.getUserId())
                     UserManager.setUserActive(curUser, userId.intValue(), _active);
@@ -420,9 +420,9 @@ public class UserController extends SpringActionController
             DeleteUsersBean bean = new DeleteUsersBean();
             User user = getViewContext().getUser();
 
-            if(null != form.getUserId())
+            if (null != form.getUserId())
             {
-                for(Integer userId : form.getUserId())
+                for (Integer userId : form.getUserId())
                 {
                     if (null != userId && userId.intValue() != user.getUserId())
                         bean.addUser(UserManager.getUser(userId.intValue()));
@@ -432,10 +432,10 @@ public class UserController extends SpringActionController
             {
                 //try to get a user selection list from the dataregion
                 Set<String> userIds = DataRegionSelection.getSelected(getViewContext(), true);
-                if(null == userIds || userIds.size() == 0)
+                if (null == userIds || userIds.size() == 0)
                     throw new RedirectException(siteUsersUrl);
 
-                for(String userId : userIds)
+                for (String userId : userIds)
                 {
                     int id = Integer.parseInt(userId);
                     if (id != user.getUserId())
@@ -443,7 +443,7 @@ public class UserController extends SpringActionController
                 }
             }
 
-            if(bean.getUsers().size() == 0)
+            if (bean.getUsers().size() == 0)
                 throw new RedirectException(siteUsersUrl);
 
             return new JspView<DeleteUsersBean>("/org/labkey/core/user/deleteUsers.jsp", bean, errors);
@@ -451,12 +451,12 @@ public class UserController extends SpringActionController
 
         public boolean handlePost(UserIdForm form, BindException errors) throws Exception
         {
-            if(null == form.getUserId())
+            if (null == form.getUserId())
                 return false;
 
             User curUser = getViewContext().getUser();
 
-            for(Integer userId : form.getUserId())
+            for (Integer userId : form.getUserId())
             {
                 if (null != userId && userId.intValue() != curUser.getUserId())
                     UserManager.deleteUser(userId.intValue());
@@ -874,7 +874,7 @@ public class UserController extends SpringActionController
             SecurityPolicy policy = SecurityManager.getPolicy(child);
             Set<Role> effectiveRoles = policy.getEffectiveRoles(requestedUser);
             effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
-            for(Role role : effectiveRoles)
+            for (Role role : effectiveRoles)
             {
                 access.append(sep);
                 access.append(role.getName());
@@ -896,7 +896,7 @@ public class UserController extends SpringActionController
                     if (requestedUser.isInGroup(group.getUserId()))
                     {
                         Collection<Role> groupRoles = policy.getAssignedRoles(group);
-                        for(Role role : effectiveRoles)
+                        for (Role role : effectiveRoles)
                         {
                             if (groupRoles.contains(role))
                                 relevantGroups.add(group);
@@ -1486,7 +1486,9 @@ public class UserController extends SpringActionController
         public ApiResponse execute(GetUsersForm form, BindException errors) throws Exception
         {
             Container container = getContainer();
-            if(container.isRoot() && !getViewContext().getUser().isAdministrator())
+            User currentUser = getUser();
+
+            if (container.isRoot() && !currentUser.isAdministrator())
                 throw new UnauthorizedException("Only system administrators may see users in the root container!");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -1496,21 +1498,20 @@ public class UserController extends SpringActionController
             List<Map<String,Object>> userResponseList = new ArrayList<Map<String,Object>>();
 
             //if requesting users in a specific group...
-            if(null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-
                 Container project = container.getProject();
 
                 //get users in given group/role name
                 Integer groupId = form.getGroupId();
-                if(null == groupId)
+                if (null == groupId)
                     groupId = SecurityManager.getGroupId(container.getProject(), form.getGroup(), false);
-                if(null == groupId)
+                if (null == groupId)
                     throw new IllegalArgumentException("The group '" + form.getGroup() + "' does not exist in the project '"
                             + project.getPath() + "'");
 
                 Group group = SecurityManager.getGroup(groupId.intValue());
-                if(null == group)
+                if (null == group)
                     throw new RuntimeException("Could not get group for group id " + groupId);
 
                 response.put("groupId", group.getUserId());
@@ -1524,30 +1525,30 @@ public class UserController extends SpringActionController
                 //special-case: if container is root, return all active users
                 //else, return all users in the current project
                 //we've already checked above that the current user is a system admin
-                if(container.isRoot())
+                if (container.isRoot())
                     users = Arrays.asList(UserManager.getActiveUsers());
                 else
                     users = SecurityManager.getProjectUsers(container, true);
             }
 
-            if(null != users)
+            if (null != users)
             {
                 //trim name filter to empty so we are guaranteed a non-null string
                 //and conver to lower-case for the compare below
                 String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
-                if(nameFilter.length() > 0)
+                if (nameFilter.length() > 0)
                     response.put("name", nameFilter);
                 
-                for(User user : users)
+                for (User user : users)
                 {
                     //according to the docs, startsWith will return true even if nameFilter is empty string
-                    if(user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
+                    if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
                     {
                         Map<String,Object> userInfo = new HashMap<String,Object>();
                         userInfo.put(PROP_USER_ID, user.getUserId());
 
                         //force sanitize of the display name, even for logged-in users
-                        userInfo.put(PROP_USER_NAME, user.getDisplayNameOld(getViewContext()));
+                        userInfo.put(PROP_USER_NAME, user.getDisplayName(currentUser));
 
                         //include email address (we now require login so no guests can see the response)
                         userInfo.put("email", user.getEmail());

@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -37,6 +38,7 @@
 
     final List<Issue> issueList = bean.getIssueList();
     final Container c = context.getContainer();
+    final User user = context.getUser();
     Issue issue = null;
     String issueId = null;
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
@@ -66,16 +68,16 @@
     <tr>
         <td valign="top" width="34%"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
-            <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
             <tr><td class="labkey-form-label">Type</td><td><%=h(issue.getType())%></td></tr>
             <tr><td class="labkey-form-label">Area</td><td><%=h(issue.getArea())%></td></tr>
             <tr><td class="labkey-form-label">Priority</td><td><%=bean._toString(issue.getPriority())%></td></tr>
             <tr><td class="labkey-form-label">Milestone</td><td><%=h(issue.getMilestone())%></td></tr>
         </table></td>
         <td valign="top" width="33%"><table>
-            <tr><td class="labkey-form-label">Opened&nbsp;By</td><td><%=h(issue.getCreatedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Opened&nbsp;By</td><td><%=h(issue.getCreatedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Opened</td><td><%=bean.writeDate(issue.getCreated())%></td></tr>
-            <tr><td class="labkey-form-label">Resolved By</td><td><%=h(issue.getResolvedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Resolved By</td><td><%=h(issue.getResolvedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Resolved</td><td><%=bean.writeDate(issue.getResolved())%></td></tr>
             <tr><td class="labkey-form-label">Resolution</td><td><%=h(issue.getResolution())%></td></tr>
 <%
@@ -93,9 +95,9 @@
             <%=bean.writeCustomColumn(c, new HString("string1"), issue.getString1(), IssuesController.ISSUE_STRING1, 10)%>
         </table></td>
         <td valign="top" width="33%"><table>
-            <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Changed</td><td><%=bean.writeDate(issue.getModified())%></td></tr>
-            <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
 
             <%=bean.writeCustomColumn(c, new HString("string2"), issue.getString2(), IssuesController.ISSUE_STRING2, 20)%>
@@ -117,7 +119,7 @@
         <hr><table width="100%"><tr><td align="left"><b>
         <%=bean.writeDate(comment.getCreated())%>
         </b></td><td align="right"><b>
-        <%=h(comment.getCreatedByName(context))%>
+        <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>
         <%=comment.getComment().getSource()%>
         <%=bean.renderAttachments(context, comment)%>

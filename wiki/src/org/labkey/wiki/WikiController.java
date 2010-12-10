@@ -1336,7 +1336,7 @@ public class WikiController extends SpringActionController
             hasReadPermission = perms.allowRead(wiki);
             hasAdminPermission = perms.allowAdmin();
             hasSetCurVersionPermission = perms.allowUpdate(wiki);
-            createdBy = UserManager.getDisplayName(wikiVersion.getCreatedBy(), getViewContext());
+            createdBy = UserManager.getDisplayName(wikiVersion.getCreatedBy(), getUser());
             created = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG).format(wikiVersion.getCreated());
             versionLink = getVersionURL(wiki.getName()).toString();
             compareLink = getCompareVersionsURL(wiki.getName()).toString();

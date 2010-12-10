@@ -192,9 +192,9 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public HString getAssignedToName(ViewContext context)
+    public HString getAssignedToName(User currentUser)
     {
-        return new HString(UserManager.getDisplayName(assignedTo, context));
+        return new HString(UserManager.getDisplayName(assignedTo, currentUser));
     }
 
 
@@ -261,9 +261,9 @@ public class Issue extends Entity implements Serializable, Cloneable
 */
 
 
-    public String getCreatedByName(ViewContext context)
+    public String getCreatedByName(User currentUser)
     {
-        return UserManager.getDisplayName(getCreatedBy(), context);
+        return UserManager.getDisplayName(getCreatedBy(), currentUser);
     }
 
 
@@ -292,9 +292,9 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public String getResolvedByName(ViewContext context)
+    public String getResolvedByName(User currentUser)
     {
-        return UserManager.getDisplayName(getResolvedBy(), context);
+        return UserManager.getDisplayName(getResolvedBy(), currentUser);
     }
 
 
@@ -359,9 +359,9 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public String getClosedByName(ViewContext context)
+    public String getClosedByName(User currentUser)
     {
-        return UserManager.getDisplayName(getClosedBy(), context);
+        return UserManager.getDisplayName(getClosedBy(), currentUser);
     }
 
 
@@ -473,9 +473,10 @@ public class Issue extends Entity implements Serializable, Cloneable
         return _comments.isEmpty();
     }
 
-    public String getModifiedByName(ViewContext context)
+
+    public String getModifiedByName(User currentUser)
     {
-        return UserManager.getDisplayName(getModifiedBy(), context);
+        return UserManager.getDisplayName(getModifiedBy(), currentUser);
     }
 
 
@@ -547,9 +548,9 @@ public class Issue extends Entity implements Serializable, Cloneable
             this.commentId = commentId;
         }
 
-        public String getCreatedByName(ViewContext context)
+        public String getCreatedByName(User currentUser)
         {
-            return UserManager.getDisplayName(getCreatedBy(), context);
+            return UserManager.getDisplayName(getCreatedBy(), currentUser);
         }
 
         public HString getComment()

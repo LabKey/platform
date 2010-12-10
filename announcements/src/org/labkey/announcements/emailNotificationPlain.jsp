@@ -15,10 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
+<%
+    User user = getViewContext().getUser();
+%>
 
-<%=announcementModel.getCreatedByName(includeGroups, HttpView.currentContext()) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) %> at <%=formatDateTime(announcementModel.getCreated())%><%
+<%=announcementModel.getCreatedByName(includeGroups, user) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) %> at <%=formatDateTime(announcementModel.getCreated())%><%
 
     int attachmentCount = announcementModel.getAttachments().size();
 

@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.core.user.DeactivateUsersBean" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.user.DeleteUsersBean" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DeleteUsersBean> me = (JspView<DeleteUsersBean>) HttpView.currentView();
+    User currentUser = me.getViewContext().getUser();
     DeleteUsersBean bean = me.getModelBean();
     ActionURL urlPost = me.getViewContext().cloneActionURL();
     urlPost.deleteParameters();
@@ -37,16 +38,16 @@ the following <%=bean.getUsers().size() > 1 ? "users" : "user"%>?
 This action cannot be undone.</p>
     <ul>
     <%
-        for(User user : bean.getUsers())
+        for (User user : bean.getUsers())
         {
-            %><li><%=PageFlowUtil.filter(user.getDisplayNameOld(me.getViewContext()))%></li><%
+            %><li><%=h(user.getDisplayName(currentUser))%></li><%
         }
     %>
     </ul>
 <form action="<%=urlPost.getEncodedLocalURIString()%>" method="post" name="deleteUsersForm">
     <labkey:csrf/>
     <%
-        for(User user : bean.getUsers())
+        for (User user : bean.getUsers())
         {
             %><input type="hidden" name="userId" value="<%=user.getUserId()%>"/><%
         }
@@ -56,20 +57,22 @@ This action cannot be undone.</p>
 </form>
 <%
     boolean canDeactivate = false;
-    for(User user : bean.getUsers())
+
+    for (User user : bean.getUsers())
     {
-        if(user.isActive())
+        if (user.isActive())
         {
             canDeactivate = true;
             break;
         }
     }
-    if(canDeactivate) {
+
+    if (canDeactivate) {
 %>
 <form action="<%=deactivateUsersUrl%>" method="post" name="deactivateUsersForm">
     <labkey:csrf/>
     <%
-        for(User user : bean.getUsers())
+        for (User user : bean.getUsers())
         {
             %><input type="hidden" name="userId" value="<%=user.getUserId()%>"/><%
         }

@@ -15,7 +15,8 @@
  */
 package org.labkey.announcements.model;
 
-import org.labkey.announcements.AnnouncementsController.*;
+import org.labkey.announcements.AnnouncementsController.DownloadAction;
+import org.labkey.announcements.AnnouncementsController.ThreadAction;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
@@ -27,7 +28,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -196,21 +196,21 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         _broadcast = broadcast;
     }
 
-    public String getCreatedByName(ViewContext context)
+    public String getCreatedByName(User currentUser)
     {
-        return getCreatedByName(false, context);
+        return getCreatedByName(false, currentUser);
     }
 
 
-    public String getCreatedByName(boolean includeGroups, ViewContext context)
+    public String getCreatedByName(boolean includeGroups, User currentUser)
     {
-        return getDisplayName(getCreatedBy(), includeGroups, context);
+        return getDisplayName(getCreatedBy(), includeGroups, currentUser);
     }
 
 
-    private String getDisplayName(int userId, boolean includeGroups, ViewContext context)
+    private String getDisplayName(int userId, boolean includeGroups, User currentUser)
     {
-        String name = UserManager.getDisplayNameOrUserId(userId, context);
+        String name = UserManager.getDisplayNameOrUserId(userId, currentUser);
 
         if (includeGroups)
         {
@@ -229,15 +229,15 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     }
 
 
-    public String getModifiedByName(ViewContext context)
+    public String getModifiedByName(User currentUser)
     {
-        return UserManager.getDisplayNameOrUserId(getModifiedBy(), context);
+        return UserManager.getDisplayNameOrUserId(getModifiedBy(), currentUser);
     }
 
 
-    public String getAssignedToName(ViewContext context)
+    public String getAssignedToName(User currentUser)
     {
-        return UserManager.getDisplayNameOrUserId(getAssignedTo(), context);
+        return UserManager.getDisplayNameOrUserId(getAssignedTo(), currentUser);
     }
 
 

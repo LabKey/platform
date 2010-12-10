@@ -1285,7 +1285,7 @@ public class DavController extends SpringActionController
                     {
                         User createdby = resource.getCreatedBy();
                         if (null != createdby)
-                            xml.writeProperty(null, "createdby", h(UserManager.getDisplayName(createdby.getUserId(), getViewContext())));
+                            xml.writeProperty(null, "createdby", h(UserManager.getDisplayName(createdby.getUserId(), getUser())));
 
                         if (isFile)
                         {
@@ -1294,7 +1294,7 @@ public class DavController extends SpringActionController
                                 xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
                             User modifiedby = resource.getModifiedBy();
                             if (null != modifiedby)
-                                xml.writeProperty(null, "modifiedby", UserManager.getDisplayName(modifiedby.getUserId(), getViewContext()));
+                                xml.writeProperty(null, "modifiedby", UserManager.getDisplayName(modifiedby.getUserId(), getUser()));
                             xml.writeProperty(null, "getcontentlength", String.valueOf(_contentLength(resource)));
                             String contentType = resource.getContentType();
                             if (contentType != null)
@@ -1429,7 +1429,7 @@ public class DavController extends SpringActionController
                         {
                             User createdby = resource.getCreatedBy();
                             if (null != createdby)
-                                xml.writeProperty(null, "createdby", h(UserManager.getDisplayName(createdby.getUserId(), getViewContext())));
+                                xml.writeProperty(null, "createdby", h(UserManager.getDisplayName(createdby.getUserId(), getUser())));
                             else
                                 xml.writeElement(null, "createdby", XMLWriter.NO_CONTENT);
                         }
@@ -1437,7 +1437,7 @@ public class DavController extends SpringActionController
                         {
                             User modifiedBy = resource.getModifiedBy();
                             if (null != modifiedBy)
-                                xml.writeProperty(null, "modifiedby", h(UserManager.getDisplayName(modifiedBy.getUserId(), getViewContext())));
+                                xml.writeProperty(null, "modifiedby", h(UserManager.getDisplayName(modifiedBy.getUserId(), getUser())));
                             else
                                 xml.writeElement(null, "modifiedby", XMLWriter.NO_CONTENT);
                         }

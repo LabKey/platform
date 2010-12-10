@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.core.user.DeactivateUsersBean" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.user.DeactivateUsersBean" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DeactivateUsersBean> me = (JspView<DeactivateUsersBean>) HttpView.currentView();
+    User currentUser = me.getViewContext().getUser();
     DeactivateUsersBean bean = me.getModelBean();
     ActionURL urlPost = me.getViewContext().cloneActionURL();
     urlPost.deleteParameters();
@@ -32,9 +34,9 @@
     the following <%=bean.getUsers().size() > 1 ? "users" : "user"%>?</p>
     <ul>
     <%
-        for(User user : bean.getUsers())
+        for (User user : bean.getUsers())
         {
-            %><li><%=PageFlowUtil.filter(user.getDisplayNameOld(me.getViewContext()))%></li><%
+            %><li><%=h(user.getDisplayName(currentUser))%></li><%
         } 
     %>
     </ul>
@@ -42,7 +44,7 @@
     <labkey:csrf/>
     <input type="hidden" name="redirUrl" value="<%=bean.getRedirUrl().getEncodedLocalURIString()%>"/>
     <%
-        for(User user : bean.getUsers())
+        for (User user : bean.getUsers())
         {
             %><input type="hidden" name="userId" value="<%=user.getUserId()%>"/><%
         }
@@ -50,7 +52,7 @@
     <%=PageFlowUtil.generateSubmitButton(bean.isActivate() ? "Re-activate" : "Deactivate")%>
     <%=PageFlowUtil.generateButton("Cancel", bean.getRedirUrl())%>
 </form>
-<% if(bean.isActivate()) { %>
+<% if (bean.isActivate()) { %>
 <p><b>Note:</b> Re-activated users will be able to login normally, and all their previous
     group memberships will be preserved.</p>
 <% } else { %>

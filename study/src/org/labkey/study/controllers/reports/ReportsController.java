@@ -1782,7 +1782,7 @@ public class ReportsController extends BaseStudyController
         private TableInfo tableInfo;
         private ResultSet resultSet;
 
-        public ReportData(Study study, int datasetId, int visitRowId, org.labkey.api.security.User user, ActionURL filterUrl) throws ServletException, SQLException
+        public ReportData(Study study, int datasetId, int visitRowId, User user, ActionURL filterUrl) throws ServletException, SQLException
         {
             DataSet def = study.getDataSet(datasetId);
             if (def == null)

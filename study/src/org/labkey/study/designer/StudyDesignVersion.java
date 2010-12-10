@@ -139,7 +139,7 @@ public class StudyDesignVersion
         gwtVersion.setLabel(getLabel());
         User user = UserManager.getUser(getCreatedBy());
         if (null != user)
-            gwtVersion.setWriterName(user.getDisplayNameOld(context));
+            gwtVersion.setWriterName(user.getDisplayName(context.getUser()));
 
         gwtVersion.setCreated(new Date(getCreated().getTime()));
         gwtVersion.setStudyId(getStudyId());

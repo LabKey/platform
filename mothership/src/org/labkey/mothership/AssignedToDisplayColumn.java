@@ -56,6 +56,7 @@ public class AssignedToDisplayColumn extends DataColumn
         out.write(getColumnInfo().getPropertyName());
         out.write("'>\n");
         out.write("<option value=\"\"></option>\n");
+
         for (User member : list)
         {
             out.write("<option value=\"");
@@ -66,9 +67,10 @@ public class AssignedToDisplayColumn extends DataColumn
                 out.write(" selected");
             }
             out.write(">");
-            out.write(member.getDisplayNameOld(ctx.getViewContext()));
+            out.write(member.getDisplayName(ctx.getViewContext().getUser()));
             out.write("</option>\n");
         }
+
         out.write("</select>");
     }
 }
