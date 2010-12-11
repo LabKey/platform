@@ -88,25 +88,21 @@ AVG : 'avg';
 BETWEEN : 'between';
 CASE : 'case';
 CAST : 'cast';
-CLASS : 'class';
 COUNT : 'count';
 DELETE : 'delete';
 DESCENDING : 'desc';
 DISTINCT : 'distinct';
 DOT : '.';
-ELEMENTS : 'elements';
 ELSE : 'else';
 END : 'end';
 ESCAPE : 'escape';
 EXISTS : 'exists';
 FALSE : 'false';
-FETCH : 'fetch';
 FROM : 'from';
 FULL : 'full';
 GROUP : 'group';
 HAVING : 'having';
 IN : 'in';
-INDICES : 'indices';
 INNER : 'inner';
 INSERT : 'insert';
 INTO : 'into';
@@ -118,7 +114,6 @@ LIMIT : 'limit';
 MAX : 'max';
 GROUP_CONCAT : 'group_concat';
 MIN : 'min';
-NEW : 'new';
 NOT : 'not';
 NULL : 'null';
 ON : 'on';
@@ -135,16 +130,8 @@ THEN : 'then';
 TRUE : 'true';
 UNION : 'union';
 UPDATE : 'update';
-VERSIONED : 'versioned';
 WHERE : 'where';
 WHEN : 'when';
-// -- EJBQL tokens --
-BOTH : 'both';
-EMPTY : 'empty';
-LEADING : 'leading';
-MEMBER : 'member';
-OF : 'of';
-TRAILING : 'trailing';
 
 
 //
@@ -157,7 +144,7 @@ statement
 	;
 
 updateStatement
-	: UPDATE^ (VERSIONED)?
+	: UPDATE^ 
 		optionalFromTokenFromClause
 		setClause
 		(whereClause)?
@@ -260,7 +247,7 @@ fromRange
 	;
 
 fromJoin
-	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^ (FETCH)?
+	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^
 	  fromRange onClause?
 	;
 
@@ -286,7 +273,7 @@ fromRange
 	;
 
 fromJoin
-	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^ (FETCH)?
+	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^
 	  fromRange onClause?
 	;
 
@@ -525,13 +512,16 @@ primaryExpression
 
 // identifier, followed by member refs (dot ident), or method calls.
 // NOTE: handleDotIdent() is called immediately after the first IDENT is recognized because
-// the method looks a head to find keywords after DOT and turns them into identifiers.
+// the method looks ahead to find keywords after DOT and turns them into identifiers.
 identPrimary
 	: identifier { handleDotIdent(); }
         ( options { greedy=true; } : (DOT^ identifier) )*
         ( options { greedy=true; } : op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE! )?
 	| aggregate
 	| cast
+// UNDONE: figure out the weakKeywords thing
+	| l=LEFT  {$l.tree.getToken().setType(METHOD_CALL);} op=OPEN {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
+	| r=RIGHT {$r.tree.getToken().setType(METHOD_CALL);} op=OPEN {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
 	;
 
 
@@ -574,7 +564,6 @@ constant
 	| NULL
 	| TRUE
 	| FALSE
-	| EMPTY
 	;
 
 number
@@ -588,10 +577,12 @@ path
 	: identifier ( DOT^ { weakKeywords(); } identifier )*
 	;
 
+
+// NOTE: left() and right() are functions as well as keywords
+// NOTE: would be nice to get weakKeywords() working in general
 identifier
 	: IDENT | QUOTED_IDENTIFIER
 	;
-
 
 
 // **** LEXER ******************************************************************

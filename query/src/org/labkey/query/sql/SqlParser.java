@@ -84,8 +84,14 @@ public class SqlParser
 				selectScope = parser.selectStatement();
                 int last = parser.getTokenStream().LA(1);
 				if (EOF != last)
+                {
+                    CommonToken t = (CommonToken)parser.getTokenStream().LT(1);
 					//noinspection ThrowableInstanceNeverThrown
-					_parseErrors.add(new QueryParseException("EOF expected", null, 0, 0));
+                    if (null != t)
+                        _parseErrors.add(new QueryParseException("Unexpected token: " + t.getText(), null, t.getLine(), t.getCharPositionInLine()));
+                    else
+					    _parseErrors.add(new QueryParseException("EOF expected", null, 0, 0));
+                }
 			}
 			catch (Exception x)
 			{
@@ -425,25 +431,21 @@ public class SqlParser
             case BETWEEN: return "BETWEEN";
             case CASE: return "CASE";
             case CAST: return "CAST";
-            case CLASS: return "CLASS";
             case COUNT: return "COUNT";
             case DELETE: return "DELETE";
             case DESCENDING: return "DESCENDING";
             case DISTINCT: return "DISTINCT";
             case DOT: return "DOT";
-            case ELEMENTS: return "ELEMENTS";
             case ELSE: return "ELSE";
             case END: return "END";
             case ESCAPE: return "ESCAPE";
             case EXISTS: return "EXISTS";
             case FALSE: return "FALSE";
-            case FETCH: return "FETCH";
             case FROM: return "FROM";
             case FULL: return "FULL";
             case GROUP: return "GROUP";
             case HAVING: return "HAVING";
             case IN: return "IN";
-            case INDICES: return "INDICES";
             case INNER: return "INNER";
             case INSERT: return "INSERT";
             case INTO: return "INTO";
@@ -455,7 +457,6 @@ public class SqlParser
             case MAX: return "MAX";
             case GROUP_CONCAT: return "GROUP_CONCAT";
             case MIN: return "MIN";
-            case NEW: return "NEW";
             case NOT: return "NOT";
             case NULL: return "NULL";
             case ON: return "ON";
@@ -472,15 +473,8 @@ public class SqlParser
             case TRUE: return "TRUE";
             case UNION: return "UNION";
             case UPDATE: return "UPDATE";
-            case VERSIONED: return "VERSIONED";
             case WHERE: return "WHERE";
             case WHEN: return "WHEN";
-            case BOTH: return "BOTH";
-            case EMPTY: return "EMPTY";
-            case LEADING: return "LEADING";
-            case MEMBER: return "MEMBER";
-            case OF: return "OF";
-            case TRAILING: return "TRAILING";
             case COMMA: return ",";
             case EQ: return "=";
             case OPEN: return "(";
@@ -903,9 +897,6 @@ public class SqlParser
 			case ESCAPE:
 				_parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
 				 return null;
-			case TRAILING:
-			case LEADING:
-			case BOTH:
 			default:
 	            _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
 				return null;
@@ -949,6 +940,16 @@ public class SqlParser
         "SELECT 'R'.a, S.b FROM R FULL JOIN S ON R.x = S.x",
 
 		"SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
+
+        "SELECT 'R'.a, S.b FROM R, S WHERE R.x = S.x",
+
+        "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN (S INNER JOIN T ON S.y = T.y) ON R.x = S.x",
+
+        "SELECT 'R'.a, S.b FROM (R INNER JOIN S ON R.x=S.x) FULL OUTER JOIN (T INNER JOIN U ON T.y = U.y) WHERE R.z = U.z",
+
+        "SELECT 'R'.a, S.b FROM R INNER JOIN S ON R.x=S.x, (T INNER JOIN U ON T.y = U.y) WHERE R.z = U.z",
+
+        "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
 
         "SELECT CASE WHEN R.a=R.b THEN 'same' WHEN R.c IS NULL THEN 'different' ELSE R.c END FROM R",
 
