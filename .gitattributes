@@ -1910,6 +1910,8 @@ query/src/org/labkey/query/sql/QFrom.java -text
 query/src/org/labkey/query/sql/QGroupBy.java -text
 query/src/org/labkey/query/sql/QIdentifier.java -text
 query/src/org/labkey/query/sql/QInternalExpr.java -text
+query/src/org/labkey/query/sql/QJoin.java -text
+query/src/org/labkey/query/sql/QJoinOrTable.java -text
 query/src/org/labkey/query/sql/QLimit.java -text
 query/src/org/labkey/query/sql/QMethodCall.java -text
 query/src/org/labkey/query/sql/QNode.java -text

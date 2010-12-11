@@ -21,6 +21,7 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -125,6 +126,8 @@ import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.sql.QExpr;
+import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.xml.ApiTestsDocument;
@@ -634,7 +637,7 @@ public class QueryController extends SpringActionController
                 QueryDefinition query = form.getQueryDef();
                 for (QueryException qpe : query.getParseErrors(form.getSchema()))
                 {
-                    errors.reject(ERROR_MSG, qpe.getMessage());
+                    errors.reject(ERROR_MSG, StringUtils.defaultString(qpe.getMessage(),qpe.toString()));
                 }
             }
             catch (Exception e)
@@ -4368,6 +4371,66 @@ public class QueryController extends SpringActionController
             response.put("xml", doc.xmlText(opts));
 
             return response;
+        }
+    }
+
+
+    private abstract class ParseAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            List<QueryParseException> qpe = new ArrayList<QueryParseException>();
+            String expr = getViewContext().getRequest().getParameter("q");
+            ArrayList<String> html = new ArrayList<String>();
+            html.add("<html><body><form method=GET><textarea cols=100 rows=10 name=q>" + PageFlowUtil.filter(expr) + "</textarea><br><input type=submit onclick='Ext.getBody().mask();'></form>");
+
+            QNode e = null;
+            if (null != expr)
+            {
+                e = _parse(expr,qpe);
+            }
+
+            for (Throwable x : qpe)
+            {
+                if (null != x.getCause() && x != x.getCause())
+                    x = x.getCause();
+                html.add("<br>" + PageFlowUtil.filter(x.toString()));
+                Category.getInstance(QueryController.class).debug(expr,x);
+            }
+            if (null != e)
+            {
+                String prefix = SqlParser.toPrefixString(e);
+                html.add("<br><b>" + PageFlowUtil.filter(prefix) + "</br>");
+            }
+            html.add("</body></html>");
+            return new HtmlView(StringUtils.join(html,""));
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+        
+        abstract QNode _parse(String e, List<QueryParseException> errors);
+    }
+
+    @RequiresSiteAdmin
+    public class ParseExpressionAction extends ParseAction
+    {
+        QNode _parse(String s, List<QueryParseException> errors)
+        {
+            return new SqlParser().parseExpr(s, errors);
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class ParseQueryAction extends ParseAction
+    {
+        QNode _parse(String s, List<QueryParseException> errors)
+        {
+            return new SqlParser().parseQuery(s, errors);
         }
     }
 }

@@ -16,32 +16,23 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.api.query.FilteredTable;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 
-public class QTable
+public class QTable implements QJoinOrTable
 {
     QExpr _table;
-    JoinType _joinType;
     QIdentifier _alias;
-    QExpr _on;
     QueryRelation _queryRelation;
-    FilteredTable _wrappedTableObject;
 
-    public QTable(QExpr table, JoinType joinType)
+    public QTable(QExpr table)
     {
         _table = table;
-        _joinType = joinType;
     }
 
     public void setAlias(QIdentifier alias)
     {
         _alias = alias;
-    }
-
-    public void setOn(QExpr with)
-    {
-        _on = with;
     }
 
     public FieldKey getTableKey()
@@ -62,52 +53,28 @@ public class QTable
     }
 
 
-    public void appendSource(SourceBuilder builder, boolean first)
+    public void appendSource(SourceBuilder builder)
     {
-        if (!first)
-        {
-            switch (_joinType)
-            {
-                case inner:
-                    builder.append("INNER JOIN ");
-                    break;
-                case left:
-                    builder.append("LEFT JOIN ");
-                    break;
-                case right:
-                    builder.append("RIGHT JOIN ");
-                    break;
-                case outer:
-                    builder.append("OUTER JOIN ");
-                    break;
-                case full:
-                    builder.append("FULL OUTER JOIN ");
-                    break;
-            }
-        }
         _table.appendSource(builder);
         if (_alias != null)
         {
             builder.append(" AS ");
             _alias.appendSource(builder);
         }
-        if (_on != null)
-        {
-            builder.append(" ON ");
-            _on.appendSource(builder);
-        }
     }
 
-    public QExpr getOn()
+
+    public void appendSql(SqlBuilder sql, QuerySelect select)
     {
-        return _on;
+        SQLFragment sqlRelation = getQueryRelation().getSql();
+        assert sqlRelation != null || select.getParseErrors().size() > 0;
+        if (sqlRelation == null)
+            return;
+        sql.append("(").append(sqlRelation).append(") ");
+        sql.append(getQueryRelation().getAlias());
     }
 
-    public JoinType getJoinType()
-    {
-        return _joinType;
-    }
-
+    
     public QExpr getTable()
     {
         return _table;

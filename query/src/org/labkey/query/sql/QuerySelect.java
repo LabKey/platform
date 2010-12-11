@@ -41,7 +41,8 @@ public class QuerySelect extends QueryRelation
     QQuery _root;
     private QLimit _limit;
     private QDistinct _distinct;
-    private Map<FieldKey, QTable> _from;
+    private Map<FieldKey, QTable> _parsedTables;
+    private List<QJoinOrTable> _parsedJoins;
     private Map<FieldKey, QueryRelation> _tables;
     private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<FieldKey, RelationColumn>();
     private SQLTableInfo _subqueryTable;
@@ -100,7 +101,6 @@ public class QuerySelect extends QueryRelation
     private void initializeSelect()
     {
         _columns = new LinkedHashMap<FieldKey,SelectColumn>();
-        _from = new LinkedHashMap<FieldKey, QTable>();
         if (_root == null)
             return;
         _limit = _root.getLimit();
@@ -110,17 +110,20 @@ public class QuerySelect extends QueryRelation
         QFrom from = _root.getFrom();
         if (from == null)
         {
-            _from = Collections.EMPTY_MAP;
+            _parsedTables = Collections.EMPTY_MAP;
+            _parsedJoins = Collections.EMPTY_LIST;
         }
         else
         {
-            _from = new FromParser().parseTables(from);
+            FromParser p = new FromParser(from);
+            _parsedTables = p.getTables();
+            _parsedJoins = p.getJoins();
         }
         _where = _root.getWhere();
         _having = _root.getHaving();
         _groupBy = _root.getGroupBy();
         _orderBy = _root.getOrderBy();
-        for (QTable qtable : _from.values())
+        for (QTable qtable : _parsedTables.values())
         {
             FieldKey key = qtable.getTableKey();
             String alias = qtable.getAlias().getName();
@@ -172,7 +175,7 @@ public class QuerySelect extends QueryRelation
 
                 if (node instanceof QRowStar)
                 {
-                    for (QTable t : _from.values())
+                    for (QTable t : _parsedTables.values())
                     {
                         QNode tableStar = QFieldKey.of(new FieldKey(t.getAlias(), "*"));
                         tableStar.setLineAndColumn(node);
@@ -281,11 +284,9 @@ public class QuerySelect extends QueryRelation
         }
         builder.popPrefix();
         builder.pushPrefix("\nFROM ");
-        QTable[] tables = _from.values().toArray(new QTable[0]);
-        for (int i = 0; i < tables.length; i ++)
+        for (QJoinOrTable range : _parsedJoins)
         {
-            QTable table = tables[i];
-            table.appendSource(builder, i == 0);
+            range.appendSource(builder);
             builder.nextPrefix("\n");
         }
         builder.popPrefix();
@@ -316,79 +317,86 @@ public class QuerySelect extends QueryRelation
 
     public Set<FieldKey> getFromTables()
     {
-        return _from.keySet();
+        return _parsedTables.keySet();
     }
+
+
+
 
     private class FromParser
     {
-        Map<FieldKey, QTable> _tables;
-
-        private void parseTable(QNode parent)
+        final Map<FieldKey, QTable> _tables;
+        final List<QJoinOrTable> _joins;
+        
+        FromParser(QFrom from)
         {
-			List<QNode> l = parent.childList();
+            _tables = new LinkedHashMap<FieldKey, QTable>();
+            _joins = new ArrayList<QJoinOrTable>();
+            parseFrom(from);
+        }
+
+
+        Map<FieldKey, QTable> getTables()
+        {
+            return _tables;
+        }
+
+
+        List<QJoinOrTable> getJoins()
+        {
+            return _joins;
+        }
+
+
+        private void parseFrom(QNode from)
+        {
+            List<QNode> l = from.childList();
             if (l.isEmpty())
             {
-                parseError("FROM clause is empty", parent);
+                parseError("FROM clause is empty", from);
                 return;
             }
-            QNode[] children = l.toArray(new QNode[l.size()]);
-			int inode = 0;
-            QNode node = children[inode];
-
-            JoinType joinType = JoinType.root;
-
-            if (parent.getTokenType() == SqlBaseParser.JOIN)
+            for (QNode r : from.childList())
             {
-                joinType = JoinType.inner;
-loop:
-                for ( ; inode < children.length ; inode++)
-                {
-					node = children[inode];
-                    switch (node.getTokenType())
-                    {
-                        case SqlBaseParser.LEFT:
-                            joinType = JoinType.left;
-                            break;
-                        case SqlBaseParser.RIGHT:
-                            joinType = JoinType.right;
-                            break;
-                        case SqlBaseParser.INNER:
-                            joinType = JoinType.inner;
-                            break;
-                        case SqlBaseParser.OUTER:
-                            joinType = JoinType.outer;
-                            break;
-                        case SqlBaseParser.FULL:
-                            joinType = JoinType.full;
-                            break;
-                        default:
-                            break loop;
-                    }
-                }
+                QJoinOrTable q = parseNode(r);
+                if (null != q)
+                    _joins.add(q);
+                else
+                    assert !getParseErrors().isEmpty();
             }
-            if (!(node instanceof QExpr))
+        }
+
+        private QJoinOrTable parseNode(QNode r)
+        {
+            if (r.getTokenType() == SqlBaseParser.RANGE)
+                return parseRange(r);
+            else if (r.getTokenType() == SqlBaseParser.JOIN)
+                return parseJoin(r);
+            else
+            {
+                parseError("Error in FROM clause", r);
+                return null;
+            }
+        }
+
+
+        private QTable parseRange(QNode node)
+        {
+            int countChildren = node.childList().size();
+            if (countChildren  < 1 || 2 < countChildren || !(node.childList().get(0) instanceof QExpr))
             {
                 parseError("Syntax error in JOIN clause", node);
-                return;
+                return null;
             }
-            QExpr expr = (QExpr) node;
-            QExpr with = null;
+
+            List<QNode> children = node.childList();
+            QExpr expr = (QExpr) children.get(0);
             QIdentifier alias = null;
-			QNode next = inode+1<children.length ? children[inode+1] : null;
-            if (next instanceof QIdentifier)
-            {
-                alias = (QIdentifier) next;
-				inode++;
-            }
-			next = inode+1<children.length ? children[inode+1] : null;
-            if (null != next && next.getTokenType() == ON)
-            {
-                with = (QExpr) next.getFirstChild();
-				inode++;
-            }
-            QTable table = new QTable(expr, joinType);
+            if (children.size() > 1 && children.get(1) instanceof QIdentifier)
+                alias = (QIdentifier) children.get(1);
+
+            QTable table = new QTable(expr);
             table.setAlias(alias);
-            table.setOn(with);
             FieldKey aliasKey = table.getAlias();
             if (_tables.containsKey(aliasKey))
             {
@@ -398,22 +406,50 @@ loop:
             {
                 _tables.put(aliasKey, table);
             }
+            return table;
         }
 
-        Map<FieldKey, QTable> parseTables(QFrom from)
-        {
-            _tables = new LinkedHashMap<FieldKey, QTable>();
 
-            for (QNode node : from.children())
+        private QJoin parseJoin(QNode join)
+        {
+            List<QNode> children = join.childList();
+            if (children.size() != 4)
             {
-                if (_tables.size() > 0 && node.getTokenType() == SqlBaseParser.RANGE)
-                {
-                    parseError("Tables in the parse clause separated by commas are not yet supported.", node);
-                    break;
-                }
-                parseTable(node);
+                parseError("Error in JOIN clause", join);
+                return null;
             }
-            return _tables;
+
+            QJoinOrTable left = parseNode(children.get(0));
+            QJoinOrTable right = parseNode(children.get(2));
+            QNode on = children.get(3);
+            if (on.childList().size() != 1 || !(on.childList().get(0) instanceof QExpr))
+            {
+                parseError("Error in ON expression", on);
+                return null;
+            }
+
+            JoinType joinType = JoinType.inner;
+            switch (children.get(1).getTokenType())
+            {
+                case SqlBaseParser.LEFT:
+                    joinType = JoinType.left;
+                    break;
+                case SqlBaseParser.RIGHT:
+                    joinType = JoinType.right;
+                    break;
+                case SqlBaseParser.INNER:
+                    joinType = JoinType.inner;
+                    break;
+                case SqlBaseParser.OUTER:
+                    joinType = JoinType.outer;
+                    break;
+                case SqlBaseParser.FULL:
+                    joinType = JoinType.full;
+                    break;
+            }
+
+            QJoin qjoin = new QJoin(left, right, joinType, (QExpr)on.childList().get(0));
+            return qjoin;
         }
     }
 
@@ -623,9 +659,10 @@ loop:
             {
                 declareFields(column.getField());
             }
-        for (QTable table : _from.values())
+        for (QTable table : _parsedTables.values())
         {
-            QExpr on = table.getOn();
+            // TODO
+            QExpr on = null; // table.getOn();
             if (on != null)
                 declareFields(on);
         }
@@ -659,7 +696,7 @@ loop:
     /*
      * Return the result of replacing field names in the expression with QField objects.
      */
-    private QExpr resolveFields(QExpr expr, QNode parent)
+    QExpr resolveFields(QExpr expr, QNode parent)
     {
         if (expr instanceof QQuery)
         {
@@ -822,46 +859,13 @@ loop:
 
         sql.popPrefix();
         sql.pushPrefix("\nFROM ");
-        for (QTable qt : _from.values())
+        for (QJoinOrTable qt : _parsedJoins)
         {
-            switch (qt.getJoinType())
-            {
-                case inner:
-                    sql.append("\nINNER JOIN ");
-                    break;
-                case outer:
-                    sql.append("\nOUTER JOIN ");
-                    break;
-                case left:
-                    sql.append("\nLEFT JOIN ");
-                    break;
-                case right:
-                    sql.append("\nRIGHT JOIN ");
-                    break;
-                case full:
-                    sql.append("\nFULL JOIN ");
-                    break;
-            }
-            SQLFragment sqlRelation = qt.getQueryRelation().getSql();
-            assert sqlRelation != null || getParseErrors().size() > 0;
-            if (sqlRelation == null)
-                return null;
-            sql.append("(").append(sqlRelation).append(") ");
-            sql.append(qt.getQueryRelation().getAlias());
-
-            if (qt.getJoinType() != JoinType.root)
-            {
-                sql.append(" ON ");
-                if (qt.getOn() == null)
-                {
-                    sql.append("1 = 1");
-                }
-                else
-                {
-                    resolveFields(qt.getOn(), null).appendSql(sql);
-                }
-            }
+            qt.appendSql(sql, this);
+            sql.nextPrefix(",");
         }
+        sql.popPrefix();
+
         if (_where != null)
         {
             sql.pushPrefix("\nWHERE ");
@@ -1291,7 +1295,7 @@ loop:
             if (null != fk)
                 to.copyURLFromStrict(col, Collections.singletonMap(fk,to.getFieldKey()));
 
-            if (_from.size() != 1)
+            if (_parsedTables.size() != 1)
                 to.setKeyField(false);
         }
 

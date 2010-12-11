@@ -180,7 +180,7 @@ stateField
 // this still needs to be defined in the ejb3 spec; additiveExpression is currently just a best guess,
 // although it is highly likely I would think that the spec may limit this even more tightly.
 newValue
-	: concatenation
+	: valueExpression
 	;
 
 deleteStatement
@@ -190,7 +190,7 @@ deleteStatement
 	;
 
 optionalFromTokenFromClause!
-	: (FROM)? f=path (a=asAlias)?
+	: (FROM)? f=path (a=(AS? identifier))?
 	    -> ^(FROM $f $a)
 	;
 
@@ -235,7 +235,7 @@ select
 
 selectFrom!
 	: (selectClause fromClause?)
-	    -> ^(SELECT_FROM fromClause? selectClause)
+	    -> ^(SELECT_FROM selectClause fromClause?)
 	;
 
 
@@ -249,46 +249,51 @@ selectClause
 // with the expression rule.
 // Also note: after a comma weak keywords are allowed and should be treated as identifiers.
 
+/*
 fromClause
 	: FROM^ { weakKeywords(); } fromRange ( fromJoin | COMMA! { weakKeywords(); } fromRange )*
 	;
 
+fromRange
+	: (path { weakKeywords(); } (AS? identifier)?) -> ^(RANGE path identifier?)
+	| (OPEN subQuery CLOSE AS? identifier) -> ^(RANGE subQuery identifier)
+	;
+
 fromJoin
 	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^ (FETCH)?
-	  (( path (asAlias)?) |
-	  ((OPEN! subQuery CLOSE!) asAlias)) onClause?
+	  fromRange onClause?
+	;
+
+onClause
+	: ON^ logicalExpression
+	;
+*/
+
+fromClause
+	: FROM^ { weakKeywords(); } joinExpression (COMMA! { weakKeywords(); } joinExpression )*
+	;
+
+joinExpression
+	: fromRange ((((LEFT|RIGHT|FULL) (OUTER!)?) | INNER)? JOIN^ fromRange onClause?)*
+    ;
+        
+fromRange
+	: (path { weakKeywords(); } (AS? identifier)?) -> ^(RANGE path identifier?)
+	| OPEN
+	    ( (subQuery) => subQuery CLOSE AS? identifier -> ^(RANGE subQuery identifier)
+	    | joinExpression CLOSE -> joinExpression
+	    )
+	;
+
+fromJoin
+	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^ (FETCH)?
+	  fromRange onClause?
 	;
 
 onClause
 	: ON^ logicalExpression
 	;
 
-fromRange
-	: fromClassOrOuterQueryPath
-	| aliasedSubQuery
-	;
-
-
-fromClassOrOuterQueryPath!
-	: (path { weakKeywords(); } asAlias?) 
-        -> ^(RANGE path asAlias?)
-	;
-
-
-aliasedSubQuery!
-    : (OPEN subQuery CLOSE asAlias)
-        -> ^(RANGE subQuery asAlias)
-    ;
-
-
-// Alias rule - Parses the optional 'as' token and forces an AST identifier node.
-asAlias
-	: (AS!)? alias
-	;
-
-alias
-	: identifier
-    ;
 
 //## groupByClause:
 //##     GROUP_BY path ( COMMA path )*;
@@ -412,7 +417,7 @@ equalityExpression
 
 
 relationalExpression
-	: concatenation (
+	: valueExpression (
 		( ( (LT|GT|LE|GE)^ additiveExpression )? )
 		| (n=NOT!)? (
 			// Represent the optional NOT prefix using the token type by
@@ -431,13 +436,13 @@ relationalExpression
 					$l.tree.getToken().setType( ($n == null) ? LIKE : NOT_LIKE);
 					$l.tree.getToken().setText( ($n == null) ? "like" : "not like");
 				}
-				concatenation likeEscape)
+				valueExpression likeEscape)
             )
 		)
 	;
 
 likeEscape
-	: (ESCAPE^ concatenation)?
+	: (ESCAPE^ valueExpression)?
 	;
 
 inList
@@ -445,10 +450,13 @@ inList
 	;
 
 betweenList
-	: concatenation AND! concatenation
+	: valueExpression AND! valueExpression
 	;
 
 //level 4 - string concatenation
+// concatenation is the highest non-boolean expression
+valueExpression : concatenation ;
+
 concatenation
 	: additiveExpression ( CONCAT^ additiveExpression )*
 	;
