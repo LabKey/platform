@@ -403,16 +403,14 @@ public class SqlParser
         {
             case EOF: return "EOF";
             case AGGREGATE: return "AGGREGATE FUNCTION";
-            case ALIAS: return "ALIAS";
+            case ALIAS: return "AS";
             case EXPR_LIST: return "EXPR LIST";
-            case FILTER_ENTITY: return "FILTER ENTITY";
             case IN_LIST: return "IN LIST";
             case IS_NOT: return "IS NOT";
             case METHOD_CALL: return "METHOD CALL";
             case NOT_BETWEEN: return "NOT BETWEEN";
             case NOT_IN: return "NOT IN";
             case NOT_LIKE: return "NOT LIKE";
-            case ORDER_ELEMENT: return "ORDER ELEMENT";
             case QUERY: return "QUERY";
             case RANGE: return "RANGE";
             case ROW_STAR: return "*";
@@ -420,8 +418,6 @@ public class SqlParser
             case UNARY_MINUS: return "-";
             case UNARY_PLUS: return "+";
             case UNION_ALL: return "UNION ALL";
-            case VECTOR_EXPR: return "VECTOR EXPR";
-            case WEIRD_IDENT: return "WEIRD IDENT";
             case ALL: return "ALL";
             case ANY: return "ANY";
             case AND: return "AND";
@@ -535,6 +531,14 @@ public class SqlParser
 	{
 		switch (node.getType())
 		{
+            case ALIAS:
+            case AS:
+            {
+                if (children.size() == 1)
+                    return first(children);
+                node.getToken().setType(AS);
+                break;
+            }
 			case METHOD_CALL:
             {
                 QNode id = first(children), exprList = second(children);
@@ -932,6 +936,8 @@ public class SqlParser
         "SELECT \"a\",\"b\",AVG(x),COUNT(x),COUNT(*),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b ORDER BY a ASC, b DESC, SUM(x)",
 
         "SELECT a = TRUE, b = FALSE, NOT c FROM R WHERE R.x IN (2,3,5,7) OR R.x BETWEEN 100 AND 200",
+
+        "SELECT R.a, R.a B, R.a AS C FROM R",
 
         "SELECT R.a, S.\"b\" FROM R LEFT OUTER JOIN S ON R.x = S.x",
 

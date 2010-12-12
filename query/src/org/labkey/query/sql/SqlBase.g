@@ -19,14 +19,12 @@ tokens
 	AGGREGATE;		// One of the aggregate functions (e.g. min, max, avg)
 	ALIAS;
 	EXPR_LIST;
-	FILTER_ENTITY;		// FROM element injected because of a filter expression (happens during compilation phase 2)
 	IN_LIST;
 	IS_NOT;
 	METHOD_CALL;
 	NOT_BETWEEN;
 	NOT_IN;
 	NOT_LIKE;
-	ORDER_ELEMENT;
 	QUERY;
 	RANGE;
 	ROW_STAR;
@@ -34,8 +32,6 @@ tokens
 	UNARY_MINUS;
 	UNARY_PLUS;
 	UNION_ALL;
-	VECTOR_EXPR;		// ( x, y, z )
-	WEIRD_IDENT;		// Identifiers that were keywords when they came in.
 }
 
 
@@ -236,26 +232,6 @@ selectClause
 // with the expression rule.
 // Also note: after a comma weak keywords are allowed and should be treated as identifiers.
 
-/*
-fromClause
-	: FROM^ { weakKeywords(); } fromRange ( fromJoin | COMMA! { weakKeywords(); } fromRange )*
-	;
-
-fromRange
-	: (path { weakKeywords(); } (AS? identifier)?) -> ^(RANGE path identifier?)
-	| (OPEN subQuery CLOSE AS? identifier) -> ^(RANGE subQuery identifier)
-	;
-
-fromJoin
-	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^
-	  fromRange onClause?
-	;
-
-onClause
-	: ON^ logicalExpression
-	;
-*/
-
 fromClause
 	: FROM^ { weakKeywords(); } joinExpression (COMMA! { weakKeywords(); } joinExpression )*
 	;
@@ -281,9 +257,6 @@ onClause
 	: ON^ logicalExpression
 	;
 
-
-//## groupByClause:
-//##     GROUP_BY path ( COMMA path )*;
 
 groupByClause
 	: GROUP^ 'by'! expression ( COMMA! expression )*
@@ -321,12 +294,12 @@ whereClause
 
 
 selectedPropertiesList
-	: aliasedSelectExpression ( COMMA! aliasedSelectExpression )*
+	: aliasedSelectExpression (COMMA! aliasedSelectExpression)*
 	;
 
 
 aliasedSelectExpression
-	: (expression ( AS^ identifier )?)
+	: (expression (AS? identifier)?) -> ^(ALIAS expression identifier?)
 	| starAtom
 	;
 
@@ -520,8 +493,8 @@ identPrimary
 	| aggregate
 	| cast
 // UNDONE: figure out the weakKeywords thing
-	| l=LEFT  {$l.tree.getToken().setType(METHOD_CALL);} op=OPEN {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
-	| r=RIGHT {$r.tree.getToken().setType(METHOD_CALL);} op=OPEN {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
+	| l=LEFT  {$l.tree.getToken().setType(IDENT);} op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
+	| r=RIGHT {$r.tree.getToken().setType(IDENT);} op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
 	;
 
 

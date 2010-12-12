@@ -745,7 +745,7 @@ public class Query
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
         new SqlTest("SELECT R.* FROM R", Rcolumns, Rsize),
         new SqlTest("SELECT * FROM R", Rcolumns, Rsize),
-        new SqlTest("SELECT R.d, seven FROM lists.R", 2, Rsize),
+        new SqlTest("SELECT R.d, seven, R.twelve AS TWE, R.day DOM, LCASE(GUID) FROM lists.R", 5, Rsize),
         new SqlTest("SELECT true as T, false as F FROM R", 2, Rsize),
         new SqlTest("SELECT COUNT(*) AS _count FROM R", 1, 1),
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby, R.createdby.displayname FROM R", 11, Rsize),
@@ -1009,6 +1009,7 @@ public class Query
                 lists = DefaultSchema.get(user, c).getSchema("lists");
             }
 
+            assertNotNull(lists);
             assertNotNull(lists);
             TableInfo Rinfo = lists.getTable("R");
             assertNotNull(Rinfo);

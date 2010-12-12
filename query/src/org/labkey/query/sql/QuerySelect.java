@@ -15,13 +15,14 @@
  */
 package org.labkey.query.sql;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.*;
 import org.labkey.api.util.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.query.design.*;
-import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 import org.labkey.data.xml.ColumnType;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.query.sql.antlr.SqlBaseParser;
@@ -210,7 +211,6 @@ public class QuerySelect extends QueryRelation
                         continue;
                     }
                 }
-
                 columnList.add(new SelectColumn(node));
             }
         }
@@ -219,26 +219,38 @@ public class QuerySelect extends QueryRelation
             parseError("Subquery can have only one column.", _root);
             return;
         }
+
+        // two passes to maintain ordering and avoid the odd name collision
+        // create unique aliases where missing
+        int expressionUniq = 0;
+        Map<FieldKey,FieldKey> fieldKeys = new HashMap<FieldKey,FieldKey>();
         for (SelectColumn column : columnList)
         {
             String name = column.getName();
-            if (name == null)
-            {
-                if (_parent != null && !_inFromClause)
-                    name = "~~value~~";
-                else
-                {
-                    parseError("Expression column requires an alias", column.getField());
-                    continue;
-                }
-            }
+            if (null == name)
+                continue;
             if (null == column._key)
                 column._key = new FieldKey(null,name);
-            if (_columns.containsKey(column._key))
-            {
+            if (fieldKeys.containsKey(column._key))
                 parseError("Duplicate column '" + column.getName() + "'", column.getField());
+            fieldKeys.put(column._key, column._key);
+        }
+        for (SelectColumn column : columnList)
+        {
+            String name = column.getName();
+            if (null != name)
                 continue;
-            }
+            while (fieldKeys.containsKey(new FieldKey(null,"Expression" + ++expressionUniq)))
+                ;
+            name = "Expression" + expressionUniq;
+            if (null == column._key)
+                column._key = new FieldKey(null,name);
+            fieldKeys.put(column._key, column._key);
+        }
+        for (SelectColumn column : columnList)
+        {
+            if (null == column.getAlias())
+                column.setAlias(_aliasManager.decideAlias(column.getName()));
             _columns.put(column._key, column);
         }
     }
@@ -654,11 +666,16 @@ public class QuerySelect extends QueryRelation
             return;
         _declareCalled = true;
 
+        Set selectAliases = Sets.newCaseInsensitiveHashSet(); 
         if (null != _columns)
+        {
             for (SelectColumn column : _columns.values())
             {
+                if (null != column.getAlias())
+                    selectAliases.add(column.getAlias());
                 declareFields(column.getField());
             }
+        }
         for (QTable table : _parsedTables.values())
         {
             // TODO
@@ -687,7 +704,10 @@ public class QuerySelect extends QueryRelation
         {
             for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
             {
-                declareFields(entry.getKey());
+                QExpr expr = entry.getKey();
+                if (expr instanceof QIdentifier && selectAliases.contains(expr.getTokenText()))
+                    continue;
+                declareFields(expr);
             }
         }
     }
@@ -836,6 +856,9 @@ public class QuerySelect extends QueryRelation
         if (count == 0)
             selectAll = true;
 
+        // keep track of mapping from source alias to generated alias (used by ORDER BY)
+        CaseInsensitiveHashMap<String> aliasMap = new CaseInsensitiveHashMap<String>();
+        
         SqlDialect dialect = getSqlDialect();
         for (SelectColumn col : _columns.values())
         {
@@ -850,7 +873,9 @@ public class QuerySelect extends QueryRelation
             }
             sql.append(col.getInternalSql());
             sql.append(" AS ");
-            sql.append(dialect.makeLegalIdentifier(alias));
+            String sqlAlias = dialect.makeLegalIdentifier(alias);
+            sql.append(sqlAlias);
+            aliasMap.put(alias,sqlAlias);
             sql.nextPrefix(",\n");
             count++;
         }
@@ -914,12 +939,18 @@ public class QuerySelect extends QueryRelation
             sql.pushPrefix("\nORDER BY ");
             for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
             {
-                QExpr expr = resolveFields(entry.getKey(), _orderBy);
-                expr.appendSql(sql);
-                if (!entry.getValue().booleanValue())
+                QExpr expr = entry.getKey();
+                if (expr instanceof QIdentifier && aliasMap.containsKey(expr.getTokenText()))
                 {
-                    sql.append(" DESC");
+                    sql.append(aliasMap.get(expr.getTokenText()));
                 }
+                else
+                {
+                    QExpr r = resolveFields(expr, _orderBy);
+                    r.appendSql(sql);
+                }
+                if (!entry.getValue().booleanValue())
+                    sql.append(" DESC");
                 sql.nextPrefix(",");
             }
             sql.popPrefix();
