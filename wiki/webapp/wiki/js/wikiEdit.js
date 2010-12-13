@@ -907,7 +907,7 @@ function enableDeleteButton(enable)
     else
     {
         elem.className = "labkey-disabled-button";
-        elem.onclick = undefined;
+        elem.onclick = function() {};
     }
 }
 
@@ -942,7 +942,7 @@ function showHideToc(show, savePref)
     elem.setDisplayed(displayed);
     var button = Ext.get(_idPrefix + "button-toc");
     if(button)
-        button.dom.value = displayed ? "Hide Page Tree" : "Show Page Tree";
+        button.dom.innerHTML = displayed ? "Hide Page Tree" : "Show Page Tree";
 
     //save preference
     if(savePref == undefined || savePref)
