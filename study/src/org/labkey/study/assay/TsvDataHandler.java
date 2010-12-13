@@ -17,7 +17,7 @@
 package org.labkey.study.assay;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
@@ -87,8 +87,8 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
 
         DomainProperty[] columns = dataDomain.getProperties();
         Map<String, DomainProperty> aliases = dataDomain.createImportMap(false);
-        Set<String> mvEnabledColumns = new CaseInsensitiveHashSet();
-        Set<String> mvIndicatorColumns = new CaseInsensitiveHashSet();
+        Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();
+        Set<String> mvIndicatorColumns = Sets.newCaseInsensitiveHashSet();
 
         for (DomainProperty col : columns)
         {
