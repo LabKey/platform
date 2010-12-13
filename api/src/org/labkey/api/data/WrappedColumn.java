@@ -36,4 +36,18 @@ public class WrappedColumn extends ExprColumn
     {
         return _col.getValueSql(tableAlias);
     }
+
+    @Override
+    public boolean isShownInInsertView()
+    {
+        // By definition, you can't set a value on a wrapped column. Set directly on the source column instead.
+        return false;
+    }
+
+    @Override
+    public boolean isShownInUpdateView()
+    {
+        // By definition, you can't set a value on a wrapped column. Set directly on the source column instead.
+        return false;
+    }
 }

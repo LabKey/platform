@@ -77,7 +77,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     private Map<String, String> _formFields = new HashMap<String, String>();
     private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<String, List<Map<String, Object>>>();
-    private Map<DataType, List<Map<String, Object>>> _dataMap;
     private static final Logger LOG = Logger.getLogger(TsvDataExchangeHandler.class);
     private DataSerializer _serializer = new TsvDataSerializer();
 
@@ -229,30 +228,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
-    /**
-     *
-     * @param propertyName
-     * @param propertySet
-     */
-    public void addSampleProperties(String propertyName, String groupColumnName, Map<String, Map<DomainProperty, String>> propertySet)
-    {
-        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
-        // convert to a list of row maps
-
-        for (Map.Entry<String, Map<DomainProperty, String>> entry : propertySet.entrySet())
-        {
-            Map<String, Object> row = new HashMap<String, Object>();
-
-            row.put(groupColumnName, entry.getKey());
-            for (Map.Entry<DomainProperty, String> colEntry : entry.getValue().entrySet())
-            {
-                row.put(colEntry.getKey().getLabel(), colEntry.getValue());
-            }
-            rows.add(row);
-        }
-        addSampleProperties(propertyName, rows);
-    }
-
     protected void addSampleProperties(String propertyName, List<Map<String, Object>> rows)
     {
         _sampleProperties.put(propertyName, rows);
@@ -382,8 +357,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     /**
      * Ensures the property name recorded maps to a valid form field name
-     * @param name
-     * @return
      */
     protected String mapPropertyName(String name)
     {

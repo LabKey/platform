@@ -693,6 +693,8 @@ LABKEY.ext.FormHelper =
 
         if (l.sort)
             config.sort = l.sort;
+        else
+            config.sort = l.displayColumn;
         
         if (!c.required)
         {

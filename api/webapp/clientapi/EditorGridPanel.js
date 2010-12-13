@@ -430,6 +430,9 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 col.editable = false; //check columns apply edits immediately, so we don't want to go into edit mode
             }
 
+            if(meta.hidden || meta.isHidden)
+                col.hidden = true; 
+
             if(col.editable && !col.editor)
                 col.editor = this.getDefaultEditor(col, meta);
             if(!col.renderer)

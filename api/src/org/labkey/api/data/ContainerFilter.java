@@ -97,6 +97,13 @@ public abstract class ContainerFilter
                 return new WorkbookAssay(user);
             }
         },
+        WorkbookAndParent("Current workbook and parent")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new WorkbookAndParent(user);
+            }
+        },
         AllFolders("All folders")
         {
             public ContainerFilter create(User user)
@@ -310,6 +317,35 @@ public abstract class ContainerFilter
         public Type getType()
         {
             return Type.WorkbookAssay;
+        }
+    }
+
+    public static class WorkbookAndParent extends ContainerFilterWithUser
+    {
+        public WorkbookAndParent(User user)
+        {
+            super(user);
+        }
+
+        @Override
+        public Collection<String> getIds(Container currentContainer)
+        {
+            Set<String> result = new HashSet<String>();
+            if (currentContainer.hasPermission(_user, ReadPermission.class))
+            {
+                result.add(currentContainer.getId());
+            }
+            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, ReadPermission.class))
+            {
+                result.add(currentContainer.getParent().getId());
+            }
+            return result;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.WorkbookAndParent;
         }
     }
 
