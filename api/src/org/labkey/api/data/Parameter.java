@@ -86,10 +86,15 @@ public class Parameter
     }
 
 
+    private String _name;
+    private String _uri = null;  // for migration of ontology based code
     private final int _sqlType;
+
+    // only allow setting once, do not clear
+    private boolean _constant = false;
+    
     private PreparedStatement _stmt;
     private final int _index;
-    private String _name;
 
 
     public Parameter(PreparedStatement stmt, int index)
@@ -111,13 +116,53 @@ public class Parameter
         _sqlType = sqlType;
     }
 
+    public Parameter(String name, String uri, int index, int sqlType)
+    {
+        _name = name;
+        _uri = uri;
+        _index = index;
+        _sqlType = sqlType;
+    }
+
+    public Parameter(ColumnInfo c, int index)
+    {
+        _name = c.getName();
+        _uri = c.getPropertyURI();
+        _sqlType = c.getSqlTypeInt();
+        _index = index;
+    }
+
     public void setName(String name)
     {
         _name = name;
     }
 
+    public String getName()
+    {
+        return _name;
+    }
+
+    public int getIndex()
+    {
+        return _index;
+    }
+
+    public int getType()
+    {
+        return _sqlType;
+    }
+
+    public void setValue(Object in, boolean constant) throws SQLException
+    {
+        setValue(in);
+        _constant = constant;
+    }
+
     public void setValue(Object in) throws SQLException
     {
+        if (_constant)
+            throw new IllegalStateException("Can't set constant parameter");
+
         Object value = getValueToBind(in);
         int sqlType = _sqlType;
 
@@ -230,24 +275,48 @@ public class Parameter
                     throw new IllegalStateException();
                 p._stmt = stmt;
                 if (_map.containsKey(p._name))
-                    throw new IllegalArgumentException("duplicate parameter name");
+                    throw new IllegalArgumentException("duplicate parameter name: " + p._name);
                 _map.put(p._name, p);
+                if (null != p._uri)
+                {
+                    if (_map.containsKey(p._uri))
+                        throw new IllegalArgumentException("duplicate property uri: " + p._uri);
+                    _map.put(p._uri, p);
+                }
             }
             _stmt = stmt;
         }
 
-
-        public PreparedStatement getStatement()
+        public boolean execute() throws SQLException
         {
-            return _stmt;
+            return _stmt.execute();
         }
 
+
+        public void addBatch() throws SQLException
+        {
+            _stmt.addBatch();
+        }
+
+
+        public void close() throws SQLException
+        {
+            _stmt.close();
+            afterClose();
+        }
+
+
+//        public PreparedStatement getStatement()
+//        {
+//            return _stmt;
+//        }
 
         public void clearParameters() throws SQLException
         {
             _stmt.clearParameters();
             for (Parameter p : _map.values())
-                p.setValue(null);
+                if (!p._constant)
+                    p.setValue(null);
         }
 
 
@@ -256,8 +325,11 @@ public class Parameter
             try
             {
                 Parameter p = _map.get(name);
-                if (null != p)
-                    p.setValue(value);
+                if (null == p)
+                    throw new IllegalArgumentException("parameter not found: " + name);
+                if (p._constant)
+                    throw new IllegalStateException("Can't set constant parameter: " + name);
+                p.setValue(value);
             }
             catch (SQLException sqlx)
             {
@@ -281,6 +353,32 @@ public class Parameter
             {
                 throw new RuntimeSQLException(sqlx);
             }
+        }
+
+
+        Runnable _onClose = null;
+
+        public void onClose(Runnable r)
+        {
+            if (null != _onClose)
+                throw new IllegalStateException("only one onClose() callback supported");
+            _onClose = r;
+        }
+
+        protected void afterClose()
+        {
+            if (null != _onClose)
+                _onClose.run();
+            _onClose = null;
+        }
+
+        @Override
+        protected void finalize() throws Throwable
+        {
+            super.finalize();
+            assert null == _onClose;
+            if (null != _onClose)
+                _onClose.run();
         }
     }
 }

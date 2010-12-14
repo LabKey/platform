@@ -45,7 +45,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 
-public class SchemaTableInfo implements TableInfo
+public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 {
     private static final Logger _log = Logger.getLogger(SchemaTableInfo.class);
 
@@ -902,5 +902,54 @@ public class SchemaTableInfo implements TableInfo
     public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow) throws ValidationException
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
+    }
+
+
+    @Override
+    public boolean insertSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean updateSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean deleteSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public TableInfo getSchemaTableInfo()
+    {
+        return this;
+    }
+
+    @Override
+    public ObjectUriType getObjectUriType()
+    {
+        return ObjectUriType.schemaColumn;
+    }
+
+    @Override
+    public String getObjectURIColumnName()
+    {
+        return null;
+    }
+
+    @Override
+    public String getObjectIdColumnName()
+    {
+        return null;
+    }
+
+    @Override
+    public Map<String, String> remapSchemaColumns()
+    {
+        return null;
     }
 }
