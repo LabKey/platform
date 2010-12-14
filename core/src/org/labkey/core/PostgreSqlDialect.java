@@ -55,6 +55,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -949,6 +950,29 @@ class PostgreSqlDialect extends SqlDialect
                     if (!createdTableNames.containsKey(tempName))
                         TempTableTracker.track(coreSchema, tempName, noref);
                 }
+                rs.close(); rs = null;
+
+                //rs = conn.getMetaData().getFunctions(dbName, tempSchemaName, "%");
+                Map types = null;
+                rs = Table.executeQuery(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", new Object[]{tempSchemaName});
+                while (rs.next())
+                {
+                    if (null == types)
+                        types = Table.executeValueMap(coreSchema, "SELECT CAST(oid AS VARCHAR), typname FROM pg_type", null, new HashMap());
+                    String name = rs.getString(1);
+                    String[] oids = StringUtils.split(rs.getString(2), ' ');
+                    SQLFragment drop = new SQLFragment("DROP FUNCTION temp.").append(name);
+                    drop.append("(");
+                    String comma = "";
+                    for (String oid : oids)
+                    {
+                        drop.append(comma).append(types.get(oid));
+                        comma = ",";
+                    }
+                    drop.append(")");
+                    Table.execute(coreSchema, drop);
+                }
+                rs.close(); rs = null;
             }
             finally
             {

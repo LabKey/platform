@@ -1553,7 +1553,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         List<String> imported = new ArrayList<String>(dataMaps.size());
         DatasetImportHelper helper = null;
         Connection conn = null;
-        PreparedStatement stmt = null;
+        Parameter.ParameterMap parameterMap = null;
 
         try
         {
@@ -1597,9 +1597,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             TableInfo table = getStorageTableInfo();
             scope = table.getSchema().getScope();
-            Parameter.ParameterMap parameterMap = Table.insertStatement(conn, user, table);
-            stmt = parameterMap.getStatement();
-
+            parameterMap = Table.insertStatement(conn, user, table);
+            
             for (Map row : dataMaps)
             {
                 if (Thread.currentThread().isInterrupted())
@@ -1632,7 +1631,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         OntologyManager.convertValuePair(pd, type, valuePair);
 
                         parameterMap.put(name, valuePair.first);
-                        parameterMap.put(name + "_" + MvColumn.MV_INDICATOR_SUFFIX, valuePair.second);
+                        if (null != valuePair.second)
+                            parameterMap.put(name + "_" + MvColumn.MV_INDICATOR_SUFFIX, valuePair.second);
                     }
                     catch (ConversionException x)
                     {
@@ -1659,7 +1659,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 if (timetype != TimepointType.VISIT)
                     parameterMap.put("date", visitDate);
 
-                stmt.execute();
+                parameterMap.execute();
 
                 imported.add(lsid);
                 // UNDONE: OntologyManager.validateProperty
@@ -1669,7 +1669,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             if (null != helper)
                 helper.done();
-            ResultSetUtil.close(stmt);
+            if (null != parameterMap)
+                parameterMap.close();
             if (null != conn)
                 scope.releaseConnection(conn);
         }
