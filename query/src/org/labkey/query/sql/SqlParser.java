@@ -941,6 +941,8 @@ public class SqlParser
 
         "SELECT R.a, S.\"b\" FROM R LEFT OUTER JOIN S ON R.x = S.x",
 
+        "SELECT R.a, S.\"b\" FROM R LEFT OUTER JOIN S ON R.x = S.x LEFT OUTER JOIN T ON S.y = T.y",
+
         "SELECT R.a, S.\"b\" FROM R LEFT JOIN S ON R.x = S.x",
 
         "SELECT 'R'.a, S.b FROM R FULL JOIN S ON R.x = S.x",
@@ -951,7 +953,7 @@ public class SqlParser
 
         "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN (S INNER JOIN T ON S.y = T.y) ON R.x = S.x",
 
-        "SELECT 'R'.a, S.b FROM (R INNER JOIN S ON R.x=S.x) FULL OUTER JOIN (T INNER JOIN U ON T.y = U.y) WHERE R.z = U.z",
+        "SELECT 'R'.a, S.b FROM (R INNER JOIN S ON R.x=S.x) FULL OUTER JOIN (T INNER JOIN U ON T.y = U.y) ON S.q=T.q WHERE R.z = U.z",
 
         "SELECT 'R'.a, S.b FROM R INNER JOIN S ON R.x=S.x, (T INNER JOIN U ON T.y = U.y) WHERE R.z = U.z",
 
@@ -975,7 +977,7 @@ public class SqlParser
 
 		"SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",
 		"SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
-		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S) T",
+		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S) T ON R.z=T.z",
 
 //		"SELECT R.a FROM R WHERE EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
 //		"SELECT R.a FROM R WHERE NOT EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",

@@ -237,20 +237,15 @@ fromClause
 	;
 
 joinExpression
-	: fromRange ((((LEFT|RIGHT|FULL) (OUTER!)?) | INNER)? JOIN^ fromRange onClause?)*
+	: ((fromRange) -> fromRange) (((((LEFT|RIGHT|FULL) (OUTER)?) | INNER)? JOIN fromRange onClause) -> ^(JOIN $joinExpression LEFT? RIGHT? FULL? INNER? fromRange onClause))*
     ;
-        
+
 fromRange
 	: (path { weakKeywords(); } (AS? identifier)?) -> ^(RANGE path identifier?)
 	| OPEN
 	    ( (subQuery) => subQuery CLOSE AS? identifier -> ^(RANGE subQuery identifier)
 	    | joinExpression CLOSE -> joinExpression
 	    )
-	;
-
-fromJoin
-	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^
-	  fromRange onClause?
 	;
 
 onClause

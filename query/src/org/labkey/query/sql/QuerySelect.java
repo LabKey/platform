@@ -42,8 +42,11 @@ public class QuerySelect extends QueryRelation
     QQuery _root;
     private QLimit _limit;
     private QDistinct _distinct;
+
     private Map<FieldKey, QTable> _parsedTables;
     private List<QJoinOrTable> _parsedJoins;
+    private List<QExpr> _onExpressions;
+
     private Map<FieldKey, QueryRelation> _tables;
     private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<FieldKey, RelationColumn>();
     private SQLTableInfo _subqueryTable;
@@ -113,12 +116,14 @@ public class QuerySelect extends QueryRelation
         {
             _parsedTables = Collections.EMPTY_MAP;
             _parsedJoins = Collections.EMPTY_LIST;
+            _onExpressions = Collections.EMPTY_LIST;
         }
         else
         {
             FromParser p = new FromParser(from);
             _parsedTables = p.getTables();
             _parsedJoins = p.getJoins();
+            _onExpressions = p.getOns();
         }
         _where = _root.getWhere();
         _having = _root.getHaving();
@@ -338,12 +343,14 @@ public class QuerySelect extends QueryRelation
     private class FromParser
     {
         final Map<FieldKey, QTable> _tables;
-        final List<QJoinOrTable> _joins;
+        final List<QJoinOrTable> _joins;        // root joins, these may be trees
+        final List<QExpr> _ons;                 // on expressions for declareFields
         
         FromParser(QFrom from)
         {
             _tables = new LinkedHashMap<FieldKey, QTable>();
             _joins = new ArrayList<QJoinOrTable>();
+            _ons = new ArrayList<QExpr>();
             parseFrom(from);
         }
 
@@ -357,6 +364,12 @@ public class QuerySelect extends QueryRelation
         List<QJoinOrTable> getJoins()
         {
             return _joins;
+        }
+
+
+        List<QExpr> getOns()
+        {
+            return _ons;
         }
 
 
@@ -439,6 +452,7 @@ public class QuerySelect extends QueryRelation
                 parseError("Error in ON expression", on);
                 return null;
             }
+            _ons.add((QExpr)on.childList().get(0));
 
             JoinType joinType = JoinType.inner;
             switch (children.get(1).getTokenType())
@@ -676,10 +690,8 @@ public class QuerySelect extends QueryRelation
                 declareFields(column.getField());
             }
         }
-        for (QTable table : _parsedTables.values())
+        for (QExpr on : _onExpressions)
         {
-            // TODO
-            QExpr on = null; // table.getOn();
             if (on != null)
                 declareFields(on);
         }
