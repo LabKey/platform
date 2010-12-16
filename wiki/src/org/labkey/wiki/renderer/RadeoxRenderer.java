@@ -78,7 +78,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     private static final MessageFormat WIKI_LINK_FORMAT = new MessageFormat("<a class=\"{2}\" href=\"{0}\">{1}</a>");
     private static final MessageFormat WIKI_IMG_FORMAT = new MessageFormat("<img class=\"{2}\" src=\"{0}\" title=\"{1}\">");
 
-    private Map<HString, WikiLinkable> _pages;
+    private Map<HString, HString> _pageTitles;
     private Collection<? extends Attachment>  _attachments;
 
     public RadeoxRenderer()
@@ -89,7 +89,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     // UNDONE: switch to format from prefix
     public RadeoxRenderer(String hrefPrefix, String attachPrefix,
-                          Map<HString, WikiLinkable> pages, @Nullable Collection<? extends Attachment> attachments)
+                          Map<HString, HString> pageTitles, @Nullable Collection<? extends Attachment> attachments)
     {
         this();
         if (null != hrefPrefix)
@@ -97,7 +97,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         _attachmentPrefix = attachPrefix;
         //all callers currently use the same prefix for href and create
         _createPrefix = hrefPrefix;
-        _pages = pages;
+        _pageTitles = pageTitles;
         _attachments = attachments;
     }
 
@@ -337,9 +337,9 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     {
         if (attachmentExists(s))
             return true;
-        if (null == _pages)
+        if (null == _pageTitles)
             return false;
-        return _pages.containsKey(new HString(s));
+        return _pageTitles.containsKey(new HString(s));
     }
 
 
@@ -386,11 +386,11 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         if (null == view || view.length() == 0)
         {
             view = name.lastIndexOf('/') >= 0 ? name.substring(name.lastIndexOf('/')) : name;
-            if (null != _pages)
+            if (null != _pageTitles)
             {
-                WikiLinkable w = _pages.get(new HString(name));
-                if (null != w)
-                    view = w.getTitle().getSource();
+                HString title = _pageTitles.get(new HString(name));
+                if (null != title)
+                    view = title.getSource();
             }
         }
 

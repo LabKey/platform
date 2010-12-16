@@ -43,7 +43,7 @@ public class HtmlRenderer implements WikiRenderer
 {
     String _hrefPrefix;
     String _attachPrefix;
-    Map<HString, WikiLinkable> _pages;
+    Map<HString, HString> _nameTitleMap;
     Map<String, Attachment> _attachments;
 
     private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<String, SubstitutionHandler>();
@@ -55,11 +55,11 @@ public class HtmlRenderer implements WikiRenderer
     }
 
 
-    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<HString, WikiLinkable> pages, @Nullable Collection<? extends Attachment> attachments)
+    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<HString, HString> nameTitleMap, @Nullable Collection<? extends Attachment> attachments)
     {
         _hrefPrefix = hrefPrefix;
         _attachPrefix = attachPrefix;
-        _pages = pages == null ? new HashMap<HString, WikiLinkable>() : pages;
+        _nameTitleMap = nameTitleMap == null ? new HashMap<HString, HString>() : nameTitleMap;
         _attachments = new HashMap<String, Attachment>();
 
         if (null != attachments)
@@ -95,8 +95,8 @@ public class HtmlRenderer implements WikiRenderer
             if (href.startsWith("#"))
                 continue;
             
-            WikiLinkable l = _pages.get(new HString(href));
-            if (null != l)
+            HString title = _nameTitleMap.get(new HString(href));
+            if (null != title)
             {
                 // UNDONE: why is l.getName() null???
                 //a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(.getName()));

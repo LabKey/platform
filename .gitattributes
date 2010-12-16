@@ -2972,12 +2972,15 @@ wiki/src/org/labkey/wiki/MenuWikiWebPartFactory.java -text
 wiki/src/org/labkey/wiki/RenderedWikiResource.java -text
 wiki/src/org/labkey/wiki/ServiceImpl.java -text
 wiki/src/org/labkey/wiki/WikiCache.java -text
+wiki/src/org/labkey/wiki/WikiCollections.java -text
 wiki/src/org/labkey/wiki/WikiContainerListener.java -text
 wiki/src/org/labkey/wiki/WikiContentCache.java -text
 wiki/src/org/labkey/wiki/WikiManager.java -text
 wiki/src/org/labkey/wiki/WikiModule.java -text
 wiki/src/org/labkey/wiki/WikiSelectManager.java -text
+wiki/src/org/labkey/wiki/WikiTOC.java -text
 wiki/src/org/labkey/wiki/WikiTOCFactory.java -text
+wiki/src/org/labkey/wiki/WikiVersionCache.java -text
 wiki/src/org/labkey/wiki/WikiWebPartFactory.java -text
 wiki/src/org/labkey/wiki/WikiWebdavProvider.java -text
 wiki/src/org/labkey/wiki/model/BaseWikiView.java -text
@@ -2986,6 +2989,7 @@ wiki/src/org/labkey/wiki/model/RadeoxMacroProxy.java -text
 wiki/src/org/labkey/wiki/model/SearchViewContext.java -text
 wiki/src/org/labkey/wiki/model/Wiki.java -text
 wiki/src/org/labkey/wiki/model/WikiEditModel.java -text
+wiki/src/org/labkey/wiki/model/WikiTree.java -text
 wiki/src/org/labkey/wiki/model/WikiVersion.java -text
 wiki/src/org/labkey/wiki/model/WikiView.java -text
 wiki/src/org/labkey/wiki/model/WikiWebPart.java -text

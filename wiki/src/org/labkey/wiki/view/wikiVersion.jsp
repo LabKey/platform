@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
 <%@ page import="org.labkey.wiki.WikiManager" %>
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
+<%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VersionBean> me = (JspView<VersionBean>) HttpView.currentView();
@@ -66,7 +67,7 @@ else
         %><br><br></td></tr> <%
 
         int nCurVersion = bean.wikiVersion.getVersion();
-        int nLatestVersion = bean.wiki.latestVersion().getVersion();
+        int nLatestVersion = bean.wiki.getLatestVersion().getVersion();
         boolean fOutputMakeCurrent = bean.hasSetCurVersionPermission && (nCurVersion != nLatestVersion);
 
         if (fOutputMakeCurrent)
@@ -84,7 +85,7 @@ else
            <td align=right>
                <%=textLink("page", bean.pageURL)%>&nbsp;<%=textLink("history", bean.versionsURL)%>&nbsp;<%
 
-        WikiVersion[] versions = WikiManager.getAllVersions(bean.wiki);
+        WikiVersion[] versions = WikiSelectManager.getAllVersions(bean.wiki);
 
         if (versions.length > 1)
         {

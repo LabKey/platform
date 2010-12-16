@@ -45,7 +45,7 @@ public abstract class BaseWikiView extends JspView<Object>
     public boolean hasContent = true;
     public boolean hasAdminPermission;
     public boolean hasInsertPermission;
-    public int pageCount;
+    public boolean folderHasWikis;
 
     public ActionURL insertURL = null;
     public ActionURL versionsURL = null;
@@ -74,7 +74,7 @@ public abstract class BaseWikiView extends JspView<Object>
         BaseWikiPermissions perms = new BaseWikiPermissions(user, c);
 
         //current number of pages in container
-        pageCount = WikiSelectManager.getPageList(c).size();
+        folderHasWikis = WikiSelectManager.hasPages(c);
 
         //set initial page title
         HString title;
@@ -83,10 +83,10 @@ public abstract class BaseWikiView extends JspView<Object>
             title = new HString("Wiki Web Part");
         else
         {
-            if (pageCount == 0)
-                title = new HString("Wiki");
-            else
+            if (folderHasWikis)
                 title = name;
+            else
+                title = new HString("Wiki");
         }
 
         if (name == null)
@@ -97,22 +97,20 @@ public abstract class BaseWikiView extends JspView<Object>
         else
         {
             if (null == wiki)
-                wiki = WikiManager.getWiki(c, name);
+                wiki = WikiSelectManager.getWiki(c, name);
 
             //this is a non-existent wiki
             if (null == wiki)
             {
                 wiki = new Wiki(c, name);
                 hasContent = false;
+                wikiVersion = new WikiVersion(name);
             }
 
             assert wiki.getName() != null;
 
             if (null == wikiVersion)
-                wikiVersion = WikiManager.getLatestVersion(wiki);
-
-            if (null == wikiVersion)
-                wikiVersion = new WikiVersion(name);
+                wikiVersion = wiki.getLatestVersion();
 
             if (perms.allowRead(wiki))
             {

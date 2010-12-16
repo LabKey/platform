@@ -16,13 +16,15 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.wiki.WikiController.ManageAction.ManageBean" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
+<%@ page import="org.labkey.wiki.model.WikiTree" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ManageBean bean = ((HttpView<ManageBean>)HttpView.currentView()).getModelBean();
@@ -112,25 +114,22 @@
   </tr>
   <tr>
     <td class='labkey-form-label'>Title</td>
-    <td><input type="text" size="40" name="title" value="<%=h(wiki.latestVersion().getTitle()) %>"></td>
+    <td><input type="text" size="40" name="title" value="<%=h(wiki.getLatestVersion().getTitle()) %>"></td>
   </tr>
   <tr>
     <td class='labkey-form-label'>Parent</td>
     <td><select name="parent" onChange="document.manage.nextAction.value = 'manage'; submit();">
         <option <%= wiki.getParent() == -1 ? "selected" : "" %> value="-1">[none]</option>
 <%
-    for (Wiki possibleParent : bean.possibleParents)
+    for (WikiTree possibleParent : bean.possibleParents)
     {
-        if (possibleParent.getRowId() != wiki.getRowId())
-        {
-            String indent = "";
-            int depth = possibleParent.getDepth();
-            while (depth-- > 0)
-                indent = indent + "&nbsp;&nbsp;";
+        String indent = "";
+        int depth = possibleParent.getDepth();
+        while (depth-- > 0)
+            indent = indent + "&nbsp;&nbsp;";
 %>
-        <option <%= possibleParent.getRowId() == wiki.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= possibleParent.latestVersion().getTitle() %> (<%= possibleParent.getName() %>)</option>
+        <option <%= possibleParent.getRowId() == wiki.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%=possibleParent.getTitle() %> (<%= possibleParent.getName() %>)</option>
 <%
-        }
     }
 %>
     </select></td>
@@ -144,10 +143,10 @@
                 <td>
                     <select name="siblings" size="10">
 <%
-        for (Wiki sibling : bean.siblings)
+        for (WikiTree sibling : bean.siblings)
         {
 %>
-                      <option <%= sibling.getRowId() == wiki.getRowId() ? "selected" : "" %> value="<%= sibling.getRowId() %>"><%= sibling.latestVersion().getTitle() %> (<%= sibling.getName() %>)</option>
+                      <option <%= sibling.getRowId() == wiki.getRowId() ? "selected" : "" %> value="<%= sibling.getRowId() %>"><%= sibling.getTitle() %> (<%= sibling.getName() %>)</option>
 <%
         }
 %>
@@ -163,7 +162,7 @@
     </td>
   </tr>
 <%
-    if (bean.showChildren && wiki.getChildren() != null && wiki.getChildren().size() > 0)
+    if (bean.showChildren && wiki.hasChildren())
     {
 %>
   <tr>
@@ -173,10 +172,10 @@
                 <td>
                     <select name="children" size="10">
 <%
-        for (Wiki child : wiki.getChildren())
+        for (Wiki child : wiki.children())
         {
 %>
-                      <option value="<%= child.getRowId() %>"><%= child.latestVersion().getTitle() %> (<%= child.getName() %>)</option>
+                      <option value="<%= child.getRowId() %>"><%= child.getLatestVersion().getTitle() %> (<%= child.getName() %>)</option>
 <%
         }
 %>
@@ -202,7 +201,7 @@
 <%=PageFlowUtil.generateSubmitButton("Edit Content", "document.manage.nextAction.value = 'editWiki'; return true;", "title=\"Edit Content and Attachments\"")%>
 
 <script type="text/javascript">
-    existingWikiPages = [<% for (Wiki p : bean.pages) out.print(PageFlowUtil.jsString(p.getName()) + ","); %>];
+    existingWikiPages = [<% for (HString name : bean.pageNames) out.print(PageFlowUtil.jsString(name) + ","); %>];
 
     function checkWikiName(name)
     {

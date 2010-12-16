@@ -17,30 +17,51 @@
 package org.labkey.wiki;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.*;
-import org.labkey.api.webdav.*;
-import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.search.SearchService;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.webdav.AbstractDocumentResource;
+import org.labkey.api.webdav.AbstractWebdavResource;
+import org.labkey.api.webdav.AbstractWebdavResourceCollection;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -110,19 +131,16 @@ class WikiWebdavProvider implements WebdavService.Provider
         @NotNull
         public Collection<String> listNames()
         {
-            try
+            List<HString> names = WikiSelectManager.getPageNames(_c);
+            ArrayList<String> strs = new ArrayList<String>();
+
+            if (names != null)
             {
-                List<HString> names = WikiManager.getWikiNameList(_c);
-                ArrayList<String> strs = new ArrayList<String>();
-                if (names != null)
                 for (HString name : names)
                     strs.add(name.getSource());
-                return strs;
             }
-            catch(SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+
+            return strs;
         }
 
         public boolean exists()
@@ -185,7 +203,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             _c = folder._c;
             _containerId = _c.getId();
             setPolicy(_c.getPolicy());
-            _wiki = WikiManager.getWiki(_c, new HString(name));
+            _wiki = WikiSelectManager.getWiki(_c, new HString(name));
             _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);
         }
 
@@ -284,7 +302,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
     static String getDocumentName(Wiki wiki)
     {
-        WikiVersion v = WikiManager.getLatestVersion(wiki);
+        WikiVersion v = wiki.getLatestVersion();
         WikiRendererType r = WikiRendererType.HTML;
         try
         {
@@ -373,7 +391,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         WikiVersion getWikiVersion()
         {
             if (_wiki != null && _version == null)
-                _version = WikiManager.getLatestVersion(_wiki);
+                _version = _wiki.getLatestVersion();
             return _version;
         }
 
@@ -428,10 +446,11 @@ class WikiWebdavProvider implements WebdavService.Provider
             long len = buf.size();
             WikiVersion version = getWikiVersion();
             version.setBody(buf.toString("UTF-8"));
+
             try
             {
                 WikiManager.updateWiki(user, _wiki, version);
-                WikiManager.getLatestVersion(_wiki, true);
+                _version = null;
                 return len;
             }
             catch (SQLException x)
@@ -444,7 +463,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         @NotNull
         public List<WebdavResolver.History> getHistory()
         {
-            WikiVersion[] versions = WikiManager.getAllVersions(_wiki);
+            WikiVersion[] versions = WikiSelectManager.getAllVersions(_wiki);
             List<WebdavResolver.History> list = new ArrayList<WebdavResolver.History>();
             for (WikiVersion v : versions)
                 list.add(new WikiHistory(_wiki, v));

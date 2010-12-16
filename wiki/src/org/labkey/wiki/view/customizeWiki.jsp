@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
-<%@ page import="org.labkey.wiki.model.Wiki" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     WikiController.CustomizeWikiPartView me = (WikiController.CustomizeWikiPartView) HttpView.currentView();
@@ -212,22 +213,25 @@ function restoreDefaultPage()
         <select name="name">
             <%
             //if current container has no pages
-            if (null == me.getContainerWikiList() || me.getContainerWikiList().size() == 0)
+            if (null == me.getContainerNameTitleMap() || me.getContainerNameTitleMap().size() == 0)
             {%>
                 <option selected value="">&lt;no pages&gt;</option>
             <%}
             else
             {
-                for (Wiki wikipage : me.getContainerWikiList())
+                for (Map.Entry<HString, HString> entry : me.getContainerNameTitleMap().entrySet())
                 {
+                    HString name = entry.getKey();
+                    HString title = entry.getValue();
+
                     //if there's a "default" page and no other page has been selected as default, select it.
-                    if (wikipage.getName().equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)
+                    if (name.equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)
                     {%>
-                        <option selected value="<%=h(wikipage.getName())%>"><%=h(wikipage.getName()) + " (" + h(wikipage.latestVersion().getTitle()) + ")"%></option>
+                        <option selected value="<%=h(name)%>"><%=h(name) + " (" + h(title) + ")"%></option>
                     <%}
                     else
                     {%>
-                        <option <%= wikipage.getName().equals(webPart.getPropertyMap().get("name")) ? "selected" : "" %> value="<%=h(wikipage.getName())%>"><%=h(wikipage.getName()) + " (" + h(wikipage.latestVersion().getTitle()) + ")"%></option>
+                        <option <%=name.equals(webPart.getPropertyMap().get("name")) ? "selected" : "" %> value="<%=h(name)%>"><%=h(name) + " (" + h(title) + ")"%></option>
                     <%}
                 }
             }%>

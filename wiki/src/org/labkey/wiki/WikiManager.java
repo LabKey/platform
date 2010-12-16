@@ -35,7 +35,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
@@ -55,7 +54,6 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
-import org.labkey.api.wiki.WikiRenderer.WikiLinkable;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -65,8 +63,6 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -89,68 +85,8 @@ public class WikiManager
     private static CommSchema comm = CommSchema.getInstance();
     private static CoreSchema core = CoreSchema.getInstance();
 
-    private static final int LATEST = -1;
-
-
-    public static class WikiAndVersion extends Pair<Wiki, WikiVersion>
-    {
-        public WikiAndVersion(Wiki wiki, WikiVersion version)
-        {
-            super(wiki, version);
-        }
-
-        public Wiki getWiki()
-        {
-            return getKey();
-        }
-
-        public WikiVersion getWikiVersion()
-        {
-            return getValue();
-        }
-    }
-
-
     private WikiManager()
     {
-    }
-
-    //does not include attachments
-    public static List<Wiki> getWikisByParentId(String containerId, int parentRowId)
-    {
-        SimpleFilter filter = new SimpleFilter("container", containerId);
-        filter.addCondition("Parent", parentRowId);
-        try
-        {
-            Wiki[] wikis = Table.select(comm.getTableInfoPages(),
-                    Table.ALL_COLUMNS,
-                    filter,
-                    new Sort("DisplayOrder,RowId"), Wiki.class);
-            return Arrays.asList(wikis);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
-
-    private static void buildDescendentList(List<Wiki> list, Wiki page, boolean deep) throws SQLException
-    {
-        List<Wiki> children = getWikisByParentId(page.getContainerId(), page.getRowId());
-        list.addAll(children);
-        if (deep)
-        {
-            for (Wiki child : children)
-                buildDescendentList(list, child, deep);
-        }
-    }
-
-    public static List<Wiki> getDescendents(Wiki page, boolean deep) throws SQLException
-    {
-        List<Wiki> descendents = new ArrayList<Wiki>();
-        buildDescendentList(descendents, page, deep);
-        return descendents;
     }
 
 
@@ -164,11 +100,13 @@ public class WikiManager
                 Table.ALL_COLUMNS,
                 new SimpleFilter("Container", c.getId()).addCondition("EntityId", entityId),
                 null, Wiki.class);
+
         if (0 == wikis.length)
             return null;
         else
             return wikis[0];
     }
+
 
     public static boolean insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files)
             throws SQLException, IOException, AttachmentService.DuplicateFilenameException
@@ -193,7 +131,7 @@ public class WikiManager
             Table.insert(user, comm.getTableInfoPageVersions(), wikiversion);
 
             //get rowid for newly inserted version
-            wikiversion = getVersion(wikiInsert, 1);
+            wikiversion = WikiSelectManager.getVersion(wikiInsert, 1);
 
             //store initial version reference in Pages table
             wikiInsert.setPageVersionId(wikiversion.getRowId());
@@ -229,10 +167,10 @@ public class WikiManager
             scope.beginTransaction();
 
             //if name, title, parent, & sort order are all still the same,
-            //we don't need to uncache all wikis--only the wiki being updated
+            //we don't need to uncache all wikis, only the wiki being updated
             //NOTE: getWikiByEntityId does not use the cache, so we'll get a fresh copy from the database
             Wiki wikiOld = getWikiByEntityId(c, wikiNew.getEntityId());
-            WikiVersion versionOld = wikiOld.latestVersion();
+            WikiVersion versionOld = wikiOld.getLatestVersion();
             String oldTitle = StringUtils.trimToEmpty(versionOld.getTitle().getSource());
             
             uncacheAll = !wikiOld.getName().equals(wikiNew.getName())
@@ -251,7 +189,7 @@ public class WikiManager
                 versionNew.setCreated(new Date(System.currentTimeMillis()));
                 versionNew.setCreatedBy(user.getUserId());
                 //get version number for new version
-                versionNew.setVersion(getNextVersionNumber(wikiNew));
+                versionNew.setVersion(WikiSelectManager.getNextVersionNumber(wikiNew));
                 //insert initial version for this page
                 versionNew = Table.insert(user, comm.getTableInfoPageVersions(), versionNew);
 
@@ -319,7 +257,7 @@ public class WikiManager
         //shift any children upward so they are not orphaned
 
         //get page's children
-        List<Wiki> children = wiki.getChildren();
+        List<Wiki> children = wiki.children();
 
         if (children.size() > 0)
         {
@@ -332,11 +270,12 @@ public class WikiManager
             if (null != parent)
                 parentId = parent.getRowId();
 
-            //get pages's siblings (children of its parent)
-            List<Wiki> siblings = getWikisByParentId(wiki.getContainerId(), parentId);
+            //get page's siblings (children of its parent)
+            List<Wiki> siblings = WikiSelectManager.getChildWikis(wiki.lookupContainer(), parentId);
 
             //find parent wiki page in sibling list, and determine its position (based on display order)
             int wikiPosition = 0;
+
             for (Wiki w : siblings)
             {
                 //hack: make sure we are working with the right kind of wiki object for comparison
@@ -354,6 +293,7 @@ public class WikiManager
             //children need to fit between parent wiki and next wiki
             //increment child's order, starting with deleted page's order
             float reorder = wikiDisplay;
+
             for (Wiki child : children)
             {
                 child.setParent(parentId);
@@ -373,13 +313,6 @@ public class WikiManager
                 }
             }
         }
-    }
-
-
-    public static long getWikiCount(Container c)
-            throws SQLException
-    {
-        return Table.executeSingleton(comm.getSchema(), "SELECT COUNT(*) FROM " + comm.getTableInfoPages() + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
     }
 
 
@@ -425,145 +358,6 @@ public class WikiManager
     }
 
 
-    static void addAllChildren(List<Wiki> pages, Wiki current)
-    {
-        pages.add(current);
-        if (current.getChildren() != null)
-        {
-            for (Wiki page : current.getChildren())
-                addAllChildren(pages, page);
-        }
-    }
-
-    // includes depth
-    public static List<Wiki> getSubTreePageList(Container c, Wiki parentPage) throws SQLException
-    {
-        List<Wiki> pageList = new ArrayList<Wiki>();
-        addAllChildren(pageList, parentPage);
-
-        return pageList;
-    }
-
-    public static List<HString> getWikiNameList(Container c) throws SQLException
-    {
-        List<Wiki> pageList = WikiSelectManager.getPageList(c);
-        List<HString> nameList = new ArrayList<HString>();
-
-        for (Wiki page : pageList)
-            nameList.add(page.getName());
-
-        return nameList;
-    }
-
-
-    public static Wiki getWikiByRowId(Container c, int rowId)
-    {
-        List<Wiki> pages = WikiSelectManager.getPageList(c);
-        for (Wiki page : pages)
-        {
-            if (page.getRowId() == rowId)
-                return page;
-        }
-        return null;
-    }
-
-    public static Wiki getWiki(Container c, HString name)
-    {
-        return getWiki(c, name, false);
-    }
-
-
-    //get wiki with specified version
-    public static Wiki getWiki(Container c, HString name, boolean forceRefresh)
-    {
-        WikiAndVersion wikipair = WikiSelectManager.getLatestWikiAndVersion(c, name, forceRefresh);
-        if (null == wikipair)
-            return null;
-        return wikipair.getWiki();
-    }
-
-
-    public static int getNextVersionNumber(Wiki wiki) throws SQLException
-    {
-        WikiVersion[] versions = getAllVersions(wiki);
-        //get last wiki version inserted
-        //note: this will break if an existing version between 0 and n is deleted
-        WikiVersion wikiversion = versions[versions.length - 1];
-        return wikiversion.getVersion() + 1;
-    }
-
-
-    // This method ignores the volatile flag -- don't cache these wikis
-    public static WikiVersion getVersion(Wiki wiki, int version) throws SQLException
-    {
-        if (null == wiki.getEntityId())
-            return null;
-
-        //special case for latest version
-        if (version == LATEST)
-            return getLatestVersion(wiki);
-
-        WikiVersion[] versions = getAllVersions(wiki);
-
-        WikiVersion wikiversion = null;
-        for (WikiVersion v : versions)
-        {
-            if (v.getVersion() == version)
-            {
-                wikiversion = v;
-                break;
-            }
-        }
-        if (null == wikiversion)
-            return null;
-
-        return wikiversion;
-    }
-
-
-    public static WikiVersion getLatestVersion(Wiki wiki)
-    {
-        return getLatestVersion(wiki, false);
-    }
-
-
-    public static WikiVersion getLatestVersion(Wiki wiki, boolean forceRefresh)
-    {
-        Container c = ContainerManager.getForId(wiki.getContainerId());
-
-        WikiAndVersion wikipair = WikiSelectManager.getLatestWikiAndVersion(c, new HString(wiki.getName(), false), forceRefresh);
-        if (null == wikipair)
-            return null;
-        return wikipair.getWikiVersion();
-    }
-
-
-    public static WikiVersion[] getAllVersions(Wiki wiki)
-    {
-        //fail if wiki has no entityid
-        if (null == wiki.getEntityId())
-            throw new IllegalStateException("Cannot retrieve version for non-existent wiki page.");
-
-        try
-        {
-            WikiVersion[] versions = Table.select(comm.getTableInfoPageVersions(),
-                        Table.ALL_COLUMNS,
-                        new SimpleFilter("pageentityid", wiki.getEntityId()),
-                        new Sort("pageentityid,version"),
-                        WikiVersion.class);
-            return versions;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
-    public static int getVersionCount(Wiki wiki)
-    {
-        return getAllVersions(wiki).length;
-    }
-
     public static FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion) throws SQLException
     {
         String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, HString.EMPTY).toString();
@@ -572,10 +366,10 @@ public class WikiManager
         if (null != wiki.getEntityId())
             attachPrefix = wiki.getAttachmentLink("");
 
-        Map<HString, WikiLinkable> pages = WikiSelectManager.getVersionMap(c);
+        Map<HString, HString> nameTitleMap = WikiSelectManager.getNameTitleMap(c);
 
         //get formatter specified for this version
-        WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, pages, wiki.getAttachments());
+        WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments());
 
         return w.format(wikiversion.getBody());
     }
@@ -583,35 +377,36 @@ public class WikiManager
 
     public static boolean wikiNameExists(Container c, HString wikiname)
     {
-        return getWiki(c, wikiname) != null;
+        return WikiSelectManager.getWiki(c, wikiname) != null;
     }
 
 
     //copies a single wiki page
-    public static Wiki copyPage(User user, Container cSrc, Wiki srcPage, Container cDest, Map<HString, Wiki> destPageMap,
+    public static Wiki copyPage(User user, Container cSrc, Wiki srcPage, Container cDest, List<HString> destPageNames,
                           Map<Integer, Integer> pageIdMap, boolean fOverwrite)
             throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
         //get latest version
-        WikiVersion srcLatestVersion = WikiManager.getLatestVersion(srcPage);
+        WikiVersion srcLatestVersion = srcPage.getLatestVersion();
 
         //create new wiki page
         HString srcName = srcPage.getName();
         HString destName = srcName;
-        Wiki destPage = WikiManager.getWiki(cDest, destName);
+        Wiki destPage = WikiSelectManager.getWiki(cDest, destName);
 
-        //check whether name exists in destination wiki
+        //check whether name exists in destination container
         //if not overwriting, generate new name
-        int i = 1;
         if (fOverwrite)
         {
             //can't overwrite if page does not exist
-            if (!destPageMap.containsKey(destName))
+            if (!destPageNames.contains(destName))
                 fOverwrite = false;
         }
         else
         {
-            while (destPageMap.containsKey(destName))
+            int i = 1;
+
+            while (destPageNames.contains(destName))
                 destName = srcName.concat("" + i++);
         }
 
@@ -628,6 +423,7 @@ public class WikiManager
             if (pageIdMap != null)
             {
                 Integer destParentId = pageIdMap.get(srcPage.getParent());
+
                 if (destParentId != null)
                     newWikiPage.setParent(destParentId);
                 else
@@ -641,10 +437,10 @@ public class WikiManager
         newWikiVersion.setBody(srcLatestVersion.getBody());
         newWikiVersion.setRendererTypeEnum(srcLatestVersion.getRendererTypeEnum());
 
-        //get attachments
-        Wiki wikiWithAttachments = WikiManager.getWiki(cSrc, srcName);
-        Collection<Attachment> attachments = wikiWithAttachments.getAttachments();
-        List<AttachmentFile> files = AttachmentService.get().getAttachmentFiles(wikiWithAttachments, attachments);
+        //get wiki & attachments
+        Wiki wiki = WikiSelectManager.getWiki(cSrc, srcName);
+        Collection<Attachment> attachments = wiki.getAttachments();
+        List<AttachmentFile> files = AttachmentService.get().getAttachmentFiles(wiki, attachments);
 
         if (fOverwrite)
         {
@@ -660,15 +456,13 @@ public class WikiManager
             //insert new wiki page in destination container
             WikiManager.insertWiki(user, cDest, newWikiPage, newWikiVersion, files);
 
-            //update destination page map
-            destPageMap.put(destName, newWikiPage);
-
             //map source row id to dest row id
             if (pageIdMap != null)
             {
                 pageIdMap.put(srcPage.getRowId(), newWikiPage.getRowId());
             }
         }
+
         return newWikiPage;
     }
 
@@ -790,6 +584,7 @@ public class WikiManager
     {
         ResultSet rs = null;
         ActionURL page = new ActionURL(WikiController.PageAction.class, null);
+
         try
         {
             SimpleFilter f = new SimpleFilter();
@@ -799,18 +594,19 @@ public class WikiManager
             if (null != modifiedSince)
                 f.addCondition("modified", modifiedSince, CompareType.GTE);
 
-            rs = Table.select(comm.getTableInfoPages(), PageFlowUtil.set("container","name"), f, null);
+            rs = Table.select(comm.getTableInfoPages(), PageFlowUtil.set("container", "name"), f, null);
+
             while (rs.next())
             {
                 String id = rs.getString(1);
                 String name = rs.getString(2);
-                ActionURL url = page.clone().setExtraPath(id).replaceParameter("name",name);
+                ActionURL url = page.clone().setExtraPath(id).replaceParameter("name", name);
                 task.addResource(searchCategory, url, SearchService.PRIORITY.item);
             }
         }
         catch (SQLException x)
         {
-            Logger.getLogger(WikiManager.class).error(x);
+            LOG.error(x);
             throw new RuntimeSQLException(x);
         }
         finally
@@ -894,6 +690,7 @@ public class WikiManager
             if (!ids.isEmpty())
             {
                 List<Pair<String,String>> list = AttachmentService.get().listAttachmentsForIndexing(ids.keySet(), modifiedSince);
+
                 for (Pair<String,String> pair : list)
                 {
                     String entityId = pair.first;
@@ -901,14 +698,14 @@ public class WikiManager
                     Wiki parent = (Wiki)ids.get(entityId);
 
                     ActionURL wikiUrl = pageUrl.clone().addParameter("name", parent.getName());
-                    ActionURL attachmentUrl = downloadUrl.clone()
+                    ActionURL attachmentURL = downloadUrl.clone()
                             .replaceParameter("entityId",entityId)
                             .replaceParameter("name",documentName);
                     // UNDONE: set title to make LuceneSearchServiceImpl work
                     String displayTitle = "\"" + documentName + "\" attached to page \"" + titles.get(entityId) + "\"";
                     WebdavResource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId,documentName),
-                            attachmentUrl, displayTitle,
+                            attachmentURL, displayTitle,
                             parent,
                             documentName, searchCategory);
 
@@ -921,7 +718,7 @@ public class WikiManager
         }
         catch (SQLException x)
         {
-            Logger.getLogger(WikiManager.class).error(x);
+            LOG.error(x);
             throw new RuntimeSQLException(x);
         }
         finally
@@ -997,11 +794,11 @@ public class WikiManager
             insertWiki(user, c, wikiA, wikiversion, null);
 
             // verify objects
-            wikiA = WikiSelectManager.getWikiByName(c, new HString("pageA", false));
-            wikiversion = getVersion(wikiA, LATEST);
+            wikiA = WikiSelectManager.getWikiFromDatabase(c, new HString("pageA", false));
+            wikiversion = WikiVersionCache.getVersion(c, wikiA.getPageVersionId());
             assertTrue(HString.eq("Topic A", wikiversion.getTitle()));
 
-            assertNull(WikiSelectManager.getWikiByName(c, new HString("pageNA", false)));
+            assertNull(WikiSelectManager.getWikiFromDatabase(c, new HString("pageNA", false)));
 
             //
             // DELETE
@@ -1009,7 +806,7 @@ public class WikiManager
             deleteWiki(user, c, wikiA);
 
             // verify
-            assertNull(WikiSelectManager.getWikiByName(c, new HString("pageA", false)));
+            assertNull(WikiSelectManager.getWikiFromDatabase(c, new HString("pageA", false)));
 
             purgePages(c, true);
         }

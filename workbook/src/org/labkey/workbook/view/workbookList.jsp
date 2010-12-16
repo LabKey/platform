@@ -41,7 +41,7 @@
         FolderType ft = c.getFolderType();
         if (!"Workbook".equals(ft.getName()))
             continue;
-        String html = wikiSvc.getHtml(c, WorkbookModule.EXPERIMENT_DESCRIPTION_WIKI_NAME, false);
+        String html = wikiSvc.getHtml(c, WorkbookModule.EXPERIMENT_DESCRIPTION_WIKI_NAME);
         %>
 <a href="<%=h(ft.getStartURL(c, ctx.getUser()))%>"><%=h(c.getName())%></a> <div><%=null == html ? "" : html%>
     </div>

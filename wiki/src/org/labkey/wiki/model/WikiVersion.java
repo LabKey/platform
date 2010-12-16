@@ -38,7 +38,7 @@ import java.util.Map;
  * Date: Feb 14, 2006
  * Time: 1:31:25 PM
  */
-public class WikiVersion implements WikiRenderer.WikiLinkable
+public class WikiVersion
 {
     private int _rowId;
     private String _pageEntityId;
@@ -196,7 +196,7 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
 
     public WikiRenderer getRenderer(String hrefPrefix,
                                     String attachPrefix,
-                                    Map<HString, WikiRenderer.WikiLinkable> pages,
+                                    Map<HString, HString> nameTitleMap,
                                     Collection<? extends Attachment> attachments)
     {
         if (_rendererType == null)
@@ -204,6 +204,6 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
 
         //TODO: why are we calling a version of getRenderer that doesn't exist on the service interface?
         WikiService svc = ServiceRegistry.get().getService(WikiService.class);
-        return null == svc ? null : ((ServiceImpl)svc).getRenderer(_rendererType, hrefPrefix, attachPrefix, pages, attachments);
+        return null == svc ? null : ((ServiceImpl)svc).getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments);
     }
 }

@@ -56,23 +56,37 @@ public class ServiceImpl implements WikiService
 
     private Map<String, MacroProvider> providers = new HashMap<String, MacroProvider>();
 
-    public String getHtml(Container c, String name, boolean forceRefresh)
+    public String getHtml(Container c, String name)
     {
         if (null == c || null == name)
             return null;
 
         try
         {
-            Wiki wiki = WikiManager.getWiki(c, new HString(name), forceRefresh);
+            Wiki wiki = WikiSelectManager.getWiki(c, new HString(name));
             if (null == wiki)
                 return null;
-            WikiVersion version = WikiManager.getLatestVersion(wiki, forceRefresh);
+            WikiVersion version = wiki.getLatestVersion();
             return version.getHtml(c, wiki);
         }
         catch (Exception x)
         {
             throw new RuntimeException(x);
         }
+    }
+
+    @Override
+    @Deprecated
+    public WebPartView getView(Container c, String name, boolean forceRefresh, boolean renderContentOnly)
+    {
+        return getView(c, name, renderContentOnly);
+    }
+
+    @Override
+    @Deprecated
+    public String getHtml(Container c, String name, boolean forceRefresh)
+    {
+        return getHtml(c, name);
     }
 
     public void insertWiki(User user, Container c, String name, String body, WikiRendererType renderType, String title)
@@ -120,19 +134,19 @@ public class ServiceImpl implements WikiService
         return providers.get(name);
     }
 
-    public WebPartView getView(Container c, String name, boolean refresh, boolean contentOnly)
+    public WebPartView getView(Container c, String name, boolean contentOnly)
     {
         try
         {
             if (contentOnly)
             {
-                String html = getHtml(c, name, refresh);
+                String html = getHtml(c, name);
                 return null == html ? null : new HtmlView(html);
             }
-            Wiki wiki = WikiManager.getWiki(c, new HString(name), refresh);
+            Wiki wiki = WikiSelectManager.getWiki(c, new HString(name));
             if (null == wiki)
                 return null;
-            WikiVersion version = WikiManager.getLatestVersion(wiki, refresh);
+            WikiVersion version = wiki.getLatestVersion();
             WikiView view = new WikiView(wiki, version, true);
             return view;
         }
@@ -164,17 +178,18 @@ public class ServiceImpl implements WikiService
     }
 
     public WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
-                                    String attachPrefix, Map<HString, WikiRenderer.WikiLinkable> pages,
+                                    String attachPrefix, Map<HString, HString> nameTitleMap,
                                     Collection<? extends Attachment> attachments)
     {
         WikiRenderer renderer;
+
         switch (rendererType)
         {
             case RADEOX:
-                renderer = new RadeoxRenderer(hrefPrefix, attachPrefix, pages, attachments);
+                renderer = new RadeoxRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
                 break;
             case HTML:
-                renderer = new HtmlRenderer(hrefPrefix, attachPrefix, pages, attachments);
+                renderer = new HtmlRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
                 break;
             case TEXT_WITH_LINKS:
                 renderer = new PlainTextRenderer();
@@ -182,24 +197,17 @@ public class ServiceImpl implements WikiService
             default:
                 renderer = new RadeoxRenderer(null, attachPrefix, null, attachments);
         }
+
         return renderer;
     }
 
 
-    public java.util.List<String> getNames(Container c)
+    public List<String> getNames(Container c)
     {
-        try
-        {
-            List<HString> l = WikiManager.getWikiNameList(c);
-            ArrayList<String> ret = new ArrayList<String>();
-            for (HString h : l)
-                ret.add(h.getSource());
-            return ret;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        List<HString> l = WikiSelectManager.getPageNames(c);
+        ArrayList<String> ret = new ArrayList<String>();
+        for (HString h : l)
+            ret.add(h.getSource());
+        return ret;
     }
-
 }

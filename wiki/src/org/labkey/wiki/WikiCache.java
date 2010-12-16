@@ -21,15 +21,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.HString;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.wiki.WikiRenderer.WikiLinkable;
-import org.labkey.wiki.WikiManager.WikiAndVersion;
 import org.labkey.wiki.model.Wiki;
-
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * User: adam
@@ -38,15 +30,12 @@ import java.util.Map;
  */
 public class WikiCache
 {
-    private static final String ORDERED_PAGE_LIST = "~~toc~~";
-    private static final String PAGES_NAME = "~~pages~~";
-    private static final String VERSIONS_NAME = "~~versions~~";
-    private static final String TOC_NAME = "~~nvtoc~~";
+    private static final String WIKI_COLLECTIONS_KEY = "~~wiki_collections~~";
     private static final boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
-    private static final StringKeyCache<Object> WIKI_CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Wikis, Versions, and TOC");
-    private static final BlockingCache<String, Object> BLOCKING_CACHE = new BlockingCache<String, Object>(WIKI_CACHE);
+    private static final StringKeyCache<Object> WIKI_CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Wikis and Wiki Collections");
+    private static final BlockingCache<String, Object> BLOCKING_CACHE = new BlockingCache<String, Object>(WIKI_CACHE);        // TODO: BlockingStringKeyCache?  Need removeUsingPrefix().
 
-    // Always passing in Container as "argument" eliminates need to create loader instances when caching lists (but doesn't help with wikis)
+    // Always passing in Container as "argument" eliminates need to create loader instances when caching collections (but doesn't help with wikis)
     public abstract static class WikiCacheLoader<V> implements CacheLoader<String, V>
     {
         abstract V load(String key, Container c);
@@ -58,40 +47,25 @@ public class WikiCache
         }
     }
 
-    public static WikiAndVersion getWikiAndVersion(Container c, String name, WikiCacheLoader<WikiAndVersion> loader)
+    public static Wiki getWiki(Container c, String name, WikiCacheLoader<Wiki> loader)
     {
         return get(c, name, loader);
     }
 
-    static Map<HString, Wiki> getPageMap(Container c, WikiCacheLoader<Map<HString, Wiki>> loader) throws SQLException
+    static WikiCollections getWikiCollections(Container c, WikiCacheLoader<WikiCollections> loader)
     {
-        return get(c, PAGES_NAME, loader);
-    }
-
-    static List<Wiki> getOrderedPageList(Container c, WikiCacheLoader<List<Wiki>> loader)
-    {
-        return get(c, ORDERED_PAGE_LIST, loader);
-    }
-
-    static Map<HString, WikiLinkable> getVersionMap(Container c, WikiCacheLoader<Map<HString, WikiLinkable>> loader)
-    {
-        return get(c, VERSIONS_NAME, loader);
-    }
-
-    static NavTree[] getNavTree(Container c, WikiCacheLoader<NavTree[]> loader)
-    {
-        return get(c, TOC_NAME, loader);
+        return get(c, WIKI_COLLECTIONS_KEY, loader);
     }
 
     public static void uncache(Container c, Wiki wiki, boolean uncacheContainerContent)
     {
         String name = wiki.getName().getSource();
-        WIKI_CACHE.remove(_cachedName(c, name));
+        BLOCKING_CACHE.remove(getCacheKey(c, name));
 
         if (uncacheContainerContent)
         {
             WikiContentCache.uncache(c);
-            uncacheLists(c);
+            uncacheCollections(c);
         }
         else
         {
@@ -102,14 +76,14 @@ public class WikiCache
     // This is drastic and rarely necessary
     public static void uncache(Container c)
     {
-        WIKI_CACHE.removeUsingPrefix(_cachedName(c, ""));
+        WIKI_CACHE.removeUsingPrefix(getCacheKey(c, ""));   // TODO: BLOCKING_CACHE.removeUsingPrefix()
         WikiContentCache.uncache(c);
-        uncacheLists(c);
+        uncacheCollections(c);
     }
 
     // Private methods below
 
-    private static String _cachedName(Container c, String name)
+    private static String getCacheKey(Container c, String name)
     {
         return "Pages/" + c.getId() + "/" + c.getPath() + "/" + name;
     }
@@ -121,16 +95,13 @@ public class WikiCache
 
         if (useCache)
             //noinspection unchecked
-            return (V)BLOCKING_CACHE.get(_cachedName(c, name), c, (WikiCacheLoader<Object>)loader);
+            return (V)BLOCKING_CACHE.get(getCacheKey(c, name), c, (WikiCacheLoader<Object>)loader);
         else
-            return loader.load(_cachedName(c, name), c);
+            return loader.load(getCacheKey(c, name), c);
     }
 
-    private static void uncacheLists(Container c)
+    private static void uncacheCollections(Container c)
     {
-        WIKI_CACHE.remove(_cachedName(c, ORDERED_PAGE_LIST));
-        WIKI_CACHE.remove(_cachedName(c, PAGES_NAME));
-        WIKI_CACHE.remove(_cachedName(c, VERSIONS_NAME));
-        WIKI_CACHE.remove(_cachedName(c, TOC_NAME));
+        BLOCKING_CACHE.remove(getCacheKey(c, WIKI_COLLECTIONS_KEY));
     }
 }

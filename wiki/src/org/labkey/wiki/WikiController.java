@@ -18,6 +18,7 @@ package org.labkey.wiki;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -72,7 +73,6 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TextExtractor;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
@@ -87,13 +87,13 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.menu.NavTreeMenu;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
+import org.labkey.wiki.model.WikiTree;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiView;
 import org.labkey.wiki.permissions.IncludeScriptPermission;
@@ -107,7 +107,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -121,7 +120,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
 
 public class WikiController extends SpringActionController
 {
@@ -170,7 +168,7 @@ public class WikiController extends SpringActionController
     public static class CustomizeWikiPartView extends JspView<Portal.WebPart>
     {
         private List<Container> _containerList;
-        private List<Wiki> _containerWikiList;
+        private Map<HString, HString> _containerNameTitleMap;
 
         public CustomizeWikiPartView(Portal.WebPart webPart)
         {
@@ -203,6 +201,7 @@ public class WikiController extends SpringActionController
                     //also use the current container if the stored container doesn't
                     //have any pages left in it
                     cStored = id == null ? context.getContainer() : ContainerManager.getForId(id);
+
                     if (cStored == null || !_containerList.contains(cStored))
                     {
                         cStored = context.getContainer();
@@ -212,7 +211,7 @@ public class WikiController extends SpringActionController
                     }
                 }
 
-                _containerWikiList = WikiSelectManager.getPageList(cStored);
+                _containerNameTitleMap = WikiSelectManager.getNameTitleMap(cStored);
             }
             catch(SQLException e)
             {
@@ -225,9 +224,9 @@ public class WikiController extends SpringActionController
             return _containerList;
         }
 
-        public List<Wiki> getContainerWikiList()
+        public Map<HString, HString> getContainerNameTitleMap()
         {
-            return _containerWikiList;
+            return _containerNameTitleMap;
         }
     }
 
@@ -258,7 +257,7 @@ public class WikiController extends SpringActionController
                 //does user have permissions to read this container?
                 //add this container if it contains any wiki pages or if it's the current container
                 if (cChild.hasPermission(context.getUser(), ReadPermission.class) &&
-                        (cChild.getId().equals(context.getContainer().getId()) || WikiSelectManager.getPageList(cChild).size() > 0))
+                        (cChild.getId().equals(context.getContainer().getId()) || WikiSelectManager.hasPages(cChild)))
                 {
                     children.add(cChild);
                 }
@@ -273,6 +272,23 @@ public class WikiController extends SpringActionController
     private ActionURL getBeginURL(Container c)
     {
         return getPageURL(getDefaultPage(c), c);
+    }
+
+
+    public static ActionURL getPageURL(Container c, @Nullable HString name)
+    {
+        return getWikiURL(c, PageAction.class, name);
+    }
+
+
+    public static ActionURL getWikiURL(Container c, Class<? extends Controller> actionClass, @Nullable HString name)
+    {
+        ActionURL url = new ActionURL(actionClass, c);
+
+        if (null != name)
+            url.addParameter("name", name.getSource());
+
+        return url;
     }
 
 
@@ -302,17 +318,23 @@ public class WikiController extends SpringActionController
     public static Wiki getDefaultPage(Container c)
     {
         //look for page named "default"
-        Wiki wiki = WikiManager.getWiki(c, new HString("default"));
+        Wiki wiki = WikiSelectManager.getWiki(c, new HString("default"));
+
         //handle case where no page named "default" exists by getting first page in ordered list
         //note that this does not automatically display page selected on web part customize. should it?
         if (wiki == null)
         {
-            List<Wiki> pageList = WikiSelectManager.getPageList(c);
-            if (pageList.size() == 0)
+            if (!WikiSelectManager.hasPages(c))
+            {
                 wiki = new Wiki(c, new HString("default"));
+            }
             else
-                wiki = pageList.get(0);
+            {
+                HString firstName = WikiSelectManager.getPageNames(c).iterator().next();
+                wiki = WikiSelectManager.getWiki(c, firstName);
+            }
         }
+
         return wiki;
     }
 
@@ -329,7 +351,7 @@ public class WikiController extends SpringActionController
 
         public ModelAndView getConfirmView(WikiNameForm form, BindException errors) throws Exception
         {
-            _wiki = WikiManager.getWiki(getContainer(), form.getName());
+            _wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
             if (null == _wiki)
                 HttpView.throwNotFound();
 
@@ -343,7 +365,7 @@ public class WikiController extends SpringActionController
         public boolean handlePost(WikiNameForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
-            _wiki = WikiManager.getWiki(c, form.getName());
+            _wiki = WikiSelectManager.getWiki(c, form.getName());
             if (null == _wiki)
                 HttpView.throwNotFound();
 
@@ -397,47 +419,25 @@ public class WikiController extends SpringActionController
         public ModelAndView getView(WikiManageForm form, boolean reshow, BindException errors) throws Exception
         {
             HString name = form.getName();
+
             if (name == null || (errors != null && errors.getErrorCount()>0))
                 name = form.getOriginalName();
 
-            _wiki = WikiManager.getWiki(getContainer(), name);
+            _wiki = WikiSelectManager.getWiki(getContainer(), name);
+
             if (null == _wiki)
                 HttpView.throwNotFound();
 
             BaseWikiPermissions perms = getPermissions();
+
             if (!perms.allowUpdate(_wiki))
                 HttpView.throwUnauthorized("You do not have permissions to manage this wiki page");
 
-
-            List<Wiki> allWikis = WikiSelectManager.getPageList(getContainer());
-            List<Wiki> descendents = WikiManager.getDescendents(_wiki, true);
-            List<Wiki> possibleParents = new ArrayList<Wiki>(allWikis.size() - descendents.size());
-
-            // Nested loops is a nasty way to do this, but since the usual number of wiki pages won't be that large
-            // (a couple hundred, tops?), this seems acceptable.  If performance suffers, we should look at using
-            // better caching or a more complex query to pull the correct data from the DB in one call.
-            for (Wiki page : allWikis)
-            {
-                boolean isDescendent = false;
-
-                for (Wiki descendent : descendents)
-                {
-                    if (page.getRowId() == descendent.getRowId())
-                    {
-                        isDescendent = true;
-                        break;
-                    }
-                }
-
-                if (!isDescendent)
-                    possibleParents.add(page);
-            }
-
             ManageBean bean = new ManageBean();
             bean.wiki = _wiki;
-            bean.pages = allWikis;
-            bean.siblings = WikiManager.getWikisByParentId(getContainer().getId(), _wiki.getParent());
-            bean.possibleParents = possibleParents;
+            bean.pageNames = WikiSelectManager.getPageNames(getContainer());
+            bean.siblings = WikiSelectManager.getChildren(getContainer(), _wiki.getParent());
+            bean.possibleParents = WikiSelectManager.getPossibleParents(getContainer(), _wiki);
             bean.showChildren = SHOW_CHILD_REORDERING;
 
             HttpView manageView = new JspView<ManageBean>("/org/labkey/wiki/view/wikiManage.jsp", bean, errors);
@@ -450,9 +450,9 @@ public class WikiController extends SpringActionController
         public class ManageBean
         {
             public Wiki wiki;
-            public List<Wiki> pages;
-            public List<Wiki> siblings;
-            public List<Wiki> possibleParents;
+            public List<HString> pageNames;
+            public Collection<WikiTree> siblings;
+            public Set<WikiTree> possibleParents;
             public boolean showChildren;
         }
 
@@ -462,7 +462,7 @@ public class WikiController extends SpringActionController
             HString originalName = form.getOriginalName();
             HString newName = form.getName();
             Container c = getContainer();
-            _wiki = WikiManager.getWiki(c, originalName);
+            _wiki = WikiSelectManager.getWiki(c, originalName);
 
             if (null == _wiki)
             {
@@ -475,7 +475,7 @@ public class WikiController extends SpringActionController
                 HttpView.throwUnauthorized("You do not have permissions to manage this wiki page");
 
             // Get the latest version based on previous properties
-            WikiVersion versionOld = WikiManager.getLatestVersion(_wiki);
+            WikiVersion versionOld = _wiki.getLatestVersion();
 
             // Now update wiki with newly submitted properties  TODO: Should clone wiki instead of changing cached copy (e.g., for concurrency and in case something goes wrong with update)
             _wiki.setName(newName);
@@ -500,14 +500,14 @@ public class WikiController extends SpringActionController
             {
                 int[] childOrder = form.getChildOrderArray();
                 if (childOrder.length > 0)
-                    updateDisplayOrder(_wiki.getChildren(), childOrder);
+                    updateDisplayOrder(_wiki.children(), childOrder);
             }
 
             int[] siblingOrder = form.getSiblingOrderArray();
 
             if (siblingOrder.length > 0)
             {
-                List<Wiki> siblings = WikiManager.getWikisByParentId(getContainer().getId(), _wiki.getParent());
+                List<Wiki> siblings = WikiSelectManager.getChildWikis(getContainer(), _wiki.getParent());
                 updateDisplayOrder(siblings, siblingOrder);
             }
 
@@ -532,7 +532,7 @@ public class WikiController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             if (null == _wikiVersion)
-                _wikiVersion = WikiManager.getLatestVersion(_wiki);
+                _wikiVersion = _wiki.getLatestVersion();
             return (new PageAction(_wiki, _wikiVersion).appendNavTrail(root))
                     .addChild("Manage \"" + _wikiVersion.getTitle().getSource() + "\"");
         }
@@ -650,17 +650,9 @@ public class WikiController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
+            Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
 
-            //get a list of wiki pages. Each wiki object contains only partial wiki data.
-            //undone: change getPageList() to return simple list of full wiki pages, rather than half-assed wiki pages
-            List<Wiki> wikiPageList = WikiSelectManager.getPageList(c);
-
-            //get wiki page with html and store in second list.
-            List<Wiki> wikiContentList = new ArrayList<Wiki>();
-            for (Wiki aWikiPageList : wikiPageList)
-                wikiContentList.add(WikiManager.getWiki(c, aWikiPageList.getName()));
-
-            JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiPageList, wikiContentList));
+            JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -683,31 +675,20 @@ public class WikiController extends SpringActionController
             if (null == form.getName() || form.getName().trim().length() == 0)
                 throw new NotFoundException("You must supply a page name!");
 
-            Wiki rootWiki = WikiManager.getWiki(c, form.getName());
+            Wiki rootWiki = WikiSelectManager.getWiki(c, form.getName());
             if (null == rootWiki)
                 throw new NotFoundException("The wiki page named '" + form.getName() + "' was not found.");
 
-            //build a list of wiki pages that are descendants of the root page
-            List<Wiki> wikiPageList = buildPageList(rootWiki);
+            // build a set of all descendants of the root page
+            Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c, rootWiki);
 
-            JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiPageList, wikiPageList));
+            JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setTemplate(PageConfig.Template.None);
-            return new PrintTemplate(v, "Print of " + rootWiki.latestVersion().getTitle() + " and Descendants");
+            return new PrintTemplate(v, "Print of " + rootWiki.getLatestVersion().getTitle() + " and Descendants");
         }
         
-        private List<Wiki> buildPageList(Wiki rootWiki)
-        {
-            List<Wiki> ret = new ArrayList<Wiki>();
-            ret.add(rootWiki);
-            for (Wiki child : rootWiki.getChildren())
-            {
-                ret.addAll(buildPageList(child));
-            }
-            return ret;
-        }
-
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -717,14 +698,12 @@ public class WikiController extends SpringActionController
 
     public class PrintAllBean
     {
-        public List<Wiki> wikiPageList;
-        public List<Wiki> wikiContentList;
+        public Set<WikiTree> wikiTrees;
         public String displayName = getUser().getDisplayName(getUser());
 
-        private PrintAllBean(List<Wiki> wikiPageList, List<Wiki> wikiContentList)
+        private PrintAllBean(Set<WikiTree> wikis)
         {
-            this.wikiPageList = wikiPageList;
-            this.wikiContentList = wikiContentList;
+            this.wikiTrees = wikis;
         }
     }
 
@@ -739,11 +718,11 @@ public class WikiController extends SpringActionController
             if (name == null)
                 HttpView.throwNotFound();
 
-            Wiki wiki = WikiManager.getWiki(c, name);
+            WikiTree tree = WikiSelectManager.getWikiTree(c, name);
 
             //just want to re-use same jsp
-            List<Wiki> wikiList = Collections.singletonList(wiki);
-            JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiList));
+            Set<WikiTree> wikis = Collections.singleton(tree);
+            JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikis));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(PageConfig.Template.None);
 
@@ -763,9 +742,8 @@ public class WikiController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
-            //get a list of wiki pages. Each wiki object contains only partial wiki data.
-            List<Wiki> wikiList = WikiSelectManager.getPageList(c);
-            JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiList));
+            Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
+            JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(PageConfig.Template.None);
 
@@ -779,14 +757,25 @@ public class WikiController extends SpringActionController
     }
 
 
+    private static List<Wiki> namesToWikis(Container c, List<HString> names)
+    {
+        LinkedList<Wiki> wikis = new LinkedList<Wiki>();
+
+        for (HString name : names)
+            wikis.add(WikiSelectManager.getWiki(c, name));
+
+        return wikis;
+    }
+
+
     public class PrintRawBean
     {
-        public List<Wiki> wikiList;
-        public String displayName;
+        public final Set<WikiTree> wikis;
+        public final String displayName;
 
-        private PrintRawBean(List<Wiki> wikiList)
+        private PrintRawBean(Set<WikiTree> wikis)
         {
-            this.wikiList = wikiList;
+            this.wikis = wikis;
             displayName = getUser().getDisplayName(getUser());
         }
     }
@@ -854,17 +843,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    private Wiki copyPage(Container cSrc, Wiki srcPage, Container cDest,
-                          Map<HString, Wiki> destPageMap, Map<Integer, Integer> pageIdMap)
-            throws SQLException, IOException, AttachmentService.DuplicateFilenameException
-    {
-        return WikiManager.copyPage(getUser(), cSrc, srcPage, cDest, destPageMap, pageIdMap, false);
-    }
-
-
-
-    private Container getSourceContainer(String source)
-            throws ServletException
+    private Container getSourceContainer(String source) throws ServletException
     {
         Container cSource;
         if (source == null)
@@ -944,9 +923,11 @@ public class WikiController extends SpringActionController
             HString pageName = form.getPageName();
             //get selected page (top of subtree)
             Wiki parentPage = null;
+
             if (pageName != null)
             {
-                parentPage = WikiManager.getWiki(cSrc, pageName);
+                parentPage = WikiSelectManager.getWiki(cSrc, pageName);
+
                 if (parentPage == null)
                     HttpView.throwNotFound("No page named '" + pageName + "' exists in the source container.");
             }
@@ -956,15 +937,18 @@ public class WikiController extends SpringActionController
 
             if (cDest != null && cDest.hasPermission(getUser(), AdminPermission.class))
             {
-                //get existing destination wiki pages
-                Map<HString, Wiki> destPageMap = WikiSelectManager.getPageMap(cDest);
-
                 //get source wiki pages
-                List<Wiki> srcWikiPageList;
+                List<HString> srcPageNames;
+
                 if (parentPage != null)
-                    srcWikiPageList = WikiManager.getSubTreePageList(cSrc, parentPage);
+                    // TODO: make subtrees work; previously beWikiManager.getSubTreePageList(cSrc, parentPage), now
+                    // somethinge like WikiSelectManager.getDescendents(cSrc, name)
+                    srcPageNames = WikiSelectManager.getPageNames(cSrc);
                 else
-                    srcWikiPageList = WikiSelectManager.getPageList(cSrc);
+                    srcPageNames = WikiSelectManager.getPageNames(cSrc);
+
+                //get existing destination wiki page names
+                List<HString> destPageNames = WikiSelectManager.getPageNames(cDest);
 
                 //map source page row ids to new page row ids
                 Map<Integer, Integer> pageIdMap = new HashMap<Integer, Integer>();
@@ -972,9 +956,10 @@ public class WikiController extends SpringActionController
                 pageIdMap.put(-1, -1);
 
                 //copy each page in the list
-                for (Wiki srcWikiPage : srcWikiPageList)
+                for (HString name : srcPageNames)
                 {
-                    copyPage(cSrc, srcWikiPage, cDest, destPageMap, pageIdMap);
+                    Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
+                    WikiManager.copyPage(getUser(), cSrc, srcWikiPage, cDest, destPageNames, pageIdMap, false);
                 }
 
                 //display the wiki module in the destination container
@@ -986,7 +971,6 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-
             return null;
         }
     }
@@ -1012,15 +996,15 @@ public class WikiController extends SpringActionController
                 HttpView.throwNotFound();
             if (!cDest.hasPermission(getUser(), AdminPermission.class))
                 HttpView.throwUnauthorized();
-            Wiki srcPage = WikiManager.getWiki(cSrc, pageName);
+            Wiki srcPage = WikiSelectManager.getWiki(cSrc, pageName);
             if (srcPage == null)
                 HttpView.throwNotFound();
 
-            //get existing destination wiki pages
-            Map<HString, Wiki> destPageMap = WikiSelectManager.getPageMap(cDest);
+            //get existing destination wiki names
+            List<HString> destPageNames = WikiSelectManager.getPageNames(cDest);
 
             //copy single page
-            Wiki newWikiPage = WikiManager.copyPage(getUser(), cSrc, srcPage, cDest, destPageMap, null, form.isOverwrite());
+            Wiki newWikiPage = WikiManager.copyPage(getUser(), cSrc, srcPage, cDest, destPageNames, null, form.isOverwrite());
 
             displayWikiModuleInDestContainer(cDest);
 
@@ -1137,7 +1121,7 @@ public class WikiController extends SpringActionController
                 HttpView.throwRedirect(new BeginAction().getUrl());
 
             //page may be existing page, or may be new page
-            _wiki = WikiManager.getWiki(getContainer(), name);
+            _wiki = WikiSelectManager.getWiki(getContainer(), name);
             boolean existing = _wiki != null;
 
             if (null == _wiki)
@@ -1151,7 +1135,8 @@ public class WikiController extends SpringActionController
             }
             else
             {
-                _wikiversion = WikiManager.getLatestVersion(_wiki);
+                _wikiversion = _wiki.getLatestVersion();
+
                 if (_wikiversion == null)
                     HttpView.throwNotFound();
             }
@@ -1208,7 +1193,7 @@ public class WikiController extends SpringActionController
             if (null == wiki)
                 return;
             appendWikiTrail(root, wiki.getParentWiki());
-            WikiVersion v = WikiManager.getLatestVersion(wiki, false);
+            WikiVersion v = wiki.getLatestVersion();
             root.addChild(v == null ? wiki.getName() : v.getTitle(), getPageURL(wiki, getContainer()));
         }
 
@@ -1226,8 +1211,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    private HttpView getDiscussionView(String objectId, ActionURL pageURL, String title)
-            throws ServletException
+    private HttpView getDiscussionView(String objectId, ActionURL pageURL, String title) throws ServletException
     {
         DiscussionService.Service service = DiscussionService.get();
         return service.getDisussionArea(getViewContext(), objectId, pageURL, title, true, false);
@@ -1264,12 +1248,12 @@ public class WikiController extends SpringActionController
             HString name = null != form.getName() ? form.getName().trim() : null;
             int version = form.getVersion();
 
-            _wiki = WikiManager.getWiki(getContainer(), name);
+            _wiki = WikiSelectManager.getWiki(getContainer(), name);
             if (null == _wiki)
                 HttpView.throwNotFound();
 
             //return latest version first since it may be cached
-            _wikiversion = WikiManager.getLatestVersion(_wiki);
+            _wikiversion = _wiki.getLatestVersion();
 
             if (version > 0)
             {
@@ -1278,7 +1262,7 @@ public class WikiController extends SpringActionController
                     HttpView.throwNotFound();
                 //if this is a valid version that is not the latest version, get that version
                 if (version != _wikiversion.getVersion())
-                    _wikiversion = WikiManager.getVersion(_wiki, version);
+                    _wikiversion = WikiSelectManager.getVersion(_wiki, version);
             }
 
             if (null == _wikiversion)
@@ -1292,7 +1276,7 @@ public class WikiController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             HString pageTitle = _wikiversion.getTitle();
-            pageTitle = pageTitle.concat(" (Version " + _wikiversion.getVersion() + " of " + WikiManager.getVersionCount(_wiki) + ")");
+            pageTitle = pageTitle.concat(" (Version " + _wikiversion.getVersion() + " of " + WikiSelectManager.getVersionCount(_wiki) + ")");
 
             return new VersionsAction(_wiki, _wikiversion).appendNavTrail(root)
                     .addChild(pageTitle, getUrl());
@@ -1362,17 +1346,17 @@ public class WikiController extends SpringActionController
         public ModelAndView getView(CompareForm form, BindException errors) throws Exception
         {
             HString name = null != form.getName() ? form.getName().trim() : null;
+            _wiki = WikiSelectManager.getWiki(getContainer(), name);
 
-            _wiki = WikiManager.getWiki(getContainer(), name);
             if (null == _wiki)
                 HttpView.throwNotFound();
 
-            _wikiVersion1 = WikiManager.getVersion(_wiki, form.getEarlierVersion());
+            _wikiVersion1 = WikiSelectManager.getVersion(_wiki, form.getEarlierVersion());
 
             if (null == _wikiVersion1)
                 HttpView.throwNotFound();
 
-            _wikiVersion2 = WikiManager.getVersion(_wiki, form.getLaterVersion());
+            _wikiVersion2 = WikiSelectManager.getVersion(_wiki, form.getLaterVersion());
 
             if (null == _wikiVersion2)
                 HttpView.throwNotFound();
@@ -1486,10 +1470,10 @@ public class WikiController extends SpringActionController
             HString wikiname = form.getName();
             if (wikiname == null)
                 HttpView.throwNotFound();
-            _wiki = WikiManager.getWiki(getContainer(), wikiname);
+            _wiki = WikiSelectManager.getWiki(getContainer(), wikiname);
             if (null == _wiki)
                 HttpView.throwNotFound();
-            _wikiversion = WikiManager.getLatestVersion(_wiki);
+            _wikiversion = _wiki.getLatestVersion();
 
             BaseWikiPermissions perms = getPermissions();
             if (!perms.allowUpdate(_wiki))
@@ -1560,7 +1544,7 @@ public class WikiController extends SpringActionController
             lb.setTitle("History");
 
             VBox view = new VBox(lb, gridView);
-            Wiki wiki = WikiManager.getWiki(getContainer(), form.getName(), true);
+            Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
             if (wiki != null)
                 view.addView(AttachmentService.get().getHistoryView(getViewContext(), wiki));
             return view;
@@ -1605,8 +1589,8 @@ public class WikiController extends SpringActionController
             HString wikiName = form.getName();
             int version = form.getVersion();
 
-            _wiki = WikiManager.getWiki(getContainer(), wikiName);
-            _wikiversion = WikiManager.getVersion(_wiki, version);
+            _wiki = WikiSelectManager.getWiki(getContainer(), wikiName);
+            _wikiversion = WikiSelectManager.getVersion(_wiki, version);
 
             //per Britt and Adam, users with update perms on this page should be able
             //to set the current version--requiring admin doesn't make sense, as any
@@ -1845,276 +1829,6 @@ public class WikiController extends SpringActionController
      }
 
 
-    public static class WikiTOC extends NavTreeMenu
-    {
-        String _selectedLink;
-        
-        static private Container getTocContainer(ViewContext context)
-        {
-            //set specified web part container
-            Container cToc;
-            //get stored property value for source container for toc
-            Object id = context.get("webPartContainer");
-            //if no value is stored, use the current container
-            if (id == null)
-                cToc = context.getContainer();
-            else
-            {
-                cToc = ContainerManager.getForId(id.toString());
-                assert (cToc != null) : "Could not find container for id: " + id;
-            }
-
-            return cToc;
-        }
-
-        static public String getNavTreeId(ViewContext context)
-        {
-            Container cToc = getTocContainer(context);
-            return "Wiki-TOC-" + cToc.getId();
-        }
-
-        static public NavTree[] getNavTree(ViewContext context)
-        {
-            Container cToc = getTocContainer(context);
-            return WikiSelectManager.getNavTree(cToc);
-        }
-
-        public WikiTOC(ViewContext context)
-        {
-            super(context, "");
-            setFrame(FrameType.PORTAL);
-            setHighlightSelection(true);
-
-            //set specified web part title
-            Object title = context.get("title");
-            if (title == null)
-                title = "Pages";
-            setTitle(title.toString());
-        }
-
-        private Wiki findSelectedPage(ViewContext context)
-        {
-            Container cToc = getTocContainer(context);
-            //get the page list for the toc container
-            List<Wiki> pageList = WikiSelectManager.getPageList(cToc);
-
-            //are there pages in page list?
-            if (pageList.size() > 0)
-            {
-                //determine current page
-                String pageViewName = context.getRequest().getParameter("name");
-                
-                //if no current page, determine the default page for the toc container
-                if (null == pageViewName)
-                    pageViewName = getDefaultPage(cToc).getName().getSource();
-
-                if (null != pageViewName)
-                    return WikiManager.getWiki(cToc, new HString(pageViewName));
-            }
-            return null;
-        }
-
-        @Override
-        protected boolean matchPath(String link, ActionURL currentUrl, String pattern)
-        {
-            if (_selectedLink == null)  return false;
-            return link.compareToIgnoreCase(_selectedLink) == 0;
-
-        }
-
-        @Override
-        protected void renderView(Object model, PrintWriter out) throws Exception
-        {
-            ViewContext context = getViewContext();
-            User user = context.getUser();
-            setId(getNavTreeId(context));
-            setElements(context, getNavTree(context));
-
-            boolean isInWebPart = false;
-            //is page being rendered in web part or in module?
-            String pageUrl = context.getActionURL().getPageFlow();
-            if (pageUrl.equalsIgnoreCase("Project"))
-                isInWebPart = true;
-
-            Container cToc = getTocContainer(context);
-
-            //Should we show the option to expand all nodes?
-            boolean showExpandOption = false;
-            for (NavTree t : getElements())
-            {
-                if (t.getChildCount() != 0)
-                {
-                    showExpandOption = true;
-                    break;
-                }
-            }
-
-            //Generate a root node to simplify finding subtrees
-            //NOTE:  This is an artifact of the detail that we can't use the
-            //NavTreeMenu (this) as the root because it won't recurse into its children
-            //See NavTreeMenu.findSubtree
-            
-            NavTree root = new NavTree();
-            root.setId(this.getId());
-            root.addChildren(getElements());
-
-            Wiki selectedPage = findSelectedPage(context);
-
-            //remember the link to the selected page so we can highlight it appropriately if we are not in
-            //a web-part context
-            if (null != selectedPage && !isInWebPart)
-                _selectedLink = selectedPage.getPageLink();
-
-            //Make sure the path to the current page is expanded
-            //FIX: per 5246, we will no longer expand the children of the current page by default
-            if (null != selectedPage)
-            {
-                HString path = HString.EMPTY;
-                Wiki page = selectedPage;
-                Stack<HString> stkPages = new Stack<HString>();
-
-                page = page.getParentWiki ();
-
-                while (null != page)
-                {
-                    stkPages.push(page.latestVersion().getTitle());
-                    page = page.getParentWiki();
-                }
-
-                while (!stkPages.empty())
-                {
-                    path = new HString(path, "/", NavTree.escapeKey(stkPages.pop().getSource()));
-                    NavTree node = root.findSubtree(path.getSource());
-                    //Don't add it to the expand collapse set, since this would slowly collect
-                    //every node we've ever visited.  This way we'll only remember the state
-                    //if the user explicitly visits a node
-
-                    //NavTreeManager.expandCollapsePath(context, getId(), path, false);
-
-                    //Instead, we'll just expand it manually
-                    if (node != null)
-                        node.setCollapsed(false);
-                }
-            }
-
-            //Apply the current expand state
-            NavTreeManager.applyExpandState(root, context);
-            String nextLink = null, prevLink = null;
-
-            if (null != selectedPage)
-            {
-                //get next and previous links
-                //UNDONE: consolidate wiki code so wiki object is always the same
-                //(so we can use pageList here rather than creating a second list)
-                List<HString> nameList = WikiManager.getWikiNameList(cToc);
-
-                if (nameList.contains(selectedPage.getName()))
-                {
-                    //determine where this page is in the ordered wiki page list
-                    int pageIndex = nameList.indexOf(selectedPage.getName());
-
-                    //if it's not the first page in the list, display the previous link
-                    if (pageIndex > 0)
-                    {
-                        Wiki wikiPrev = WikiManager.getWiki(cToc, nameList.get(pageIndex - 1));
-                        prevLink = wikiPrev.getPageLink();
-                    }
-
-                    //if it's not the last page in the list, display the next link
-                    if (pageIndex < nameList.size() - 1)
-                    {
-                        Wiki wikiNext = WikiManager.getWiki(cToc, nameList.get(pageIndex + 1));
-                        nextLink = wikiNext.getPageLink();
-                    }
-                }
-            }
-
-            //output only this one if wiki contains no pages
-            boolean bHasInsert = cToc.hasPermission(user, InsertPermission.class);
-            boolean bHasCopy = cToc.hasPermission(user, AdminPermission.class) && getElements().length > 0;
-            boolean bHasPrint = (!isInWebPart || bHasInsert) && getElements().length > 0;
-
-            if (bHasInsert || bHasCopy || bHasPrint)
-            {
-                out.println("<table class=\"labkey-wp-link-panel\">");
-                out.println("<tr>");
-                out.println("<td  style=\"height:16;\">");
-
-                if (bHasInsert)
-                {
-                    ActionURL newPageUrl = new ActionURL(EditWikiAction.class, cToc);
-                    newPageUrl.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
-                    out.print("&nbsp;" + PageFlowUtil.textLink("new page", newPageUrl.getLocalURIString()));
-                }
-
-                if (bHasCopy)
-                {
-                    URLHelper copyUrl = new ActionURL(CopyWikiLocationAction.class, cToc);
-                    //pass in source container as a param.
-                    copyUrl.addParameter("sourceContainer", cToc.getPath());
-
-                    out.print("&nbsp;" + PageFlowUtil.textLink("copy pages", copyUrl.toString()));
-                }
-
-                if (bHasPrint)
-                {
-                    Map<String, String> map = new HashMap<String, String>();
-                    map.put("target", "_blank");
-                    
-                    out.print("&nbsp;" + PageFlowUtil.textLink("print all",
-                            PageFlowUtil.filter(new ActionURL(PrintAllAction.class, cToc).toString()), null, null, map));
-                }
-
-                out.println("");
-                out.println("</td></tr>");
-                out.println("</table>");
-            }
-
-            out.println("<div id=\"NavTree-"+ getId() +"\">");
-            super.renderView(model, out);
-            out.println("</div>");
-
-            if (getElements().length > 1)
-            {
-                out.println("<br>");
-                out.println("<table width=\"100%\">");
-                out.println("<tr>\n<td>");
-
-                if (prevLink != null)
-                {
-                    out.print("<a href=\"");
-                    out.print(PageFlowUtil.filter(prevLink));
-                    out.println("\">[previous]</a>");
-                }
-                else
-                {
-                    out.println("[previous]");
-                }
-
-                if (nextLink != null)
-                {
-                    out.print("<a href=\"");
-                    out.print(PageFlowUtil.filter(nextLink));
-                    out.println("\">[next]</a>");
-                }
-                else
-                {
-                    out.println("[next]");
-                }
-
-                if (showExpandOption)
-                {
-                    out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
-                    out.println(PageFlowUtil.textLink("expand all", "javascript:;", "adjustAllTocEntries('" + getId() + "', true, true)", ""));
-                    out.println(PageFlowUtil.textLink("collapse all", "javascript:;", "adjustAllTocEntries('" + getId() + "', true, false)", ""));
-                }
-
-                out.println("</td>\n</tr>\n</table>");
-            }
-        }
-
-    }
-
     /**
      * Don't display a name for CreatedBy "0" (Guest)
      */
@@ -2172,17 +1886,19 @@ public class WikiController extends SpringActionController
             if (null == container)
                 throw new IllegalArgumentException("The container id '" + form.getId() + "' is not valid.");
             
-            List<Wiki> wikiList = WikiSelectManager.getPageList(container);
-            if (null == wikiList)
+            Map<HString, HString> wikiMap = WikiSelectManager.getNameTitleMap(container);
+            if (null == wikiMap)
                 return new ApiSimpleResponse("pages", null);
 
-            List<Map<String, String>> pages = new ArrayList<Map<String, String>>(wikiList.size());
-            for (Wiki wiki : wikiList)
+            List<Map<String, String>> pages = new ArrayList<Map<String, String>>(wikiMap.size());
+
+            for (Map.Entry<HString, HString> entry : wikiMap.entrySet())
             {
+                String name = entry.getKey().getSource();
+                String title = entry.getValue().getSource();
                 Map<String, String> pageMap = new HashMap<String, String>();
-                pageMap.put("name", wiki.getName().getSource());
-                if (wiki.latestVersion() != null)
-                    pageMap.put("title", wiki.latestVersion().getTitle().getSource());
+                pageMap.put("name", name);
+                pageMap.put("title", title);
                 pages.add(pageMap);
             }
 
@@ -2291,12 +2007,12 @@ public class WikiController extends SpringActionController
 
             if (null != form.getName() && form.getName().length() > 0)
             {
-                wiki = WikiManager.getWiki(getViewContext().getContainer(), form.getName());
+                wiki = WikiSelectManager.getWiki(getViewContext().getContainer(), form.getName());
                 if (null == wiki)
                     throw new NotFoundException("There is no wiki in the current folder named '" + form.getName() + "'!");
 
                 //get the current version
-                curVersion = wiki.latestVersion();
+                curVersion = wiki.getLatestVersion();
                 if (null == curVersion)
                     throw new NotFoundException("Could not locate the current version of the wiki named '" + form.getName() + "'!");
             }
@@ -2507,7 +2223,7 @@ public class WikiController extends SpringActionController
             //but different entity id (works for both insert and update case)
             if (null != name && name.length() > 0)
             {
-                Wiki existingWiki = WikiManager.getWiki(container, name);
+                Wiki existingWiki = WikiSelectManager.getWiki(container, name);
                 if (null != existingWiki && (null == form.getEntityId() || !HString.eq(existingWiki.getEntityId().toLowerCase(), form.getEntityId().toString().toLowerCase())))
                     errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
             }
@@ -2619,7 +2335,7 @@ public class WikiController extends SpringActionController
             if (!policy.hasPermission(user, UpdatePermission.class, contextualRoles))
                 HttpView.throwUnauthorized("You are not allowed to edit this wiki page.");
 
-            WikiVersion wikiversion = new WikiVersion(wikiUpdate.latestVersion());
+            WikiVersion wikiversion = new WikiVersion(wikiUpdate.getLatestVersion());
 
             //if title is null, use name
             HString title = form.getTitle().isEmpty() ? form.getName() : form.getTitle();
@@ -2731,7 +2447,7 @@ public class WikiController extends SpringActionController
             if (warnings.size() > 0)
                 resp.put("warnings", warnings);
 
-            Wiki wikiUpdated = WikiManager.getWiki(getViewContext().getContainer(), wiki.getName());
+            Wiki wikiUpdated = WikiSelectManager.getWiki(getViewContext().getContainer(), wiki.getName());
             assert(null != wikiUpdated);
             List<Object> attachments = new ArrayList<Object>();
 
@@ -2833,6 +2549,7 @@ public class WikiController extends SpringActionController
             return _currentPage;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setCurrentPage(HString currentPage)
         {
             _currentPage = currentPage;
@@ -2886,12 +2603,12 @@ public class WikiController extends SpringActionController
 
             if (null != currentPage)
             {
-                Wiki wiki = WikiManager.getWiki(getViewContext().getContainer(), currentPage);
-                if (null != wiki && null != wiki.latestVersion())
+                Wiki wiki = WikiSelectManager.getWiki(getViewContext().getContainer(), currentPage);
+                if (null != wiki && null != wiki.getLatestVersion())
                 {
                     LinkedList<String> path = new LinkedList<String>();
                     Wiki parent = wiki.getParentWiki();
-                    while (null != parent && null != parent.latestVersion())
+                    while (null != parent && null != parent.getLatestVersion())
                     {
                         path.addFirst(parent.getName().toString());
                         parent = parent.getParentWiki();

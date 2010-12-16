@@ -25,7 +25,7 @@
     Wiki wiki = me.getModelBean();
 %>
 <div style="padding:10px;">
-    <%  if (null == wiki.latestVersion())
+    <%  if (null == wiki.getLatestVersion())
         {%>
             This page does not have any printable content. The page may have been deleted or renamed by another user.<br><br>
         <%}
@@ -33,11 +33,11 @@
         {%>
             <table width="100%">
                 <tr>
-                    <td align=left><h3 class="labkey-header-large"><%=PageFlowUtil.filter(wiki.latestVersion().getTitle())%></h3></td>
+                    <td align=left><h3 class="labkey-header-large"><%=PageFlowUtil.filter(wiki.getLatestVersion().getTitle())%></h3></td>
                     <td align=right><%=DateUtil.formatDate()%></td>
                 </tr>
             </table>
             <hr>
-            <%=wiki.latestVersion().getHtml(me.getViewContext().getContainer(),wiki)%>
+            <%=wiki.getLatestVersion().getHtml(me.getViewContext().getContainer(),wiki)%>
         <%}%>
 </div>

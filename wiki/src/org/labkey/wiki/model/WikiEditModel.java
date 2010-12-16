@@ -23,8 +23,7 @@ import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.ServiceImpl;
 import org.labkey.wiki.WikiSelectManager;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Model bean for the wikiEdit.jsp view
@@ -118,30 +117,9 @@ public class WikiEditModel
             return PageFlowUtil.jsString(_wikiVersion.getRendererType());
     }
 
-    public List<Wiki> getPossibleParents()
+    public Set<WikiTree> getPossibleParents()
     {
-        List<Wiki> parents = new ArrayList<Wiki>(WikiSelectManager.getPageList(_container));
-
-        //remove the current wiki from the list
-        //so that it can't become its own parent
-        Wiki toRemove = null;
-
-        if (null != _wiki)
-        {
-            for (Wiki wiki : parents)
-            {
-                if (wiki.getRowId() == _wiki.getRowId())
-                {
-                    toRemove = wiki;
-                    break;
-                }
-            }
-
-            if (null != toRemove)
-                parents.remove(toRemove);
-        }
-
-        return parents;
+        return WikiSelectManager.getPossibleParents(_container, _wiki);
     }
 
     public boolean hasAttachments()

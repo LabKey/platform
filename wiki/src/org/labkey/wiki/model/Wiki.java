@@ -24,12 +24,15 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.ActionURL;
-import org.labkey.wiki.WikiController.*;
-import org.labkey.wiki.WikiManager;
+import org.labkey.wiki.WikiController;
+import org.labkey.wiki.WikiController.DownloadAction;
+import org.labkey.wiki.WikiController.ManageAction;
+import org.labkey.wiki.WikiController.PageAction;
+import org.labkey.wiki.WikiController.VersionsAction;
+import org.labkey.wiki.WikiSelectManager;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.Serializable;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
@@ -50,10 +53,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     private HString _name;
     private int _parent = -1;
     private float _displayOrder = 0;
-    private Wiki _parentWiki;
     private Integer _pageVersionId;
-    private int _depth;
-    private List<Wiki> _children;
     private boolean _showAttachments = true;
 
 
@@ -71,21 +71,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
     public ActionURL getWikiURL(Class<? extends Controller> actionClass, HString name)
     {
-        ActionURL url = new ActionURL(actionClass, lookupContainer());
-
-        if (null == name)
-            url.deleteFilterParameters("name");
-        else
-            url.replaceParameter("name", name.getSource());
-
-        return url;
-    }
-
-
-    @Deprecated
-    public String getPageLink()
-    {
-        return getPageURL().getLocalURIString();
+        return WikiController.getWikiURL(lookupContainer(), actionClass, name);
     }
 
 
@@ -143,9 +129,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
     public Wiki getParentWiki()
     {
-        if (_parentWiki == null)
-            _parentWiki = WikiManager.getWikiByRowId(ContainerManager.getForId(getContainerId()), getParent());
-        return _parentWiki;
+        return WikiSelectManager.getWiki(ContainerManager.getForId(getContainerId()), getParent());
     }
 
     public int getParent()
@@ -170,14 +154,12 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         _name = name;
     }
 
-    public WikiVersion latestVersion()
+    public WikiVersion getLatestVersion()
     {
-        return WikiManager.getLatestVersion(this, false);
-    }
+        if (null == getPageVersionId())
+            return null;
 
-    public int versionCount() throws SQLException
-    {
-        return WikiManager.getVersionCount(this);
+        return WikiSelectManager.getVersion(lookupContainer(), getPageVersionId());
     }
 
     public Collection<Attachment> getAttachments()
@@ -185,25 +167,14 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         return AttachmentService.get().getAttachments(this);
     }
 
-    public List<Wiki> getChildren()
+    public boolean hasChildren()
     {
-        if (_children == null)
-        {
-            _children = WikiManager.getWikisByParentId(getContainerId(), getRowId());
-            for (Wiki child : _children)
-                child.setDepth(_depth + 1);
-        }
-        return _children;
+        return WikiSelectManager.hasChildren(lookupContainer(), getRowId());
     }
 
-    public int getDepth()
+    public List<Wiki> children()
     {
-        return _depth;
-    }
-
-    private void setDepth(int depth)
-    {
-        _depth = depth;
+        return getRowId() > 0 ? WikiSelectManager.getChildWikis(lookupContainer(), getRowId()) : null;
     }
 
     public Integer getPageVersionId()
@@ -230,5 +201,22 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     public String toString()
     {
         return "Wiki: \"" + getName() + "\" (rowId:" + _rowId + ")";
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Wiki wiki = (Wiki) o;
+
+        return _rowId == wiki._rowId;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _rowId;
     }
 }

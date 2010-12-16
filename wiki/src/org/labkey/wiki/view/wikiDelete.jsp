@@ -27,4 +27,4 @@
 Are you sure you want to delete this page?
 <p/>
 <b>name: <%=PageFlowUtil.filter(wiki.getName())%></b><br/>
-<b>title: <%=PageFlowUtil.filter(wiki.latestVersion().getTitle())%></b>
+<b>title: <%=PageFlowUtil.filter(wiki.getLatestVersion().getTitle())%></b>

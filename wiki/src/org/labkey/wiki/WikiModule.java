@@ -163,11 +163,11 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         Collection<String> list = new LinkedList<String>();
         try
         {
-            long count = WikiManager.getWikiCount(c);
+            int count = WikiSelectManager.getPageCount(c);
             if (count > 0)
                 list.add("" + count + " Wiki Page" + (count > 1 ? "s" : ""));
         }
-        catch (SQLException x)
+        catch (Exception x)
         {
             list.add(x.toString());
         }

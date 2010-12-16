@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
 <%@ page import="org.labkey.wiki.WikiController.PrintBranchAction" %>
 <%@ page import="org.labkey.wiki.model.BaseWikiView" %>
@@ -30,7 +31,6 @@
 <%@ page import="javax.servlet.http.HttpServletResponse" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--wiki-->
 <%
@@ -93,7 +93,7 @@ if (view.hasContent && includeLinks)
         %>&nbsp;<%=textLink("print", view.printURL.toString(), null, null, printProperty)%><%
     }
 
-    if (null != view.printURL && null != wiki.getChildren() && wiki.getChildren().size() > 0)
+    if (null != view.printURL && wiki.hasChildren())
     {
         %>&nbsp;<%=textLink("print branch", printBranchURL.getLocalURIString(), null, null, printProperty)%><%
     }
@@ -108,7 +108,7 @@ if (!view.hasContent)
     if (view.isWebPart())
     {%>
         <%
-        if (view.pageCount == 0 && view.hasInsertPermission && !view.isEmbedded())
+        if (!view.folderHasWikis && view.hasInsertPermission && !view.isEmbedded())
         {%>
             The Wiki web part displays a single wiki page.
             This folder does not currently contain any wiki pages to display. You can:<br>
@@ -116,7 +116,7 @@ if (!view.hasContent)
                 <li><a href="<%=h(view.insertURL)%>">Create a new wiki page</a> to display in this web part.</li>
             </ul>
         <%}
-        else if (view.pageCount > 0 && view.hasAdminPermission && !view.isEmbedded())
+        else if (view.folderHasWikis && view.hasAdminPermission && !view.isEmbedded())
         {%>
             The Wiki web part displays a single wiki page.
             Currently there is no page selected to display. You can:<br>
@@ -135,7 +135,7 @@ if (!view.hasContent)
         // No page here, so set the response code to 404
         context.getResponse().setStatus(HttpServletResponse.SC_NOT_FOUND);
 
-        if (view.pageCount == 0 && null != view.insertURL)
+        if (!view.folderHasWikis && null != view.insertURL)
         {%>
             This Wiki currently does not contain any pages.<br><br>
             <%=textLink("add a new page", view.insertURL)%>
@@ -160,7 +160,7 @@ else
     if (null != wiki.getAttachments() && wiki.getAttachments().size() > 0 && wiki.isShowAttachments())
     {
         %><p/><%
-            if (null != wiki.latestVersion().getBody())
+            if (null != wiki.getLatestVersion().getBody())
             {
         %>
             <table style="width:100%" cellspacing="0" class="lk-wiki-file-attachments-divider">

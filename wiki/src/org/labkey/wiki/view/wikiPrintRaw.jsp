@@ -36,11 +36,11 @@
 
 <%
     //print each page's content with title
-    for (Wiki wiki : bean.wikiList)
+    for (Wiki wiki : bean.wikis)
     {%>
         <hr size=1>
-        <h3><a name="<%=h(wiki.getName())%>"></a><%=h(wiki.latestVersion().getTitle())%></h3><br>
-        <pre><%=h(wiki.latestVersion().getBody())%></pre><br><br>
+        <h3><a name="<%=h(wiki.getName())%>"></a><%=h(wiki.getLatestVersion().getTitle())%></h3><br>
+        <pre><%=h(wiki.getLatestVersion().getBody())%></pre><br><br>
     <%}
 %>
 </div>

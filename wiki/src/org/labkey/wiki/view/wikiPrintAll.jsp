@@ -15,13 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.DateUtil"%>
-<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.wiki.model.WikiTree" %>
+<%@ page import="org.labkey.wiki.model.WikiVersion" %>
+<%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WikiController.PrintAllBean> me = (JspView<WikiController.PrintAllBean>) HttpView.currentView();
@@ -37,19 +40,23 @@
     </table>
 
 <%  //print list of page titles with anchors at top
-    for (Wiki wiki : bean.wikiPageList)
+    for (WikiTree tree : bean.wikiTrees)
     {
-        out.print(StringUtils.repeat("&nbsp;&nbsp;", wiki.getDepth()));
+        out.print(StringUtils.repeat("&nbsp;&nbsp;", tree.getDepth()));
     %>
-        <a href="#<%=wiki.getName()%>"><%=h(wiki.latestVersion().getTitle())%></a><br>
-    <%}
+        <a href="#<%=h(tree.getName())%>"><%=h(tree.getTitle())%></a><br>
+    <%
+    }
 
     //print each page's content with title
-    for (Wiki wiki : bean.wikiContentList)
-    {%>
+    for (WikiTree tree : bean.wikiTrees)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, tree.getName());
+        WikiVersion version = wiki.getLatestVersion();
+    %>
         <hr size=1>
-        <h3><a name="<%=wiki.getName()%>"></a><%=h(wiki.latestVersion().getTitle())%></h3><br>
-        <%=wiki.latestVersion().getHtml(c, wiki)%><br><br>
+        <h3><a name="<%=h(wiki.getName())%>"></a><%=h(version.getTitle())%></h3><br>
+        <%=version.getHtml(c, wiki)%><br><br>
     <%}
 %>
 </div>

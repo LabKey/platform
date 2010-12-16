@@ -33,7 +33,7 @@ public class WikiTOCFactory extends BaseWebPartFactory
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
     {
-        WebPartView v = new WikiController.WikiTOC(portalCtx);
+        WebPartView v = new WikiTOC(portalCtx);
         //TODO: Should just use setters
         populateProperties(v, webPart.getPropertyMap());
         return v;

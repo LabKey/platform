@@ -23,9 +23,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
-<%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %> 
+<%@ page import="org.labkey.wiki.model.WikiTree" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
@@ -138,11 +138,11 @@
                         <select name="parent" id="<%=ID_PREFIX%>parent" onkeypress="setWikiDirty()" onchange="setWikiDirty()">
                             <option <%= model.getParent() == -1 ? "selected='1'" : "" %> value="-1">[none]</option>
                             <%
-                                for (Wiki possibleParent : model.getPossibleParents())
+                                for (WikiTree possibleParent : model.getPossibleParents())
                                 {
                                     String indent = "";
                                     int depth = possibleParent.getDepth();
-                                    HString parentTitle = possibleParent.latestVersion().getTitle();
+                                    HString parentTitle = possibleParent.getTitle();
                                     while (depth-- > 0)
                                         indent = indent + "&nbsp;&nbsp;";
                                     %><option <%= possibleParent.getRowId() == model.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= h(parentTitle) %> (<%= possibleParent.getName() %>)</option><%
