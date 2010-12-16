@@ -1441,7 +1441,7 @@ public class Table
         Integer statementRowCount = (table.getSqlDialect().requiresStatementMaxRows() ? decideRowCount : null);  // TODO: clean this all up
         Table.TableResultSet rs = (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, scrollable, asyncRequest, log, statementRowCount);
 
-        return new ResultSetResults(rs, columns.values());
+        return new ResultsImpl(rs, columns.values());
     }
 
 
