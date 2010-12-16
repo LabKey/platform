@@ -20,10 +20,17 @@
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page import="org.labkey.wiki.model.WikiTree" %>
+<%@ page import="org.labkey.wiki.model.WikiVersion" %>
+<%@ page import="org.labkey.wiki.WikiSelectManager" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WikiController.PrintRawBean> me = (JspView<WikiController.PrintRawBean>) HttpView.currentView();
     WikiController.PrintRawBean bean = me.getModelBean();
+    ViewContext ctx = me.getViewContext();
+    Container c = ctx.getContainer();
 %>
 <div style="padding:10px;">
 
@@ -36,11 +43,14 @@
 
 <%
     //print each page's content with title
-    for (Wiki wiki : bean.wikis)
-    {%>
+    for (WikiTree tree : bean.wikis)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, tree.getName());
+        WikiVersion version = wiki.getLatestVersion();
+        %>
         <hr size=1>
-        <h3><a name="<%=h(wiki.getName())%>"></a><%=h(wiki.getLatestVersion().getTitle())%></h3><br>
-        <pre><%=h(wiki.getLatestVersion().getBody())%></pre><br><br>
+        <h3><a name="<%=h(tree.getName())%>"></a><%=h(tree.getTitle())%></h3><br>
+        <pre><%=h(version.getBody())%></pre><br><br>
     <%}
 %>
 </div>
