@@ -103,10 +103,10 @@ public class SqlParser
 			{
 				CommonTree parseRoot = (CommonTree) selectScope.getTree();
 				assert parseRoot != null;
-                assert dump(parseRoot);
+//                assert dump(parseRoot);
                 
 				QNode qnodeRoot = convertParseTree(parseRoot);
-				assert dump(qnodeRoot);
+//				assert dump(qnodeRoot);
 				assert MemTracker.put(qnodeRoot);
 
 				if (qnodeRoot instanceof QQuery || qnodeRoot instanceof QUnion)
