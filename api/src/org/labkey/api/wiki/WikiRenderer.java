@@ -16,8 +16,6 @@
 
 package org.labkey.api.wiki;
 
-import org.labkey.api.util.HString;
-
 /**
  * User: Tamra Myers
  * Date: Aug 16, 2006
@@ -25,13 +23,6 @@ import org.labkey.api.util.HString;
  */
 public interface WikiRenderer
 {
-    public interface WikiLinkable
-    {
-        HString getTitle();
-
-        HString getName();
-    }
-
     // TODO: Pass in "wiki page", "message", "issue", etc. so we can tailor any error messages
     public FormattedHtml format(String text);
 }

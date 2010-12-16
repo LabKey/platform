@@ -90,7 +90,13 @@ public class NavTree extends Pair<String, String> implements Collapsible
 
     public NavTree(String display, URLHelper urlhelp)
     {
-        this(display, urlhelp != null ? urlhelp.getLocalURIString() : null);
+        this(display, urlhelp, false);
+    }
+
+
+    public NavTree(String display, URLHelper urlhelp, boolean collapsed)
+    {
+        this(display, urlhelp != null ? urlhelp.getLocalURIString() : null, collapsed);
     }
 
 

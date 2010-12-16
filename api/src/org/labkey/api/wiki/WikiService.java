@@ -30,8 +30,15 @@ import java.util.Collection;
  */
 public interface WikiService
 {
+    public WebPartView getView(Container c, String name, boolean renderContentOnly);
+    public String getHtml(Container c, String name);
+
+    @Deprecated // Use getView(Container c, String name, boolean renderContentOnly) instead (forceRefresh parameter is ignored)
     public WebPartView getView(Container c, String name, boolean forceRefresh, boolean renderContentOnly);
+
+    @Deprecated // Use getHtml(Container c, String name) instead (forceRefresh parameter is ignored)
     public String getHtml(Container c, String name, boolean forceRefresh);
+
     public void insertWiki(User user, Container container, String name, String content, WikiRendererType renderType, String title);
 
     /**

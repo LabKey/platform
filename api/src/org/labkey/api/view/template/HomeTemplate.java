@@ -64,7 +64,7 @@ public class HomeTemplate extends PrintTemplate
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         WebPartView wikiMenu = null;
         if (null != c && null != c.getProject() && ModuleLoader.getInstance().isStartupComplete() && null != wikiService)
-            wikiMenu = wikiService.getView(c.getProject(), "_navTree", false, true);
+            wikiMenu = wikiService.getView(c.getProject(), "_navTree", false);
 
         if (null != wikiMenu)
             setView("menu", wikiMenu);
@@ -76,7 +76,7 @@ public class HomeTemplate extends PrintTemplate
 
         WebPartView header = null;
         if (ModuleLoader.getInstance().isStartupComplete() && null != wikiService && null != c && null != c.getProject())
-            header = wikiService.getView(c.getProject(), "_header", false, true);
+            header = wikiService.getView(c.getProject(), "_header", false);
 
         if (null != header)
             setView("header", header);

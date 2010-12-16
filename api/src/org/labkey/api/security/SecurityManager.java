@@ -1825,10 +1825,10 @@ public class SecurityManager
 
         WikiService service = ServiceRegistry.get().getService(WikiService.class);
         //No wiki service. Must be in weird state. Don't do terms here...
-        if(null == service)
+        if (null == service)
             return null;
 
-        return service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME, false);
+        return service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME);
     }
 
 
