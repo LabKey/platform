@@ -906,7 +906,7 @@ public class QueryServiceImpl extends QueryService
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0);
 		ResultSet rs = Table.executeQuery(table.getSchema(), sql);
-        return new ResultSetResults(rs, columns);
+        return new ResultsImpl(rs, columns);
     }
 
 
