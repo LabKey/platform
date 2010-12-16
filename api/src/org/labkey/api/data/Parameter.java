@@ -268,6 +268,11 @@ public class Parameter
 
         public ParameterMap(PreparedStatement stmt, Collection<Parameter> parameters)
         {
+            this(stmt, parameters, null);
+        }
+
+        public ParameterMap(PreparedStatement stmt, Collection<Parameter> parameters, Map<String,String> remap)
+        {
             _map = new CaseInsensitiveHashMap<Parameter>(parameters.size() * 2);
             for (Parameter p : parameters)
             {
@@ -276,7 +281,10 @@ public class Parameter
                 p._stmt = stmt;
                 if (_map.containsKey(p._name))
                     throw new IllegalArgumentException("duplicate parameter name: " + p._name);
-                _map.put(p._name, p);
+                String name = p._name;
+                if (null != remap && remap.containsKey(name))
+                    name = remap.get(name);
+                _map.put(name, p);
                 if (null != p._uri)
                 {
                     if (_map.containsKey(p._uri))
@@ -286,6 +294,13 @@ public class Parameter
             }
             _stmt = stmt;
         }
+
+
+        public boolean containsKey(String name)
+        {
+            return _map.containsKey(name);
+        }
+        
 
         public boolean execute() throws SQLException
         {

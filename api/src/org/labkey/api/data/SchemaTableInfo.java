@@ -905,6 +905,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
+    //
+    // UpdateableTableInfo
+    //
+
     @Override
     public boolean insertSupported()
     {
@@ -948,7 +952,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
-    public Map<String, String> remapSchemaColumns()
+    public CaseInsensitiveHashMap<String> remapSchemaColumns()
     {
         return null;
     }

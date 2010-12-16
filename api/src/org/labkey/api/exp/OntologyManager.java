@@ -22,15 +22,19 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -48,6 +52,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -125,10 +130,9 @@ public class OntologyManager
 
 		try
 		{
-			// UNDONE: add PropertyDescriptor.getPropertyType()
             PropertyType[] propertyTypes = new PropertyType[descriptors.length];
             for (int i = 0; i < descriptors.length; i++)
-                propertyTypes[i] = PropertyType.getFromURI(descriptors[i].getConceptURI(), descriptors[i].getRangeURI());
+                propertyTypes[i] = descriptors[i].getPropertyType();
 
             OntologyObject objInsert = new OntologyObject();
 			objInsert.setContainer(c);
@@ -248,8 +252,191 @@ public class OntologyManager
 		return resultingLsids;
 	}
 
+
+    /**
+     * As an incremental step of QueryUpdateService cleanup, this is a version of insertTabDelimited that works on a
+     * tableInfo that implements UpdateableTableInfo.  Does not support ownerObjectid.
+     *
+     * This code is made complicated by the fact that while we are trying to move toward a TableInfo/ColumnInfo view
+     * of the world, validators are attached to PropertyDescriptors.  Also, missing value handling is attached
+     * to PropertyDescriptors
+     *
+     * The original version of this method expects a data be be a map PropertyURI->value.  This version will also
+     * accept Name->value.
+     *
+     * Name->Value is preferred we're using TableInfo after all.
+     */
+    public static List<String> insertTabDelimited(TableInfo tableInsert, Container c, User user,
+            UpdateableTableImportHelper helper,
+            List<Map<String, Object>> rows,
+            Logger logger)
+        throws SQLException, ValidationException
+    {
+        if (!(tableInsert instanceof UpdateableTableInfo))
+            throw new IllegalArgumentException();
+
+        DbScope scope = tableInsert.getSchema().getScope();
+        
+		assert scope.isTransactionActive();
+		List<String> resultingLsids = new ArrayList<String>(rows.size());
+
+        Domain d = tableInsert.getDomain();
+        DomainProperty[] properties = null == d  ? null : d.getProperties();
+        
+        ValidatorContext validatorCache = new ValidatorContext(c, user);
+
+        Connection conn = null;
+        Parameter.ParameterMap parameterMap = null;
+
+        Map currentRow = null;
+
+		try
+		{
+            conn = scope.getConnection();
+            parameterMap = QueryService.get().insertStatement(conn, user, tableInsert);
+            List<ValidationError> errors = new ArrayList<ValidationError>();
+
+            Map<String, IPropertyValidator[]> validatorMap = new HashMap<String, IPropertyValidator[]>();
+            Map<String, DomainProperty> propertiesMap = new HashMap<String, DomainProperty>();
+
+            // cache all the property validators for this upload
+            if (null != properties)
+            {
+                for (DomainProperty dp : properties)
+                {
+                    propertiesMap.put(dp.getPropertyURI(), dp);
+                    IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(dp.getPropertyDescriptor());
+                    if (validators.length > 0)
+                        validatorMap.put(dp.getPropertyURI(), validators);
+                }
+            }
+
+            ColumnInfo[] columns = tableInsert.getColumns().toArray(new ColumnInfo[0]);
+            PropertyType[] propertyTypes = new PropertyType[columns.length];
+            for (int i = 0; i < columns.length; i++)
+            {
+                String propertyURI = columns[i].getPropertyURI();
+                DomainProperty dp = null==propertyURI ? null : propertiesMap.get(propertyURI);
+                PropertyDescriptor pd = null==dp ? null : dp.getPropertyDescriptor();
+                if (null != pd)
+                    propertyTypes[i] = pd.getPropertyType();
+            }
+
+            int rowCount = 0;
+            int batchCount = 0;
+
+			for (Map<String, Object> map : rows)
+			{
+                currentRow = new CaseInsensitiveHashMap(map);
+                
+                // TODO: hack -- should exit and return cancellation status instead of throwing
+                if (Thread.currentThread().isInterrupted())
+                    throw new CancellationException();
+
+                parameterMap.clearParameters();
+
+				String lsid = helper.beforeImportObject(currentRow);
+				resultingLsids.add(lsid);
+
+                //
+                // NOTE we validate based on columninfo/propertydescriptor
+                // However, we bind by name, and there may be parameters that do not correspond to columninfo
+                //
+
+                for (int i=0 ; i<columns.length ; i++)
+				{
+                    ColumnInfo col = columns[i];
+                    if (col.isMvIndicatorColumn() || col.isRawValueColumn()) //TODO col.isNotUpdatableForSomeReasonSoContinue()
+                        continue;
+                    String propertyURI = col.getPropertyURI();
+                    DomainProperty dp = null==propertyURI ? null : propertiesMap.get(propertyURI);
+                    PropertyDescriptor pd = null==dp ? null : dp.getPropertyDescriptor();
+
+					Object value = currentRow.get(col.getName());
+                    if (null == value)
+                        value = currentRow.get(propertyURI);
+
+					if (null == value)
+                    {
+                        // TODO col.isNullable() doesn't seem to work here
+                        if (null != pd && pd.isRequired())
+                            throw new ValidationException("Missing value for required property " + col.getName());
+                    }
+                    else
+                    {
+                        // TODO does validateProperty handle MvFieldWrapper?
+                        if (null != pd && validatorMap.containsKey(propertyURI))
+                        {
+                            validateProperty(validatorMap.get(propertyURI), pd, value, errors, validatorCache);
+                        }
+                    }
+                    try
+                    {
+                        if (null == propertyTypes[i])
+                        {
+                            // some built-in columns won't have parameters (createdby, etc)
+                            String key = null==propertyURI ? col.getName() : propertyURI;
+                            if (parameterMap.containsKey(key))
+                            {
+                                assert !(value instanceof MvFieldWrapper);
+                                parameterMap.put(key, value);
+                            }
+                        }
+                        else
+                        {
+                            Pair<Object,String> p = new Pair<Object,String>(value,null);
+                            convertValuePair(pd, propertyTypes[i], p);
+                            parameterMap.put(col.getPropertyURI(), p.first);
+                            if (null != p.second)
+                            {
+                                String mvName = col.getMvColumnName();
+                                assert null != mvName;
+                                parameterMap.put(mvName, p.second);
+                            }
+                        }
+                    }
+                    catch (ConversionException e)
+                    {
+                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + propertyTypes[i].getJavaType().getSimpleName());
+                    }
+				}
+                
+                helper.bindAdditionalParameters(map, parameterMap);
+                
+                parameterMap.execute();
+            }
+
+            if (!errors.isEmpty())
+                throw new ValidationException(errors);
+
+            helper.afterBatchInsert(rowCount);
+            if (logger != null)
+                logger.debug("inserted row " + rowCount + ".");
+		}
+		catch (SQLException x)
+		{
+            SQLException next = x.getNextException();
+            if (x instanceof java.sql.BatchUpdateException && null != next)
+                x = next;
+            _log.debug("Exception uploading: ", x);
+            if (null != currentRow)
+                _log.debug(currentRow.toString());
+			throw x;
+		}
+        finally
+        {
+            if (null != parameterMap)
+                parameterMap.close();
+            if (null != conn)
+                scope.releaseConnection(conn);
+        }
+
+		return resultingLsids;
+	}
+    
+
     public static boolean validateProperty(IPropertyValidator[] validators, PropertyDescriptor prop, Object value,
-                                            List<ValidationError> errors, ValidatorContext validatorCache)
+            List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
 
@@ -263,11 +450,28 @@ public class OntologyManager
 
     public interface ImportHelper
 	{
-		/** return LSID for new or existing Object */
+		/** return LSID for new or existing Object
+         *
+         * may modifiy map
+         */
 		String beforeImportObject(Map<String, Object> map) throws SQLException;
+
 		void afterBatchInsert(int currentRow) throws SQLException;
+
         void updateStatistics(int currentRow) throws SQLException;
     }
+
+
+    public interface UpdateableTableImportHelper extends ImportHelper
+    {
+        /** may set parameters directly for columns that are not exposed by tableinfo
+         * e.g. "_key"
+         * 
+         * TODO maybe this can be handled declaratively? see UpdateableTableInfo
+         */
+        void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target);
+    }
+
 
 	/**
 	 * Get the name for a property. First check name attached to the property

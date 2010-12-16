@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.Map;
 
@@ -66,10 +67,13 @@ public interface UpdateableTableInfo
     @Nullable
     String getObjectIdColumnName();
 
-    // Some columns in the SchemaTableInfo may be aliased
-    // (and may even conflict with property names)
-    //
-    // e.g. for list if the key column is named "Name" then this map should have ("Name" -> "key")
+    /**
+     * Some columns in the SchemaTableInfo may be aliased in the QueryTableInfo.  This map describes the mapping.
+     *
+     * physical column -> query column
+     *
+     * e.g. for list if the key column is named "Name" then this map should have ("key" -> "Name")
+     */
     @Nullable
-    Map<String,String> remapSchemaColumns();
+    CaseInsensitiveHashMap<String> remapSchemaColumns();
 }

@@ -24,6 +24,7 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 
 import java.io.File;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -94,6 +95,8 @@ abstract public class QueryService
 	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
 	abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException;
 	abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset);
+    abstract public Parameter.ParameterMap insertStatement(Connection conn, User user, TableInfo tableInsert) throws SQLException;
+
 
     public interface QueryListener
     {

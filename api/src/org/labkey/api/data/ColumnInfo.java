@@ -115,6 +115,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String _mvColumnName = null;
     // indicates that this is an mv column for another column
     private boolean _isMvIndicatorColumn = false;
+    private boolean _isRawValueColumn = false;
 
 
     public ColumnInfo(FieldKey key)
@@ -1364,7 +1365,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         _isMvIndicatorColumn = mvIndicatorColumn;
     }
-    
+
+    public boolean isRawValueColumn()
+    {
+        return _isRawValueColumn;
+    }
+
+    public void setRawValueColumn(boolean rawColumn)
+    {
+        _isRawValueColumn = rawColumn;
+    }
 
     /**
      * Returns true if this column does not contain data that should be queried, but is a lookup into a valid table.
