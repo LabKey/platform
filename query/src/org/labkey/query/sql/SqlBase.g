@@ -289,7 +289,8 @@ whereClause
 
 
 selectedPropertiesList
-	: aliasedSelectExpression (COMMA! aliasedSelectExpression)*
+    // weird trailing comma for backward compatibility
+	: aliasedSelectExpression (COMMA! aliasedSelectExpression)* (COMMA!)?
 	;
 
 
