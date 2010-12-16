@@ -17,6 +17,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
@@ -24,9 +25,16 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
@@ -45,8 +53,12 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.*;
 
 public class QueryServiceImpl extends QueryService
@@ -894,7 +906,7 @@ public class QueryServiceImpl extends QueryService
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0);
 		ResultSet rs = Table.executeQuery(table.getSchema(), sql);
-        return new ResultsImpl(rs, columns);
+        return new ResultSetResults(rs, columns);
     }
 
 
@@ -1152,5 +1164,297 @@ public class QueryServiceImpl extends QueryService
 	    {
 		    _close();
 	    }
+    }
+
+
+    // SQLFragment version for convenience
+    private static void appendSelectAutoIncrement(SqlDialect d, SQLFragment sqlf, TableInfo tinfo, String columnName)
+    {
+        // TODO why does appendSelectAutoIncrement prepend a semi-colon?
+        String t = d.appendSelectAutoIncrement("", tinfo, columnName);
+        t = StringUtils.strip(t, ";\n\r");
+        sqlf.append(t);
+    }
+
+    private static String p(SqlDialect d, boolean useVariable, int i)
+    {
+        return !useVariable ? "?" : d.isSqlServer() ? "@p" + i : "_$p" + i;
+    }
+
+
+    /**
+     * Create a reusable SQL Statement for inserting rows into an labkey relationship.  The relationship
+     * persisted directly in the database (SchemaTableInfo), or via the OnotologyManager tables.
+     *
+     * QueryService shouldn't really know about the internals of exp.Object and exp.ObjectProperty etc.
+     * However, I can only keep so many levels of abstraction in my head at once.
+     *
+     * NOTE: this is currently fairly expensive for updating one row into an Ontology stored relationship on Postgres.
+     * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
+     * to provisioned tables for major datatypes.
+     *
+     * NOTE: does not currently provide for manually setting built-in columns.  Wouldn't be hard to add.
+     */
+    public Parameter.ParameterMap insertStatement(Connection conn, User user, TableInfo tableInsert) throws SQLException
+    {
+        // TODO Does not provide for overriding the built-in fields (CreatedBy, ModifiedBy etc)
+        if (!(tableInsert instanceof UpdateableTableInfo))
+            throw new IllegalArgumentException();
+
+        UpdateableTableInfo updatable = (UpdateableTableInfo)tableInsert;
+        TableInfo table = updatable.getSchemaTableInfo();
+
+        if (!(table instanceof SchemaTableInfo))
+            throw new IllegalArgumentException();
+        if (null == ((SchemaTableInfo)table).getMetaDataName())
+            throw new IllegalArgumentException();
+
+        SqlDialect d = tableInsert.getSqlDialect();
+        boolean useVariables = false;
+
+        ArrayList<Parameter> parameters = new ArrayList<Parameter>();
+        Timestamp ts = new Timestamp(System.currentTimeMillis());
+
+        String comma = "";
+        CaseInsensitiveHashSet done = new CaseInsensitiveHashSet();
+
+        String objectIdVar = d.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
+        String setKeyword = d.isPostgreSQL() ? "" : "SET ";
+
+        //
+        // exp.Objects INSERT
+        //
+
+        SQLFragment sqlfDeclare = new SQLFragment();
+        SQLFragment sqlfObject = new SQLFragment();
+        SQLFragment sqlfObjectProperty = new SQLFragment();
+
+        Domain domain = tableInsert.getDomain();
+        DomainKind domainKind = tableInsert.getDomainKind();
+        DomainProperty[] properties = null;
+        if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
+        {
+            properties = domain.getProperties();
+            if (properties.length == 0)
+                properties = null;
+            if (null != properties)
+            {
+                useVariables = d.isPostgreSQL();
+                sqlfDeclare.append("DECLARE " + objectIdVar + " INT;\n");
+                Parameter c = new Parameter("container", parameters.size()+1, Types.VARCHAR);
+                parameters.add(c);
+                String parameterName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
+                        ? updatable.getObjectURIColumnName()
+                        : "objecturi";
+                Parameter u = new Parameter(parameterName, parameters.size()+1, Types.VARCHAR);
+                parameters.add(u);
+                sqlfObject.append("INSERT INTO exp.Object (container, objecturi) ");
+                sqlfObject.append("VALUES(" + p(d,useVariables,c.getIndex()) + "," + p(d,useVariables,u.getIndex()) + ");\n");
+                sqlfObject.append(setKeyword + objectIdVar + " = (");
+                appendSelectAutoIncrement(d, sqlfObject,DbSchema.get("exp").getTable("object"),"objectid");
+                sqlfObject.append(");\n");
+            }
+        }
+
+        //
+        // BASE TABLE INSERT()
+        //
+
+        SQLFragment cols = new SQLFragment();
+        SQLFragment values = new SQLFragment();
+
+        ColumnInfo col = table.getColumn("Owner");
+        if (null != col && null != user)
+        {
+            cols.append(comma).append("Owner");
+            values.append(comma).append(user.getUserId());
+            done.add("Owner");
+            comma = ",";
+        }
+        col = table.getColumn("CreatedBy");
+        if (null != col && null != user)
+        {
+            cols.append(comma).append("CreatedBy");
+            values.append(comma).append(user.getUserId());
+            done.add("CreatedBy");
+            comma = ",";
+        }
+        col = table.getColumn("Created");
+        if (null != col)
+        {
+            cols.append(comma).append("Created");
+            values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
+            done.add("Created");
+            comma = ",";
+        }
+        ColumnInfo colModifiedBy = table.getColumn("Modified");
+        if (null != colModifiedBy && null != user)
+        {
+            cols.append(comma).append("ModifiedBy");
+            values.append(comma).append(user.getUserId());
+            done.add("ModifiedBy");
+            comma = ",";
+        }
+        ColumnInfo colModified = table.getColumn("Modified");
+        if (null != colModified)
+        {
+            cols.append(comma).append("Modified");
+            values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
+            done.add("Modified");
+            comma = ",";
+        }
+        ColumnInfo colVersion = table.getVersionColumn();
+        if (null != colVersion && !done.contains(colVersion.getName()) && colVersion.getSqlTypeInt() == Types.TIMESTAMP)
+        {
+            cols.append(comma).append(colVersion.getSelectName());
+            values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
+            done.add(colVersion.getName());
+            comma = ",";
+        }
+
+        String objectIdColumnName = StringUtils.trimToNull(updatable.getObjectIdColumnName());
+
+        for (ColumnInfo column : table.getColumns())
+        {
+            if (column.isAutoIncrement())
+                continue;
+            if (done.contains(column.getName()))
+                continue;
+            done.add(column.getName());
+
+            cols.append(comma).append(column.getSelectName());
+            if (column.getName().equalsIgnoreCase(objectIdColumnName))
+            {
+                values.append(comma).append(objectIdVar);
+            }
+            else
+            {
+                Parameter p = new Parameter(column, parameters.size()+1);
+                parameters.add(p);
+                values.append(comma).append(p(d,useVariables,p.getIndex()));
+            }
+            comma = ", ";
+        }
+
+        SQLFragment sqlfInsertInto = new SQLFragment();
+        sqlfInsertInto.append("INSERT INTO " + table + " (");
+        sqlfInsertInto.append(cols).append(")\nVALUES (").append(values).append(");\n");
+
+        //
+        // ObjectProperty
+        //
+
+        if (null != properties)
+        {
+            for (DomainProperty dp : domain.getProperties())
+            {
+                // ignore property that 'wraps' a hard column
+                if (done.contains(dp.getName()))
+                    continue;
+                // CONSIDER: IF (p IS NOT NULL) THEN ...
+                sqlfObjectProperty.append("INSERT INTO exp.ObjectProperty (objectid, propertyid, typetag, mvindicator, ");
+                PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
+                switch (propertyType.getStorageType())
+                {
+                    case 's':
+                        sqlfObjectProperty.append("stringValue");
+                        break;
+                    case 'd':
+                        sqlfObjectProperty.append("dateTimeValue");
+                        break;
+                    case 'f':
+                        sqlfObjectProperty.append("doubleValue");
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown property type: " + propertyType);
+                }
+                sqlfObjectProperty.append(") VALUES (");
+                sqlfObjectProperty.append(objectIdVar);
+                sqlfObjectProperty.append(",").append(dp.getPropertyId());
+                sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
+                Parameter mv = new Parameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, parameters.size()+1, Types.VARCHAR);
+                parameters.add(mv);
+                sqlfObjectProperty.append(",").append(p(d,useVariables,mv.getIndex()));
+                Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), parameters.size()+1, propertyType.getSqlType());
+                parameters.add(v);
+                sqlfObjectProperty.append(",").append(p(d,useVariables,v.getIndex()));
+                sqlfObjectProperty.append(");\n");
+            }
+        }
+
+        //
+        // PREPARE
+        //
+
+        Parameter.ParameterMap ret;
+
+        if (!useVariables)
+        {
+            SQLFragment script = new SQLFragment();
+            script.append(sqlfDeclare);
+            script.append(sqlfObject);
+            script.append(sqlfInsertInto);
+            script.append(sqlfObjectProperty);
+            PreparedStatement stmt = conn.prepareStatement(script.getSQL());
+            ret = new Parameter.ParameterMap(stmt, parameters, updatable.remapSchemaColumns());
+        }
+        else
+        {
+            // wrap in a function
+            SQLFragment fn = new SQLFragment();
+            String fnName = d.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
+            fn.append("CREATE FUNCTION " + fnName + "(");
+            SQLFragment call = new SQLFragment("SELECT " + fnName + "(");
+            final SQLFragment drop = new SQLFragment("DROP FUNCTION " + fnName + "(");
+            comma = "";
+            for (Parameter p : parameters)
+            {
+                String type = d.sqlTypeNameFromSqlType(p.getType());
+                fn.append("\n").append(comma);
+                fn.append(p(d,useVariables,p.getIndex()));
+                fn.append(" ");
+                fn.append(type);
+                fn.append(" -- " + p.getName());
+                drop.append(comma).append(type);
+                call.append(comma).append("?");
+                comma = ",";
+            }
+            fn.append("\n) RETURNS void AS $$\n");
+            drop.append(");");
+            call.append(");");
+            fn.append(sqlfDeclare);
+            fn.append("BEGIN\n");
+            fn.append(sqlfObject);
+            fn.append(sqlfInsertInto);
+            fn.append(sqlfObjectProperty);
+            fn.append("\nEND;\n$$ LANGUAGE plpgsql;\n");
+
+            Table.execute(table.getSchema(), fn);
+            PreparedStatement stmt = conn.prepareStatement(call.getSQL());
+            ret = new Parameter.ParameterMap(stmt, parameters, updatable.remapSchemaColumns());
+            ret.onClose(new Runnable() { @Override public void run()
+            {
+                try
+                {
+                    Table.execute(ExperimentService.get().getSchema(),drop);
+                }
+                catch (SQLException x)
+                {
+                    Category.getInstance(QueryServiceImpl.class).error("Error dropping temp function", x);
+                }
+            }});
+        }
+
+//        if (null != constants)
+//        {
+//            for (Map.Entry e : constants.entrySet())
+//            {
+//                Parameter p = ret._map.get(e.getKey());
+//                if (null != p)
+//                    p.setValue(e.getValue(), true);
+//            }
+//        }
+
+        return ret;
     }
 }

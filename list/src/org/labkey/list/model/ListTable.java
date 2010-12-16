@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
@@ -23,6 +24,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -42,7 +44,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class ListTable extends FilteredTable
+public class ListTable extends FilteredTable implements UpdateableTableInfo
 {
     static public TableInfo getIndexTable(ListDefinition.KeyType keyType)
     {
@@ -216,5 +218,60 @@ public class ListTable extends FilteredTable
     public QueryUpdateService getUpdateService()
     {
         return new ListQueryUpdateService(this, getList());
+    }
+
+    // UpdateableTableInfo
+
+    @Override
+    public boolean insertSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean updateSupported()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean deleteSupported()
+    {
+        return false;
+    }
+
+    @Override
+    public TableInfo getSchemaTableInfo()
+    {
+        return getRealTable();
+    }
+
+    public ObjectUriType getObjectUriType()
+    {
+        return ObjectUriType.generateUrn;
+    }
+
+    @Override
+    public String getObjectURIColumnName()
+    {
+        return null;
+    }
+
+    @Override
+    public String getObjectIdColumnName()
+    {
+        return "objectid";
+    }
+
+    @Override
+    public CaseInsensitiveHashMap<String> remapSchemaColumns()
+    {
+        if (!_list.getKeyName().isEmpty() && !_list.getKeyName().equalsIgnoreCase("key"))
+        {
+            CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<String>();
+            m.put("key", _list.getKeyName());
+            return m;
+        }
+        return null;
     }
 }

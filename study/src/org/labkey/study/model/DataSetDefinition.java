@@ -16,7 +16,6 @@
 
 package org.labkey.study.model;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
@@ -39,10 +38,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
@@ -65,7 +61,6 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
@@ -74,7 +69,6 @@ import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -88,7 +82,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -668,7 +661,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      * so that this object can be cached...
      */
 
-    public static class DatasetSchemaTableInfo extends SchemaTableInfo
+    public class DatasetSchemaTableInfo extends SchemaTableInfo
     {
         private Container _container;
         ColumnInfo _ptid;
@@ -807,6 +800,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     rawValueCol.setHidden(true);
                     rawValueCol.setMvColumnName(null); // This column itself does not allow QC
                     rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
+                    rawValueCol.setRawValueColumn(true);
 
                     columns.add(mvColumn);
                     columns.add(rawValueCol);
@@ -922,6 +916,43 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 return _storage.getFromSQL(alias);
             }
+        }
+
+        //
+        // UpdateableTableInfo
+        //
+
+        @Override
+        public Domain getDomain()
+        {
+            return DataSetDefinition.this.getDomain();    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public DomainKind getDomainKind()
+        {
+            return DataSetDefinition.this.getDomainKind();    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public TableInfo getSchemaTableInfo()
+        {
+            return _storage;
+        }
+
+        @Override
+        public CaseInsensitiveHashMap<String> remapSchemaColumns()
+        {
+             CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<String>();
+            
+            // why did I add an underscore to the stored mv indicators???
+            for (ColumnInfo col : getColumns())
+            {
+                if (null == col.getMvColumnName())
+                    continue;
+                m.put(col.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, col.getMvColumnName());                
+            }
+            return m;
         }
     }
 
@@ -1473,7 +1504,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             long start = System.currentTimeMillis();
-            List<String> imported = _insertPropertyMaps(study, user, dataMaps, lastModified, ensureObjects, logger, scope);
+            DatasetImportHelper helper = new DatasetImportHelper(user, this, lastModified);
+            List<String> imported = OntologyManager.insertTabDelimited(getTableInfo(user), getContainer(), user,
+                    helper, dataMaps, logger);
             long end = System.currentTimeMillis();
             _log.info("imported " + getName() + " : " + DateUtil.formatDuration(end-start));
 
@@ -1542,7 +1575,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      *
      * TODO: should OntolgoyManager.insertTabDelimited handle this case too (share code with other materialized domains)
      *
-     */
     private List<String> _insertPropertyMaps(Study study, User user, List<Map<String, Object>> dataMaps, long lastModified, boolean ensureObjects, Logger logger, DbScope scope)
             throws SQLException, ValidationException
     {
@@ -1597,7 +1629,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             TableInfo table = getStorageTableInfo();
             scope = table.getSchema().getScope();
-            parameterMap = Table.insertStatement(conn, user, table);
+            parameterMap = QueryService.get().insertStatement(conn, user, table);
             
             for (Map row : dataMaps)
             {
@@ -1676,27 +1708,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
         return imported;
     }
+     */
 
 
-//    public void insertIntoMaterialized(User user, Collection<String> lsids)
-//            throws SQLException
-//    {
-//        TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
-//        if (tempTableInfo != null)
-//        {
-//            // Update the materialized temp table if it's still around
-//            SimpleFilter tempTableFilter = new SimpleFilter();
-//            tempTableFilter.addInClause("LSID", lsids);
-//            SQLFragment sqlSelect = Table.getSelectSQL(getTableInfo(user, false, false), null, null, null);
-//            SQLFragment sqlSelectInto = new SQLFragment();
-//            sqlSelectInto.append("INSERT INTO ").append(tempTableInfo).append(" SELECT * FROM (");
-//            sqlSelectInto.append(sqlSelect);
-//            sqlSelectInto.append(") x ");
-//            sqlSelectInto.append(tempTableFilter.getSQLFragment(tempTableInfo.getSqlDialect()));
-//
-//            Table.execute(tempTableInfo.getSchema(), sqlSelectInto);
-//        }
-//    }
 
     /**
      * If all the dupes can be replaced, delete them. If not return the ones that should NOT be replaced
@@ -1707,8 +1721,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (null == rows || rows.size() == 0)
             return null;
 
-        Container c = study.getContainer();
-        DatasetImportHelper helper = new DatasetImportHelper(user, null, c, this, 0);
+        DatasetImportHelper helper = new DatasetImportHelper(user, this, 0);
 
         // duplicate keys found that should be deleted
         Set<String> deleteSet = new HashSet<String>();

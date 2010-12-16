@@ -15,20 +15,19 @@
  */
 package org.labkey.study.model;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.*;
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Map;
 
@@ -36,43 +35,32 @@ import java.util.Map;
 * User: jeckels
 * Date: Apr 23, 2010
 */
-class DatasetImportHelper implements OntologyManager.ImportHelper
+class DatasetImportHelper implements OntologyManager.UpdateableTableImportHelper
 {
-
-    //final TableInfo _tinfo;
     final String _containerId;
     final int _datasetId;
     final String _urnPrefix;
-    final Connection _conn;
-    //PreparedStatement _stmt = null;
     final Long _lastModified;
     final String _visitDatePropertyURI;
     final String _keyPropertyURI;
     final Study _study;
     final DataSet _dataset;
 
-    DatasetImportHelper(User user, Connection conn, Container c, DataSetDefinition dataset, long lastModified) throws SQLException, UnauthorizedException
+    final TimepointType _timetype;
+    final DecimalFormat _sequenceFormat; 
+
+    DatasetImportHelper(User user, DataSetDefinition dataset, long lastModified) throws SQLException, UnauthorizedException
     {
-        //_tinfo = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(c), user);
-        _containerId = c.getId();
-        _study = StudyManager.getInstance().getStudy(c);
+        _containerId = dataset.getContainer().getId();
+        _study = dataset.getStudy();
         _datasetId = dataset.getDataSetId();
         _dataset = StudyManager.getInstance().getDataSetDefinition(_study, _datasetId);
         _urnPrefix = dataset.getURNPrefix();
-        _conn = conn;
         _lastModified = lastModified;
-        /*
-        if (null != conn)
-        {
-            SqlDialect dialect = StudyManager.getSchema().getSqlDialect();
-            String strType = StudyManager.getSchema().getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR);
-            _stmt = conn.prepareStatement(
-                    "INSERT INTO " + _tinfo + " (Container, DatasetId, ParticipantId, SequenceNum, LSID, _VisitDate, Created, Modified, SourceLsid, _key, QCState, ParticipantSequenceKey) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + dialect.concatenate("?", "'|'", "CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType + ")") + ")");
-            _stmt.setString(1, _containerId);
-            _stmt.setInt(2, _datasetId);
-        }
-*/
+
+        _timetype = _study.getTimepointType();
+        _sequenceFormat = new DecimalFormat("0.0000");
+
         String visitDatePropertyURI = null;
         String keyPropertyURI = null;
         TableInfo datasetTable = dataset.getTableInfo(user,false);
@@ -89,6 +77,29 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
     }
 
 
+    public void addParameters(Map<String,Object> row, Parameter.ParameterMap parameterMap)
+    {
+//        String lsid = getURI(row);
+//        String participantId = getParticipantId(row);
+//        double sequenceNum = getSequenceNum(row);
+//        Object key = getKey(row);
+//        String participantSequenceKey = participantId + "|" + _sequenceFormat.format(sequenceNum);
+//        Date visitDate = getVisitDate(row);
+//        Integer qcState = getQCState(row);
+//        String sourceLsid = getSourceLsid(row);
+//
+//        parameterMap.put("participantsequencekey", participantSequenceKey);
+//        parameterMap.put("participantid", participantId);
+//        parameterMap.put("sequencenum", sequenceNum);
+//        parameterMap.put("_key", key==null ? "" : String.valueOf(key));
+//        parameterMap.put("lsid", lsid);
+//        parameterMap.put("qcstate", qcState);
+//        parameterMap.put("sourcelsid", sourceLsid);
+//        if (_timetype != TimepointType.VISIT)
+//            parameterMap.put("date", visitDate);
+    }
+
+    
     static double toDouble(Object i)
     {
         if (i == null)
@@ -102,8 +113,6 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
     static String participantURI = DataSetDefinition.getParticipantIdURI();
     static String visitSequenceNumURI = DataSetDefinition.getSequenceNumURI();
     static String visitDateURI = DataSetDefinition.getVisitDateURI();
-    static String createdURI = DataSetDefinition.getCreatedURI();
-    static String modifiedURI = DataSetDefinition.getModifiedURI();
     static String sourceLsidURI = DataSetDefinition.getSourceLsidURI();
     static String qcStateURI = DataSetDefinition.getQCStateURI();
 
@@ -178,66 +187,33 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
         return (String)map.get(sourceLsidURI);
     }
 
-    public String beforeImportObject(Map<String, Object> map) throws SQLException
+    public String beforeImportObject(Map<String, Object> row) throws SQLException
     {
-        throw new RuntimeException("obsolete");
+        String lsid = getURI(row);
+        String participantId = getParticipantId(row);
+        double sequenceNum = getSequenceNum(row);
+        String participantSequenceKey = participantId + "|" + _sequenceFormat.format(sequenceNum);
+        Date visitDate = getVisitDate(row);
+        Integer qcState = getQCState(row);
+        String sourceLsid = getSourceLsid(row);
 
-        /*
-        if (null == _stmt)
-            throw new IllegalStateException("No connection provided");
-
-        String uri = getURI(map);
-        String ptid = String.valueOf(map.get(participantURI));
-        double visit = getSequenceNum(map);
-        Object key = null == _keyPropertyURI ? null : map.get(_keyPropertyURI);
-
-        Object created = map.get(createdURI);
-        Long timeCreated = null == created ? _lastModified : toMs(created);
-        Object modified = map.get(modifiedURI);
-        Long timeModified = null == modified ? _lastModified : toMs(modified);
-        Long visitDate = toMs(map.get(_visitDatePropertyURI));
-        assert _dataset.isDemographicData() || _study.getTimepointType() == TimepointType.VISIT || null != visitDate;
-        String sourceLsid = (String) map.get(sourceLsidURI);
-        // Values coming in from the client API might get here as Doubles, though we really want an Integer
-        Number qcState = (Number) map.get(qcStateURI);
-
-        _stmt.setString(3, ptid);
-        _stmt.setDouble(4, visit); // SequenceNum
-        _stmt.setString(5, uri); // LSID
-        _stmt.setTimestamp(6, null == visitDate ? null : new Timestamp(visitDate));
-        _stmt.setTimestamp(7, null == timeCreated ? null : new Timestamp(timeCreated));
-        _stmt.setTimestamp(8, null == timeModified ? null : new Timestamp(timeModified));
-        _stmt.setString(9, sourceLsid);
-        _stmt.setString(10, key == null ? "" : String.valueOf(key));
-        if (qcState != null)
-            _stmt.setInt(11, qcState.intValue());
-        else
-            _stmt.setNull(11, Types.INTEGER);
-
-        // ParticipantSequenceKey (concatenation of "ptid|SequenceNum")
-        _stmt.setString(12, ptid);
-        _stmt.setDouble(13, visit);
-
-        _stmt.execute();
-        return uri;
-        */
+        row.put("participantsequencekey", participantSequenceKey);
+        row.put("participantid", participantId);
+        row.put("sequencenum", sequenceNum);
+        row.put("lsid", lsid);
+        row.put("qcstate", qcState);
+        row.put("sourcelsid", sourceLsid);
+        if (_timetype != TimepointType.VISIT)
+            row.put("date", visitDate);
+        return lsid;
     }
 
-
-    private Long toMs(Object date)
+    @Override
+    public void bindAdditionalParameters(Map<String, Object> row, Parameter.ParameterMap target)
     {
-        if (null == date)
-            return null;
-        if (date instanceof String)
-        {
-            try{ return DateUtil.parseDateTime((String)date);}
-            catch (ConversionException x) { return null; }
-        }
-        if (date instanceof Date)
-            return ((Date)date).getTime();
-        return null;
+        Object key = getKey(row);
+        target.put("_key", key==null ? "" : String.valueOf(key));
     }
-
 
     public void afterBatchInsert(int currentRow) throws SQLException
     {
@@ -245,24 +221,9 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
 
     public void updateStatistics(int currentRow) throws SQLException
     {
-        // TODO this is likely unneeded
-        //_tinfo.getSqlDialect().updateStatistics(_tinfo);
     }
-
 
     public void done()
     {
-        /*
-        try
-        {
-            if (null != _stmt)
-                _stmt.close();
-            _stmt = null;
-        }
-        catch (SQLException x)
-        {
-            Logger.getLogger(DatasetImportHelper.class).error("unexpected error", x);
-        }
-        */
     }
 }
