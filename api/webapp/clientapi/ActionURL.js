@@ -257,6 +257,16 @@ that points back to the current page:
                 newUrl = newUrl.substring(0, newUrl.length - 1);
             }
             return newUrl;
+        },
+
+        /**
+         * Get the current base URL, which includes context path
+         * for example: http://labkey.org/labkey/
+         * @return {String} Current base URL.
+         */
+        getBaseURL : function()
+        {
+            return window.location.protocol + '//' + window.location.host + LABKEY.ActionURL.getContextPath() + '/';
         }
     };
 };
