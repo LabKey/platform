@@ -24,6 +24,8 @@ import org.labkey.api.util.MemTracker;
  * Date: Jul 8, 2010
  * Time: 10:35:38 AM
  */
+@Deprecated  // No longer used -- replaced with EhCache
+// Do not use CacheProviders directly; use CacheManager.getCache() to get a cache
 public class TTLCacheProvider implements CacheProvider
 {
     private static final CacheProvider INSTANCE = new TTLCacheProvider();

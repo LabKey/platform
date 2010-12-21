@@ -19,6 +19,7 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.config.CacheConfiguration;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.BasicCache;
 import org.labkey.api.cache.CacheLoader;
@@ -29,6 +30,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ShutdownListener;
 
 import javax.servlet.ServletContextEvent;
+import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,16 +39,29 @@ import java.util.concurrent.atomic.AtomicLong;
  * Date: Jul 8, 2010
  * Time: 1:46:40 PM
  */
+// Do not use CacheProvider implementations directly; use CacheManager.getCache() to get a cache
 public class EhCacheProvider implements CacheProvider, ShutdownListener
 {
     private static final Logger LOG = Logger.getLogger(EhCacheProvider.class);
     private static final EhCacheProvider INSTANCE = new EhCacheProvider();
-    private static final CacheManager MANAGER = new CacheManager();
+    private static final CacheManager MANAGER;
     private static final AtomicLong cacheCount = new AtomicLong(0);
     private static final Object _nullMarker = BasicCache.NULL_MARKER;
     
     static
     {
+        InputStream is = null;
+
+        try
+        {
+            is = EhCacheProvider.class.getResourceAsStream("ehcache.xml");
+            MANAGER = new CacheManager(is);
+        }
+        finally
+        {
+            IOUtils.closeQuietly(is);
+        }
+
         ContextListener.addShutdownListener(INSTANCE);
     }
 

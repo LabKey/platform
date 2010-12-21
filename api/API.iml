@@ -100,15 +100,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/antlr-3.1.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-validator.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -460,9 +451,9 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library>
+      <library name="Ehcache 2.3.1">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.1.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.3.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
