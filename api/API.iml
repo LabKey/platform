@@ -455,8 +455,12 @@
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.3.1.jar!/" />
         </CLASSES>
-        <JAVADOC />
-        <SOURCES />
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.3.1-javadoc.jar!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.3.1-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
   </component>
