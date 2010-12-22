@@ -24,8 +24,13 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
 import org.labkey.api.reports.report.InternalScriptEngineReport;
+import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.view.*;
+import org.labkey.api.reports.report.view.ChartDesignerBean;
+import org.labkey.api.reports.report.view.DefaultReportUIProvider;
+import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
@@ -40,7 +45,6 @@ import java.util.List;
  * Date: May 16, 2008
  * Time: 4:10:45 PM
  */
-
 public class ReportUIProvider extends DefaultReportUIProvider
 {
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
@@ -59,6 +63,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
             designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
         }
+
         ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
         for (ScriptEngineFactory factory : manager.getEngineFactories())
@@ -90,6 +95,13 @@ public class ReportUIProvider extends DefaultReportUIProvider
             if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
                 designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot", provider.getCreateWizardURL(settings, context)));
         }
+
+        ScriptReportBean bean = new ScriptReportBean(settings);
+        bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+        bean.setScriptExtension(".js");
+        bean.setReportType(JavaScriptReport.TYPE);
+        designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "I'm a really cool javascript thingy", ReportUtil.getScriptReportDesignerURL(context, bean)));
+
         return designers;
     }
 

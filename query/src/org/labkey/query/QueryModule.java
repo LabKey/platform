@@ -96,6 +96,7 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new RReport());
         ReportService.get().registerReport(new ExternalScriptEngineReport());
         ReportService.get().registerReport(new InternalScriptEngineReport());
+        ReportService.get().registerReport(new JavaScriptReport());
 
         QueryView.register(new RExportScriptFactory());
         QueryView.register(new JavaScriptExportScriptFactory());

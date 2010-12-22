@@ -1,6 +1,3 @@
-<%@ page import="org.labkey.api.util.MailHelper" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.Properties" %>
 <%
 /*
  * Copyright (c) 2008 LabKey Corporation
@@ -18,7 +15,9 @@
  * limitations under the License.
  */
 %>
-
+<%@ page import="org.labkey.api.util.MailHelper" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.Properties" %>
 <%
     Properties emailProps = MailHelper.getSession().getProperties();
 %>

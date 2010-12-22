@@ -21,18 +21,41 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.labkey.api.data.*;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataException;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ViewOptions;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.query.design.*;
+import org.labkey.query.design.DgColumn;
+import org.labkey.query.design.DgQuery;
+import org.labkey.query.design.DgTable;
+import org.labkey.query.design.DgValue;
+import org.labkey.query.design.QueryDocument;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
@@ -44,7 +67,12 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
 public abstract class QueryDefinitionImpl implements QueryDefinition
@@ -145,6 +173,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     private Map<String, CustomView> getAllCustomViews(User user, HttpServletRequest request, boolean inheritable, boolean allModules)
     {
         Map<String, CustomView> ret = new LinkedHashMap<String, CustomView>();
+
         try
         {
             Container container = getContainer();
@@ -167,6 +196,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             log.error("Error", e);
         }
+
         return ret;
     }
 
@@ -453,14 +483,17 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         if (table == null)
             throw new NullPointerException();
+
         if (view != null)
         {
-            Map<FieldKey,ColumnInfo> map = QueryService.get().getColumns(table, view.getColumns());
+            Map<FieldKey, ColumnInfo> map = QueryService.get().getColumns(table, view.getColumns());
+
             if (!map.isEmpty())
             {
                 return new ArrayList<ColumnInfo>(map.values());
             }
         }
+
         return new ArrayList<ColumnInfo>(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
     }
 

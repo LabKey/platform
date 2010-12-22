@@ -468,7 +468,7 @@ public class ReportsController extends SpringActionController
             //form.setIsDirty(true);
             Report report = form.getReport();
             if (report instanceof RReport)
-                ((RReport)report).clearCache();
+                report.clearCache();
             RunRReportView.updateReportCache(form, false);
             return true;
         }
