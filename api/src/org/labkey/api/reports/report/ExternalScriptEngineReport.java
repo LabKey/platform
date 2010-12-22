@@ -88,6 +88,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 */
 
         List<String> errors = new ArrayList<String>();
+
         if (!validateScript(script, errors))
         {
             for (String error : errors)
@@ -96,9 +97,11 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         }
 
         List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
+
         if (!getCachedReport(context, outputSubst))
         {
-            try {
+            try
+            {
                 runScript(context, outputSubst, createInputDataFile(context));
             }
             catch (Exception e)
@@ -113,8 +116,10 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 HttpView errView = new HtmlView(err);
                 view.addView(errView);
             }
+
             cacheResults(context, outputSubst);
         }
+
         renderViews(this, view, outputSubst, false);
 
         return view;
@@ -124,12 +129,12 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine();
+
         if (engine != null)
         {
             try
             {
                 Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-
                 bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
                 Object output = engine.eval(createScript(context, outputSubst, inputDataTsv));
 
@@ -147,6 +152,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
                     outputSubst.add(param);
                 }
+
                 return output != null ? output.toString() : "";
             }
             catch(Exception e)
@@ -154,6 +160,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 throw new ScriptException(e);
             }
         }
+
         throw new ScriptException("A script engine implementation was not found for the specified report");
     }
 
@@ -165,10 +172,14 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             synchronized(_cachedReportURLMap)
             {
                 File cacheDir = getCacheDir();
-                if(null == cacheDir)
+
+                if (null == cacheDir)
                     return;
-                try {
+
+                try
+                {
                     File mapFile = new File(cacheDir, SUBSTITUTION_MAP);
+
                     for (ParamReplacement param : replacements)
                     {
                         File src = param.getFile();
@@ -177,10 +188,12 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                         if (dst.createNewFile())
                         {
                             FileUtil.copyFile(src, dst);
+
                             if (param.getId().equals(ConsoleOutput.ID))
                             {
                                 BufferedWriter bw = null;
-                                try {
+                                try
+                                {
                                     bw = new BufferedWriter(new FileWriter(dst, true));
                                     bw.write("\nLast cached update : " + DateUtil.formatDateTime() + "\n");
                                 }
@@ -193,6 +206,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                             param.setFile(dst);
                         }
                     }
+
                     ParamReplacementSvc.get().toFile(replacements, mapFile);
                     _cachedReportURLMap.put(getDescriptor().getReportId(), getCacheURL(context.getActionURL()));
                 }
@@ -224,10 +238,11 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                     return false;
                 }
                 File cacheDir = getCacheDir();
-                if(null == cacheDir)
+                if (null == cacheDir)
                     return false;
 
-                try {
+                try
+                {
                     for (ParamReplacement param : ParamReplacementSvc.get().fromFile(new File(cacheDir, SUBSTITUTION_MAP)))
                     {
                         replacements.add(param);
@@ -296,7 +311,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     protected File getCacheDir()
     {
-        if(getDescriptor().getReportId() == null)
+        if (getDescriptor().getReportId() == null)
             return null;
 
         File cacheDir = new File(getTempRoot(), "Report_" + FileUtil.makeLegalName(getDescriptor().getReportId().toString()) + File.separator + CACHE_DIR);
@@ -319,6 +334,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public HttpView renderDataView(ViewContext context) throws Exception
     {
         QueryView view = createQueryView(context, getDescriptor());
+
         if (view != null)
             return view;
         else

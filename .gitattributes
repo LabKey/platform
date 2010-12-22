@@ -653,6 +653,7 @@ api/src/org/labkey/api/reports/report/ModuleRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/QueryReport.java -text
 api/src/org/labkey/api/reports/report/QueryReportDescriptor.java -text
+api/src/org/labkey/api/reports/report/QueryViewReport.java -text
 api/src/org/labkey/api/reports/report/RReport.java -text
 api/src/org/labkey/api/reports/report/RReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/RReportJob.java -text

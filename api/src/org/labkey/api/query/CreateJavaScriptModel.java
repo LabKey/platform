@@ -15,7 +15,9 @@
  */
 package org.labkey.api.query;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -79,5 +81,31 @@ public class CreateJavaScriptModel extends ExportScriptModel
         //remove enclosing double-quotes since we'll use PageFlowUtil.jsString() on the result
         String sort = super.getSort();
         return null != sort ? PageFlowUtil.jsString(sort.substring(1, sort.length() - 1)) : "null";
+    }
+
+    // Produce javascript code block containing all the standard query parameters.  Callers need to wrap this block in
+    // curly braces (at a minimum) and modify any parameters they need to change.
+    public String getStandardJavaScriptParameters(int indentSpaces)
+    {
+        String indent = StringUtils.repeat(" ", indentSpaces);
+        StringBuilder params = new StringBuilder();
+        params.append(indent).append("requiredVersion: 9.1,\n");
+        params.append(indent).append("schemaName: ").append(PageFlowUtil.jsString(getSchemaName())).append(",\n");
+        params.append(indent).append("queryName: ").append(PageFlowUtil.jsString(getQueryName())).append(",\n");
+        params.append(indent).append("columns: ").append(PageFlowUtil.jsString(getColumns())).append(",\n");
+        params.append(indent).append("filterArray: ").append(getFilters()).append(",\n");
+
+        ContainerFilter containerFilter = getContainerFilter();
+
+        if (null != containerFilter)
+        {
+            params.append(indent).append("containerFilter: '").append(containerFilter.getType().name()).append("',\n");
+        }
+
+        params.append(indent).append("sort: ").append(getSort()).append(",\n");
+        params.append(indent).append("successCallback: onSuccess,\n");
+        params.append(indent).append("errorCallback: onError");
+
+        return params.toString();
     }
 }

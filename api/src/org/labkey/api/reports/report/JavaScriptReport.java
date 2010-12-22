@@ -16,6 +16,8 @@
 
 package org.labkey.api.reports.report;
 
+import org.labkey.api.query.CreateJavaScriptModel;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
@@ -25,7 +27,7 @@ import org.labkey.api.view.ViewContext;
 * Date: Dec 14, 2010
 * Time: 5:38:37 PM
 */
-public class JavaScriptReport extends AbstractReport
+public class JavaScriptReport extends QueryViewReport
 {
     public static final String TYPE = "ReportService.JavaScriptReport";
 
@@ -50,6 +52,19 @@ public class JavaScriptReport extends AbstractReport
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        return new JspView<JavaScriptReport>("/org/labkey/api/reports/report/view/javaScriptReport.jsp", this);
+        return new JspView<JavaScriptReportBean>("/org/labkey/api/reports/report/view/javaScriptReport.jsp", new JavaScriptReportBean(context));
+    }
+
+    public class JavaScriptReportBean
+    {
+        public final CreateJavaScriptModel model;
+        public final String script;
+
+        private JavaScriptReportBean(ViewContext context) throws Exception
+        {
+            QueryView qv = createQueryView(context, getDescriptor());
+            model = new CreateJavaScriptModel(qv);
+            script = getDescriptor().getProperty(RReportDescriptor.Prop.script);
+        }
     }
 }

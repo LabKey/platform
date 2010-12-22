@@ -35,12 +35,8 @@ import org.labkey.api.data.Table;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -52,7 +48,6 @@ import org.labkey.api.reports.report.r.view.PdfOutput;
 import org.labkey.api.reports.report.r.view.PostscriptOutput;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
-import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.DataView;
@@ -87,7 +82,7 @@ import java.util.regex.Pattern;
  *
  * A Report implementation that uses a ScriptEngine instance to execute the associated script.
 */
-public abstract class ScriptEngineReport extends AbstractReport implements Report.ResultSetGenerator
+public abstract class ScriptEngineReport extends QueryViewReport implements Report.ResultSetGenerator
 {
     public static final String INPUT_FILE_TSV = "input_data";
     public static Pattern scriptPattern = Pattern.compile("\\$\\{(.*?)\\}");
@@ -143,39 +138,11 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         //throw new RuntimeException("No Script Engine is available for this Report");
     }
 
-    /**
-     * Create the query view used to generate the result set that this report operates on.
-     */
-    protected QueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
-    {
-        final String schemaName = descriptor.getProperty(QueryParam.schemaName.toString());
-        final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
-        final String viewName = descriptor.getProperty(QueryParam.viewName.toString());
-        final String dataRegionName = descriptor.getProperty(QueryParam.dataRegionName.toString());
-
-        if (context != null && schemaName != null)
-        {
-            UserSchema base = (UserSchema) DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(schemaName);
-            if (base != null)
-            {
-                QuerySettings settings = base.getSettings(context, dataRegionName);
-                settings.setSchemaName(schemaName);
-                settings.setQueryName(queryName);
-                settings.setViewName(viewName);
-                // need to reset the report id since we want to render the data grid, not the report
-                settings.setReportId(null);
-
-                UserSchema schema = base.createView(context, settings).getSchema();
-                return new ReportQueryView(schema, settings);
-            }
-        }
-        return null;
-    }
-
     public Results generateResults(ViewContext context) throws Exception
     {
         ReportDescriptor descriptor = getDescriptor();
         QueryView view = createQueryView(context, descriptor);
+
         if (view != null)
         {
             view.getSettings().setMaxRows(Table.ALL_ROWS);
@@ -185,6 +152,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
 
             // temporary code until we add a more generic way to specify a filter or grouping on the chart
             final String filterParam = descriptor.getProperty(ReportDescriptor.Prop.filterParam);
+
             if (!StringUtils.isEmpty(filterParam))
             {
                 final String filterValue = (String)context.get(filterParam);
@@ -196,8 +164,10 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
                     ctx.setBaseFilter(filter);
                 }
             }
+
             if (null == rgn.getResultSet(ctx))
                 return null;
+
             return new ResultsImpl(ctx);
         }
         return null;
@@ -368,6 +338,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         ArrayList<String> ret = new ArrayList<String>(r.getResultSet().getMetaData().getColumnCount());
         // now go through the resultset
         ResultSetMetaData md = r.getResultSet().getMetaData();
+
         for (int col=1, count=md.getColumnCount() ; col<=count ; col++)
         {
             String name = md.getColumnName(col);
@@ -381,7 +352,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
             if (!aliases.add(alias))
             {
                 int i;
-                for (i=1; !aliases.add(alias+i) ;i++)
+                for (i=1; !aliases.add(alias+i); i++)
                     ;
                 alias = alias+i;
             }
@@ -487,6 +458,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
     public void serializeToFolder(VirtualFile directory) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
+
         if (descriptor.getReportId() != null)
         {
             // for script based reports, write the script portion to a separate file to facilitate script modifications
@@ -533,19 +505,23 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
             // script file takes precedence over any meta-data based script.
 
             File scriptFile = new File(reportFile.getParent(), getSerializedScriptFileName());
+
             if (scriptFile.exists())
             {
                 BufferedReader br = null;
 
-                try {
+                try
+                {
                     StringBuilder sb = new StringBuilder();
                     br = new BufferedReader(new FileReader(scriptFile));
                     String l;
+
                     while ((l = br.readLine()) != null)
                     {
                         sb.append(l);
                         sb.append('\n');
                     }
+
                     getDescriptor().setProperty(RReportDescriptor.Prop.script, sb.toString());
                 }
                 finally
@@ -603,7 +579,3 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         }
     }
 }
-
-/*
-participantvisit_pre_1_pre1init
-*/

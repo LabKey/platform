@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.reports.report.JavaScriptReport.JavaScriptReportBean" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.reports.report.JavaScriptReport" %>
-<%@ page import="org.labkey.api.reports.report.RReportDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<JavaScriptReport> me = (HttpView<JavaScriptReport>) HttpView.currentView();
-    JavaScriptReport report = me.getModelBean();
+    HttpView<JavaScriptReportBean> me = (HttpView<JavaScriptReportBean>) HttpView.currentView();
+    JavaScriptReportBean bean = me.getModelBean();
     String uniqueName = "foo";
     String containingFunctionName = "cf_" + uniqueName;
 %>
@@ -33,13 +32,17 @@
     {
         if (typeof render == 'function')
         {
-            render(div);
+            var query = {
+<%=bean.model.getStandardJavaScriptParameters(16)%>
+            };
+
+            render(query, div);
         }
         else
         {
             alert("Your script must define a function called 'render'");
         }
 
-        <%=report.getDescriptor().getProperty(RReportDescriptor.Prop.script)%>
+        <%=bean.script%>
     }
 </script>

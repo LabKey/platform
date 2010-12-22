@@ -16,19 +16,17 @@
 
 package org.labkey.api.study;
 
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Sort;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.view.ActionURL;
 
-import java.util.List;
-import java.io.PrintWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * User: brittp
