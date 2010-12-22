@@ -44,6 +44,9 @@ tokens
 @lexer::header
 {
 	package org.labkey.query.sql.antlr;
+
+    import org.apache.log4j.Category;
+    import org.labkey.query.sql.SqlParser;
 }
 
 
@@ -65,8 +68,16 @@ tokens
 
 @lexer::members
 {
+    Category _log = Category.getInstance(SqlParser.class);
+    
     protected void setPossibleID(boolean possibleID)
     {
+    }
+
+    @Override
+    public void emitErrorMessage(String msg)
+    {
+        _log.debug(msg);
     }
 }
 
@@ -623,7 +634,6 @@ QUOTED_IDENTIFIER
 	;
 
 
-fragment
 WS 
 	: (' ' | '\t' | '\r' | '\n')+ {skip();}
 	;
