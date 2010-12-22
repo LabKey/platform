@@ -62,9 +62,9 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -126,7 +126,6 @@ import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.query.sql.QExpr;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
@@ -2364,14 +2363,14 @@ public class QueryController extends SpringActionController
             }
 
             QueryView view = QueryView.create(form, errors);
-            if(metaDataOnly)
+            if (metaDataOnly)
                 view.getSettings().setMaxRows(1); //query assumes that 0 means all rows!
 
             view.setShowPagination(form.isIncludeTotalCount());
 
             //if viewName was specified, ensure that it was actually found and used
             //QueryView.create() will happily ignore an invalid view name and just return the default view
-            if(null != StringUtils.trimToNull(form.getViewName()) &&
+            if (null != StringUtils.trimToNull(form.getViewName()) &&
                     null == view.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.getViewName()))
             {
                 throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
@@ -2380,7 +2379,7 @@ public class QueryController extends SpringActionController
             boolean isEditable = isQueryEditable(view.getTable());
 
             //if requested version is >= 9.1, use the extended api query response
-            if(getRequestedApiVersion() >= 9.1)
+            if (getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isEditable, true,
                         form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
             else
@@ -2478,14 +2477,14 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(ExecuteSqlForm form, BindException errors) throws Exception
         {
             String schemaName = StringUtils.trimToNull(form.getSchemaName());
-            if(null == schemaName)
+            if (null == schemaName)
                 throw new IllegalArgumentException("No value was supplied for the required parameter 'schemaName'.");
             String sql = StringUtils.trimToNull(form.getSql());
-            if(null == sql)
+            if (null == sql)
                 throw new IllegalArgumentException("No value was supplied for the required parameter 'sql'.");
 
             UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
-            if(null == schema)
+            if (null == schema)
                 throw new IllegalArgumentException("Schema '" + schemaName + "' could not be found.");
 
             //create a temp query settings object initialized with the posted LabKey SQL
@@ -2503,14 +2502,14 @@ public class QueryController extends SpringActionController
 
             //apply optional settings (maxRows, offset)
             boolean metaDataOnly = false;
-            if(null != form.getMaxRows() && form.getMaxRows().intValue() >= 0)
+            if (null != form.getMaxRows() && form.getMaxRows().intValue() >= 0)
             {
                 settings.setShowRows(ShowRows.PAGINATED);
                 settings.setMaxRows(Table.ALL_ROWS == form.getMaxRows().intValue() ? 1 : form.getMaxRows().intValue());
                 metaDataOnly = (Table.ALL_ROWS == form.getMaxRows().intValue());
             }
 
-            if(null != form.getOffset())
+            if (null != form.getOffset())
                 settings.setOffset(form.getOffset().longValue());
 
             if (form.getContainerFilter() != null)
@@ -2529,7 +2528,7 @@ public class QueryController extends SpringActionController
 
             boolean isEditable = isQueryEditable(view.getTable());
 
-            if(getRequestedApiVersion() >= 9.1)
+            if (getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isEditable,
                         false, schemaName, "sql", 0, null, metaDataOnly);
             else
@@ -2663,7 +2662,7 @@ public class QueryController extends SpringActionController
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
             {
-                List<Map<String,Object>> insertedRows = qus.insertRows(user, container, rows);
+                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows);
                 return qus.getRows(user, container, insertedRows);
             }
         },
@@ -2679,7 +2678,7 @@ public class QueryController extends SpringActionController
                     newRows.add((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES));
                     oldKeys.add((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS));
                 }
-                List<Map<String,Object>> updatedRows = qus.insertRows(user, container, newRows);
+                List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows);
                 updatedRows = qus.getRows(user, container, updatedRows);
                 List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
                 for (int i = 0; i < updatedRows.size(); i++)
@@ -2697,7 +2696,7 @@ public class QueryController extends SpringActionController
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
             {
-                List<Map<String,Object>> updatedRows = qus.updateRows(user, container, rows, rows);
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, rows);
                 return qus.getRows(user, container, updatedRows);
             }
         },
@@ -2713,7 +2712,7 @@ public class QueryController extends SpringActionController
                     newRows.add((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES));
                     oldKeys.add((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS));
                 }
-                List<Map<String,Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys);
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys);
                 updatedRows = qus.getRows(user, container, updatedRows);
                 List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
                 for (int i = 0; i < updatedRows.size(); i++)
@@ -2769,7 +2768,7 @@ public class QueryController extends SpringActionController
             User user = getViewContext().getUser();
 
             JSONArray rows = json.getJSONArray(PROP_ROWS);
-            if(null == rows || rows.length() < 1)
+            if (null == rows || rows.length() < 1)
                 throw new IllegalArgumentException("No 'rows' array supplied!");
 
             String schemaName = json.getString(PROP_SCHEMA_NAME);
@@ -2791,7 +2790,7 @@ public class QueryController extends SpringActionController
             for(int idx = 0; idx < rows.length(); ++idx)
             {
                 JSONObject jsonObj = rows.getJSONObject(idx);
-                if(null != jsonObj)
+                if (null != jsonObj)
                 {
                     CaseInsensitiveHashMap<Object> rowMap = new CaseInsensitiveHashMap<Object>(jsonObj);
                     rowsToProcess.add(rowMap);
@@ -2841,7 +2840,7 @@ public class QueryController extends SpringActionController
         @NotNull
         protected TableInfo getTableInfo(Container container, User user, String schemaName, String queryName)
         {
-            if(null == schemaName || null == queryName)
+            if (null == schemaName || null == queryName)
                 throw new IllegalArgumentException("You must supply a schemaName and queryName!");
 
             UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
@@ -4018,7 +4017,7 @@ public class QueryController extends SpringActionController
                     if (null == schema)
                         continue;
 
-                    Map<String,Object> schemaProps = new HashMap<String,Object>();
+                    Map<String, Object> schemaProps = new HashMap<String, Object>();
                     schemaProps.put("description", schema.getDescription());
                     
                     resp.put(schema.getName(), schemaProps);
@@ -4074,22 +4073,22 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(GetQueriesForm form, BindException errors) throws Exception
         {
-            if(null == StringUtils.trimToNull(form.getSchemaName()))
+            if (null == StringUtils.trimToNull(form.getSchemaName()))
                 throw new IllegalArgumentException("You must supply a value for the 'schemaName' parameter!");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             QuerySchema qschema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getSchema(form.getSchemaName());
-            if(null == qschema)
+            if (null == qschema)
                 throw new NotFoundException("The schema name '" + form.getSchemaName()
                         + "' was not found within the folder '" + getViewContext().getContainer().getPath() + "'");
 
-            if(!(qschema instanceof UserSchema))
+            if (!(qschema instanceof UserSchema))
                 throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
 
             response.put("schemaName", form.getSchemaName());
             UserSchema uschema = (UserSchema) qschema;
 
-            List<Map<String,Object>> qinfos = new ArrayList<Map<String,Object>>();
+            List<Map<String, Object>> qinfos = new ArrayList<Map<String, Object>>();
 
             //user-defined queries
             if (form.isIncludeUserQueries())
@@ -4147,7 +4146,7 @@ public class QueryController extends SpringActionController
             if (null != table && includeColumns)
             {
                 //enumerate the columns
-                List<Map<String,Object>> cinfos = new ArrayList<Map<String,Object>>();
+                List<Map<String, Object>> cinfos = new ArrayList<Map<String, Object>>();
                 for(ColumnInfo col : table.getColumns())
                 {
                     Map<String, Object> cinfo = new HashMap<String, Object>();

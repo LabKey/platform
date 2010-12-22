@@ -23,7 +23,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
-import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
@@ -72,6 +71,7 @@ public class ReportQueryViewFactory
                                                     String queryName, String viewName) throws Exception
     {
         StudyQuerySchema schema = getStudyQuerySchema(context, ReadPermission.class, descriptor);
+
         if (schema != null)
         {
             QuerySettings settings = schema.getSettings(context, descriptor.getProperty(QueryParam.dataRegionName.toString()), queryName);
@@ -82,14 +82,17 @@ public class ReportQueryViewFactory
 
             ReportQueryView view = new StudyReportQueryView(schema, settings);
             final String filterParam = descriptor.getProperty("filterParam");
+
             if (!StringUtils.isEmpty(filterParam))
             {
                 final String filterValue = context.getActionURL().getParameter(filterParam);
+
                 if (filterValue != null)
                 {
                     view.setFilter(new SimpleFilter(filterParam, filterValue));
                 }
             }
+
             return view;
         }
 
