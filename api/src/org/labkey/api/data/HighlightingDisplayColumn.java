@@ -81,7 +81,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
 
         out.write("</style>\n");
 
-        out.write("<script>\n");
+        out.write("<script type=\"text/javascript\">\n");
 
         out.write("var rules = new Array();\n" +
                 "\n" +
@@ -115,7 +115,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
                 "\tvar style = getStyle(el.tagName + \".\" + el.className);\n" +
                 "\n" +
                 "\tif (style)\n" +
-                "\t\tstyle.backgroundColor = '#FFFFFF';\n" +
+                "\t\tstyle.backgroundColor = null;\n" +
                 "}\n" +
                 "\n" +
                 "function getStyle(className)\n" +
@@ -123,10 +123,8 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
                 "\tvar lcName = className.toLowerCase();  // different browsers change the case of tagname & rule selector text, so force everything to lowercase\n" +
                 "\n" +
                 "\tfor (i = 0; i < rules.length; i++)\n" +
-                "\t{\n" +
                 "\t\tif (rules[i].selectorText.toLowerCase() == lcName)\n" +
                 "\t\t\treturn rules[i].style;\n" +
-                "\t}\n" +
                 "\n" +
                 "\treturn null;\n" +
                 "}\n" +

@@ -1011,7 +1011,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     for (var i = 0; i < userFilter.length; i++)
                         additionalFields[userFilter[i].fieldKey] = true;
 
-                    for (var i = 0; i < userSort.length; i++)
+                    for (i = 0; i < userSort.length; i++)
                         additionalFields[userSort[i].fieldKey] = true;
 
                     var fields = [];
@@ -2205,27 +2205,33 @@ function clearSort(tableName, columnName)
 }
 
 // If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.
-function verifySelected(form, url, method, pluralNoun, confirmText)
+function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singularConfirmText)
 {
-    var checked = false;
+    var checked = 0;
     var elems = form.elements;
     var l = elems.length;
+
     for (var i = 0; i < l; i++)
     {
         var e = elems[i];
+
         if (e.type == 'checkbox' && e.checked && e.name == '.select')
         {
-            checked = true;
-            break;
+            checked++;
+
+            if (checked > 1)
+                break;
         }
     }
-    if (checked)
+
+    if (checked > 0)
     {
-        if ((window.parent == window) && (null != confirmText))
+        if ((window.parent == window) && (null != pluralConfirmText))
         {
-            if (!window.confirm(confirmText))
+            if (!window.confirm(1 == checked && null != singularConfirmText ? singularConfirmText : pluralConfirmText))
                 return false;
         }
+
         form.action = url;
         form.method = method;
         return true;

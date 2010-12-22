@@ -654,7 +654,7 @@ public class QueryView extends WebPartView<Object>
         {
             ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
             btnDelete.setActionType(ActionButton.Action.POST);
-            btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected rows?");
+            btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
             return btnDelete;
         }
         return null;

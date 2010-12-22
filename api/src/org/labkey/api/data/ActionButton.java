@@ -17,6 +17,8 @@
 package org.labkey.api.data;
 
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -66,7 +68,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     {
         BUTTON_DELETE = new ActionButton("delete.post", "Delete");
         BUTTON_DELETE.setDisplayPermission(DeletePermission.class);
-        BUTTON_DELETE.setRequiresSelection(true, "Are you sure you want to delete the selected rows?");
+        BUTTON_DELETE.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
         BUTTON_DELETE.lock();
         assert MemTracker.remove(BUTTON_DELETE);
 
@@ -118,7 +120,8 @@ public class ActionButton extends DisplayElement implements Cloneable
     private String _target;
     private boolean _appendScript;
     protected boolean _requiresSelection;
-    private String _confirmText;
+    private @Nullable String _singularConfirmText;
+    private @Nullable String _pluralConfirmText;
     private String _encodedSubmitForm;
 
     public ActionButton(String caption, URLHelper link)
@@ -173,7 +176,8 @@ public class ActionButton extends DisplayElement implements Cloneable
         _url = ab._url;
         _target = ab._target;
         _requiresSelection = ab._requiresSelection;
-        _confirmText = ab._confirmText;
+        _pluralConfirmText = ab._pluralConfirmText;
+        _singularConfirmText = ab._singularConfirmText;
     }
 
     public String getActionType()
@@ -276,19 +280,20 @@ public class ActionButton extends DisplayElement implements Cloneable
 
     public void setRequiresSelection(boolean requiresSelection)
     {
-        setRequiresSelection(requiresSelection, null, null);
+        setRequiresSelection(requiresSelection, null, null, null);
     }
 
-    public void setRequiresSelection(boolean requiresSelection, String confirmText)
+    public void setRequiresSelection(boolean requiresSelection, @NotNull String singularConfirmText, @NotNull String pluralConfirmText)
     {
-        setRequiresSelection(requiresSelection, confirmText, null);
+        setRequiresSelection(requiresSelection, singularConfirmText, pluralConfirmText, null);
     }
 
-    public void setRequiresSelection(boolean requiresSelection, String confirmText, String encodedSubmitForm)
+    public void setRequiresSelection(boolean requiresSelection, @Nullable String singularConfirmText, @Nullable String pluralConfirmText, @Nullable String encodedSubmitForm)
     {
         checkLocked();
         _requiresSelection = requiresSelection;
-        _confirmText = confirmText;
+        _singularConfirmText = singularConfirmText;
+        _pluralConfirmText = pluralConfirmText;
         _encodedSubmitForm = encodedSubmitForm;
     }
 
@@ -301,7 +306,8 @@ public class ActionButton extends DisplayElement implements Cloneable
                         "\"" + (_url != null ? getURL(ctx) : getActionName(ctx)) + "\", " +
                         "\"" + _actionType.toString() + "\", " +
                         "\"rows\"" +
-                        (_confirmText != null ? ", \"" + PageFlowUtil.filter(_confirmText) + "\"" : "") +
+                        (_pluralConfirmText != null ? ", \"" + PageFlowUtil.filter(_pluralConfirmText) + "\"" : "") +
+                        (_singularConfirmText != null ? ", \"" + PageFlowUtil.filter(_singularConfirmText) + "\"" : "") +
                     ")";
         }
         else
