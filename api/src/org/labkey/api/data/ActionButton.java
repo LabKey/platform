@@ -283,11 +283,13 @@ public class ActionButton extends DisplayElement implements Cloneable
         setRequiresSelection(requiresSelection, null, null, null);
     }
 
+    // Confirm text strings can include ${selectedCount} -- when the message is rendered, this will be replaced by the actual count.
     public void setRequiresSelection(boolean requiresSelection, @NotNull String singularConfirmText, @NotNull String pluralConfirmText)
     {
         setRequiresSelection(requiresSelection, singularConfirmText, pluralConfirmText, null);
     }
 
+    // Confirm text strings can include ${selectedCount} -- when the message is rendered, this will be replaced by the actual count.
     public void setRequiresSelection(boolean requiresSelection, @Nullable String singularConfirmText, @Nullable String pluralConfirmText, @Nullable String encodedSubmitForm)
     {
         checkLocked();
@@ -301,6 +303,8 @@ public class ActionButton extends DisplayElement implements Cloneable
     {
         if (_requiresSelection)
         {
+            // We pass in the plural text first since some javascript usages of verifySelected() pass in only a single (plural)
+            // confirmation message.
             return "return verifySelected(" +
                         (_encodedSubmitForm != null ? _encodedSubmitForm : "this.form") + ", " +
                         "\"" + (_url != null ? getURL(ctx) : getActionName(ctx)) + "\", " +

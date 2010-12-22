@@ -2218,9 +2218,6 @@ function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singul
         if (e.type == 'checkbox' && e.checked && e.name == '.select')
         {
             checked++;
-
-            if (checked > 1)
-                break;
         }
     }
 
@@ -2228,7 +2225,9 @@ function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singul
     {
         if ((window.parent == window) && (null != pluralConfirmText))
         {
-            if (!window.confirm(1 == checked && null != singularConfirmText ? singularConfirmText : pluralConfirmText))
+            var confirmText = (1 == checked && null != singularConfirmText ? singularConfirmText : pluralConfirmText);
+
+            if (!window.confirm(confirmText.replace("${selectedCount}", checked)))
                 return false;
         }
 
