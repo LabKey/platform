@@ -867,7 +867,7 @@ public class StudyController extends BaseStudyController
                     {
                         ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
                         ActionButton deleteRows = new ActionButton(deleteRowsURL, "Delete");
-                        deleteRows.setRequiresSelection(true, "Delete selected rows of this dataset?");
+                        deleteRows.setRequiresSelection(true, "Delete selected row from this dataset?", "Delete selected rows from this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);
                         deleteRows.setDisplayPermission(DeletePermission.class);
                         buttonBar.add(deleteRows);
@@ -883,7 +883,7 @@ public class StudyController extends BaseStudyController
                         ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
                         deleteRowsURL.addParameter("protocolId", protocol.getRowId());
                         ActionButton deleteRows = new ActionButton(deleteRowsURL, "Recall");
-                        deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
+                        deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);
                         deleteRows.setDisplayPermission(DeletePermission.class);
                         buttonBar.add(deleteRows);
@@ -2231,7 +2231,7 @@ public class StudyController extends BaseStudyController
                     deleteURL.addParameter("sourceLsid", sourceLsid);
                     ActionButton deleteRows = new ActionButton(deleteURL, "Recall Rows");
 
-                    deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
+                    deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
                     deleteRows.setActionType(ActionButton.Action.POST);
                     deleteRows.setDisplayPermission(DeletePermission.class);
 

@@ -2542,11 +2542,12 @@ public class AnnouncementsController extends SpringActionController
                 ButtonBar bb = new ButtonBar();
                 rgn.setShowRecordSelectors(true);
 
-                String conversations = settings.getConversationName().toLowerCase() + "s";
+                String conversation = settings.getConversationName().toLowerCase();
+                String conversations = conversation + "s";
                 ActionButton delete = new ActionButton(DeleteThreadsAction.class, "Delete");
                 delete.setActionType(ActionButton.Action.GET);
                 delete.setDisplayPermission(DeletePermission.class);
-                delete.setRequiresSelection(true, "Are you sure you want to delete these " + conversations + "?");
+                delete.setRequiresSelection(true, "Are you sure you want to delete this " + conversation + "?", "Are you sure you want to delete these " + conversations + "?");
                 bb.add(delete);
 
                 rgn.setButtonBar(bb);
