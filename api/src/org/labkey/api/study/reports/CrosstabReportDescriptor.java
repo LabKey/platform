@@ -25,7 +25,8 @@ import java.util.List;
  * User: Karl Lum
  * Date: Nov 17, 2006
  */
-public class CrosstabReportDescriptor extends QueryReportDescriptor {
+public class CrosstabReportDescriptor extends QueryReportDescriptor
+{
     public static final String TYPE = "crosstabDescriptor";
     public static final String STATS = "stats";
 
@@ -37,6 +38,7 @@ public class CrosstabReportDescriptor extends QueryReportDescriptor {
     }
 
     public void setStats(String[] stats){_props.put(STATS, Arrays.asList(stats));}
+
     public String[] getStats()
     {
         final Object stats = _props.get(STATS);

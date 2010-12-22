@@ -38,9 +38,19 @@ import java.util.Set;
  */
 public class DisplayColumnDecorator extends DisplayColumn
 {
-    protected final DisplayColumn _column;
+    protected DisplayColumn _column;
 
     public DisplayColumnDecorator(DisplayColumn column)
+    {
+        _column = column;
+    }
+
+    public DisplayColumn getDisplayColumn()
+    {
+        return _column;
+    }
+
+    public void setDisplayColumn(DisplayColumn column)
     {
         _column = column;
     }
@@ -61,6 +71,12 @@ public class DisplayColumnDecorator extends DisplayColumn
     public void renderTitle(RenderContext ctx, Writer out) throws IOException
     {
         _column.renderTitle(ctx, out);
+    }
+
+    @Override
+    public void renderGridEnd(Writer out) throws IOException
+    {
+        super.renderGridEnd(out);
     }
 
     @Override

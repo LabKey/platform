@@ -15,20 +15,20 @@
  */
 package org.labkey.api.reports.report.view;
 
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.Report;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
-import java.util.Map;
+import java.util.Collections;
 import java.util.List;
-import java.util.Collections;/*
+
+/*
  * User: Karl Lum
  * Date: May 16, 2008
  * Time: 4:11:33 PM
  */
-
 public class DefaultReportUIProvider implements ReportService.UIProvider
 {
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)

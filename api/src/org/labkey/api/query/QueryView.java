@@ -25,6 +25,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
+import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.RReportBean;
@@ -124,11 +125,12 @@ public class QueryView extends WebPartView<Object>
             if (RReport.TYPE.equals(type)) return true;
             if (QuerySnapshotService.TYPE.equals(type)) return true;
             if (CrosstabReport.TYPE.equals(type)) return true;
+            if (JavaScriptReport.TYPE.equals(type)) return true;
             return ChartQueryReport.TYPE.equals(type);
         }
     };
 
-    TableInfo _table;
+    private TableInfo _table;
 
     public QueryView(QueryForm form, Errors errors)
     {
@@ -1717,6 +1719,7 @@ public class QueryView extends WebPartView<Object>
         if (_showDetailsColumn && !isPrintView() && !isExportView())
         {
             StringExpression urlDetails = table.getDetailsURL(Table.createFieldKeyMap(table).keySet(), getContainer());
+
             if (urlDetails != null)
             {
                 ret.add(new DetailsColumn(urlDetails));
@@ -1726,6 +1729,7 @@ public class QueryView extends WebPartView<Object>
         if (_showUpdateColumn && canUpdate() && !isPrintView() && !isExportView())
         {
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
+
             if (urlUpdate != null)
             {
                 ret.add(0, new UpdateColumn(urlUpdate));
@@ -1733,6 +1737,7 @@ public class QueryView extends WebPartView<Object>
         }
 
         ret.addAll(getQueryDef().getDisplayColumns(_customView, table));
+
         if (_linkTarget != null)
         {
             for (DisplayColumn displayColumn : ret)

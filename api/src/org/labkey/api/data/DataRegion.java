@@ -840,7 +840,7 @@ public class DataRegion extends DisplayElement
 
             renderFooter(ctx, out, renderButtons, colCount);
 
-            renderRegionEnd(ctx, out, renderButtons);
+            renderRegionEnd(ctx, out, renderButtons, renderers);
         }
         finally
         {
@@ -884,11 +884,17 @@ public class DataRegion extends DisplayElement
         out.write("\n</colgroup>");
     }
 
-    protected void renderRegionEnd(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
+    protected void renderRegionEnd(RenderContext ctx, Writer out, boolean renderButtons, List<DisplayColumn> renderers) throws IOException
     {
         out.write("\n</table>");
         if (renderButtons)
             renderFormEnd(ctx, out);
+
+        for (DisplayColumn renderer : renderers)
+        {
+            if (renderer.isVisible(ctx))
+                renderer.renderGridEnd(out);
+        }
     }
 
     protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, int colCount) throws IOException

@@ -15,37 +15,69 @@
  */
 package org.labkey.api.reports.report;
 
-import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.reports.report.r.ParamReplacementSvc;
-import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.reports.report.r.view.*;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.VBox;
-import org.labkey.api.query.*;
-import org.labkey.api.data.*;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.writer.VirtualFile;
+import org.apache.commons.collections15.map.CaseInsensitiveMap;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.Table;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.collections15.map.CaseInsensitiveMap;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.view.ConsoleOutput;
+import org.labkey.api.reports.report.r.view.FileOutput;
+import org.labkey.api.reports.report.r.view.HtmlOutput;
+import org.labkey.api.reports.report.r.view.ImageOutput;
+import org.labkey.api.reports.report.r.view.PdfOutput;
+import org.labkey.api.reports.report.r.view.PostscriptOutput;
+import org.labkey.api.reports.report.r.view.TextOutput;
+import org.labkey.api.reports.report.r.view.TsvOutput;
+import org.labkey.api.reports.report.view.ReportQueryView;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.VirtualFile;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.ResultSetMetaData;
-import java.util.*;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.io.*;
 
 /**
  *
@@ -70,7 +102,8 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
     private File _tempFolder;
     private boolean _tempFolderPipeline;
 
-    static {
+    static
+    {
         ParamReplacementSvc.get().registerHandler(new ConsoleOutput());
         ParamReplacementSvc.get().registerHandler(new TextOutput());
         ParamReplacementSvc.get().registerHandler(new HtmlOutput());

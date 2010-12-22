@@ -77,7 +77,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         dataRegionName,
         redirectUrl,
         cached,
-        version,
+        version
     }
 
     public ReportDescriptor()
