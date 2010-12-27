@@ -121,12 +121,26 @@ public class MapLoader extends DataLoader
         }
 
         @Override
-        protected Object[] readFields()
+        protected Object[] readFields() throws IOException
         {
             if (lineNum() < data.length)
-                return data[lineNum()];
+            {
+                // 11374: Return values only for active columns
+                ColumnDescriptor[] columns = getColumns();
+                List<Object> values = new ArrayList<Object>(_activeColumns.length);
+                Object[] parsedValues = data[lineNum()];
 
-            return null;
+                for (int i = 0; i < columns.length; i++)
+                {
+                    if (columns[i].load)
+                        values.add(parsedValues[i]);
+                }
+
+                assert values.size() == _activeColumns.length;
+                
+                return values.toArray();
+            }
+            return null;           
         }
 
         public void close() throws IOException
@@ -144,16 +158,19 @@ public class MapLoader extends DataLoader
             row1.put("name", "bob");
             row1.put("date", "1/2/2006");
             row1.put("number", "1.1");
+            row1.put("noload", "dont load");
 
             Map<String, Object> row2 = new HashMap<String, Object>();
             row2.put("name", "jim");
             row2.put("date", "");
             row2.put("number", "");
+            row2.put("noload", "");
 
             Map<String, Object> row3 = new CaseInsensitiveHashMap<Object>();
             row3.put("Name", "sally");
             row3.put("Date", "2-Jan-06");
             row3.put("Number", 1.2); // NOTE: not a String!
+            row3.put("Noload", "");
 
             List<Map<String, Object>> rows = Arrays.asList(row1, row2, row3);
             MapLoader loader = new MapLoader(rows);
@@ -162,12 +179,20 @@ public class MapLoader extends DataLoader
             assertEquals("name",   cd[0].name); assertEquals(String.class, cd[0].clazz);
             assertEquals("date",   cd[1].name); assertEquals(Date.class,   cd[1].clazz);
             assertEquals("number", cd[2].name); assertEquals(Double.class, cd[2].clazz);
+            assertEquals("noload", cd[3].name); assertEquals(String.class, cd[3].clazz);
+            cd[3].load = false;
 
             List<Map<String, Object>> data = loader.load();
             assertEquals("bob", data.get(0).get("name"));
             assertEquals(new GregorianCalendar(2006, 0, 2).getTime(), data.get(0).get("date"));
             assertEquals(1.1, data.get(0).get("number"));
             assertEquals(1.2, data.get(2).get("number"));
+
+            // 11374: make sure we don't load inactive columns
+            assertEquals(data.get(0).size(), 3);
+            assertEquals(data.get(1).size(), 3);
+            assertNull(data.get(0).get("noload"));
+            assertNull(data.get(0).get("noload"));
         }
     }
 }

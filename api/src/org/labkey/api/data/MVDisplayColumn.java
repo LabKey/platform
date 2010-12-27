@@ -118,7 +118,17 @@ public class MVDisplayColumn extends DataColumn
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        return getValue(ctx);
+        // For non-mv-aware clients, we need to return null
+        // if we have an mv indicator
+        if (getMvIndicator(ctx) != null)
+        {
+            return null;
+        }
+        else
+        {
+            // No MV indicator, so return the underlying data
+            return super.getDisplayValue(ctx);
+        }
     }
 
     @Override
