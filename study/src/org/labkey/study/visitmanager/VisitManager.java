@@ -4,8 +4,11 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.study.Visit;
 import org.labkey.study.model.QCStateSet;
@@ -83,7 +86,6 @@ public abstract class VisitManager
         }
 
         StudyManager.getInstance().clearVisitCache(getStudy());
-        StudyManager.getInstance().reindex(getStudy().getContainer());
     }
 
 
@@ -216,7 +218,9 @@ public abstract class VisitManager
     }
 
     /** Update the Participants table to match the entries in StudyData. */
-    protected void updateParticipants(User user, Collection<DataSetDefinition> changedDatasets, Set<String> potentiallyInsertedParticipants, Set<String> potentiallyDeletedParticipants)
+    protected void updateParticipants(User user, Collection<DataSetDefinition> changedDatasets,
+        final Set<String> potentiallyInsertedParticipants, 
+        Set<String> potentiallyDeletedParticipants)
     {
         try
         {
@@ -256,6 +260,59 @@ public abstract class VisitManager
             }
 
             updateStartDates(user);
+
+
+            //
+            // tell the search service about potential new ptids
+            //
+            final SearchService ss = ServiceRegistry.get(SearchService.class);
+            final String cid = _study.getContainer().getId();
+            if (null != ss)
+            {
+                if (null != potentiallyInsertedParticipants)
+                {
+                    final ArrayList<String> ptids = new ArrayList<String>(potentiallyInsertedParticipants);
+                    ArrayList<Pair<String,String>> list = new ArrayList<Pair<String, String>>(ptids.size());
+                    for (String ptid : ptids)
+                        list.add(new Pair<String,String>(cid,ptid));
+                    ss.addParticipantIds(list);
+                    Runnable r = new Runnable(){ public void run(){
+                        StudyManager.indexParticipantView(ss.defaultTask(), _study.getContainer(), ptids);
+                    }};
+                    ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
+                }
+                else
+                {
+                    Runnable r = new Runnable() { public void run()
+                    {
+                        ResultSet rs = null;
+                        try
+                        {
+                            rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
+                                "SELECT container, participantid FROM study.participant study\n" +
+                                "    WHERE study.container=? AND NOT EXISTS (SELECT participantid FROM search.participantindex search\n" +
+                                "      WHERE search.container=? AND search.participantid=study.participantid)", new Object[]{cid,cid});
+                            ArrayList<Pair<String,String>> list = new ArrayList<Pair<String, String>>();
+                            while (rs.next())
+                                list.add(new Pair<String,String>(rs.getString(1),rs.getString(2)));
+                            ss.addParticipantIds(list);
+                            ArrayList<String> ptids = new ArrayList<String>(list.size());
+                            for (Pair<String,String> p : list)
+                                ptids.add(p.second);
+                            StudyManager.indexParticipantView(ss.defaultTask(), _study.getContainer(), ptids);
+                        }
+                        catch (SQLException x)
+                        {
+                            throw new RuntimeSQLException(x);
+                        }
+                        finally
+                        {
+                            ResultSetUtil.close(rs);
+                        }
+                    } };
+                    ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
+                }
+            }
         }
         catch (SQLException x)
         {

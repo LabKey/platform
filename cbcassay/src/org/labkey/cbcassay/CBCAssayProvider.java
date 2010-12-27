@@ -29,6 +29,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.AssayResultDetailsAction;
 import org.labkey.api.study.assay.*;
@@ -163,7 +164,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
             public boolean hasPermission(User user, Class<? extends Permission> perm)
             {
                 if (getUpdateService() != null)
-                    return DeletePermission.class.isAssignableFrom(perm) && getContainer().hasPermission(user, perm);
+                    return (UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm)) && getContainer().hasPermission(user, perm);
                 return false;
             }
 
@@ -181,7 +182,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         table.setDetailsURL(new DetailsURL(showDetailsUrl, params));
 
         ActionURL updateUrl = new ActionURL(CBCAssayController.UpdateAction.class, null);
-        table.setUpdateURL(new DetailsURL(updateUrl, "objectId", FieldKey.fromString("ObjectId")));
+        table.setUpdateURL(new DetailsURL(updateUrl, "dataRowId", FieldKey.fromString("ObjectId")));
 
         return table;
     }

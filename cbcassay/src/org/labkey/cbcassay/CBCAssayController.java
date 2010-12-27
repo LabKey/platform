@@ -142,7 +142,7 @@ public class CBCAssayController extends SpringActionController
             AssaySchema schema = AssayService.get().createSchema(form.getUser(), form.getContainer());
 
             String name = AssayService.get().getResultsTableName(_protocol);
-            QuerySettings settings = schema.getSettings(form.getViewContext(), name); //provider.getResultsQuerySettings();
+            QuerySettings settings = schema.getSettings(form.getViewContext(), name, name); //provider.getResultsQuerySettings();
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
@@ -256,17 +256,17 @@ public class CBCAssayController extends SpringActionController
 
     public static class DetailsForm extends ViewForm
     {
-        private int _objectId;
+        private int _dataRowId;
         private String _returnURL;
 
-        public int getObjectId()
+        public int getDataRowId()
         {
-            return _objectId;
+            return _dataRowId;
         }
 
-        public void setObjectId(int objectId)
+        public void setDataRowId(int dataRowId)
         {
-            _objectId = objectId;
+            _dataRowId = dataRowId;
         }
 
         public String getReturnURL()
@@ -313,9 +313,9 @@ public class CBCAssayController extends SpringActionController
         {
             if (_data == null)
             {
-                _data = getProvider().getDataForDataRow(form.getObjectId());
+                _data = getProvider().getDataForDataRow(form.getDataRowId());
                 if (_data == null)
-                    HttpView.throwNotFound("Data '" + form.getObjectId() + "' not found");
+                    HttpView.throwNotFound("Data '" + form.getDataRowId() + "' not found");
                 _run = _data.getRun();
                 if (_run == null)
                     HttpView.throwNotFound("Run not found");
@@ -342,6 +342,7 @@ public class CBCAssayController extends SpringActionController
 
         // XXX: move ListControler.setDisplayColumnsFromDefaultView to query
         // XXX: or use table.getUserModifiableColumns() ?
+        // XXX: or change these columns return false for .getShowInUpdateView()
         private List<DisplayColumn> getUpdateableColumns(QueryView queryView)
         {
             List<DisplayColumn> displayColumns = queryView.getDisplayColumns();
@@ -349,7 +350,9 @@ public class CBCAssayController extends SpringActionController
             while (iter.hasNext())
             {
                 DisplayColumn column = iter.next();
-                if (column.getCaption().equals("Target Study"))
+                if (column.getCaption().contains("Target Study"))
+                    iter.remove();
+                if (column.getCaption().indexOf("Copied to ") == 0 && column.getCaption().endsWith("Study"))
                     iter.remove();
                 if (!column.isEditable() || column.getColumnInfo() instanceof LookupColumn)
                     iter.remove();
@@ -363,8 +366,11 @@ public class CBCAssayController extends SpringActionController
 
             QueryView queryView = getResultsView();
             QueryUpdateForm quf = new QueryUpdateForm(queryView.getTable(), getViewContext(), errors);
+            // Need to set the pkval ObjectId from dataRowId
+            quf.setPkVal(form.getDataRowId());
 
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
             ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
 //            ActionButton btnCancel = new ActionButton("Cancel", _returnURL);
             bb.add(btnSubmit);
@@ -398,7 +404,7 @@ public class CBCAssayController extends SpringActionController
                     transaction = true;
                 }
 
-                OntologyObject obj = OntologyManager.getOntologyObject(form.getObjectId());
+                OntologyObject obj = OntologyManager.getOntologyObject(form.getDataRowId());
                 String objectURI = obj.getObjectURI();
 
                 List<FieldKey> visibleColumns = quf.getTable().getDefaultVisibleColumns();
@@ -423,7 +429,13 @@ public class CBCAssayController extends SpringActionController
                     formValues.put(key, formValue);
                 }
 
-                Map<String, Object> oldValues = (Map<String, Object>)quf.getOldValues();
+                // Get the oldValues directly instead of using the quf.getOldValues().
+                // r13966 changed .oldValues to not include any FieldKey lookups.
+                Map[] maps = Table.select(quf.getTable(), columns.values(), new PkFilter(quf.getTable(), quf.getPkVals()), null, Map.class);
+                if (maps == null || maps.length != 1)
+                    throw new RuntimeException("Didn't find existing row for '" + form.getDataRowId() + "'");
+                Map<String, Object> oldValues = (Map<String, Object>)maps[0];
+
                 for (FieldKey key : formValues.keySet())
                 {
                     ColumnInfo col = columns.get(key);

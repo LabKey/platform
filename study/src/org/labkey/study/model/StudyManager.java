@@ -401,7 +401,7 @@ public class StudyManager
         if (dataSetDefinition.getDataSetId() <= 0)
             throw new IllegalArgumentException("datasetId must be greater than zero.");
         _dataSetHelper.create(user, dataSetDefinition);
-        reindex(dataSetDefinition.getContainer());
+        indexDataset(null, dataSetDefinition);
     }
 
 
@@ -469,7 +469,7 @@ public class StudyManager
 
             uncache(dataSetDefinition);
         }
-        reindex(dataSetDefinition.getContainer());
+        indexDataset(null, dataSetDefinition);
     }
 
 
@@ -2811,8 +2811,6 @@ public class StudyManager
             }
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
 
-            ActionURL dataset = new ActionURL(StudyController.DatasetAction.class, null);
-
             while (rs.next())
             {
                 String container = rs.getString(1);
@@ -2825,44 +2823,7 @@ public class StudyManager
                 DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(study, id);
                 if (null == dsd) continue;
 
-                String docid = "dataset:" + new Path(container,String.valueOf(id)).toString();
-
-                StringBuilder body = new StringBuilder();
-                Map<String, Object> props = new HashMap<String, Object>();
-
-                props.put(SearchService.PROPERTY.categories.toString(), datasetCategory.toString());
-                props.put(SearchService.PROPERTY.displayTitle.toString(), StringUtils.defaultIfEmpty(dsd.getLabel(),dsd.getName()));
-                String name = dsd.getName();
-                String label = StringUtils.equals(dsd.getLabel(),name) ? null : dsd.getLabel();
-                String description = dsd.getDescription();
-                String searchTitle = StringUtilsLabKey.joinNonBlank(" ", name, label, description); 
-                props.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
-
-                body.append(searchTitle).append("\n");
-
-                String sep = "";
-
-                Domain domain = dsd.getDomain();
-                if (null != domain)
-                {
-                    for (DomainProperty property : domain.getProperties())
-                    {
-                        String n = StringUtils.trimToEmpty(property.getName());
-                        String l = StringUtils.trimToEmpty(property.getLabel());
-                        if (n.equals(l))
-                            l = "";
-                        body.append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
-                        sep = ",\n";
-                    }
-                }
-
-                ActionURL view = dataset.clone().replaceParameter("datasetId", String.valueOf(id));
-                view.setExtraPath(container);
-
-                SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,
-                        "text/plain", body.toString().getBytes(),
-                        view, props);
-                task.addResource(r, SearchService.PRIORITY.item);
+                indexDataset(task, dsd);
             }
         }
         catch (SQLException x)
@@ -2874,9 +2835,54 @@ public class StudyManager
             ResultSetUtil.close(rs);
         }
     }
-    
 
-    public static void indexParticipantView(final SearchService.IndexTask task, final Date modifiedSince)
+    private static void indexDataset(SearchService.IndexTask task, DataSetDefinition dsd)
+    {
+        if (null == task)
+            task = ServiceRegistry.get(SearchService.class).defaultTask();
+        String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDataSetId())).toString();
+
+        StringBuilder body = new StringBuilder();
+        Map<String, Object> props = new HashMap<String, Object>();
+
+        props.put(SearchService.PROPERTY.categories.toString(), datasetCategory.toString());
+        props.put(SearchService.PROPERTY.displayTitle.toString(), StringUtils.defaultIfEmpty(dsd.getLabel(),dsd.getName()));
+        String name = dsd.getName();
+        String label = StringUtils.equals(dsd.getLabel(),name) ? null : dsd.getLabel();
+        String description = dsd.getDescription();
+        String searchTitle = StringUtilsLabKey.joinNonBlank(" ", name, label, description);
+        props.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+
+        body.append(searchTitle).append("\n");
+
+        String sep = "";
+
+        Domain domain = dsd.getDomain();
+        if (null != domain)
+        {
+            for (DomainProperty property : domain.getProperties())
+            {
+                String n = StringUtils.trimToEmpty(property.getName());
+                String l = StringUtils.trimToEmpty(property.getLabel());
+                if (n.equals(l))
+                    l = "";
+                body.append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
+                sep = ",\n";
+            }
+        }
+
+        ActionURL view = new ActionURL(StudyController.DatasetAction.class, null);
+        view.replaceParameter("datasetId", String.valueOf(dsd.getDataSetId()));
+        view.setExtraPath(dsd.getContainer().getId());
+
+        SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,
+                "text/plain", body.toString().getBytes(),
+                view, props);
+        task.addResource(r, SearchService.PRIORITY.item);
+    }
+
+
+    public static void indexParticipantView(final SearchService.IndexTask task)
     {
         ResultSet rs = null;
         try
@@ -2893,7 +2899,7 @@ public class StudyManager
                 {
                     public void run()
                     {
-                        indexParticipantView(task, c, modifiedSince);
+                        indexParticipantView(task, c, null);
                     }
                 }, SearchService.PRIORITY.group);
             }
@@ -2909,13 +2915,40 @@ public class StudyManager
     }
 
 
-    public static void indexParticipantView(SearchService.IndexTask task, Container c, Date modifiedSince)
+    public static void indexParticipantView(final SearchService.IndexTask task, final Container c, List<String> ptids)
     {
         if (null == c)
         {
-            indexParticipantView(task, modifiedSince);
+            if (null != ptids)
+                throw new IllegalArgumentException();
+            indexParticipantView(task);
             return;
         }
+
+        if (null != ptids && ptids.size() == 0)
+            return;
+
+        final int BATCH_SIZE = 500;
+        if (null != ptids && ptids.size() > BATCH_SIZE)
+        {
+            ArrayList<String> list = new ArrayList<String>(BATCH_SIZE);
+            for (String ptid : ptids)
+            {
+                list.add(ptid);
+                if (list.size() == BATCH_SIZE)
+                {
+                    final ArrayList<String> l = list;
+                    Runnable r = new Runnable(){ @Override public void run() {
+                        indexParticipantView(task, c, l);
+                    }};
+                    task.addRunnable(r, SearchService.PRIORITY.bulk);
+                    list = new ArrayList<String>(BATCH_SIZE);
+                }
+            }
+            indexParticipantView(task, c, list);
+            return;
+        }
+
 
         ResultSet rs = null;
         try
@@ -2926,10 +2959,24 @@ public class StudyManager
             String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false).toString();
 
             SQLFragment f = new SQLFragment("SELECT container, participantid FROM " + StudySchema.getInstance().getTableInfoParticipant());
+            String prefix = " WHERE ";
             if (null != c)
             {
-                f.append(" WHERE container = ?");
+                f.append(prefix).append(" container = ?");
                 f.add(c);
+                prefix = " AND ";
+            }
+            if (null != ptids)
+            {
+                f.append(prefix).append(" participantid IN (");
+                String marker="?";
+                for (String ptid : ptids)
+                {
+                    f.append(marker);
+                    f.add(ptid);
+                    marker = ",?";
+                }
+                f.append(")");
             }
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
 

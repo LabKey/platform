@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.TempTableWriter;
 import org.labkey.api.data.Table;
@@ -1166,6 +1167,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         try
         {
             tinfo = ttw.loadTempTable(search);
+            
+            SQLFragment sqlf = new SQLFragment("CREATE INDEX tmp_ix ON " + tinfo.getTempTableName() + "(container,participantid)");
+            if (search.getSqlDialect().isPostgreSQL())
+                sqlf.append("\n;ANALYZE " + tinfo.getTempTableName() + ";");
+            Table.execute(search, sqlf);
+
             Date now = new Date(System.currentTimeMillis());
             Table.execute(search,
                     "UPDATE search.ParticipantIndex SET LastIndexed=? " +

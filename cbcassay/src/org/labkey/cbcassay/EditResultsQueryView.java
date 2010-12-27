@@ -93,7 +93,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
         ActionURL url = getViewContext().cloneActionURL();
         url.setAction(CBCAssayController.EditResultsAction.class);
         url = url.deleteParameter("returnURL"); // use 'returnURL' hidden form field
-        ActionButton doneButton = new ActionButton("Finished Editing", url);
+        ActionButton doneButton = new ActionButton("Save", url);
         doneButton.setActionName(url.getAction() + ".view?" + url.getQueryString()); // preserve url filters
         doneButton.setActionType(ActionButton.Action.POST);
         bar.add(doneButton);
