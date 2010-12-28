@@ -17,6 +17,7 @@
 package org.labkey.api.study;
 
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.view.UnauthorizedException;
@@ -31,6 +32,8 @@ import java.util.Set;
 public interface DataSet extends StudyEntity
 {
     Set<String> getDefaultFieldNames();
+
+    Domain getDomain();
 
     String getName();
 

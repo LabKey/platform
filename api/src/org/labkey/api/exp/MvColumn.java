@@ -37,7 +37,7 @@ public class MvColumn extends LookupColumn
 
     public MvColumn(PropertyDescriptor pd, ColumnInfo lsidColumn)
     {
-        super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn("MvIndicator"), false);
+        super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn("MvIndicator"));
         this.pd = pd;
 
         String name = ColumnInfo.legalNameFromName(pd.getName() + MV_INDICATOR_SUFFIX);

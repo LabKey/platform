@@ -18,10 +18,10 @@ package org.labkey.api.gwt.client.assay;
 
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.WindowCloseListener;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.URL;
@@ -57,7 +57,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private final String _returnURL;
     private SaveButtonBar saveBarTop;
     private SaveButtonBar saveBarBottom;
-    private WindowCloseListener _closeListener = new AssayCloseListener();
+    private HandlerRegistration _closeHandlerManager;
 
     public AssayDesignerMainPanel(RootPanel rootPanel)
     {
@@ -174,7 +174,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         else
             setDirty(_copy);
 
-        Window.addWindowCloseListener(_closeListener);
+        _closeHandlerManager = Window.addWindowClosingHandler(new AssayCloseListener());
     }
 
     protected void addErrorMessage(String message)
@@ -210,7 +210,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     if (_domain.getDomainId() == 0)
                     {
                         // special case handling for the first save:
-                        for (Iterator<GWTDomain> it = result.getDomains().iterator(); it.hasNext() && match == null;)
+                        for (Iterator<GWTDomain<GWTPropertyDescriptor>> it = result.getDomains().iterator(); it.hasNext() && match == null;)
                         {
                             GWTDomain domain = it.next();
                             if (domain.getName().endsWith(_domain.getName()))
@@ -220,7 +220,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     else
                     {
                         // if this is not the first save, we can use the domain ID to find the new domain:
-                        for (Iterator<GWTDomain> it = result.getDomains().iterator(); it.hasNext() && match == null;)
+                        for (Iterator<GWTDomain<GWTPropertyDescriptor>> it = result.getDomains().iterator(); it.hasNext() && match == null;)
                         {
                             GWTDomain domain = it.next();
                             if (domain.getDomainId() == _domain.getDomainId())
@@ -307,9 +307,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 templateList.setSelectedIndex(selectedIndex);
             if (templateList.getItemCount() > 0)
                 assay.setSelectedPlateTemplate(templateList.getValue(templateList.getSelectedIndex()));
-            templateList.addChangeListener(new ChangeListener()
+            templateList.addChangeHandler(new ChangeHandler()
             {
-                public void onChange(Widget sender)
+                public void onChange(ChangeEvent event)
                 {
                     assay.setSelectedPlateTemplate(templateList.getValue(templateList.getSelectedIndex()));
                     setDirty(true);
@@ -506,11 +506,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     {
         if (validate())
         {
-            List<GWTDomain> domains = new ArrayList<GWTDomain>();
+            List<GWTDomain<GWTPropertyDescriptor>> domains = new ArrayList<GWTDomain<GWTPropertyDescriptor>>();
 
-            for (PropertiesEditor _domainEditor : _domainEditors)
+            for (PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> domainEditor : _domainEditors)
             {
-                domains.add(_domainEditor.getUpdates());
+                domains.add(domainEditor.getUpdates());
             }
             _assay.setDomains(domains);
 
@@ -549,8 +549,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             {
                 public void onSuccess(GWTProtocol protocol)
                 {
-                    // save was successful, so don't prompt when navigating away
-                    Window.removeWindowCloseListener(_closeListener);
+                    if (_closeHandlerManager != null)
+                    {
+                        _closeHandlerManager.removeHandler();
+                        _closeHandlerManager = null;
+                    }
                     WindowUtil.setLocation(doneLink);
                 }
             });
@@ -558,13 +561,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
     }
 
-    class AssayCloseListener implements WindowCloseListener
+    class AssayCloseListener implements Window.ClosingHandler
     {
-        public void onWindowClosed()
-        {
-        }
-
-        public String onWindowClosing()
+        public void onWindowClosing(Window.ClosingEvent event)
         {
             boolean dirty = _dirty;
             for (int i = 0; i < _domainEditors.size() && !dirty; i++)
@@ -572,9 +571,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 dirty = _domainEditors.get(i).isDirty();
             }
             if (dirty)
-                return "Changes have not been saved and will be discarded.";
-            else
-                return null;
+                event.setMessage("Changes have not been saved and will be discarded.");
         }
     }
 }

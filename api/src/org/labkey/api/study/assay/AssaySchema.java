@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
@@ -49,4 +50,25 @@ public abstract class AssaySchema extends UserSchema
     }
 
     public abstract TableInfo createTable(String name);
+
+    public static String getBatchesTableName(ExpProtocol protocol)
+    {
+        return getProviderTableName(protocol, "Batches");
+    }
+
+    public static String getRunsTableName(ExpProtocol protocol)
+    {
+        return getProviderTableName(protocol, "Runs");
+    }
+
+    public static String getResultsTableName(ExpProtocol protocol)
+    {
+        return getProviderTableName(protocol, "Data");
+    }
+
+    public static String getProviderTableName(ExpProtocol protocol, String tableName)
+    {
+        assert tableName != null;
+        return protocol.getName() + " " + tableName;
+    }
 }

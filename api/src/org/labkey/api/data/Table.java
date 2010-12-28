@@ -1094,23 +1094,21 @@ public class Table
         }
 
         // UNDONE: reselect
-        String updateSQL = "UPDATE " + table.getSelectName() + "\n\t" +
+        SQLFragment updateSQL = new SQLFragment("UPDATE " + table.getSelectName() + "\n\t" +
                 "SET " + setSQL + "\n\t" +
-                whereSQL;
+                whereSQL);
 
         DbSchema schema = table.getSchema();
         Connection conn = null;
         PreparedStatement stmt = null;
 
-        ArrayList<Object> parameterList = new ArrayList<Object>(parametersSet.size() + parametersWhere.size());
-        parameterList.addAll(parametersSet);
-        parameterList.addAll(parametersWhere);
-        Object[] parameters = parameterList.toArray();
+        updateSQL.addAll(parametersSet);
+        updateSQL.addAll(parametersWhere);
 
         try
         {
             conn = schema.getScope().getConnection();
-            int count = execute(conn, updateSQL, parameters);
+            int count = execute(table.getSchema(), updateSQL);
 
             // check for concurrency problem
             if (count == 0)
@@ -1123,7 +1121,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            _doCatch(updateSQL, parameters, conn, e);
+            _doCatch(updateSQL.getSQL(), updateSQL.getParamsArray(), conn, e);
             throw(e);
         }
 
@@ -1570,7 +1568,10 @@ public class Table
 
     public static long rowCount(TableInfo tinfo) throws SQLException
     {
-        return Table.executeSingleton(tinfo.getSchema(), "SELECT COUNT(*) FROM " + tinfo, null, Long.class);
+        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
+        sql.append(QueryService.get().getSelectSQL(tinfo, tinfo.getPkColumns(), null, null, Table.ALL_ROWS, 0));
+        sql.append(") x");
+        return Table.executeSingleton(tinfo.getSchema(), sql.getSQL(), sql.getParamsArray(), Long.class);
     }
 
 

@@ -16,6 +16,7 @@
 package org.labkey.api.data.dialect;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
@@ -111,6 +112,19 @@ public abstract class SimpleSqlDialect extends SqlDialect
     public String getBooleanLiteral(boolean b)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    protected String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
+    {
+        if (prop.isAutoIncrement())
+        {
+            throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getSqlTypeInt() + " (" + sqlTypeNameFromSqlType(prop.getSqlTypeInt()) + ")");
+        }
+        else
+        {
+            return sqlTypeNameFromSqlType(prop.getSqlTypeInt());
+        }
     }
 
     @Override

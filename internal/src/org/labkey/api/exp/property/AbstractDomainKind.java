@@ -28,10 +28,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
-import java.sql.Types;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,22 +41,6 @@ import java.util.Set;
  */
 public abstract class AbstractDomainKind extends DomainKind
 {
-    /*
-     * the columns common to all datasets
-     */
-    final protected static Set<PropertyStorageSpec> BASE_PROPERTIES;
-    static
-    {
-        PropertyStorageSpec[] props = {
-            new PropertyStorageSpec("created", Types.TIMESTAMP),
-            new PropertyStorageSpec("modified", Types.TIMESTAMP),
-            new PropertyStorageSpec("createdBy", Types.INTEGER),
-            new PropertyStorageSpec("modifiedBy", Types.INTEGER)
-        };
-
-        BASE_PROPERTIES = new HashSet<PropertyStorageSpec>(Arrays.asList(props));
-    }
-
     @Override
     public String generateDomainURI(String schemaName, String queryName, Container container, User user)
     {
@@ -119,7 +100,7 @@ public abstract class AbstractDomainKind extends DomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        return BASE_PROPERTIES;
+        return Collections.emptySet();
     }
 
     @Override

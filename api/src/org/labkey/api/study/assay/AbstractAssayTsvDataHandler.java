@@ -44,6 +44,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 {
     protected static final Object ERROR_VALUE = new Object();
 
+    private static final Logger LOG = Logger.getLogger(AbstractAssayTsvDataHandler.class);
+
     protected abstract boolean allowEmptyData();
 
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
@@ -60,6 +62,41 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context);
         assert(rawData.size() <= 1);
         importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next());
+    }
+
+    @Override
+    public void beforeDeleteData(List<ExpData> data) throws ExperimentException
+    {
+        for (ExpData d : data)
+        {
+            ExpProtocolApplication sourceApplication = d.getSourceApplication();
+            if (sourceApplication != null)
+            {
+                ExpRun run = sourceApplication.getRun();
+                ExpProtocol protocol = run.getProtocol();
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+
+                Domain domain = provider.getResultsDomain(protocol);
+                if (domain.getStorageTableName() != null)
+                {
+                    SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
+                    deleteSQL.append(domain.getDomainKind().getStorageSchemaName());
+                    deleteSQL.append(".");
+                    deleteSQL.append(domain.getStorageTableName());
+                    deleteSQL.append(" WHERE DataId = ?");
+                    deleteSQL.add(d.getRowId());
+
+                    try
+                    {
+                        Table.execute(DbSchema.get(domain.getDomainKind().getStorageSchemaName()), deleteSQL);
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new ExperimentException(e);
+                    }
+                }
+            }
+        }
     }
 
     public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData) throws ExperimentException
@@ -90,11 +127,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 throw new ExperimentException("Could not find any input samples in the data");
             }
 
-            DomainProperty[] dataDPs = dataDomain.getProperties();
-            PropertyDescriptor[] dataProperties = new PropertyDescriptor[dataDPs.length];
-            for (int i = 0; i < dataDPs.length; i++)
-                dataProperties[i] = dataDPs[i].getPropertyDescriptor();
-
             Map<String, DomainProperty> propertyNameToDescriptor = dataDomain.createImportMap(true);
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
 
@@ -104,7 +136,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 transaction = true;
             }
 
-            insertRowData(data, user, container, dataProperties, fileData);
+            insertRowData(data, user, container, dataDomain, fileData, provider.createDataTable(AssayService.get().createSchema(user, container), protocol));
 
             if (shouldAddInputMaterials())
             {
@@ -191,12 +223,24 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     /** Insert the data into the database.  Transaction is active. */
-    protected void insertRowData(ExpData data, User user, Container container, PropertyDescriptor[] dataProperties, List<Map<String, Object>> fileData)
+    protected void insertRowData(ExpData data, User user, Container container, Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo)
             throws SQLException, ValidationException
     {
-        Integer id = OntologyManager.ensureObject(container, data.getLSID());
-        OntologyManager.insertTabDelimited(container, user, id,
-                new SimpleAssayDataImportHelper(data.getLSID()), dataProperties, fileData, false);
+        if (tableInfo instanceof UpdateableTableInfo)
+        {
+            OntologyManager.insertTabDelimited(tableInfo, container, user, new SimpleAssayDataImportHelper(data), fileData, LOG);
+        }
+        else
+        {
+            PropertyDescriptor[] dataProperties = new PropertyDescriptor[dataDomain.getProperties().length];
+            for (int i = 0; i < dataDomain.getProperties().length; i++)
+            {
+                dataProperties[i] = dataDomain.getProperties()[i].getPropertyDescriptor();
+            }
+            Integer id = OntologyManager.ensureObject(container, data.getLSID());
+            OntologyManager.insertTabDelimited(container, user, id,
+                    new SimpleAssayDataImportHelper(data), dataProperties, fileData, false);
+        }
     }
 
     protected abstract boolean shouldAddInputMaterials();

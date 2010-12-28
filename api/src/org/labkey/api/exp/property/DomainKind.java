@@ -16,16 +16,14 @@
 
 package org.labkey.api.exp.property;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -33,11 +31,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-abstract public class DomainKind
+abstract public class DomainKind implements Handler<String>
 {
     abstract public String getKindName();
     abstract public String getTypeLabel(Domain domain);
-    abstract public boolean isDomainType(String domainURI);
     abstract public SQLFragment sqlObjectIdsInDomain(Domain domain);
 
     /**
@@ -45,8 +42,6 @@ abstract public class DomainKind
      */
     abstract public String generateDomainURI(String schemaName, String queryName, Container container, User user);
 
-    // UNUSED: remove?
-    abstract public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers);
     abstract public ActionURL urlShowData(Domain domain);
     abstract public ActionURL urlEditDefinition(Domain domain);
     abstract public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user);
@@ -96,7 +91,6 @@ abstract public class DomainKind
     /**
      * If domains of this kind should get hard tables automatically provisioned, this returns
      * the db schema where they reside. If it is null, hard tables are not to be provisioned for doamins of this kind.
-     * @return
      */
     abstract public DbScope getScope();
     abstract public String getStorageSchemaName();

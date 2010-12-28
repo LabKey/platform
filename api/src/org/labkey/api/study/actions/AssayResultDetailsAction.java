@@ -57,7 +57,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
             throw new RuntimeException("Assay must be derived from AbstractAssayProvider to use the AssayResultDetailsAction");
 
         AbstractAssayProvider aap = (AbstractAssayProvider) provider;
-        _data = aap.getDataForDataRow(_dataRowId);
+        _data = aap.getDataForDataRow(_dataRowId, _protocol);
         if (_data == null)
             HttpView.throwNotFound("Assay ExpData not found for dataRowId: " + _dataRowId);
 

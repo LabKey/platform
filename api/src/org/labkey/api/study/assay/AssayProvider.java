@@ -44,6 +44,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,7 +97,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol);
 
-    ActionURL copyToStudy(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
+    ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
 
     boolean canCopyToStudy();
 
@@ -155,6 +156,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
     boolean hasUsefulDetailsPage();
 
     PipelineProvider getPipelineProvider();
+
+    /** Upgrade from property store to hard table */
+    void materializeAssayResults(User user, ExpProtocol protocol) throws SQLException;
 
     public enum Scope {
         ALL,

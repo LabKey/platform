@@ -16,7 +16,9 @@
 
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.Parameter;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.ExpData;
 
 import java.util.Map;
 import java.sql.SQLException;
@@ -25,18 +27,18 @@ import java.sql.SQLException;
  * User: jeckels
  * Date: Jul 23, 2007
  */
-public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
+public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper, OntologyManager.UpdateableTableImportHelper
 {
     private int _id = 0;
-    private String _dataLSID;
-    public SimpleAssayDataImportHelper(String dataLSID)
+    private ExpData _data;
+    public SimpleAssayDataImportHelper(ExpData data)
     {
-        _dataLSID = dataLSID;
+        _data = data;
     }
 
     public String beforeImportObject(Map<String, Object> map) throws SQLException
     {
-        return _dataLSID + ".DataRow-" + _id++;
+        return _data.getLSID() + ".DataRow-" + _id++;
     }
 
     public void afterBatchInsert(int currentRow) throws SQLException
@@ -46,5 +48,11 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
 
     public void updateStatistics(int currentRow) throws SQLException
     {
+    }
+
+    @Override
+    public void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target)
+    {
+        target.put("DataId", _data.getRowId());
     }
 }

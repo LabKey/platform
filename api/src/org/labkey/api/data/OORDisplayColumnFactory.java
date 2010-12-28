@@ -35,12 +35,14 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
         return new OutOfRangeDisplayColumn(colInfo);
     }
 
-    public static void addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn)
+    /** @return the merged value/indicator OOR ColumnInfo */
+    public static ColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn)
     {
-        addOORColumns(table, numberColumn, oorIndicatorColumn, numberColumn.getName());
+        return addOORColumns(table, numberColumn, oorIndicatorColumn, numberColumn.getName());
     }
 
-    public static void addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption)
+    /** @return the merged value/indicator OOR ColumnInfo */
+    public static ColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption)
     {
         ColumnInfo combinedCol = table.addWrapColumn(numberColumn);
         combinedCol.setLabel(caption);
@@ -55,7 +57,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
                 table.getColumn(numberColumn.getName() + NUMBER_COLUMN_SUFFIX) != null ||
                 table.getColumn(numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX) != null )
         {
-            return;
+            return null;
         }
 
         combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory());
@@ -64,8 +66,12 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
         wrappedNumberColumn.setLabel(caption + " " + NUMBER_COLUMN_SUFFIX);
 
         SQLFragment inRangeSQL = new SQLFragment("CASE WHEN ");
+        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);
+        inRangeSQL.append(".");
         inRangeSQL.append(oorIndicatorColumn.getName());
         inRangeSQL.append(" IS NULL THEN ");
+        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);
+        inRangeSQL.append(".");
         inRangeSQL.append(numberColumn.getName());
         inRangeSQL.append(" ELSE NULL END");
 
@@ -73,5 +79,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
                     inRangeSQL, numberColumn.getSqlTypeInt(), wrappedNumberColumn, wrappedOORIndicatorCol));
         inRangeColumn.setLabel(caption + " In Range");
         inRangeColumn.setFormat(numberColumn.getFormat());
+
+        return combinedCol;
     }
 }

@@ -28,6 +28,7 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -323,7 +324,6 @@ public class OntologyManager
             }
 
             int rowCount = 0;
-            int batchCount = 0;
 
 			for (Map<String, Object> map : rows)
 			{
@@ -379,6 +379,9 @@ public class OntologyManager
                             if (parameterMap.containsKey(key))
                             {
                                 assert !(value instanceof MvFieldWrapper);
+                                // Handle type coercion for these built-in columns as well, though we don't need to
+                                // worry about missing values
+                                value = PropertyType.getFromClass(col.getJavaObjectClass()).convert(value);
                                 parameterMap.put(key, value);
                             }
                         }
@@ -404,6 +407,7 @@ public class OntologyManager
                 helper.bindAdditionalParameters(map, parameterMap);
                 
                 parameterMap.execute();
+                rowCount++;
             }
 
             if (!errors.isEmpty())
@@ -948,7 +952,7 @@ public class OntologyManager
     }
 
 
-    public static void deleteAllObjects(Container c) throws SQLException
+    public static void deleteAllObjects(Container c, User user) throws SQLException
 	{
         String containerid = c.getId();
         Container projectContainer = c.getProject();
@@ -974,6 +978,15 @@ public class OntologyManager
 
             // delete property validator references on property descriptors
             PropertyService.get().deleteValidatorsAndFormats(c);
+
+            // Drop tables directly and allow bulk delete calls below to clean up rows in exp.propertydescriptor,
+            // exp.domaindescriptor, etc
+            String selectSQL = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
+            DomainDescriptor[] dds = Table.executeQuery(getExpSchema(), selectSQL, new Object[] { c.getId() }, DomainDescriptor.class);
+            for (DomainDescriptor dd : dds)
+            {
+                StorageProvisioner.drop(PropertyService.get().getDomain(dd.getDomainId()));
+            }
 
             String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";
             Table.execute(getExpSchema(), deletePropDomSqlPD, new Object[]{containerid});
@@ -2606,7 +2619,7 @@ public class OntologyManager
             {
                 Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
                 //Clean up last time's mess
-                OntologyManager.deleteAllObjects(c);
+                OntologyManager.deleteAllObjects(c, TestContext.get().getUser());
                 assertEquals(0L, OntologyManager.getObjectCount(c));
 
                 String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
@@ -2629,7 +2642,7 @@ public class OntologyManager
                 String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
                 OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, dateProp, cal.getTime()));
 
-                OntologyManager.deleteAllObjects(c);
+                OntologyManager.deleteAllObjects(c, TestContext.get().getUser());
                 assertEquals(0L, OntologyManager.getObjectCount(c));
                 assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
             }
@@ -2889,7 +2902,7 @@ public class OntologyManager
             {
                 Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
                 //Clean up last time's mess
-                OntologyManager.deleteAllObjects(c);
+                OntologyManager.deleteAllObjects(c, TestContext.get().getUser());
                 assertEquals(0L, OntologyManager.getObjectCount(c));
 
                 String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
@@ -2967,7 +2980,7 @@ public class OntologyManager
                 assertNotNull(m.get(strProp));
                 assertNotNull(m.get(intProp));
 
-                OntologyManager.deleteAllObjects(c);
+                OntologyManager.deleteAllObjects(c, TestContext.get().getUser());
                 assertEquals(0L, OntologyManager.getObjectCount(c));
                 assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
             }
@@ -2982,7 +2995,7 @@ public class OntologyManager
         {
             Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
             //Clean up last time's mess
-            OntologyManager.deleteAllObjects(c);
+            OntologyManager.deleteAllObjects(c, TestContext.get().getUser());
             assertEquals(0L, OntologyManager.getObjectCount(c));
             String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
             String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();

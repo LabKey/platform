@@ -50,9 +50,6 @@ public class PropertyStorageSpec
 
     /**
      * bare mininum storage specification
-     *
-     * @param name
-     * @param sqlTypeInt
      */
     public PropertyStorageSpec(String name, int sqlTypeInt)
     {
@@ -110,7 +107,6 @@ public class PropertyStorageSpec
 
     /**
      * cause this field to be provisioned as a primary key in the db
-     * @param primaryKey
      */
     public void setPrimaryKey(boolean primaryKey)
     {
@@ -124,7 +120,6 @@ public class PropertyStorageSpec
 
     /**
      * defaults true if not set
-     * @param nullable
      */
     public void setNullable(boolean nullable)
     {
@@ -139,7 +134,6 @@ public class PropertyStorageSpec
 
     /**
      * defaults false if not set
-     * @param autoIncrement
      */
     public void setAutoIncrement(boolean autoIncrement)
     {
@@ -155,10 +149,6 @@ public class PropertyStorageSpec
         return size;
     }
 
-    /**
-     *
-     * @param size
-     */
     public void setSize(int size)
     {
         this.size = size;
@@ -176,7 +166,7 @@ public class PropertyStorageSpec
 
     public String getMvIndicatorColumnName()
     {
-        return this.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX;
+        return getMvIndicatorColumnName(getName());
     }
 
     public static String getMvIndicatorColumnName(String rootName)

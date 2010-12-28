@@ -956,4 +956,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         return null;
     }
+
+    /** Move an existing column to a different spot in the ordered list */
+    public void setColumnIndex(ColumnInfo c, int i)
+    {
+        if (!columns.remove(c))
+        {
+            throw new IllegalArgumentException("Column " + c + " is not part of table " + this);
+        }
+        columns.add(i, c);
+    }
 }

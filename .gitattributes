@@ -861,6 +861,7 @@ api/src/org/labkey/api/study/assay/AssayPipelineProvider.java -text
 api/src/org/labkey/api/study/assay/AssayProvider.java -text
 api/src/org/labkey/api/study/assay/AssayPublishKey.java -text
 api/src/org/labkey/api/study/assay/AssayPublishService.java -text
+api/src/org/labkey/api/study/assay/AssayResultTable.java -text
 api/src/org/labkey/api/study/assay/AssayResultsView.java -text
 api/src/org/labkey/api/study/assay/AssayRunType.java -text
 api/src/org/labkey/api/study/assay/AssayRunUploadContext.java -text
@@ -895,7 +896,6 @@ api/src/org/labkey/api/study/assay/SpecimenForeignKey.java -text
 api/src/org/labkey/api/study/assay/SpecimenPropertyColumnDecorator.java -text
 api/src/org/labkey/api/study/assay/StudyContainerFilter.java -text
 api/src/org/labkey/api/study/assay/StudyDataSetColumn.java -text
-api/src/org/labkey/api/study/assay/StudyDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolverType.java -text
 api/src/org/labkey/api/study/assay/TextAreaDataCollector.java -text
@@ -2520,6 +2520,8 @@ internal/src/org/labkey/api/exp/AbstractFileXarSource.java -text
 internal/src/org/labkey/api/exp/CompressedXarSource.java -text
 internal/src/org/labkey/api/exp/FileXarSource.java -text
 internal/src/org/labkey/api/exp/property/AbstractDomainKind.java -text
+internal/src/org/labkey/api/exp/property/AssayDomainKind.java -text
+internal/src/org/labkey/api/exp/property/AssayResultDomainKind.java -text
 internal/src/org/labkey/api/exp/property/DomainEditorServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainImporterServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainUtil.java -text

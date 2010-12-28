@@ -22,6 +22,8 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 abstract public class LookupForeignKey extends AbstractForeignKey
 {
@@ -29,19 +31,11 @@ abstract public class LookupForeignKey extends AbstractForeignKey
     Object _param;
     private boolean _prefixColumnCaption = true;
     String _titleColumn;
-    private boolean _joinOnContainer = false;
+    private Map<ColumnInfo, String> _additionalJoins = new HashMap<ColumnInfo, String>();
 
     public LookupForeignKey(ActionURL baseURL, String paramName, String tableName, String pkColumnName, String titleColumn)
     {
         super(tableName, pkColumnName);
-        _baseURL = baseURL;
-        _param = paramName;
-        _titleColumn = titleColumn;
-    }
-
-    public LookupForeignKey(ActionURL baseURL, Enum paramName, String tableName, String pkColumnName, String titleColumn)
-    {
-        this(pkColumnName);
         _baseURL = baseURL;
         _param = paramName;
         _titleColumn = titleColumn;
@@ -54,22 +48,25 @@ abstract public class LookupForeignKey extends AbstractForeignKey
 
     public LookupForeignKey(ActionURL baseURL, Enum paramName, String pkColumnName, String titleColumn)
     {
-        this(baseURL, paramName, null, pkColumnName, titleColumn);
+        this(pkColumnName);
+        _baseURL = baseURL;
+        _param = paramName;
+        _titleColumn = titleColumn;
     }
 
     public LookupForeignKey(String tableName, String pkColumnName, String titleColumn)
     {
-         this(null, (String) null, tableName, pkColumnName, titleColumn);
+         this(null, null, tableName, pkColumnName, titleColumn);
     }
 
     public LookupForeignKey(String pkColumnName, String titleColumn)
     {
-         this(null, (String) null, null, pkColumnName, titleColumn);
+         this(null, null, null, pkColumnName, titleColumn);
     }
 
     public LookupForeignKey(String pkColumnName)
     {
-        this(null, (String) null, null, pkColumnName, null);
+        this(null, null, null, pkColumnName, null);
     }
 
     public void setPrefixColumnCaption(boolean prefix)
@@ -77,14 +74,11 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         _prefixColumnCaption = prefix;
     }
 
-    public boolean isJoinOnContainer()
+    /** Adds an extra pair of columns to the join. This doesn't affect how the lookup is presented through query,
+     * but does change the SQL that we generate for the join criteria */
+    public void addJoin(ColumnInfo fkColumn, String lookupColumnName)
     {
-        return _joinOnContainer;
-    }
-
-    public void setJoinOnContainer(boolean joinOnContainer)
-    {
-        _joinOnContainer = joinOnContainer;
+        _additionalJoins.put(fkColumn, lookupColumnName);
     }
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
@@ -109,8 +103,15 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         LookupColumn result = LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
         if (result != null)
         {
-            result.setJoinOnContainer(_joinOnContainer);
+            for (Map.Entry<ColumnInfo, String> entry : _additionalJoins.entrySet())
+            {
+                ColumnInfo lookupContainer = table.getColumn(entry.getValue());
+                assert lookupContainer != null : "Couldn't find Container column of name '" + entry.getValue() + "' in " + table;
+
+                result.addJoin(entry.getKey(), lookupContainer);
+            }
         }
+
         return result;
     }
 

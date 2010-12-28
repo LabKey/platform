@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.ArrayList;
 
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
 /**
  * User: brittp
@@ -38,7 +39,7 @@ public class GWTProtocol implements IsSerializable
 
     private Map<String, String> _protocolParameters;
 
-    private List<GWTDomain> _domains;
+    private List<GWTDomain<GWTPropertyDescriptor>> _domains;
 
     private List<String> _availablePlateTemplates;
 
@@ -64,12 +65,12 @@ public class GWTProtocol implements IsSerializable
     }
 
 
-    public List<GWTDomain> getDomains()
+    public List<GWTDomain<GWTPropertyDescriptor>> getDomains()
     {
         return _domains;
     }
 
-    public void setDomains(List<GWTDomain> domains)
+    public void setDomains(List<GWTDomain<GWTPropertyDescriptor>> domains)
     {
         _domains = domains;
     }

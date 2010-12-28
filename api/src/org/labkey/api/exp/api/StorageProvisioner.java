@@ -20,11 +20,12 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -99,7 +100,7 @@ public class StorageProvisioner
 
             TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.CreateTable);
 
-            CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
+            Set<String> base = Sets.newCaseInsensitiveHashSet();
 
             for (PropertyStorageSpec spec : kind.getBaseProperties())
             {
@@ -225,7 +226,7 @@ public class StorageProvisioner
 
         TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.AddColumns);
 
-        CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
+        Set<String> base = Sets.newCaseInsensitiveHashSet();
         for (PropertyStorageSpec s : kind.getBaseProperties())
             base.add(s.getName());
 
@@ -345,7 +346,7 @@ public class StorageProvisioner
 
         String tableName = domain.getStorageTableName();
 
-        CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
+        Set<String> base = Sets.newCaseInsensitiveHashSet();
         for (PropertyStorageSpec s : kind.getBaseProperties())
             base.add(s.getName());
 
@@ -379,7 +380,6 @@ public class StorageProvisioner
     }
 
     /**
-     * @param domain
      * @param propsRenamed map where keys are the current properties including the new names, values are the old column names.
      */
     public static void renameProperties(Domain domain, Map<DomainProperty, String> propsRenamed) throws SQLException
@@ -397,7 +397,7 @@ public class StorageProvisioner
             con = scope.getConnection();
             TableChange renamePropChange = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.RenameColumns);
 
-            CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
+            Set<String> base = Sets.newCaseInsensitiveHashSet();
             for (PropertyStorageSpec s : kind.getBaseProperties())
                 base.add(s.getName());
 
@@ -418,7 +418,7 @@ public class StorageProvisioner
 
                 if (prop.isMvEnabled())
                 {
-                    renamePropChange.addColumnRename(prop.getMvIndicatorColumnName(oldPropName), prop.getMvIndicatorColumnName(prop.getName()));
+                    renamePropChange.addColumnRename(PropertyStorageSpec.getMvIndicatorColumnName(oldPropName), prop.getMvIndicatorColumnName());
                 }
 
             }
@@ -451,14 +451,12 @@ public class StorageProvisioner
      * return a TableInfo for this domain, creating if necessary
      * this method DOES NOT cache
      *
-     * @param kind
-     * @param domain
      * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
-     * @return
      */
 
-    public static TableInfo createTableInfo(DomainKind kind, Domain domain, DbSchema parentSchema)
+    public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema)
     {
+        DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
         String schemaName = kind.getStorageSchemaName();
 
@@ -479,6 +477,7 @@ public class StorageProvisioner
             ti.setMetaDataName(tableName);
             ti.loadFromMetaData(conn.getMetaData(), scope.getDatabaseName(), schemaName);
 
+            int index = 0;
             for (DomainProperty p : domain.getProperties())
             {
                 ColumnInfo c = ti.getColumn(p.getName());
@@ -487,7 +486,22 @@ public class StorageProvisioner
                     Logger.getLogger(StorageProvisioner.class).info("Column not found in storage table: " + tableName + "." + p.getName());
                     continue;
                 }
+                // The columns coming back from JDBC metadata aren't necessarily in the same order that the domain
+                // wants them based on its current property order
+                ti.setColumnIndex(c, index++);
                 PropertyColumn.copyAttributes(null, c, p.getPropertyDescriptor());
+                if (p.isMvEnabled())
+                {
+                    c.setDisplayColumnFactory(new MVDisplayColumnFactory());
+
+                    ColumnInfo mvColumn = ti.getColumn(PropertyStorageSpec.getMvIndicatorColumnName(p.getName()));
+                    assert mvColumn != null : "No MV column found for " + p.getName();
+                    if (mvColumn != null)
+                    {
+                        c.setMvColumnName(mvColumn.getName());
+                        mvColumn.setMvIndicatorColumn(true);
+                    }
+                }
                 c.setScale(p.getScale());
             }
 
@@ -564,7 +578,7 @@ public class StorageProvisioner
                         domainReport.getName(), domainReport.getSchemaName(), domainReport.getTableName()));
                 continue;
             }
-            Set<String> hardColumnNames = new CaseInsensitiveHashSet(table.getColumnNameSet());
+            Set<String> hardColumnNames = Sets.newCaseInsensitiveHashSet(table.getColumnNameSet());
             Domain domain = PropertyService.get().getDomain(domainReport.getId());
             for (DomainProperty domainProp : domain.getProperties())
             {
@@ -704,7 +718,7 @@ public class StorageProvisioner
             Lsid lsid = new Lsid("TestDatasetDomainKind", "Folder-" + container.getRowId(), domainName);
             domain = PropertyService.get().createDomain(container, lsid.toString(), domainName);
             domain.save(new User());
-            StorageProvisioner.createTableInfo(domain.getDomainKind(), domain, DbSchema.get(domain.getDomainKind().getStorageSchemaName()));
+            StorageProvisioner.createTableInfo(domain, DbSchema.get(domain.getDomainKind().getStorageSchemaName()));
             domain = PropertyService.get().getDomain(domain.getTypeId());
         }
 
@@ -875,7 +889,7 @@ renaming a property AND toggling mvindicator on in the same change.
             }
             finally
             {
-                con.close();
+                if (con != null) { con.close(); }
             }
 
         }

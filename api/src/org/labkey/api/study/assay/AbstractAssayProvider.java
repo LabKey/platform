@@ -38,6 +38,8 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.query.ResultsQueryView;
@@ -46,6 +48,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -167,6 +170,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         private List<PropertyDescriptor> _batchPDs;
         /** Up to the caller to decide what the keys mean */
         private Map<Integer, ExpRun> _runsByOntologyObjectId = new HashMap<Integer, ExpRun>();
+        private Map<Integer, ExpRun> _runsByRunId = new HashMap<Integer, ExpRun>();
         private Map<Integer, ExpRun> _runsByDataId = new HashMap<Integer, ExpRun>();
         private Map<Integer, ExpData> _data = new HashMap<Integer, ExpData>();
         private Map<Container, TableInfo> _runTables = new HashMap<Container, TableInfo>();
@@ -261,6 +265,17 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 ExpData data = ExperimentService.get().getExpData(dataRowParent.getObjectURI());
                 result = data.getRun();
                 _runsByOntologyObjectId.put(o.getOwnerObjectId(), result);
+            }
+            return result;
+        }
+
+        public ExpRun getRun(int runId)
+        {
+            ExpRun result = _runsByRunId.get(runId);
+            if (result == null)
+            {
+                result = ExperimentService.get().getExpRun(runId);
+                _runsByRunId.put(runId, result);
             }
             return result;
         }
@@ -1041,7 +1056,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         if (targetStudyColumn == null)
             return null;
-        ExpData data = getDataForDataRow(dataId);
+        ExpData data = getDataForDataRow(dataId, protocol);
         if (data == null)
             return null;
         ExpRun run = data.getRun();
@@ -1082,7 +1097,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return OntologyManager.getProperties(object.getContainer(), object.getLSID());
     }
 
-    public abstract ExpData getDataForDataRow(Object dataRowId);
+    public abstract ExpData getDataForDataRow(Object dataRowId, ExpProtocol protocol);
 
 
     public ActionURL getImportURL(Container container, ExpProtocol protocol)
@@ -1386,7 +1401,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             resultDetailsURL.addParameter("rowId", protocol.getRowId());
             Map<String, String> params = new HashMap<String, String>();
             // map ObjectId to url parameter ResultDetailsForm.dataRowId
-            params.put("dataRowId", "ObjectId");
+            params.put("dataRowId", AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
 
             AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
             ati.setDetailsURL(new DetailsURL(resultDetailsURL, params));
@@ -1509,7 +1524,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
      * had data copied into them.
      * @return The names of the added columns that should be visible
      */
-    protected Set<String> addCopiedToStudyColumns(AbstractTableInfo table, ExpProtocol protocol, User user, String keyColumnName, boolean setVisibleColumns)
+    protected Set<String> addCopiedToStudyColumns(AbstractTableInfo table, ExpProtocol protocol, User user, boolean setVisibleColumns)
     {
         Set<String> visibleColumnNames = new HashSet<String>();
         int datasetIndex = 0;
@@ -1519,29 +1534,30 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (!studyContainer.hasPermission(user, ReadPermission.class))
                 continue;
 
-            // CONSIDER: get list of datasets for protocolid first and filter studyDataTable (see StudySchema.getTableInfoStudyDataFiltered)
-            TableInfo studyDataTable = StudyService.get().getStudyDataTable(studyContainer);
-            
-            // We need the dataset ID as a separate column in order to display the URL
-            SQLFragment datasetIdSQL = new SQLFragment();
-            datasetIdSQL.appendComment("<dataset column " + studyContainer.getPath() + ">", table.getSqlDialect());
-            datasetIdSQL.append("(SELECT max(sd.datasetid) FROM ").append(studyDataTable.getFromSQL("sd")).append(" study.dataset d " +
-                "WHERE ? = d.container AND sd.datasetid = d.datasetid AND " +
-                "d.protocolid = " + protocol.getRowId() + " AND " +
-                "sd._key = CAST(" + ExprColumn.STR_TABLE_ALIAS + "." + keyColumnName + " AS " +
-                table.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) +
-                "(200)))");
-            datasetIdSQL.appendComment("</dataset column>", table.getSqlDialect());
-            datasetIdSQL.add(studyContainer);
+            Study study = StudyService.get().getStudy(studyContainer);
+            DataSet assayDataSet = null;
+            for (DataSet dataSet : study.getDataSets())
+            {
+                if (dataSet.getProtocolId() != null && protocol.getRowId() == dataSet.getProtocolId().intValue())
+                {
+                    assayDataSet = dataSet;
+                    break;
+                }
+            }
+
+            if (assayDataSet == null || !assayDataSet.canRead(user))
+            {
+                continue;
+            }
 
             String datasetIdColumnName = "dataset" + datasetIndex++;
             final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table,
-                datasetIdColumnName, studyContainer, protocol.getRowId(), this);
+                datasetIdColumnName, this, assayDataSet, user);
             datasetColumn.setHidden(true);
             table.addColumn(datasetColumn);
 
             String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
-                ".datasetid IS NOT NULL THEN 'copied' ELSE NULL END)";
+                "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
 
             String studyName = StudyService.get().getStudyName(studyContainer);
             if (studyName == null)
@@ -1560,14 +1576,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 datasetColumn);
             final String copiedToStudyColumnCaption = "Copied to " + studyName;
             studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
-
-            studyCopiedColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    return new StudyDisplayColumn(copiedToStudyColumnCaption, studyContainer, datasetColumn.getName(), colInfo);
-                }
-            });
+            studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataSet.getContainer(), assayDataSet.getDataSetId())));
 
             table.addColumn(studyCopiedColumn);
 
@@ -1715,4 +1724,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         return new DefaultDataTransformer();
     }
+
+    public void materializeAssayResults(User user, ExpProtocol protocol) throws SQLException {}
 }

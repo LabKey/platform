@@ -19,7 +19,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
-import org.labkey.api.study.StudyService;
+import org.labkey.api.security.User;
+import org.labkey.api.study.DataSet;
 
 import java.sql.Types;
 import java.util.Map;
@@ -30,21 +31,21 @@ import java.util.Map;
  */
 public class StudyDataSetColumn extends ExprColumn
 {
-    private Container _studyContainer;
-    private int _protocolId;
     private AssayProvider _provider;
+    private final DataSet _assayDataSet;
+    private final User _user;
 
-    public StudyDataSetColumn(TableInfo parent, String name, Container studyContainer, int protocolId, AssayProvider provider)
+    public StudyDataSetColumn(TableInfo parent, String name, AssayProvider provider, DataSet assayDataSet, User user)
     {
-        super(parent, name, new SQLFragment(getDatasetIdAlias(studyContainer) + ".datasetid"), Types.INTEGER);
-        _studyContainer = studyContainer;
-        _protocolId = protocolId;
+        super(parent, name, new SQLFragment(Integer.toString(assayDataSet.getDataSetId())), Types.INTEGER);
         _provider = provider;
+        _assayDataSet = assayDataSet;
+        _user = user;
     }
 
     public Container getStudyContainer()
     {
-        return _studyContainer;
+        return _assayDataSet.getContainer();
     }
 
     public static String getDatasetIdAlias(Container studyContainer)
@@ -54,7 +55,7 @@ public class StudyDataSetColumn extends ExprColumn
 
     public String getDatasetIdAlias()
     {
-        return getDatasetIdAlias(_studyContainer);
+        return getDatasetIdAlias(getStudyContainer());
     }
 
     @Override
@@ -63,22 +64,13 @@ public class StudyDataSetColumn extends ExprColumn
         super.declareJoins(parentAlias, map);
         SQLFragment joinSql = new SQLFragment();
         String datasetAlias = getDatasetIdAlias();
-        String studyDataAlias = "StudyData" + _studyContainer.getRowId();
-        TableInfo studyDataTable = StudyService.get().getStudyDataTable(_studyContainer);
+        Container studyContainer = getStudyContainer();
+        TableInfo dataSetTable = _assayDataSet.getTableInfo(_user);
 
-        joinSql.appendComment("<StudyDataSetColumn.join " + _studyContainer.getPath() + ">", getSqlDialect());
-        joinSql.append(" LEFT OUTER JOIN ").append(studyDataTable.getFromSQL(studyDataAlias)).append(" ON ");
-        joinSql.append(studyDataAlias).append("._key = CAST(" + parentAlias + "." + _provider.getTableMetadata().getResultRowIdFieldKey().getName() + " AS ");
+        joinSql.appendComment("<StudyDataSetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
+        joinSql.append(" LEFT OUTER JOIN ").append(dataSetTable.getFromSQL(datasetAlias)).append(" ON ");
+        joinSql.append(datasetAlias).append("._key = CAST(" + parentAlias + "." + _provider.getTableMetadata().getResultRowIdFieldKey().getName() + " AS ");
         joinSql.append(getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR)).append("(200))");
-        joinSql.append(" LEFT OUTER JOIN (\n");
-        joinSql.append("SELECT MAX(study.Dataset.datasetid) AS datasetid, study.Dataset.container \n");
-        joinSql.append("FROM study.Dataset \n");
-        joinSql.append("WHERE study.Dataset.protocolid = ? \n");
-        joinSql.add(_protocolId);
-        joinSql.append("GROUP BY study.Dataset.container\n");
-        joinSql.append(") ").append(datasetAlias).append(" ON ? = ").append(datasetAlias);
-        joinSql.append(".container AND ").append(studyDataAlias).append(".datasetid = ").append(datasetAlias).append(".datasetid");
-        joinSql.add(_studyContainer);
         joinSql.appendComment("</StudyDataSetColumn.join>", getSqlDialect());
         map.put(datasetAlias, joinSql);
     }

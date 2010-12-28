@@ -157,12 +157,6 @@ public class StudyService
         boolean isValidSubjectColumnName(Container container, String subjectColumnName);
 
         boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
-
-
-        // NOTE: this is to fix two places in the code that directly queries study.studydata from outside
-        // the study module.  That does not seem like a good practice, however.
-        @Deprecated
-        TableInfo getStudyDataTable(Container container);
     }
 
     public static void register(Service serviceImpl)

@@ -134,17 +134,12 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         return _metadata.getDefaultHiddenProperties();
     }
 
-    private ColumnInfo getIndicatorColumn(String baseName, ColumnInfo colInfo)
+    private static ColumnInfo getIndicatorColumn(String baseName, ColumnInfo colInfo)
     {
         return getNamedColumn(baseName, colInfo, OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
     }
 
-    private ColumnInfo getNumberColumn(String baseName, ColumnInfo colInfo)
-    {
-        return getNamedColumn(baseName, colInfo, OORDisplayColumnFactory.NUMBER_COLUMN_SUFFIX);
-    }
-
-    private ColumnInfo getNamedColumn(String baseName, ColumnInfo colInfo, String suffix)
+    private static ColumnInfo getNamedColumn(String baseName, ColumnInfo colInfo, String suffix)
     {
         FieldKey thisFieldKey = FieldKey.fromString(colInfo.getName());
         List<FieldKey> keys = new ArrayList<FieldKey>();
@@ -171,7 +166,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         }
     }
 
-    private class InRangeExprColumn extends ExprColumn
+    public static class InRangeExprColumn extends ExprColumn
     {
         private final String _baseName;
 
@@ -209,6 +204,11 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
                 throw new IllegalStateException("Could not find " + _baseName + OORDisplayColumnFactory.NUMBER_COLUMN_SUFFIX + " column");
             }
             numberCol.declareJoins(parentAlias, map);
+        }
+
+        private ColumnInfo getNumberColumn(String baseName, ColumnInfo colInfo)
+        {
+            return getNamedColumn(baseName, colInfo, OORDisplayColumnFactory.NUMBER_COLUMN_SUFFIX);
         }
     }
 

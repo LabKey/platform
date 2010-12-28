@@ -18,8 +18,11 @@ package org.labkey.api.data;
 
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class LookupColumn extends ColumnInfo
@@ -56,12 +59,16 @@ public class LookupColumn extends ColumnInfo
         return false;   // Lookup columns are never key fields of the parent table
     }
 
+    /** The column in the source table. In the UI, this is the column that will be joinable to the target table. */
     protected ColumnInfo _foreignKey;
+    /** The column in the target table, typically its PK. */
     protected ColumnInfo _lookupKey;
+    /** The display column to show */
     protected ColumnInfo _lookupColumn;
-    protected boolean _joinOnContainer;
+    /** Additional column pairs if this is a multi-column join */
+    protected Map<ColumnInfo, ColumnInfo> _additionalJoins = new HashMap<ColumnInfo, ColumnInfo>();
 
-    public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn, boolean joinOnContainer)
+    public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
     {
         // Bug 1166: always report that our parent table is the leftmost table, so the dataregion knows which
         // table to select from
@@ -72,55 +79,54 @@ public class LookupColumn extends ColumnInfo
         _lookupColumn = lookupColumn;
         setSqlTypeName(lookupColumn.getSqlTypeName());
         setAlias(foreignKey.getAlias() + "$" + lookupColumn.getAlias());
-        _joinOnContainer = joinOnContainer;
     }
-
-    public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
-    {
-        this(foreignKey, lookupKey, lookupColumn, false);
-    }
-
 
     public SQLFragment getValueSql(String tableAliasName)
     {
         return _lookupColumn.getValueSql(getTableAlias(tableAliasName));
     }
 
+    public void addJoin(ColumnInfo foreignKey, ColumnInfo lookupKey)
+    {
+        FieldKey fieldKey = new FieldKey(_foreignKey.getFieldKey().getParent(), foreignKey.getName());
+        Map<FieldKey, ColumnInfo> map = QueryService.get().getColumns(_foreignKey.getParentTable(), Collections.singleton(fieldKey));
+        ColumnInfo translatedFK = map.get(fieldKey);
+
+        _additionalJoins.put(translatedFK, lookupKey);
+    }
 
     public SQLFragment getJoinCondition(String tableAliasName)
     {
-        return getJoinConditionHelper(
-            tableAliasName, _foreignKey.getValueSql(tableAliasName), _foreignKey.getSqlTypeInt(),
-            getTableAlias(tableAliasName), _lookupKey.getValueSql(getTableAlias(tableAliasName)), _lookupKey.getSqlTypeInt(),
-            _joinOnContainer, getSqlDialect().isPostgreSQL()
-        );
+        SQLFragment result = new SQLFragment("(");
+        result.append(getJoinCondition(tableAliasName, _foreignKey, _lookupKey));
+        for (Map.Entry<ColumnInfo, ColumnInfo> entry : _additionalJoins.entrySet())
+        {
+            ColumnInfo fk = entry.getKey();
+            ColumnInfo pk = entry.getValue();
+            result.append(" AND ");
+            result.append(getJoinCondition(tableAliasName, fk, pk));
+        }
+        result.append(")");
+        return result;
     }
 
-
-    public static SQLFragment getJoinConditionHelper(String tableAliasName, SQLFragment fkSql, int fkType,
-            String joinAlias, SQLFragment pkSql, int pkType,
-            boolean joinOnContainer, boolean isPostgreSQL)
+    private SQLFragment getJoinCondition(String tableAliasName, ColumnInfo fk, ColumnInfo pk)
     {
         SQLFragment condition = new SQLFragment();
-        boolean typeMismatch = fkType != pkType;
-        condition.append("(");
-        if (isPostgreSQL && typeMismatch)
+        boolean addCast = fk.getSqlTypeInt() != pk.getSqlTypeInt() && getSqlDialect().isPostgreSQL();
+        SQLFragment fkSql = fk.getValueSql(tableAliasName);
+        if (addCast)
             condition.append("CAST((").append(fkSql).append(") AS VARCHAR)");
         else
             condition.append(fkSql);
         condition.append(" = ");
 
-        if (isPostgreSQL && typeMismatch)
+        SQLFragment pkSql = pk.getValueSql(getTableAlias(tableAliasName));
+        if (addCast)
             condition.append("CAST((").append(pkSql).append(") AS VARCHAR)");
         else
             condition.append(pkSql);
 
-        if (joinOnContainer)
-        {
-            condition.append(" AND ").append(tableAliasName);
-            condition.append(".Container = ").append(joinAlias).append(".Container");
-        }
-        condition.append(")");
         return condition;
     }
 
@@ -136,6 +142,10 @@ public class LookupColumn extends ColumnInfo
         if (assertEnabled || !map.containsKey(colTableAlias))
         {
             _foreignKey.declareJoins(baseAlias, map);
+            for (ColumnInfo columnInfo : _additionalJoins.keySet())
+            {
+                columnInfo.declareJoins(baseAlias, map);
+            }
             SQLFragment strJoin = new SQLFragment("\n\tLEFT OUTER JOIN ");
 
             addLookupSql(strJoin, _lookupKey.getParentTable(), colTableAlias);
@@ -167,19 +177,12 @@ public class LookupColumn extends ColumnInfo
      * NOTE: postgres may ignore characters past 64 resulting in spurious duplicate alias errors
      * ref 10493
      * @param baseAlias alias of table on "left hand side" of the lookup
-     * @return
      */
     public String getTableAlias(String baseAlias)
     {
         String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + _foreignKey.getAlias() + "$";
         alias = AliasManager.truncate(alias, 64);
         return alias;
-    }
-
-    
-    public void setJoinOnContainer(boolean joinOnContainer)
-    {
-        _joinOnContainer = joinOnContainer;
     }
 
     public String getColumnName()

@@ -34,15 +34,18 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * Used only for migrating data out of OntologyManager into hard tables at upgrade time.
+ * 
  * User: brittp
  * Date: Jul 6, 2007
  * Time: 5:35:15 PM
  */
+@Deprecated
 public class RunDataTable extends FilteredTable
 {
     private Domain _resultsDomain;
 
-    public RunDataTable(final AssaySchema schema, final ExpProtocol protocol)
+    public RunDataTable(final AssaySchema schema, final ExpProtocol protocol, boolean forUpgrade)
     {
         super(new ProtocolFilteredObjectTable(schema.getContainer(), protocol.getLSID()), schema.getContainer());
         setDescription("Contains all of the results (and may contain raw data as well) for the " + protocol.getName() + " assay definition");
@@ -76,17 +79,23 @@ public class RunDataTable extends FilteredTable
         SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%.DataRow-%'");
         addCondition(dataRowClause, "ObjectURI");
 
-        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), Types.INTEGER);
-        runColumn.setFk(new LookupForeignKey("RowID")
+        ExprColumn dataColumn = new ExprColumn(this, "DataId", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataId"), Types.INTEGER);
+        addColumn(dataColumn);
+
+        if (!forUpgrade)
         {
-            public TableInfo getLookupTableInfo()
+            ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), Types.INTEGER);
+            runColumn.setFk(new LookupForeignKey("RowID")
             {
-                ExpRunTable expRunTable = AssayService.get().createRunTable(protocol, provider, schema.getUser(), schema.getContainer());
-                expRunTable.setContainerFilter(getContainerFilter());
-                return expRunTable;
-            }
-        });
-        addColumn(runColumn);
+                public TableInfo getLookupTableInfo()
+                {
+                    ExpRunTable expRunTable = AssayService.get().createRunTable(protocol, provider, schema.getUser(), schema.getContainer());
+                    expRunTable.setContainerFilter(getContainerFilter());
+                    return expRunTable;
+                }
+            });
+            addColumn(runColumn);
+        }
 
         List<PropertyDescriptor> runProperties = provider.getRunTableColumns(protocol);
         for (PropertyDescriptor prop : runProperties)
@@ -101,10 +110,13 @@ public class RunDataTable extends FilteredTable
                 visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
         }
 
-        Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), "objectId", false);
-        for (String columnName : studyColumnNames)
+        if (!forUpgrade)
         {
-            visibleColumns.add(new FieldKey(null, columnName));
+            Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), false);
+            for (String columnName : studyColumnNames)
+            {
+                visibleColumns.add(new FieldKey(null, columnName));
+            }
         }
 
         setDefaultVisibleColumns(visibleColumns);

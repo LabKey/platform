@@ -372,7 +372,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
         {
             List<String> publishErrors = new ArrayList<String>();
-            ActionURL successURL  = provider.copyToStudy(context.getUser(), _protocol, targetStudy, publishData, publishErrors);
+            ActionURL successURL  = provider.copyToStudy(context, _protocol, targetStudy, publishData, publishErrors);
             if (publishErrors.isEmpty())
             {
                 DataRegionSelection.clearAll(getViewContext(), publishConfirmForm.getDataRegionSelectionKey());
