@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-EXEC sp_addapprole 'exp', 'password'
+EXEC sp_addapprole 'assayresult', 'password'
 GO
 
 EXEC core.executeJavaUpgradeCode 'materializeAssayResults'
