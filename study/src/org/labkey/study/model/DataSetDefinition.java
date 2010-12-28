@@ -794,17 +794,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     mvColumn.setMvIndicatorColumn(true);
 
                     ColumnInfo rawValueCol = new AliasedColumn(wrapped.getName() + RawValueColumn.RAW_VALUE_SUFFIX, wrapped);
+                    rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
                     rawValueCol.setLabel(getName());
                     rawValueCol.setUserEditable(false);
                     rawValueCol.setHidden(true);
-                    rawValueCol.setMvColumnName(null); // This column itself does not allow QC
+                    rawValueCol.setMvColumnName(null); // This version of the column does not show missing values
                     rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
                     rawValueCol.setRawValueColumn(true);
 
                     columns.add(mvColumn);
                     columns.add(rawValueCol);
 
-                    wrapped.setDisplayColumnFactory(new MVDisplayColumnFactory());
                     wrapped.setMvColumnName(mvColumn.getName());
                 }
             }
