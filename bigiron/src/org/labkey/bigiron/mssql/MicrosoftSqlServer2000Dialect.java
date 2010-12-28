@@ -115,7 +115,7 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
         {
             if (prop.getSqlTypeInt() == Types.INTEGER)
             {
-                return "IDENTITY (1, 1)";
+                return "INT IDENTITY (1, 1)";
             }
             else
             {
@@ -672,7 +672,7 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
     {
         List<String> colSpec = new ArrayList<String>();
         colSpec.add(makeLegalIdentifier(prop.getName()));
-        colSpec.add(sqlTypeNameFromSqlType(prop.getSqlTypeInt()));
+        colSpec.add(sqlTypeNameFromSqlType(prop));
 
         if (prop.getSqlTypeInt() == Types.VARCHAR)
             colSpec.add("(" + prop.getSize() + ")");
