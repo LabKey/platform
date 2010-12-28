@@ -169,7 +169,20 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 
                         if (!skipProperty)
                         {
-                            addProperty(pd, entry.getValue().getValue(rs), dataMap, tempTypes);
+                            ColumnInfo column = entry.getValue();
+                            Object value = column.getValue(rs);
+                            if (pd.isMvEnabled())
+                            {
+                                for (ColumnInfo c : columns)
+                                {
+                                    if (c.getName().equalsIgnoreCase(column.getMvColumnName()))
+                                    {
+                                        value = new MvFieldWrapper(value, (String)c.getValue(rs));
+                                        break;
+                                    }
+                                }
+                            }
+                            addProperty(pd, value, dataMap, tempTypes);
                         }
                     }
 

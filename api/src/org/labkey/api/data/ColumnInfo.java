@@ -292,6 +292,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         dimension = col.dimension;
 
         setMvColumnName(col.getMvColumnName());
+        setRawValueColumn(col.isRawValueColumn());
+        setMvIndicatorColumn(col.isMvIndicatorColumn());
     }
 
 

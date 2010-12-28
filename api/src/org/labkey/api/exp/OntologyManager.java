@@ -343,7 +343,7 @@ public class OntologyManager
                 // However, we bind by name, and there may be parameters that do not correspond to columninfo
                 //
 
-                for (int i=0 ; i<columns.length ; i++)
+                for (int i = 0; i < columns.length; i++)
 				{
                     ColumnInfo col = columns[i];
                     if (col.isMvIndicatorColumn() || col.isRawValueColumn()) //TODO col.isNotUpdatableForSomeReasonSoContinue()
@@ -375,7 +375,7 @@ public class OntologyManager
                         if (null == propertyTypes[i])
                         {
                             // some built-in columns won't have parameters (createdby, etc)
-                            String key = null==propertyURI ? col.getName() : propertyURI;
+                            String key = null == propertyURI ? col.getName() : propertyURI;
                             if (parameterMap.containsKey(key))
                             {
                                 assert !(value instanceof MvFieldWrapper);
@@ -393,8 +393,10 @@ public class OntologyManager
                             if (null != p.second)
                             {
                                 String mvName = col.getMvColumnName();
-                                assert null != mvName;
-                                parameterMap.put(mvName, p.second);
+                                if (mvName != null)
+                                {
+                                    parameterMap.put(mvName, p.second);
+                                }
                             }
                         }
                     }

@@ -144,6 +144,12 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         setDefaultVisibleColumns(visibleColumns);
     }
 
+    @Override
+    public Domain getDomain()
+    {
+        return _resultsDomain;
+    }
+
     private ColumnInfo createRawValueColumn(ColumnInfo baseColumn, ColumnInfo col, String nameSuffix, String labelSuffix, String descriptionSuffix)
     {
         ColumnInfo rawValueCol = new AliasedColumn(baseColumn.getName() + nameSuffix, col);
@@ -162,6 +168,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         rawValueCol.setDescription(description);
         rawValueCol.setUserEditable(false);
         rawValueCol.setHidden(true);
+        rawValueCol.setRawValueColumn(true);
         rawValueCol.setMvColumnName(null); // This column itself does not allow QC
         rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
         return rawValueCol;
