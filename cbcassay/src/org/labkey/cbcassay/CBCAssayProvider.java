@@ -120,9 +120,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     {
         super("CBCAssayProtocol", "CBCAssayRun", CBCDataHandler.DATA_TYPE,
             new CBCAssayTableMetadata(
-                FieldKey.fromParts("Properties"),
+                null,
                 FieldKey.fromParts("Run"),
-                FieldKey.fromParts("ObjectId")));
+                FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME)));
     }
 
     private final static class CBCAssayTableMetadata extends AssayTableMetadata
@@ -157,32 +157,35 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         return result;
     }
 
-    public TableInfo createDataTable(final AssaySchema schema, ExpProtocol protocol)
+    public FilteredTable createDataTable(final AssaySchema schema, ExpProtocol protocol)
     {
-        RunDataTable table = new RunDataTable(schema, protocol) {
+        AssayResultTable table = new AssayResultTable(schema, protocol, this) {
             @Override
             public boolean hasPermission(User user, Class<? extends Permission> perm)
             {
                 if (getUpdateService() != null)
-                    return (UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm)) && getContainer().hasPermission(user, perm);
+                    return (UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm)) && _schema.getContainer().hasPermission(user, perm);
                 return false;
             }
 
             @Override
             public QueryUpdateService getUpdateService()
             {
-                return new DummyUpdateService();
+                return new DefaultQueryUpdateService(this, getRealTable());
             }
         };
 
         ActionURL showDetailsUrl = new ActionURL(AssayResultDetailsAction.class, schema.getContainer());
         showDetailsUrl.addParameter("rowId", protocol.getRowId());
         Map<String, String> params = new HashMap<String, String>();
-        params.put("dataRowId", "ObjectId");
+        params.put("dataRowId", AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
         table.setDetailsURL(new DetailsURL(showDetailsUrl, params));
 
         ActionURL updateUrl = new ActionURL(CBCAssayController.UpdateAction.class, null);
-        table.setUpdateURL(new DetailsURL(updateUrl, "dataRowId", FieldKey.fromString("ObjectId")));
+        updateUrl.addParameter("rowId", protocol.getRowId());
+        Map<String, Object> updateParams = new HashMap<String, Object>();
+        updateParams.put("dataRowId", FieldKey.fromString(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
+        table.setUpdateURL(new DetailsURL(updateUrl, updateParams));
 
         return table;
     }
@@ -289,17 +292,6 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         return new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/tsvDataDescription.jsp", form);
     }
 
-//    @Override
-//    public Map<String, Class<? extends Controller>> getImportActions()
-//    {
-//        return Collections.<String, Class<? extends Controller>>singletonMap(IMPORT_DATA_LINK_NAME, CBCUploadWizardAction.class);
-//    }
-
-//    protected PropertyType getDataRowIdType()
-//    {
-//        return PropertyType.INTEGER;
-//    }
-
     public static ActionURL getResultUpdateUrl(ViewContext context)
     {
         // clone the current url to keep objectId parameter if present
@@ -336,14 +328,6 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     {
         return details && domainType == ExpProtocol.AssayDomainTypes.Result;
     }
-
-//    @Override
-//    // XXX: tried to use the default ResultsQueryView and add column renderers to it instead
-//    public QueryView createResultsView(ViewContext context, ExpProtocol protocol)
-//    {
-//        QuerySettings settings = getResultsQuerySettings(context, protocol);
-//        return new CBCResultsQueryView(protocol, context, settings);
-//    }
 
     @Override
     public ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol)

@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.TimepointType;
 
@@ -36,10 +37,15 @@ public class ContinuousDatasetDomainKind extends DatasetDomainKind
         return "StudyDatasetVisit";
     }
 
-    public boolean isDomainType(String domainURI)
+    @Override
+    public Priority getPriority(String domainURI)
     {
         DataSetDefinition def  = getDatasetDefinition(domainURI);
-        return null!=def && def.getStudy().getTimepointType() == TimepointType.CONTINUOUS;
+        if (null!=def && def.getStudy().getTimepointType() == TimepointType.CONTINUOUS)
+        {
+            return Priority.MEDIUM;
+        }
+        return null;
     }
 
     @Override

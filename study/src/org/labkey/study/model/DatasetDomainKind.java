@@ -19,7 +19,6 @@ package org.labkey.study.model;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -84,10 +83,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             new PropertyStorageSpec(_KEY, Types.VARCHAR, 200),
             new PropertyStorageSpec(QCSTATE, Types.INTEGER),
             new PropertyStorageSpec(PARTICIPANTSEQUENCEKEY, Types.VARCHAR, 200),
+            new PropertyStorageSpec("created", Types.TIMESTAMP),
+            new PropertyStorageSpec("modified", Types.TIMESTAMP),
+            new PropertyStorageSpec("createdBy", Types.INTEGER),
+            new PropertyStorageSpec("modifiedBy", Types.INTEGER)
         };
 
         BASE_PROPERTIES = new HashSet<PropertyStorageSpec>(Arrays.asList(props));
-        BASE_PROPERTIES.addAll(AbstractDomainKind.BASE_PROPERTIES);
 
         PropertyStorageSpec.Index[] indices = {
           new PropertyStorageSpec.Index(false, QCSTATE),
@@ -146,12 +148,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     }
 
 
-    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
-    {
-        return null;
-    }
-
-
     public ActionURL urlShowData(Domain domain)
     {
         DataSet def = getDatasetDefinition(domain.getTypeURI());
@@ -181,14 +177,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
 
     // consider move into StudyManager
-    private static Cache domainCache = CacheManager.getCache(1000, CacheManager.DAY, "Domain->Dataset map");
+    private static Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(1000, CacheManager.DAY, "Domain->Dataset map");
 
-    private CacheLoader loader = new CacheLoader()
+    private CacheLoader<String, Pair<String, Integer>> loader = new CacheLoader<String, Pair<String, Integer>>()
     {
         @Override
-        public Object load(Object key, Object argument)
+        public Pair<String, Integer> load(String domainURI, Object argument)
         {
-            String domainURI = (String)key;
             SQLFragment sql = new SQLFragment();
             sql.append("SELECT container, datasetid FROM study.Dataset WHERE TypeURI=?");
             sql.add(domainURI);
@@ -199,7 +194,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
                 if (!rs.next())
                     return null;
                 else
-                    return new Pair(rs.getString(1), rs.getInt(2));
+                    return new Pair<String, Integer>(rs.getString(1), rs.getInt(2));
             }
             catch (SQLException x)
             {
@@ -215,7 +210,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
     DataSetDefinition getDatasetDefinition(String domainURI)
     {
-        Pair<String,Integer> p = (Pair<String,Integer>)domainCache.get(domainURI, null, loader);
+        Pair<String,Integer> p = domainCache.get(domainURI, null, loader);
         if (null == p)
             return null;
 

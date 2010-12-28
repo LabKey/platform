@@ -16,7 +16,6 @@
 
 package org.labkey.study.assay;
 
-import com.google.gwt.user.client.rpc.SerializableException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -73,7 +72,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         super(context);
     }
 
-    public GWTProtocol getAssayDefinition(int rowId, boolean copy) throws SerializableException
+    public GWTProtocol getAssayDefinition(int rowId, boolean copy)
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(rowId);
         if (protocol == null)
@@ -90,7 +89,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
     }
 
-    public GWTProtocol getAssayTemplate(String providerName) throws SerializableException
+    public GWTProtocol getAssayTemplate(String providerName)
     {
         AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(providerName);
         if (provider == null)
@@ -101,10 +100,10 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         return getAssayTemplate(provider, template, false);
     }
 
-    public GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy) throws SerializableException
+    public GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
     {
         ExpProtocol protocol = template.getKey();
-        List<GWTDomain> gwtDomains = new ArrayList<GWTDomain>();
+        List<GWTDomain<GWTPropertyDescriptor>> gwtDomains = new ArrayList<GWTDomain<GWTPropertyDescriptor>>();
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : template.getValue())
         {
             Domain domain = domainInfo.getKey();
@@ -320,7 +319,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
 
                     //ensure that the user has edit perms in this container
-                    if(!canUpdateProtocol(protocol))
+                    if(!canUpdateProtocols())
                         throw new AssayException("You do not have sufficient permissions to update this Assay");
 
                     if (!protocol.getContainer().equals(getContainer()))
@@ -397,10 +396,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             {
                 throw new AssayException(e.getMessage());
             }
-            catch (SerializableException e)
-            {
-                throw new AssayException(e.getMessage());
-            }
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
@@ -440,7 +435,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
     }
 
-    public boolean canUpdateProtocol(ExpProtocol protocol)
+    public boolean canUpdateProtocols()
     {
         Container c = getContainer();
         User u = getUser();

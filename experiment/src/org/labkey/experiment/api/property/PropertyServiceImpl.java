@@ -101,12 +101,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
 
     public DomainKind getDomainKind(String typeURI)
     {
-        for (DomainKind type : _domainTypes)
-        {
-            if (type.isDomainType(typeURI))
-                return type;
-        }
-        return null;
+        return Handler.Priority.findBestHandler(_domainTypes, typeURI);
     }
 
     public void registerDomainKind(DomainKind type)

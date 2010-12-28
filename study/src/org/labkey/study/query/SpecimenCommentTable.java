@@ -1,5 +1,6 @@
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.LookupForeignKey;
@@ -58,6 +59,11 @@ public class SpecimenCommentTable extends FilteredTable
                     wrappedColumn.setHidden(true);
             }
         }
+
+        ColumnInfo folderColumn = wrapColumn("Folder", _rootTable.getColumn("Container"));
+        folderColumn.setFk(new ContainerForeignKey());
+        addColumn(folderColumn);
+
         setTitleColumn("Comment");
     }
 }

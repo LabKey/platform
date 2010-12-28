@@ -28,6 +28,8 @@ import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.AssayDomainKind;
+import org.labkey.api.exp.property.AssayResultDomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -65,7 +67,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.study.assay.AssayDomainKind;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
@@ -165,7 +166,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 10.30;
+        return 10.31;
     }
 
     protected void init()
@@ -195,6 +196,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new ContinuousDatasetDomainKind());
         PropertyService.get().registerDomainKind(new TestDatasetDomainKind());
         PropertyService.get().registerDomainKind(new AssayDomainKind());
+        PropertyService.get().registerDomainKind(new AssayResultDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
 

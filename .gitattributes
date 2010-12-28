@@ -272,7 +272,6 @@ cbcassay/src/org/labkey/cbcassay/CBCAssaySchema.java -text
 cbcassay/src/org/labkey/cbcassay/CBCDataHandler.java -text
 cbcassay/src/org/labkey/cbcassay/CBCResultsQueryView.java -text
 cbcassay/src/org/labkey/cbcassay/CBCRunUploadForm.java -text
-cbcassay/src/org/labkey/cbcassay/DummyUpdateService.java -text
 cbcassay/src/org/labkey/cbcassay/EditResultsQueryView.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCData.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataDisplayColumn.java -text
@@ -2241,6 +2240,7 @@ study/resources/schemas/dbscripts/postgresql/study-10.13-10.14.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.20-10.21.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.20-10.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.21-10.22.sql -text
+study/resources/schemas/dbscripts/postgresql/study-10.30-10.31.sql -text
 study/resources/schemas/dbscripts/postgresql/study-8.30-9.10.sql -text
 study/resources/schemas/dbscripts/postgresql/study-8.301-9.10.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.10-9.20.sql -text
@@ -2381,6 +2381,7 @@ study/resources/schemas/dbscripts/sqlserver/study-10.13-10.14.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-10.20-10.21.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-10.20-10.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-10.21-10.22.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-10.30-10.31.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-8.30-9.10.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-8.301-9.10.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.10-9.20.sql -text
@@ -2408,7 +2409,6 @@ study/src/org/labkey/study/StudySchema.java -text
 study/src/org/labkey/study/StudyServiceImpl.java -text
 study/src/org/labkey/study/StudyUnionTableInfo.java -text
 study/src/org/labkey/study/StudyUpgradeCode.java -text
-study/src/org/labkey/study/assay/AssayDomainKind.java -text
 study/src/org/labkey/study/assay/AssayManager.java -text
 study/src/org/labkey/study/assay/AssayPublishManager.java -text
 study/src/org/labkey/study/assay/AssayServiceImpl.java -text

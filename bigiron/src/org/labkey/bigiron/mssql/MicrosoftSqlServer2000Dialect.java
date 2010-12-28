@@ -108,6 +108,26 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
         sqlTypeIntMap.put(Types.FLOAT, "FLOAT");
     }
 
+    @Override
+    protected String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
+    {
+        if (prop.isAutoIncrement())
+        {
+            if (prop.getSqlTypeInt() == Types.INTEGER)
+            {
+                return "IDENTITY (1, 1)";
+            }
+            else
+            {
+                throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getSqlTypeInt() + " (" + sqlTypeNameFromSqlType(prop.getSqlTypeInt()) + ")");
+            }
+        }
+        else
+        {
+            return sqlTypeNameFromSqlType(prop.getSqlTypeInt());
+        }
+    }
+
     public boolean isSqlServer()
     {
         return true;

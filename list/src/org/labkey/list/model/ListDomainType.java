@@ -43,8 +43,6 @@ import java.util.Set;
 
 public class ListDomainType extends AbstractDomainKind
 {
-    static public final ListDomainType instance = new ListDomainType();
-
     public String getTypeLabel(Domain domain)
     {
         return "List '" + domain.getName() + "'";
@@ -56,10 +54,11 @@ public class ListDomainType extends AbstractDomainKind
         return ListDefinitionImpl.NAMESPACE_PREFIX;
     }
 
-    public boolean isDomainType(String domainURI)
+    @Override
+    public Priority getPriority(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
-        return ListDefinitionImpl.NAMESPACE_PREFIX.equals(lsid.getNamespacePrefix());
+        return ListDefinitionImpl.NAMESPACE_PREFIX.equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
     @Override
@@ -94,11 +93,6 @@ public class ListDomainType extends AbstractDomainKind
     public String generateDomainURI(String schemaName, String name, Container container, User user)
     {
         return generateDomainURI(name, container).toString();
-    }
-
-    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
-    {
-        return null;
     }
 
     public ActionURL urlShowData(Domain domain)

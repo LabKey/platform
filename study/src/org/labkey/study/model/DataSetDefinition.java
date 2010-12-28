@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -167,22 +167,22 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "ParticipantSequenceKey"
     };
 
-    static final CaseInsensitiveHashSet DEFAULT_ABSOLUTE_DATE_FIELDS;
-    static final CaseInsensitiveHashSet DEFAULT_RELATIVE_DATE_FIELDS;
-    static final CaseInsensitiveHashSet DEFAULT_VISIT_FIELDS;
-    private static final CaseInsensitiveHashSet HIDDEN_DEFAULT_FIELDS = new CaseInsensitiveHashSet(HIDDEN_DEFAULT_FIELD_NAMES_ARRAY);
+    static final Set<String> DEFAULT_ABSOLUTE_DATE_FIELDS;
+    static final Set<String> DEFAULT_RELATIVE_DATE_FIELDS;
+    static final Set<String> DEFAULT_VISIT_FIELDS;
+    private static final Set<String> HIDDEN_DEFAULT_FIELDS = Sets.newCaseInsensitiveHashSet(HIDDEN_DEFAULT_FIELD_NAMES_ARRAY);
 
     static
     {
-        DEFAULT_ABSOLUTE_DATE_FIELDS = new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
-        DEFAULT_ABSOLUTE_DATE_FIELDS.addAll(DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY);
+        DEFAULT_ABSOLUTE_DATE_FIELDS = Sets.newCaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
+        DEFAULT_ABSOLUTE_DATE_FIELDS.addAll(Sets.newCaseInsensitiveHashSet(DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY));
 
-        DEFAULT_RELATIVE_DATE_FIELDS = new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
-        DEFAULT_RELATIVE_DATE_FIELDS.addAll(DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY);
-        DEFAULT_RELATIVE_DATE_FIELDS.addAll(DEFAULT_RELATIVE_DATE_FIELD_NAMES_ARRAY);
+        DEFAULT_RELATIVE_DATE_FIELDS = Sets.newCaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
+        DEFAULT_RELATIVE_DATE_FIELDS.addAll(Sets.newCaseInsensitiveHashSet(DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY));
+        DEFAULT_RELATIVE_DATE_FIELDS.addAll(Sets.newCaseInsensitiveHashSet(DEFAULT_RELATIVE_DATE_FIELD_NAMES_ARRAY));
 
-        DEFAULT_VISIT_FIELDS = new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
-        DEFAULT_VISIT_FIELDS.addAll(DEFAULT_VISIT_FIELD_NAMES_ARRAY);
+        DEFAULT_VISIT_FIELDS = Sets.newCaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
+        DEFAULT_VISIT_FIELDS.addAll(Sets.newCaseInsensitiveHashSet(DEFAULT_VISIT_FIELD_NAMES_ARRAY));
     }
 
     public DataSetDefinition()
@@ -413,17 +413,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return null;
 
         Domain d = ensureDomain();
-        DomainKind kind = getDomainKind();
 
         // create table may set storageTableName() so uncache _domain
         if (null == d.getStorageTableName())
             _domain = null;
 
-        TableInfo ti = StorageProvisioner.createTableInfo(kind, d, StudySchema.getInstance().getSchema());
+        TableInfo ti = StorageProvisioner.createTableInfo(d, StudySchema.getInstance().getSchema());
 
         TableInfo template = getTemplateTableInfo();
 
-        for (PropertyStorageSpec pss : kind.getBaseProperties())
+        for (PropertyStorageSpec pss : d.getDomainKind().getBaseProperties())
         {
             ColumnInfo c = ti.getColumn(pss.getName());
             ColumnInfo t = template.getColumn(pss.getName());
@@ -1638,7 +1637,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
                 parameterMap.clearParameters();
                 
-                for (Map.Entry<String,Object> e : (Set<Map.Entry<String,Object>>)row.entrySet())
+                for (Map.Entry<String,Object> e : row.entrySet())
                 {
                     PropertyDescriptor pd = propertyNameMap.get(e.getKey());
                     if (null == pd) continue;
@@ -1694,7 +1693,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 parameterMap.execute();
 
                 imported.add(lsid);
-                // UNDONE: OntologyManager.validateProperty
             }
         }
         finally

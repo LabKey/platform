@@ -36,7 +36,6 @@ import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -90,7 +89,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             ExperimentService.get().closeTransaction();
         }
 
-        return serializeResult(provider, protocol, batch);
+        return serializeResult(provider, protocol, batch, getViewContext().getUser());
     }
 
     private ExpRun handleRun(JSONObject runJsonObject, ExpProtocol protocol, AssayProvider provider, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException, SQLException
@@ -142,7 +141,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             {
                 // Client didn't post the rows so reuse the values that are currently attached to the run
                 // Inefficient but easy
-                serializedRun = serializeRun(run, provider, protocol);
+                serializedRun = serializeRun(run, provider, protocol, getViewContext().getUser());
                 dataRows = serializedRun.getJSONArray(DATA_ROWS);
             }
             else
@@ -153,7 +152,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             if (!runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
             {
                 if (serializedRun == null)
-                    serializedRun = serializeRun(run, provider, protocol);
+                    serializedRun = serializeRun(run, provider, protocol, getViewContext().getUser());
                 dataInputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
             }
             else
@@ -164,7 +163,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             if (!runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS))
             {
                 if (serializedRun == null)
-                    serializedRun = serializeRun(run, provider, protocol);
+                    serializedRun = serializeRun(run, provider, protocol, getViewContext().getUser());
                 materialInputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
             }
             else
@@ -175,7 +174,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             if (!runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS))
             {
                 if (serializedRun == null)
-                    serializedRun = serializeRun(run, provider, protocol);
+                    serializedRun = serializeRun(run, provider, protocol, getViewContext().getUser());
                 dataOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
             }
             else
@@ -186,7 +185,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             if (!runJsonObject.has(ExperimentJSONConverter.MATERIAL_OUTPUTS))
             {
                 if (serializedRun == null)
-                    serializedRun = serializeRun(run, provider, protocol);
+                    serializedRun = serializeRun(run, provider, protocol, getViewContext().getUser());
                 materialOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
             }
             else

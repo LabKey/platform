@@ -20,14 +20,13 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -38,6 +37,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.actions.ProtocolIdForm;
+import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -48,6 +48,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -193,24 +195,13 @@ public class CBCAssayController extends SpringActionController
                 {
                     int objectId = objectIds[i];
                     String newSampleId = sampleIds[i];
-                    OntologyObject obj = OntologyManager.getOntologyObject(objectId);
-                    String objectURI = obj.getObjectURI();
 
-                    // fetch current value of SampleId
-                    Map<String, Object> oldValues = OntologyManager.getProperties(getContainer(), objectURI);
-                    String oldSampleId = (String)oldValues.get(sampleIdPd.getPropertyURI());
-                    if (oldSampleId == null && newSampleId == null)
-                        continue;
-                    if (oldSampleId != null && oldSampleId.equals(newSampleId))
-                        continue;
+                    SQLFragment sql = new SQLFragment("UPDATE " + resultDomain.getDomainKind().getStorageSchemaName());
+                    sql.append("." + resultDomain.getStorageTableName() + " SET " + sampleIdKey.getName() + " = ? WHERE RowId = ?");
+                    sql.add(newSampleId);
+                    sql.add(objectId);
 
-                    OntologyManager.deleteProperty(objectURI, sampleIdPd.getPropertyURI(), getContainer(), getContainer());
-
-                    if (newSampleId != null)
-                    {
-                        ObjectProperty oprop = new ObjectProperty(objectURI, getContainer(), sampleIdPd.getPropertyURI(), newSampleId);
-                        OntologyManager.insertProperties(getContainer(), objectURI, oprop);
-                    }
+                    Table.execute(DbSchema.get(resultDomain.getDomainKind().getStorageSchemaName()), sql);
                 }
 
                 if (transaction)
@@ -254,7 +245,7 @@ public class CBCAssayController extends SpringActionController
         }
     }
 
-    public static class DetailsForm extends ViewForm
+    public static class DetailsForm extends ProtocolIdForm
     {
         private int _dataRowId;
         private String _returnURL;
@@ -304,24 +295,13 @@ public class CBCAssayController extends SpringActionController
     public class UpdateAction extends FormViewAction<DetailsForm>
     {
         private CBCAssayProvider _provider;
-        private ExpData _data;
-        private ExpRun _run;
         private ExpProtocol _protocol;
         private ActionURL _returnURL;
 
         public void validateCommand(DetailsForm form, Errors errors)
         {
-            if (_data == null)
-            {
-                _data = getProvider().getDataForDataRow(form.getDataRowId());
-                if (_data == null)
-                    HttpView.throwNotFound("Data '" + form.getDataRowId() + "' not found");
-                _run = _data.getRun();
-                if (_run == null)
-                    HttpView.throwNotFound("Run not found");
-                _protocol = _run.getProtocol();
-                _returnURL = form.getReturnActionURL();
-            }
+            _protocol = form.getProtocol();
+            _returnURL = form.getReturnActionURL();
         }
 
         CBCAssayProvider getProvider()
@@ -336,8 +316,7 @@ public class CBCAssayController extends SpringActionController
             // XXX: need to debug why I can't use the provider's queryView in the UpdateView
 //            QueryView queryView = provider.createRunDataView(getViewContext(), _protocol);
             QuerySettings settings = getProvider().getResultsQuerySettings(getViewContext(), _protocol);
-            QueryView queryView = new ResultsQueryView(_protocol, getViewContext(), settings);
-            return queryView;
+            return new ResultsQueryView(_protocol, getViewContext(), settings);
         }
 
         // XXX: move ListControler.setDisplayColumnsFromDefaultView to query
@@ -404,10 +383,8 @@ public class CBCAssayController extends SpringActionController
                     transaction = true;
                 }
 
-                OntologyObject obj = OntologyManager.getOntologyObject(form.getDataRowId());
-                String objectURI = obj.getObjectURI();
-
-                List<FieldKey> visibleColumns = quf.getTable().getDefaultVisibleColumns();
+                List<FieldKey> visibleColumns = new ArrayList<FieldKey>(quf.getTable().getDefaultVisibleColumns());
+                visibleColumns.add(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
                 Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(quf.getTable(), visibleColumns);
 
                 // map column -> posted form value
@@ -435,6 +412,7 @@ public class CBCAssayController extends SpringActionController
                 if (maps == null || maps.length != 1)
                     throw new RuntimeException("Didn't find existing row for '" + form.getDataRowId() + "'");
                 Map<String, Object> oldValues = (Map<String, Object>)maps[0];
+                Map<String, Object> newValues = new CaseInsensitiveHashMap<Object>(oldValues);
 
                 for (FieldKey key : formValues.keySet())
                 {
@@ -461,17 +439,11 @@ public class CBCAssayController extends SpringActionController
                     if (pd == null)
                         throw new RuntimeException("expected Property for " + key.getName());
 
-                    if (oldValue != null)
-                    {
-                        OntologyManager.deleteProperty(objectURI, pd.getPropertyURI(), getContainer(), getContainer());
-                    }
-
-                    if (newValue != null)
-                    {
-                        ObjectProperty oprop = new ObjectProperty(objectURI, getContainer(), pd.getPropertyURI(), newValue);
-                        OntologyManager.insertProperties(getContainer(), objectURI, oprop);
-                    }
+                    newValues.put(key.getName(), newValue);
                 }
+
+                QueryUpdateService updateService = quf.getTable().getUpdateService();
+                updateService.updateRows(getUser(), getContainer(), Collections.singletonList(newValues), Collections.singletonList(oldValues));
 
                 if (transaction)
                 {

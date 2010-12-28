@@ -131,7 +131,7 @@ public abstract class BaseStudyTable extends FilteredTable
                 return visitTable;
             }
         };
-        visitFK.setJoinOnContainer(true);
+        visitFK.addJoin(getColumn("Container"), "Folder");
         visitColumn.setFk(visitFK);
         visitColumn.setKeyField(true);
     }
@@ -171,7 +171,7 @@ public abstract class BaseStudyTable extends FilteredTable
                 return result;
             }
         };
-        commentsFK.setJoinOnContainer(true);
+        commentsFK.addJoin(getColumn("Container"), "Folder");
         commentsColumn.setFk(commentsFK);
         commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {

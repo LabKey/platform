@@ -17,7 +17,6 @@
 package org.labkey.study.assay;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -54,9 +53,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix)
     {
         super(protocolLSIDPrefix, runLSIDPrefix, TsvDataHandler.DATA_TYPE, new AssayTableMetadata(
-            FieldKey.fromParts("Properties"),
+            null,
             FieldKey.fromParts("Run"),
-            FieldKey.fromParts("ObjectId")));
+            FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME)));
     }
 
     public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context)
@@ -105,9 +104,10 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return Arrays.asList(new StudyParticipantVisitResolverType(), new ThawListResolverType());
     }
 
-    public TableInfo createDataTable(AssaySchema schema, ExpProtocol protocol)
+    public AssayResultTable createDataTable(AssaySchema schema, ExpProtocol protocol)
     {
-        return new RunDataTable(schema, protocol);
+        return new AssayResultTable(schema, protocol, this);
+//        return new RunDataTable(schema, protocol);
     }
 
     protected Map<String, Set<String>> getRequiredDomainProperties()

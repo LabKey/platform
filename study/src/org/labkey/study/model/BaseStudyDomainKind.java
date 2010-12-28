@@ -15,15 +15,12 @@
  */
 package org.labkey.study.model;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.security.User;
-import org.labkey.api.util.Pair;
 
 import java.util.Set;
 
@@ -44,10 +41,11 @@ public abstract class BaseStudyDomainKind extends AbstractDomainKind
         return domain.getName();
     }
 
-    public boolean isDomainType(String domainURI)
+    @Override
+    public Priority getPriority(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
-        return getDomainInfo().getDomainPrefix().equals(lsid.getNamespacePrefix());
+        return getDomainInfo().getDomainPrefix().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
@@ -58,11 +56,6 @@ public abstract class BaseStudyDomainKind extends AbstractDomainKind
         sql.append("SELECT o.ObjectId FROM " + getTableInfo() + " c, exp.object o WHERE c.LSID = o.ObjectURI AND c.container = ?");
         sql.add(container.getId());
         return sql;
-    }
-
-    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
-    {
-        return null;
     }
 
     protected abstract ExtensibleStudyEntity.DomainInfo getDomainInfo();

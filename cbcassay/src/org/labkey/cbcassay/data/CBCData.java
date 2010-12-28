@@ -17,22 +17,23 @@
 package org.labkey.cbcassay.data;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.study.assay.AbstractTsvAssayProvider;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.cbcassay.CBCAssayManager;
-import org.labkey.cbcassay.CBCAssayProvider;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,19 +54,40 @@ public class CBCData
 
     public static CBCData fromObjectId(int objectId, ExpData data, ExpProtocol protocol, User user) throws SQLException
     {
-        // fetch row data
-        OntologyObject oo = OntologyManager.getOntologyObject(objectId);
-        Map<String, Object> values = OntologyManager.getProperties(data.getContainer(), oo.getObjectURI());
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+        Domain dataDomain = provider.getResultsDomain(protocol);
+        for (DomainProperty property : dataDomain.getProperties())
+        {
+            fieldKeys.add(FieldKey.fromParts(property.getName()));
+        }
+        TableInfo tableInfo = provider.createDataTable(AssayService.get().createSchema(user, data.getContainer()), protocol);
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fieldKeys);
+        assert columns.size() == fieldKeys.size() : "Missing a column for at least one of the properties";
+        SimpleFilter filter = new SimpleFilter(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, objectId);
+
+        Map<String, Object>[] dataRows = Table.select(tableInfo, columns.values(), filter, null, Map.class);
+        if (dataRows.length == 0)
+        {
+            return null;
+        }
+        if (dataRows.length > 1)
+        {
+            throw new IllegalStateException("Expected zero or one results, but got " + dataRows.length);
+        }
 
         // fetch metadata using the column PropertyDescriptors
-        String dataDomainUri = CBCAssayProvider.getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
-        PropertyDescriptor[] properties = OntologyManager.getPropertiesForType(dataDomainUri, data.getContainer());
-        Map<String, CBCDataProperty> meta = new CaseInsensitiveHashMap<CBCDataProperty>(properties.length*2);
-        for (PropertyDescriptor property : properties)
+        Map<String, CBCDataProperty> meta = new CaseInsensitiveHashMap<CBCDataProperty>();
+        Map<String, Object> values = new HashMap<String, Object>();
+
+        for (ColumnInfo column : columns.values())
         {
+            DomainProperty property = dataDomain.getPropertyByName(column.getName());
             // XXX: check it has min/max/units properties
-            meta.put(property.getName(), new CBCDataProperty(property));
-            values.put(property.getName(), values.get(property.getPropertyURI()));
+            meta.put(property.getName(), new CBCDataProperty(property.getPropertyDescriptor()));
+            Object value = column.getValue(dataRows[0]);
+            values.put(property.getName(), value);
+            values.put(property.getPropertyURI(), value);
         }
 
         return new CBCData(data, protocol, values, meta);

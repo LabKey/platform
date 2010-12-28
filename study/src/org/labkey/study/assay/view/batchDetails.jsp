@@ -33,7 +33,7 @@
     ExpExperiment batch = bean.expExperiment;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser());
-    JSONObject batchJson = AbstractAssayAPIAction.serializeBatch(batch, provider, protocol);
+    JSONObject batchJson = AbstractAssayAPIAction.serializeBatch(batch, provider, protocol, me.getViewContext().getUser());
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();

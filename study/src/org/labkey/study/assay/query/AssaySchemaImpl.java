@@ -39,7 +39,6 @@ import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 
 import javax.servlet.ServletException;
-import java.net.BindException;
 import java.sql.Types;
 import java.util.*;
 
@@ -102,27 +101,6 @@ public class AssaySchemaImpl extends AssaySchema
             }
         }
         return names;
-    }
-
-    public static String getBatchesTableName(ExpProtocol protocol)
-    {
-        return getProviderTableName(protocol, "Batches");
-    }
-
-    public static String getRunsTableName(ExpProtocol protocol)
-    {
-        return getProviderTableName(protocol, "Runs");
-    }
-
-    public static String getResultsTableName(ExpProtocol protocol)
-    {
-        return getProviderTableName(protocol, "Data");
-    }
-
-    public static String getProviderTableName(ExpProtocol protocol, String tableName)
-    {
-        assert tableName != null;
-        return protocol.getName() + " " + tableName;
     }
 
     private List<ExpProtocol> getProtocols()

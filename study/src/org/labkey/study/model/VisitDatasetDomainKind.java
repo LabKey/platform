@@ -35,10 +35,11 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
         return "StudyDatasetVisit";
     }
 
-    public boolean isDomainType(String domainURI)
+    @Override
+    public Priority getPriority(String domainURI)
     {
         DataSetDefinition def  = getDatasetDefinition(domainURI);
-        return null!=def && def.getStudy().getTimepointType() == TimepointType.VISIT;
+        return null!=def && def.getStudy().getTimepointType() == TimepointType.VISIT ? Priority.MEDIUM : null;
     }
     
     @Override

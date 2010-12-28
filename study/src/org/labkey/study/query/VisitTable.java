@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.LookupForeignKey;
@@ -33,6 +34,7 @@ public class VisitTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "SequenceNumMin", _rootTable.getColumn("SequenceNumMin")));
         addColumn(new AliasedColumn(this, "SequenceNumMax", _rootTable.getColumn("SequenceNumMax")));
         addColumn(new AliasedColumn(this, "Label", _rootTable.getColumn("Label")));
+        addColumn(new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"))).setFk(new ContainerForeignKey());
         addColumn(new AliasedColumn(this, "ShowByDefault", _rootTable.getColumn("ShowByDefault")));
         addWrapColumn(_rootTable.getColumn("DisplayOrder"));
         addWrapColumn(_rootTable.getColumn("ChronologicalOrder"));

@@ -814,7 +814,7 @@ class PostgreSqlDialect extends SqlDialect
                 sql.add(getDropColumnsStatement(change));
                 break;
             case RenameColumns:
-                    sql.addAll(getRenameColumnsStatement(change));
+                sql.addAll(getRenameColumnsStatement(change));
                 break;
         }
 
@@ -900,11 +900,13 @@ class PostgreSqlDialect extends SqlDialect
     {
         List<String> colSpec = new ArrayList<String>();
         colSpec.add(makePropertyIdentifier(prop.getName()));
-        colSpec.add(sqlTypeNameFromSqlType(prop.getSqlTypeInt()));
+        colSpec.add(sqlTypeNameFromSqlType(prop));
         if (prop.getSqlTypeInt() == Types.VARCHAR)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getSqlTypeInt() == Types.NUMERIC)
             colSpec.add("(15,4)");
+        if (!prop.isNullable() || prop.isPrimaryKey())
+            colSpec.add("NOT NULL");
         return StringUtils.join(colSpec, ' ');
     }
 
@@ -914,6 +916,25 @@ class PostgreSqlDialect extends SqlDialect
         return change.getSchemaName() + "." + change.getTableName();
     }
 
+    @Override
+    protected String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
+    {
+        if (prop.isAutoIncrement())
+        {
+            if (prop.getSqlTypeInt() == Types.INTEGER)
+            {
+                return "SERIAL";
+            }
+            else
+            {
+                throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getSqlTypeInt() + " (" + sqlTypeNameFromSqlType(prop.getSqlTypeInt()) + ")");
+            }
+        }
+        else
+        {
+            return sqlTypeNameFromSqlType(prop.getSqlTypeInt());
+        }
+    }
 
     private String makePropertyIdentifier(String name)
     {

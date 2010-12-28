@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.TimepointType;
 
@@ -37,10 +38,14 @@ public class DateDatasetDomainKind extends DatasetDomainKind
     }
 
     @Override
-    public boolean isDomainType(String domainURI)
+    public Priority getPriority(String domainURI)
     {
         DataSetDefinition def = getDatasetDefinition(domainURI);
-        return null!=def && def.getStudy().getTimepointType() == TimepointType.DATE;
+        if (null != def && def.getStudy().getTimepointType() == TimepointType.DATE)
+        {
+            return Priority.MEDIUM;
+        }
+        return null;
     }
 
     @Override

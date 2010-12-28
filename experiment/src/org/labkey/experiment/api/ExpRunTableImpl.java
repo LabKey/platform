@@ -546,7 +546,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         {
                             SqlDialect d = getSqlDialect();
                             SQLFragment sql = new SQLFragment("(CASE WHEN EXISTS (SELECT ExperimentId FROM ");
-                            sql.append(ExperimentServiceImpl.get().getTinfoRunList());
+                            sql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
                             sql.append(" WHERE ExperimentRunId = " + parent.getValueSql(tableAlias).getSQL() + " AND ExperimentId = " + exp.getRowId() + ") THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
                             return sql;
                         }

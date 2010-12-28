@@ -19,19 +19,28 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.SQLFragment;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.springframework.validation.BindException;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.sql.SQLException;
@@ -82,46 +91,49 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
 
     protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, FORM form, BindException errors) throws Exception;
 
-    public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, Integer[] objectIds) throws SQLException
+    public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, User user, Integer... objectIds) throws SQLException
     {
-        JSONArray dataRows = new JSONArray();
-
-        SQLFragment sql = new SQLFragment("SELECT child.ObjectURI FROM " + OntologyManager.getTinfoObject() + " child, ");
-        sql.append(OntologyManager.getTinfoObject() + " parent WHERE parent.ObjectId = child.OwnerObjectId AND ");
-        sql.append("parent.ObjectURI = ? ");
-        sql.add(data.getLSID());
+        Domain dataDomain = provider.getResultsDomain(protocol);
+        List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+        for (DomainProperty property : dataDomain.getProperties())
+        {
+            fieldKeys.add(FieldKey.fromParts(property.getName()));
+        }
+        TableInfo tableInfo = provider.createDataTable(AssayService.get().createSchema(user, data.getContainer()), protocol);
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fieldKeys);
+        assert columns.size() == fieldKeys.size() : "Missing a column for at least one of the properties";
+        SimpleFilter filter = new SimpleFilter(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME, data.getRowId());
         if (objectIds != null && objectIds.length > 0)
         {
-            sql.append("AND child.ObjectId IN (");
-            for (int i = 0; i < objectIds.length; i++)
-            {
-                sql.append("?");
-                if (i < objectIds.length - 1)
-                    sql.append(",");
-                sql.add(objectIds[i]);
-            }
-            sql.append(") ");
+            filter.addClause(new SimpleFilter.InClause(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, Arrays.asList(objectIds)));
         }
-        sql.append("ORDER BY child.ObjectId");
-        String[] objectURIs = Table.executeArray(OntologyManager.getExpSchema(), sql, String.class);
+        Results results = null;
 
-        Domain dataDomain = provider.getResultsDomain(protocol);
-
-        for (String objectURI : objectURIs)
+        try
         {
-            JSONObject dataRow = new JSONObject();
-            Map<String, Object> values = OntologyManager.getProperties(data.getContainer(), objectURI);
-            for (DomainProperty prop : dataDomain.getProperties())
+            results = Table.select(tableInfo, columns.values(), filter, new Sort(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
+
+            JSONArray dataRows = new JSONArray();
+            while (results.next())
             {
-                dataRow.put(prop.getName(), values.get(prop.getPropertyURI()));
+                JSONObject dataRow = new JSONObject();
+                for (ColumnInfo columnInfo : columns.values())
+                {
+                    Object value = columnInfo.getValue(results);
+                    dataRow.put(columnInfo.getName(), value);
+                }
+                dataRows.put(dataRow);
             }
-            dataRows.put(dataRow);
+            return dataRows;
+        }
+        finally
+        {
+            if (results != null) { try { results.close(); } catch (SQLException e) {} }
         }
 
-        return dataRows;
     }
 
-    public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol) throws SQLException
+    public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user) throws SQLException
     {
         JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider.getRunDomain(protocol));
 
@@ -129,7 +141,7 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
         ExpData[] datas = run.getOutputDatas(provider.getDataType());
         if (datas.length == 1)
         {
-            dataRows = serializeDataRows(datas[0], provider, protocol, null);
+            dataRows = serializeDataRows(datas[0], provider, protocol, user);
         }
         else
         {
@@ -140,21 +152,21 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
         return jsonObject;
     }
 
-    public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol) throws SQLException
+    public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user) throws SQLException
     {
         JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider.getBatchDomain(protocol));
 
         JSONArray runsArray = new JSONArray();
         for (ExpRun run : batch.getRuns())
         {
-            runsArray.put(serializeRun(run, provider, protocol));
+            runsArray.put(serializeRun(run, provider, protocol, user));
         }
         jsonObject.put(RUNS, runsArray);
 
         return jsonObject;
     }
 
-    protected ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment batch) throws SQLException
+    protected ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment batch, User user) throws SQLException
     {
         JSONObject result = new JSONObject();
         result.put(ASSAY_ID, protocol.getRowId());
@@ -163,7 +175,7 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
 
         if (batch != null)
         {
-            batchObject = serializeBatch(batch, provider, protocol);
+            batchObject = serializeBatch(batch, provider, protocol, user);
         }
         else
         {

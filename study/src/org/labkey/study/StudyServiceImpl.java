@@ -636,15 +636,4 @@ public class StudyServiceImpl implements StudyService.Service
         }
         return true;
     }
-
-
-    @Override
-    public TableInfo getStudyDataTable(Container container)
-    {
-        StudyImpl study = StudyManager.getInstance().getStudy(container);
-        if (study != null)
-            return StudySchema.getInstance().getTableInfoStudyData(study, null);
-        else
-            return null;
-    }
 }

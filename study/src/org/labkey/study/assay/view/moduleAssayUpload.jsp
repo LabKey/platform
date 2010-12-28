@@ -64,7 +64,7 @@ LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
  if (batchId > 0)
  {
     ExpExperiment batch = lookupBatch(batchId);
-    JSONObject batchJson = AbstractAssayAPIAction.serializeBatch(batch, provider, protocol);
+    JSONObject batchJson = AbstractAssayAPIAction.serializeBatch(batch, provider, protocol, me.getViewContext().getUser());
     %>LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.toString(2)%>);<%
  }
  else

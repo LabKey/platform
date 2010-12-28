@@ -38,9 +38,9 @@ public class TestDatasetDomainKind extends DatasetDomainKind
     }
 
     @Override
-    public boolean isDomainType(String domainURI)
+    public Priority getPriority(String domainURI)
     {
-        return domainURI.contains(KIND_NAME);
+        return domainURI.contains(KIND_NAME) ? Priority.MEDIUM : null;
     }
 
     @Override

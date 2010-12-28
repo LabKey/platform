@@ -17,15 +17,27 @@ package org.labkey.study;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.study.assay.AssayManager;
 import org.labkey.study.model.DataSetDefinition;
 
+import javax.servlet.ServletContext;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -153,4 +165,44 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
+    /** called at 10.30->10.31 */
+    public void materializeAssayResults(final ModuleContext moduleContext)
+    {
+        // This needs to happen later, after all of the AssayProviders have been registered
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                upgradeAssayResults(moduleContext.getUpgradeUser(), ContainerManager.getRoot());
+            }
+        });
+    }
+
+    /** Recurse through the container tree, upgrading any assay protocols that live there */ 
+    private void upgradeAssayResults(User user, Container c)
+    {
+        try
+        {
+            for (ExpProtocol protocol : ExperimentService.get().getExpProtocols(c))
+            {
+                AssayProvider provider = AssayManager.get().getProvider(protocol);
+                if (provider != null)
+                {
+                    // Upgrade is AssayProvider dependent
+                    provider.materializeAssayResults(user, protocol);
+                }
+            }
+
+            // Recurse through the children
+            for (Container child : c.getChildren())
+            {
+                upgradeAssayResults(user, child);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 }

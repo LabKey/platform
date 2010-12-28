@@ -1835,7 +1835,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 list.delete(null);
             }
 
-            OntologyManager.deleteAllObjects(c);
+            OntologyManager.deleteAllObjects(c, user);
             // delete material sources
             // now call the specialized function to delete the Materials that belong to the Material Source,
             // including the toplevel properties of the Materials, of which there are often many

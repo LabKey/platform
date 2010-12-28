@@ -25,6 +25,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
@@ -56,7 +57,7 @@ public final class CBCResultsQueryView extends ResultsQueryView
     public DataView createDataView()
     {
         DataView view = super.createDataView();
-        view.getDataRegion().setRecordSelectorValueColumns("ObjectId");
+        view.getDataRegion().setRecordSelectorValueColumns(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
         return view;
     }
 
@@ -100,7 +101,6 @@ public final class CBCResultsQueryView extends ResultsQueryView
         FieldKey sampleIdKey = assayTableMeta.getParticipantIDFieldKey();
         FieldKey propertiesKey = FieldKey.fromString("Properties");
         Container container = context.getContainer();
-        String dataDomainURI = AbstractAssayProvider.getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
 
         ListIterator<DisplayColumn> iter = columns.listIterator();
         while (iter.hasNext())
@@ -119,14 +119,9 @@ public final class CBCResultsQueryView extends ResultsQueryView
                 {
                     iter.set(new SampleIdInputColumn(provider, info));
                 }
-                else if (propertiesKey.equals(fieldKey.getParent()))
+                else if (fieldKey.getParent() == null || propertiesKey.equals(fieldKey.getParent()))
                 {
-                    // XXX: this is nasty, but I couldn't find a better way to get the ColumnInfo's name
-                    // XXX: ColumnInfo.getPropertyURI() doesn't contain the domainURI#name as I expected.
-                    String name = fieldKey.getName();
-                    String propertyUri = dataDomainURI + "#" + name;
-
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyUri, container);
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(info.getPropertyURI(), container);
                     if (pd != null)
                     {
                         // XXX: check it has min/max/units properties

@@ -432,7 +432,7 @@ public class DomainImpl implements Domain
     {
         for (DomainPropertyImpl prop : getProperties())
         {
-            if (prop.getName().equals(name))
+            if (prop.getName().equalsIgnoreCase(name))
                 return prop;
         }
         return null;

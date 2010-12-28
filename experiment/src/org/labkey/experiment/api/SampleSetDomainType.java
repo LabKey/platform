@@ -50,10 +50,11 @@ public class SampleSetDomainType extends AbstractDomainKind
         return "SampleSet";
     }
     
-    public boolean isDomainType(String domainURI)
+    @Override
+    public Priority getPriority(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
-        return "SampleSet".equals(lsid.getNamespacePrefix());
+        return "SampleSet".equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
     public String generateDomainURI(String schemaName, String queryName, Container container, User user)
@@ -94,15 +95,6 @@ public class SampleSetDomainType extends AbstractDomainKind
         SQLFragment ret = new SQLFragment("SELECT exp.object.objectid FROM exp.object INNER JOIN exp.material ON exp.object.objecturi = exp.material.lsid WHERE exp.material.cpastype = ?");
         ret.add(domain.getTypeURI());
         return ret;
-    }
-
-    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containerFilter)
-    {
-        SamplesSchema schema = new SamplesSchema(user, domain.getContainer());
-        TableInfo table = schema.getSampleTable(ExperimentService.get().getSampleSet(domain.getTypeURI()));
-        if (table == null)
-            return null;
-        return new Pair<TableInfo, ColumnInfo>(table, table.getColumn("LSID"));
     }
 
     public Set<String> getReservedPropertyNames(Domain domain)

@@ -104,10 +104,10 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean isDomainType(String domainURI)
+    public Priority getPriority(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
-        return lsid.getNamespacePrefix().startsWith(SimpleModule.NAMESPACE_PREFIX);
+        return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(SimpleModule.NAMESPACE_PREFIX) ? Priority.MEDIUM : null;
     }
 
     public String generateDomainURI(String schemaName, String tableName, Container c, User u)
@@ -120,8 +120,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
         try
         {
             XarContext xc = getXarContext(schemaName, tableName, c, u);
-            String lsid = LsidUtils.resolveLsidFromTemplate(SimpleModule.DOMAIN_LSID_TEMPLATE, xc, SimpleModule.DOMAIN_NAMESPACE_PREFIX_TEMPLATE);
-            return lsid;
+            return LsidUtils.resolveLsidFromTemplate(SimpleModule.DOMAIN_LSID_TEMPLATE, xc, SimpleModule.DOMAIN_NAMESPACE_PREFIX_TEMPLATE);
         }
         catch (XarFormatException xfe)
         {
@@ -170,12 +169,6 @@ public class SimpleTableDomainKind extends AbstractDomainKind
             }
         }
         return new SQLFragment("NULL");
-    }
-
-    @Override
-    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
-    {
-        return null;
     }
 
     @Override

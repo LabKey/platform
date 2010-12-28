@@ -42,6 +42,6 @@ public class GetAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFor
             batch = lookupBatch(batchId);
         }
 
-        return serializeResult(provider, assay, batch);
+        return serializeResult(provider, assay, batch, getViewContext().getUser());
     }
 }

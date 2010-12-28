@@ -72,22 +72,16 @@ public class FilePropertiesDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean isDomainType(String domainURI)
+    public Priority getPriority(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
-        return FileContentServiceImpl.NAMESPACE_PREFIX.equals(lsid.getNamespacePrefix());
+        return FileContentServiceImpl.NAMESPACE_PREFIX.equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
     @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         return new SQLFragment("NULL");
-    }
-
-    @Override
-    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
-    {
-        return null;
     }
 
     @Override
