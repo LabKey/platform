@@ -135,7 +135,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         return result;
     }
 
-    public void addJob(PipelineJob job) throws IOException
+    public void addJob(PipelineJob job)
     {
         // Duplicate code from PipelineQueueImpl, should be refactored into a superclass
         File logFile = job.getLogFile();

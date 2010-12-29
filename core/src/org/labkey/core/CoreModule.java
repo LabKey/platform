@@ -393,11 +393,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
 
-    public void startup(ModuleContext moduleContext)
+    public void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
         ContainerManager.clearCache();
-        initWebApplicationContext();
 
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);

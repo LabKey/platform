@@ -32,7 +32,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,7 +58,7 @@ public class PipelineQueueImpl implements PipelineQueue
 
     JobRunner _runner = new JobRunner(MAX_RUNNING_JOBS);
 
-    public synchronized void addJob(PipelineJob job) throws IOException
+    public synchronized void addJob(PipelineJob job)
     {
         if (null == job)
             throw new NullPointerException();
@@ -144,7 +143,7 @@ public class PipelineQueueImpl implements PipelineQueue
     {
         if (_pending.size() == 0)
             return;
-        HashSet<String> containers = new HashSet();
+        HashSet<String> containers = new HashSet<String>();
         boolean singleThreadedJobFound = false;
         for (PipelineJob job : _submitted)
         {

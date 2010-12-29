@@ -154,4 +154,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     {
         return _typeHierarchy;
     }
+
+    @Override
+    public String toString()
+    {
+        return getDescription();
+    }
 }

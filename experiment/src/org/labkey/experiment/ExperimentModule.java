@@ -119,12 +119,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return true;
     }
 
-    @Override
-    protected ContextType getContextType()
-    {
-        return ContextType.config;
-    }
-
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         List<WebPartFactory> result = new ArrayList<WebPartFactory>();
@@ -203,8 +197,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return result;
     }
 
-
-    public void startup(ModuleContext context)
+    @Override
+    protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)
@@ -280,8 +274,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
         PropertyService.get().registerValidatorKind(new LookupValidator());
-
-        initWebApplicationContext();
     }
 
     public Collection<String> getSummary(Container c)

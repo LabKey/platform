@@ -210,12 +210,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    protected ContextType getContextType()
-    {
-        return ContextType.context;
-    }
-
-    @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
         Set<ModuleResourceLoader> loaders = new HashSet<ModuleResourceLoader>();
@@ -260,7 +254,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
 
-    public void startup(ModuleContext moduleContext)
+    @Override
+    protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         //register roles
         RoleManager.registerRole(new SpecimenCoordinatorRole());
@@ -322,8 +317,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ReportService.get().addViewFactory(new ReportsController.StudyRReportViewFactory());
         ReportService.get().addUIProvider(new StudyReportUIProvider());
-
-        initWebApplicationContext();
 
         StudyReload.initializeAllTimers();
 

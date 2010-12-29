@@ -285,7 +285,7 @@ public class PipelineServiceImpl extends PipelineService
         return _queue;
     }
 
-    public void queueJob(PipelineJob job) throws IOException
+    public void queueJob(PipelineJob job)
     {
         getPipelineQueue().addJob(job);
     }

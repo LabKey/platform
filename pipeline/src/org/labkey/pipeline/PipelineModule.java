@@ -124,15 +124,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     }
 
     @Override
-    protected ContextType getContextType()
+    protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        return ContextType.config;
-    }
-
-    public void startup(ModuleContext moduleContext)
-    {
-        initWebApplicationContext();
-
         PipelineService service = PipelineService.get();
         service.registerPipelineProvider(new FileAnalysisPipelineProvider(this));
 
