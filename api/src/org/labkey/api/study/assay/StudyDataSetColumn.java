@@ -37,7 +37,8 @@ public class StudyDataSetColumn extends ExprColumn
 
     public StudyDataSetColumn(TableInfo parent, String name, AssayProvider provider, DataSet assayDataSet, User user)
     {
-        super(parent, name, new SQLFragment(Integer.toString(assayDataSet.getDataSetId())), Types.INTEGER);
+        super(parent, name, new SQLFragment("(CASE WHEN " + getDatasetIdAlias(assayDataSet.getContainer()) +
+                "._key IS NOT NULL THEN " + assayDataSet.getDataSetId() + " ELSE NULL END)"), Types.INTEGER);
         _provider = provider;
         _assayDataSet = assayDataSet;
         _user = user;
