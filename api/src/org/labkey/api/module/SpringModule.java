@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -89,12 +90,21 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
             throw new RuntimeException(x);
         }
     }
- 
+
+    /** Do not override this method, instead implement startupAfterSpringConfig(), which will be invoked for you */
+    @Override
+    public final void startup(ModuleContext moduleContext)
+    {
+        initWebApplicationContext();
+        startupAfterSpringConfig(moduleContext);
+    }
+
+    /** Invoked after Spring has been configured as part of the startup() method */
+    protected abstract void startupAfterSpringConfig(ModuleContext moduleContext);
 
     /**
-     * Override and return 'context' or 'config' to specify Spring context
-     * for this module. If 'config' is specified, context may be overriden
-     * outside the the module after installation, by specifying a path to
+     * A module may define a pipeline configuration file in /WEB-INF/[module-name]Context.xml.
+     * Context may be overriden outside the the module after installation, by specifying a path to
      * the configuration files in the <code>ServletContext</code> parameter
      * <code>INIT_PARAMETER_CONFIG_PATH</code>.
      * <p/>
@@ -109,52 +119,61 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
      * in the module.  The pipeline also uses a registration model to allow
      * elements to be overriden by TaskId.
      *
-     * @return context type supported by this module
+     * @return path to the context XML file within the webapp, if present, or null if no file is present
      */
-    protected ContextType getContextType()
+    protected String getContextXMLFilePath()
     {
-        return ContextType.none;
+        String potentialPath = "/WEB-INF/" + getName().toLowerCase() + "Context.xml";
+
+        // Look for a context file
+        InputStream is = ModuleLoader.getServletContext().getResourceAsStream(potentialPath);
+        try
+        {
+            if (is != null && is.read() != -1)
+            {
+                return potentialPath;
+            }
+        }
+        catch (IOException e) { /* Just return */ }
+        finally
+        {
+            if (is != null) { try { is.close(); } catch (IOException e) {} }
+        }
+        return null;
     }
 
 
     // see contextCongfigLocation parameter
     protected List<String> getContextConfigLocation()
     {
-        if (ContextType.none.equals(getContextType()))
+        String contextXMLFilePath = getContextXMLFilePath();
+        if (contextXMLFilePath == null)
             return Collections.emptyList();
 
         String prefix = getName().toLowerCase();
 
         List<String> result = new ArrayList<String>();
         // Add the location of the context XML inside the module
-        result.add(getContextXMLPath());
+        result.add(contextXMLFilePath);
 
-        if (ContextType.config.equals(getContextType()))
+        // Look for post-installation config outside the module
+        String configPath = getInitParameter(INIT_PARAMETER_CONFIG_PATH);
+        if (configPath != null)
         {
-            // Look for post-installation config outside the module
-            String configPath = getInitParameter(INIT_PARAMETER_CONFIG_PATH);
-            if (configPath != null)
+            File dirConfig = new File(configPath);
+            String configRelPath = prefix + "Config.xml";
+            URI uriConfig = URIUtil.resolve(dirConfig.toURI(), configRelPath);
+            if (uriConfig != null)
             {
-                File dirConfig = new File(configPath);
-                String configRelPath = prefix + "Config.xml";
-                URI uriConfig = URIUtil.resolve(dirConfig.toURI(), configRelPath);
-                if (uriConfig != null)
+                File fileConfig = new File(uriConfig);
+                if (fileConfig.exists())
                 {
-                    File fileConfig = new File(uriConfig);
-                    if (fileConfig.exists())
-                    {
-                        result.add(fileConfig.toString());
-                    }
+                    result.add(fileConfig.toString());
                 }
             }
         }
 
         return result;
-    }
-
-    protected String getContextXMLPath()
-    {
-        return "/WEB-INF/" + getName().toLowerCase() + "Context.xml";
     }
 
     ContextLoader _contextLoader;
@@ -163,11 +182,11 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
     protected void initWebApplicationContext()
     {
         _parentContext = ModuleLoader.getServletContext();
-        final WebApplicationContext rootWebApplicationContext = WebApplicationContextUtils.getWebApplicationContext(ModuleLoader.getServletContext());
 
         final List<String> contextConfigFiles = getContextConfigLocation();
         if (!contextConfigFiles.isEmpty())
         {
+            final WebApplicationContext rootWebApplicationContext = WebApplicationContextUtils.getWebApplicationContext(ModuleLoader.getServletContext());
             _log.info("Loading Spring configuration for the " + getName() + " module from " + contextConfigFiles);
 
             try

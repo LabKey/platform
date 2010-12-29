@@ -20,13 +20,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.List;
@@ -83,7 +80,7 @@ abstract public class PipelineService
     @NotNull
     abstract public PipelineQueue getPipelineQueue();
 
-    abstract public void queueJob(PipelineJob job) throws IOException;
+    abstract public void queueJob(PipelineJob job);
 
     abstract public void setPipelineProperty(Container container, String name, String value) throws SQLException;
 

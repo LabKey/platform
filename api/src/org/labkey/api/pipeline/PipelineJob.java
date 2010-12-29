@@ -935,11 +935,6 @@ abstract public class PipelineJob extends Job implements Serializable
         runSubProcess(pb, dirWork, null, 0);
     }
 
-    public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile) throws PipelineJobException
-    {
-        runSubProcess(pb, dirWork, outputFile, 0);
-    }
-
     public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile, int logLineInterval)
             throws PipelineJobException
     {

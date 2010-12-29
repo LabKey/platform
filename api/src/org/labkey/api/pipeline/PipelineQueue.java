@@ -27,9 +27,8 @@ public interface PipelineQueue
      * Add a <code>PipelineJob</code> to this queue to be run.
      *
      * @param job Job to be run
-     * @throws IOException Error in initialization
      */
-    void addJob(PipelineJob job) throws IOException;
+    void addJob(PipelineJob job);
 
     /**
      * Cancel a previously added <code>PipelineJob</code>.  The job may be still on the

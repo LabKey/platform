@@ -147,7 +147,8 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
         return _schemaNames;
     }
 
-    public void startup(ModuleContext moduleContext)
+    @Override
+    protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         for (final String schemaName : getSchemaNames())
         {
@@ -162,26 +163,6 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
             });
         }
         ContainerManager.addContainerListener(this);
-        initWebApplicationContext();
-    }
-
-    @Override
-    protected ContextType getContextType()
-    {
-        InputStream is = ModuleLoader.getServletContext().getResourceAsStream(getContextXMLPath());
-        try
-        {
-            if (is != null && is.read() != -1)
-            {
-                return ContextType.config;
-            }
-        }
-        catch (IOException e) { /* Just return */ }
-        finally
-        {
-            if (is != null) { try { is.close(); } catch (IOException e) {} }
-        }
-        return ContextType.none;
     }
 
     protected String getResourcePath()

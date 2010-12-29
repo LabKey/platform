@@ -42,7 +42,6 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public static String getDataSetBaseName(File dirData)
     {
         return "all";
-//        return dirData.getName();
     }
 
     protected String description;
