@@ -26,4 +26,4 @@
 <%=PageFlowUtil.getStandardIncludes(c)%>
 <labkey:errors/><br><br>
 <%=PageFlowUtil.generateSubmitButton("Back", "window.history.back(); return false;")%>
-<%=PageFlowUtil.generateButton("Home", AppProps.getInstance().getHomePageActionURL())%>
+<%=generateButton("Home", AppProps.getInstance().getHomePageActionURL())%>

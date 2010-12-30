@@ -16,18 +16,17 @@
  */
 %>
 <%@ page import="org.labkey.api.util.GUID" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Map" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-JspView<Map<String, ActionURL>> me = (JspView<Map<String, ActionURL>>) HttpView.currentView();
-Map<String, ActionURL> map = me.getModelBean();
-String guid = GUID.makeGUID();
-boolean first = true;
+    JspView<Map<String, ActionURL>> me = (JspView<Map<String, ActionURL>>) HttpView.currentView();
+    Map<String, ActionURL> map = me.getModelBean();
+    String guid = GUID.makeGUID();
+    boolean first = true;
 %>
-
 <table class="labkey-export-tab-contents">
     <tr>
         <td class="labkey-export-tab-options">
@@ -36,15 +35,15 @@ boolean first = true;
                 { %>
                     <tr>
                         <td valign="center"><%= first ? "Scripting language:" : "" %></td>
-                        <td valign="center"><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType" <%= first ? "checked=\"true\"" : "" %> value="<%= PageFlowUtil.filter(entry.getValue()) %>"/></td>
-                        <td valign="center"><%= PageFlowUtil.filter(entry.getKey())%></td>
+                        <td valign="center"><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType" <%= first ? "checked=\"true\"" : "" %> value="<%=h(entry.getValue()) %>"/></td>
+                        <td valign="center"><%= h(entry.getKey())%></td>
                     </tr>
                 <%  first = false;
                 }%>
             </table>
         </td>
         <td class="labkey-export-tab-buttons">
-            <%= PageFlowUtil.generateButton("Create Script", "", "window.location = getRadioButtonValue(document.getElementById(\"" + guid + "\")); return false;") %>
+            <%=generateButton("Create Script", "", "window.location = getRadioButtonValue(document.getElementById(\"" + guid + "\")); return false;") %>
         </td>
     </tr>
 </table>

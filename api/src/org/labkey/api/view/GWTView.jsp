@@ -24,7 +24,7 @@
     GWTView.GWTViewBean bean = (GWTView.GWTViewBean) me.getModelBean();
 %>
 <%--<textarea id="gwtDebug" cols="200" rows=20 style="overflow:auto;"></textarea>--%>
-<div id="<%= PageFlowUtil.filter(bean.getModuleName()) %>-Root" class="extContainer <%=h(bean.getLoadingStyleName())%>"></div>
+<div id="<%= h(bean.getModuleName()) %>-Root" class="extContainer <%=h(bean.getLoadingStyleName())%>"></div>
 <%
 String contextPath = request.getContextPath();
 String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js";

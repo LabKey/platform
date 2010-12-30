@@ -15,9 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ClientAPIWebPartFactory" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
@@ -61,8 +66,8 @@
     <tr>
         <td>
             <%=generateSubmitButton("Save & Close")%>
-            <%=PageFlowUtil.generateButton("Preview", "", "preview()")%>
-            <%=PageFlowUtil.generateButton("Reset", "", "reset()")%>
+            <%=generateButton("Preview", "", "preview()")%>
+            <%=generateButton("Reset", "", "reset()")%>
             <%=generateButton("Cancel", "begin.view")%>
         </td>
     </tr>
@@ -72,5 +77,5 @@
 <div id="preview"><%=content%></div>
 <% WebPartView.endTitleFrame(out);%>
 
-<div id="defaultContent" style="visibility:hidden;"><%=PageFlowUtil.filter(defaultContent)%></div>
+<div id="defaultContent" style="visibility:hidden;"><%=h(defaultContent)%></div>
 </form>

@@ -26,9 +26,10 @@
     function onSuccess(results)
     {
         var data = "";
+        var length = Math.min(10, results.rows.length);
 
-        //process the rows
-        for (var idxRow = 0; idxRow < results.rows.length; idxRow++)
+        // Display first 10 rows in a popup dialog
+        for (var idxRow = 0; idxRow < length; idxRow++)
         {
             var row = results.rows[idxRow];
 

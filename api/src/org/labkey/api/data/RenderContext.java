@@ -543,7 +543,6 @@ public class RenderContext extends BoundMap // extends ViewContext
 
         if (key instanceof FieldKey)
         {
-
             if (null != _rs && _rs.hasColumn((FieldKey)key))
             {
                 try

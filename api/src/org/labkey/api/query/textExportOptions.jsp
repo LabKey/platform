@@ -15,20 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-JspView<ActionURL> me = (JspView<ActionURL>) HttpView.currentView();
+    ActionURL url = (ActionURL)HttpView.currentModel();
 %>
 <table class="labkey-export-tab-contents">
     <tr>
         <td class="labkey-export-tab-options">
             <table class="labkey-export-tab-layout"><tr><td>Export as tab-separated values</td></tr></table>
-            </td>
+        </td>
         <td class="labkey-export-tab-buttons">
-            <%= PageFlowUtil.generateButton("Export to Text", me.getModelBean()) %>
+            <%=generateButton("Export to Text", url) %>
         </td>
     </tr>
 </table>

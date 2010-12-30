@@ -609,14 +609,14 @@ api/src/org/labkey/api/query/ValidationException.java -text
 api/src/org/labkey/api/query/ViewOptions.java -text
 api/src/org/labkey/api/query/createJavaScript.jsp -text
 api/src/org/labkey/api/query/excelExportOptions.jsp -text
-api/src/org/labkey/api/query/excelScriptOptions.jsp -text
 api/src/org/labkey/api/query/exportRScript.jsp -text
-api/src/org/labkey/api/query/exportTextOptions.jsp -text
+api/src/org/labkey/api/query/scriptExportOptions.jsp -text
 api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
 api/src/org/labkey/api/query/snapshot/AbstractTableMethodInfo.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotForm.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotService.java -text
+api/src/org/labkey/api/query/textExportOptions.jsp -text
 api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text

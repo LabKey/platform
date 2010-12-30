@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.labkey.api.query.FieldKey;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -83,8 +82,11 @@ public class MultiValuedRenderContext extends RenderContextDecorator
     @Override
     public Object get(Object key)
     {
-        assert _currentValues.containsKey(key);
+        Object value = _currentValues.get(key);
 
-        return _currentValues.get(key);
+        if (null == value)
+            value = super.get(key);
+
+        return value;
     }
 }

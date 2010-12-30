@@ -717,7 +717,7 @@ public class QueryView extends WebPartView<Object>
         {
             tsvURL.addParameter("exportAsWebPage", "true");
         }
-        exportButton.addSubPanel("Text", new JspView<ActionURL>("/org/labkey/api/query/exportTextOptions.jsp", tsvURL));
+        exportButton.addSubPanel("Text", new JspView<ActionURL>("/org/labkey/api/query/textExportOptions.jsp", tsvURL));
 
         if (_allowExportExternalQuery)
         {
@@ -731,13 +731,15 @@ public class QueryView extends WebPartView<Object>
         if (!_exportScriptFactories.isEmpty())
         {
             Map<String, ActionURL> options = new LinkedHashMap<String, ActionURL>();
+
             for (ExportScriptFactory factory : _exportScriptFactories.values())
             {
                 ActionURL url = urlFor(QueryAction.exportScript);
                 url.addParameter("scriptType", factory.getScriptType());
                 options.put(factory.getMenuText(), url);
             }
-            button.addSubPanel("Script", new JspView<Map<String, ActionURL>>("/org/labkey/api/query/excelScriptOptions.jsp", options));
+
+            button.addSubPanel("Script", new JspView<Map<String, ActionURL>>("/org/labkey/api/query/scriptExportOptions.jsp", options));
         }
     }
 

@@ -45,16 +45,6 @@ public class DisplayColumnDecorator extends DisplayColumn
         _column = column;
     }
 
-    public DisplayColumn getDisplayColumn()
-    {
-        return _column;
-    }
-
-    public void setDisplayColumn(DisplayColumn column)
-    {
-        _column = column;
-    }
-
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
@@ -76,7 +66,7 @@ public class DisplayColumnDecorator extends DisplayColumn
     @Override
     public void renderGridEnd(Writer out) throws IOException
     {
-        super.renderGridEnd(out);
+        _column.renderGridEnd(out);
     }
 
     @Override

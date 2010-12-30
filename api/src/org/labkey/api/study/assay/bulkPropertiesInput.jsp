@@ -16,11 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.study.actions.BulkPropertiesDisplayColumn" %>
+<%@ page import="org.labkey.api.study.actions.BulkPropertiesUploadForm" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.study.actions.BulkPropertiesUploadForm" %>
-
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     BulkPropertiesUploadForm form = ((JspView<BulkPropertiesUploadForm>)HttpView.currentView()).getModelBean();
     String existingValue = form.getRawBulkProperties();
@@ -65,7 +65,7 @@
             <% if (form.getTemplateURL() != null) { %><%=PageFlowUtil.textLink("download Excel template", form.getTemplateURL())%><br/><% } %>
             <textarea style="width: 100%"
                     rows="5" cols="80"
-                    name="<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME %>"><%= PageFlowUtil.filter(existingValue) %></textarea>
+                    name="<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME %>"><%=h(existingValue) %></textarea>
         </td>
     </tr>
 </table>

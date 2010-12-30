@@ -125,6 +125,7 @@ public class PageFlowUtil
 
     static public final String NONPRINTING_ALTCHAR = "~";
     static final String nonPrinting;
+
     static
     {
         StringBuffer sb = new StringBuffer();

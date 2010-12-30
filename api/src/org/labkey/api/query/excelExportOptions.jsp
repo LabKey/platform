@@ -20,15 +20,17 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.util.GUID" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-JspView<QueryView.ExcelExportOptionsBean> me = (JspView<QueryView.ExcelExportOptionsBean>) HttpView.currentView();
-QueryView.ExcelExportOptionsBean model = me.getModelBean();
-String guid = GUID.makeGUID();
-String onClickScript = null;
-if (model.getIqyURL() != null)
-{
-    onClickScript = "window.location = document.getElementById('" + guid + "').checked ? " + PageFlowUtil.jsString(model.getXlsURL().getLocalURIString()) + " : " + PageFlowUtil.jsString(model.getIqyURL().getLocalURIString()) + "; return false;";
-}
+    JspView<QueryView.ExcelExportOptionsBean> me = (JspView<QueryView.ExcelExportOptionsBean>) HttpView.currentView();
+    QueryView.ExcelExportOptionsBean model = me.getModelBean();
+    String guid = GUID.makeGUID();
+    String onClickScript = null;
+
+    if (model.getIqyURL() != null)
+    {
+        onClickScript = "window.location = document.getElementById('" + guid + "').checked ? " + PageFlowUtil.jsString(model.getXlsURL().getLocalURIString()) + " : " + PageFlowUtil.jsString(model.getIqyURL().getLocalURIString()) + "; return false;";
+    }
 %>
 <table class="labkey-export-tab-contents">
     <tr>
@@ -36,20 +38,20 @@ if (model.getIqyURL() != null)
             <table class="labkey-export-tab-layout">
                 <tr>
                     <td>Export to Excel as:</td>
-                    <td valign="center"><input type="radio" id="<%= guid %>" name="excelExportType" value="<%= PageFlowUtil.filter(model.getXlsURL()) %>" checked="true" /></td>
+                    <td valign="center"><input type="radio" id="<%=guid%>" name="excelExportType" value="<%=h(model.getXlsURL()) %>" checked="true" /></td>
                     <td valign="center"><label for="<%=guid%>">Standard File (.xls)</label></td>
                 </tr>
                 <% if (model.getIqyURL() != null) { %>
                 <tr>
                     <td/>
-                    <td valign="center"><input type="radio" id="excelWebQuery" name="excelExportType" value="<%= PageFlowUtil.filter(model.getIqyURL()) %>" /></td>
+                    <td valign="center"><input type="radio" id="excelWebQuery" name="excelExportType" value="<%=h(model.getIqyURL()) %>" /></td>
                     <td valign="center"><label for="excelWebQuery">Refreshable Web Query (.iqy)</label></td>
                 </tr>
                 <% } %>
             </table>
         </td>
         <td class="labkey-export-tab-buttons">
-            <%=PageFlowUtil.generateButton("Export to Excel", model.getXlsURL(), onClickScript) %>
+            <%=generateButton("Export to Excel", model.getXlsURL(), onClickScript) %>
         </td>
     </tr>
     <tr>

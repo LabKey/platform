@@ -134,14 +134,17 @@ public abstract class TSVWriter
             StringBuffer sb = new StringBuffer(value.length() + 10);
             sb.append(_chQuote);
             int i = -1, lastMatch = 0;
+
             while (-1 != (i = value.indexOf(_chQuote, lastMatch)))
             {
                 sb.append(value.substring(lastMatch, i));
                 sb.append(_chQuote).append(_chQuote);
                 lastMatch = i+1;
             }
+
             if (lastMatch < value.length())
                 sb.append(value.substring(lastMatch));
+
             sb.append(_chQuote);
             escaped = sb.toString();
         }
@@ -276,12 +279,14 @@ public abstract class TSVWriter
 
     private class StringBuilderWriter extends Writer
     {
-        private StringBuilder _builder;
+        private final StringBuilder _builder;
         private boolean _closed = false;
+
         public StringBuilderWriter(StringBuilder builder)
         {
             _builder = builder;
         }
+
         public void write(char cbuf[], int off, int len) throws IOException
         {
             if (_closed)

@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.query.FieldKey;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -30,22 +32,22 @@ import java.util.List;
 public class HighlightingDisplayColumn extends DisplayColumnDecorator
 {
     private final LinkedHashMap<List<Object>, String> _distinctValuesToClass = new LinkedHashMap<List<Object>, String>();
-    private final String[] _columnNames;
+    private final FieldKey[] _fields;
 
     private int _counter = 0;
 
-    public HighlightingDisplayColumn(DisplayColumn column, String... distinguishingColumnNames)
+    public HighlightingDisplayColumn(DisplayColumn column, FieldKey... distinguishingFields)
     {
         super(column);
-        _columnNames = distinguishingColumnNames;
+        _fields = distinguishingFields;
     }
 
     protected String getStyleClass(RenderContext ctx)
     {
-        List<Object> values = new ArrayList<Object>(_columnNames.length);
+        List<Object> values = new ArrayList<Object>(_fields.length);
 
-        for (String _columnName : _columnNames)
-            values.add(ctx.get(_columnName));
+        for (FieldKey _field : _fields)
+            values.add(ctx.get(_field));
 
         String className = _distinctValuesToClass.get(values);
 
