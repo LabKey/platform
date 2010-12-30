@@ -1345,7 +1345,7 @@ public class VisualizationController extends SpringActionController
             for (Map.Entry<String, Measure> entry : tableNameToMetadata.entrySet())
             {
                 if (previousEntry != null)
-                    sql.append("\nJOIN\n");
+                    sql.append("\nINNER JOIN\n");
 
                 String tableName = entry.getKey();
                 sql.append(VisualizationSchema.SCHEMA_NAME).append(".").append(tableName).append(" AS ").append(tableName);
