@@ -20,14 +20,12 @@
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
-<%@ page import="org.labkey.wiki.WikiManager" %>
-<%@ page import="org.labkey.wiki.model.WikiVersion" %>
 <%@ page import="org.labkey.wiki.WikiSelectManager" %>
+<%@ page import="org.labkey.wiki.model.WikiVersion" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VersionBean> me = (JspView<VersionBean>) HttpView.currentView();
@@ -73,7 +71,7 @@ else
         if (fOutputMakeCurrent)
         {
             %><tr><td align=right colspan="2"><form method=POST action="<%=h(bean.makeCurrentURL)%>">
-                <%=PageFlowUtil.generateSubmitButton("Make Current")%></form></td></tr><%
+                <%=generateSubmitButton("Make Current")%></form></td></tr><%
         }%>
 
        <tr><td colspan=2 class="labkey-title-area-line"></td></tr>

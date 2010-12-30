@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.cbcassay.CBCAssayProvider" %>
 <%@ page import="org.labkey.cbcassay.data.CBCData" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -92,6 +91,6 @@
 </table>
 
 <% if (canEdit) { %>
-    <%=PageFlowUtil.generateButton("Edit", CBCAssayProvider.getResultUpdateUrl(getViewContext()))%>
+    <%=generateButton("Edit", CBCAssayProvider.getResultUpdateUrl(getViewContext()))%>
 <% } %>
 

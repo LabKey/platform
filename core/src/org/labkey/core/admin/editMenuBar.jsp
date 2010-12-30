@@ -17,14 +17,13 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
     boolean menuEnabled = LookAndFeelProperties.getInstance(me.getViewContext().getContainer()).isMenuUIEnabled();
-    ActionURL refreshURL = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsMenuURL(me.getViewContext().getContainer());
+    ActionURL refreshURL = urlProvider(AdminUrls.class).getProjectSettingsMenuURL(me.getViewContext().getContainer());
 %>
 <form action="" method="POST">
     <br>The menu bar is a beta feature of labkey server that can be customized to provide quick access to LabKey features.<br><br>

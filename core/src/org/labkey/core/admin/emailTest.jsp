@@ -16,11 +16,11 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.EmailTestForm> me = (JspView<AdminController.EmailTestForm>) HttpView.currentView();
     AdminController.EmailTestForm form = me.getModelBean();
@@ -32,27 +32,27 @@ message to the address specified in the 'To' text box containing the content spe
 
 <% if(null != form.getException()) { %>
 <div class="labkey-status-error">Your message could not be sent for the following reason(s):<br/>
-<%=PageFlowUtil.filter(form.getException().getMessage())%>
+<%=h(form.getException().getMessage())%>
 </div>
 <% } else if(null != form.getTo()) { %>
-<div class="labkey-status-info">Your email was successfully sent to <%=PageFlowUtil.filter(form.getTo())%>.</div>
+<div class="labkey-status-info">Your email was successfully sent to <%=h(form.getTo())%>.</div>
 <% } %>
 
 <form action="<%=new ActionURL(AdminController.EmailTestAction.class, me.getViewContext().getContainer()).getLocalURIString()%>" method="POST"/>
 <table>
     <tr>
         <td class="labkey-form-label">To</td>
-        <td><input type="text" name="to" value="<%=PageFlowUtil.filter(StringUtils.trimToEmpty(form.getTo()))%>" size="20"/></td>
+        <td><input type="text" name="to" value="<%=h(StringUtils.trimToEmpty(form.getTo()))%>" size="20"/></td>
     </tr>
     <tr>
         <td class="labkey-form-label">Body</td>
         <td>
-            <textarea rows="20" cols="60" name="body"><%=PageFlowUtil.filter(StringUtils.trimToEmpty(form.getBody()))%></textarea>
+            <textarea rows="20" cols="60" name="body"><%=h(StringUtils.trimToEmpty(form.getBody()))%></textarea>
         </td>
     </tr>
     <tr>
         <td colspan="2" style="text-align:right">
-            <%=PageFlowUtil.generateSubmitButton("Send")%>
+            <%=generateSubmitButton("Send")%>
         </td>
     </tr>
 </table>

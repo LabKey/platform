@@ -21,13 +21,11 @@
 <%@ page import="org.labkey.api.pipeline.PipelineJobData" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 private Object outputJob(String status, PipelineJob job,
@@ -44,7 +42,7 @@ private Object outputJob(String status, PipelineJob job,
     }
     else
     {
-        ret.append("<a href=\"").append(PageFlowUtil.filter(href)).append("\">")
+        ret.append("<a href=\"").append(h(href)).append("\">")
                 .append(status).append("</a>");
     }
     ret.append("</td><td>");
@@ -55,7 +53,7 @@ private Object outputJob(String status, PipelineJob job,
 
     if (status.equals("pending") && canCancel)
     {
-        ret.append("<td>" + PageFlowUtil.generateButton("cancel", "cancelJob.view?jobId=" + job.getJobGUID() +
+        ret.append("<td>" + generateButton("cancel", "cancelJob.view?jobId=" + job.getJobGUID() +
                 (isAllContainers ? "&allcontainers=1" : "")));
     }
     return ret;
@@ -103,4 +101,4 @@ private Object outputJob(String status, PipelineJob job,
         } %>
         </table><%
     } %>
-    <%=PageFlowUtil.generateButton("Grid", StatusController.urlShowList(ContainerManager.getRoot(), false))%>
+    <%=generateButton("Grid", StatusController.urlShowList(ContainerManager.getRoot(), false))%>

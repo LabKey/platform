@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveTreeMap" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveTreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Map<String, String>> me = (JspView<Map<String, String>>) HttpView.currentView();
@@ -30,8 +29,8 @@
     <% for (Map.Entry<String, String> entry : sortedProperties.entrySet())
     { %>
         <tr>
-            <td class='labkey-form-label' valign="top"><%= PageFlowUtil.filter(entry.getKey())%></td>
-            <td><%= PageFlowUtil.filter(entry.getValue())%></td>
+            <td class='labkey-form-label' valign="top"><%=h(entry.getKey())%></td>
+            <td><%=h(entry.getValue())%></td>
         </tr>
     <% }
     %>

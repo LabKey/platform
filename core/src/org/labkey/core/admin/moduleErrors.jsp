@@ -15,19 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="java.io.PrintWriter" %>
 <%@ page import="java.io.StringWriter" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
     Map<String,Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
-
 %>
-    <table id="dataregion_Gen Runs"
-           class="labkey-data-region labkey-show-borders">
+    <table id="dataregion_Gen Runs" class="labkey-data-region labkey-show-borders">
         <colgroup><col><col></colgroup>
         <tr><th><b>Module name</b></th><th><b>Stack trace</b></th></tr>
 
@@ -42,7 +38,7 @@
 
                 StringWriter writer = new StringWriter();
                 entry.getValue().printStackTrace(new PrintWriter(writer));
-                out.print(PageFlowUtil.filter(writer.toString()));
+                out.print(h(writer.toString()));
 
             %></pre></td>
 

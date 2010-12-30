@@ -21,6 +21,7 @@
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>                 
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
@@ -45,7 +46,6 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -226,7 +226,7 @@
 <a class="labkey-search-title" href="<%=h(href)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:600;'><%
                 if (null != summary)
                 {
-                    %><%=PageFlowUtil.filter(summary, false)%><br><%
+                    %><%=h(summary, false)%><br><%
                 }
                 if (form.isAdvanced())
                 {
@@ -298,7 +298,7 @@
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
                         {
-                            %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%></div><%
+                            %><div style="margin-left:10px;"><%=h(summary, false)%></div><%
                         }
                     }
 
@@ -337,7 +337,7 @@ String formatNavTrail(Collection<NavTree> list)
         for (NavTree n : list)
         {
             sb.append(connector);
-            sb.append("<a style='text-decoration:underline; color:#808080;' href='").append(PageFlowUtil.filter(n.getValue())).append("'>").append(PageFlowUtil.filter(n.getKey())).append("</a>");
+            sb.append("<a style='text-decoration:underline; color:#808080;' href='").append(h(n.getValue())).append("'>").append(h(n.getKey())).append("</a>");
             connector = " - ";
         }
         sb.append("</span>");

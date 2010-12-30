@@ -23,13 +23,10 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
     int rowId = 0;
 %>
-
 <form name="mvIndicatorsForm" method="POST" action=folderSettings.post?tabId=mvIndicators>
-
     <table>
         <tr>
             <td>
@@ -105,11 +102,10 @@
                                 needComma = true;
                             }
 
-                            String popupText = PageFlowUtil.filter(label);
+                            String popupText = h(label);
 
                             out.write(PageFlowUtil.helpPopup(indicator, popupText, true, indicator, 0));
                         }
-
                     }
                 %>
 

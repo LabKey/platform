@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.exp.ExperimentRunType"%>
-<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.util.Pair"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.ChooseExperimentTypeBean" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ChooseExperimentTypeBean> me = (JspView<ChooseExperimentTypeBean>) HttpView.currentView();
     ChooseExperimentTypeBean bean = me.getModelBean();
@@ -32,7 +32,7 @@
     {
         if (!"experimentRunFilter".equals(params.getKey()))
         { %>
-            <input type="hidden" name="<%= PageFlowUtil.filter(params.getKey())%>" value="<%= PageFlowUtil.filter(params.getValue())%>" />
+            <input type="hidden" name="<%=h(params.getKey())%>" value="<%=h(params.getValue())%>" />
     <%  }
     } %>
     Filter by run type: <select name="experimentRunFilter" onchange="form.submit()">

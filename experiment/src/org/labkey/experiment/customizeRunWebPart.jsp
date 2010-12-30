@@ -1,8 +1,3 @@
-<%@ page import="org.labkey.experiment.ExperimentRunWebPartFactory" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.exp.ExperimentRunType" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%
 /*
  * Copyright (c) 2010 LabKey Corporation
@@ -20,7 +15,11 @@
  * limitations under the License.
  */
 %>
-
+<%@ page import="org.labkey.api.exp.ExperimentRunType" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.experiment.ExperimentRunWebPartFactory" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExperimentRunWebPartFactory.Bean> me = (JspView<ExperimentRunWebPartFactory.Bean>) HttpView.currentView();
     ExperimentRunWebPartFactory.Bean bean = me.getModelBean();
@@ -34,15 +33,15 @@
                 <select name="<%= ExperimentRunWebPartFactory.EXPERIMENT_RUN_FILTER %>">
                     <option value="">&lt;Automatically selected based on runs&gt;</option>
                     <% for (ExperimentRunType type : bean.getTypes()) { %>
-                        <option value="<%= PageFlowUtil.filter(type.getDescription()) %>" <%= type.getDescription().equals(bean.getDefaultRunFilterName()) ? "selected" : "" %>><%= PageFlowUtil.filter(type.getDescription()) %></option>
+                        <option value="<%=h(type.getDescription()) %>" <%= type.getDescription().equals(bean.getDefaultRunFilterName()) ? "selected" : "" %>><%=h(type.getDescription()) %></option>
                     <% } %>
                 </select>
             </td>
         </tr>
         <tr>
             <td colspan=2 align="right">
-                <%=PageFlowUtil.generateSubmitButton("Submit")%>
-                <%=PageFlowUtil.generateButton("Cancel", "begin.view")%>
+                <%=generateSubmitButton("Submit")%>
+                <%=generateButton("Cancel", "begin.view")%>
             </td>
         </tr>
     </table>

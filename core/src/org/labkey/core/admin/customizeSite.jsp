@@ -17,7 +17,6 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -109,7 +108,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <%}%>
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save")%></td>
+    <td><%=generateSubmitButton("Save")%></td>
 </tr>
 </table>
 
@@ -382,7 +381,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save")%></td>
+    <td><%=generateSubmitButton("Save")%></td>
 </tr>
 </table>
 </form>

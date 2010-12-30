@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.audit.SiteSettingsAuditDetailsModel" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SiteSettingsAuditDetailsModel> me = (JspView<SiteSettingsAuditDetailsModel>) HttpView.currentView();
     SiteSettingsAuditDetailsModel model = me.getModelBean();
 %>
 
-<p>On <%=PageFlowUtil.filter(model.getWhen())%>,
-    <b><%=null == model.getUser() ? "user id " + model.getEvent().getCreatedBy().getUserId() : PageFlowUtil.filter(model.getUser().getFriendlyName())%></b>
+<p>On <%=h(model.getWhen())%>,
+    <b><%=null == model.getUser() ? "user id " + model.getEvent().getCreatedBy().getUserId() : h(model.getUser().getFriendlyName())%></b>
     modified the site settings in the following way:</p>
 <%=model.getDiff()%>

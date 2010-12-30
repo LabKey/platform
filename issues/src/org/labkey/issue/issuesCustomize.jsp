@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="org.labkey.api.util.HString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
@@ -41,8 +40,8 @@
   </tr>
   <tr>
     <td colspan=2 align="right">
-      <%=PageFlowUtil.generateSubmitButton("Submit")%>
-      <%=PageFlowUtil.generateButton("Cancel", "begin.view")%>
+      <%=generateSubmitButton("Submit")%>
+      <%=generateButton("Cancel", "begin.view")%>
     </td>
   </tr>
 </table>

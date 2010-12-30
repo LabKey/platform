@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.study.SampleManager"%>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="org.labkey.study.model.SiteImpl"%>
-<%@ page import="org.labkey.study.model.StudyManager"%>
 <%@ page import="org.labkey.study.model.Specimen"%>
-<%@ page import="org.labkey.study.SampleManager"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="java.util.Map"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.model.StudyManager"%>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.NewRequestBean> me = (JspView<SpecimenController.NewRequestBean>) HttpView.currentView();
@@ -45,7 +45,7 @@
         {
             for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
             {
-                %><%=PageFlowUtil.filter(HttpView.currentContext().getMessage(e))%><br><%
+                %><%=h(HttpView.currentContext().getMessage(e))%><br><%
             }
         }
     %>

@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.core.workbook.CreateWorkbookBean" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.workbook.CreateWorkbookBean" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<CreateWorkbookBean> me = (JspView<CreateWorkbookBean>) HttpView.currentView();
     CreateWorkbookBean searchBean = me.getModelBean();
@@ -90,12 +90,12 @@
     <table class="cwb-layout-table">
         <tr>
             <td class="labkey-form-label">Title:</td>
-            <td><input id="workbookTitle" type="text" name="title" class="cwb-input" value="<%=PageFlowUtil.filter(searchBean.getTitle())%>"/></td>
+            <td><input id="workbookTitle" type="text" name="title" class="cwb-input" value="<%=h(searchBean.getTitle())%>"/></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Description:</td>
             <td>
-                <textarea id="workbookDescription" name="description" rows="4" cols="40" class="cwb-input"><%=null == searchBean.getDescription() ? "" : PageFlowUtil.filter(searchBean.getDescription())%></textarea>
+                <textarea id="workbookDescription" name="description" rows="4" cols="40" class="cwb-input"><%=null == searchBean.getDescription() ? "" : h(searchBean.getDescription())%></textarea>
             </td>
         </tr>
         <% if (folderTypes.size() > 1) { %>
@@ -105,7 +105,7 @@
                     <select id="workbookFolderType" name="folderType">
                         <option value="" />
                         <% for (FolderType folderType : folderTypes) { %>
-                            <option value="<%= PageFlowUtil.filter(folderType.getName()) %>"><%= PageFlowUtil.filter(folderType.getLabel()) %></option>
+                            <option value="<%=h(folderType.getName()) %>"><%=h(folderType.getLabel()) %></option>
                         <% } %>
                     </select>
                 </td>

@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.action.SpringActionController" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainer();
@@ -41,5 +40,5 @@
             </td>
         </tr>
     </table>
-    <%=PageFlowUtil.generateSubmitButton("Save")%>
+    <%=generateSubmitButton("Save")%>
 </form>

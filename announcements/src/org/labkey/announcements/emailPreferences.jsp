@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
 <b><%=message == null ? "" : message%></b>
@@ -36,7 +35,7 @@
     <input type="radio" value="<%=AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST%>" name="notificationType" <%=notificationType == AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST ? " checked" : "" %>>
     <b>Daily Digest</b> - send one email each day that summarizes all posts<br>
 
-    <br><input type=hidden name="srcUrl"value="<%=PageFlowUtil.filter(srcURL)%>"/>
+    <br><input type=hidden name="srcUrl" value="<%=h(srcURL)%>"/>
     <%=generateSubmitButton("Update")%>
-    <%=PageFlowUtil.generateButton((message == null ? "Cancel" : "Done"), srcURL)%>
+    <%=generateButton((message == null ? "Cancel" : "Done"), srcURL)%>
 </form>

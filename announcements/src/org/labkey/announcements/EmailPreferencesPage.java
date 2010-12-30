@@ -19,7 +19,7 @@ package org.labkey.announcements;
 import org.labkey.api.jsp.JspBase;
 
 abstract public class EmailPreferencesPage extends JspBase
-    {
+{
     public String message;
     public int emailPreference;
     public String srcURL;
@@ -27,4 +27,4 @@ abstract public class EmailPreferencesPage extends JspBase
     public boolean hasMemberList;
     public int notificationType;
     public boolean isProjectMember;
-    }
+}

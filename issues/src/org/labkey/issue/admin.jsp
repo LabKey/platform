@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.issue.IssueUpdateEmailTemplate" %>
+<%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<IssuesController.AdminBean> me = (HttpView<IssuesController.AdminBean>) HttpView.currentView();
@@ -37,8 +36,8 @@
 <br>
 <table>
 <tr><td>
-    <%=PageFlowUtil.generateButton("Back to " + bean.entryTypeNames.pluralName, "list.view?.lastFilter=true")%>
-    <%=PageFlowUtil.generateButton("Customize Email Template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, me.getViewContext().getActionURL()))%>
+    <%=generateButton("Back to " + bean.entryTypeNames.pluralName, "list.view?.lastFilter=true")%>
+    <%=generateButton("Customize Email Template", urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, me.getViewContext().getActionURL()))%>
 </td></tr>
 <tr><td>&nbsp;</td></tr>
 <%=formatMissedErrorsInTable("form", 1)%>
@@ -64,7 +63,7 @@
         <tr><td>String4</td><td><input name="string4" value="<%=h(captions.get("string4"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string4" <%=pickListColumns.contains("string4") ? "checked" : ""%>>Use pick list for this field</td></tr>
         <tr><td>String5</td><td><input name="string5" value="<%=h(captions.get("string5"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string5" <%=pickListColumns.contains("string5") ? "checked" : ""%>>Use pick list for this field</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
-        <tr><td colspan=2 align="center"><%=PageFlowUtil.generateSubmitButton("Update Custom Fields")%></td></tr>
+        <tr><td colspan=2 align="center"><%=generateSubmitButton("Update Custom Fields")%></td></tr>
         </table>
         </form>
     </td>
@@ -91,7 +90,7 @@
                 </td>
             </tr>
             <tr>
-                <td align="center"><%=PageFlowUtil.generateSubmitButton("Update Entry Type Names")%></td>
+                <td align="center"><%=generateSubmitButton("Update Entry Type Names")%></td>
             </tr>
         </table>
         </form>
@@ -133,7 +132,7 @@
                 </td>
             </tr>
             <tr>
-                <td align="center"><%=PageFlowUtil.generateSubmitButton("Update Assigned To List")%></td>
+                <td align="center"><%=generateSubmitButton("Update Assigned To List")%></td>
             </tr>
         </table>
         </form>

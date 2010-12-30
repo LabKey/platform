@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.biotrue.controllers.BtController" %>
 <%@ page import="org.labkey.biotrue.datamodel.Server" %>
@@ -47,8 +46,8 @@
             </select>
         <tr><td></td></tr>
         <tr><td>
-            <%=PageFlowUtil.generateButton("Cancel", HttpView.currentContext().cloneActionURL().setAction(BtController.AdminAction.class))%>&nbsp;
-            <%=PageFlowUtil.generateSubmitButton("Update")%>&nbsp;
+            <%=generateButton("Cancel", HttpView.currentContext().cloneActionURL().setAction(BtController.AdminAction.class))%>&nbsp;
+            <%=generateSubmitButton("Update")%>&nbsp;
         </td></tr>
         <tr><td>&nbsp;</td></tr>
     </table>

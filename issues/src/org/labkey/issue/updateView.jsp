@@ -206,7 +206,7 @@
     if (bean.getBody() != null)
     {
 %>
-    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="0"><%=PageFlowUtil.filter(bean.getBody())%></textarea>
+    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="0"><%=h(bean.getBody())%></textarea>
 <%
     } else {
 %>

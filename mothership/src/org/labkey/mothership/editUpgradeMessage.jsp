@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.mothership.MothershipController"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<MothershipController.UpgradeMessageForm> me = (JspView<MothershipController.UpgradeMessageForm>) HttpView.currentView();
@@ -40,7 +39,7 @@
                 Upgrade message (HTML allowed):
             </td>
             <td>
-                <textarea rows="5" cols="50" name="message"><%= PageFlowUtil.filter(form.getMessage())%></textarea>
+                <textarea rows="5" cols="50" name="message"><%=h(form.getMessage())%></textarea>
             </td>
         </tr>
         <tr>
@@ -48,7 +47,7 @@
                 Create issue URL:
             </td>
             <td>
-                <input type="text" size="50" name="createIssueURL" value="<%= PageFlowUtil.filter(form.getCreateIssueURL())%>"/>
+                <input type="text" size="50" name="createIssueURL" value="<%=h(form.getCreateIssueURL())%>"/>
             </td>
         </tr>
         <tr>
@@ -56,7 +55,7 @@
                 Issues container path:
             </td>
             <td>
-                <input type="text" size="50" name="issuesContainer" value="<%= PageFlowUtil.filter(form.getIssuesContainer())%>"/>
+                <input type="text" size="50" name="issuesContainer" value="<%=h(form.getIssuesContainer())%>"/>
             </td>
         </tr>
         <tr>

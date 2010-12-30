@@ -244,7 +244,7 @@ function restoreDefaultPage()
             <tr>
                 <td align="left">
                     <%=PageFlowUtil.generateSubmitButton("Submit", "", "name=\"Submit\" id=\"btnSubmit\"")%>
-                    <%=PageFlowUtil.generateButton("Cancel", "begin.view")%>
+                    <%=generateButton("Cancel", "begin.view")%>
                 </td>
             </tr>
         </table>

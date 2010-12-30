@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView me = (JspView) HttpView.currentView();
     Container container = me.getViewContext().getContainer();
@@ -30,9 +30,9 @@
 
 <script type="text/javascript">
     var _wb_titleId = Ext.id();
-    LABKEY.NavTrail.setTrail("<span class='wb-name'><%=container.getRowId()%>:&nbsp;</span><span class='labkey-edit-in-place' id='" + _wb_titleId + "'><%=PageFlowUtil.filter(container.getTitle())%></span>",
+    LABKEY.NavTrail.setTrail("<span class='wb-name'><%=container.getRowId()%>:&nbsp;</span><span class='labkey-edit-in-place' id='" + _wb_titleId + "'><%=h(container.getTitle())%></span>",
             undefined, "<%=container.getTitle()%>");
-    //LABKEY.NavTrail.setTrail("<%=PageFlowUtil.filter(container.getTitle())%>");
+    //LABKEY.NavTrail.setTrail("<%=h(container.getTitle())%>");
 </script>
 
 <style type="text/css">
@@ -42,7 +42,7 @@
     }
 </style>
 
-<div id="wb-description" class="labkey-edit-in-place"><%=null != container.getDescription() ? PageFlowUtil.filter(container.getDescription()) : "&nbsp;"%></div>
+<div id="wb-description" class="labkey-edit-in-place"><%=null != container.getDescription() ? h(container.getDescription()) : "&nbsp;"%></div>
 
 <script type="text/javascript">
     Ext.onReady(function(){
@@ -72,5 +72,4 @@
             }
         });
     });
-
 </script>

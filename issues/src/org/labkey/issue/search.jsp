@@ -19,20 +19,19 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.search.SearchUtils" %>
+<%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.io.IOException" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="org.labkey.api.search.SearchUtils.*" %>
-<%@ page import="org.labkey.api.search.SearchUtils" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -105,7 +104,7 @@
                 %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><br><%
                 if (!StringUtils.isEmpty(hit.summary))
                 {
-                    %><div style="margin-left:10px;"><%=PageFlowUtil.filter(StringUtils.trimToEmpty(hit.summary), false)%></div><%
+                    %><div style="margin-left:10px;"><%=h(StringUtils.trimToEmpty(hit.summary), false)%></div><%
                 }
                 %><%-- <div style='margin-left:10px; color:green;'><%=h(href)%></div> --%>
                 <br><%

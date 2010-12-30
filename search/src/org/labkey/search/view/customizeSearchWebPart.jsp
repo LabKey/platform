@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.action.SpringActionController"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
@@ -35,8 +34,8 @@
   </tr>
   <tr>
     <td colspan=2>
-      <%=PageFlowUtil.generateSubmitButton("Submit")%>
-      <%=PageFlowUtil.generateButton("Cancel", "begin.view")%>
+      <%=generateSubmitButton("Submit")%>
+      <%=generateButton("Cancel", "begin.view")%>
     </td>
   </tr>
 </table>

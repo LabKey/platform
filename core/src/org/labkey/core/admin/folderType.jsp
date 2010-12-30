@@ -15,17 +15,21 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang.StringUtils"%>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.*" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -211,7 +215,7 @@ function validate()
     %>
                 </table>
                 <input type="hidden" name="wizard" value="<%=h(form.isWizard())%>">
-                <%=PageFlowUtil.generateSubmitButton((form.isWizard() ? "Next" : "Update Folder"))%>
+                <%=generateSubmitButton((form.isWizard() ? "Next" : "Update Folder"))%>
     <%WebPartView.endTitleFrame(out);%>
     </td>
     <td width="30%" valign="top">

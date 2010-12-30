@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.authentication.opensso.OpenSSOController.*" %>
 <%@ page import="org.labkey.authentication.opensso.OpenSSOController" %>
+<%@ page import="org.labkey.authentication.opensso.OpenSSOController.PickReferrerForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PickReferrerForm> me = (JspView<PickReferrerForm>)HttpView.currentView();

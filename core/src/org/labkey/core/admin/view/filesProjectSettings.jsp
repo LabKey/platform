@@ -43,7 +43,7 @@
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
-        <p class="labkey-message"><%= PageFlowUtil.filter(bean.getConfirmMessage()) %></p>
+        <p class="labkey-message"><%= h(bean.getConfirmMessage()) %></p>
 <%  } %>
 
 <labkey:errors/>

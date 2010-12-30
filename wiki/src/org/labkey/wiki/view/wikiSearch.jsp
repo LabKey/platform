@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.wiki.model.SearchViewContext" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SearchViewContext> _me = (JspView<SearchViewContext>) HttpView.currentView();
     SearchViewContext _ctx = _me.getModelBean();
@@ -39,7 +39,7 @@
             <input type="text" name="search" style="width:100%">
         </td>
         <td width="1%">
-            <%=PageFlowUtil.generateButton("Search", "javascript:{}", "submitSearch();")%>
+            <%=generateButton("Search", "javascript:{}", "submitSearch();")%>
         </td>
     </tr>
 </table>

@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Wiki> me = (JspView<Wiki>) HttpView.currentView();
     Wiki wiki = me.getModelBean();
@@ -26,5 +26,5 @@
 
 Are you sure you want to delete this page?
 <p/>
-<b>name: <%=PageFlowUtil.filter(wiki.getName())%></b><br/>
-<b>title: <%=PageFlowUtil.filter(wiki.getLatestVersion().getTitle())%></b>
+<b>name: <%=h(wiki.getName())%></b><br/>
+<b>title: <%=h(wiki.getLatestVersion().getTitle())%></b>

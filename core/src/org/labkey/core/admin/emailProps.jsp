@@ -16,8 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.util.MailHelper" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.Properties" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Properties emailProps = MailHelper.getSession().getProperties();
 %>
@@ -25,8 +25,8 @@
 <table>
     <% for(Object key : emailProps.keySet()) { %>
     <tr>
-        <td class="labkey-form-label"><%=PageFlowUtil.filter(key.toString())%></td>
-        <td><%=PageFlowUtil.filter(emailProps.get(key))%></td>
+        <td class="labkey-form-label"><%=h(key.toString())%></td>
+        <td><%=h(emailProps.get(key))%></td>
     </tr>
     <% } %>
 </table>

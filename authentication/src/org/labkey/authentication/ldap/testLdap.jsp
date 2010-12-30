@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.authentication.ldap.LdapController.*" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.authentication.ldap.LdapController.TestLdapForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<TestLdapForm> me = (JspView<TestLdapForm>)HttpView.currentView();

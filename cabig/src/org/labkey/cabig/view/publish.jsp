@@ -16,18 +16,19 @@
  */
 %>
 <%@ page import="org.labkey.api.util.HelpTopic"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.cabig.caBIGController" %>
-<%@ page import="org.labkey.cabig.caBIGController.*" %>
+<%@ page import="org.labkey.cabig.caBIGController.AdminAction" %>
+<%@ page import="org.labkey.cabig.caBIGController.PublishAction" %>
+<%@ page import="org.labkey.cabig.caBIGController.UnpublishAction" %>
 <%@ page import="org.labkey.cabig.caBIGManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext ctx = HttpView.currentContext();
     boolean isPublished = caBIGManager.get().isPublished(ctx.getContainer());
-    String publishButton = PageFlowUtil.generateButton(isPublished ? "Unpublish" : "Publish", caBIGController.getCaBigURL(isPublished ? UnpublishAction.class : PublishAction.class, ctx.getContainer(), ctx.getActionURL()));
+    String publishButton = generateButton(isPublished ? "Unpublish" : "Publish", caBIGController.getCaBigURL(isPublished ? UnpublishAction.class : PublishAction.class, ctx.getContainer(), ctx.getActionURL()));
     ActionURL adminUrl = caBIGController.getCaBigURL(AdminAction.class, ctx.getContainer(), ctx.getActionURL());
 
     if (isPublished)
@@ -44,7 +45,7 @@ This folder is not published to the caBIG&trade; (cancer Biomedical Informatics 
 this folder to caBIG&trade;.  If you do this then all experiment data in this folder will be publicly visible via the caBIG&trade; web application.<br><br>
 <%  }  %>
 
-<%=publishButton%>&nbsp;<%=PageFlowUtil.generateButton("Admin", adminUrl)%>
+<%=publishButton%>&nbsp;<%=generateButton("Admin", adminUrl)%>
 <br><br>For more information about publishing to caBIG&trade;, <a href="<%=h(new HelpTopic("cabig" ).getHelpTopicLink())%>" target="cabig">click here</a>.
 
 <%

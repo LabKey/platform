@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.wiki.WikiController" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WikiController.CopyBean> me = (JspView<WikiController.CopyBean>) HttpView.currentView();
@@ -39,8 +38,8 @@ Note that only the latest version of each wiki page is copied.
 
 <table>
     <tr>
-        <td><%=PageFlowUtil.generateSubmitButton("Copy Pages")%></td>
-        <td><%=PageFlowUtil.generateButton("Cancel", bean.cancelURL)%></td>
+        <td><%=generateSubmitButton("Copy Pages")%></td>
+        <td><%=generateButton("Cancel", bean.cancelURL)%></td>
     </tr>
 </table>
 </form>

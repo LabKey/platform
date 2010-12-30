@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.portal.ProjectController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -26,5 +25,5 @@
 %>
 <labkey:errors/>
 <p>
-    <%=PageFlowUtil.generateButton("Back to Portal", new ActionURL(ProjectController.BeginAction.class, c))%>
+    <%=generateButton("Back to Portal", new ActionURL(ProjectController.BeginAction.class, c))%>
 </p>

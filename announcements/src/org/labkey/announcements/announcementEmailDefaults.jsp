@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementEmailDefaults.EmailDefaultsBean" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementEmailDefaults.EmailDefaultsBean"%>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager.EmailOption" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<EmailDefaultsBean> me = (HttpView<EmailDefaultsBean>) HttpView.currentView();

@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang.BooleanUtils" %>
 <%@ page import="org.labkey.api.query.QueryAction" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotDefinition" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotForm" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.apache.commons.lang.BooleanUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -56,10 +55,10 @@
 <table cellpadding="0" class="normal">
     <tr><td>&nbsp;</td></tr>
     <tr>
-        <td><%=PageFlowUtil.generateButton("Update Snapshot", PageFlowUtil.urlProvider(QueryUrls.class).urlUpdateSnapshot(context.getContainer()).addParameters(params), "return confirm('Updating will replace all current data with a fresh snapshot');")%></td>
+        <td><%=generateButton("Update Snapshot", urlProvider(QueryUrls.class).urlUpdateSnapshot(context.getContainer()).addParameters(params), "return confirm('Updating will replace all current data with a fresh snapshot');")%></td>
 <%  if (def != null) { %>
-        <td><%=PageFlowUtil.generateButton("Source Query", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition(context.getUser())))%></td>
-        <td><%=PageFlowUtil.generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
+        <td><%=generateButton("Source Query", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition(context.getUser())))%></td>
+        <td><%=generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
 <%  } %>
     </tr>
 </table>

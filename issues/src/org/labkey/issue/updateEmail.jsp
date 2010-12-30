@@ -14,17 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-%>
-<%@ page import="org.labkey.issue.model.Issue"
+%><%@ page import="org.labkey.issue.model.Issue"
 %><%@ page import="java.util.Iterator"
 %><%@ page import="org.labkey.issue.IssuesController"
 %><%@ page import="org.labkey.api.view.HttpView"
 %><%@ page import="org.labkey.api.view.JspView" 
 %><%@ page import="org.labkey.api.util.PageFlowUtil"
 %><%@ page import="org.labkey.api.data.Container"
-%>
-<%@ page import="org.labkey.api.util.HString" %>
-<%@ page extends="org.labkey.api.jsp.JspBase"
+%><%@ page import="org.labkey.api.util.HString"
+%><%@ page extends="org.labkey.api.jsp.JspBase"
 %><%
     JspView<IssuesController.UpdateEmailPage> me = (JspView<IssuesController.UpdateEmailPage>)HttpView.currentView();
     IssuesController.UpdateEmailPage bean = me.getModelBean();

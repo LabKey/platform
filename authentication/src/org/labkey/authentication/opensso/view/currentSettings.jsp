@@ -16,11 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.authentication.opensso.OpenSSOController" %>
-<%@ page import="org.labkey.authentication.opensso.OpenSSOController.*" %>
+<%@ page import="org.labkey.authentication.opensso.OpenSSOController.ConfigProperties" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ConfigProperties> me = (JspView<ConfigProperties>)HttpView.currentView();
@@ -40,5 +39,5 @@
     }
 %>
 </table><br>
-<%=PageFlowUtil.generateButton("Modify Settings", OpenSSOController.getConfigureURL())%>
-<%=PageFlowUtil.generateButton("Done", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL())%>
+<%=generateButton("Modify Settings", OpenSSOController.getConfigureURL())%>
+<%=generateButton("Done", urlProvider(LoginUrls.class).getConfigureURL())%>

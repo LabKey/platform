@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.controllers.samples.SpecimenUtils" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenUtils" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenUtils.NotificationBean> me =
@@ -60,7 +60,7 @@
             <%
                 for (Attachment att : attachments) {
             %>
-            <a href="<%= bean.getBaseServerURI() %><%= PageFlowUtil.filter(att.getDownloadUrl(SpecimenController.DownloadAction.class)) %>">
+            <a href="<%= bean.getBaseServerURI() %><%= h(att.getDownloadUrl(SpecimenController.DownloadAction.class)) %>">
                 <%= h(att.getName()) %>
             </a><br>
             <%

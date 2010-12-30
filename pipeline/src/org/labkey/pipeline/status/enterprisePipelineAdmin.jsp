@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StatusController.EnterprisePipelineBean> view = (JspView<StatusController.EnterprisePipelineBean>) HttpView.currentView();
     StatusController.EnterprisePipelineBean bean = view.getModelBean();
@@ -37,7 +38,7 @@ Your configuration references the following execution locations:
 <ul>
 <% for (String location : bean.getLocations())
 {    %>
-    <li><%= PageFlowUtil.filter(location) %></li>
+    <li><%=h(location) %></li>
 <%
 }
 %>

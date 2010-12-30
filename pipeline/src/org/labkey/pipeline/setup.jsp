@@ -15,21 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.pipeline.view.SetupForm" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.pipeline.mule.PipelineJobRunnerGlobus" %>
+<%@ page import="java.io.File" %>
 <%@ page import="java.security.cert.X509Certificate" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.io.File" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -57,7 +56,7 @@
 
     if (bean.getConfirmMessage() != null)
     { %>
-            <p class="labkey-message"><%= PageFlowUtil.filter(bean.getConfirmMessage()) %></p>
+            <p class="labkey-message"><%=h(bean.getConfirmMessage()) %></p>
     <% }
 %>
 
@@ -188,7 +187,7 @@
                                 <br/>Current configuration expires <%= DateUtil.formatDate(certs[0].getNotAfter())%><%
                                 if (certs[0].getSubjectX500Principal() != null)
                                 {
-                                    %>; Issued to <%= PageFlowUtil.filter(certs[0].getSubjectX500Principal().getName()) %>
+                                    %>; Issued to <%=h(certs[0].getSubjectX500Principal().getName()) %>
                             <%  }
                             } %>
                     </td>
