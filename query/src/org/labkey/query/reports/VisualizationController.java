@@ -1,12 +1,47 @@
 package org.labkey.query.reports;
 
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.fop.svg.PDFTranscoder;
 import org.json.JSONArray;
-import org.labkey.api.action.*;
-import org.labkey.api.data.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiQueryResponse;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.CrosstabAxis;
+import org.labkey.api.data.CrosstabDimension;
+import org.labkey.api.data.CrosstabMeasure;
+import org.labkey.api.data.CrosstabMember;
+import org.labkey.api.data.CrosstabSettings;
+import org.labkey.api.data.CrosstabTableInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Type;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AbstractSchema;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.TempQuerySettings;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -17,8 +52,20 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.util.*;
+import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Copyright (c) 2010 LabKey Corporation
@@ -1474,4 +1521,79 @@ public class VisualizationController extends SpringActionController
             return resp;
         }
     }
+
+    /**
+     * Expects an HTTP post with no parameters, the post body carrying an SVG XML document.
+     * Content-type of request must be text/xml, not any kind of multipart
+     * Returns a PNG image.
+     */
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ExportImageAction extends BaseViewAction
+    {
+
+        @Override
+        protected String getCommandClassMethodName()
+        {
+            return "execute";
+        }
+
+        @Override
+        public ModelAndView handleRequest() throws Exception
+        {
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setContentType("image/png");
+            response.addHeader("Content-Disposition", "attachment; filename=visualization.png");
+
+            TranscoderInput xIn = new TranscoderInput(getViewContext().getRequest().getInputStream());
+            TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
+
+            new PNGTranscoder().transcode(xIn, xOut);
+
+            return null;
+        }
+
+        @Override
+        public void validate(Object o, Errors errors)
+        {
+            return;
+        }
+    }
+
+    /**
+     * Expects an HTTP post with no parameters, the post body carrying an SVG XML document.
+     * Content-type of request must be text/xml, not any kind of multipart
+     * Returns a PDF document containing the visualization as a scalable vector graphic
+     */
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ExportPDFAction extends BaseViewAction
+    {
+
+        @Override
+        protected String getCommandClassMethodName()
+        {
+            return "execute";
+        }
+
+        @Override
+        public ModelAndView handleRequest() throws Exception
+        {
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setContentType("application/pdf");
+            response.addHeader("Content-Disposition", "attachment; filename=visualization.pdf");
+
+            TranscoderInput xIn = new TranscoderInput(getViewContext().getRequest().getInputStream());
+            TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
+
+            new PDFTranscoder().transcode(xIn, xOut);
+
+            return null;
+        }
+
+        @Override
+        public void validate(Object o, Errors errors)
+        {
+            return;
+        }
+    }
+
 }
