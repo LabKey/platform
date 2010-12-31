@@ -117,6 +117,18 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
+    public List<Aggregate> getBaseAggregates()
+    {
+        return _ctx.getBaseAggregates();
+    }
+
+    @Override
+    public void setBaseAggregates(List<Aggregate> aggregates)
+    {
+        _ctx.setBaseAggregates(aggregates);
+    }
+
+    @Override
     public ResultSet getResultSet()
     {
         return _ctx.getResultSet();

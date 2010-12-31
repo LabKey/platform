@@ -23,6 +23,7 @@ import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -503,11 +504,6 @@ public class DataRegion extends DisplayElement
         return null;
     }
 
-    public List<Aggregate> getAggregates()
-    {
-        return _settings != null ? _settings.getAggregates() : null;
-    }
-
     // TODO: Should get rid of getTable() & setTable() and just rely on the query columns associated with each display column.
     // Also, dc.isQueryColumn() is redundant with !queryColumns.isEmpty()
     public TableInfo getTable()
@@ -622,7 +618,7 @@ public class DataRegion extends DisplayElement
                 }
             }
 
-            getAggregates(ctx);
+            getAggregateResults(ctx);
             return rs;
         }
         finally
@@ -644,7 +640,7 @@ public class DataRegion extends DisplayElement
         // no extra query columns added by default
     }
 
-    private void getAggregates(RenderContext ctx) throws SQLException, IOException
+    private void getAggregateResults(RenderContext ctx) throws SQLException, IOException
     {
         ResultSet rs = ctx.getResultSet();
         assert rs != null;
@@ -658,19 +654,19 @@ public class DataRegion extends DisplayElement
         if (countAggregate)
         {
             List<Aggregate> newAggregates = new LinkedList<Aggregate>();
-            if (getAggregates() != null)
-                newAggregates.addAll(getAggregates());
+            if (ctx.getBaseAggregates() != null)
+                newAggregates.addAll(ctx.getBaseAggregates());
             newAggregates.add(Aggregate.createCountStar());
 
-            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, isAllowAsync());
+            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, isAllowAsync());
 
             Aggregate.Result result = _aggregateResults.remove(Aggregate.STAR);
             if (result != null)
                 _totalRows = (Long)result.getValue();
-        }
+            }
         else
         {
-            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), getAggregates(), isAllowAsync());
+            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), ctx.getBaseAggregates(), isAllowAsync());
         }
 
         // TODO: Move this into RenderContext?
@@ -1302,7 +1298,13 @@ public class DataRegion extends DisplayElement
                     }
                     ColumnInfo col = renderer.getColumnInfo();
 
-                    Aggregate.Result result = col != null ? _aggregateResults.get(renderer.getColumnInfo().getAlias()) : null;
+                    Aggregate.Result result = null;
+                    if (col != null)
+                    {
+                        result = _aggregateResults.get(renderer.getColumnInfo().getName());
+                        if (result == null)
+                            _aggregateResults.get(renderer.getColumnInfo().getAlias());
+                    }
                     if (result != null)
                     {
                         Format formatter = renderer.getFormat();
@@ -1800,9 +1802,9 @@ public class DataRegion extends DisplayElement
         {
             if (!shouldRender(renderer, ctx))
                 continue;
-            renderFormField(ctx, out, renderer);
-            if (null != renderer.getColumnInfo())
-                renderedColumns.add(renderer.getColumnInfo().getPropertyName());
+                renderFormField(ctx, out, renderer);
+                if (null != renderer.getColumnInfo())
+                    renderedColumns.add(renderer.getColumnInfo().getPropertyName());
         }
 
         int span = _groups.isEmpty() ? 1 : (_horizontalGroups ? _groups.get(0).getColumns().size() + 1 : _groups.size()); // One extra one for the column to reuse the same value
@@ -1970,6 +1972,7 @@ public class DataRegion extends DisplayElement
                         out.write(PageFlowUtil.filter(pkVal.toString()));
                         out.write("\">");
                     }
+                    renderedColumns.add(pkColName);
                 }
             }
         }
@@ -1995,7 +1998,7 @@ public class DataRegion extends DisplayElement
         TableViewForm viewForm = ctx.getForm();
 
         List<DisplayColumn> renderers = getDisplayColumns();
-        Set<String> renderedColumns = new HashSet<String>();
+        Set<String> renderedColumns = Sets.newCaseInsensitiveHashSet();
         ViewContext viewContext = ctx.getViewContext();
 
         //if user doesn't have read permissions, don't render anything

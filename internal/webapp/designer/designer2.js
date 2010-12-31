@@ -850,12 +850,38 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         var fieldMetaStore = this.fieldMetaStore = config.fieldMetaStore;
 
         this.columnStore = new Ext.data.JsonStore({
-            fields: ['name', 'fieldKey', 'title'],
+            fields: ['name', 'fieldKey', 'title', 'aggregate'],
             root: 'columns',
             idProperty: 'fieldKey',
             data: this.customView,
             remoteSort: true
         });
+
+        // Load aggregates from the customView.aggregates Array.
+        // We use the columnStore to track aggregates since aggregates and columns are 1-to-1 at this time.
+        // By adding the aggregate to the columnStore the columnsList can render it.
+        if (this.customView.aggregates)
+        {
+            for (var i = 0; i < this.customView.aggregates.length; i++)
+            {
+                var agg = this.customView.aggregates[i];
+                if (!agg.fieldKey && !agg.type)
+                    continue;
+                var columnRecord = this.columnStore.getById(agg.fieldKey);
+                if (!columnRecord)
+                    continue;
+                columnRecord.set('aggregate',agg.type);
+            }
+        }
+
+//        this.aggregateStore = new Ext.data.JsonStore({
+//            fields: ['fieldKey', 'aggregate'],
+//            root: 'aggregates',
+//            // only one aggregate per column for now
+//            idProperty: 'fieldKey',
+//            data: this.customView,
+//            remoteSort: true
+//        });
 
         config = Ext.applyIf({
             title: "Columns",
@@ -889,6 +915,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             '  <tr>',
                             '    <td class="labkey-grab"></td>',
                             '    <td><div class="item-caption">{[values.title || this.getFieldCaption(values)]}</div></td>',
+                            '    <td><div class="item-aggregate">{[values.aggregate || ""]}</div></td>',
                             '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit Title"></div></td>',
                             '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
                             '  </tr>',
@@ -924,6 +951,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     onToolGear : function (index, item, e) {
         var columnRecord = this.columnStore.getAt(index);
         var fieldKey = columnRecord.data.fieldKey;
+        /*
         Ext.Msg.prompt('Set column caption',
                 "Set caption for column '" + fieldKey + "'",
                 function (btnId, text) {
@@ -931,6 +959,88 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     if (btnId == "ok")
                         columnRecord.set("title", text || undefined);
                 }, this, false, columnRecord.data.title);
+        */
+
+        if (!this._editPropsWin)
+        {
+            var aggOptions = [["", "[None]"]];
+            for (var key in LABKEY.AggregateTypes)
+                aggOptions.push([key, key]);
+
+            var win = new Ext.Window({
+                autoCreate: true,
+                title: "Edit column properties",
+                resizable: false,
+                constrain: true,
+                constrainHeader: true,
+                minimizable: false,
+                maximizable: false,
+                modal: true,
+                stateful: false,
+                shim: true,
+                buttonAlign: "center",
+                width: 350,
+                height: 200,
+                minHeight: 100,
+                plain: true,
+                footer: true,
+                closable: true,
+                closeAction: 'hide',
+                layout: 'fit',
+                items: new Ext.form.FormPanel({
+                    labelWidth: 75,
+                    plain: true,
+                    border: false,
+                    items: [{
+                        xtype: "textfield",
+                        fieldLabel: "Title",
+                        name: "title",
+                        ref: "../titleField",
+                        allowBlank: true,
+                        width: 'auto'
+                    },{
+                        xtype: "combo",
+                        fieldLabel: "Aggregate",
+                        name: "aggregate",
+                        ref: "../aggregateField",
+                        width: 'auto',
+                        store: aggOptions,
+                        mode: 'local',
+                        triggerAction: 'all',
+                        typeAhead: false,
+                        disableKeyFilter: true
+                    }]
+                }),
+                buttons: [{
+                    text: "OK",
+                    handler: function () {
+                        var title = win.titleField.getValue();
+                        title = title ? title.trim() : "";
+                        win.columnRecord.set("title", title || undefined);
+
+                        var aggregate = win.aggregateField.getValue();
+                        win.columnRecord.set("aggregate", aggregate);
+
+                        win.hide();
+                    }
+                },{
+                    text: "Cancel",
+                    handler: function () { win.hide(); }
+                }]
+            });
+            win.initEditForm = function (columnRecord)
+            {
+                this.columnRecord = columnRecord;
+                this.setTitle("Edit column properties for '" + this.columnRecord.get("fieldKey") + "'");
+                this.titleField.setValue(this.columnRecord.get("title"));
+                this.aggregateField.setValue(this.columnRecord.get("aggregate"));
+            };
+            win.render(document.body);
+            this._editPropsWin = win;
+        }
+
+        this._editPropsWin.initEditForm(columnRecord);
+        this._editPropsWin.show();
     },
 
     createDefaultRecordData : function (fieldKey) {
@@ -969,6 +1079,20 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
             // XXX: check each fieldKey is selected only once
         }
         return true;
+    },
+
+    save : function (edited, urlParameters) {
+        LABKEY.DataRegion.ColumnsTab.superclass.save.call(this, edited, urlParameters);
+
+        // move the aggregates out of the 'columns' list and into a separate 'aggregates' list
+        edited.aggregates = [];
+        for (var i = 0; i < edited.columns.length; i++)
+        {
+            var col = edited.columns[i];
+            if (col.aggregate)
+                edited.aggregates.push({fieldKey: col.fieldKey, type: col.aggregate});
+            delete col.aggregate;
+        }
     }
 
 });

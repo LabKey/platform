@@ -16,8 +16,20 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.URLHelper;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -27,7 +39,6 @@ import java.sql.SQLException;
 public class Aggregate
 {
     public static String STAR = "*";
-    public static String QS_PREFIX = ".agg."; //query string param is "<dataregion>.agg.<column>=<type>"
 
     public enum Type
     {
@@ -44,9 +55,9 @@ public class Aggregate
             _friendlyName = friendlyName;
         }
 
-        public String getSQLColumnFragment(String columnName, String asName)
+        public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName)
         {
-            return name() + "(" + CoreSchema.getInstance().getSqlDialect().getColumnSelectName(columnName) + ") AS " + asName;
+            return name() + "(" + dialect.getColumnSelectName(columnName) + ") AS " + asName;
         }
 
         public String getFriendlyName()
@@ -78,7 +89,7 @@ public class Aggregate
 
     private String _columnName;
     private Type _type;
-    private String _aggregateColumnName;
+    private String _aggregateColumnName = null;
 
     private Aggregate()
     {
@@ -93,7 +104,6 @@ public class Aggregate
     {
         _columnName = columnAlias;
         _type = type;
-        _aggregateColumnName = type.name() + _columnName;
     }
 
     public static Aggregate createCountStar()
@@ -101,7 +111,6 @@ public class Aggregate
         Aggregate agg = new Aggregate();
         agg._columnName = STAR;
         agg._type = Type.COUNT;
-        agg._aggregateColumnName = "COUNT_STAR";
         return agg;
     }
 
@@ -110,9 +119,23 @@ public class Aggregate
         return _columnName.equals(STAR) && _type == Type.COUNT;
     }
 
-    public String getSQL()
+    public String getSQL(SqlDialect dialect, Map<String, ? extends ColumnInfo> columns)
     {
-        return _type.getSQLColumnFragment(_columnName, _aggregateColumnName);
+        String alias = _columnName;
+        if (isCountStar())
+        {
+            _aggregateColumnName = "COUNT_STAR";
+        }
+        else
+        {
+            ColumnInfo col = columns.get(alias);
+            if (col != null)
+                alias = col.getAlias();
+
+            _aggregateColumnName = _type.name() + alias;
+        }
+
+        return _type.getSQLColumnFragment(dialect, alias, _aggregateColumnName);
     }
 
     public String getColumnName()
@@ -127,10 +150,50 @@ public class Aggregate
 
     public Result getResult(ResultSet rs) throws SQLException
     {
+        assert _aggregateColumnName != null;
+        if (_aggregateColumnName == null)
+            return new Result(this, 0L);
+        
         double resultValue = rs.getDouble(_aggregateColumnName);
         if (resultValue == Math.floor(resultValue))
             return new Result(this, new Long((long) resultValue));
         else
             return new Result(this, new Double(resultValue));
     }
+
+    /** Extracts aggregate URL parameters from a URL. */
+    @NotNull
+    public static List<Aggregate> fromURL(URLHelper urlHelper, String regionName)
+    {
+        return fromURL(urlHelper.getPropertyValues(), regionName);
+    }
+
+    /** Extracts aggregate URL parameters from a URL. */
+    @NotNull
+    public static List<Aggregate> fromURL(PropertyValues pvs, String regionName)
+    {
+        List<Aggregate> aggregates = new LinkedList<Aggregate>();
+        String prefix = regionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + ".";
+        for (PropertyValue val : pvs.getPropertyValues())
+        {
+            if (val.getName().startsWith(prefix))
+            {
+                FieldKey fieldKey = FieldKey.fromString(val.getName().substring(prefix.length()));
+                String columnName = StringUtils.join(fieldKey.getParts(), "/");
+
+                Aggregate.Type type;
+                try
+                {
+                    type = Aggregate.Type.valueOf(((String)val.getValue()).toUpperCase());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IllegalArgumentException("'" + val.getValue() + "' is not a valid aggregate type.");
+                }
+                aggregates.add(new Aggregate(columnName, type));
+            }
+        }
+        return aggregates;
+    }
+
 }

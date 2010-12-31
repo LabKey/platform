@@ -143,9 +143,9 @@ LABKEY.Filter = new function()
 
 
         /** @private create a js object suitable for Query.selectRows, etc */
-        appendFilterParams : function (params, filterArray, dataregion)
+        appendFilterParams : function (params, filterArray, dataRegionName)
         {
-            dataregion = dataregion || "query";
+            dataRegionName = dataRegionName || "query";
             params = params || {};
             if (filterArray)
             {
@@ -155,7 +155,24 @@ LABKEY.Filter = new function()
                     // 10.1 compatibility: treat ~eq=null as a NOOP (ref 10482)
                     if (filter.getFilterType().isDataValueRequired() && null == filter.getURLParameterValue())
                         continue;
-                    params[filter.getURLParameterName(dataregion)] = filter.getURLParameterValue();
+                    params[filter.getURLParameterName(dataRegionName)] = filter.getURLParameterValue();
+                }
+            }
+            return params;
+        },
+
+        /** @private create a js object suitable for QueryWebPart, etc */
+        appendAggregateParams : function (params, aggregateArray, dataRegionName)
+        {
+            dataRegionName = dataRegionName || "query";
+            params = params || {};
+            if (aggregateArray)
+            {
+                for (var idx = 0; idx < aggregateArray.length; ++idx)
+                {
+                    var aggregate = aggregateArray[idx];
+                    if (aggregate.type && aggregate.column)
+                        params[dataRegionName + '.agg.' + aggregate.column] = aggregate.type;
                 }
             }
             return params;

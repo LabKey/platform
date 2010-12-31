@@ -103,7 +103,7 @@
  * @param {Array} [config.removeableFilters] A set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
  * each of which is created using the {@link LABKEY.Filter.create} method. These filters can be modified or removed by the user
  * interacting with the UI.
- * @param {Array} [config.aggregates] A array of aggregate definitions. The objects in this array should have two
+ * @param {Array} [config.aggregates] An array of aggregate definitions. The objects in this array should have two
  * properties: 'column' and 'type'. The column property is the column name, and the type property may be one of the
  * the {@link LABKEY.AggregateTypes} values.
  * @param {String} [config.dataRegionName] The name to be used for the data region. This should be unique within
@@ -236,14 +236,19 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         if (config.removeableFilters)
         {
             // Translate the set of filters that are removeable to be included as the initial set of URL parameters
-            var translatedFilters = {};
-            LABKEY.Filter.appendFilterParams(translatedFilters, config.removeableFilters, this.dataRegionName);
-            this.userFilters = translatedFilters;
+            this.userFilters = LABKEY.Filter.appendFilterParams({}, config.removeableFilters, this.dataRegionName);
         }
+
         if (config.removeableSort)
         {
             this.userSort = config.removeableSort;
         }
+
+        // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
+        //if (config.removeableAggregates)
+        //{
+        //    this.userAggregates = LABKEY.Filter.appendAggregateParams({}, config.removeableAggregates, this.dataRegionName);
+        //}
         this.qsParamsToIgnore = {};
 
         /**
@@ -284,20 +289,15 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         if (this.userFilters)
         {
             for (var name in this.userFilters)
-            {
                 params[name] = this.userFilters[name];
-            }
         }
 
-        //handle aggregates separately
-        if(this.aggregates)
-        {
-            for (var idx = 0; idx < this.aggregates.length; ++idx)
-            {
-                if(this.aggregates[idx].type &&  this.aggregates[idx].column)
-                    params[this.dataRegionName + '.agg.' + this.aggregates[idx].column] = this.aggregates[idx].type;
-            }
-        }
+        // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
+        //if(this.userAggregates)
+        //{
+        //    for (var name in this.userAggregates)
+        //        params[name] = this.userAggregates[name];
+        //}
 
         //forward query string parameters for this data region
         //except those we should specifically ignore
@@ -353,6 +353,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         // Non-removeable sorts. We need to pass these as JSON, not on the URL.
         if (this.sort)
             json.filters[this.dataRegionName + ".sort"] = this.sort;
+
+        // Non-removable aggregates. We need to pass these as JSON, not on the URL.
+        if (this.aggregates)
+            LABKEY.Filter.appendAggregateParams(json.filters, this.aggregates, this.dataRegionName);
 
         // re-open designer after update
         if (dr)

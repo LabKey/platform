@@ -636,7 +636,7 @@ public class Table
         Map<String,ColumnInfo> cols = new CaseInsensitiveHashMap<ColumnInfo>();
         cols.put(col.getName(), col);
         if (filter != null || sort != null)
-            ensureRequiredColumns(table, cols, filter, sort);
+            ensureRequiredColumns(table, cols, filter, sort, null);
         SQLFragment sqlf = getSelectSQL(table, cols.values(), filter, sort);
 
         DbSchema schema = table.getSchema();
@@ -1357,21 +1357,23 @@ public class Table
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
-        ensureRequiredColumns(table, columns, filter, null);
+        ensureRequiredColumns(table, columns, filter, null, aggregates);
         SQLFragment innerSql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, 0, 0);
+
+        Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, columns.values());
 
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT ");
         boolean first = true;
         for (Aggregate agg : aggregates)
         {
-            if (agg.isCountStar() || columns.containsKey(agg.getColumnName()))
+            if (agg.isCountStar() || columnMap.containsKey(agg.getColumnName()))
             {
                 if (first)
                     first = false;
                 else
                     sql.append(", ");
-                sql.append(agg.getSQL());
+                sql.append(agg.getSQL(table.getSqlDialect(), columnMap));
             }
         }
         Map<String, Aggregate.Result> results = new HashMap<String, Aggregate.Result>();
@@ -1423,7 +1425,7 @@ public class Table
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
-        ensureRequiredColumns(table, columns, filter, sort);
+        ensureRequiredColumns(table, columns, filter, sort, null);
 
         long queryOffset = offset, scrollOffset = 0;
         int queryRowCount = rowCount;
@@ -1468,7 +1470,7 @@ public class Table
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
-        ensureRequiredColumns(table, columns, filter, sort);
+        ensureRequiredColumns(table, columns, filter, sort, null);
         SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, 0, 0);
         return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, 0);
     }
@@ -1518,7 +1520,7 @@ public class Table
     }
 
 
-    public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, Filter filter, Sort sort)
+    public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, Filter filter, Sort sort, List<Aggregate> aggregates)
     {
         List<ColumnInfo> allColumns = table.getColumns();
         Set<String> requiredColumns = new CaseInsensitiveHashSet();
@@ -1529,6 +1531,12 @@ public class Table
         if (null != sort)
         {
             requiredColumns.addAll(sort.getRequiredColumnNames(cols));
+        }
+
+        if (null != aggregates)
+        {
+            for (Aggregate agg : aggregates)
+                requiredColumns.add(agg.getColumnName());
         }
 
         // TODO: Ensure pk, filter & where columns in cases where caller is naive

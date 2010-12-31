@@ -24,6 +24,7 @@ import org.labkey.api.view.*;
 import org.apache.commons.beanutils.ConvertingWrapDynaBean;
 
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 
@@ -197,6 +198,11 @@ public class QueryWebPart extends WebPartView
 
                             Sort sort = _settings.getBaseSort();
                             sort.addURLSort(url, queryView.getDataRegionName());
+
+                            List<Aggregate> aggregates = _settings.getAggregates();
+                            aggregates.addAll(Aggregate.fromURL(url, queryView.getDataRegionName()));
+                            
+                            // XXX: containerFilter
                         }
                     }
                 }

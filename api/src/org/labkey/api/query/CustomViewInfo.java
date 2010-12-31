@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.Sort;
@@ -37,6 +38,10 @@ import java.util.Map;
  */
 public interface CustomViewInfo
 {
+    public String FILTER_PARAM_PREFIX = "filter";
+    public String CONTAINER_FILTER_NAME = "containerFilterName";
+    public String AGGREGATE_PARAM_PREFIX = "agg";
+
     enum ColumnProperty
     {
         columnTitle(PropertyName.COLUMN_TITLE);
@@ -62,12 +67,10 @@ public interface CustomViewInfo
 
     public static class FilterAndSort
     {
-        protected static final String FILTER_PARAM_PREFIX = "filter";
-        protected static final String CONTAINER_FILTER_NAME = "containerFilterName";
-
         private List<FilterInfo> filter = new ArrayList<FilterInfo>();
         private List<Sort.SortField> sort = new ArrayList<Sort.SortField>();
         private String[] containerFilterNames = new String[]{};
+        private List<Aggregate> aggregates = new ArrayList<Aggregate>();
 
         public List<FilterInfo> getFilter()
         {
@@ -82,6 +85,11 @@ public interface CustomViewInfo
         public String[] getContainerFilterNames()
         {
             return containerFilterNames;
+        }
+
+        public List<Aggregate> getAggregates()
+        {
+            return aggregates;
         }
 
         public static FilterAndSort fromString(String strFilter) throws URISyntaxException
@@ -110,6 +118,23 @@ public interface CustomViewInfo
                 Sort sort = new Sort(filterSort, FILTER_PARAM_PREFIX);
                 fas.sort = sort.getSortList();
                 fas.containerFilterNames = filterSort.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
+
+                List<Aggregate> aggregates = Aggregate.fromURL(filterSort, FILTER_PARAM_PREFIX);
+                fas.aggregates.addAll(aggregates);
+                /*
+                // XXX: can be replaced by the code in Aggregate.fromURL() ?
+                for (String key : filterSort.getKeysByPrefix(FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "."))
+                {
+                    String fieldKey = key.substring((FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX).length() + 1);
+                    for (String aggType : filterSort.getParameters(key))
+                    {
+                        FieldKey fk = FieldKey.fromString(fieldKey);
+                        String fieldKeyDecoded = StringUtils.join(fk.getParts(), "/");
+                        Aggregate agg = new Aggregate(fieldKeyDecoded, Aggregate.Type.valueOf(aggType.toUpperCase()));
+                        fas.aggregates.add(agg);
+                    }
+                }
+                */
             }
 
             return fas;

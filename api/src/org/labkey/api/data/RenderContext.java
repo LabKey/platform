@@ -56,6 +56,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
     private CustomView _view;
+    private List<Aggregate> _aggregates;
 
     private Results _rs;
 //    private Map<FieldKey, ColumnInfo> _fieldMap;
@@ -156,6 +157,16 @@ public class RenderContext extends BoundMap // extends ViewContext
         _baseSort = sort;
     }
 
+    public List<Aggregate> getBaseAggregates()
+    {
+        return _aggregates;
+    }
+
+    public void setBaseAggregates(List<Aggregate> aggregates)
+    {
+        _aggregates = aggregates;
+    }
+    
     public Results getResults()
     {
         return _rs;
@@ -301,14 +312,11 @@ public class RenderContext extends BoundMap // extends ViewContext
         }
 
         List<Aggregate> aggregates = new ArrayList<Aggregate>();
-        Set<String> availableColNames = new HashSet<String>();
-
-        for (ColumnInfo col : cols)
-            availableColNames.add(col.getAlias());
+        Map<String, ColumnInfo> availableColNames = Table.createColumnMap(tinfo, cols);
 
         for (Aggregate aggregate : aggregatesIn)
         {
-            if (aggregate.isCountStar() || availableColNames.contains(aggregate.getColumnName()))
+            if (aggregate.isCountStar() || availableColNames.containsKey(aggregate.getColumnName()))
                 aggregates.add(aggregate);
         }
 

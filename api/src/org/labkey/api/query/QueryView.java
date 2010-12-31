@@ -1348,10 +1348,16 @@ public class QueryView extends WebPartView<Object>
                 sort = new Sort();
             }
 
+            List<Aggregate> aggregates = new LinkedList<Aggregate>();
+            if (ret.getRenderContext().getBaseAggregates() != null)
+                aggregates.addAll(ret.getRenderContext().getBaseAggregates());
+
             // We need to set the base sort/filter _before_ adding the customView sort/filter.
             // If the user has set a sort on their custom view, we want their sort to take precedence.
             filter.addAllClauses(getSettings().getBaseFilter());
             sort.insertSort(getSettings().getBaseSort());
+            if (getSettings().getAggregates() != null)
+                aggregates.addAll(getSettings().getAggregates());
 
             if (_customView != null && _customView.hasFilterOrSort())
             {
@@ -1359,10 +1365,13 @@ public class QueryView extends WebPartView<Object>
                 _customView.applyFilterAndSortToURL(url, getDataRegionName());
                 filter.addUrlFilters(url, getDataRegionName());
                 sort.addURLSort(url, getDataRegionName());
+
+                aggregates.addAll(Aggregate.fromURL(url, getDataRegionName()));
             }
 
             ret.getRenderContext().setBaseFilter(filter);
             ret.getRenderContext().setBaseSort(sort);
+            ret.getRenderContext().setBaseAggregates(aggregates);
         }
 
         // XXX: Move to QuerySettings?

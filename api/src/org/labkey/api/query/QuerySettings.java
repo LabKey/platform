@@ -148,23 +148,7 @@ public class QuerySettings
 
     public void setAggregates(PropertyValues pvs)
     {
-        for(PropertyValue val : pvs.getPropertyValues())
-        {
-            if(val.getName().startsWith(getDataRegionName() + Aggregate.QS_PREFIX))
-            {
-                String columnName = val.getName().substring((getDataRegionName() + Aggregate.QS_PREFIX).length());
-                Aggregate.Type type;
-                try
-                {
-                    type = Aggregate.Type.valueOf(((String)val.getValue()).toUpperCase());
-                }
-                catch(IllegalArgumentException e)
-                {
-                    throw new IllegalArgumentException("'" + val.getValue() + "' is not a valid aggregate type.");
-                }
-                _aggregates.add(new Aggregate(columnName, type));
-            }
-        }
+        _aggregates.addAll(Aggregate.fromURL(pvs, getDataRegionName()));
     }
 
     public void addAggregates(Aggregate... aggregates)
