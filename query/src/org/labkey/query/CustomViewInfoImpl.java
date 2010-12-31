@@ -39,9 +39,6 @@ import java.util.*;
  */
 public class CustomViewInfoImpl implements CustomViewInfo
 {
-    protected static final String FILTER_PARAM_PREFIX = "filter";
-    protected static final String CONTAINER_FILTER_NAME = "containerFilterName";
-
     protected final QueryManager _mgr = QueryManager.get();
     protected CstmView _cstmView;
     protected boolean _inSession;

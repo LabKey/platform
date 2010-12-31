@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
@@ -54,6 +55,7 @@ public class CustomViewXmlReader
     private boolean _hidden = false;
     private List<Pair<String,String>> _filters;
     private List<String> _sorts;
+    private List<Pair<String, String>> _aggregates;
     private String _customIconUrl;
 
     protected String _name;
@@ -93,12 +95,17 @@ public class CustomViewXmlReader
         return _filters;
     }
 
+    public List<Pair<String, String>> getAggregates()
+    {
+        return _aggregates;
+    }
+
     // TODO: There should be a common util for filter/sort url handling.  Should use a proper URL class to do this, not create/encode the query string manually
     public String getFilterAndSortString()
     {
         String sort = getSortParamValue();
 
-        if (null == getFilters() && null == sort)
+        if (null == getFilters() && null == sort && null == getAggregates())
             return null;
 
         StringBuilder ret = new StringBuilder("?");
@@ -123,6 +130,20 @@ public class CustomViewXmlReader
             ret.append(sep);
             ret.append("filter.sort=");
             ret.append(PageFlowUtil.encode(sort));
+            sep = "&";
+        }
+
+        if (null != getAggregates())
+        {
+            for (Pair<String, String> aggregate : getAggregates())
+            {
+                ret.append(sep);
+                ret.append("filter.agg.");
+                ret.append(PageFlowUtil.encode(aggregate.first));
+                ret.append("=");
+                ret.append(PageFlowUtil.encode(aggregate.second));
+                sep = "&";
+            }
         }
 
         return ret.toString();
@@ -211,14 +232,11 @@ public class CustomViewXmlReader
             reader._hidden = viewElement.isSetHidden() && viewElement.getHidden();
             reader._customIconUrl = viewElement.getCustomIconUrl();
 
-            //load the columns
+            //load the columns, filters, sorts, aggregates
             reader._colList = loadColumns(viewElement.getColumns());
-
-            //load the filters
             reader._filters = loadFilters(viewElement.getFilters());
-
-            //load the sorts
             reader._sorts = loadSorts(viewElement.getSorts());
+            reader._aggregates = loadAggregates(viewElement.getAggregates());
 
             return reader;
         }
@@ -304,6 +322,24 @@ public class CustomViewXmlReader
                 continue;
 
             ret.add(sort.isSetDescending() && sort.getDescending() ? "-" + sort.getColumn() : sort.getColumn());
+        }
+        return ret;
+    }
+
+    protected static List<Pair<String, String>> loadAggregates(AggregatesType aggregates)
+    {
+        if (null == aggregates)
+            return null;
+
+        List<Pair<String, String>> ret = new ArrayList<Pair<String, String>>();
+        for (AggregateType aggregate : aggregates.getAggregateArray())
+        {
+            String column = StringUtils.trimToNull(aggregate.getColumn());
+            String type = StringUtils.trimToNull(aggregate.getType() != null ? aggregate.getType().toString() : null);
+            if (column == null || type == null)
+                continue;
+
+            ret.add(new Pair<String, String>(column, type));
         }
         return ret;
     }

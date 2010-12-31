@@ -26,6 +26,9 @@ import org.labkey.api.query.*;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import static org.labkey.api.query.CustomViewInfo.FILTER_PARAM_PREFIX;
+import static org.labkey.api.query.CustomViewInfo.CONTAINER_FILTER_NAME;
+import static org.labkey.api.query.CustomViewInfo.AGGREGATE_PARAM_PREFIX;
 
 import javax.servlet.ServletException;
 import java.net.URISyntaxException;
@@ -34,10 +37,6 @@ import java.util.*;
 // Helper class to serialize a CustomView to/from json
 public class CustomViewUtil
 {
-    // UNDONE: consolodate String constants
-    protected static final String FILTER_PARAM_PREFIX = "filter";
-    protected static final String CONTAINER_FILTER_NAME = "containerFilterName";
-
     public static void update(CustomView view, JSONObject jsonView, boolean saveFilterAndSort)
     {
         List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> fields = new ArrayList<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>>();
@@ -96,6 +95,20 @@ public class CustomViewUtil
                 sort.appendSortColumn(columnName, true);
             }
             sort.applyToURL(url, FILTER_PARAM_PREFIX);
+        }
+
+        JSONArray jsonAggregates = jsonView.optJSONArray("aggregates");
+        if (jsonAggregates != null && jsonAggregates.length() > 0)
+        {
+            for (Map<String, Object> aggInfo : jsonAggregates.toMapList())
+            {
+                String fieldKey = StringUtils.trimToNull((String)aggInfo.get("fieldKey"));
+                String type = StringUtils.trimToNull((String)aggInfo.get("type"));
+                if (fieldKey == null || type == null)
+                    continue;
+
+                url.addParameter(FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "." + fieldKey, type);
+            }
         }
 
         String containerFilter = StringUtils.trimToNull(jsonView.optString("containerFilter"));
@@ -202,6 +215,7 @@ public class CustomViewUtil
 
         List<Map<String, Object>> filterInfos = new ArrayList<Map<String, Object>>();
         List<Map<String, Object>> sortInfos = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> aggInfos = new ArrayList<Map<String, Object>>();
         try
         {
             CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(view.getFilterAndSort());
@@ -224,13 +238,24 @@ public class CustomViewUtil
                 sortInfos.add(sortInfo);
             }
 
+            for (Aggregate agg : fas.getAggregates())
+            {
+                Map<String, Object> aggInfo = new HashMap<String, Object>();
+                aggInfo.put("fieldKey", agg.getColumnName());
+                aggInfo.put("type", agg.getType().toString());
+                allKeys.add(FieldKey.fromString(agg.getColumnName()));
+                aggInfos.add(aggInfo);
+            }
+
         }
         catch (URISyntaxException e)
         {
         }
         ret.put("filter", filterInfos);
         ret.put("sort", sortInfos);
+        ret.put("aggregates", aggInfos);
         ret.put("containerFilter", view.getContainerFilterName());
+        
 
         if (includeFieldMeta)
         {
