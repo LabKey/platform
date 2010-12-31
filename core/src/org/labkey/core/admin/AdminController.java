@@ -1021,8 +1021,6 @@ public class AdminController extends SpringActionController
             props.setMascotUserPassword(form.getMascotUserPassword());
             props.setMascotHTTPProxy(form.getMascotHTTPProxy());
 
-            props.setMicroarrayFeatureExtractionServer(form.getMicroarrayFeatureExtractionServer());
-
             try
             {
                 ExceptionReportingLevel level = ExceptionReportingLevel.valueOf(form.getExceptionReportingLevel());
@@ -1356,7 +1354,6 @@ public class AdminController extends SpringActionController
         private String _networkDrivePassword;
         private boolean _caBIGEnabled;
         private String _baseServerUrl;
-        private String _microarrayFeatureExtractionServer;
         private String _callbackPassword;
 
         public String getMascotServer()
@@ -1617,16 +1614,6 @@ public class AdminController extends SpringActionController
         public void setBaseServerUrl(String baseServerUrl)
         {
             _baseServerUrl = baseServerUrl;
-        }
-
-        public String getMicroarrayFeatureExtractionServer()
-        {
-            return _microarrayFeatureExtractionServer;
-        }
-
-        public void setMicroarrayFeatureExtractionServer(String microarrayFeatureExtractionServer)
-        {
-            _microarrayFeatureExtractionServer = microarrayFeatureExtractionServer;
         }
 
         public boolean isTestInPage()

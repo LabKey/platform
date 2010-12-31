@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
+import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.TaskPipelineSettings;
@@ -29,6 +30,8 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
      * Used to identify the pipeline in configuration.
      */
     private TaskId _id;
+
+    private SpringModule _declaringModule;
 
     /**
      * Tasks to execute in the pipeline.
@@ -91,6 +94,9 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         if (settings.getTaskProgressionSpec() != null)
             _taskProgression = taskProgression;
 
+        if (settings.getDeclaringModule() != null)
+            _declaringModule = settings.getDeclaringModule();
+
         if (settings.getProtocolObjectId() != null)
             _protocolIdentifier = settings.getProtocolObjectId();
 
@@ -113,5 +119,15 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
     public TaskId[] getTaskProgression()
     {
         return _taskProgression;
+    }
+
+    public SpringModule getDeclaringModule()
+    {
+        return _declaringModule;
+    }
+
+    public void setDeclaringModule(SpringModule declaringModule)
+    {
+        _declaringModule = declaringModule;
     }
 }

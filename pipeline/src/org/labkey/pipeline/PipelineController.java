@@ -575,14 +575,10 @@ public class PipelineController extends SpringActionController
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             FilesAdminOptions options = svc.getAdminOptions(container);
 
-            Set<Module> activeModules = container.getActiveModules();
             for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
             {
-                if (provider.isShowActionsIfModuleInactive() || activeModules.contains(provider.getOwningModule()))
-                {
-                    for (PipelineActionConfig config : provider.getDefaultActionConfig())
-                        options.addDefaultPipelineConfig(config);
-                }
+                for (PipelineActionConfig config : provider.getDefaultActionConfig(container))
+                    options.addDefaultPipelineConfig(config);
             }
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("config", options.toJSON());

@@ -84,13 +84,13 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
     }
 
     @Override
-    public List<PipelineActionConfig> getDefaultActionConfig()
+    public List<PipelineActionConfig> getDefaultActionConfig(Container container)
     {
         List<PipelineActionConfig> result = new ArrayList<PipelineActionConfig>();
         FileAnalysisTaskPipeline[] pipelines = PipelineJobService.get().getTaskPipelines(FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {
-            if (tp.getDefaultDisplayState() != null)
+            if (tp.getDefaultDisplayState() != null && container.getActiveModules().contains(tp.getDeclaringModule()))
             {
                 String actionId = createActionId(this.getClass(), tp.getDescription());
                 result.add(new PipelineActionConfig(actionId, tp.getDefaultDisplayState(), tp.getDescription(), true));

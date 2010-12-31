@@ -342,17 +342,6 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure microarray settings (<%=bean.helpLink%>)</td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Microarray feature extraction server</td>
-    <td><input type="text" name="microarrayFeatureExtractionServer" size="64" value="<%=appProps.getMicroarrayFeatureExtractionServer()%>"></td>
-</tr>
-
-<tr>
-    <td>&nbsp;</td>
-</tr>
-<tr>
     <td colspan=2>Configure caBIG&trade; (<%=bean.caBigHelpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
