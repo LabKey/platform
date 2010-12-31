@@ -63,7 +63,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String USAGE_REPORTING_LEVEL = "usageReportingLevel";
     protected static final String SERVER_GUID = "serverGUID";
     protected static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
-    protected static final String MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP = "microarrayFeatureExtractionServer";
     protected static final String BLAST_SERVER_BASE_URL_PROP = "BLASTBaseURL";
     protected static final String MASCOT_SERVER_PROP = "MascotServer";
     protected static final String MASCOT_USERACCOUNT_PROP = "MascotUserAccount";
@@ -503,11 +502,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     public boolean isCaBIGEnabled()
     {
         return lookupBooleanValue(CABIG_ENABLED, false);
-    }
-
-    public String getMicroarrayFeatureExtractionServer()
-    {
-        return lookupStringValue(MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP, "");
     }
 
     // Get the name of the webapp configuration file, e.g., labkey.xml, cpas.xml, or root.xml.  Used in some error messages

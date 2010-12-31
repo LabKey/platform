@@ -15,7 +15,12 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.module.SpringModule;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +31,7 @@ import java.util.List;
  *
  * @author brendanx
  */
-public class TaskPipelineRegistrar implements InitializingBean
+public class TaskPipelineRegistrar implements InitializingBean, ApplicationContextAware
 {
     private List<TaskFactorySettings> _factories =
             new ArrayList<TaskFactorySettings>();
@@ -36,6 +41,7 @@ public class TaskPipelineRegistrar implements InitializingBean
             new ArrayList<TaskPipelineSettings>();
     private List<TaskPipeline> _pipelineImpls =
             new ArrayList<TaskPipeline>();
+    private SpringModule _declaringModule;
 
     public List<TaskFactorySettings> getFactories()
     {
@@ -148,12 +154,27 @@ public class TaskPipelineRegistrar implements InitializingBean
 
         // Register and release base pipeline implementations
         for (TaskPipeline pipeline : _pipelineImpls)
+        {
+            pipeline.setDeclaringModule(_declaringModule);
             service.addTaskPipeline(pipeline);
+        }
         _pipelineImpls = null;
 
         // Register and release the pipeline settings objects
         for (TaskPipelineSettings pipeline : _pipelines)
+        {
+            pipeline.setDeclaringModule(_declaringModule);
             service.addTaskPipeline(pipeline);
+        }
         _pipelines = null;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
+    {
+        if (applicationContext instanceof WebApplicationContext)
+        {
+            _declaringModule = (SpringModule)((WebApplicationContext)applicationContext).getServletContext();
+        }
     }
 }

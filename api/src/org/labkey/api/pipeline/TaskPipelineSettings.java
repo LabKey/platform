@@ -15,6 +15,8 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.module.SpringModule;
+
 /**
  * <code>TaskPipelineSpec</code> is used for Spring configuration of a
  * <code>TaskPipeline</code> in the <code>TaskRegistry</code>.  Extend this
@@ -38,6 +40,7 @@ public class TaskPipelineSettings
      * Name to show in the UI for the generated Experiment protocol
      */
     private String _protocolShortDescription;
+    private SpringModule _declaringModule;
 
 
     public TaskPipelineSettings(TaskId id)
@@ -116,5 +119,15 @@ public class TaskPipelineSettings
     public void setProtocolName(String protocolShortDescription)
     {
         _protocolShortDescription = protocolShortDescription;
+    }
+
+    public void setDeclaringModule(SpringModule declaringModule)
+    {
+        _declaringModule = declaringModule;
+    }
+
+    public SpringModule getDeclaringModule()
+    {
+        return _declaringModule;
     }
 }

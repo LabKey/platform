@@ -15,6 +15,8 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.module.SpringModule;
+
 /**
  * <code>TaskPipeline</code> identifies a set of <code>TasksFactory</code>
  * objects that can be used to create <code>Task</code> instances for processing
@@ -41,4 +43,8 @@ public interface TaskPipeline<SettingsType extends TaskPipelineSettings>
 
     /** @return Name to show in the UI for the generated Experiment protocol */
     String getProtocolShortDescription();
+
+    void setDeclaringModule(SpringModule declaringModule);
+
+    SpringModule getDeclaringModule();
 }

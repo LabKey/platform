@@ -359,8 +359,19 @@ abstract public class PipelineProvider
         return false;
     }
 
-    public List<PipelineActionConfig> getDefaultActionConfig()
+    /** Calculate the available set of actions */
+    protected List<PipelineActionConfig> getDefaultActionConfig()
     {
+        return Collections.emptyList();
+    }
+
+    /** Check if this provider should add actions based on the enabled modules, and then calculate the available set */
+    public List<PipelineActionConfig> getDefaultActionConfig(Container container)
+    {
+        if (_showActionsIfModuleInactive || container.getActiveModules().contains(getOwningModule()))
+        {
+            return getDefaultActionConfig();
+        }
         return Collections.emptyList();
     }
 }

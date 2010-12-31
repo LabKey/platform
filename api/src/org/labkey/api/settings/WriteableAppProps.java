@@ -180,11 +180,6 @@ public class WriteableAppProps extends AppProps
         storeBooleanValue(MAIL_RECORDER_ENABLED, enabled);        
     }
 
-    public void setMicroarrayFeatureExtractionServer(String name)
-    {
-        storeStringValue(MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP, name);
-    }
-
     public void setFileSystemRoot(String root)
     {
         storeStringValue(WEB_ROOT, root);
