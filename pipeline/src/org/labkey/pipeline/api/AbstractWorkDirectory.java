@@ -15,9 +15,12 @@
  */
 package org.labkey.pipeline.api;
 
+import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.WorkDirFactory;
+import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
@@ -29,7 +32,12 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: jeckels
@@ -102,6 +110,127 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         {
             if (!_dir.mkdirs())
                 throw new IOException("Failed to create work directory " + _dir);
+        }
+    }
+
+    @Override
+    public void acceptFilesAsOutputs(Map<String, TaskPath> expectedOutputs, RecordedAction action) throws IOException
+    {
+        File[] remainingFiles = getDir().listFiles();
+
+        if (remainingFiles != null && remainingFiles.length > 0)
+        {
+            WorkDirectory.CopyingResource lock = null;
+            try
+            {
+                lock = ensureCopyingLock();
+
+                // First handle anything that's been explicitly configured
+                for (Map.Entry<String, TaskPath> entry : expectedOutputs.entrySet())
+                {
+                    TaskPath taskPath = entry.getValue();
+                    String role = entry.getKey();
+                    if (WorkDirectory.Function.output.toString().equals(role))
+                    {
+                        role = taskPath.getDefaultRole();
+                    }
+                    outputFile(taskPath, role, action);
+                }
+
+                // Slurp up any other files too
+                for (File workFile : getDir().listFiles())
+                {
+                    File f = outputFile(workFile);
+                    String role = "";
+                    String baseName = _support.getBaseName();
+                    if (f.getName().startsWith(baseName))
+                    {
+                        role = f.getName().substring(baseName.length());
+                    }
+                    else if (f.getName().contains("."))
+                    {
+                        role = f.getName().substring(f.getName().indexOf(".") + 1);
+                    }
+                    while (role.length() > 0 && !Character.isJavaIdentifierPart(role.charAt(0)))
+                    {
+                        role = role.substring(1);
+                    }
+                    if ("".equals(role))
+                    {
+                        role = "Output";
+                    }
+
+                    if (f.isDirectory())
+                    {
+                        // It's a directory, so add all of the child files instead of the directory itself 
+                        Collection<File> contents = FileUtils.listFiles(f, FileFilterUtils.fileFileFilter(), FileFilterUtils.trueFileFilter());
+                        for (File content : contents)
+                        {
+                            action.addOutput(content, role, false);
+                        }
+                    }
+                    else
+                    {
+                        action.addOutput(f, role, false);
+                    }
+                }
+            }
+            finally
+            {
+                if (lock != null) { lock.release(); }
+            }
+        }
+    }
+
+    public List<File> getWorkFiles(WorkDirectory.Function f, TaskPath tp)
+    {
+        if (tp == null)
+            return Collections.emptyList();
+
+        List<String> baseNames;
+        if (tp.isSplitFiles())
+            baseNames = _support.getSplitBaseNames();
+        else
+            baseNames = Collections.singletonList(_support.getBaseName());
+
+        ArrayList<File> files = new ArrayList<File>();
+        for (String baseName : baseNames)
+            files.add(newWorkFile(f, tp, baseName));
+        return files;
+    }
+
+    private void outputFile(TaskPath tp, String role, RecordedAction action) throws IOException
+    {
+        List<File> filesWork = getWorkFiles(WorkDirectory.Function.output, tp);
+        for (File fileWork : filesWork)
+        {
+            File fileOutput = _support.findOutputFile(fileWork.getName());
+            if (fileOutput != null)
+            {
+                // If the output file is optional, or in a shared directory outside
+                // the analysis directory for this job, and it already exists,
+                // then simply discard the work file, leaving the original.
+
+                // CONSIDER: Unfortunately, with a local work directory, this may hide files
+                // that are auto-generated by the command in place.  Such files like,
+                // .mzXML.inspect for msInspect will not be recorded as output.
+                if (tp.isOptional() ||
+                        !_support.getAnalysisDirectory().equals(fileOutput.getParentFile()))
+                {
+                    if (NetworkDrive.exists(fileOutput))
+                    {
+                        discardFile(fileWork);
+                        return;
+                    }
+                }
+            }
+
+            if (!tp.isOptional() || fileWork.exists())
+            {
+                // Add it as an output if it's non-optional, or if it's optional and the file exists
+                File f = outputFile(fileWork);
+                action.addOutput(f, role, false);
+            }
         }
     }
 
@@ -244,6 +373,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 }
             }
             _log.info("Moving " + fileWork + " to " + fileDest);
+            boolean directory = fileWork.isDirectory();
             if (fileWork.renameTo(fileDest))
                 fileWork = null;
             else
@@ -252,7 +382,14 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 // work across different file systems.  Use a copy to a .copy file, and then an
                 // atomic rename within the same directory to the destination.
                 fileCopy = FT_COPY.newFile(fileDest.getParentFile(), fileDest.getName());
-                FileUtils.copyFile(fileWork, fileCopy);
+                if (directory)
+                {
+                    FileUtils.copyDirectory(fileWork, fileCopy);
+                }
+                else
+                {
+                    FileUtils.copyFile(fileWork, fileCopy);
+                }
                 if (!fileCopy.renameTo(fileDest))
                 {
                     // We failed to copy the output file to its final location
@@ -284,9 +421,16 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 _log.info("Removing " + fileRemove);
                 fileRemove.delete();
             }
-            if (fileWork != null && !fileWork.delete())
+            if (fileWork != null)
             {
-                throw new IOException("Failed to remove file " + fileWork);
+                if (directory)
+                {
+                    FileUtils.deleteDirectory(fileWork);
+                }
+                else if (!fileWork.delete())
+                {
+                    throw new IOException("Failed to remove file " + fileWork);
+                }
             }
         }
         finally
@@ -339,13 +483,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
-    public void remove() throws IOException
+    public void remove(boolean success) throws IOException
     {
         discardCopiedInputs();
         
         if (NetworkDrive.exists(_dir))
         {
-            if (!_dir.delete())
+            if (!_dir.delete() && success)
             {
                 StringBuffer message = new StringBuffer();
                 message.append("Failed to remove work directory ").append(_dir);
@@ -380,6 +524,18 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
         _copyingResource = createCopyingLock();
         return _copyingResource;
+    }
+
+    public File newWorkFile(WorkDirectory.Function f, TaskPath tp, String baseName)
+    {
+        if (tp == null)
+            return null;
+
+        FileType type = tp.getType();
+        if (type != null)
+            return newFile(f, type.getDefaultName(baseName));
+
+        return newFile(f, tp.getName());
     }
 
     /**

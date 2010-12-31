@@ -16,6 +16,7 @@
 package org.labkey.pipeline.analysis;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -26,6 +27,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.InsertPermission;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <code>FileAnalysisPipelineProvider</code>
@@ -70,8 +73,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
 
         Container c = context.getContainer();
 
-        PipelineJobService service = PipelineJobService.get();
-        FileAnalysisTaskPipeline[] pipelines = service.getTaskPipelines(FileAnalysisTaskPipeline.class);
+        FileAnalysisTaskPipeline[] pipelines = PipelineJobService.get().getTaskPipelines(FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {            
             String path = directory.cloneHref().getParameter(Params.path.toString());
@@ -79,5 +81,21 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             addAction(actionId, tp.getAnalyzeURL(c, path), tp.getDescription(),
                     directory, directory.listFiles(tp.getInitialFileTypeFilter()), true, false, includeAll);
         }
+    }
+
+    @Override
+    public List<PipelineActionConfig> getDefaultActionConfig()
+    {
+        List<PipelineActionConfig> result = new ArrayList<PipelineActionConfig>();
+        FileAnalysisTaskPipeline[] pipelines = PipelineJobService.get().getTaskPipelines(FileAnalysisTaskPipeline.class);
+        for (final FileAnalysisTaskPipeline tp : pipelines)
+        {
+            if (tp.getDefaultDisplayState() != null)
+            {
+                String actionId = createActionId(this.getClass(), tp.getDescription());
+                result.add(new PipelineActionConfig(actionId, tp.getDefaultDisplayState(), tp.getDescription(), true));
+            }
+        }
+        return result;
     }
 }

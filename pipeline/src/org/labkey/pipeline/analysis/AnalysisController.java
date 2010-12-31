@@ -61,14 +61,17 @@ public class AnalysisController extends SpringActionController
     @RequiresPermissionClass(InsertPermission.class)
     public class AnalyzeAction extends SimpleViewAction<AnalyzeForm>
     {
+        private TaskPipeline _taskPipeline;
+
         public ModelAndView getView(AnalyzeForm analyzeForm, BindException errors) throws Exception
         {
+            _taskPipeline = PipelineJobService.get().getTaskPipeline(new TaskId(analyzeForm.getTaskId()));
             return new JspView<ActionURL>("/org/labkey/pipeline/analysis/analyze.jsp", PageFlowUtil.urlProvider(PipelineUrls.class).urlReferer(getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Analyze Files");
+            return root.addChild(_taskPipeline.getDescription());
         }
     }
 

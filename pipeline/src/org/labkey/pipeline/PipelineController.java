@@ -565,7 +565,6 @@ public class PipelineController extends SpringActionController
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
 
             PipeRoot pr = PipelineService.get().findPipelineRoot(container);
             if (pr == null || !pr.isValid())

@@ -34,15 +34,15 @@ import java.util.Map;
  */
 public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisTaskPipelineSettings> implements FileAnalysisTaskPipeline, Cloneable
 {
-    /**
-     * The text that will appear in the button to start this pipeline.
-     */
+    /** The text that will appear in the button to start this pipeline. */
     private String _description = "Analyze Data";
     private String _protocolFactoryName;
     private StringExpression _analyzeURL;
     private boolean _initialFileTypesFromTask;
     private List<FileType> _initialFileTypes;
     private Map<FileType, FileType[]> _typeHierarchy;
+    /** If set, the default location for the action in the UI */
+    private PipelineActionConfig.displayState _defaultDisplayState;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -106,7 +106,17 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             }
         }
 
+        if (settings.getDefaultDisplayState() != null)
+        {
+            _defaultDisplayState = settings.getDefaultDisplayState();
+        }
+
         return this;
+    }
+
+    public PipelineActionConfig.displayState getDefaultDisplayState()
+    {
+        return _defaultDisplayState;
     }
 
     public String getDescription()

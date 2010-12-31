@@ -79,6 +79,12 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         return getProtocolIdentifier();
     }
 
+    @Override
+    public String getDescription()
+    {
+        return getProtocolShortDescription();
+    }
+
     private TaskPipeline configure(SettingsType settings, TaskId[] taskProgression)
     {
         _id = settings.getId();
