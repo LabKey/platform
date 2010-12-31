@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.util.FileType;
@@ -79,6 +80,8 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
 
     /** URL at which this job should be configured and launched */
     private StringExpression _analyzeURL;
+    /** If set, the default location for the action in the UI */
+    private PipelineActionConfig.displayState _defaultDisplayState;
 
     public FileAnalysisTaskPipelineSettings(String name)
     {
@@ -154,5 +157,15 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     public void setAnalyzeURL(String url)
     {
         _analyzeURL = StringExpressionFactory.createURL(url);
+    }
+
+    public PipelineActionConfig.displayState getDefaultDisplayState()
+    {
+        return _defaultDisplayState;
+    }
+
+    public void setDefaultDisplayState(PipelineActionConfig.displayState defaultDisplayState)
+    {
+        _defaultDisplayState = defaultDisplayState;
     }
 }

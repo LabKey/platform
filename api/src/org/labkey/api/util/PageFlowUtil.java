@@ -1605,7 +1605,7 @@ public class PageFlowUtil
     {
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS());
-        sb.append(getStylesheetIncludes(c, userAgent));
+        sb.append(getStylesheetIncludes(c, userAgent, false));
         sb.append(getJavaScriptIncludes());
         return sb.toString();
     }
@@ -1631,11 +1631,12 @@ public class PageFlowUtil
 
     public static String getStylesheetIncludes(Container c)
     {
-        return getStylesheetIncludes(c, null);
+        return getStylesheetIncludes(c, null, true);
     }
 
-    
-    public static String getStylesheetIncludes(Container c, @Nullable String userAgent)
+
+    /** @param forEmail whether this is intended for emailing, in which case we shouldn't include any JavaScript at all */
+    public static String getStylesheetIncludes(Container c, @Nullable String userAgent, boolean forEmail)
     {
         boolean oldIE = null != userAgent && (-1 != userAgent.indexOf("MSIE 6") || -1 != userAgent.indexOf("MSIE 7"));
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
@@ -1702,12 +1703,15 @@ public class PageFlowUtil
         sb.append(filter(printStyleURL));
         sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\" >\n");
 
-        // mark these stylesheets as included (in case someone else tries)
-        sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
-        sb.append("LABKEY.loadedScripts('" + extJsRoot + "/resources/css/ext-all.css','" + theme.getStyleSheet() + "','printStyle.css');\n");
-        if (useLESS)
-            sb.append("LABKEY.requiresScript('less-1.0.35.js',true);\n");
-        sb.append("</script>\n");
+        if (forEmail)
+        {
+            // mark these stylesheets as included (in case someone else tries)
+            sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
+            sb.append("LABKEY.loadedScripts('" + extJsRoot + "/resources/css/ext-all.css','" + theme.getStyleSheet() + "','printStyle.css');\n");
+            if (useLESS)
+                sb.append("LABKEY.requiresScript('less-1.0.35.js',true);\n");
+            sb.append("</script>\n");
+        }
 
         return sb.toString();
     }

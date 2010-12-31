@@ -593,7 +593,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 {
                     if (workDirectory != null)
                     {
-                        workDirectory.remove();
+                        workDirectory.remove(success);
                         ((WorkDirectoryTask)task).setWorkDirectory(null);
                     }
                 }

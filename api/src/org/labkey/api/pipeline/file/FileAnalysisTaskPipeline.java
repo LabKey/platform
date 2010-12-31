@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.URLHelper;
@@ -30,14 +31,6 @@ import java.util.Map;
  */
 public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskPipelineSettings>
 {
-    /**
-     * Returns a description of this pipeline to be displayed in the
-     * user interface for initiating a job that will run the pipeline.
-     *
-     * @return a description of this pipeline
-     */
-    String getDescription();
-
     /**
      * Returns the name of the protocol factory for this pipeline, which
      * will be used as the root directory name for all analyses of this type
@@ -65,4 +58,6 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
     URLHelper getAnalyzeURL(Container c, String path);
 
     public Map<FileType, FileType[]> getTypeHierarchy();
+
+    PipelineActionConfig.displayState getDefaultDisplayState();
 }

@@ -15,10 +15,13 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.util.FileType;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <code>WorkDirectory</code>
@@ -65,13 +68,23 @@ public interface WorkDirectory
     /** Deletes any inputs that were copied into this working directory */
     void discardCopiedInputs() throws IOException;
 
-    /** Cleans up any lingering inputs and deletes the working directory */
-    void remove() throws IOException;
+    void acceptFilesAsOutputs(Map<String, TaskPath> expectedOutputs, RecordedAction action) throws IOException;
+
+    /**
+     * Cleans up any lingering inputs and deletes the working directory
+     * @param success whether or not the task completed successfully. If so, it's fair to complain about unexpected
+     * files that are still left. If not, don't add additional errors to the log.
+     */
+    void remove(boolean success) throws IOException;
 
     /**
      * Ensures that we have a lock, if needed. The lock must be released by the caller.
      */
     public CopyingResource ensureCopyingLock() throws IOException;
+
+    List<File> getWorkFiles(Function f, TaskPath tp);
+
+    File newWorkFile(Function output, TaskPath taskPath, String baseName);
 
     public interface CopyingResource
     {

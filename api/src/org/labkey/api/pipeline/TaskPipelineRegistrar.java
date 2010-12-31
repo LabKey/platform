@@ -19,7 +19,6 @@ import org.springframework.beans.factory.InitializingBean;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
 
 /**
  * <code>TaskPipelineRegistrar</code> is meant for use in a Spring

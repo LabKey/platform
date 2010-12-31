@@ -22,6 +22,14 @@ package org.labkey.api.pipeline;
  */
 public interface TaskPipeline<SettingsType extends TaskPipelineSettings>
 {
+    /**
+     * Returns a description of this pipeline to be displayed in the
+     * user interface for initiating a job that will run the pipeline.
+     *
+     * @return a description of this pipeline
+     */
+    String getDescription();
+
     TaskId getId();
 
     TaskId[] getTaskProgression();
