@@ -16,23 +16,45 @@
 
 package org.labkey.query;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.FilterInfo;
+import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import static org.labkey.api.query.CustomViewInfo.FILTER_PARAM_PREFIX;
-import static org.labkey.api.query.CustomViewInfo.CONTAINER_FILTER_NAME;
-import static org.labkey.api.query.CustomViewInfo.AGGREGATE_PARAM_PREFIX;
 
 import javax.servlet.ServletException;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.labkey.api.query.CustomViewInfo.AGGREGATE_PARAM_PREFIX;
+import static org.labkey.api.query.CustomViewInfo.CONTAINER_FILTER_NAME;
+import static org.labkey.api.query.CustomViewInfo.FILTER_PARAM_PREFIX;
 
 // Helper class to serialize a CustomView to/from json
 public class CustomViewUtil

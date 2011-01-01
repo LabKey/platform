@@ -424,9 +424,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             public void shutdownStarted(ServletContextEvent servletContextEvent)
             {
                 Logger logger = Logger.getLogger(ActionsTsvWriter.class);
+
                 if (null != logger)
                 {
                     Appender appender = logger.getAppender("ACTION_STATS");
+
                     if (null != appender && appender instanceof RollingFileAppender)
                         ((RollingFileAppender)appender).rollOver();
                     else
@@ -434,11 +436,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
                     TSVWriter writer = new ActionsTsvWriter();
                     StringBuilder buf = new StringBuilder();
+
                     try
                     {
                         writer.write(buf);
                     }
-                    catch (ServletException e)
+                    catch (IOException e)
                     {
                         Logger.getLogger(CoreModule.class).error("Exception exporting action stats", e);
                     }
