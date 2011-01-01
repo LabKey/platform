@@ -332,6 +332,7 @@ public class ActionButton extends DisplayElement implements Cloneable
             return;
 
         StringBuffer attributes = new StringBuffer();
+
         if (_requiresSelection)
         {
             DataRegion dataRegion = ctx.getCurrentRegion();

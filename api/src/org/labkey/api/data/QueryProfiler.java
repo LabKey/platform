@@ -21,18 +21,29 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Formats;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -693,7 +704,7 @@ public class QueryProfiler
                 {
                     shutdownWriter.write(buf);
                 }
-                catch (ServletException e)
+                catch (IOException e)
                 {
                     LOG.error("Exception writing query stats", e);
                 }

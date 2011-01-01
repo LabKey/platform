@@ -110,6 +110,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return _scriptType;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setScriptType(String scriptType)
         {
             _scriptType = scriptType;
@@ -122,6 +123,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return _exportType;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setExportType(String exportType)
         {
             _exportType = exportType;
@@ -145,6 +147,11 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         public void setExportRegion(String exportRegion)
         {
             _exportRegion = exportRegion;
+        }
+
+        public boolean isExport()
+        {
+            return null != getExportType();
         }
     }
 }

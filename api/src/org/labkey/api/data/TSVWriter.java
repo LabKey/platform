@@ -16,33 +16,16 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.util.regex.Pattern;
 
-public abstract class TSVWriter
+public abstract class TSVWriter extends TextWriter
 {
-    private static Logger _log = Logger.getLogger(TSVWriter.class);
-
     private String _filenamePrefix = "tsv";
-    private boolean _exportAsWebPage = false;
 
-    // Stashing the OutputStream and the PrintWriter allows multiple writes (e.g., Export Runs to TSV)
-    private ServletOutputStream _outputStream = null;
-    protected PrintWriter _pw = null;
     protected char _chDelimiter = '\t';
     protected char _chQuote = '"';
     protected String _rowSeparator = "\n";
@@ -56,16 +39,6 @@ public abstract class TSVWriter
     public String getFilenamePrefix()
     {
         return _filenamePrefix;
-    }
-
-    public boolean isExportAsWebPage()
-    {
-        return _exportAsWebPage;
-    }
-
-    public void setExportAsWebPage(boolean exportAsWebPage)
-    {
-        _exportAsWebPage = exportAsWebPage;
     }
 
     private static final Pattern badChars = Pattern.compile("[\\\\:/\\[\\]\\?\\*\\|]");
@@ -152,76 +125,6 @@ public abstract class TSVWriter
         return escaped;
     }
 
-    // Create a TSV file and stream it to the browser.
-    public void write(HttpServletResponse response) throws ServletException
-    {
-        try
-        {
-            prepare(response);
-            write();
-        }
-        catch (Exception e)
-        {
-            _log.error("write", e);
-            throw new ServletException(e);
-        }
-        finally
-        {
-            close();
-        }
-    }
-
-    // Prepare the TSVWriter to write TSV file to the file system -- can be used for testing
-    public void prepare(File file) throws ServletException
-    {
-        try
-        {
-            _pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-        }
-        catch(IOException e)
-        {
-            _log.error("prepare", e);
-            throw new ServletException(e);
-        }
-    }
-
-
-    public void prepare(StringBuilder builder)
-    {
-        _pw = new PrintWriter(new StringBuilderWriter(builder));
-    }
-
-    // Prepare the TSVWriter to stream TSV file to the browser
-    // TODO: Factor out TextWriter and share with FastaWriter
-    public void prepare(HttpServletResponse response) throws ServletException
-    {
-        // Flush any extraneous output (e.g., <CR><LF> from JSPs)
-        response.reset();
-
-        // Specify attachment and foil caching
-        if (_exportAsWebPage)
-           response.setHeader("Content-disposition", "inline; filename=\"" + getFilename() + "\"");
-        else
-        {
-           // Set the content-type so the browser knows which application to launch
-           response.setContentType(getContentType());
-           response.setHeader("Content-disposition", "attachment; filename=\"" + getFilename() + "\"");
-        }
-
-        try
-        {
-            // Get the outputstream of the servlet (BTW, always get the outputstream AFTER you've
-            // set the content-disposition and content-type)
-            _outputStream = response.getOutputStream();        // TODO: Shouldn't need to stash OutputStream
-            _pw = new PrintWriter(_outputStream);
-        }
-        catch(IOException e)
-        {
-            _log.error("preparePrintWriter", e);
-            throw new ServletException(e);
-        }
-    }
-
     /**
      * Override to return a different content type
      * @return The content type
@@ -241,106 +144,6 @@ public abstract class TSVWriter
     }
 
 
-    public void setPrintWriter(PrintWriter pw)
-    {
-        _pw = pw;
-    }
-
-
-    public PrintWriter getPrintWriter()
-    {
-        return _pw;
-    }
-
-
-    // Write a newly created TSV file to the PrintWriter.
-    public void write(PrintWriter pw) throws ServletException
-    {
-        _pw = pw;
-        write();
-        close();
-    }
-
-    // Write a newly created TSV file to the file system.
-    public void write(File file) throws ServletException
-    {
-        prepare(file);
-        write();
-        close();
-    }
-
-    // Write a newly created TSV file to a string builder.
-    public void write(StringBuilder builder) throws ServletException
-    {
-        prepare(builder);
-        write();
-        close();
-    }
-
-    private class StringBuilderWriter extends Writer
-    {
-        private final StringBuilder _builder;
-        private boolean _closed = false;
-
-        public StringBuilderWriter(StringBuilder builder)
-        {
-            _builder = builder;
-        }
-
-        public void write(char cbuf[], int off, int len) throws IOException
-        {
-            if (_closed)
-                throw new IOException("Cannot write to closed writer.");
-            _builder.append(cbuf, off, len);
-        }
-
-        public void close() throws IOException
-        {
-            _closed = true;
-        }
-
-        public void flush() throws IOException
-        {
-            // no-op
-        }
-    }
-
-    public void close() throws ServletException
-    {
-        if (_pw == null)
-        {
-            return;
-        }
-        
-        _pw.close();
-
-        if (_pw.checkError())
-            _log.error("PrintWriter error");
-
-        if (null == _outputStream)
-            return;
-
-        try
-        {
-            // Flush the outputstream
-            _outputStream.flush();
-            // Finally, close the outputstream
-            _outputStream.close();
-        }
-        catch(IOException e)
-        {
-            if (!ExceptionUtil.isClientAbortException(e))
-            {
-                _log.error("close", e);
-                throw new ServletException(e);
-            }
-        }
-    }
-
-
-    protected abstract void write();
-
-    
     public static class TestCase extends Assert
     {
         private static class FakeTSVWriter extends TSVWriter

@@ -21,7 +21,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.view.HttpView;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -202,7 +201,7 @@ public class TSVGridWriter extends TSVWriter
 
 
     @Override
-    public void close() throws ServletException
+    public void close() throws IOException
     {
         if (_rs != null) try { _rs.close(); } catch (SQLException e) {}
         super.close();

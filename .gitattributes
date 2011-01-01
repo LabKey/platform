@@ -225,6 +225,7 @@ api/src/org/labkey/api/data/SqlColumn.java -text
 api/src/org/labkey/api/data/SqlScriptManager.java -text
 api/src/org/labkey/api/data/SqlScriptParser.java -text
 api/src/org/labkey/api/data/SqlScriptRunner.java -text
+api/src/org/labkey/api/data/StringBuilderWriter.java -text
 api/src/org/labkey/api/data/TSVGridWriter.java -text
 api/src/org/labkey/api/data/TSVWriter.java -text
 api/src/org/labkey/api/data/TableChange.java -text
@@ -236,6 +237,7 @@ api/src/org/labkey/api/data/TempTableInfo.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TempTableWriter.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
+api/src/org/labkey/api/data/TextWriter.java -text
 api/src/org/labkey/api/data/TransactedBlock.java -text
 api/src/org/labkey/api/data/TransactionCache.java -text
 api/src/org/labkey/api/data/UnionTableInfo.java -text

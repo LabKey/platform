@@ -17,9 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -34,14 +32,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Join;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.StatementWrapper;
-import org.labkey.api.exp.Identifiable;
-import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -53,7 +43,6 @@ import org.labkey.api.util.ResultSetUtil;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.rowset.CachedRowSet;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.sql.BatchUpdateException;

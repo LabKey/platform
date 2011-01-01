@@ -15,10 +15,9 @@
  */
 package org.labkey.api.writer;
 
+import org.labkey.api.data.TextWriter;
+
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -27,64 +26,36 @@ import java.io.PrintWriter;
  * Date: Aug 24, 2010
  * Time: 12:08:36 AM
  */
-public class FastaWriter<E extends FastaEntry>
+public class FastaWriter<E extends FastaEntry> extends TextWriter
 {
     private final FastaGenerator<E> _generator;
+    private String _filename;
 
     public FastaWriter(FastaGenerator<E> generator)
     {
         _generator = generator;
     }
 
-    // TODO: Create base class TextWriter that implements write() methods (TSVWriter should inherit as well)
-    public void write(File file) throws IOException
+    @Override
+    protected String getFilename()
     {
-        write(new PrintWriter(new BufferedWriter(new FileWriter(file))));
+        return _filename;
     }
 
-    public void write(HttpServletResponse response, String filename, boolean exportAsWebPage) throws IOException
+    public void write(HttpServletResponse response, String filename) throws IOException
     {
-        // Flush any extraneous output (e.g., <CR><LF> from JSPs)
-        response.reset();
-
-        // Specify attachment and foil caching
-        if (exportAsWebPage)
-        {
-           response.setHeader("Content-disposition", "inline; filename=\"" + filename + "\"");
-        }
-        else
-        {
-           // Set the content-type so the browser knows which application to launch
-           response.setContentType(getContentType());
-           response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
-        }
-
-        // Write to the outputstream of the servlet (BTW, always get the outputstream AFTER you've
-        // set the content-disposition and content-type)
-        write(new PrintWriter(response.getOutputStream()));
+        _filename = filename;
+        write(response);
     }
 
     // Always closes the PrintWriter
-    private void write(PrintWriter pw)
+    public void write()
     {
-        try
+        while (_generator.hasNext())
         {
-            while (_generator.hasNext())
-            {
-                E entry = _generator.next();
-                writeEntry(pw, entry);
-            }
+            E entry = _generator.next();
+            writeEntry(_pw, entry);
         }
-        finally
-        {
-            if (null != pw)
-                pw.close();
-        }
-    }
-
-    private String getContentType()
-    {
-        return "text/plain";
     }
 
     protected void writeEntry(PrintWriter pw, E entry)
