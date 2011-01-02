@@ -175,7 +175,9 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
         },
 */
         items: [fileBrowser],
-        height: <%= height %>
+        height: <%= height %>,
+        boxMinHeight:<%= height %>,
+        boxMinWidth: 650
     });
 
     var _resize = function(w,h)
