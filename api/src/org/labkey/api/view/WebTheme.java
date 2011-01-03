@@ -23,62 +23,42 @@ import java.awt.*;
  */
 public class WebTheme
 {
-    private final String _navBarColor;
-    private final String _headerLineColor;
-    private final String _editFormColor;
     private final String _friendlyName;
-    private final String _fullScreenBorderColor;
-    private final Color _titleBarBackgroundColor;
-    private final Color _titleBarBorderColor;
-    private final Color _titleColor;
     private final boolean _custom;
     private final String _stylesheet;
-    
-    WebTheme(String friendlyName, String StylesheetName)
+
+    private final String _textColor;
+    private final String _linkColor;
+    private final String _gridColor;
+    private final String _primaryBGColor;
+    private final String _secondBGColor;
+    private final String _borderTitleColor;
+    private final String _webpartColor;
+
+    WebTheme(String friendlyName, String textColor, String linkColor, String gridColor, String primaryBackgroundColor,
+             String secondaryBackgroundColor, String borderTitleColor, String webPartColor)
     {
-        if (null == friendlyName)
-            throw new IllegalArgumentException("You must specify a name for this theme");
-        else if (null == StylesheetName)
-            throw new IllegalArgumentException("You must specify a stylesheet for the Web Theme ->" + friendlyName);
         _friendlyName = friendlyName;
+
+        parseColor(textColor);
+        parseColor(linkColor);
+        parseColor(gridColor);
+        parseColor(primaryBackgroundColor);
+        parseColor(secondaryBackgroundColor);
+        parseColor(borderTitleColor);
+        parseColor(webPartColor);
+        
+        _textColor = textColor;
+        _linkColor = linkColor;
+        _gridColor = gridColor;
+        _primaryBGColor = primaryBackgroundColor;
+        _secondBGColor = secondaryBackgroundColor;
+        _borderTitleColor = borderTitleColor;
+        _webpartColor = webPartColor;
 
         // This is a custom theme, defined by the stylesheet given as a parameter -- only set during init
         _custom = true;
-        _stylesheet = StylesheetName;
-        
-        // This theme does not use any WebTheme color definitions;
-        _navBarColor = "";
-        _headerLineColor = "";
-        _editFormColor = "";
-        _fullScreenBorderColor = "";
-        _titleBarBackgroundColor = null;
-        _titleBarBorderColor = null;
-        _titleColor = null;
-    }
-
-    WebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String titleBarBackgroundColor, String titleBarBorderColor)
-    {
-        if (null == friendlyName)
-            throw new IllegalArgumentException("You must specify a name for this theme");
-
-        // perform testing on the color code
-        parseColor(navBarColor);
-        parseColor(headerLineColor);
-        parseColor(editFormColor);
-        parseColor(fullScreenBorderColor);
-
-        _friendlyName = friendlyName;
-        _navBarColor = navBarColor;
-        _headerLineColor = headerLineColor;
-        _editFormColor = editFormColor;
-        _fullScreenBorderColor = fullScreenBorderColor;
-        _titleBarBackgroundColor = parseColor(titleBarBackgroundColor);
-        _titleBarBorderColor = parseColor(titleBarBorderColor);
-        // UNDONE: save restore this color
-        _titleColor = new Color(0x003399);
-        
-        _custom = false;
-        _stylesheet = "stylesheet.css";
+        _stylesheet = "stylesheet103.css";
     }
 
     private Color parseColor(String s)
@@ -106,30 +86,10 @@ public class WebTheme
     {
         return _stylesheet;
     }
-    
-    public String getNavBarColor()
-    {
-        return _navBarColor;
-    }
-
-    public String getHeaderLineColor()
-    {
-        return _headerLineColor;
-    }
-
-    public String getEditFormColor()
-    {
-        return _editFormColor;
-    }
 
     public String getFriendlyName()
     {
         return _friendlyName;
-    }
-
-    public String getFullScreenBorderColor()
-    {
-        return _fullScreenBorderColor;
     }
 
     public String toString()
@@ -143,31 +103,39 @@ public class WebTheme
         return rgb.length() == 6 ? rgb : "000000".substring(rgb.length()) + rgb;
     }
 
-    public String getTitleBarBackgroundString()
+    public String getTextColor()
     {
-        if (_titleBarBackgroundColor != null)
-            return toRGB(_titleBarBackgroundColor);
-        return "";
+        return _textColor;
     }
 
-    public String getTitleBarBorderString()
+    public String getLinkColor()
     {
-        if (_titleBarBorderColor != null)
-            return toRGB(_titleBarBorderColor);
-        return "";
+        return _linkColor;
     }
 
-    public Color getTitleColor()
+    public String getGridColor()
     {
-        return _titleColor;
+        return _gridColor;
     }
 
-    public String getTitleColorString()
+    public String getPrimaryBackgroundColor()
     {
-        if (_titleColor != null)
-            return toRGB(_titleColor);
-        return "";
+        return _primaryBGColor;
     }
 
+    public String getSecondaryBackgroundColor()
+    {
+        return _secondBGColor;
+    }
+
+    public String getBorderTitleColor()
+    {
+        return _borderTitleColor;
+    }
+
+    public String getWebPartColor()
+    {
+        return _webpartColor;
+    }
 }
 

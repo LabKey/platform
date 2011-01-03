@@ -31,9 +31,9 @@ import java.sql.SQLException;
  */
 public class WebThemeManager
 {
-    private static final WebTheme BLUE = new WebTheme("Blue", "e1ecfc", "89a1b4", "ffdf8c", "336699", "ebf4ff", "89a1b4");
-    private static final WebTheme BROWN = new WebTheme("Brown", "cccc99", "929146", "e1e1c4", "666633", "e1e1c4", "929146");
-    private static final WebTheme SEATTLE = new WebTheme("Seattle", "stylesheet103.css"); // Follows a new theming 'theme' of naming themes after LabKey related cities.
+    private static final WebTheme BLUE  = new WebTheme("Blue", "000000", "003399", "BEBEBE", "FFFFFF", "FFFFFF", "003399", "EBF4FF");
+    private static final WebTheme BROWN = new WebTheme("Brown", "000000", "003399", "B2B166","FFFFFF","FFFFFF", "003399", "B2B166");
+    private static final WebTheme SEATTLE = new WebTheme("Seattle", "000000", "126495", "E7EFF4", "F8F8F8", "FFFFFF", "676767", "E0E6EA");
     
     // handle Web Theme color management
     private static final String THEME_NAMES_KEY = "themeNames";
@@ -64,26 +64,45 @@ public class WebThemeManager
                     String[] themeColorsArray = (null == themeColors ? "" : themeColors).split(";");
                     if (null != themeColorsArray || themeColorsArray.length > 0)
                     {
-                        if (6 != themeColorsArray.length)
+                        if (6 == themeColorsArray.length)
+                        {
+                            // Works for backwards compatibility to bootstrap old theme types
+                            if (themeName.equals(BLUE.getFriendlyName()))
+                            {
+                                updateWebTheme(themeName, BLUE.getTextColor(), BLUE.getLinkColor(), BLUE.getGridColor(),
+                                        BLUE.getPrimaryBackgroundColor(), BLUE.getSecondaryBackgroundColor(),
+                                        BLUE.getBorderTitleColor(), BLUE.getWebPartColor());
+                            }
+                            else if (themeName.equals(BROWN.getFriendlyName()))
+                            {
+                                updateWebTheme(themeName, BROWN.getTextColor(), BROWN.getLinkColor(), BROWN.getGridColor(),
+                                        BROWN.getPrimaryBackgroundColor(), BROWN.getSecondaryBackgroundColor(),
+                                        BROWN.getBorderTitleColor(), BROWN.getWebPartColor());
+                            }
+                            else
+                                continue;  // Old custom design themes do not get bootstrapped.
+                        }
+                        if (7 != themeColorsArray.length)
                         {
                             // incorrect number of colors defined, let's just skip it
                             continue;
                         }
 
-                        String navBarColor = themeColorsArray[0];
-                        String headerLineColor = themeColorsArray[1];
-                        String editFormColor = themeColorsArray[2];
-                        String fullScreenBorderColor = themeColorsArray[3];
-                        String titleBarBackgroundColor = themeColorsArray[4];
-                        String titleBarBorderColor = themeColorsArray[5];
+                        String textColor = themeColorsArray[0];
+                        String linkColor = themeColorsArray[1];
+                        String gridColor = themeColorsArray[2];
+                        String primaryBackgroundColor = themeColorsArray[3];
+                        String secondaryBackgroundColor = themeColorsArray[4];
+                        String borderTitleColor = themeColorsArray[5];
+                        String webPartColor = themeColorsArray[6];
 
                         try
                         {
                             WebTheme webTheme = new WebTheme(
                                     themeName,
-                                    navBarColor, headerLineColor,
-                                    editFormColor, fullScreenBorderColor,
-                                    titleBarBackgroundColor, titleBarBorderColor);
+                                    textColor, linkColor,
+                                    gridColor, primaryBackgroundColor,
+                                    secondaryBackgroundColor, borderTitleColor, webPartColor);
 
                             addToMap(webTheme);
                         }
@@ -172,10 +191,10 @@ public class WebThemeManager
         return null;
     }
 
-    public static void updateWebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String titleBarBackgroundColor, String titleBarBorderColor)
+    public static void updateWebTheme(String friendlyName, String textColor, String linkColor, String gridColor, String primaryBackgroundColor, String secondaryBackgroundColor, String borderTitleColor, String webPartColor)
         throws SQLException
     {
-        WebTheme updateTheme = new WebTheme(friendlyName, navBarColor, headerLineColor, editFormColor, fullScreenBorderColor, titleBarBackgroundColor, titleBarBorderColor);
+        WebTheme updateTheme = new WebTheme(friendlyName, textColor, linkColor, gridColor, primaryBackgroundColor, secondaryBackgroundColor, borderTitleColor, webPartColor);
 
         synchronized(_webThemeMap)
         {
@@ -225,12 +244,13 @@ public class WebThemeManager
                 key.append(THEME_COLORS_KEY);
                 key.append(theme.getFriendlyName());
                 StringBuilder def = new StringBuilder();
-                def.append(theme.getNavBarColor ());
-                def.append(";").append(theme.getHeaderLineColor());
-                def.append(";").append(theme.getEditFormColor());
-                def.append(";").append(theme.getFullScreenBorderColor());
-                def.append(";").append(theme.getTitleBarBackgroundString());
-                def.append(";").append(theme.getTitleBarBorderString());
+                def.append(theme.getTextColor());
+                def.append(";").append(theme.getLinkColor());
+                def.append(";").append(theme.getGridColor());
+                def.append(";").append(theme.getPrimaryBackgroundColor());
+                def.append(";").append(theme.getSecondaryBackgroundColor());
+                def.append(";").append(theme.getBorderTitleColor());
+                def.append(";").append(theme.getWebPartColor());
                 properties.put(key.toString(), def.toString());
             }
 

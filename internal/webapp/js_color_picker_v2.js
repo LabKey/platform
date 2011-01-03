@@ -537,6 +537,9 @@ Owner of DHTMLgoodies.com
         {
             color = color.substring(1)
         }
+        if (color_picker_form_field === undefined) {
+            color_picker_form_field = false;
+        }
         color_picker_form_field.value = color;
         try {color_picker_form_field.focus();} catch(x){}
         color_picker_div.style.display='none';
