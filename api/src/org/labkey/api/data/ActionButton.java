@@ -331,7 +331,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         if (!shouldRender(ctx))
             return;
 
-        StringBuffer attributes = new StringBuffer();
+        StringBuilder attributes = new StringBuilder();
 
         if (_requiresSelection)
         {

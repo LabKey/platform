@@ -78,12 +78,6 @@ public class ViewServlet extends HttpServlet
     private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<Boolean>();
 
     private static Map<Class, String> _pageFlowClassToName = null;
-    private static Map<String, Class> _pageFlowNameToClass = null;
-
-    public static Class getControllerClass(String pageFlowName)
-    {
-        return _pageFlowNameToClass.get(pageFlowName);
-    }
 
     public static String getPageFlowName(Class controllerClass)
     {
@@ -267,11 +261,6 @@ public class ViewServlet extends HttpServlet
 
     private static void initializeControllerMaps()
     {
-        _pageFlowNameToClass = new HashMap<String, Class>();
-
-        for (Module module : ModuleLoader.getInstance().getModules())
-            _pageFlowNameToClass.putAll(module.getPageFlowNameToClass());
-
         _pageFlowClassToName = new HashMap<Class, String>();
 
         for (Module module : ModuleLoader.getInstance().getModules())

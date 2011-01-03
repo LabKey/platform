@@ -35,11 +35,32 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     private final FieldKey[] _fields;
 
     private int _counter = 0;
+    private String _highlightColor = "yellow";
 
     public HighlightingDisplayColumn(DisplayColumn column, FieldKey... distinguishingFields)
     {
         super(column);
         _fields = distinguishingFields;
+    }
+
+    // Call to set a different highlight color (yellow is the default)
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setHighlightColor(String color)
+    {
+        _highlightColor = color;
+    }
+
+    // Override to provide custom javascript that sets the span style on hover
+    public String getHoverStyle()
+    {
+        return "\t\tstyle.backgroundColor = '" + _highlightColor + "';\n";
+    }
+
+    // Override to provide custom javascript that resets the span style on unhover
+    public String getUnhoverStyle()
+    {
+        // Note: Setting backgroundColor = null works in every browser except IE; blank string seems to work universally.
+        return "\t\tstyle.backgroundColor = '';\n";
     }
 
     protected String getStyleClass(RenderContext ctx)
@@ -74,7 +95,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     {
         super.renderGridEnd(out);
 
-        out.write("\n<style type=\"text/css\" title=\"hdc\">\n");
+        out.write("\n<style type=\"text/css\" title=\"hdc\">\n");  // TODO: Unique ID for this stylesheet
 
         for (String style : _distinctValuesToClass.values())
         {
@@ -86,50 +107,47 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         out.write("<script type=\"text/javascript\">\n");
 
         out.write("var rules = new Array();\n" +
-                "\n" +
-                "for (i = 0; i < document.styleSheets.length; i++)\n" +
-                "{\n" +
-                "\tvar ss = document.styleSheets[i];\n" +
-                "\n" +
-                "\tif (ss.title == \"hdc\")\n" +
-                "\t{\n" +
-                "\t\tif (ss.cssRules)\n" +
-                "\t\t{\n" +
-                "\t\t\trules = ss.cssRules;\n" +
-                "\t\t}\n" +
-                "\t\telse if (ss.rules)\n" +
-                "\t\t{\n" +
-                "\t\t\trules = ss.rules;\n" +
-                "\t\t}\n\n" +
-                "\t\tbreak;\n" +
-                "\t}\n" +
-                "}\n\n" +
-                "function hover(el)\n" +
-                "{\n" +
-                "\tvar style = getStyle(el.tagName + \".\" + el.className);\n" +
-                "\n" +
-                "\tif (style)\n" +
-                "\t\tstyle.backgroundColor = 'yellow';\n" +
-                "}\n" +
-                "\n" +
-                "function unhover(el)\n" +
-                "{\n" +
-                "\tvar style = getStyle(el.tagName + \".\" + el.className);\n" +
-                "\n" +
-                "\tif (style)\n" +
-                "\t\tstyle.backgroundColor = null;\n" +
-                "}\n" +
-                "\n" +
-                "function getStyle(className)\n" +
-                "{\n" +
-                "\tvar lcName = className.toLowerCase();  // different browsers change the case of tagname & rule selector text, so force everything to lowercase\n" +
-                "\n" +
-                "\tfor (i = 0; i < rules.length; i++)\n" +
-                "\t\tif (rules[i].selectorText.toLowerCase() == lcName)\n" +
-                "\t\t\treturn rules[i].style;\n" +
-                "\n" +
-                "\treturn null;\n" +
-                "}\n" +
-                "</script>");
+            "\n" +
+            "for (i = 0; i < document.styleSheets.length; i++)\n" +
+            "{\n" +
+            "\tvar ss = document.styleSheets[i];\n" +
+            "\n" +
+            "\tif (ss.title == \"hdc\")\n" +     // TODO: Unique ID for this stylesheet
+            "\t{\n" +
+            "\t\tif (ss.cssRules)\n" +
+            "\t\t{\n" +
+            "\t\t\trules = ss.cssRules;\n" +
+            "\t\t}\n" +
+            "\t\telse if (ss.rules)\n" +
+            "\t\t{\n" +
+            "\t\t\trules = ss.rules;\n" +
+            "\t\t}\n\n" +
+            "\t\tbreak;\n" +
+            "\t}\n" +
+            "}\n\n" +
+            "var styleMap = new Array();\n\n" +
+            "for (i = 0; i < rules.length; i++)\n" +
+            "\tstyleMap[rules[i].selectorText.toLowerCase()] = rules[i].style;\n\n" + // different browsers use different casing, so force everything to lowercase
+            "function hover(el)\n" +
+            "{\n" +
+            "\tvar style = getStyle(el.tagName + \".\" + el.className);\n" +
+            "\n" +
+            "\tif (style)\n" +
+            getHoverStyle() +
+            "}\n" +
+            "\n" +
+            "function unhover(el)\n" +
+            "{\n" +
+            "\tvar style = getStyle(el.tagName + \".\" + el.className);\n" +
+            "\n" +
+            "\tif (style)\n" +
+            getUnhoverStyle() +
+            "}\n" +
+            "\n" +
+            "function getStyle(className)\n" +
+            "{\n" +
+            "\treturn styleMap[className.toLowerCase()];\n" +
+            "}\n" +
+            "</script>");
     }
 }
