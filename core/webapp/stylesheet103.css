@@ -35,7 +35,7 @@ body, div, td, th, table, img, form
 {
     font-family: verdana, arial, helvetica, sans-serif;
     margin: 0;
-	color: #000;
+	color: #000000;
 }
 
 body, div, td, th, table, img, form,
@@ -56,9 +56,10 @@ a, a:visited, .labkey-link, .labkey-link:visited
     text-decoration: none;
 }
 
+/* Skipped in themeStylesheet.jsp */
 a:hover, a:visited:hover, .labkey-link:hover, .labkey-link:visited:hover
 {
-	color: #000;
+	color: #000000;
 }
 
 h3
@@ -129,7 +130,7 @@ table#header
 th.labkey-header {
     border: 0;
     padding: 5px 0;
-    color: #000;
+    color: #000000;
     float: left;
 }
 
@@ -187,7 +188,7 @@ table.labkey-expandable-nav th.labkey-header {
 .labkey-announcement-title span, .labkey-announcement-title a
 {
     font-weight: bold;
-    color: #000;
+    color: #000000;
 }
 
 .labkey-announcement-title a {
@@ -350,7 +351,7 @@ table.labkey-button-bar
 
 .labkey-button-bar .labkey-button:hover,
 .labkey-button-bar .labkey-menu-button:hover {
-    background-color: #fff;
+    background-color: #FFFFFF;
     border: 1px solid #676767;
 
     margin: 0.1em 0.8em 0.5em 0;
@@ -359,7 +360,7 @@ table.labkey-button-bar
     vertical-align: middle;
     white-space: nowrap;
 
-    color: #000;
+    color: #000000;
     cursor:pointer;
     border-radius: 5px;
     -moz-border-radius: 5px;
@@ -424,9 +425,9 @@ a.labkey-menu-button:hover
 a.labkey-menu-button:hover span
 {
     border: 1px solid #676767;
-    background-color: #fff;
+    background-color: #FFFFFF;
     cursor: pointer;
-	color: #000;
+	color: #000000;
 }
 
 /* This is the class for the down arrow that can be included in a button.
@@ -448,7 +449,7 @@ img.labkey-button-arrow
 img.labkey-mv-indicator
 {
     background-color: transparent;
-    color: red;
+    color: #FF0000;
     width: 0.6em;
     height: auto;
     position: relative;
@@ -465,7 +466,7 @@ a.labkey-button:visited {
     padding: 2px 5px;
 	margin-right: 5px;
     border: 1px solid #5894b8;
-    background-color: #fff;
+    background-color: #FFFFFF;
     color: #126495;
     text-transform: uppercase;
     font-size: 10px;
@@ -482,12 +483,13 @@ a.labkey-button:hover
 {
     padding: 2px 5px;
     border: 1px solid #676767;
-    background-color: #fff;
-    color: #000;
+    background-color: #ffffff;
+    color: #000000;
     text-transform: uppercase;
     font-size: 10px;
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
+    cursor: pointer;
 
     border-radius: 5px;
     -moz-border-radius: 5px;
@@ -516,19 +518,11 @@ a.labkey-disabled-button {
     *padding: 1px 5px 0px 5px;
 }
 
-a.labkey-button:hover,
-a.labkey-text-link:hover
-{
-    border: 1px solid #676767;
-    background-color: #fff;
-    cursor: pointer;
-}
-
 a.labkey-button:active
 {
     border: 1px solid #676767;
     position: relative;
-    background-color: #fff;
+    background-color: #FFFFFF;
 }
 
 /* Used across the site for simple indenting */
@@ -632,7 +626,7 @@ table.labkey-nav-trail
     padding-right:8;
     padding-top:12;
     padding-bottom:12;
-    background-color:#ffffff;
+    background-color:#FFFFFF;
     font-family:Arial,Verdana,sans-serif;
     font-size:18pt;
     font-weight:bold;
@@ -641,7 +635,7 @@ table.labkey-nav-trail
 table.labkey-app-bar td
 {
     width:100%;
-    background-color:#ffffff;
+    background-color:#FFFFFF;
     font-family:Arial,Verdana,sans-serif;
     font-size:18pt;
     font-weight:bold;
@@ -809,7 +803,7 @@ table.labkey-customize-view td,
 table.labkey-customize-view a,
 table.labkey-customize-view .labkey-tab a:hover
 {
-    background: white;
+    background: #FFFFFF;
 }
 
 table.labkey-customize-view .labkey-help-pop-up
@@ -1356,9 +1350,9 @@ td.labkey-main-menu a
 
 td.labkey-main-menu a.selected
 {
-    background-color:white;
-    color:black;
-    border-bottom-color:white;
+    background-color:#FFFFFF;
+    color:#000000;
+    border-bottom-color:#FFFFFF;
 }
 
 .labkey-webpart-menu
@@ -1367,7 +1361,7 @@ td.labkey-main-menu a.selected
     position:absolute;
     border:5px solid #dae1e6;
     margin:3;
-    background-color:white;
+    background-color:#FFFFFF;
     padding:8px;
     z-index:1000
 }
@@ -1437,6 +1431,7 @@ table.labkey-main-search img {
     color: #000000;
     text-decoration: none;
 }
+
 .labkey-search-filter A, .labkey-search-filter A:visited
 {
     font-family: arial, helvetica, sans-serif;
@@ -1445,6 +1440,7 @@ table.labkey-main-search img {
     color: #676767;
     text-decoration: none;
 }
+
 .labkey-search-filter A:hover
 {
     text-decoration: underline;
@@ -1665,7 +1661,7 @@ td.labkey-crumb-trail {
     font-size: 30px;
     font-weight: normal;
     font-family: Arial, Helvetica, sans-serif;
-    color: #000;
+    color: #000000;
 }
 
 /* This is the table that contains each web part in the portal view */
@@ -1702,7 +1698,7 @@ tr.labkey-wp-header
     padding-bottom: 5px;
     text-align: left;
     white-space:nowrap;
-    color:#000;
+    color:#000000;
     font-size: 18px;
 	border: 0;
 }
@@ -1716,7 +1712,7 @@ tr.labkey-wp-header
 
 .labkey-wp-header a:hover
 {
-    color:#000;
+    color:#000000;
     cursor:pointer;
 }
 
@@ -1752,11 +1748,11 @@ td.labkey-wp-title-left
 th.labkey-wp-title-left {
     border-right: 0 none;
     font-family: Arial, Helvetica, sans serif;
-    color: #000;
+    color: #000000;
 }
 
 th.labkey-wp-title-left a:link, th.labkey-wp-title-left a:visited {
-    color: #000;
+    color: #000000;
     text-decoration: none;
 }
 
@@ -1801,8 +1797,7 @@ a.labkey-text-link, a.labkey-text-link:visited {
 }
 
 a.labkey-text-link:hover {
-    background-color: #fff;
-    color: #000;
+    background-color: #FFFFFF;
     text-transform: uppercase;
     font-size: 10px;
     font-family: Verdana, Arial, Helvetica, sans serif;
@@ -1810,7 +1805,7 @@ a.labkey-text-link:hover {
     padding: 2px 10px 2px 0;
 	background: url(./_images/arrow_link_button_over.png) top right no-repeat;
 	border: none;
-	color: #000;
+	color: #000000;
 }
 
 a.no-arrow
@@ -2071,7 +2066,7 @@ table.labkey-r-tsvout
 .gwt-ProgressBar-shell .gwt-ProgressBar-text {
   padding: 0;
   margin: 0;
-  color: white;
+  color: #FFFFFF;
 }
 
 .gwt-PushButton {
@@ -2123,21 +2118,17 @@ version: 2.2.2
 /* Menu styles */
 
 div.yuimenu {
-
     background-color:#FFFFFF;
     border:solid 1px #89A1B4;
     padding:1px;
-
 }
 
 /* Submenus are positioned absolute and hidden by default */
 
 div.yuimenu div.yuimenu,
 div.yuimenubar div.yuimenu {
-
     position:absolute;
     visibility:hidden;
-
 }
 
 /* MenuBar Styles */
@@ -2161,26 +2152,22 @@ div.clear, div.yuimenubar div.bd {
     Clear the module body for other browsers
 */
 div.clear:after, div.yuimenubar div.bd:after {
-
     content:'.';
     display:block;
     clear:both;
     visibility:hidden;
     height:0;
-
 }
 
 /* Matches the group title (H6) inside a Menu or MenuBar instance */
 
 div.yuimenu h6,
 div.yuimenubar h6 {
-
     font-size:100%;
     font-weight:normal;
     margin:0;
     border:solid 1px #89A1B4;
     color:#126495;
-
 }
 
 div.yuimenubar h6 {
@@ -2553,7 +2540,7 @@ div.yuimenu li.checked em.checkedindicator.disabled {
 }
 
 .x-panel-header {
-    color:#000;
+    color:#000000;
 	border: 1px solid #89a1b4;
     background: #E7EFF4;
 }
@@ -2576,13 +2563,12 @@ div.yuimenu li.checked em.checkedindicator.disabled {
 
 .x-panel-tbar-noheader .x-toolbar, .x-panel-mc .x-panel-tbar .x-toolbar {
 	border:none;
-	/*border-bottom:1px solid #d0d0d0;*/
 }
 .x-panel-body-noheader, .x-panel-mc .x-panel-body {
     border-color:#d0d0d0;
 }
 .x-panel-tl .x-panel-header {
-    color:#000;
+    color:#000000;
 }
 .x-panel-tc {
 	background-image:none;
@@ -2651,13 +2637,12 @@ td.sort-desc, td.sort-asc, td.x-grid3-hd-menu-open {
 }
 
 td.x-grid3-hd-over, td.sort-desc, td.sort-asc, td.x-grid3-hd-menu-open {
-	/*border-left:1px solid #EEE;*/
 	border-left: none;
 	border-right:1px solid #D0D0D0;
 }
 
 td.sort-desc .x-grid3-hd-inner, td.sort-asc .x-grid3-hd-inner {
-	background-color: white;
+	background-color: #FFFFFF;
 	background-image:none;
 }
 
@@ -2685,7 +2670,7 @@ td a.x-grid3-hd-btn:hover {
 
 .x-menu {
     padding:0;
-    background: white none;
+    background: #FFFFFF none;
     border-color: #89A1B4;
 }
 .x-menu-sep {margin:1px 1px 0 1px;}
@@ -2698,7 +2683,7 @@ li.x-menu-item-active {
 li.x-menu-list-item, li.x-menu-item-active { padding:0; }
 
 li.x-menu-item-active a.x-menu-item {
-	color:black;
+	color:#000000;
 }
 
 .extContainer .x-menu-item-active {
@@ -2754,7 +2739,7 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-btn-over button {
-    color: #000;
+    color: #000000;
 }
 
 /* makes it more apparent that the item is disabled and works for IE */
@@ -2780,7 +2765,7 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-layout-collapsed{
-    background-color:#eee;
+    background-color:#eeeeee;
     border-color:#e0e0e0;
 }
 .x-layout-collapsed-over{
@@ -2800,7 +2785,7 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-toolbar .x-btn-over button {
-	color: black;
+	color: #000000;
 }
 
 .x-btn-tl, .x-btn-tr, .x-btn-tc, .x-btn-ml, .x-btn-mr, .x-btn-mc, .x-btn-bl, .x-btn-br, .x-btn-bc{
@@ -2815,7 +2800,7 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text {
-    color:#fff;
+    color:#FFFFFF;
     font-weight: normal;
     font-size: 13px;
 }
@@ -2824,39 +2809,39 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 /*********** X-panel *******/
 
 .x-panel-tc {
-    background: #fff;
+    background: #FFFFFF;
 	font-size: 14px;
 }
 .x-panel-tl {
-    background: #fff;
+    background: #FFFFFF;
     border-top: 1px solid #e0e6ea;
     border-bottom: 1px solid #e0e6ea;
 }
 .x-panel-tr {
-    background: #fff;
+    background: #FFFFFF;
 }
 .x-panel-bc {
-    background: #fff;
+    background: #FFFFFF;
 }
 .x-panel-bl {
-    background: #fff;
+    background: #FFFFFF;
     padding-left:4px;
 }
 .x-panel-br {
-    background: #fff;
+    background: #FFFFFF;
     padding-right: 4px;
 }
 .x-panel-mc {
     border:0px solid #d0d0d0;
-    background:white;
+    background:#FFFFFF;
 }
 
 .x-panel-ml {
-    background: #fff;
+    background: #FFFFFF;
     padding-left:4px;
 }
 .x-panel-mr{
-    background: #fff;
+    background: #FFFFFF;
     padding-right:4px;
 }
 
@@ -2881,7 +2866,7 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 	padding-right: 4px !important;
 }
 .x-window-bc{
-	background: white;
+	background: #FFFFFF;
 }
 .x-window-bl {
 	background: #126495;
@@ -2922,23 +2907,23 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 
 .x-window-plain .x-window-mc {
     background: #e8e8e8;
-    border-right:1px solid #eee;
-    border-bottom:1px solid #eee;
+    border-right:1px solid #eeeeee;
+    border-bottom:1px solid #eeeeee;
     border-top:1px solid #d0d0d0;
     border-left:1px solid #d0d0d0;
 	border:none;
 }
 
 .x-window-plain .x-window-body {
-    border-left:1px solid #eee;
-    border-top:1px solid #eee;
+    border-left:1px solid #eeeeee;
+    border-top:1px solid #eeeeee;
     border-bottom:1px solid #d0d0d0;
     border-right:1px solid #d0d0d0;
     background:transparent !important;
 }
 
 body.x-body-masked .x-window-mc, body.x-body-masked .x-window-plain .x-window-mc {
-    background-color: white;
+    background-color: #FFFFFF;
 }
 
 .x-window-maximized .x-window-tc {
@@ -2972,7 +2957,6 @@ body .x-window .x-window-tl .x-window-header {
 
 .x-panel-noborder .x-panel-tbar-noborder .x-toolbar {
     border-width:0;
-    /*border-bottom:1px solid #d0d0d0;*/
 }
 
 .x-panel-noborder .x-panel-bbar-noborder .x-toolbar {
@@ -3002,7 +2986,7 @@ body .x-grid3 .x-grid3-row-selected {
 }
 
 body .x-grid3 .x-grid3-row-alt {
-	background: #EEE;
+	background: #EEEEEE;
 }
 
 /* FORM */
@@ -3072,7 +3056,7 @@ td.labkey-tab-selected, .labkey-tab-selected {
     border-right: solid 1px #89A1B4;
     border-bottom: solid 1px #ffffff;
     background-color: #fff;
-    color: #000;
+    color: #000000;
 	font-weight: bold;
     white-space: nowrap;
 }
@@ -3082,7 +3066,7 @@ td.labkey-tab-selected, .labkey-tab-selected {
     border-top: solid 1px #89A1B4;
     border-bottom: solid 1px #ffffff;
     background-color: #fff;
-    color: #000;
+    color: #000000;
 	font-weight: bold;
     white-space: nowrap;
 }
@@ -3113,7 +3097,7 @@ td.labkey-tab, .labkey-tab {
 .labkey-tab a:hover {
 	padding: 4px 7px;
     background-color: #e7eff4;
-    color: #000;
+    color: #000000;
 	font-weight: bold;
     text-decoration: none;
     vertical-align: bottom;
@@ -3135,7 +3119,7 @@ td.labkey-tab-content, .labkey-tab-content {
     border-left: solid 1px #89A1B4;
     border-right: solid 1px #89A1B4;
     border-bottom: solid 1px #89A1B4;
-    background-color:white;
+    background-color:#FFFFFF;
     vertical-align:bottom;
 }
 
@@ -3187,7 +3171,7 @@ li.labkey-tab-active a
     background-color : #fff;
     border-bottom : 1px solid #fff;
     margin-bottom: -1px;
-	color: #000;
+	color: #000000;
 	font-weight: bold;
 }
 
@@ -3231,7 +3215,7 @@ li.labkey-tab-inactive a
 }
 
 .x-grouptabs-panel-body
-{   
+{
     height: 120px;
 }
 
@@ -3363,19 +3347,18 @@ ul.x-tab-strip-top li {
 	background:transparent none;
 }
 
-/* .x-tab-strip-top .x-tab-strip-active  .x-tab-right { background:#E1ECFC none; color: white;} */
-.x-tab-strip-active span.x-tab-strip-text {color:black;}
+.x-tab-strip-active span.x-tab-strip-text {color:#000000;}
 
 
 .x-tab-scroller-left {
-	background:white url(./gtheme/img/icons7.png) no-repeat scroll -160px -76px;	border-bottom:1px solid white; }
+	background:#FFFFFF url(./gtheme/img/icons7.png) no-repeat scroll -160px -76px;	border-bottom:1px solid #FFFFFF; }
 .x-tab-scroller-left-over { background-position: -160px -96px; }
-.x-tab-scroller-left-disabled {background:white;opacity:1;}
+.x-tab-scroller-left-disabled {background:#FFFFFF;opacity:1;}
 
 .x-tab-scroller-right {
-	background:white url(./gtheme/img/icons7.png) no-repeat scroll -139px -76px;	border-bottom:1px solid white;}
+	background:#FFFFFF url(./gtheme/img/icons7.png) no-repeat scroll -139px -76px;	border-bottom:1px solid #FFFFFF;}
 .x-tab-scroller-right-over { background-position: -139px -96px; }
-.x-tab-scroller-right-disabled {background:white;opacity:1;}
+.x-tab-scroller-right-disabled {background:#FFFFFF;opacity:1;}
 
 /* fix up spacer since the tabs no longer within a panel with background and border */
 .x-tab-panel-header-plain .x-tab-strip-spacer,
@@ -3387,7 +3370,7 @@ ul.x-tab-strip-top li {
 	border-right:1px solid #89A1B4;
 	border-top: none;
 	border-bottom: none;
-	background-color: #fff;
+	background-color: #FFFFFF;
 }
 
 .x-tab-panel-header-plain .x-tab-strip-spacer,

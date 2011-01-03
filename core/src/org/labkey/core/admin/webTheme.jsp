@@ -58,16 +58,15 @@ function getCssRules()
     }
 }
 
-function updateNavigationColor ()
+function updateLinkColor()
 {
-  var color=document.getElementsByName("navBarColor")[0].value;
+  var color=document.getElementsByName("linkColor")[0].value;
   if (!isValidColor(color)) return;
 
   var i;
   var cssRules=getCssRules();
   for ( i = 0; i < cssRules.length; i++ )
   {
-    // theme.getNavBarColor()
     var cssName=cssRules[i].selectorText.toLowerCase();
     if ((cssName.indexOf('labkey-frame')!=-1)
       || (cssName.indexOf('labkey-site-nav-panel')!=-1)
@@ -80,9 +79,9 @@ function updateNavigationColor ()
   }
 }
 
-function updateHeaderLineColor ()
+function updateTextColor ()
 {
-  var color=document.getElementsByName("headerLineColor")[0].value;
+  var color=document.getElementsByName("textColor")[0].value;
   if (!isValidColor(color)) return;
 
   var cssRules=getCssRules();
@@ -166,45 +165,45 @@ function formatQuery(o)
 }
 
 
-function updateFormFieldNameColor ()
+function updateGridColor()
 {
-  var color=document.getElementsByName("editFormColor")[0].value;
-  if (!isValidColor(color)) return;
+    var color=document.getElementsByName("gridColor")[0].value;
+    if (!isValidColor(color)) return;
 
-  var i;
-  var cssRules=getCssRules();
-  for ( i = 0; i < cssRules.length; i++ )
-  {
-    // theme.getEditFormColor()
-    var cssName=cssRules[i].selectorText.toLowerCase();
-    if (cssName.indexOf('.labkey-form-label')!=-1) {
-      cssRules[i].style.backgroundColor="#"+color;
+    var i;
+    var cssRules=getCssRules();
+    for ( i = 0; i < cssRules.length; i++ )
+    {
+        // theme.getEditFormColor()
+        var cssName=cssRules[i].selectorText.toLowerCase();
+        if (cssName.indexOf('.labkey-form-label')!=-1) {
+            cssRules[i].style.backgroundColor="#"+color;
+        }
     }
-  }
 }
 
-function updateFullScreenBorderColor ()
+function updatePrimaryBackgroundColor()
 {
-  var color=document.getElementsByName("fullScreenBorderColor")[0].value;
-  if (!isValidColor(color)) return;
+    var color=document.getElementsByName("primaryBackgroundColor")[0].value;
+    if (!isValidColor(color)) return;
 
-  var i;
-  var cssRules=getCssRules();
-  for ( i = 0; i < cssRules.length; i++ )
-  {
-    //theme.getFullScreenBorderColor()
-    var cssName=cssRules[i].selectorText.toLowerCase();
-    if (cssName.indexOf('labkey-full-screen-background')!=-1) {
-      cssRules[i].style.backgroundColor="#"+color;
+    var i;
+    var cssRules=getCssRules();
+    for ( i = 0; i < cssRules.length; i++ )
+    {
+        //theme.getFullScreenBorderColor()
+        var cssName=cssRules[i].selectorText.toLowerCase();
+        if (cssName.indexOf('labkey-full-screen-background')!=-1) {
+            cssRules[i].style.backgroundColor="#"+color;
+        }
     }
-  }
 }
 
-function updateTitleBarColor()
+function updateSecondaryBackgroundColor()
 {
-    var backgroundColor=document.getElementsByName("titleBarBackgroundColor")[0].value;
+    var backgroundColor=document.getElementsByName("secondaryBackgroundColor")[0].value;
     if (!isValidColor(backgroundColor)) return;
-    var borderColor=document.getElementsByName("titleBarBorderColor")[0].value;
+    var borderColor=document.getElementsByName("secondaryBackgroundColor")[0].value;
     if (!isValidColor(borderColor)) return;
 
     var i;
@@ -229,14 +228,27 @@ function updateTitleBarColor()
     }
 }
 
+function updateBorderTitleColor()
+{
+
+}
+
+function updateWebPartColor()
+{
+
+}
+
 function updateAll()
 {
-  updateNavigationColor();
-  updateHeaderLineColor();
-  updateFormFieldNameColor();
-  updateFullScreenBorderColor();
-  updateTitleBarColor();
+    updateLinkColor();
+    updateTextColor();
+    updateGridColor();
+    updatePrimaryBackgroundColor();
+    updateSecondaryBackgroundColor();
+    updateBorderTitleColor();
+    updateWebPartColor();
 }
+
 </script>
 
 <form name="themeForm" action="saveWebTheme.view" enctype="multipart/form-data" method="post">
@@ -266,7 +278,7 @@ if (null == webThemeErrors)
     boolean isBuiltInTheme;
     if (bean.selectedTheme != null)
     {
-        isBuiltInTheme = (bean.selectedTheme.getFriendlyName().compareToIgnoreCase("Blue") == 0
+        isBuiltInTheme = (bean.selectedTheme.getFriendlyName().compareToIgnoreCase("Seattle") == 0
                 || bean.selectedTheme.getFriendlyName().compareToIgnoreCase("Brown") == 0);
     }
     else
@@ -307,45 +319,52 @@ if (null == webThemeErrors)
 </tr>
 <%}%>
 <tr>
-    <td class="labkey-form-label">Navigation Bar Color (left panel menu)</td>
+    <td class="labkey-form-label">Link Color</td>
     <td>
-        <input type="text" name="navBarColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getNavBarColor() : StringUtils.trimToEmpty(bean.form.getNavBarColor()))%>" <%=disabled%> onfocus="updateNavigationColor()" onblur="updateNavigationColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].navBarColor)"<%}%>>
+        <input type="text" name="linkColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getLinkColor() : StringUtils.trimToEmpty(bean.form.getLinkColor()))%>" <%=disabled%> onfocus="updateLinkColor()" onblur="updateLinkColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('linkColor')[0])"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Left Navigation Border Color</td>
+    <td class="labkey-form-label">Text Color</td>
     <td>
-        <input type="text" name="headerLineColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getHeaderLineColor() : StringUtils.trimToEmpty(bean.form.getHeaderLineColor()))%>" <%=disabled%> onfocus="updateHeaderLineColor()" onblur="updateHeaderLineColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].headerLineColor)"<%}%>>
+        <input type="text" name="textColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getTextColor() : StringUtils.trimToEmpty(bean.form.getTextColor()))%>" <%=disabled%> onfocus="updateTextColor()" onblur="updateTextColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('textColor')[0])"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Form Field Name Color</td>
+    <td class="labkey-form-label">Grid Color</td>
     <td>
-        <input type="text" name="editFormColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getEditFormColor() : StringUtils.trimToEmpty(bean.form.getEditFormColor()))%>" <%=disabled%> onfocus="updateFormFieldNameColor()" onblur="updateFormFieldNameColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].editFormColor)"<%}%>>
+        <input type="text" name="gridColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getGridColor() : StringUtils.trimToEmpty(bean.form.getGridColor()))%>" <%=disabled%> onfocus="updateGridColor()" onblur="updateGridColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('gridColor')[0])"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Full Screen Border Color</td>
+    <td class="labkey-form-label">Primary Background Color</td>
     <td>
-        <input type="text" name="fullScreenBorderColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getFullScreenBorderColor() : StringUtils.trimToEmpty(bean.form.getFullScreenBorderColor()))%>" <%=disabled%> onfocus="updateFullScreenBorderColor()" onblur="updateFullScreenBorderColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].fullScreenBorderColor)"<%}%>>
+        <input type="text" name="primaryBackgroundColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getPrimaryBackgroundColor() : StringUtils.trimToEmpty(bean.form.getPrimaryBackgroundColor()))%>" <%=disabled%> onfocus="updatePrimaryBackgroundColor()" onblur="updatePrimaryBackgroundColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('primaryBackgroundColor')[0])"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Title Bar Background Color</td>
+    <td class="labkey-form-label">Secondary Background Color</td>
     <td>
-        <input type="text" name="titleBarBackgroundColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getTitleBarBackgroundString() : StringUtils.trimToEmpty(bean.form.getTitleBarBackgroundColor()))%>" <%=disabled%> onfocus="updateTitleBarColor()" onblur="updateTitleBarColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].titleBarBackgroundColor)"<%}%>>
+        <input type="text" name="secondaryBackgroundColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getSecondaryBackgroundColor() : StringUtils.trimToEmpty(bean.form.getSecondaryBackgroundColor()))%>" <%=disabled%> onfocus="updateSecondaryBackgroundColor()" onblur="updateSecondaryBackgroundColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('secondaryBackgroundColor')[0])"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Title Bar Border Color</td>
+    <td class="labkey-form-label">Border & Title Color</td>
     <td>
-        <input type="text" name="titleBarBorderColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getTitleBarBorderString () : StringUtils.trimToEmpty(bean.form.getTitleBarBorderColor()))%>" <%=disabled%> onfocus="updateTitleBarColor()" onblur="updateTitleBarColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].titleBarBorderColor)"<%}%>>
+        <input type="text" name="borderTitleColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getBorderTitleColor() : StringUtils.trimToEmpty(bean.form.getBorderTitleColor()))%>" <%=disabled%> onfocus="updateBorderTitleColor()" onblur="updateBorderTitleColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('borderTitleColor')[0])"<%}%>>
+    </td>
+</tr>
+<tr>
+    <td class="labkey-form-label">WebPart Color</td>
+    <td>
+        <input type="text" name="webpartColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getWebPartColor() : StringUtils.trimToEmpty(bean.form.getWebpartColor()))%>" <%=disabled%> onfocus="updateWebPartColor()" onblur="updateWebPartColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('webpartColor')[0])"<%}%>>
     </td>
 </tr>
 <tr>

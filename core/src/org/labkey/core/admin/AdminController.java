@@ -2645,10 +2645,9 @@ public class AdminController extends SpringActionController
             //add new theme or update existing theme
             WebThemeManager.updateWebTheme(
                 themeName
-                , form.getNavBarColor(), form.getHeaderLineColor()
-                , form.getEditFormColor(), form.getFullScreenBorderColor()
-                , form.getTitleBarBackgroundColor(), form.getTitleBarBorderColor()
-                );
+                , form.getTextColor(), form.getLinkColor()
+                , form.getGridColor(), form.getPrimaryBackgroundColor()
+                , form.getSecondaryBackgroundColor(), form.getBorderTitleColor(), form.getWebpartColor());
 
             //parameter to use to set customize page drop-down to user's last choice on define themes page
             successURL.addParameter("themeName", themeName);
@@ -2695,12 +2694,13 @@ public class AdminController extends SpringActionController
     {
         String _themeName;
         String _friendlyName;
-        String _navBarColor;
-        String _headerLineColor;
-        String _editFormColor;
-        String _fullScreenBorderColor;
-        String _titleBarBackgroundColor;
-        String _titleBarBorderColor;
+        String _linkColor;
+        String _textColor;
+        String _gridColor;
+        String _primaryBackgroundColor;
+        String _secondaryBackgroundColor;
+        String _borderTitleColor;
+        String _webpartColor;
 
         private boolean upgradeInProgress;
 
@@ -2716,14 +2716,14 @@ public class AdminController extends SpringActionController
             this.upgradeInProgress = upgradeInProgress;
         }
 
-        public String getEditFormColor()
+        public String getGridColor()
         {
-            return _editFormColor;
+            return _gridColor;
         }
 
-        public void setEditFormColor(String editFormColor)
+        public void setGridColor(String gridColor)
         {
-            _editFormColor = editFormColor;
+            _gridColor = gridColor;
         }
 
         public String getFriendlyName()
@@ -2736,56 +2736,66 @@ public class AdminController extends SpringActionController
             _friendlyName = friendlyName;
         }
 
-        public String getFullScreenBorderColor()
+        public String getPrimaryBackgroundColor()
         {
-            return _fullScreenBorderColor;
+            return _primaryBackgroundColor;
         }
 
-        public void setFullScreenBorderColor(String fullScreenBorderColor)
+        public void setPrimaryBackgroundColor(String primaryBackgroundColor)
         {
-            _fullScreenBorderColor = fullScreenBorderColor;
+            _primaryBackgroundColor = primaryBackgroundColor;
         }
 
-        public String getTitleBarBorderColor()
+        public String getBorderTitleColor()
         {
-            return _titleBarBorderColor;
+            return _borderTitleColor;
         }
 
-        public void setTitleBarBorderColor(String titleBarBorderColor)
+        public void setBorderTitleColor(String borderTitleColor)
         {
-            _titleBarBorderColor = titleBarBorderColor;
+            _borderTitleColor = borderTitleColor;
         }
 
-        public String getTitleBarBackgroundColor()
+        public String getSecondaryBackgroundColor()
         {
-            return _titleBarBackgroundColor;
+            return _secondaryBackgroundColor;
         }
 
-        public void setTitleBarBackgroundColor(String titleBarBackgroundColor)
+        public void setSecondaryBackgroundColor(String secondaryBackgroundColor)
         {
-            _titleBarBackgroundColor = titleBarBackgroundColor;
+            _secondaryBackgroundColor = secondaryBackgroundColor;
         }
 
-        public String getHeaderLineColor()
+        public String getTextColor()
         {
-            return _headerLineColor;
+            return _textColor;
         }
 
-        public void setHeaderLineColor(String headerLineColor)
+        public void setTextColor(String textColor)
         {
-            _headerLineColor = headerLineColor;
+            _textColor = textColor;
         }
 
-        public String getNavBarColor()
+        public String getLinkColor()
         {
-            return _navBarColor;
+            return _linkColor;
         }
 
-        public void setNavBarColor(String navBarColor)
+        public void setLinkColor(String linkColor)
         {
-            _navBarColor = navBarColor;
+            _linkColor = linkColor;
         }
 
+        public String getWebpartColor()
+        {
+            return _webpartColor;
+        }
+
+        public void setWebpartColor(String webpartColor)
+        {
+            _webpartColor = webpartColor;
+        }
+        
         public String getThemeName()
         {
             return _themeName;
@@ -2841,12 +2851,12 @@ public class AdminController extends SpringActionController
                 errors.reject(ERROR_MSG, "Please choose a theme name.");
             }
 
-            if (_navBarColor == null || _headerLineColor == null || _editFormColor == null ||
-                    _fullScreenBorderColor == null || _titleBarBackgroundColor == null ||
-                    _titleBarBorderColor == null ||
-                    !isValidColor(_navBarColor) || !isValidColor(_headerLineColor) || !isValidColor(_editFormColor) ||
-                    !isValidColor(_fullScreenBorderColor) || !isValidColor(_titleBarBackgroundColor) ||
-                    !isValidColor(_titleBarBorderColor))
+            if (_linkColor == null || _textColor == null || _gridColor == null ||
+                    _primaryBackgroundColor == null || _secondaryBackgroundColor == null ||
+                    _borderTitleColor == null || _webpartColor == null ||
+                    !isValidColor(_linkColor) || !isValidColor(_textColor) || !isValidColor(_gridColor) ||
+                    !isValidColor(_primaryBackgroundColor) || !isValidColor(_secondaryBackgroundColor) ||
+                    !isValidColor(_borderTitleColor) || !isValidColor(_webpartColor))
             {
                 errors.reject(ERROR_MSG, "You must provide a valid 6-character hexadecimal value for each field.");
             }

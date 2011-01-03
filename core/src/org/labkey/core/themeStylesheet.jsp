@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2010 LabKey Corporation
+ * Copyright (c) 2008-2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
    That means colors and font sizes only. All other properties should be set in stylesheet.css. This file represents
    the minimal set of overrides to respect the user's look and feel settings. */
 
-   
+
     Container c = getViewContext().getContainer();
     WebTheme theme = WebThemeManager.getTheme(c);
     response.setContentType("text/css");
@@ -36,21 +36,13 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     String navBarWidth = laf.getNavigationBarWidth();
 
-    String formLabel           = theme.getEditFormColor();
-    String fullScreenBorder    = theme.getFullScreenBorderColor();
-    String wpHeaderPanel       = theme.getTitleBarBackgroundString();
-    String wpHeaderPanelBorder = theme.getTitleBarBorderString();
-    String navBorder           = theme.getHeaderLineColor();
-    String navBackground       = theme.getNavBarColor();
-    String linkAndHeaderText   = theme.getTitleColorString();
-
-    boolean testBorders = false;
-    if (testBorders)
-    {
-        wpHeaderPanelBorder = "ff0000";
-        navBorder           = "00ff00";
-    }
-
+    String link        = theme.getLinkColor();
+    String text        = theme.getTextColor();
+    String grid        = theme.getGridColor();
+    String primary     = theme.getPrimaryBackgroundColor();
+    String second      = theme.getSecondaryBackgroundColor();
+    String borderTitle = theme.getBorderTitleColor();
+    String webpart     = theme.getWebPartColor();
     /*
 
     index:
@@ -80,522 +72,579 @@
 
 %>
 
-/* defaults */
+/* defaults, general attributes */
+body, div, td, th, table, img, form
+{
+    color: #<%= text %>;
+}
+
 body, div, td, th, table, img, form,
 .x-form-item, .x-panel-header, .x-btn button
 {
-    font-size: <%= themeFont.getNormalSize() %>;
+    font-size: <%=themeFont.getNormalSize()%>;
 }
 
-input, .gwt-TextBox, .x-form-field
+a, a:visited, .labkey-link, .labkey-link:visited
 {
-	font-size:<%= themeFont.getTextInputSize() %>;
+    color: #<%= link %>;
 }
 
-a, a:visited
+table#header
 {
-    color: #<%=linkAndHeaderText%>;
+    border-bottom: 10px solid #<%= link %>;
 }
 
-select
-{
-	font-size:<%= themeFont.getTextInputSize() %>;
-}
-
-legend
-{
-    border-color: #<%= navBorder %>;
-    background-color: #<%= wpHeaderPanel %>;
-}
-
-fieldset
-{
-    border-color: #<%= navBorder %>;
-}
-
-/* general */
-.labkey-header-large
-{
-    font-size: <%= themeFont.getHeader_1Size() %>;
-}
-
-.labkey-message
-{
-    font-size: <%= themeFont.getNormalSize() %>;
-}
-
-.labkey-message-strong
-{
-    font-size: <%= themeFont.getNormalSize() %>;
-}
-
-.labkey-form-label, tr td.labkey-form-label-nowrap
-{
-    background-color: #<%= formLabel %>;
-}
-
-.labkey-form-label-nowrap, tr td.labkey-form-label-nowrap
-{
-	background-color: #<%= formLabel %>;
-}
-
-.labkey-full-screen-background
-{
-    background-color: #<%= fullScreenBorder %>;
-}
-
-th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, .labkey-col-header-filter th.hover
-{
-    background: #<%= wpHeaderPanel %>;
-}
-
-.labkey-title-area-line
-{
-    background-color: #<%= navBorder %>;
-}
-
-.labkey-frame
-{
-    background: #<%= navBackground %>;
-}
-
-.labkey-nav-bordered
-{
-   border-color: #<%= navBorder %>;
-}
-
-.labkey-completion-highlight
-{
-    background-color: #<%= navBackground %>;
-}
-
+/* General */
 .labkey-header
 {
-    color: #<%= linkAndHeaderText %>;
+    color: #<%= link %>;
+}
+
+.labkey-header:hover
+{
+    background-color: #<%= grid %>;
+}
+
+th.labkey-header
+{
+    color: #<%= text %>;
+}
+
+th.labkey-header a:hover
+{
+    color: #<%= link %>;
+}
+
+.labkey-header-large
+{
+    color: #<%= text %>;
+}
+
+.labkey-header-large:hover
+{
+    background-color: #<%= grid %>;
 }
 
 .labkey-announcement-title span, .labkey-announcement-title a
 {
-    color: #<%=linkAndHeaderText%>
+    color: #<%= text %>;
 }
 
-.labkey-data-region A
+.labkey-announcement-title a
 {
-    color: #<%=linkAndHeaderText%>;
+	color:#<%= link %>;
+	font-size: 14px;
 }
 
-th.labkey-col-header-filter, td.labkey-col-header-filter, .labkey-col-header-filter th
+/*  Used across the site whenever there is a label with a colored background */
+.labkey-form-label, tr td.labkey-form-label
 {
-    color: #<%= linkAndHeaderText %>;
+    background-color: #<%= webpart %>;
 }
 
-th.labkey-expand-collapse-area
+.labkey-form-label-nowrap, tr td.labkey-form-label-nowrap
 {
-    color: #<%=linkAndHeaderText%>;
+	background-color: #<%= webpart %>;
 }
 
-/* home template */
-
-a.labkey-main-title
+/* Used for button bars across the site */
+div.labkey-button-bar, table.labkey-button-bar
 {
-    font-size:<%= themeFont.getPageTitleSize() %>;
+    background-color: #<%= grid %>;
 }
 
-.labkey-site-nav-panel
+/* Used for the new css menu buttons, which consist of a link
+    or a span wrapped around an input for submit buttons */
+.labkey-button-bar .labkey-button,
+.labkey-button-bar .labkey-menu-button,
+.labkey-button-bar .labkey-button:visited,
+.labkey-button-bar .labkey-menu-button:visited
 {
-    background-color: #<%= navBackground %>;
-    border-top-color: #<%= navBorder %>;
-    border-right-color: #<%= navBorder %>;
+    background-color: #<%= grid %>;
+    border: 1px solid #<%= grid %>;
+    color: #<%= link %>;
 }
 
+.labkey-button-bar .labkey-button:hover,
+.labkey-button-bar .labkey-menu-button:hover
+{
+    background-color: #<%= second %>;
+    border: 1px solid #<%= borderTitle %>;
+    color: #<%= text %>;
+}
+
+.labkey-button-bar .labkey-disabled-button,
+.labkey-button-bar .labkey-disabled-button:visited,
+.labkey-button-bar .labkey-disabled-button:hover
+.labkey-menu-button .labkey-disabled-button,
+.labkey-menu-button .labkey-disabled-button:visited,
+.labkey-menu-button .labkey-disabled-button:hover
+.labkey-disabled-menu-button,
+.labkey-disabled-menu-button:visited,
+.labkey-disabled-menu-button:hover
+{
+    background-color: #<%= grid %>;
+    border: 1px solid #<%= grid %>;
+}
+
+/* this keeps the enabled button text blue */
+a.labkey-menu-button
+{
+    color: #<%= link %>;
+}
+
+/* this keeps disabled button hover bg invisible and no hand cursor */
+.labkey-button-bar .labkey-disabled-button:hover
+{
+    border: 1px solid #<%= grid %>;
+    background-color: #<%= grid %>;
+}
+
+/* this keeps the hover state style for enabled buttons */
+a.labkey-menu-button:hover
+a.labkey-menu-button:hover span
+{
+    border: 1px solid #<%= borderTitle %>;
+    background-color: #<%= second %>;
+	color: #<%= text %>;
+}
+
+/* ********* Standalone Buttons ******** */
+
+a.labkey-button, a.labkey-button:visited
+{
+    background-color: #<%= second %>;
+    color: #<%= link %>;
+}
+
+a.labkey-button:hover
+{
+    border: 1px solid #<%= borderTitle %>;
+    background-color: #<%= second %>;
+    color: #<%= text %>;
+}
+
+.labkey-disabled-button,
+.labkey-disabled-button:visited
+a.labkey-disabled-button
+{
+    border: 1px solid #<%= borderTitle %>;
+    background-color: #<%= second %>;
+}
+
+a.labkey-button:active
+{
+    border: 1px solid #<%= borderTitle %>;
+    background-color: #<%= second %>;
+}
+
+/* This is used in simple cases to give an area the same background as the
+ side panel */
+.labkey-frame
+{
+    background-color: #<%= grid %>;
+}
+
+/* Used for the "App Bar" containing the main title and the application button bar */
+/* Used for tabs */
+.labkey-app-bar
+{
+    background-color:#<%= second %>;
+}
+
+table.labkey-app-bar td
+{
+    background-color:#<%= second %>;
+}
+
+td.labkey-app-button-bar-button a
+{
+    color:#<%= link %>;
+}
+
+.labkey-completion-highlight
+{
+    background-color: #<%= grid %>;
+}
+
+/* Used for full screen pages such as for login or upgrade */
+.labkey-full-screen-background
+{
+    background-color: #<%= primary %>;
+}
+
+.labkey-full-screen-table
+{
+    background-color: #<%= second %>;
+    border: 5px solid #<%= webpart %>;
+}
+
+table.labkey-customize-view td,
+table.labkey-customize-view a,
+table.labkey-customize-view .labkey-tab a:hover
+{
+    background: #<%= second %>;
+}
+
+/* There are some odd styles that are used so that the data
+regions look the same in IE, Safari, and Firefox */
+table.labkey-data-region
+{
+    background-color: #<%= second %>;
+}
+
+/* Used for the normal rows in data regions, sometimes these rows are not given a class */
+.labkey-row td, .labkey-row th, tr.labkey-row
+{
+    background: #<%= second %>;
+}
+
+/* This is used for the headers on data regions that highlight on mouseover and give a drop down
+of filter options when clicked */
+th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th
+{
+    color: #<%= link %>;
+}
+
+th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-col-header-filter th:hover
+{
+    background-color: #<%= grid %>;
+}
+
+/* Used for the unbordered empty or title cells sometimes put on tables */
+.labkey-data-region .labkey-data-region-title
+{
+    background-color: #<%= second %>;
+}
+
+.labkey-data-region-header-container
+{
+    background-color: #<%= grid %>;
+}
+
+/* Used for blank cells in the data region such as when the main row headers have sub row headers */
+td.labkey-blank-cell, th.labkey-blank-cell
+{
+    background: #<%= second %>;
+}
+
+.labkey-customview-item.x-view-over
+{
+    border-top: 1px solid #<%= link %>;
+    border-bottom: 1px solid #<%= link %>;
+}
+
+/* Help pop ups */
+#helpDiv
+{
+    background-color:#<%= second %>;
+}
+
+/* The table that is the entire page */
+table.labkey-main
+{
+    background-color: #<%= primary %>;
+}
+
+/* The top panel with the title and logo */
+#headerpanel
+{
+    background-color: #<%= second %>;
+}
+
+/* The side panel with the navigation and admin expandable menus */
+td.labkey-site-nav-panel
+{
+    background-color: #<%= primary %>;
+    border-right: 1px solid #<%= webpart %>;
+}
+
+td.labkey-main-menu
+{
+    background-color: #<%= grid %>;
+}
+
+td.labkey-main-menu a.selected
+{
+    background-color:#<%= second %>;
+    color:#<%= text %>;
+    border-bottom-color:#<%= second %>;
+}
+
+.labkey-webpart-menu
+{
+    background-color:#<%= second %>;
+}
+
+.labkey-search-filter A, .labkey-search-filter A:visited
+{
+    color: #<%= borderTitle %>;
+}
+
+.labkey-search-navresults H3
+{
+    color: #<%= borderTitle %>;
+}
+
+.labkey-search-results TD
+{
+    color: #<%= borderTitle %>;
+}
+
+/* The table that contains the expandable nav panels */
 table.labkey-expandable-nav
 {
-    border-top-color: #<%= navBorder %>;
-    border-right-color: #<%= navBorder %>;
-    border-bottom-color: #<%= navBorder %>;
-    width: <%= navBarWidth %>px;
+    background-color: #<%= primary %>;
 }
 
-.labkey-expandable-nav-body
-{
-    border-top-color: #<%= navBorder %>;
-}
-
+/* Each line of the expandable nav menus */
 tr.labkey-nav-tree-row
 {
-    color: #<%= linkAndHeaderText %>;
+    color: #<%= link %>;
 }
 
 tr.labkey-nav-tree-row:hover
 {
-    background-color: #<%= wpHeaderPanel %>;
+    background-color: #<%= grid %>;
 }
 
-.labkey-nav-page-header
+table#navBar
 {
-	font-size: <%= themeFont.getPageHeaderSize() %>;
-	color: #<%=linkAndHeaderText%>;
+    background-color:#<%= primary %>;
+}
+
+/* This is the table that contains each web part in the portal view */
+table.labkey-wp
+{
+    width: 100%;
+    border-spacing: 0; *border-collapse: collapse;
+    border: 5px solid #<%= webpart %>;
+}
+
+/* This is the body of the web part */
+td.labkey-wp-body
+{
+    width: 100%;
+    padding: 10px;
+    background: #<%= second %>;
+}
+
+/* This is used for the top strip on web parts, but is also used for headers elsewhere such as the
+help pop up */
+tr.labkey-wp-header
+{
+    background-color: #<%= webpart %>;
 }
 
 .labkey-wp-header th, .labkey-wp-header td, .labkey-wp-title
 {
-    color: #<%=linkAndHeaderText%>;
+    color:#<%= text %>;
 }
 
 .labkey-wp-header a:link, .labkey-wp-header a:visited
 {
-    color:#<%=linkAndHeaderText%>;
+    color:#<%= link %>;
 }
 
-tr.labkey-wp-header
+.labkey-wp-header a:hover
 {
-    background-color: #<%= wpHeaderPanel %>;
+    color:#<%= text %>;
 }
 
-.labkey-wp-header th, .labkey-wp-header td
+th.labkey-wp-title-left
 {
-    border-color: #<%= wpHeaderPanelBorder %>;
+    color: #<%= text %>;
 }
 
-/* module specific */
+th.labkey-wp-title-left a:link, th.labkey-wp-title-left a:visited
+{
+    color: #<%= text %>;
+}
 
-/* MS1 */
+th.labkey-wp-title-left a:hover
+{
+    color: #<%= link %>;
+}
+
+a.labkey-text-link, a.labkey-text-link:visited
+{
+    color: #<%= link %>;
+}
+
+a.labkey-text-link:hover
+{
+	color: #<%= text %>;
+}
 
 td.labkey-ms1-filter
 {
-    background: #<%= navBackground %>;
-}
-
-/* Wiki */
-
-div.labkey-status-info, .labkey-status-info
-{
-    background-color: #<%=navBackground%>;
-    border-color: #<%=navBorder%>;
-}
-
-
-td.labkey-main-menu
-{
-    background-color:#<%=navBackground%>;
-    border-top-color: #<%=navBorder%>;
-    border-bottom-color: #<%=navBorder%>
+    background: #<%= grid %>;
 }
 
 /* GWT */
-
-.gwt-CheckBox {
-  font-size: <%=themeFont.getNormalSize()%>;
+.gwt-DialogBox .Caption
+{
+    background-color: #<%= grid %>;
 }
 
-.gwt-MenuBar .gwt-MenuItem {
-  font-size: <%=themeFont.getNormalSize()%>;
+.gwt-MenuBar
+{
+    background-color: #<%= grid %>;
 }
 
-.gwt-Tree .gwt-TreeItem {
-  font-size: <%=themeFont.getNormalSize()%>;
+.gwt-StackPanel .gwt-StackPanelItem
+{
+    background-color: #<%= grid %>;
 }
 
-.gwt-ToolTip {
-	background-color: #<%= formLabel %>;
-	font-size: <%= themeFont.getNormalSize() %>;
+/* YUI */
+div.yuimenu h6, div.yuimenubar h6
+{
+    color:#<%= link %>;
 }
 
-.gwt-DialogBox .Caption {
-    background-color: #<%=wpHeaderPanel%>;
-    border-color: #<%= wpHeaderPanelBorder %>;
+div.yuimenu li a, div.yuimenubar li a
+{
+    color:#<%= link %>;
 }
 
-.gwt-DialogBox {
-  border-color: #<%=navBorder%>;
-}
-
-.gwt-HorizontalSplitter .Bar {
-  background-color: #<%=navBorder%>;
-}
-
-.gwt-VerticalSplitter .Bar {
-  background-color: #<%=navBorder%>;
-}
-
-.gwt-MenuBar {
-  background-color: #<%=navBackground%>;
-  border-color: #<%=navBorder%>;
-}
-
-.gwt-MenuBar .gwt-MenuItem-selected {
-  background-color: #<%=navBorder%>;
-}
-
-.gwt-StackPanel .gwt-StackPanelItem {
-  background-color: #<%=navBackground%>;
-}
-
-/* yui */
-
-div.yuimenu {
-    border-color: #<%=navBorder%>;
-}
-
-div.yuimenu h6,
-div.yuimenubar h6 {
-    border-color: #<%=navBorder%>;
-    color: #<%=linkAndHeaderText%>;
-}
-
-div.yuimenu ul {
-    border-color: #<%=navBorder%>;
-}
-
-div.yuimenubar li.yuimenubaritem {
-    border-color:#<%=navBorder%>;
-}
-
-div.yuimenu li.selected,
-div.yuimenubar li.selected {
-    background-color:#<%=navBackground%>;
-}
-
-div.yuimenu li a,
-div.yuimenubar li a {
-    color:#<%=linkAndHeaderText%>;
+div.yuimenu li.selected, div.yuimenubar li.selected
+{
+    background-color:#<%= grid %>;
 }
 
 div.yuimenu li.selected a.selected,
 div.yuimenu li.selected em.selected,
-div.yuimenubar li.selected a.selected {
-    color:#<%=linkAndHeaderText%>;
+div.yuimenubar li.selected a.selected
+{
+    color:#<%= link %>;
 }
 
-
-
-/*
- * Ext JS Library 2.2
- * Copyright(c) 2006-2008, Ext JS, LLC.
- * licensing@extjs.com
- *
- * http://extjs.com/license
- *
- * These overrides were formerly in gtheme.css
- */
-
-.x-panel-header {
-	background-color: #<%= wpHeaderPanel %>;
-	border-color: #<%= wpHeaderPanelBorder %>;
+/* ExtJS */
+.x-panel-header
+{
+    background: #<%= grid %>;
 }
 
-.x-grid3-hd-inner {
-font-weight:normal;
-    color:#<%= linkAndHeaderText %>%>;
+li.x-menu-item-active
+{
+	background:#<%= grid %> none repeat scroll 0 0;
 }
 
-.x-grid-group-hd{
-    border-color:#<%= fullScreenBorder %> ;
+/* Buttons */
+.x-btn button
+{
+    color: #<%= link %>;
 }
 
-.x-menu {
-    border-color: #<%= wpHeaderPanelBorder %>;
+.x-btn-over button
+{
+    color: #<%= text %>;
 }
 
-.extContainer .x-menu-item-active {
-    border-color: #<%= wpHeaderPanelBorder %>;
-}
-
-/*********** X-panel *******/
-.x-panel-tc {
-	background-color: #<%= navBackground %>;
-}
-.x-panel-tl {
-	background-color: #<%= navBackground %>;
-}
-.x-panel-tr {
-	background-color: #<%= navBackground %>;
-}
-.x-panel-bc {
-	background-color: #<%= navBackground %>;
-}
-.x-panel-bl {
-	background-color: #<%= navBackground %>;
-}
-.x-panel-br {
-	background-color: #<%= navBackground %>
-}
-.x-panel-ml {
-	background-color: #<%= navBackground %>;
-}
-.x-panel-mr{
-	background-color: #<%= navBackground %>;
+.x-toolbar .x-btn-over button
+{
+	color: #<%= text %>;
 }
 
 /*********** X-tree ******/
 
-.x-tree-node .x-tree-selected {
-    background-color: <%= navBackground %>;
+.x-tree-node .x-tree-selected
+{
+    background-color: #<%= grid %>;
 }
 
 /*********** X-window ******/
-.x-window-tc {
-	background-color: #<%= fullScreenBorder %> ;
-}
-.x-window-tl {
-	background-color: #<%= fullScreenBorder %>;
-}
-.x-window-tr {
-	background-color: #<%= fullScreenBorder %>;
-}
-.x-window-bl {
-	background-color: #<%= fullScreenBorder %>;
-}
-.x-window-br {
-	background-color: #<%= fullScreenBorder %>;
-}
-.x-window-footer {
-	border-bottom-color: #<%= fullScreenBorder %>;
-}
-
-.x-window-ml {
-	background-color: #<%= fullScreenBorder %>;
-}
-.x-window-mr {
-	background-color: #<%= fullScreenBorder %>;
-}
-
-.x-window-maximized .x-window-tc {
-	background-color: #<%= fullScreenBorder %>;
-}
-
-.x-panel-nofooter .x-panel-bc, .x-panel-nofooter .x-window-bc {
-	background-color: #<%= fullScreenBorder %>;
-}
-
-.x-panel-body {
-    border-color: #<%= wpHeaderPanelBorder %>;
-}
-
-body .x-grid3 .x-grid3-row-selected {
-    border-color: #<%= fullScreenBorder %>;
-    background: #<%= navBackground %> !important;
-}
-
-
-
-/*****     TAB STRIPS     *****/
-
-<%
-String tabBorderColor = wpHeaderPanelBorder;
-String tabSelectedColor = wpHeaderPanel;
-String tabFontColor = linkAndHeaderText;
-String tabFontSize = themeFont.getNormalSize();
-boolean shadeSelectedTab = true;
-%>
-
-/* labkey */
-
-/* for navbar area */
-.labkey-proj-nav-panel td.labkey-tab-selected
+.x-window-tc
 {
-    color: #<%=tabFontColor%>;
-    background-color:#ffffff;
-    border-top-color: #<%= navBorder %>;
-    border-left-color: #<%= navBorder %>;
-    border-right-color: #<%= navBorder %>;
-    border-bottom-color: #ffffff;
+	background: #<%= link %>;
 }
-.labkey-proj-nav-panel .labkey-tab-strip,
-.labkey-proj-nav-panel .labkey-tab-strip .labkey-tab-space,
-.labkey-proj-nav-panel .labkey-tab-strip .labkey-tab,
-.labkey-proj-nav-panel .labkey-tab-strip a
+
+.x-window-tl
 {
-    border-color: #<%= navBorder %>;
+	background: #<%= link %>;
 }
 
-/* everwhere else */
-.labkey-tab-selected, td.labkey-tab-selected, ul.labkey-tab-strip li.labkey-tab-active a
+.x-window-tr
 {
-    color: #<%=tabFontColor%>;
-    background-color: #<%=tabSelectedColor%>;
-    border-bottom-color: #<%=tabSelectedColor%>;
+	background: #<%= link %>;
 }
 
-.labkey-tab-strip,
-ul.labkey-tab-strip,
-.labkey-tab-strip .labkey-tab,
-.labkey-tab-strip-content,
-ul.labkey-tab-strip a,
-.labkey-tab-strip a,
-.labkey-tab-strip li,
-.labkey-tab-strip .labkey-tab-space
+.x-window-bl
 {
-   border-color: #<%= tabBorderColor %>;
-   color: #<%=tabFontColor%>;
+	background: #<%= link %>;
 }
-.labkey-tab-strip-spacer
+
+.x-window-br
 {
-    background-color:#<%=tabSelectedColor%>;
-	border-color: #<%=tabBorderColor%>;
+	background: #<%= link %>;
 }
-td.labkey-tab-content
+
+.x-window-footer
 {
-   border-left-color: #<%= tabBorderColor %>;
-   border-right-color: #<%= tabBorderColor %>;
-   border-bottom-color: #<%= tabBorderColor %>;
+	border-bottom-color: #<%= link %>;
 }
 
-/* gwt */
-
-.gwt-TabBar {
-  font-size: <%=tabFontSize%>;
+.x-window-ml
+{
+	background: #<%= link %>;
 }
 
-.gwt-TabBar .gwt-TabBarRest {
-  border-color: #<%=tabBorderColor%>;
+.x-window-mr
+{
+	background: #<%= link %>;
 }
 
-.gwt-TabBar .gwt-TabBarItem, .gwt-TabBar .gwt-TabBarItem-selected {
-  border-color: #<%=tabBorderColor%>;
-  color: #<%= tabFontColor %>;
+.x-window-maximized .x-window-tc
+{
+	background: #<%= link %>;
 }
 
-.gwt-TabBar .gwt-TabBarItem-selected {
-  border-color: #<%=tabBorderColor%>;
-  background-color:#<%= tabSelectedColor %>;
-  color: #<%= tabFontColor %>;
+.x-panel-nofooter .x-panel-bc, .x-panel-nofooter .x-window-bc
+{
+	background: #<%= link %>;
 }
 
-.gwt-TabBar .gwt-TabBarItem-selected {
-  border-bottom:0;
+body .x-grid3 .x-grid3-row-selected
+{
+    border: 1px solid #<%= link %>;
+    background: #<%= grid %> !important;
 }
 
-.gwt-TabBar .gwt-TabBarItem .gwt-Label, .gwt-TabBar .gwt-TabBarItem-selected .gwt-Label {
-  color: #<%= tabFontColor %>;
-  font-size: <%= tabFontSize %>;
+/* This tab has a bottom border so it looks like it is back */
+td.labkey-tab, .labkey-tab
+{
+    background-color: #<%= grid %>;
+    color: #<%= link %>;
 }
 
-.gwt-TabPanelBottom { border: solid 1px #<%= tabBorderColor %>; }
-
-/* ext */
-
-.x-tab-panel-body {
-    border-color: #<%= tabBorderColor %>;
+.labkey-tab a
+{
+    background-color: #<%= grid %>;
+    color: #<%= link %>;
 }
 
-.x-tab-panel-header, .x-tab-panel-footer {
-	background-color: #<%= tabSelectedColor %>;
-	border-color: #<%= tabBorderColor %>;
+.labkey-tab a:hover
+{
+    background-color: #<%= grid %>;
 }
 
-ul.x-tab-strip span.x-tab-strip-text { color: #<%= tabFontColor %>; font-size: <%= tabFontSize %>; }
-
-ul.x-tab-strip-top .x-tab-strip-active .x-tab-right, ul.x-tab-strip-top .x-tab-strip-active .x-tab-close {
-    background-color:#<%= tabSelectedColor%>;
-    border-bottom-color:#<%=tabSelectedColor%>;
+ul.x-tab-strip-top li
+{
+	background-color: #<%= grid %>;
 }
 
-ul.x-tab-strip-top { border-bottom-color:#<%=tabBorderColor%>;}
+.x-tab-strip span.x-tab-strip-text
+{
+	color: #<%= link %>;
+}
 
-ul.x-tab-strip-top li { border-color:<%=tabBorderColor%>; }
+.x-grid3-hd-inner
+{
+    color: #<%= link %>;
+}
 
-.x-tab-panel-header-plain .x-tab-strip-spacer, .x-tab-panel-header .x-tab-strip-spacer {
-    border-color:#<%=tabBorderColor%>;
-    background-color:#<%=tabSelectedColor%>
+.x-toolbar
+{
+    background: #<%= grid %>;
 }
