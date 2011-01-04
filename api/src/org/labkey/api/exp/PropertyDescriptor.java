@@ -303,6 +303,12 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         return getPropertyType().getSqlType();
     }
 
+    @Override
+    public JdbcType getJdbcType()
+    {
+        return getPropertyType().getJdbcType();
+    }
+    
     public boolean isMvEnabled()
     {
         return mvEnabled;

@@ -70,7 +70,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         private boolean isUserId(ColumnInfo col)
         {
-            if (col.getSqlTypeInt() != Types.INTEGER)
+            if (col.getJdbcType() != JdbcType.INTEGER)
                 return false;
             if (col.getFk() instanceof PdLookupForeignKey)
             {
@@ -90,7 +90,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String name;
     private String alias;
     private String sqlTypeName;
-    private int sqlTypeInt = Types.NULL;
+    private JdbcType jdbcType = null;
     private String textAlign = null;
     private ForeignKey fk = null;
     private String defaultValue = null;
@@ -136,7 +136,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         this.fieldKey = new FieldKey(null, rsmd.getColumnName(col));
         this.setSqlTypeName(rsmd.getColumnTypeName(col));
-        this.sqlTypeInt = rsmd.getColumnType(col);
+        this.jdbcType = JdbcType.valueOf(rsmd.getColumnType(col));
     }
 
     public ColumnInfo(String name, TableInfo parentTable)
@@ -241,7 +241,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
         setSqlTypeName(col.getSqlTypeName());
-        this.sqlTypeInt = col.sqlTypeInt;
+        this.jdbcType = col.jdbcType;
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
         // URL copy/rewrite is handled separately
@@ -497,7 +497,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         // NOTE: most non-string types don't have spaces after conversion except dates
         // let's make sure they don't wrap (bug 392)
         // Consider: (nicksh) negative numbers also end up wrapping
-        return "java.util.Date".equals(javaTypeFromSqlType(getSqlTypeInt(), false));
+        return java.util.Date.class.isAssignableFrom(getJdbcType().cls);
     }
 
     public void setDisplayField(ColumnInfo field)
@@ -593,12 +593,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 inputType = "textarea";
             else if ("image".equalsIgnoreCase(getSqlTypeName()))
                 inputType = "file";
-            else if (getSqlTypeInt() == Types.BIT || getSqlTypeInt() == Types.BOOLEAN)
+            else if (getJdbcType() == JdbcType.BOOLEAN)
                 inputType = "checkbox";
             else
                 inputType = "text";
         }
-
         return inputType;
     }
 
@@ -1132,7 +1131,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
             col.metaDataName = metaDataName;
             col.sqlTypeName = reader.getSqlTypeName();
-            col.sqlTypeInt = reader.getSqlType();
+            col.jdbcType = JdbcType.valueOf(reader.getSqlType());
             col.isAutoIncrement = reader.isAutoIncrement();
             col.scale = reader.getScale();
             col.nullable = reader.isNullable();
@@ -1289,30 +1288,35 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         ArrayList<String> fkColumnNames = new ArrayList<String>(2);
     }
 
+
     public String getSqlTypeName()
     {
         return sqlTypeName;
     }
 
+
     public void setSqlTypeName(String sqlTypeName)
     {
         this.sqlTypeName = sqlTypeName;
-        this.sqlTypeInt = Types.NULL;
+        this.jdbcType = null;
     }
 
-    public int getSqlTypeInt()
+
+    public JdbcType getJdbcType()
     {
-        if (sqlTypeInt == Types.NULL)
+        if (jdbcType == null)
         {
             SqlDialect d;
             if (getParentTable() == null)
                 d = CoreSchema.getInstance().getSqlDialect();
             else
                 d = getParentTable().getSqlDialect();
-            sqlTypeInt = d.sqlTypeIntFromSqlTypeName(getSqlTypeName());
+            int type = d.sqlTypeIntFromSqlTypeName(getSqlTypeName());
+            jdbcType = JdbcType.valueOf(type);
         }
-        return sqlTypeInt;
+        return jdbcType;
     }
+
 
     public ForeignKey getFk()
     {

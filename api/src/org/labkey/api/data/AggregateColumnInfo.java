@@ -55,7 +55,8 @@ public class AggregateColumnInfo extends ColumnInfo
         }
     }
 
-    public int getSqlTypeInt()
+    @Override
+    public JdbcType getJdbcType()
     {
         return _measure.getAggregateSqlType();
     }

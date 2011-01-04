@@ -19,6 +19,7 @@ package org.labkey.api.exp;
 import jxl.*;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.data.JdbcType;
 
 import java.io.File;
 import java.sql.Types;
@@ -37,7 +38,7 @@ import java.util.TimeZone;
  */
 public enum PropertyType
 {
-    BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', Types.BOOLEAN, 10, null, CellType.BOOLEAN, Boolean.class)
+    BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, CellType.BOOLEAN, Boolean.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -55,7 +56,7 @@ public enum PropertyType
             return boolValue;
         }
     },
-    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', Types.VARCHAR, 100, null, CellType.LABEL, String.class)
+    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 100, null, CellType.LABEL, String.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -70,7 +71,7 @@ public enum PropertyType
                 return ConvertUtils.convert(value);
         }
     },
-    MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', Types.VARCHAR, 1000, "textarea", CellType.LABEL, String.class)
+    MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 1000, "textarea", CellType.LABEL, String.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -85,7 +86,7 @@ public enum PropertyType
                 return ConvertUtils.convert(value);
         }
     },
-    RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', Types.VARCHAR, 100, null, CellType.LABEL, Identifiable.class)
+    RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 100, null, CellType.LABEL, Identifiable.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -102,7 +103,7 @@ public enum PropertyType
                 return value.toString();
         }
     },
-    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', Types.INTEGER, 10, null, CellType.NUMBER, Integer.class, Long.class)
+    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, CellType.NUMBER, Integer.class, Long.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -119,7 +120,7 @@ public enum PropertyType
                 return (Integer)ConvertUtils.convert(value.toString(), Integer.class);
         }
     },
-    FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', Types.VARCHAR, 100, "file", CellType.LABEL, File.class)
+    FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 100, "file", CellType.LABEL, File.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -136,7 +137,7 @@ public enum PropertyType
                 return String.valueOf(value);
         }
     },
-    ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', Types.VARCHAR, 100, "file", CellType.LABEL, File.class)
+    ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', JdbcType.VARCHAR, 100, "file", CellType.LABEL, File.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -153,7 +154,7 @@ public enum PropertyType
                 return String.valueOf(value);
         }
     },
-    DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', Types.TIMESTAMP, 100, null, CellType.DATE, Date.class)
+    DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', JdbcType.TIMESTAMP, 100, null, CellType.DATE, Date.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -188,7 +189,7 @@ public enum PropertyType
                 return ConvertUtils.convert(value.toString(), Date.class);
         }
     },
-    DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', Types.DOUBLE, 20, null, CellType.NUMBER, Double.class, Float.class)
+    DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, CellType.NUMBER, Double.class, Float.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -205,7 +206,7 @@ public enum PropertyType
                 return ConvertUtils.convert(String.valueOf(value), Double.class);
         }
     },
-    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', Types.LONGVARCHAR, 100, null, CellType.LABEL, null)
+    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 100, null, CellType.LABEL, null)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -225,7 +226,7 @@ public enum PropertyType
     private String xarName;
     private char storageType;
     private CellType excelCellType;
-    private int sqlType;
+    private JdbcType jdbcType;
     private int scale;
     private String inputType;
     private Class javaType;
@@ -237,7 +238,7 @@ public enum PropertyType
     PropertyType(String typeURI,
                  String xarName,
                  char storageType,
-                 int sqlType,
+                 JdbcType jdbcType,
                  int scale,
                  String inputType,
                  CellType excelCellType,
@@ -247,7 +248,7 @@ public enum PropertyType
         this.typeURI = typeURI;
         this.xarName = xarName;
         this.storageType = storageType;
-        this.sqlType = sqlType;
+        this.jdbcType = jdbcType;
         this.scale = scale;
         this.inputType = inputType;
         this.javaType = javaType;
@@ -272,7 +273,12 @@ public enum PropertyType
 
     public int getSqlType()
     {
-        return sqlType;
+        return jdbcType.sqlType;
+    }
+    
+    public JdbcType getJdbcType()
+    {
+        return jdbcType;
     }
 
     public int getScale()

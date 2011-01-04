@@ -83,17 +83,17 @@ public class CrosstabMeasure
             return this.name();
         }
 
-        public int getAggregateSqlType(ColumnInfo sourceCol)
+        public JdbcType getAggregateSqlType(ColumnInfo sourceCol)
         {
             switch(this)
             {
                 case COUNT:
-                    return Types.BIGINT;
+                    return JdbcType.BIGINT;
                 case AVG:
                 case STDDEV:
-                    return Types.NUMERIC;
+                    return JdbcType.DECIMAL;
                 default:
-                    return sourceCol.getSqlTypeInt();
+                    return sourceCol.getJdbcType();
             }
         }
 
@@ -192,7 +192,7 @@ public class CrosstabMeasure
         return _aggregateFunction.getSqlExpression(_sourceColumn.getSqlDialect(), new SQLFragment(tableAlias + "." + _sourceColumn.getAlias()));
     }
 
-    public int getAggregateSqlType()
+    public JdbcType getAggregateSqlType()
     {
         return _aggregateFunction.getAggregateSqlType(_sourceColumn);
     }

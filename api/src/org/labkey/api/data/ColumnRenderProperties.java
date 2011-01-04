@@ -353,7 +353,13 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return sb.toString();
     }
 
-    public abstract int getSqlTypeInt();
+    @Deprecated
+    public int getSqlTypeInt()
+    {
+        return getJdbcType().sqlType;
+    }
+
+    public abstract JdbcType getJdbcType();
 
     public abstract boolean isLookup();
 
@@ -384,26 +390,20 @@ public abstract class ColumnRenderProperties implements ImportAliasable
 
     public boolean isDateTimeType()
     {
-        int sqlType = getSqlTypeInt();
-        return (sqlType == Types.DATE) ||
-                (sqlType == Types.TIME) ||
-                (sqlType == Types.TIMESTAMP);
+        JdbcType type = getJdbcType();
+        return type==JdbcType.DATE || type==JdbcType.TIME || type==JdbcType.TIMESTAMP;
     }
 
     public boolean isStringType()
     {
-        int sqlType = getSqlTypeInt();
-        return (sqlType == Types.CLOB) ||
-                (sqlType == Types.CHAR) ||
-                (sqlType == Types.VARCHAR) ||
-                (sqlType == Types.LONGVARCHAR);
+        JdbcType type = getJdbcType();
+        return type.cls == String.class;
     }
 
     public boolean isLongTextType()
     {
-        int sqlType = getSqlTypeInt();
-        return (sqlType == Types.CLOB) ||
-                (sqlType == Types.LONGVARCHAR);
+        JdbcType type = getJdbcType();
+        return type == JdbcType.LONGVARCHAR;
     }
 
     public boolean isBooleanType()
@@ -463,6 +463,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     {
         switch (sqlType)
         {
+            case Types.FLOAT:
             case Types.DOUBLE:
             case Types.NUMERIC:
             case Types.DECIMAL:
@@ -470,7 +471,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
                     return Double.class;
                 else
                     return Double.TYPE;
-            case Types.FLOAT:
             case Types.REAL:
                 if (isObj)
                     return Float.class;
