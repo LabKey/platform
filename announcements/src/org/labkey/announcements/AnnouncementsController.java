@@ -1847,8 +1847,6 @@ public class AnnouncementsController extends SpringActionController
     private EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c, Settings settings, Permissions perm, AnnouncementModel parent,
             AnnouncementModel a, String removeUrl, WikiRendererType currentRendererType, Reason reason)
     {
-        HttpServletRequest request = AppProps.getInstance().createMockRequest();
-
         EmailNotificationPage page = (EmailNotificationPage) JspLoader.createPage(AnnouncementsController.class, templateName);
 
         page.settings = settings;
