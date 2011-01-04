@@ -47,17 +47,23 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
     /** The number of sample data rows to return **/
     private static final int NUM_SAMPLE_ROWS = 5;
 
-    private final File _tempFile;
+    protected File _importFile;
+    private int _numSampleRows = NUM_SAMPLE_ROWS;
 
     public DomainImporterServiceBase(ViewContext context)
     {
         super(context);
+        setImportFile(context);
+    }
 
+    protected void setImportFile(ViewContext context)
+    {
         // Retrieve the file from the session now, so we can delete it later.  If we're importing in a background thread,
         // we won't have a session at the end of import.
         HttpSession session = getViewContext().getSession();
         SessionTempFileHolder fileHolder = (SessionTempFileHolder)session.getAttribute("org.labkey.domain.tempFile");
-        _tempFile = (null == fileHolder ? null : fileHolder.getFile());
+        
+        _importFile = (null == fileHolder ? null : fileHolder.getFile());
     }
 
     public List<InferencedColumn> inferenceColumns() throws ImportException
@@ -77,10 +83,10 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
     @NotNull
     private File getImportFile() throws ImportException
     {
-        if (null == _tempFile)
-            throw new ImportException("No temp file uploaded");
+        if (null == _importFile)
+            throw new ImportException("No import file uploaded");
 
-        return _tempFile;
+        return _importFile;
     }
 
     protected void deleteImportFile()
@@ -118,6 +124,16 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
         }
     }
 
+    public int getNumSampleRows()
+    {
+        return _numSampleRows;
+    }
+
+    public void setNumSampleRows(int numSampleRows)
+    {
+        _numSampleRows = numSampleRows;
+    }
+
     private List<InferencedColumn> getColumns(DataLoader loader) throws ImportException
     {
         List<InferencedColumn> result = new ArrayList<InferencedColumn>();
@@ -126,7 +142,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
         {
             ColumnDescriptor[] columns = loader.getColumns();
 
-            String[][] data = loader.getFirstNLines(NUM_SAMPLE_ROWS + 1); // also need the header
+            String[][] data = loader.getFirstNLines(_numSampleRows + 1); // also need the header
             int numRows = data.length;
 
             for (int colIndex=0; colIndex<columns.length; colIndex++)

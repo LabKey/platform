@@ -61,6 +61,7 @@ public class AssayService
         public WebPartView createAssayListView(ViewContext context, boolean portalView);
 
         ModelAndView createAssayDesignerView(Map<String, String> properties);
+        ModelAndView createAssayImportView(Map<String, String> properties);
         ModelAndView createListChooserView(Map<String, String> properties);
 
         ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);

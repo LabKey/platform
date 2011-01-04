@@ -149,6 +149,12 @@ public interface AssayProvider extends Handler<ExpProtocol>
     Class<? extends Controller> getDesignerAction();
 
     /**
+     * Returns the action that implements the data import action for this type when the
+     * assay definition does not yet exist.
+     */
+    Class<? extends Controller> getDataImportAction();
+
+    /**
      * Returns true if the given provider can display a useful details page for dataset data that has been copied.
      * If a provider is a simple GPAT, then it does not have a useful details page
      * @return

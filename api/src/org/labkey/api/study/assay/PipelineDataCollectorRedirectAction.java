@@ -112,7 +112,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         {
             return new SimpleErrorView(errors);
         }
-        
+
         Collections.sort(files);
         List<Map<String, File>> maps = new ArrayList<Map<String, File>>();
         for (File file : files)

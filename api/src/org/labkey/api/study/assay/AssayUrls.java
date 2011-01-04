@@ -55,6 +55,21 @@ public interface AssayUrls extends UrlProvider
 
     ActionURL getDeleteDesignURL(Container container, ExpProtocol protocol);
 
-    /** path and files may be null, in which case it is assumed that the POST will include data object RowIds */
+    /**
+     * Returns the URL for the assay import data wizard for an existing assay definition.
+     * path and files may be null, in which case it is assumed that the POST will include data object RowIds
+     * @param protocol the assay to import into
+     */
     ActionURL getImportURL(Container container, ExpProtocol protocol, String path, File[] files);
+
+    /**
+     * Returns the URL for the assay import data wizard for a new assay definition of the type.
+     * specified by the providerName. Both path and files must be non-null.
+     * 
+     * @param container container in which the assay definition should live.
+     * @param providerName the type of assay to create.
+     * @param path the pipeline root relative path for this container.
+     * @param files the files to import into the assay definition once it has been created.
+     */
+    ActionURL getImportURL(Container container, String providerName, String path, File[] files);
 }

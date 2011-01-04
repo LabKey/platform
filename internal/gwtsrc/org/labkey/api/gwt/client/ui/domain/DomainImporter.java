@@ -87,6 +87,8 @@ public class DomainImporter
     private ColumnMapper columnMapper;
 
     private boolean cancelRequested = false;
+    private boolean _hideFileUpload;
+    private boolean _hideButtons;
 
     public DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap, Set<String> baseColumnNames)
     {
@@ -106,6 +108,9 @@ public class DomainImporter
         String url = PropertyUtil.getRelativeURL("uploadFileForInferencing", "property");
         form.setAction(url);
 
+        // skip display of a file upload form, the service will obtain the file from other means
+        _hideFileUpload = Boolean.parseBoolean(PropertyUtil.getServerProperty("skipFileUpload"));
+
         form.setEncoding(FormPanel.ENCODING_MULTIPART);
         form.setMethod(FormPanel.METHOD_POST);
 
@@ -114,19 +119,22 @@ public class DomainImporter
         form.setWidget(panel);
 
         VerticalPanel uploadPanel = new VerticalPanel();
-        uploadPanel.add(new HTML("Import from TSV or Excel file.<p>"));
-        fileUpload = new FileUploadWithListeners();
-        fileUpload.setName("uploadFormElement");
-        fileUpload.addChangeListener(new ChangeListener()
-        {
-            public void onChange(Widget sender)
-            {
-                form.submit();
-            }
-        });
-        uploadPanel.add(fileUpload);
-        panel.add(uploadPanel);
 
+        if (!_hideFileUpload)
+        {
+            uploadPanel.add(new HTML("Import from TSV or Excel file.<p>"));
+            fileUpload = new FileUploadWithListeners();
+            fileUpload.setName("uploadFormElement");
+            fileUpload.addChangeListener(new ChangeListener()
+            {
+                public void onChange(Widget sender)
+                {
+                    form.submit();
+                }
+            });
+            uploadPanel.add(fileUpload);
+            panel.add(uploadPanel);
+        }
         uploadStatusLabel = new HTML("&nbsp;");
 
         panel.add(uploadStatusLabel);
@@ -168,7 +176,7 @@ public class DomainImporter
             navigate(cancelURL);
     }
 
-    private void importData()
+    protected void importData()
     {
         service.getDomainDescriptor(getTypeURI(), new ErrorDialogAsyncCallback<GWTDomain>()
         {
@@ -331,6 +339,72 @@ public class DomainImporter
         statusTimer.scheduleRepeating(2000);
     }
 
+    protected void displayInferredColumns(List<InferencedColumn> inferredColumns)
+    {
+        uploadStatusLabel.setHTML("&nbsp;");
+        columns = inferredColumns;
+        boolean needGridAndButtons = false;
+        if (grid == null)
+        {
+            needGridAndButtons = true;
+            grid = new DomainImportGrid();
+            VerticalPanel gridPanel = new VerticalPanel();
+            gridPanel.add(new HTML("Showing first " + columns.get(0).getData().size() + " rows:<p>"));
+            gridPanel.add(grid);
+            mainPanel.add(gridPanel);
+        }
+        grid.setColumns(columns);
+        if (!needGridAndButtons && needToMapColumns)
+        {
+            // We've already been through here once, remove our old mapper
+            mainPanel.remove(columnMapper);
+        }
+        if (needToMapColumns)
+        {
+            columnMapper = new ColumnMapper();
+            mainPanel.insert(columnMapper, 2);
+        }
+
+        if (needGridAndButtons && !_hideButtons)
+        {
+            HorizontalPanel buttons = new HorizontalPanel();
+            importButton = new ImageButton("Import", new ClickHandler()
+            {
+                public void onClick(ClickEvent e)
+                {
+                    handleImport();
+/*
+                    importButton.setEnabled(false);
+                    progressBarText = new ProgressBarText("Creating columns...");
+                    progressBar = new ProgressBar(0, 100, 0, progressBarText);  // Placeholder to display the first couple messages
+                    mainPanel.add(progressBar);
+                    importData();
+*/
+                }
+            });
+            buttons.add(importButton);
+            buttons.add(new ImageButton("Cancel", new ClickHandler()
+            {
+                public void onClick(ClickEvent e)
+                {
+                    handleCancel();
+                }
+            }));
+
+            mainPanel.add(buttons);
+        }
+    }
+
+    public void handleImport()
+    {
+        if (importButton != null)
+            importButton.setEnabled(false);
+        progressBarText = new ProgressBarText("Creating columns...");
+        progressBar = new ProgressBar(0, 100, 0, progressBarText);  // Placeholder to display the first couple messages
+        mainPanel.add(progressBar);
+        importData();
+    }
+
     private void updateStatus(ImportStatus status)
     {
         if (status.getTotalRows() > 0)
@@ -380,7 +454,7 @@ public class DomainImporter
         onCancel();
     }
 
-    private void cancel()
+    public void handleCancel()
     {
         if (null == jobId)
         {
@@ -397,6 +471,11 @@ public class DomainImporter
                 }
             });
         }
+    }
+
+    public void setHideButtons(boolean hideButtons)
+    {
+        _hideButtons = hideButtons;
     }
 
     public static native void navigate(String url) /*-{
@@ -436,55 +515,7 @@ public class DomainImporter
 
         public void onSuccess(List<InferencedColumn> result)
         {
-            uploadStatusLabel.setHTML("&nbsp;");
-            columns = result;
-            boolean needGridAndButtons = false;
-            if (grid == null)
-            {
-                needGridAndButtons = true;
-                grid = new DomainImportGrid();
-                VerticalPanel gridPanel = new VerticalPanel();
-                gridPanel.add(new HTML("Showing first 5 rows:<p>"));
-                gridPanel.add(grid);
-                mainPanel.add(gridPanel);
-            }
-            grid.setColumns(columns);
-            if (!needGridAndButtons && needToMapColumns)
-            {
-                // We've already been through here once, remove our old mapper
-                mainPanel.remove(columnMapper);
-            }
-            if (needToMapColumns)
-            {
-                columnMapper = new ColumnMapper();
-                mainPanel.insert(columnMapper, 2);
-            }
-
-            if (needGridAndButtons)
-            {
-                HorizontalPanel buttons = new HorizontalPanel();
-                importButton = new ImageButton("Import", new ClickHandler()
-                {
-                    public void onClick(ClickEvent e)
-                    {
-                        importButton.setEnabled(false);
-                        progressBarText = new ProgressBarText("Creating columns...");
-                        progressBar = new ProgressBar(0, 100, 0, progressBarText);  // Placeholder to display the first couple messages
-                        mainPanel.add(progressBar);
-                        importData();
-                    }
-                });
-                buttons.add(importButton);
-                buttons.add(new ImageButton("Cancel", new ClickHandler()
-                {
-                    public void onClick(ClickEvent e)
-                    {
-                        cancel();
-                    }
-                }));
-
-                mainPanel.add(buttons);
-            }
+            displayInferredColumns(result);
         }
     }
 

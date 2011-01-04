@@ -96,7 +96,9 @@ public class AssayPipelineProvider extends PipelineProvider
                     navTree.addSeparator();
                 }
 
-                ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(context.getContainer(), _assayProvider.getName(), PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(context.getContainer(), null));
+                ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(context.getContainer(), _assayProvider.getName(),
+                        directory.getRelativePath(), new File[0]);
+
                 NavTree child = new NavTree("Create New " + _assayProvider.getName() + " Assay Design", url);
                 child.setId(id + ":Create Assay Definition");
                 navTree.addChild(child);

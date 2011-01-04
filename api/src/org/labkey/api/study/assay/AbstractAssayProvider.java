@@ -1519,6 +1519,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return DesignerAction.class;
     }
 
+    @Override
+    public Class<? extends Controller> getDataImportAction()
+    {
+        return ImportAction.class;
+    }
+
     /**
      * Adds columns to an assay data table, providing a link to any datasets that have
      * had data copied into them.
