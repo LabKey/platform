@@ -79,9 +79,8 @@ public abstract class DisplayColumn extends RenderColumn
     public abstract void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException;
 
     // Do nothing by default
-    public void renderGridEnd(Writer out) throws IOException
+    public void renderGridEnd(RenderContext ctx, Writer out) throws IOException
     {
-
     }
 
     public String renderURL(RenderContext ctx)

@@ -16,19 +16,17 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
-import java.io.StringWriter;
-import java.io.Writer;
 import java.io.IOException;
-import java.util.Set;
+import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam

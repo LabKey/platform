@@ -64,9 +64,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderGridEnd(Writer out) throws IOException
+    public void renderGridEnd(RenderContext ctx, Writer out) throws IOException
     {
-        _column.renderGridEnd(out);
+        _column.renderGridEnd(ctx, out);
     }
 
     @Override

@@ -889,7 +889,7 @@ public class DataRegion extends DisplayElement
         for (DisplayColumn renderer : renderers)
         {
             if (renderer.isVisible(ctx))
-                renderer.renderGridEnd(out);
+                renderer.renderGridEnd(ctx, out);
         }
     }
 

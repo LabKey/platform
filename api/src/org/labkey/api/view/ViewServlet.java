@@ -65,7 +65,7 @@ public class ViewServlet extends HttpServlet
     public static final String ORIGINAL_URL_URLHELPER = "LABKEY.OriginalURLHelper";  // URLHelper
     public static final String REQUEST_ACTION_URL = "LABKEY.RequestURL";             // ActionURL
     public static final String REQUEST_STARTTIME = "LABKEY.StartTime";
-
+    public static final String REQUEST_UID_COUNTER = "LABKEY.Counter";                   // Incrementing counter scoped to a single request
     // useful for access log
     public static final String REQUEST_ACTION = "LABKEY.action";
     public static final String REQUEST_CONTROLLER = "LABKEY.controller";
@@ -102,7 +102,8 @@ public class ViewServlet extends HttpServlet
         long startTime = System.currentTimeMillis();
 
         request.setAttribute(REQUEST_STARTTIME, startTime);
-        response.setHeader("Server", _serverHeader); 
+        request.setAttribute(REQUEST_UID_COUNTER, new AtomicInteger());  // Used to generate unique ids in the context of this request
+        response.setHeader("Server", _serverHeader);
         HttpSession session = request.getSession(true);
 
         if (_debug)

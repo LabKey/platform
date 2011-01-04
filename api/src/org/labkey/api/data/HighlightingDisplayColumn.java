@@ -17,9 +17,11 @@
 package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.UniqueID;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,7 +36,9 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     private final LinkedHashMap<List<Object>, String> _distinctValuesToClass = new LinkedHashMap<List<Object>, String>();
     private final FieldKey[] _fields;
 
-    private int _counter = 0;
+    private int _uid;
+    private String _hoverFunctionName = "hover" + _uid;
+    private String _unhoverFunctionName = "unhover" + _uid;
     private String _highlightColor = "yellow";
 
     public HighlightingDisplayColumn(DisplayColumn column, FieldKey... distinguishingFields)
@@ -74,7 +78,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
 
         if (null == className)
         {
-            className = "c" + _counter++;
+            className = "c" + UniqueID.getRequestScopedUID(ctx.getRequest());
             _distinctValuesToClass.put(values, className);
         }
 
@@ -82,38 +86,76 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     }
 
     @Override
+    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException, SQLException
+    {
+        super.renderGridHeaderCell(ctx, out);
+        _uid = UniqueID.getRequestScopedUID(ctx.getRequest());
+        _hoverFunctionName = "hover" + _uid;
+        _unhoverFunctionName = "unhover" + _uid;
+    }
+
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         String styleClass = getStyleClass(ctx);
-        out.write("<span class=\"" + styleClass + "\" onmouseover=\"hover(this);\" onmouseout=\"unhover(this);\">");
+        out.write("<span class=\"" + styleClass + "\" onmouseover=\"" + _hoverFunctionName + "(this);\" onmouseout=\"" + _unhoverFunctionName + "(this);\">");
         super.renderGridCellContents(ctx, out);
         out.write("</span>");
     }
 
     @Override
-    public void renderGridEnd(Writer out) throws IOException
+    public void renderGridEnd(RenderContext ctx, Writer out) throws IOException
     {
-        super.renderGridEnd(out);
+        super.renderGridEnd(ctx, out);
 
-        out.write("\n<style type=\"text/css\" title=\"hdc\">\n");  // TODO: Unique ID for this stylesheet
-
-        for (String style : _distinctValuesToClass.values())
-        {
-            out.write("span." + style + " {}\n");
-        }
-
-        out.write("</style>\n");
+        String styleMapName = "styleMap" + _uid;
+        String stylesheetName = "hdc" + _uid;
 
         out.write("<script type=\"text/javascript\">\n");
 
-        out.write("var rules = new Array();\n" +
-            "\n" +
-            "for (i = 0; i < document.styleSheets.length; i++)\n" +
+        out.write("var " + styleMapName + " = {};\n" +
+            "init(" + styleMapName + ");\n\n" +
+            "function init(styleMap)\n" +
             "{\n" +
-            "\tvar ss = document.styleSheets[i];\n" +
-            "\n" +
-            "\tif (ss.title == \"hdc\")\n" +     // TODO: Unique ID for this stylesheet
+            "\t// Create a new stylesheet for this column's styles\n" +
+            "\tvar cssNode = document.createElement('style');\n" +
+            "\tcssNode.type = 'text/css';\n" +
+            "\tcssNode.rel = 'stylesheet';\n" +
+            "\tcssNode.media = 'screen';\n" +
+            "\tcssNode.title = '" + stylesheetName + "';\n" +
+            "\tdocument.getElementsByTagName(\"head\")[0].appendChild(cssNode);\n\n" +
+
+            "\t// Get a reference to our new stylesheet\n" +
+            "\tvar ss = cssNode.sheet ? cssNode.sheet : cssNode.styleSheet;\n\n" +
+
+            "\t// Add all the styles\n");
+
+        for (String style : _distinctValuesToClass.values())
+        {
+            out.write("\taddStyle(ss, \"span." + style.toLowerCase() + "\");\n");
+        }
+
+        out.write("\n\t// Add all the styles to a name -> style \"map\", which may perform better than iterating all the styles every time\n" +
+            "\tvar rules = rules(ss);\n\n" +
+            "\t// Force name to lowercase -- different browsers use different casing\n" +
+            "\tfor (i = 0; i < rules.length; i++)\n" +
+            "\t\tstyleMap[rules[i].selectorText.toLowerCase()] = rules[i].style;\n\n" +
+            "\tfunction addStyle(ss, newName)\n" +
             "\t{\n" +
+            "\t\tif (ss.addRule)\n" +
+            "\t\t{\n" +
+            "\t\t\tss.addRule(newName, null, 0);       // IE\n" +
+            "\t\t}\n" +
+            "\t\telse\n" +
+            "\t\t{\n" +
+            "\t\t\tss.insertRule(newName + ' { }', 0); // Non-IE\n" +
+            "\t\t}\n" +
+            "\t}\n" +
+            "\n" +
+            "\tfunction rules(ss)\n" +
+            "\t{\n" +
+            "\t\tvar rules = new Array();\n" +
+            "\n" +
             "\t\tif (ss.cssRules)\n" +
             "\t\t{\n" +
             "\t\t\trules = ss.cssRules;\n" +
@@ -121,32 +163,25 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
             "\t\telse if (ss.rules)\n" +
             "\t\t{\n" +
             "\t\t\trules = ss.rules;\n" +
-            "\t\t}\n\n" +
-            "\t\tbreak;\n" +
+            "\t\t}\n" +
+            "\n" +
+            "\t\treturn rules;\n" +
             "\t}\n" +
             "}\n\n" +
-            "var styleMap = new Array();\n\n" +
-            "for (i = 0; i < rules.length; i++)\n" +
-            "\tstyleMap[rules[i].selectorText.toLowerCase()] = rules[i].style;\n\n" + // different browsers use different casing, so force everything to lowercase
-            "function hover(el)\n" +
+            "function " + _hoverFunctionName + "(el)\n" +
             "{\n" +
-            "\tvar style = getStyle(el.tagName + \".\" + el.className);\n" +
+            "\tvar style = " + styleMapName + "[(el.tagName + \".\" + el.className).toLowerCase()];\n" +
             "\n" +
             "\tif (style)\n" +
             getHoverStyle() +
             "}\n" +
             "\n" +
-            "function unhover(el)\n" +
+            "function " + _unhoverFunctionName + "(el)\n" +
             "{\n" +
-            "\tvar style = getStyle(el.tagName + \".\" + el.className);\n" +
+            "\tvar style = " + styleMapName + "[(el.tagName + \".\" + el.className).toLowerCase()];\n" +
             "\n" +
             "\tif (style)\n" +
             getUnhoverStyle() +
-            "}\n" +
-            "\n" +
-            "function getStyle(className)\n" +
-            "{\n" +
-            "\treturn styleMap[className.toLowerCase()];\n" +
             "}\n" +
             "</script>");
     }
