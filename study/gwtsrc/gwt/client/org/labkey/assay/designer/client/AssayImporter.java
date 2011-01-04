@@ -149,12 +149,12 @@ public class AssayImporter implements EntryPoint
 
         int row = 0;
         FlexTable table = new FlexTable();
-        BoundTextBox name = new BoundTextBox("Assay Name", "assay_name_id", _assayName);
+        BoundTextBox name = new BoundTextBox("Assay Name", "AssayDesignerName", _assayName);
         name.setRequired(true);
         table.setWidget(row, 0, new InlineHTML("Name&nbsp;(Required)&nbsp;"));
         table.setWidget(row++, 1, name);
 
-        BoundCheckBox showEditor = new BoundCheckBox("show_assay_editor_id", _showEditor, null);
+        BoundCheckBox showEditor = new BoundCheckBox("ShowAssayDesigner", _showEditor, null);
         FlowPanel namePanel = new FlowPanel();
         namePanel.add(new InlineHTML("Show Advanced Assay Designer&nbsp;"));
         namePanel.add(new HelpPopup("Advanced Assay Designer", "This wizard allows you to quickly design an assay based on the columns in " +
