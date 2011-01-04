@@ -202,6 +202,12 @@ public class AssayManager implements AssayService.Interface
     }
 
     @Override
+    public ModelAndView createAssayImportView(Map<String, String> properties)
+    {
+        return new StudyGWTView(StudyApplication.GWTModule.AssayImporter, properties);
+    }
+
+    @Override
     public ModelAndView createListChooserView(Map<String, String> properties)
     {
         GWTView listChooser = new StudyGWTView(StudyApplication.GWTModule.ListChooser, properties);

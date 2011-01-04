@@ -1,0 +1,270 @@
+/*
+ * Copyright (c) 2010 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.study.assay;
+
+import gwt.client.org.labkey.assay.designer.client.AssayImporterService;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainImporterServiceBase;
+import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.ui.domain.ImportException;
+import org.labkey.api.gwt.client.ui.domain.ImportStatus;
+import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
+import org.labkey.api.study.actions.ImportAction;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: Dec 10, 2010
+ * Time: 2:33:54 PM
+ */
+public class AssayImportServiceImpl extends DomainImporterServiceBase implements AssayImporterService
+{
+    private boolean _deleteImportFile;
+
+    public AssayImportServiceImpl(ViewContext context)
+    {
+        super(context);
+        setNumSampleRows(20);
+    }
+
+    @Override
+    protected void setImportFile(ViewContext context)
+    {
+        HttpSession session = getViewContext().getSession();
+        Object o = session.getAttribute(ImportAction.ASSAY_IMPORT_FILE);
+
+        //PipelineDataCollector.gsetFileCollection(getViewContext().getRequest().getSession(true), getContainer(), form.getProtocol(), maps);
+
+        //if (o instanceof File)
+        //    _importFile = (File)o;
+    }
+
+    @Override
+    protected void deleteImportFile()
+    {
+        if (_deleteImportFile)
+            super.deleteImportFile();
+    }
+
+    @Override
+    public List<InferencedColumn> getInferenceColumns(String path, String file) throws ImportException
+    {
+        List<File> files = ImportAction.getFiles(getContainer(), path, new String[]{file});
+
+        if (!files.isEmpty())
+        {
+            _importFile = files.get(0);
+            return inferenceColumns();
+        }
+        throw new ImportException("Failed trying to infer columns for the file: " + file);
+    }
+
+    @Override
+    public ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException
+    {
+        ImportStatus status = new ImportStatus();
+
+        status.setComplete(true);
+//        status.setMessages(errors);
+
+        return status;
+    }
+
+    @Override
+    public ImportStatus getStatus(String jobId) throws ImportException
+    {
+        throw new ImportException("Shouldn't be calling getStatus() -- assays import synchronously");
+    }
+
+    @Override
+    public String cancelImport(String jobId) throws ImportException
+    {
+        return null;
+    }
+
+    @Override
+    public GWTProtocol createProtocol(String providerName, String assayName) throws ImportException
+    {
+        ViewContext context = getViewContext();
+
+        try {
+
+            AssayServiceImpl svc = new AssayServiceImpl(context);
+
+            GWTProtocol gwtProtocol = svc.getAssayTemplate(providerName);
+
+            gwtProtocol.setName(assayName);
+            gwtProtocol = svc.saveChanges(gwtProtocol, true);
+
+            return gwtProtocol;
+        }
+        catch (Exception e)
+        {
+            throw new ImportException(e.getMessage());
+        }
+    }
+
+    @Override
+    public String getDomainImportURI(GWTProtocol gwtProtocol) throws ImportException
+    {
+        try {
+            AssayProvider provider = AssayService.get().getProvider(gwtProtocol.getProviderName());
+            if (provider != null)
+            {
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
+                Domain domain = provider.getResultsDomain(protocol);
+
+                return domain.getTypeURI();
+            }
+            return null;
+        }
+        catch (Exception e)
+        {
+            throw new ImportException(e.getMessage());
+        }
+    }
+
+    @Override
+    public String getImportURL(GWTProtocol gwtProtocol, String directoryPath, String file) throws ImportException
+    {
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
+        List<File> files = ImportAction.getFiles(getContainer(), directoryPath, new String[]{file});
+
+        if (protocol != null && !files.isEmpty())
+        {
+            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(getContainer(), protocol, directoryPath, new File[]{files.get(0)});
+            return url.getLocalURIString();
+        }
+        return null;
+    }
+
+    @Override
+    public String getDesignerURL(GWTProtocol gwtProtocol, String directoryPath, String file) throws ImportException
+    {
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
+        List<File> files = ImportAction.getFiles(getContainer(), directoryPath, new String[]{file});
+
+        if (protocol != null && !files.isEmpty())
+        {
+            ActionURL returnUrl = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(getContainer(), protocol, directoryPath, new File[]{files.get(0)});
+            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), protocol, false, returnUrl);
+
+            return url.getLocalURIString();
+        }
+        return null;
+    }
+
+    public String getTypeURI(String providerName, String assayName) throws ImportException
+    {
+        ViewContext context = getViewContext();
+
+        try {
+
+            AssayServiceImpl svc = new AssayServiceImpl(context);
+
+            GWTProtocol gwtProtocol = svc.getAssayTemplate(providerName);
+
+            gwtProtocol.setName(assayName);
+            gwtProtocol = svc.saveChanges(gwtProtocol, true);
+
+            AssayProvider provider = AssayService.get().getProvider(providerName);
+            if (provider != null)
+            {
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
+                Domain domain = provider.getResultsDomain(protocol);
+
+                return domain.getTypeURI();
+            }
+            return null;
+        }
+        catch (Exception e)
+        {
+            throw new ImportException(e.getMessage());
+        }
+    }
+
+    private void setPropertyDomainURIs(ExpProtocol protocol, Set<String> uris)
+    {
+        if (getContainer() == null)
+        {
+            throw new IllegalStateException("Must set container before setting domain URIs");
+        }
+        if (protocol.getLSID() == null)
+        {
+            throw new IllegalStateException("Must set LSID before setting domain URIs");
+        }
+        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+        // First prune out any domains of the same type that aren't in the new set
+        for (String uri : new HashSet<String>(props.keySet()))
+        {
+            Lsid lsid = new Lsid(uri);
+            if (lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_PREFIX) && !uris.contains(uri))
+            {
+                props.remove(uri);
+            }
+        }
+
+        for (String uri : uris)
+        {
+            if (!props.containsKey(uri))
+            {
+                ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(), uri, uri);
+                props.put(prop.getPropertyURI(), prop);
+            }
+        }
+        protocol.setObjectProperties(props);
+    }
+
+    public String getImportURL(String providerName, String directoryPath, String assayName) throws ImportException
+    {
+        List<ExpProtocol> assays = AssayService.get().getAssayProtocols(getContainer());
+        ExpProtocol assayProtocol = null;
+        for (ExpProtocol protocol : assays)
+        {
+            String name = protocol.getName();
+
+            if (name.equals(assayName))
+                assayProtocol = protocol;
+        }
+
+        if (assayProtocol != null)
+        {
+            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(getContainer(), assayProtocol, directoryPath, new File[]{_importFile});
+
+            return url.getLocalURIString();
+        }
+        return null;
+    }
+}

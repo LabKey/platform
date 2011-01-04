@@ -45,6 +45,17 @@ public class StudyApplication implements EntryPoint
                 return new gwt.client.org.labkey.assay.designer.client.AssayDesigner();
             }
         },
+        AssayImporter("gwt.client.org.labkey.assay.designer.client.AssayImporter")
+        {
+            public void onSuccess()
+            {
+                new gwt.client.org.labkey.assay.designer.client.AssayImporter().onModuleLoad();
+            }
+            EntryPoint getEntryPoint()
+            {
+                return new gwt.client.org.labkey.assay.designer.client.AssayImporter();
+            }
+        },
         ListChooser("gwt.client.org.labkey.assay.upload.client.ListChooser")
         {
             public void onSuccess()
@@ -160,6 +171,9 @@ public class StudyApplication implements EntryPoint
         {
             case AssayDesigner:
                 GWT.runAsync(GWTModule.AssayDesigner);
+                break;
+            case AssayImporter:
+                GWT.runAsync(GWTModule.AssayImporter);
                 break;
             case ListChooser:
                 GWT.runAsync(GWTModule.ListChooser);

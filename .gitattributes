@@ -2039,6 +2039,9 @@ study/gwtsrc/gwt/StudyChartDesigner.gwt.xml_old -text
 study/gwtsrc/gwt/StudyDesigner.gwt.xml_old -text
 study/gwtsrc/gwt/TemplateDesigner.gwt.xml_old -text
 study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayDesigner.java -text
+study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporter.java -text
+study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterService.java -text
+study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterServiceAsync.java -text
 study/gwtsrc/gwt/client/org/labkey/assay/upload/client/ListChooser.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/GroupChangeListener.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/GroupChangeListenerAdapter.java -text
@@ -2409,6 +2412,7 @@ study/src/org/labkey/study/StudySchema.java -text
 study/src/org/labkey/study/StudyServiceImpl.java -text
 study/src/org/labkey/study/StudyUnionTableInfo.java -text
 study/src/org/labkey/study/StudyUpgradeCode.java -text
+study/src/org/labkey/study/assay/AssayImportServiceImpl.java -text
 study/src/org/labkey/study/assay/AssayManager.java -text
 study/src/org/labkey/study/assay/AssayPublishManager.java -text
 study/src/org/labkey/study/assay/AssayServiceImpl.java -text
@@ -2419,6 +2423,7 @@ study/src/org/labkey/study/assay/ModuleDataExchangeHandler.java -text
 study/src/org/labkey/study/assay/ModuleRunUploadContext.java -text
 study/src/org/labkey/study/assay/TsvAssayProvider.java -text
 study/src/org/labkey/study/assay/TsvDataHandler.java -text
+study/src/org/labkey/study/assay/TsvImportAction.java -text
 study/src/org/labkey/study/assay/query/AssayAuditViewFactory.java -text
 study/src/org/labkey/study/assay/query/AssayListPortalView.java -text
 study/src/org/labkey/study/assay/query/AssayListQueryView.java -text

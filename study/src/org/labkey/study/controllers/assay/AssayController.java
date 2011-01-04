@@ -40,6 +40,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.actions.*;
@@ -48,10 +49,13 @@ import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
+import org.labkey.study.assay.AssayImportServiceImpl;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
+import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
+import org.labkey.study.controllers.DatasetImportServiceImpl;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.springframework.validation.BindException;
@@ -84,6 +88,8 @@ public class AssayController extends SpringActionController
             PipelineDataCollectorRedirectAction.class,
             DeleteAction.class,
             DesignerAction.class,
+            ImportAction.class,
+            TsvImportAction.class,
             TemplateAction.class,
             AssayBatchesAction.class,
             AssayBatchDetailsAction.class,
@@ -934,6 +940,38 @@ public class AssayController extends SpringActionController
                 }
             }
             return url;
+        }
+
+        @Override
+        public ActionURL getImportURL(Container container, String providerName, String path, File[] files)
+        {
+            AssayProvider provider = AssayService.get().getProvider(providerName);
+            if (provider == null)
+            {
+                return null;
+            }
+            ActionURL url = new ActionURL(provider.getDataImportAction(), container);
+            url.addParameter("providerName", provider.getName());
+
+            if (path != null)
+            {
+                assert files != null : "If you specify a path you must include files as well";
+                url.addParameter("path", path);
+                for (File file : files)
+                {
+                    url.addParameter("file", file.getName());
+                }
+            }
+            return url;
+        }
+    }
+
+    @RequiresPermissionClass(DesignAssayPermission.class)
+    public class AssayImportServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new AssayImportServiceImpl(getViewContext());
         }
     }
 }

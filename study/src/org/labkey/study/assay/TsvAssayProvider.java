@@ -34,6 +34,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.study.StudyModule;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.util.*;
@@ -138,5 +139,11 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return new AssayPipelineProvider(StudyModule.class,
                 new PipelineProvider.FileTypesEntryFilter(getDataType().getFileType()), 
                 this, "Import Text or Excel Assay");
+    }
+
+    @Override
+    public Class<? extends Controller> getDataImportAction()
+    {
+        return TsvImportAction.class;
     }
 }
