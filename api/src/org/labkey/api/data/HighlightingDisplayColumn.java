@@ -120,13 +120,15 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
             "\t// Create a new stylesheet for this column's styles\n" +
             "\tvar cssNode = document.createElement('style');\n" +
             "\tcssNode.type = 'text/css';\n" +
-            "\tcssNode.rel = 'stylesheet';\n" +
-            "\tcssNode.media = 'screen';\n" +
             "\tcssNode.title = '" + stylesheetName + "';\n" +
             "\tdocument.getElementsByTagName(\"head\")[0].appendChild(cssNode);\n\n" +
 
             "\t// Get a reference to our new stylesheet\n" +
-            "\tvar ss = cssNode.sheet ? cssNode.sheet : cssNode.styleSheet;\n\n" +
+            "\tvar ss = cssNode.sheet ? cssNode.sheet : cssNode.styleSheet;\n" +
+
+            // When mulitple HDCs are rendered on a page, the first stylesheet has "disabled=false" and subsequent
+            // stylesheets have "disabled=true" -- explicitly enabling every one seems to do the trick.  
+            "\tss.disabled = false;\n\n" +
 
             "\t// Add all the styles\n");
 
@@ -183,6 +185,6 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
             "\tif (style)\n" +
             getUnhoverStyle() +
             "}\n" +
-            "</script>");
+            "</script>\n");
     }
 }

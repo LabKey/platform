@@ -1060,11 +1060,6 @@ public class PageFlowUtil
         return generateButton(text, href, null);
     }
 
-    public static String generateButton(String text, HString href)
-    {
-        return generateButton(text, null==href ? null : href.getSource(), null);
-    }
-
     public static String generateButton(String text, String href, String onClick)
     {
         return generateButton(text, href, onClick, "");
@@ -1116,11 +1111,11 @@ public class PageFlowUtil
 
     public static String generateSubmitButton(String text, String onClick, String attributes, boolean enabled, boolean disableOnClick)
     {
-        String guid = GUID.makeGUID();
+        String id = GUID.makeGUID();
         char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
 
         String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
-        String submitCode = "submitForm(document.getElementById(" + quote + guid + quote + ").form); return false;";
+        String submitCode = "submitForm(document.getElementById(" + quote + id + quote + ").form); return false;";
 
         String onClickMethod;
 
@@ -1133,12 +1128,12 @@ public class PageFlowUtil
         if (onClick == null || "".equals(onClick))
             onClickMethod = checkDisabled + submitCode;
         else
-            onClickMethod = checkDisabled + "this.form = document.getElementById(" + quote + guid + quote + ").form; if (isTrueOrUndefined(function() {" + onClick + "}.call(this))) " +  submitCode;
+            onClickMethod = checkDisabled + "this.form = document.getElementById(" + quote + id + quote + ").form; if (isTrueOrUndefined(function() {" + onClick + "}.call(this))) " +  submitCode;
 
         StringBuilder sb = new StringBuilder();
 
         sb.append("<input type=\"submit\" style=\"display: none;\" id=\"");
-        sb.append(guid);
+        sb.append(id);
         sb.append("\">");
 
         if (enabled)

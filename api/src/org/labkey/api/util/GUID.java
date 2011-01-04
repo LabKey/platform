@@ -151,7 +151,7 @@ public class GUID implements Serializable
 
         synchronized (lock)
         {
-            nanoCounter = (nanoCounter+1) % 10000;
+            nanoCounter = (nanoCounter + 1) % 10000;
             if (0 == nanoCounter)
                 msTimer = Math.max(msTimer + 1, System.currentTimeMillis()); // technically should be relative to 15 October 1582
             time = msTimer * 10000 + nanoCounter;

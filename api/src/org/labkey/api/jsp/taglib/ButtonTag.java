@@ -90,6 +90,7 @@ public class ButtonTag extends SimpleTagBase
             _href = value.toString();
         }
     }
+
     public void setText(String text)
     {
         _text = text;
@@ -99,6 +100,7 @@ public class ButtonTag extends SimpleTagBase
     {
         _onclick = onclick;
     }
+
     public void setAction(String action)
     {
         _action = action;
