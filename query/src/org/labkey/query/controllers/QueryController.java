@@ -16,6 +16,7 @@
 
 package org.labkey.query.controllers;
 
+import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
@@ -4390,6 +4391,12 @@ public class QueryController extends SpringActionController
                 e = _parse(expr,qpe);
             }
 
+            Tree tree = null;
+            if (null != expr)
+            {
+                try { tree = _tree(expr); } catch (Exception x){}
+            }
+
             for (Throwable x : qpe)
             {
                 if (null != x.getCause() && x != x.getCause())
@@ -4400,7 +4407,14 @@ public class QueryController extends SpringActionController
             if (null != e)
             {
                 String prefix = SqlParser.toPrefixString(e);
-                html.add("<br><b>" + PageFlowUtil.filter(prefix) + "</br>");
+                html.add("<hr>");
+                html.add(PageFlowUtil.filter(prefix));
+            }
+            if (null != tree)
+            {
+                String prefix = SqlParser.toPrefixString(tree);
+                html.add("<hr>");
+                html.add(PageFlowUtil.filter(prefix));
             }
             html.add("</body></html>");
             return new HtmlView(StringUtils.join(html,""));
@@ -4413,6 +4427,7 @@ public class QueryController extends SpringActionController
         }
         
         abstract QNode _parse(String e, List<QueryParseException> errors);
+        abstract Tree _tree(String e) throws Exception;
     }
 
     @RequiresSiteAdmin
@@ -4422,6 +4437,12 @@ public class QueryController extends SpringActionController
         {
             return new SqlParser().parseExpr(s, errors);
         }
+
+        @Override
+        Tree _tree(String e)
+        {
+            return null;
+        }
     }
 
     @RequiresSiteAdmin
@@ -4430,6 +4451,12 @@ public class QueryController extends SpringActionController
         QNode _parse(String s, List<QueryParseException> errors)
         {
             return new SqlParser().parseQuery(s, errors);
+        }
+
+        @Override
+        Tree _tree(String s) throws Exception
+        {
+            return new SqlParser().rawQuery(s);
         }
     }
 }

@@ -1888,11 +1888,13 @@ query/src/org/labkey/query/reports/view/manageViews.jsp -text
 query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
 query/src/org/labkey/query/sql/Builder.java -text
+query/src/org/labkey/query/sql/ConvertType.java -text
 query/src/org/labkey/query/sql/IConstant.java -text
 query/src/org/labkey/query/sql/JoinType.java -text
 query/src/org/labkey/query/sql/Method.java -text
 query/src/org/labkey/query/sql/Node.java -text
 query/src/org/labkey/query/sql/Operator.java -text
+query/src/org/labkey/query/sql/ParameterType.java -text
 query/src/org/labkey/query/sql/Precedence.java -text
 query/src/org/labkey/query/sql/QAggregate.java -text
 query/src/org/labkey/query/sql/QAs.java -text
@@ -1918,6 +1920,7 @@ query/src/org/labkey/query/sql/QNull.java -text
 query/src/org/labkey/query/sql/QNumber.java -text
 query/src/org/labkey/query/sql/QOperator.java -text
 query/src/org/labkey/query/sql/QOrder.java -text
+query/src/org/labkey/query/sql/QParameter.java -text
 query/src/org/labkey/query/sql/QQuery.java -text
 query/src/org/labkey/query/sql/QRowStar.java -text
 query/src/org/labkey/query/sql/QSelect.java -text

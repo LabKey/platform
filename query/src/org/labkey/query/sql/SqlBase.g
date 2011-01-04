@@ -16,8 +16,11 @@ options
 
 tokens
 {
+    ASCENDING;
 	AGGREGATE;		// One of the aggregate functions (e.g. min, max, avg)
 	ALIAS;
+    DECLARATION; 
+	DESCENDING;
 	EXPR_LIST;
 	IN_LIST;
 	IS_NOT;
@@ -25,10 +28,13 @@ tokens
 	NOT_BETWEEN;
 	NOT_IN;
 	NOT_LIKE;
+    PARAMETERS;
 	QUERY;
 	RANGE;
 	ROW_STAR;
 	SELECT_FROM;
+    STATEMENT;
+    DATATYPE;
 	UNARY_MINUS;
 	UNARY_PLUS;
 	UNION_ALL;
@@ -63,6 +69,17 @@ tokens
 	public void weakKeywords() //throws TokenStreamException
 	{
 	}
+
+	public boolean isSqlType(String type)
+	{
+	    return true;
+	}
+
+    @Override
+    public void traceOut(String ruleName, int ruleIndex, Object inputSymbol)
+    {
+        super.traceOut(ruleName, ruleIndex, inputSymbol);
+    }
 }
 
 
@@ -90,14 +107,12 @@ ALL : 'all';
 ANY : 'any';
 AND : 'and';
 AS : 'as';
-ASCENDING : 'asc';
 AVG : 'avg';
 BETWEEN : 'between';
 CASE : 'case';
 CAST : 'cast';
 COUNT : 'count';
 DELETE : 'delete';
-DESCENDING : 'desc';
 DISTINCT : 'distinct';
 DOT : '.';
 ELSE : 'else';
@@ -147,8 +162,34 @@ WHEN : 'when';
 
 
 statement
-	: ( updateStatement | deleteStatement | selectStatement | insertStatement )
+	: parameters? ( updateStatement | deleteStatement | selectStatement | insertStatement )
+	    -> ^(STATEMENT parameters? updateStatement? deleteStatement? selectStatement? insertStatement?)
 	;
+
+
+parameters
+    :   'parameters' OPEN declarationList CLOSE -> ^(PARAMETERS declarationList)
+    ;
+
+
+declarationList
+	: declaration (COMMA! declaration)*
+    ;
+
+
+declaration
+    : identifier sqltype ('default' constant)? -> ^(DECLARATION identifier sqltype constant?)
+    ;
+
+
+sqltype
+    : type=identifier
+    {
+        if (!isSqlType($type.text))
+            reportError(new MismatchedTokenException(DATATYPE, input));
+    }
+    ;
+    
 
 updateStatement
 	: UPDATE^ 
@@ -514,8 +555,8 @@ aggregate
 
 
 cast
-    : (c=CAST open=OPEN expression as=AS identifier CLOSE)
-        -> ^(METHOD_CALL IDENT[$c] ^(EXPR_LIST expression identifier))
+    : (c=CAST open=OPEN expression as=AS sqltype CLOSE)
+        -> ^(METHOD_CALL IDENT[$c] ^(EXPR_LIST expression sqltype))
 	;
 
 

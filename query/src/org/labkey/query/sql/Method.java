@@ -18,7 +18,6 @@ package org.labkey.query.sql;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
@@ -290,7 +289,7 @@ public abstract class Method
                 try
                 {
                     String sqlEscapeTypeName = getTypeArgument(fragments);
-                    sqlType = ConvertType.valueOf(sqlEscapeTypeName).type;
+                    sqlType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType.sqlType;
                 }
                 catch (IllegalArgumentException x)
                 {
@@ -309,7 +308,7 @@ public abstract class Method
                 String typeName = sqlEscapeTypeName;
                 try
                 {
-                    sqlType = ConvertType.valueOf(sqlEscapeTypeName).type;
+                    sqlType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType.sqlType;
                     typeName = schema.getSqlDialect().sqlTypeNameFromSqlType(sqlType);
                     fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
                 }
@@ -518,54 +517,7 @@ public abstract class Method
             return ret;
         }
     }
-    
 
-    enum ConvertType
-    {
-        BIGINT(Types.BIGINT),
-        BINARY(Types.BINARY),
-        BIT(Types.BIT),
-        CHAR(Types.CHAR),
-        DECIMAL(Types.DECIMAL),
-        DOUBLE(Types.DOUBLE),
-        FLOAT(Types.FLOAT),
-        GUID(Types.VARCHAR),
-        INTEGER(Types.INTEGER),
-        INTERVAL_MONTH(Types.INTEGER),
-        INTERVAL_YEAR(Types.INTEGER),
-        INTERVAL_YEAR_TO_MONTH(Types.INTEGER),
-        INTERVAL_DAY(Types.INTEGER),
-        INTERVAL_HOUR(Types.INTEGER),
-        INTERVAL_MINUTE(Types.INTEGER),
-        INTERVAL_SECOND(Types.INTEGER),
-//        INTERVAL_DAY_TO_HOUR,
-//        INTERVAL_DAY_TO_MINUTE,
-//        INTERVAL_DAY_TO_SECOND,
-//        INTERVAL_HOUR_TO_MINUTE,
-//        INTERVAL_HOUR_TO_SECOND,
-//        INTERVAL_MINUTE_TO_SECOND,
-        LONGVARBINARY(Types.LONGVARBINARY),
-        LONGVARCHAR(Types.LONGVARCHAR),
-        NUMERIC(Types.NUMERIC),
-        REAL(Types.REAL),
-        SMALLINT(Types.SMALLINT),
-        DATE(Types.DATE),
-        TIME(Types.TIME),
-        TIMESTAMP(Types.TIMESTAMP),
-        TINYINT(Types.TINYINT),
-        VARBINARY(Types.VARBINARY),
-        VARCHAR(Types.VARCHAR)
-//        WCHAR(Types.CHAR),
-//        WLONGVARCHAR(Types.LONGVARCHAR),
-//        WVARCHAR(Types.LONGVARCHAR)
-         ;
-
-        int type;
-        ConvertType(int type)
-        {
-            this.type = type;
-        }
-    }
 
     private static class JdbcMethod extends Method
     {

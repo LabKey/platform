@@ -19,6 +19,7 @@ package org.labkey.query;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
@@ -49,6 +50,7 @@ import org.labkey.query.reports.*;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
+import org.labkey.query.sql.ConvertType;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.QueryWebPartFactory;
@@ -160,7 +162,8 @@ public class QueryModule extends DefaultModule
         return new HashSet<Class>(Arrays.asList(
                 SqlParser.TestCase.class,
                 Query.TestCase.class,
-                QueryServiceImpl.TestCase.class
+                QueryServiceImpl.TestCase.class,
+                JdbcType.TestCase.class
         ));
     }
 

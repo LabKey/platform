@@ -97,6 +97,7 @@ public class Query
     private TablesDocument _metadata = null;
     private ContainerFilter _containerFilter;
     private QueryRelation _queryRoot;
+    private ArrayList<QParameter> _parameters;
 
     private Query _parent; // only used to avoid recursion for now
 
@@ -171,13 +172,6 @@ public class Query
     {
         if (null == _querySource)
             throw new IllegalStateException("SQL has not been specified");
-        _parse(_querySource);
-    }
-
-
-    public void parse(String queryText)
-    {
-        _querySource = queryText;
 
         _parse(_querySource);
         
@@ -186,7 +180,7 @@ public class Query
 
         for (QueryException e : _parseErrors)
         {
-            ExceptionUtil.decorateException(e, LabkeySQL, queryText, false);
+            ExceptionUtil.decorateException(e, LabkeySQL, _querySource, false);
             if (null != getSchema() && null != getSchema().getName())
                 ExceptionUtil.decorateException(e, QuerySchema, getSchema().getName(), false);
             if (null != _name)
@@ -195,11 +189,22 @@ public class Query
     }
 
 
+    public void parse(String queryText)
+    {
+        _querySource = queryText;
+        parse();
+    }
+
+
 	private void _parse(String queryText)
     {
 		try
 		{
-			QNode root = (new SqlParser()).parseQuery(queryText, _parseErrors);
+            SqlParser parser = new SqlParser();
+
+            parser.parseQuery(queryText, _parseErrors);
+
+			QNode root = parser.getRoot();
             QueryRelation relation = null;
 
 			if (root instanceof QQuery)
@@ -215,6 +220,7 @@ public class Query
                 return;
 
             _queryRoot = relation;
+            _parameters = parser.getParameters();
 
             if (_queryRoot._savedName == null && _name != null)
                 _queryRoot.setSavedName(_name);
@@ -370,13 +376,26 @@ public class Query
     }
 
 
+    public ArrayList<QParameter> getParameters()
+    {
+
+        if (_parseErrors.size() > 0)
+            return null;
+        if (null == _queryRoot)
+            throw new IllegalStateException("call parse first");
+        return _parameters;
+    }
+
+
     public TableInfo getTableInfo()
     {
         try
         {
             if (_parseErrors.size() > 0)
                 return null;
-            TableInfo tinfo = _queryRoot == null ? null : _queryRoot.getTableInfo();
+            if (null == _queryRoot)
+                throw new IllegalStateException("call parse first");
+            TableInfo tinfo = _queryRoot.getTableInfo();
             if (tinfo instanceof ContainerFilterable)
                 ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
             return tinfo;

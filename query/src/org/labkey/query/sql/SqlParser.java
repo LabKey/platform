@@ -28,7 +28,7 @@ import org.antlr.runtime.TokenStream;
 import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
-import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -60,9 +60,12 @@ import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored","ThrowableInstanceNeverThrown"})
 public class SqlParser
 {
-	private static Logger _log = Logger.getLogger(SqlParser.class);
+	private static Category _log = Category.getInstance(SqlParser.class);
 
     ArrayList<Exception> _parseErrors;
+    QNode _root;
+    ArrayList<QParameter> _parameters;
+    
 
     //
     // PUBLIC
@@ -71,6 +74,20 @@ public class SqlParser
     public SqlParser()
     {
     }
+
+
+    // for testing only
+    public Tree rawQuery(String str) throws Exception
+    {
+        _parseErrors = new ArrayList<Exception>();
+        _SqlParser parser = new _SqlParser(str, _parseErrors);
+        ParserRuleReturnScope selectScope = null;
+        selectScope = parser.statement();
+        if (!_parseErrors.isEmpty())
+            throw _parseErrors.get(0);
+        return (Tree)selectScope.getTree();
+    }
+
 
 	public QNode parseQuery(String str, List<? super QueryParseException> errors)
 	{
@@ -81,7 +98,7 @@ public class SqlParser
             ParserRuleReturnScope selectScope = null;
 			try
 			{
-				selectScope = parser.selectStatement();
+				selectScope = parser.statement();
                 int last = parser.getTokenStream().LA(1);
 				if (EOF != last)
                 {
@@ -98,28 +115,53 @@ public class SqlParser
 				_parseErrors.add(x);
 			}
 
-			QNode ret = null;
 			if (_parseErrors.size() == 0)
 			{
 				CommonTree parseRoot = (CommonTree) selectScope.getTree();
 				assert parseRoot != null;
+                assert parseRoot.getType() == STATEMENT;
+                assert parseRoot.getChildCount()==1 || parseRoot.getChildCount()==2;
 //                assert dump(parseRoot);
-                
-				QNode qnodeRoot = convertParseTree(parseRoot);
+
+                CommonTree parameters = null;
+                if (parseRoot.getChildCount() == 2)
+                {
+                    _parameters = new ArrayList<QParameter>();
+                    parameters = (CommonTree)parseRoot.getChild(0);
+                    for (Object parameter : parameters.getChildren())
+                    {
+                        QParameter p = convertParameter((CommonTree)parameter);
+                        if (null == p)
+                        {
+                            assert !_parseErrors.isEmpty();
+                            continue;
+                        }
+                        _parameters.add(p);
+                    }
+                }
+                CommonTree selectStmt = (CommonTree)parseRoot.getChild(parseRoot.getChildCount()-1);
+                if (selectStmt.getType() != QUERY && selectStmt.getType() != UNION && selectStmt.getType() != UNION_ALL)
+                {
+                    _parseErrors.add(new QueryParseException(tokenName(selectStmt.getType()) + " statements are not supported", null, parseRoot.getLine(), parseRoot.getCharPositionInLine()));
+                    return null;
+                }
+
+				QNode qnodeRoot = convertParseTree(selectStmt);
 //				assert dump(qnodeRoot);
 				assert MemTracker.put(qnodeRoot);
 
 				if (qnodeRoot instanceof QQuery || qnodeRoot instanceof QUnion)
-					ret = qnodeRoot;
+					_root = qnodeRoot;
 				else
 					errors.add(new QueryParseException("This does not look like a SELECT or UNION query", null, 0, 0));
-			}
+            }
 			
 			for (Throwable e : _parseErrors)
 			{
 				errors.add(wrapParseException(e));
 			}
-			return ret;
+
+			return _root;
 		}
 		catch (Exception e)
 		{
@@ -127,6 +169,18 @@ public class SqlParser
 			return null;
 		}
 	}
+
+
+    public QNode getRoot()
+    {
+        return _root;
+    }
+
+
+    public ArrayList<QParameter> getParameters()
+    {
+        return null==_parameters ? new ArrayList<QParameter>(0) : _parameters;
+    }
 
 	
     public QExpr parseExpr(String str, List<? super QueryParseException> errors)
@@ -160,12 +214,12 @@ public class SqlParser
 			assert dump(qnodeRoot);
             assert MemTracker.put(qnodeRoot);
 
-            QExpr ret = qnodeRoot != null && qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
+            _root = qnodeRoot != null && qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
             for (Throwable e : _parseErrors)
             {
                 errors.add(wrapParseException(e));
             }
-            return ret;
+            return (QExpr)_root;
         }
         catch (Exception e)
         {
@@ -175,7 +229,7 @@ public class SqlParser
     }
 
 
-    public static String toPrefixString(CommonTree tree)
+    public static String toPrefixString(Tree tree)
     {
         StringBuilder sb = new StringBuilder();
         _prefix(tree, sb);
@@ -428,6 +482,7 @@ public class SqlParser
             case CASE: return "CASE";
             case CAST: return "CAST";
             case COUNT: return "COUNT";
+            case DATATYPE: return "DATATYPE";
             case DELETE: return "DELETE";
             case DESCENDING: return "DESCENDING";
             case DISTINCT: return "DISTINCT";
@@ -510,6 +565,52 @@ public class SqlParser
         return null;
     }
 
+
+    private QParameter convertParameter(CommonTree node)
+    {
+        if (node.getChildCount() < 2 || node.getChildCount() > 3)
+        {
+            _parseErrors.add(new QueryParseException("Invalid parameter declaration", null, node.getLine(), node.getCharPositionInLine()));
+            return null;
+        }
+
+        QNode parameter = convertParseTree(node);
+        QNode nodeName = parameter.childList().get(0);
+        QNode nodeType = parameter.childList().get(1);
+        QNode nodeDefault = null;
+        
+        if (parameter.childList().size() > 2)
+        {
+            nodeDefault = parameter.childList().get(2);
+            if (!(nodeDefault instanceof IConstant))
+            {
+                Tree n = node.getChild(2);
+                _parseErrors.add(new QueryParseException("Constant expected after DEFAULT", null, n.getLine(), n.getCharPositionInLine()));
+                return null;
+            }
+        }
+
+        if (!(nodeName instanceof QIdentifier) || !(nodeType instanceof QIdentifier) || (null != nodeDefault && !(nodeDefault instanceof QExpr)))
+        {
+            _parseErrors.add(new QueryParseException("Parse exception in parameter declaration", null, node.getLine(), node.getCharPositionInLine()));
+            return null;
+        }
+
+        QIdentifier identName = (QIdentifier)nodeName;
+        QIdentifier identType = (QIdentifier)nodeType;
+        QExpr exprDefault = (QExpr)nodeDefault;
+        boolean required = exprDefault == null;
+        ParameterType type = ParameterType.valueOf(identType.getIdentifier());
+        Object value = null==exprDefault ? null : type.convert(((IConstant)exprDefault).getValue());
+
+        if (null == type)
+        {
+            _parseErrors.add(new QueryParseException("Type is not supported: " + identType.getIdentifier(), null, identType.getLine(), identType.getColumn()));
+            return null;
+        }
+        return new QParameter(parameter, identName.getIdentifier(), type, required, value);
+    }
+    
 
 	private QNode convertParseTree(CommonTree node)
 	{
@@ -646,7 +747,7 @@ public class SqlParser
             s = s.substring(4);
         try
         {
-            Method.ConvertType.valueOf(s);
+            ConvertType.valueOf(s);
             return true;
         }
         catch (IllegalArgumentException x)
@@ -749,15 +850,23 @@ public class SqlParser
             setTreeAdaptor(new AdaptorWrapper());
             _errors = errors;
             assert MemTracker.put(this);
+        }
 
-//            CommonTokenStream s = new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str)));
-//            while (SqlBaseParser.EOF != s.LA(1))
-//            {
-//                Token t = s.LT(1);
-//                System.out.println(t.getType() + ": " + t.getText());
-//                s.consume();
-//            }
-		}
+        public boolean isSqlType(String type)
+        {
+            type = type.toUpperCase();
+            if (type.startsWith("SQL_"))
+                type = type.substring(4);
+            try
+            {
+                ConvertType.valueOf(type);
+                return true;
+            }
+            catch (IllegalArgumentException x)
+            {
+                return false;
+            }
+        }
 
 		@Override
 		public void reportError(RecognitionException ex)
