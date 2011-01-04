@@ -279,17 +279,20 @@ public class Parameter
                 if (null == p._name)
                     throw new IllegalStateException();
                 p._stmt = stmt;
-                if (_map.containsKey(p._name))
-                    throw new IllegalArgumentException("duplicate parameter name: " + p._name);
                 String name = p._name;
                 if (null != remap && remap.containsKey(name))
                     name = remap.get(name);
+                if (_map.containsKey(name))
+                    throw new IllegalArgumentException("duplicate parameter name: " + name);
                 _map.put(name, p);
                 if (null != p._uri)
                 {
-                    if (_map.containsKey(p._uri))
-                        throw new IllegalArgumentException("duplicate property uri: " + p._uri);
-                    _map.put(p._uri, p);
+                    String uri = p._uri;
+                    if (null != remap && remap.containsKey(uri))
+                        uri = remap.get(uri);
+                    if (_map.containsKey(uri))
+                        throw new IllegalArgumentException("duplicate property uri: " + uri);
+                    _map.put(uri, p);
                 }
             }
             _stmt = stmt;
