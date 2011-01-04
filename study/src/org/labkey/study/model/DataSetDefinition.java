@@ -951,6 +951,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     continue;
                 m.put(col.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, col.getMvColumnName());                
             }
+
+            // shouldn't getStorageTableInfo().getColumn("date").getPropertyURI() == getVisitDateURI()?
+            if (getStudy().getTimepointType() != TimepointType.VISIT)
+            {
+                m.put(getStorageTableInfo().getColumn("date").getPropertyURI(), getVisitDateURI());
+            }
+
             return m;
         }
     }
