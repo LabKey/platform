@@ -272,7 +272,7 @@
 
         this.send = function()
         {
-            req.open("POST", "<%=PageFlowUtil.urlProvider(ReportUrls.class).urlSaveRReportState(c).getLocalURIString()%>");
+            req.open("POST", "<%=urlProvider(ReportUrls.class).urlSaveRReportState(c).getLocalURIString()%>");
             req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             req.send(url);
         };

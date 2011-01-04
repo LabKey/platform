@@ -30,7 +30,7 @@
     CustomizeFilesWebPartView me = (CustomizeFilesWebPartView) HttpView.currentView();
     CustomizeFilesWebPartView.CustomizeWebPartForm form = me.getModelBean();
     ViewContext ctx = me.getViewContext();
-    ActionURL postUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
+    ActionURL postUrl = urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
     FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
     AttachmentDirectory [] attDirs = svc.getRegisteredDirectories(ctx.getContainer());
 %>
@@ -53,7 +53,7 @@
             </select>
 <%          if (ctx.getUser().isAdministrator())
             {
-                ActionURL configUrl = PageFlowUtil.urlProvider(FileUrls.class).urlShowAdmin(ctx.getContainer()); %>
+                ActionURL configUrl = urlProvider(FileUrls.class).urlShowAdmin(ctx.getContainer()); %>
                 <a href="<%=h(configUrl)%>">Configure File Roots</a>
 <%          } %>
             </td>

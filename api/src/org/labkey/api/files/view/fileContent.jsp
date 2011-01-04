@@ -53,7 +53,7 @@
 
     Container c = context.getContainer();
 
-    ActionURL projConfig = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
+    ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
     int height = 350;
 %>
 <!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
@@ -87,7 +87,7 @@ Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
 Ext.QuickTips.init();
 
 var autoResize = <%=bean.isAutoResize()%>;
-var actionsURL = <%=PageFlowUtil.jsString(PageFlowUtil.urlProvider(PipelineUrls.class).urlActions(context.getContainer()).getLocalURIString() + "path=")%>;
+var actionsURL = <%=PageFlowUtil.jsString(urlProvider(PipelineUrls.class).urlActions(context.getContainer()).getLocalURIString() + "path=")%>;
 var buttonActions = [];
 
 <%

@@ -113,7 +113,7 @@
 
         this.send = function()
         {
-            req.open("POST", "<%=PageFlowUtil.urlProvider(ReportUrls.class).urlUpdateRReportState(HttpView.currentContext().getContainer()).getLocalURIString()%>");
+            req.open("POST", "<%=urlProvider(ReportUrls.class).urlUpdateRReportState(HttpView.currentContext().getContainer()).getLocalURIString()%>");
             req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             req.send(viewName);
         }
