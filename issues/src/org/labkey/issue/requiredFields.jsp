@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.issue.IssuesController"%>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.issue.IssuesController"%>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.HString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuesController.IssuesPreference> me = (JspView<IssuesController.IssuesPreference>) HttpView.currentView();
@@ -60,7 +59,7 @@
     %>
         <tr><td></td></tr>
         <tr>
-            <td colspan="2" align="center"><%=PageFlowUtil.generateSubmitButton("Update Required Fields")%></td>
+            <td colspan="2" align="center"><%=generateSubmitButton("Update Required Fields")%></td>
         </tr>
     </table><br>
 </form>

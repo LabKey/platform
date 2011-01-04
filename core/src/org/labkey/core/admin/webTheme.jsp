@@ -385,7 +385,7 @@ if (null == webThemeErrors)
         }
         else
             {%>
-            <%=PageFlowUtil.generateButton("Done", PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(HttpView.currentContext().getContainer()))%>
+            <%=generateButton("Done", urlProvider(AdminUrls.class).getProjectSettingsURL(HttpView.currentContext().getContainer()))%>
            <%}%>
     </td>
 </tr>

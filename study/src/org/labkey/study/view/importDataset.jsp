@@ -16,7 +16,6 @@
  */
 %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
@@ -29,8 +28,8 @@
 <labkey:errors/>
 
 <form action="showImportDataset.post" method=POST>
-    <%=PageFlowUtil.generateSubmitButton("Import Data")%>
-    <%=PageFlowUtil.generateBackButton("Cancel")%>
+    <%=generateSubmitButton("Import Data")%>
+    <%=generateBackButton("Cancel")%>
     <table width="100%">
     <tr><td class=labkey-form-label width=150>Type URI</td><td><%=h(form.getTypeURI())%><input type=hidden name="typeURI" value="<%=h(form.getTypeURI())%>"></td></tr>
     <tr><td class=labkey-form-label width=150>Key Fields</td><td><%=h(form.getKeys())%><input type=hidden name="keys" value="<%=h(form.getKeys())%>"></td></tr>

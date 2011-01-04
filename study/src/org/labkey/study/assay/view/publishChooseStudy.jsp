@@ -18,11 +18,11 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.actions.PublishStartAction" %>
 <%@ page import="org.labkey.api.study.assay.AssayPublishService" %>
 <%@ page import="org.labkey.api.study.assay.AssayUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -30,7 +30,6 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PublishStartAction.PublishBean> me = (JspView<PublishStartAction.PublishBean>) HttpView.currentView();
@@ -47,7 +46,7 @@
             unambiguous = false;
     }
 
-    ActionURL postURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyConfirmURL(getViewContext().getContainer(), bean.getProtocol());
+    ActionURL postURL = urlProvider(AssayUrls.class).getCopyToStudyConfirmURL(getViewContext().getContainer(), bean.getProtocol());
     Pair<String, String>[] parameters = postURL.getParameters();
     postURL.deleteParameters();
 %>

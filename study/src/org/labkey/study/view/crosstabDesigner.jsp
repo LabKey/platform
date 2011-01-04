@@ -18,10 +18,9 @@
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
 <%@ page import="org.labkey.api.query.FieldKey"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -69,7 +68,7 @@
         </td>
     </tr>
     </table>
-    <%=PageFlowUtil.generateSubmitButton("Submit")%>
+    <%=generateSubmitButton("Submit")%>
 </form>
 
 <%!

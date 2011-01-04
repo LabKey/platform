@@ -25,4 +25,4 @@
     ActionURL homeURL = AppProps.getInstance().getHomePageActionURL();
 %>
 <%=message%><br><br>
-<%=PageFlowUtil.generateButton("Home", homeURL)%>
+<%=generateButton("Home", homeURL)%>

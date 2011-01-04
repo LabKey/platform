@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -107,9 +106,9 @@
         ActionURL pipelineUrl;
 
         if (PipelineService.get().hasSiteDefaultRoot(c))
-            pipelineUrl = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline");
+            pipelineUrl = urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline");
         else
-            pipelineUrl = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(c);
+            pipelineUrl = urlProvider(PipelineUrls.class).urlBegin(c);
 
         out.write(textLink("Manage Files", pipelineUrl));
     }

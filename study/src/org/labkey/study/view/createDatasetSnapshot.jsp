@@ -88,7 +88,7 @@
                 out.println(PageFlowUtil.generateSubmitButton("Edit Dataset Definition", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
                 out.print("&nbsp;");
             }
-            out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Save" : "Create Snapshot"));
+            out.println(generateSubmitButton(bean.isEdit() ? "Save" : "Create Snapshot"));
             out.print("&nbsp;");
             out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Done" : "Cancel", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
         %>

@@ -17,15 +17,14 @@
 %>
 <%@ page import="org.labkey.api.exp.OntologyManager"%>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.study.Visit"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
 <%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="org.labkey.study.model.VisitDataSet"%>
+<%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="java.util.HashMap"%>
-<%@ page import="java.util.List"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 //    Study study;
@@ -103,7 +102,7 @@ if (selectedDataset != null)
 }
 %>
 </table>
-<%=PageFlowUtil.generateSubmitButton("Submit")%>
+<%=generateSubmitButton("Submit")%>
 </form>
 <font class=labkey-error><%= error==null ? "" : h(error)%></font>
 <script type="text/javascript">

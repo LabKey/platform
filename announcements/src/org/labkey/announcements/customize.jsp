@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -103,7 +102,7 @@
     </tr>
     <tr>
         <td colspan=2><%=generateSubmitButton("Save")%>
-        <%=PageFlowUtil.generateButton("Cancel", bean.returnURL)%></td>
+        <%=generateButton("Cancel", bean.returnURL)%></td>
     </tr>
 </table>
 </form>

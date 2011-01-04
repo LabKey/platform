@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.workbook.CreateWorkbookBean" %>
@@ -113,8 +112,8 @@
         <% } %>
         <tr>
             <td colspan="2" class="cwb-button-bar">
-                <%=PageFlowUtil.generateButton("Cancel", container.getStartURL(me.getViewContext().getUser()))%>
-                <%=PageFlowUtil.generateSubmitButton("Create Workbook")%>
+                <%=generateButton("Cancel", container.getStartURL(me.getViewContext().getUser()))%>
+                <%=generateSubmitButton("Create Workbook")%>
             </td>
         </tr>
     </table>

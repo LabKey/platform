@@ -95,7 +95,7 @@
         // ajax call to get report section names
         if (element)
         {
-            var url = "<%=PageFlowUtil.urlProvider(ReportUrls.class).urlReportSections(context.getContainer())%>";
+            var url = "<%=urlProvider(ReportUrls.class).urlReportSections(context.getContainer())%>";
 
             url = url.concat("&<%=ReportDescriptor.Prop.reportId.name()%>=");
             url = url.concat(element.value);

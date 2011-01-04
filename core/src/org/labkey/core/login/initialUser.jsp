@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.springframework.validation.Errors" %>
@@ -41,6 +40,6 @@ folders, etc.<br><br>
 <table>
     <tr><td>Email:</td><td><input id="email" type="text" name="email" value="<%=h(email)%>" style="width:200px;"></td></tr>
     <tr><td>&nbsp;</td><td style="height:50px">
-        <%=PageFlowUtil.generateSubmitButton("Register")%></td></tr>
+        <%=generateSubmitButton("Register")%></td></tr>
 </table>
 </form>

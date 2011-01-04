@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -49,8 +48,8 @@
             %><input type="hidden" name="userId" value="<%=user.getUserId()%>"/><%
         }
     %>
-    <%=PageFlowUtil.generateSubmitButton(bean.isActivate() ? "Re-activate" : "Deactivate")%>
-    <%=PageFlowUtil.generateButton("Cancel", bean.getRedirUrl())%>
+    <%=generateSubmitButton(bean.isActivate() ? "Re-activate" : "Deactivate")%>
+    <%=generateButton("Cancel", bean.getRedirUrl())%>
 </form>
 <% if (bean.isActivate()) { %>
 <p><b>Note:</b> Re-activated users will be able to login normally, and all their previous

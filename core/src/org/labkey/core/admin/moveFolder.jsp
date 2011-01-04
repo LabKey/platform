@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -59,17 +58,17 @@
     </table>
 
     <table><tr>
-    <td><%=PageFlowUtil.generateButton("Cancel", AdminController.getManageFoldersURL(c))%></td><%
+    <td><%=generateButton("Cancel", AdminController.getManageFoldersURL(c))%></td><%
     if (form.isShowAll())
     {
         if (!c.isProject())
         {
-            %><td><%=PageFlowUtil.generateButton("Show Current Project Only", AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), false))%></td><%
+            %><td><%=generateButton("Show Current Project Only", AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), false))%></td><%
         }
     }
     else
     {
-        %><td><%=PageFlowUtil.generateButton("Show All Projects", AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), true))%></td><%
+        %><td><%=generateButton("Show All Projects", AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), true))%></td><%
     }
     %></tr>
 </table>

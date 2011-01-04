@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
@@ -75,6 +74,6 @@
 
     </table>
 
-    <%=PageFlowUtil.generateSubmitButton("Submit")%>
+    <%=generateSubmitButton("Submit")%>
 </form>
 

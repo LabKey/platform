@@ -32,7 +32,7 @@
     ActionURL cancelUrl = new ActionURL(DesignerController.CancelWizardAction.class, container).addParameter("studyId", String.valueOf(form.getStudyId()));
     if (null != form.getMessage())
     {%>
-        <span class="labkey-error"><%=PageFlowUtil.filter(form.getMessage(), true)%></span><br><%
+        <span class="labkey-error"><%=h(form.getMessage(), true)%></span><br><%
     }%>
 Use this wizard to create a folder that will contain all of the assay results and information about each <%=h(species)%> (subject) within
 the vaccine study.
@@ -75,7 +75,7 @@ the vaccine study.
 
         <tr>
         <td>Folder Name</td>
-        <td><input name="folderName" value="<%=PageFlowUtil.filter(form.getFolderName())%>"></td>
+        <td><input name="folderName" value="<%=h(form.getFolderName())%>"></td>
         </tr>
         <tr>
             <td>Parent Folder</td>
@@ -100,8 +100,8 @@ the vaccine study.
             </td>
         </tr>
     </table>
-    <%=PageFlowUtil.generateButton("Back", "javascript:window.history.back();")%>
-    <%=PageFlowUtil.generateSubmitButton("Next")%>&nbsp;&nbsp;<%=PageFlowUtil.generateButton("Cancel", cancelUrl)%>
+    <%=generateButton("Back", "javascript:window.history.back();")%>
+    <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
 
 <%
 }
@@ -138,11 +138,11 @@ Each study needs specimen ids for the specimens included in the study. To upload
     <textarea class="labkey-bordered" rows="20" cols="80" name="specimenTSV"><%=h(form.getSpecimenTSV())%></textarea>
         <input type="hidden" value="false"  name="ignoreWarnings">
     <br>
-    <%=PageFlowUtil.generateButton("Back", "javascript:window.history.back();")%>
+    <%=generateButton("Back", "javascript:window.history.back();")%>
         <% if (form.isContainsWarnings())  {%>
             <%=PageFlowUtil.generateSubmitButton("Ignore Warnings and Continue", "form.ignoreWarnings.value = 'true';form.submit();")%>
         <%}%>
-        <%=PageFlowUtil.generateSubmitButton("Next")%>&nbsp;&nbsp;<%=PageFlowUtil.generateButton("Cancel", cancelUrl)%>
+        <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
 <br><%
 %>
 <input type="hidden" name="uploadSpecimens" value="true"> <br>
@@ -156,11 +156,11 @@ Paste a tab-delimited dataset copied from the workbook downloaded in the previou
 <textarea class="labkey-bordered" rows="20" cols="80" name="specimenTSV"><%=h(form.getSpecimenTSV())%></textarea>
     <input type="hidden" value="false"  name="ignoreWarnings">
 <br>
-<%=PageFlowUtil.generateButton("Back", "javascript:window.history.back();")%>
+<%=generateButton("Back", "javascript:window.history.back();")%>
     <% if (form.isContainsWarnings())  {%>
         <%=PageFlowUtil.generateSubmitButton("Ignore Warnings and Continue", "form.ignoreWarnings.value = 'true';form.submit();")%>
     <%}%>
-    <%=PageFlowUtil.generateSubmitButton("Next")%>&nbsp;&nbsp;<%=PageFlowUtil.generateButton("Cancel", cancelUrl)%>
+    <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
 <%
 }
 if (form.getWizardStep() != DesignerController.WizardStep.UPLOAD_SAMPLES &&
@@ -204,11 +204,11 @@ if (form.getWizardStep() == DesignerController.WizardStep.SHOW_PARTICIPANTS)
     The correct number of participants should be supplied for each cohort.<br>
     <textarea rows="20" cols="60" name="participantTSV"><%=h(form.getParticipantTSV())%></textarea>
     <input type="hidden" name="ignoreWarnings" value="false"><br>
-    <%=PageFlowUtil.generateButton("Back", "javascript:window.history.back();")%>
+    <%=generateButton("Back", "javascript:window.history.back();")%>
     <% if (form.isContainsWarnings())  {%>
         <%=PageFlowUtil.generateSubmitButton("Ignore Warnings and Continue", "form.ignoreWarnings.value = 'true';form.submit();")%>
     <%}%>
-    <%=PageFlowUtil.generateSubmitButton("Next")%>&nbsp;&nbsp;<%=PageFlowUtil.generateButton("Cancel", cancelUrl)%>
+    <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
 <%
 }
 if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPANTS)
@@ -223,10 +223,10 @@ if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPANTS)
     Other columns may be added. The correct number of participants should be supplied for each cohort.<br>
     <textarea rows="20" cols="60" name="participantTSV"><%=h(form.getParticipantTSV())%></textarea>
     <input type="hidden" name="ignoreWarnings" value="false"><br>
-    <%=PageFlowUtil.generateButton("Back", "javascript:window.history.back();")%>     <% if (form.isContainsWarnings())  {%>
+    <%=generateButton("Back", "javascript:window.history.back();")%>     <% if (form.isContainsWarnings())  {%>
         <%=PageFlowUtil.generateSubmitButton("Ignore Warnings and Continue", "form.ignoreWarnings.value = 'true';form.submit();")%>
     <%}%>
-    <%=PageFlowUtil.generateSubmitButton("Next")%>&nbsp;&nbsp;<%=PageFlowUtil.generateButton("Cancel", cancelUrl)%><%
+    <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%><%
 }
 if (form.getWizardStep() == DesignerController.WizardStep.CONFIRM)
 {
@@ -247,8 +247,8 @@ You are about to create a study folder with the following settings:
     <li><b>Specimens: </b><%=h(DesignerController.getSpecimens().size())%> </li>
 </ul>
 <br>
-<%=PageFlowUtil.generateButton("Back", "javascript:window.history.back();")%>
-    <%=PageFlowUtil.generateSubmitButton("Finish")%>&nbsp;&nbsp;<%=PageFlowUtil.generateButton("Cancel", cancelUrl)%>
+<%=generateButton("Back", "javascript:window.history.back();")%>
+    <%=generateSubmitButton("Finish")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
 <%
 }
 

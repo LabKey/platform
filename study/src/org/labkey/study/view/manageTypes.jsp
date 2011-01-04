@@ -153,8 +153,8 @@
             <td><input id="dateFormat" name="dateFormat" value="<%=StringUtils.trimToEmpty(dateFormat)%>"></td></tr>
         <tr><td>Default Study Number format string:<%=PageFlowUtil.helpPopup("Number format string", decimalFormatHelp, true)%></td>
             <td><input id="numberFormat" name="numberFormat" value="<%=StringUtils.trimToEmpty(numberFormat)%>"></td></tr>
-        <tr><td><%=PageFlowUtil.generateSubmitButton("Submit")%>
-            &nbsp;<%=PageFlowUtil.generateButton("Reset to Default", "javascript:resetDefaultFormats()")%>
+        <tr><td><%=generateSubmitButton("Submit")%>
+            &nbsp;<%=generateButton("Reset to Default", "javascript:resetDefaultFormats()")%>
 
         </td></tr>
     </table>

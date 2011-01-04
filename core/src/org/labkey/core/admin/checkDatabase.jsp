@@ -37,7 +37,7 @@
     <table>
         <tr class="labkey-wp-header"><th colspan=2 align=center>Database Tools</th></tr>
         <tr><td>Check table consistency:&nbsp;</td>
-        <td> <%=PageFlowUtil.generateButton("Do Database Check", new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot()))%>&nbsp;</td></tr>
+        <td> <%=generateButton("Do Database Check", new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot()))%>&nbsp;</td></tr>
         <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Get schema xml doc:&nbsp;</td>
             <td>
@@ -56,8 +56,8 @@
                     %>
                 </select><br>
             </td></tr>
-        <tr><td></td><td><%= PageFlowUtil.generateSubmitButton("Get Schema Xml") %>
-        <%=PageFlowUtil.generateButton("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>  </td></tr>
+        <tr><td></td><td><%=generateSubmitButton("Get Schema Xml") %>
+        <%=generateButton("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>  </td></tr>
         <tr><td></td><td></td></tr>
     </table>
 </form><br/><br/>

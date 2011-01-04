@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
@@ -54,7 +53,7 @@
         <% } %>
         <tr><td>&nbsp;</td></tr>
         
-        <tr><td class="labkey-form-label">Site-Level&nbsp;File&nbsp;Root&nbsp;<%=PageFlowUtil.helpPopup("File Root", "Set a site-level file root. " +
+        <tr><td class="labkey-form-label">Site-Level&nbsp;File&nbsp;Root&nbsp;<%=helpPopup("File Root", "Set a site-level file root. " +
                 "When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system." +
                 " A site-level file root may be overridden at the project level from 'Project Settings'.")%></td>
             <td><input type="text" name="rootPath" size="64" value="<%=h(bean.getRootPath())%>"></td>
@@ -65,12 +64,12 @@
         <%
             if (bean.isUpgrade()) {
         %>
-            <td><%=PageFlowUtil.generateSubmitButton("Next")%></td>
+            <td><%=generateSubmitButton("Next")%></td>
         <%
             } else {
         %>
-            <td><%=PageFlowUtil.generateSubmitButton("Save")%>&nbsp;
-                <%=PageFlowUtil.generateButton("Cancel", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL())%>
+            <td><%=generateSubmitButton("Save")%>&nbsp;
+                <%=generateButton("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>
             </td>
         <%
             }

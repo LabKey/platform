@@ -20,18 +20,15 @@
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotDefinition" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotForm" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -69,14 +66,14 @@
     <table>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td><%=PageFlowUtil.generateSubmitButton("Update Snapshot")%></td>
+            <td><%=generateSubmitButton("Update Snapshot")%></td>
 <%      if (def != null && dsDef != null) { %>
 <%--
-            <td><%=PageFlowUtil.generateButton("Edit Query Source", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition()))%></td>
+            <td><%=generateButton("Edit Query Source", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition()))%></td>
 --%>
-            <td><%=PageFlowUtil.generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
-            <td><%=PageFlowUtil.generateButton(datasetLabel, context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset)))%></td>
-            <td><%=PageFlowUtil.generateButton("Delete Snapshot", deleteSnapshotURL.addParameter("id", dsDef.getDataSetId()),
+            <td><%=generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
+            <td><%=generateButton(datasetLabel, context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset)))%></td>
+            <td><%=generateButton("Delete Snapshot", deleteSnapshotURL.addParameter("id", dsDef.getDataSetId()),
                     "return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')")%></td>
 <%      } %>
         </tr>

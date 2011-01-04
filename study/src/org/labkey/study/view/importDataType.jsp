@@ -51,7 +51,7 @@
             </td>
         </tr>
         <tr>
-            <td colspan=5><%=PageFlowUtil.generateSubmitButton("Next")%>&nbsp;<%= generateButton("Cancel", "manageTypes.view") %></td>
+            <td colspan=5><%=generateSubmitButton("Next")%>&nbsp;<%= generateButton("Cancel", "manageTypes.view") %></td>
         </tr>
     </table>
 </form>

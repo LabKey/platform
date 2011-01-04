@@ -46,8 +46,8 @@
     </table>
     <table>
         <tr>
-            <td><%=PageFlowUtil.generateSubmitButton("Rename")%></td>
-            <td><%=PageFlowUtil.generateButton("Cancel", "manageFolders.view")%></td>
+            <td><%=generateSubmitButton("Rename")%></td>
+            <td><%=generateButton("Cancel", "manageFolders.view")%></td>
         </tr>
     </table>
 </form>

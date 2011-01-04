@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.core.attachment.AttachmentServiceImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -28,8 +27,8 @@
   </tr>
   <tr>
     <td>
-        <%=PageFlowUtil.generateButton("OK", me.deleteURL)%>
-        <%=PageFlowUtil.generateButton("Cancel", "#cancel", "window.close();")%>
+        <%=generateButton("OK", me.deleteURL)%>
+        <%=generateButton("Cancel", "#cancel", "window.close();")%>
     </td>
   </tr>
 </table>

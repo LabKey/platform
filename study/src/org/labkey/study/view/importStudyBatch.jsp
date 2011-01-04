@@ -17,15 +17,14 @@
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.labkey.api.study.DataSet"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.pipeline.DatasetFileReader" %>
 <%@ page import="org.labkey.study.pipeline.DatasetImportRunnable" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Date" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <div>
 <labkey:errors/>
@@ -48,11 +47,11 @@ for (DatasetImportRunnable runnable : runnables)
     DataSet dataset = runnable.getDatasetDefinition();
     String message = runnable.validate();
     if (message == null)
-        message = PageFlowUtil.filter(runnable.getFileName());
+        message = h(runnable.getFileName());
     else
     {
         hasError = true;
-        message = "<font class=labkey-error>" + PageFlowUtil.filter(message) + "</font>";
+        message = "<font class=labkey-error>" + h(message) + "</font>";
     }
     %>
     <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row"%>">
@@ -70,8 +69,8 @@ if (!hasError)
 {
     ActionURL submitURL = new ActionURL(StudyController.SubmitStudyBatchAction.class, me.getViewContext().getContainer());
 %><form action="<%=submitURL.getLocalURIString()%>" method=POST>
-    <input type=hidden name=path value="<%=PageFlowUtil.filter(bean.getPath())%>">
-    <%=PageFlowUtil.generateSubmitButton("Start Import")%>
+    <input type=hidden name=path value="<%=h(bean.getPath())%>">
+    <%=generateSubmitButton("Start Import")%>
 </form><%
 }
 %>

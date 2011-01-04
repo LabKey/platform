@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty"%>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.study.actions.TemplateAction" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.assay.*" %>
+<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
+<%@ page import="org.labkey.api.study.assay.PipelineDataCollector" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<org.labkey.api.study.actions.AssayRunUploadForm>) HttpView.currentView();
@@ -45,7 +44,7 @@
             <% if (PipelineDataCollector.getFileQueue(bean).isEmpty())
             { %>
                 <%= textLink("download spreadsheet template",
-                    PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(bean.getContainer(), bean.getProtocol(), TemplateAction.class))%>
+                    urlProvider(AssayUrls.class).getProtocolURL(bean.getContainer(), bean.getProtocol(), TemplateAction.class))%>
                 <br>After downloading and editing the spreadsheet template, paste it into the text area below or save the spreadsheet and upload it as a file.
             <% }%>
         </td>

@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -84,15 +83,15 @@
 
     <table>
         <tr>
-            <td><%=PageFlowUtil.generateSubmitButton("Next")%></td>
+            <td><%=generateSubmitButton("Next")%></td>
             <td><%
                 if (!c.isRoot())
                 {
-                    %><%=PageFlowUtil.generateButton("Cancel", "manageFolders.view")%><%
+                    %><%=generateButton("Cancel", "manageFolders.view")%><%
                 }
                 else
                 {
-                    %><%=PageFlowUtil.generateButton("Cancel", "createFolder.view", "window.history.back(); return false;")%><%
+                    %><%=generateButton("Cancel", "createFolder.view", "window.history.back(); return false;")%><%
                 } %></td>
         </tr>
     </table>

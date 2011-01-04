@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.announcements.model.AnnouncementManager"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<BulkEditBean> me = (HttpView<BulkEditBean>) HttpView.currentView();

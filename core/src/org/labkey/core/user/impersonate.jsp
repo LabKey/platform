@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -57,7 +56,7 @@
             %>
             </select><br>
             <%=generateReturnUrlFormField(returnURL)%>
-            <%=PageFlowUtil.generateSubmitButton("Impersonate")%><%
+            <%=generateSubmitButton("Impersonate")%><%
             }
             %>
         </td></tr>

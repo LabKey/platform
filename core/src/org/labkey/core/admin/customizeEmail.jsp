@@ -57,8 +57,8 @@
         <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
         <tr>
             <td></td><td>
-            <%=PageFlowUtil.generateSubmitButton("Save")%>
-            <%=PageFlowUtil.generateButton("Cancel", bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL()))%>
+            <%=generateSubmitButton("Save")%>
+            <%=generateButton("Cancel", bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL()))%>
             <%=PageFlowUtil.generateSubmitButton("Reset to Default Template", "this.form.action='deleteCustomEmail.view'", "id='siteResetButton' style='display: none;'")%>
             <%=PageFlowUtil.generateSubmitButton("Delete Folder-Level Template", "this.form.action='deleteCustomEmail.view'", "id='folderResetButton' style='display: none;'")%>
         </tr>

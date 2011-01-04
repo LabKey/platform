@@ -15,21 +15,20 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.core.workbook.WorkbookSearchBean" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.core.CoreController" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.CoreController" %>
+<%@ page import="org.labkey.core.workbook.WorkbookSearchBean" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WorkbookSearchBean> me = (JspView<WorkbookSearchBean>) HttpView.currentView();
-    WorkbookSearchBean searchBean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
 %>
 <form method="GET" action="<%=new ActionURL(CoreController.LookupWorkbookAction.class, container)%>">
     <input type="text" id="wbsearch-id" name="id" size="20" value=""/>
-    <%=PageFlowUtil.generateSubmitButton("Go")%>
+    <%=generateSubmitButton("Go")%>
 </form>
 
 <script type="text/javascript">

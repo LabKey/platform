@@ -17,13 +17,12 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
-<%@ page import="org.labkey.search.model.SearchPropertyManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.search.SearchController" %>
+<%@ page import="org.labkey.search.model.SearchPropertyManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -67,7 +66,7 @@ else
         {
         %>
         <tr><td><input type="hidden" name="pause" value="1"></td></tr>
-        <tr><td><%=PageFlowUtil.generateSubmitButton("Pause Crawler")%></td></tr><%
+        <tr><td><%=generateSubmitButton("Pause Crawler")%></td></tr><%
         }
     }
     else
@@ -78,7 +77,7 @@ else
         {
         %>
         <tr><td><input type="hidden" name="start" value="1"></td></tr>
-        <tr><td><%=PageFlowUtil.generateSubmitButton("Start Crawler")%></td></tr><%
+        <tr><td><%=generateSubmitButton("Start Crawler")%></td></tr><%
         }
     }
     %>
@@ -91,7 +90,7 @@ else
         <table>
             <tr><td>Deleting the search index isn't usually necessary; it causes re-indexing of all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="delete" value="1"></td></tr>
-            <tr><td><%=PageFlowUtil.generateSubmitButton("Delete Index")%></td></tr>
+            <tr><td><%=generateSubmitButton("Delete Index")%></td></tr>
         </table>
     </form></p><%
     }

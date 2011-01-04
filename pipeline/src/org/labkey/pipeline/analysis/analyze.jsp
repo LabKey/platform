@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ActionURL cancelURL = (ActionURL)HttpView.currentModel();
 %>
@@ -162,7 +162,7 @@
         if (!selectedFileNames || selectedFileNames.length == 0)
         {
             alert("No files have been selected for analysis. Return to the pipeline to select them.");
-            window.location = "<%= PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(HttpView.currentContext().getContainer(), null) %>";
+            window.location = "<%= urlProvider(PipelineUrls.class).urlBrowse(HttpView.currentContext().getContainer(), null) %>";
         }
         showFileStatus("<em>(Refreshing status)</em>");
         LABKEY.Pipeline.getProtocols({ taskId: taskId, successCallback: getProtocolsCallback });

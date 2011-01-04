@@ -17,28 +17,27 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.reports.Report"%>
+<%@ page import="org.labkey.api.security.Group"%>
+<%@ page import="org.labkey.api.security.SecurityManager"%>
+<%@ page import="org.labkey.api.security.SecurityPolicy"%>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
+<%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.study.controllers.security.SecurityController"%>
-<%@ page import="org.labkey.study.model.StudyImpl"%>
-<%@ page import="org.labkey.study.model.StudyManager"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.reports.AttachmentReport" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.*" %>
-<%@ page import="org.labkey.api.security.SecurityManager" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
-
 
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
 <script type="text/javascript">LABKEY.requiresYahoo("event");</script>
-
 <%
     JspView<Report> me = (JspView<Report>) HttpView.currentView();
     Report bean = me.getModelBean();
@@ -157,7 +156,7 @@
         }
         %>
     </table
-    <%=PageFlowUtil.generateSubmitButton("Save")%>
+    <%=generateSubmitButton("Save")%>
     <span id="selectionButtons">
         <%=PageFlowUtil.generateButton("Select All", "#", "setSelection(true); return false;")%>
         <%=PageFlowUtil.generateButton("Select None", "#", "setSelection(false); return false;")%>

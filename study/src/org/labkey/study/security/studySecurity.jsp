@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
@@ -53,7 +52,5 @@
         %>
     </select>
     </p>
-    <%=PageFlowUtil.generateSubmitButton("Update")%>
-
-
+    <%=generateSubmitButton("Update")%>
 </form>

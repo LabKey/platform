@@ -16,11 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.experiment.types.TypesController"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.experiment.types.TypesController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 
 //
@@ -52,18 +53,18 @@ for (found in foundSemanticTypes)
 <labkey:errors/>
 <form action="findConcepts.view" method=GET>
 <table >
-	<tr><td class="labkey-form-label">Search for</td><td><input name=query style="width:320;" value="<%=PageFlowUtil.filter(form.getQuery())%>"></td></tr>
+	<tr><td class="labkey-form-label">Search for</td><td><input name=query style="width:320;" value="<%=h(form.getQuery())%>"></td></tr>
 	<tr><td class="labkey-form-label">Prefix match</td><td><input type=checkbox name=prefixMatch <%=form.isPrefixMatch()?"checked":""%>></td></tr>
 	<tr><td colspan=2><hr></td></tr>
 	<tr><td class="labkey-form-label">Semantic Type</td><td><select name="semanticType"  style="width:320;">
 	<option value=""<%=form.getSemanticType() == null?" selected":""%>>- any -</option><%
 	for (String type : semanticTypes)
 		{
-		%><option<%=form.getSemanticType() != null && form.getSemanticType().equals(type)?" selected":""%>><%=PageFlowUtil.filter(type)%></option><%
+		%><option<%=form.getSemanticType() != null && form.getSemanticType().equals(type)?" selected":""%>><%=h(type)%></option><%
 		}
 	%></select></td></tr>
-	<tr><td class="labkey-form-label">Concept</td><td><input name="concept" style="width:320;" value="<%=PageFlowUtil.filter(form.getConcept())%>"></td></tr>
-	<tr><td><%=PageFlowUtil.generateSubmitButton("Search")%></td><td></td></tr>
+	<tr><td class="labkey-form-label">Concept</td><td><input name="concept" style="width:320;" value="<%=h(form.getConcept())%>"></td></tr>
+	<tr><td><%=generateSubmitButton("Search")%></td><td></td></tr>
 </table>
 </form>
 <p/>
@@ -102,13 +103,13 @@ else
                 semanticType = semanticType.substring(0, semanticType.length()-1);
             semanticType = semanticType.replaceAll("\\|", ", ");
             }
-        %><p/><b><%=PageFlowUtil.filter(uri)%></b><hr size=1>
+        %><p/><b><%=h(uri)%></b><hr size=1>
 		<table>
-			<tr><th valign=top align=right nowrap>Name</th><td><%=PageFlowUtil.filter(name)%></td></tr>
-			<tr><th valign=top align=right nowrap>Label</th><td><%=PageFlowUtil.filter(label)%></td></tr>
-			<tr><th valign=top align=right nowrap>Semantic Type(s)</th><td><%=PageFlowUtil.filter(semanticType)%></td></tr>
-			<tr><th valign=top align=right nowrap>Parent Concept</th><td><%=PageFlowUtil.filter(row.get("ConceptURI"))%></td></tr>
-			<tr><th valign=top align=right nowrap>Description</th><td><%=PageFlowUtil.filter(description)%></td></tr>
+			<tr><th valign=top align=right nowrap>Name</th><td><%=h(name)%></td></tr>
+			<tr><th valign=top align=right nowrap>Label</th><td><%=h(label)%></td></tr>
+			<tr><th valign=top align=right nowrap>Semantic Type(s)</th><td><%=h(semanticType)%></td></tr>
+			<tr><th valign=top align=right nowrap>Parent Concept</th><td><%=h(row.get("ConceptURI"))%></td></tr>
+			<tr><th valign=top align=right nowrap>Description</th><td><%=h(description)%></td></tr>
 		</table>
         <%=PageFlowUtil.generateButton("select", "", "javascript:select(" + PageFlowUtil.jsString(uri) + ")")%><%
 		}
@@ -125,30 +126,30 @@ else
 		String description = (String)row.get("Description");
 
 	    // concept
-		%><b><a href="javascript:concept(<%=PageFlowUtil.jsString(uri)%>)"><%=PageFlowUtil.filter(name)%></a> : </b><%
+		%><b><a href="javascript:concept(<%=PageFlowUtil.jsString(uri)%>)"><%=h(name)%></a> : </b><%
 		String and = "";
 		for (String pathURI : path)
 			{
 			out.print(and);
-			%><a href="javascript:concept(<%=PageFlowUtil.jsString(pathURI)%>)"><%=PageFlowUtil.filter(pathURI.substring(pathURI.lastIndexOf('#')+1))%></a><%
+			%><a href="javascript:concept(<%=PageFlowUtil.jsString(pathURI)%>)"><%=h(pathURI.substring(pathURI.lastIndexOf('#')+1))%></a><%
 			and = " / ";
 			}
 		if (false)
 		{
-		%><%=and%><a href="javascript:concept(<%=PageFlowUtil.jsString(uri)%>)"><%=PageFlowUtil.filter(name)%></a><%
+		%><%=and%><a href="javascript:concept(<%=PageFlowUtil.jsString(uri)%>)"><%=h(name)%></a><%
 		}
 		out.println("<br>");
 		if (row == match)
 			{
-			out.println("&nbsp;&nbsp;Semantic Types " + PageFlowUtil.filter(row.get("SemanticType")) + "<br>");
-			out.println("&nbsp;&nbsp;PropertyURI " + PageFlowUtil.filter(uri) + "<br>");
+			out.println("&nbsp;&nbsp;Semantic Types " + h(row.get("SemanticType")) + "<br>");
+			out.println("&nbsp;&nbsp;PropertyURI " + h(uri) + "<br>");
 			if (row.get("Description") != null)
-				out.println("&nbsp;&nbsp;&nbsp;" + PageFlowUtil.filter(description) + "<br>");
+				out.println("&nbsp;&nbsp;&nbsp;" + h(description) + "<br>");
 			}
 		else
 			{
 			if (row.get("Description") != null)
-				out.println("&nbsp;&nbsp;&nbsp;" + PageFlowUtil.filter(description) + "<br>");
+				out.println("&nbsp;&nbsp;&nbsp;" + h(description) + "<br>");
 			}
 		}
 	}

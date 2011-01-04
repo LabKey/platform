@@ -52,7 +52,7 @@
     if (ctx.getUser().isAdministrator())
     {
         File rootFile = service.getFileRoot(ctx.getContainer().getProject());
-        ActionURL configureHelper = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(ctx.getContainer()).addParameter("tabId", "files");
+        ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(ctx.getContainer()).addParameter("tabId", "files");
         if (null == rootFile)
         { %>
             There is no file root for this project.

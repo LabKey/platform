@@ -16,14 +16,16 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.apache.commons.lang.math.NumberUtils" %>
-<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
+<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <%
@@ -67,11 +69,12 @@
             doneUrl.addParameter("Dataset.viewName", defaultView);
     %>
         <tr><td>&nbsp;</td></tr>
-        <tr><td><%=PageFlowUtil.generateButton("Done", doneUrl)%></td></tr>
+        <tr><td><%=generateButton("Done", doneUrl)%></td></tr>
 </table>
 
 <%!
-    String getLabel(Pair<String, String> view, String defaultView) {
+    String getLabel(Pair<String, String> view, String defaultView)
+    {
         if (StringUtils.equals(view.getValue(), defaultView))
             return "<b>" + view.getKey() + "</b>";
 

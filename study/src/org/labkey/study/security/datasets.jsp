@@ -22,8 +22,7 @@
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission"%>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission"%>
 <%@ page import="org.labkey.api.study.DataSet"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.ArrayList" %>
@@ -180,10 +179,10 @@ else
     </table>
     <table>
         <tr>
-            <td><%=PageFlowUtil.generateSubmitButton("Save")%></td>
-            <td><%=PageFlowUtil.generateButton("Set all to Read", "#", "return setAllSelections('Read');")%></td>
-            <td><%=PageFlowUtil.generateButton("Set all to Edit", "#", "return setAllSelections('Edit');")%></td>
-            <td><%=PageFlowUtil.generateButton("Clear All", "#", "return setAllSelections('None');")%></td>
+            <td><%=generateSubmitButton("Save")%></td>
+            <td><%=generateButton("Set all to Read", "#", "return setAllSelections('Read');")%></td>
+            <td><%=generateButton("Set all to Edit", "#", "return setAllSelections('Edit');")%></td>
+            <td><%=generateButton("Clear All", "#", "return setAllSelections('None');")%></td>
         </tr></table>
 </form>
 

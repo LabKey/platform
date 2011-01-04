@@ -61,6 +61,6 @@
         %>
         which will also be deleted.<p/><%
     }%>
-    <%=PageFlowUtil.generateSubmitButton("Delete")%>&nbsp;<%=PageFlowUtil.generateSubmitButton("Cancel", "javascript:window.history.back(); return false;")%>
+    <%=generateSubmitButton("Delete")%>&nbsp;<%=PageFlowUtil.generateSubmitButton("Cancel", "javascript:window.history.back(); return false;")%>
     <input type=hidden name=id value="<%=visit.getRowId()%>">
 </form>

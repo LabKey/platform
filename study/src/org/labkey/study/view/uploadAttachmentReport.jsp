@@ -15,18 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.reports.AttachmentReport"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.reports.Report" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
-
 <%
     JspView<ReportsController.UploadForm> me = (JspView<ReportsController.UploadForm>) HttpView.currentView();
     ReportsController.UploadForm bean = me.getModelBean();
@@ -57,7 +51,7 @@
                 <%
                 } else {
                 %>
-                    <input type="hidden" name="reportId" value="<%=PageFlowUtil.filter(bean.getReportId())%>"><%=PageFlowUtil.filter(bean.getLabel())%>
+                    <input type="hidden" name="reportId" value="<%=h(bean.getReportId())%>"><%=h(bean.getLabel())%>
              <% } %>
             </td>
         </tr>
@@ -90,8 +84,8 @@
     </table>
 
 <br>
-    <%=PageFlowUtil.generateSubmitButton("Submit")%>
-    <%=PageFlowUtil.generateBackButton("Cancel")%>
+    <%=generateSubmitButton("Submit")%>
+    <%=generateBackButton("Cancel")%>
     </form>
 <script type="text/javascript">
     function showUpload()

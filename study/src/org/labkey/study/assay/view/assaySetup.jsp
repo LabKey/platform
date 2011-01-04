@@ -16,14 +16,13 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.api.pipeline.PipelineService" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.study.assay.AssayManager" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.assay.AssayManager" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -60,7 +59,7 @@
 <p>
     <em>Pipeline root has not been set.</em>
     <% if (canSetPipelineRoot) { %>
-        <labkey:link href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c).getLocalURIString()%>" text="setup pipeline"/>
+        <labkey:link href="<%=urlProvider(PipelineUrls.class).urlSetup(c).getLocalURIString()%>" text="setup pipeline"/>
     <% } else { %>
         Please ask an administrator for assistance.
     <% } %>

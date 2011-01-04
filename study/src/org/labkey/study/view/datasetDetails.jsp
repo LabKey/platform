@@ -22,10 +22,18 @@
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.*" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.VisitDataSet" %>
+<%@ page import="org.labkey.study.model.VisitDataSetType" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="java.util.HashMap" %>
@@ -55,12 +63,12 @@
     ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
     deleteDatasetURL.addParameter("id", dataset.getDataSetId());
 
-    %><br><%=PageFlowUtil.generateButton("View Data", viewDatasetURL)%><%
+    %><br><%=generateButton("View Data", viewDatasetURL)%><%
     if (study.getTimepointType() != TimepointType.CONTINUOUS)
     {
-    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Associated " + visitManager.getPluralLabel(), updateDatasetURL)%><%
+    %>&nbsp;<%=generateButton("Edit Associated " + visitManager.getPluralLabel(), updateDatasetURL)%><%
     }
-    %>&nbsp;<%=PageFlowUtil.generateButton("Manage Datasets", manageTypesURL)%><%
+    %>&nbsp;<%=generateButton("Manage Datasets", manageTypesURL)%><%
     %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
 }
@@ -72,8 +80,8 @@ if (permissions.contains(UpdatePermission.class))
     ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, context.getContainer());
     editTypeURL.addParameter("datasetId", dataset.getDataSetId());
 
-    %>&nbsp;<%=PageFlowUtil.generateButton("Show Import History", showHistoryURL)%><%
-    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Definition", editTypeURL)%><%
+    %>&nbsp;<%=generateButton("Show Import History", showHistoryURL)%><%
+    %>&nbsp;<%=generateButton("Edit Definition", editTypeURL)%><%
 }
 if (!pipelineSet)
 {

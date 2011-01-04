@@ -16,17 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.data.DataRegion" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuesController.EmailPrefsBean> me = (JspView<IssuesController.EmailPrefsBean>)HttpView.currentView();
@@ -75,7 +72,7 @@
     <input type="checkbox" value="8" name="emailPreference" <%=(emailPrefs & IssueManager.NOTIFY_SELF_SPAM) != 0 ? " checked" : ""%>>
     Send me email notifications when I enter/edit <%=indefArticle%> <%=names.singularName%><br>
     <br>
-    <%=PageFlowUtil.generateSubmitButton("Update")%><%
+    <%=generateSubmitButton("Update")%><%
     if (issueId > 0)
     {
         %><%= generateButton("Back to " + names.singularName, IssuesController.issueURL(context.getContainer(), IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%

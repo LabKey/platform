@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.assay.AssayService" %>
 <%@ page import="org.labkey.api.study.assay.AssayUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -40,7 +39,7 @@
         ActionURL url;
         if (protocol.getContainer().equals(proj))
         {
-            url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(proj, protocol);
+            url = urlProvider(AssayUrls.class).getAssayRunsURL(proj, protocol);
             url.addParameter(protocol.getName() + " Runs.containerFilterName", ContainerFilter.AllInProject.class.getSimpleName());
         }
         else

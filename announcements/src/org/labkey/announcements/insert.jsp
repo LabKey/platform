@@ -131,7 +131,7 @@ if (bean.allowBroadcast)
 <br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, true)%>&nbsp;<%
 if (null != cancelURL)
 {
-    %><%=PageFlowUtil.generateButton("Cancel", cancelURL)%><%
+    %><%=generateButton("Cancel", cancelURL)%><%
 }
 else
 {

@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.GUID" %>
-
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView<ExperimentController.ExportBean> me = (JspView<ExperimentController.ExportBean>) HttpView.currentView();
@@ -64,19 +63,19 @@ String guid = GUID.makeGUID();
 <table cellspacing="4" class="labkey-export-tab-contents">
     <tr>
         <td valign="middle" rowspan="2">Export as a ZIP file:</td>
-        <td valign="middle"><input type="radio" name="fileExportType" value="all" checked="true" onclick="setFileDownloadEnabled(document.getElementById('<%= PageFlowUtil.filter(guid) %>').checked, '<%= PageFlowUtil.filter(guid) %>');" /></td>
+        <td valign="middle"><input type="radio" name="fileExportType" value="all" checked="true" onclick="setFileDownloadEnabled(document.getElementById('<%=h(guid) %>').checked, '<%= h(guid) %>');" /></td>
         <td valign="middle">Include all files</td>
     </tr>
     <% if (!bean.getRoles().isEmpty()) { %>
         <tr>
-            <td valign="middle"><input type="radio" id="<%= PageFlowUtil.filter(guid) %>"name="fileExportType" value="role" onclick="setFileDownloadEnabled(document.getElementById('<%= PageFlowUtil.filter(guid) %>').checked, '<%= PageFlowUtil.filter(guid) %>');" /></td>
+            <td valign="middle"><input type="radio" id="<%=h(guid) %>"name="fileExportType" value="role" onclick="setFileDownloadEnabled(document.getElementById('<%= h(guid) %>').checked, '<%= h(guid) %>');" /></td>
             <td valign="middle">Include only selected files based on usage in run:</td>
         </tr>
         <tr>
             <td colspan="2" />
             <td>
                 <% for (String role : bean.getRoles()) { %>
-                    <div style="white-space:nowrap; width: 15em; float: left;"><input type="checkbox" class="file-download-role-checkbox-<%= guid %>" disabled="true" name="roles" id="role<%= PageFlowUtil.filter(role) %>" value="<%= PageFlowUtil.filter(role) %>" /><span style="padding-left: .4em; padding-right: 1.5em;"><%= PageFlowUtil.filter(role) %></span></div>
+                    <div style="white-space:nowrap; width: 15em; float: left;"><input type="checkbox" class="file-download-role-checkbox-<%= guid %>" disabled="true" name="roles" id="role<%= h(role) %>" value="<%= h(role) %>" /><span style="padding-left: .4em; padding-right: 1.5em;"><%= h(role) %></span></div>
                 <% } %>
             </td>
         </tr>

@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.security.SecurityController.AddUsersForm" %>
 <%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
@@ -99,7 +98,7 @@
         <tr>
             <td>
                 <labkey:button text="Add Users" />
-                <%=PageFlowUtil.generateButton("Done", form.getReturnURLHelper())%><%=generateReturnUrlFormField(form)%>
+                <%=generateButton("Done", form.getReturnURLHelper())%><%=generateReturnUrlFormField(form)%>
             </td>
         </tr>
     </table>

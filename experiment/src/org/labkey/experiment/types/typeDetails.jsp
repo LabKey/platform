@@ -19,21 +19,22 @@
 <%@ page import="org.labkey.api.exp.PropertyType"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 String typeName = (String)HttpView.currentView().getViewContext().get("typeName");
 PropertyDescriptor[] properties = (PropertyDescriptor[])HttpView.currentView().getViewContext().get("properties");
-%><h3><%=PageFlowUtil.filter(typeName)%></h3>
+%><h3><%=h(typeName)%></h3>
 <table>
 <tr><th>Name</th><th>PropertyURI</th><th>Type</th></tr><%
 for (PropertyDescriptor pd : properties)
-    {
+{
     PropertyType t = pd.getPropertyType();
-    %><tr><td><%=PageFlowUtil.filter(pd.getName())%></td><td><%=PageFlowUtil.filter(pd.getPropertyURI())%></td><td><%=PageFlowUtil.filter(t.getXmlName())%></td></tr><%
-    }
+    %><tr><td><%=h(pd.getName())%></td><td><%=h(pd.getPropertyURI())%></td><td><%=h(t.getXmlName())%></td></tr><%
+}
 %></table>
 <!-- <p>
 [ <a href="types.view">View Types</a> ]<br>
 [ <a href="importData.view?typeURI=<%=PageFlowUtil.encode(typeName)%>">Import Data</a> ]<br>&nbsp;<br>
-<%=PageFlowUtil.generateButton("Delete data", "deleteData.view?typeURI=" + PageFlowUtil.encode(typeName) + "&deleteType=0")%>
-&nbsp;<%=PageFlowUtil.generateButton("Delete type", "deleteData.view?typeURI=" + PageFlowUtil.encode(typeName) + "&deleteType=1")%>
+<%=generateButton("Delete data", "deleteData.view?typeURI=" + PageFlowUtil.encode(typeName) + "&deleteType=0")%>
+&nbsp;<%=generateButton("Delete type", "deleteData.view?typeURI=" + PageFlowUtil.encode(typeName) + "&deleteType=1")%>
 </p> --!>

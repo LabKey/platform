@@ -45,7 +45,7 @@
             <td></td>
             <td style="height:50">
             <%=PageFlowUtil.generateSubmitButton("Submit", "", "name=\"reset\"")%>
-            <%=PageFlowUtil.generateButton("Cancel", urlProvider(LoginUrls.class).getLoginURL(doneURL))%>
+            <%=generateButton("Cancel", urlProvider(LoginUrls.class).getLoginURL(doneURL))%>
             </td>
         </tr>
     </table>

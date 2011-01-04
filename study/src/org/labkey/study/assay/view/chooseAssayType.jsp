@@ -15,17 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -38,8 +35,8 @@
 </p>
 <p>If you have an existing assay design to import in the XAR file format (a .xar or .xar.xml file), you can place
     the file in this folder's pipeline directory and upload using the
-    <a href="<%= PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString()) %>">Data Pipeline</a>
-    or <a href="<%= PageFlowUtil.urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer()) %>">upload XAR the file directly</a>.
+    <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString()) %>">Data Pipeline</a>
+    or <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer()) %>">upload XAR the file directly</a>.
 </p>
 <p>
     To create a new assay design, please choose which assay type you would like to customize with your own settings and input options.

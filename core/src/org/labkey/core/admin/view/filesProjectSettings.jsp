@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.files.FileContentService"%>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
@@ -62,7 +61,7 @@
         <tr><td></td></tr>
         <tr>
 <%--
-            <td class="labkey-form-label">File&nbsp;root&nbsp;<%=PageFlowUtil.helpPopup("File root", "Set a project-level file root. " +
+            <td class="labkey-form-label">File&nbsp;root&nbsp;<%=helpPopup("File root", "Set a project-level file root. " +
                 "When a project-level file root is set, each folder for that project has a corresponding subdirectory in the file system.")%></td>
 --%>
             <td>
@@ -90,7 +89,7 @@
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td><%=PageFlowUtil.generateSubmitButton("Save")%></td>
+            <td><%=generateSubmitButton("Save")%></td>
         </tr>
     </table>
     <%

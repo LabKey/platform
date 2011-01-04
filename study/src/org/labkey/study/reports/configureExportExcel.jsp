@@ -77,7 +77,7 @@ for (SiteImpl site : sites)
         <tr><th class="labkey-form-label">Report name</th><td><input style="width:250;" type=text id=label name=label value=""></td></tr><%
     } %>
 </table>
-<%=PageFlowUtil.generateSubmitButton("Export")%>
+<%=generateSubmitButton("Export")%>
         <% if (isAdmin)
         {   %>
             <input type=hidden name=reportType value="<%=ExportExcelReport.TYPE%>">

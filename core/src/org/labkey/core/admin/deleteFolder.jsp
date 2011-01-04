@@ -46,7 +46,7 @@
     {
         %><tr><td>You cannot delete the home project.</td></tr>
         <tr><td>
-            <%=PageFlowUtil.generateButton("OK", "manageFolders.view")%>
+            <%=generateButton("OK", "manageFolders.view")%>
         </td></tr>
         </table><%
 
@@ -60,7 +60,7 @@
         %><tr><td>This <%=h(containerType)%> has <%=childrenDescription%>s, but you don't have admininistrative permissions to all the <%=childrenDescription%>s.</td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td>
-            <%=PageFlowUtil.generateButton("Back", "manageFolders.view")%>
+            <%=generateButton("Back", "manageFolders.view")%>
         </td></tr>
         </table><%
 
@@ -111,8 +111,8 @@
 
         <table><tr>
             <td><form action="deleteFolder.post<%=recurse ? "?recurse=1" : ""%>" method="post">
-                <%=PageFlowUtil.generateSubmitButton("Delete")%></form></td>
-            <td><%=PageFlowUtil.generateButton("Cancel", "manageFolders.view")%></td>
+                <%=generateSubmitButton("Delete")%></form></td>
+            <td><%=generateButton("Cancel", "manageFolders.view")%></td>
         </tr></table><%
     }
     else
@@ -127,8 +127,8 @@
 
 <table>
     <tr>
-        <td><%=PageFlowUtil.generateButton("Delete All Folders", "deleteFolder.view?recurse=1")%></td>
-        <td><%=PageFlowUtil.generateButton("Cancel", "manageFolders.view")%></td>
+        <td><%=generateButton("Delete All Folders", "deleteFolder.view?recurse=1")%></td>
+        <td><%=generateButton("Cancel", "manageFolders.view")%></td>
     </tr>
 </table><%
     }  %>

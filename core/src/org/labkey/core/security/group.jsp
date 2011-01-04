@@ -75,7 +75,7 @@ Ext.onReady(function()
 
 </script>
 
-<%if (bean.group.getUserId() > 0){%><%=PageFlowUtil.generateButton("Rename Group", "renameGroup.view?id=" + bean.group.getUserId())%><%}%>
+<%if (bean.group.getUserId() > 0){%><%=generateButton("Rename Group", "renameGroup.view?id=" + bean.group.getUserId())%><%}%>
 
 <form id="groupMembersForm" action="updateMembers.post" method="POST">
 <labkey:csrf />
@@ -133,7 +133,7 @@ else
             <td colspan=3>
                 <%=PageFlowUtil.generateSubmitButton("Select All", "return selectAllCheckboxes(this.form, true);")%>
                 <%=PageFlowUtil.generateSubmitButton("Clear All", "return selectAllCheckboxes(this.form, false);")%>
-                <%= PageFlowUtil.generateButton("Export All to Excel", urlGroup)%>
+                <%= generateButton("Export All to Excel", urlGroup)%>
             </td>
         </tr>
 

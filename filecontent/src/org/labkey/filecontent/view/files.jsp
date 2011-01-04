@@ -52,7 +52,7 @@
 
     if (!bean.isEnabled())
     {
-        ActionURL projConfig = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
+        ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
         out.println("File sharing has been disabled for this project. Sharing can be configured from the <a href=" + projConfig + ">project settings</a> view.");
         return;
     }

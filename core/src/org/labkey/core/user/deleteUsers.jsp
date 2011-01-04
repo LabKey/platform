@@ -52,8 +52,8 @@ This action cannot be undone.</p>
             %><input type="hidden" name="userId" value="<%=user.getUserId()%>"/><%
         }
     %>
-    <%=PageFlowUtil.generateSubmitButton("Permanently Delete")%>
-    <%=PageFlowUtil.generateButton("Cancel", bean.getCancelUrl())%>
+    <%=generateSubmitButton("Permanently Delete")%>
+    <%=generateButton("Cancel", bean.getCancelUrl())%>
 </form>
 <%
     boolean canDeactivate = false;
@@ -83,6 +83,6 @@ This action cannot be undone.</p>
     Deactivated users may not login, but their information will be preserved
     for display purposes, and their group memberships will be preserved in case
     they are re-activated at a later time.</p>
-    <p><%=PageFlowUtil.generateSubmitButton(bean.getUsers().size() > 1 ? "Deactivate Users" : "Deactivate User")%></p>
+    <p><%=generateSubmitButton(bean.getUsers().size() > 1 ? "Deactivate Users" : "Deactivate User")%></p>
 </form>
 <% } %>

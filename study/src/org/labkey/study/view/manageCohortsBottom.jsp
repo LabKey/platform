@@ -15,15 +15,21 @@
     * limitations under the License.
     */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
-<%@ page import="java.util.*" %>
-<%@ page import="org.labkey.study.CohortFilter" %>
-<%@ page import="org.labkey.study.model.*" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.CohortFilter" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
+<%@ page import="org.labkey.study.model.Participant" %>
+<%@ page import="org.labkey.study.model.SecurityType" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -144,10 +150,8 @@
     <%
         if (study.isManualCohortAssignment())
         {
-            %><%= PageFlowUtil.generateSubmitButton("Save")%><%
+            %><%=generateSubmitButton("Save")%><%
         }
 
     %>
-
-
 </form>

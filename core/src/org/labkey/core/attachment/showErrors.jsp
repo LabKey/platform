@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.core.attachment.AttachmentServiceImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -24,4 +23,4 @@
 %>
 <%=formatMissedErrors("form")%>
 <%=null != me.errorHtml ? me.errorHtml : ""%>
-<br><br><%=PageFlowUtil.generateButton("Continue", me.returnURL)%>
+<br><br><%=generateButton("Continue", me.returnURL)%>

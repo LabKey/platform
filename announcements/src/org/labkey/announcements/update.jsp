@@ -124,7 +124,7 @@ if (settings.hasExpires())
       <table>
         <tr>
           <td><%=PageFlowUtil.generateSubmitButton("Submit", "this.form.action='update.post';this.form.method='post';", "name=\"update.post\"")%>
-             &nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.returnURL)%></td>
+             &nbsp;<%=generateButton("Cancel", bean.returnURL)%></td>
         </tr>
       </table>
     </td>

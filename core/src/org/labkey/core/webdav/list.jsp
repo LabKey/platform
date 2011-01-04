@@ -15,19 +15,21 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.apache.commons.lang.time.FastDateFormat" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.webdav.WebdavResolver" %>
-<%@ page import="java.util.*" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.core.webdav.DavController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
-<%@ page import="org.labkey.api.util.Path" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="org.labkey.core.webdav.DavController" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -182,10 +184,10 @@ This is a WebDav enabled directory.<br>
     }
 %>
 <%
-if (supportsDavMount) {%><%=PageFlowUtil.generateButton("davmount","?davmount")%><br><%}
-if (supportsDavScheme) {%><%=PageFlowUtil.generateButton("dav", href.replace("http:","dav:"))%><br><%}
-if (supportsWebdavScheme) {%><%=PageFlowUtil.generateButton("webdav", href.replace("http:","webdav:"))%><br><%}
-%><%=PageFlowUtil.generateButton("Standard View","?listing=ext")%><br>
+if (supportsDavMount) {%><%=generateButton("davmount","?davmount")%><br><%}
+if (supportsDavScheme) {%><%=generateButton("dav", href.replace("http:","dav:"))%><br><%}
+if (supportsWebdavScheme) {%><%=generateButton("webdav", href.replace("http:","webdav:"))%><br><%}
+%><%=generateButton("Standard View","?listing=ext")%><br>
 <!--<%=request.getHeader("user-agent")%>-->
 <%
 } // end plainHtml

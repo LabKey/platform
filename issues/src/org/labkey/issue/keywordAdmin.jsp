@@ -83,7 +83,7 @@
 <td align="center">
     <form method="POST" name="add<%=kwp.name%>" action="addKeyword.post">
     <input name="keyword" value=""><br>
-        <%=PageFlowUtil.generateSubmitButton("Add " + kwp.name)%><br>
+        <%=generateSubmitButton("Add " + kwp.name)%><br>
     <input type="hidden" name="type" value="<%=kwp.type%>">
     </form>
 </td><%

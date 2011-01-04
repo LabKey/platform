@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -67,7 +66,7 @@
 %>
 </table>
 
-<form method="post" action="<%=PageFlowUtil.filter(context.getActionURL().relativeUrl("saveReportView", null, "Study-Reports"))%>" onsubmit="return validateForm();">
+<form method="post" action="<%=h(context.getActionURL().relativeUrl("saveReportView", null, "Study-Reports"))%>" onsubmit="return validateForm();">
     <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=bean.getSchemaName()%>">
     <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=bean.getQueryName()%>">
     <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=bean.getViewName()%>">
@@ -85,13 +84,13 @@
     } else {
 %>
         <td><b>Save View</b></td>
-        <td>Name:&nbsp;<input id="reportName" name="label" value="<%=PageFlowUtil.filter(bean.getLabel())%>">
+        <td>Name:&nbsp;<input id="reportName" name="label" value="<%=h(bean.getLabel())%>">
         <input type=hidden name=srcURL value="<%=context.getActionURL().getLocalURIString()%>">
 <%
     }
 %>
         <input type=hidden name=reportType value="<%=report.getDescriptor().getReportType()%>">
-        <input type=hidden name=params value="<%=PageFlowUtil.filter(bean.getParams())%>"></td>
+        <input type=hidden name=params value="<%=h(bean.getParams())%>"></td>
 
 <%--
         <td>Add as Custom View For:
@@ -100,7 +99,7 @@
         for (DataSet def : defs)
         {
             if (def.canRead(context.getUser())) %>
-                <option <%=def.getDataSetId() == showWithDataset ? " selected" : ""%> value="<%=def.getDataSetId()%>"><%=PageFlowUtil.filter(def.getLabel())%></option>
+                <option <%=def.getDataSetId() == showWithDataset ? " selected" : ""%> value="<%=def.getDataSetId()%>"><%=h(def.getLabel())%></option>
 <%
         }
 %>
@@ -108,12 +107,12 @@
         </td>
 --%>
         <td>&nbsp;</td>
-        <td><%=PageFlowUtil.generateSubmitButton((confirm ? "Overwrite" : "Save"))%>
+        <td><%=generateSubmitButton((confirm ? "Overwrite" : "Save"))%>
 <%
     if (confirm)
     {
 %>
-        &nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.getSrcURL())%>
+        &nbsp;<%=generateButton("Cancel", bean.getSrcURL())%>
 <%
     } 
 %>

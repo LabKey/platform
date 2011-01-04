@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainer();
-    boolean reload = ((Boolean) HttpView.currentModel()).booleanValue();
+    boolean reload = (Boolean) HttpView.currentModel();
 
     String lowerCaseVerb = (reload ? "reload" : "import");
     String initialCapVerb = (reload ? "Reload" : "Import");
@@ -59,7 +58,7 @@ be created using a standard template.
         to your local hard drive), browse to a .study.zip file, open it, and click the "<%=initialCapVerb%> Study From Local Zip Archive" button below.</td></tr>
 <tr><td><input type="file" name="studyZip" size="50"></td></tr>
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton(initialCapVerb + " Study From Local Zip Archive")%></td>
+    <td><%=generateSubmitButton(initialCapVerb + " Study From Local Zip Archive")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -71,7 +70,7 @@ be created using a standard template.
 
             if (reload) { %> You can also reload study archives via the "Data Pipeline" link in the study overview.<% } %></td></tr>
 <tr>
-    <td><%=PageFlowUtil.generateButton(initialCapVerb + " Study Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
+    <td><%=generateButton(initialCapVerb + " Study Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
 </tr>
 </table>
 </form>

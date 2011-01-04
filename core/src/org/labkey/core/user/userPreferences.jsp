@@ -16,12 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.security.UserUrls"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.core.user.UserController" %>
-<%@ page import="org.labkey.api.security.UserUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<UserController.UserPreference> me = (JspView<UserController.UserPreference>) HttpView.currentView();
@@ -43,8 +42,8 @@
     %>
         <tr><td></td></tr>
         <tr>
-            <td><%=PageFlowUtil.generateButton("Show Grid", showGridLink)%>&nbsp;
-                <%=PageFlowUtil.generateSubmitButton("Update")%></td>
+            <td><%=generateButton("Show Grid", showGridLink)%>&nbsp;
+                <%=generateSubmitButton("Update")%></td>
         </tr>
     </table><br>
 </form>

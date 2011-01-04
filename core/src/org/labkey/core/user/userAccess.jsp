@@ -88,7 +88,7 @@ However, If this account is re-enabled, it would have the following permissions.
                 if (group.isAdministrators() || group.isProjectGroup())
                 {
                     String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
-                    ActionURL groupURL = PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
+                    ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
                     %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>"><%=h(displayName)%></a><%
                 }
                 else
