@@ -25,6 +25,7 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -500,5 +501,11 @@ abstract public class JspBase extends JspContext implements HasViewContext
     protected String formAction(Class<? extends Controller> actionClass, Method method)
     {
         return "action=\"" + SpringActionController.getActionName(actionClass) + "." + method.getSuffix() + "\" method=\"" + method.getMethod() + "\"";
+    }
+
+    // Provides a unique integer within the context of this request.  Handy for generating element ids, etc. See UniqueID for caveats and warnings.
+    protected int getRequestScopedUID()
+    {
+        return UniqueID.getRequestScopedUID(getViewContext().getRequest());
     }
 }

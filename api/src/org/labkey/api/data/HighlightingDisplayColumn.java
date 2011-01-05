@@ -109,26 +109,23 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         super.renderGridEnd(ctx, out);
 
         String styleMapName = "styleMap" + _uid;
-        String stylesheetName = "hdc" + _uid;
 
         out.write("<script type=\"text/javascript\">\n");
 
-        out.write("var " + styleMapName + " = {};\n" +
-            "init(" + styleMapName + ");\n\n" +
-            "function init(styleMap)\n" +
+        out.write(
+            "// Code to support dynamic highlighting for \"" + getName() + "\" column\n" +
+            "var " + styleMapName + " = {};\n\n" +
+
+            "// Initialize the stylesheet and populate the styleMap via an anonymous function\n" +
+            "(function()\n" +
             "{\n" +
             "\t// Create a new stylesheet for this column's styles\n" +
             "\tvar cssNode = document.createElement('style');\n" +
             "\tcssNode.type = 'text/css';\n" +
-            "\tcssNode.title = '" + stylesheetName + "';\n" +
             "\tdocument.getElementsByTagName(\"head\")[0].appendChild(cssNode);\n\n" +
 
             "\t// Get a reference to our new stylesheet\n" +
-            "\tvar ss = cssNode.sheet ? cssNode.sheet : cssNode.styleSheet;\n" +
-
-            // When mulitple HDCs are rendered on a page, the first stylesheet has "disabled=false" and subsequent
-            // stylesheets have "disabled=true" -- explicitly enabling every one seems to do the trick.  
-            "\tss.disabled = false;\n\n" +
+            "\tvar ss = cssNode.sheet ? cssNode.sheet : cssNode.styleSheet;\n\n" +
 
             "\t// Add all the styles\n");
 
@@ -140,8 +137,8 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         out.write("\n\t// Add all the styles to a name -> style \"map\", which may perform better than iterating all the styles every time\n" +
             "\tvar rules = rules(ss);\n\n" +
             "\t// Force name to lowercase -- different browsers use different casing\n" +
-            "\tfor (i = 0; i < rules.length; i++)\n" +
-            "\t\tstyleMap[rules[i].selectorText.toLowerCase()] = rules[i].style;\n\n" +
+            "\tfor (var i = 0; i < rules.length; i++)\n" +
+            "\t\t" + styleMapName + "[rules[i].selectorText.toLowerCase()] = rules[i].style;\n\n" +
             "\tfunction addStyle(ss, newName)\n" +
             "\t{\n" +
             "\t\tif (ss.addRule)\n" +
@@ -169,7 +166,9 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
             "\n" +
             "\t\treturn rules;\n" +
             "\t}\n" +
-            "}\n\n" +
+            "}).call();\n\n" +
+
+            // hover()
             "function " + _hoverFunctionName + "(el)\n" +
             "{\n" +
             "\tvar style = " + styleMapName + "[(el.tagName + \".\" + el.className).toLowerCase()];\n" +
@@ -178,6 +177,8 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
             getHoverStyle() +
             "}\n" +
             "\n" +
+
+            // unhover()
             "function " + _unhoverFunctionName + "(el)\n" +
             "{\n" +
             "\tvar style = " + styleMapName + "[(el.tagName + \".\" + el.className).toLowerCase()];\n" +

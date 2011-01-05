@@ -47,12 +47,14 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     }
 
 
+    // TODO: Delete
     public HString getParameter(HString s)
     {
         return new HString(super.getParameter(s.getSource()), true);
     }
 
 
+    // TODO: Delete
     public HString[] getParameterValues(HString s)
     {
         String[] values = getParameterValues(s.getSource());
