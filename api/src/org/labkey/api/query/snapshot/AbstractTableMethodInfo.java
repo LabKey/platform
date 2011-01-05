@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query.snapshot;
 
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.DbSchema;
@@ -27,9 +28,9 @@ import org.labkey.api.data.DbSchema;
  */
 public abstract class AbstractTableMethodInfo extends AbstractMethodInfo
 {
-    protected AbstractTableMethodInfo(int sqlType)
+    protected AbstractTableMethodInfo(JdbcType jdbcType)
     {
-        super(sqlType);
+        super(jdbcType);
     }
     
     public final SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)

@@ -23,21 +23,21 @@ import java.util.ArrayList;
 
 abstract public class AbstractMethodInfo implements MethodInfo
 {
-    protected int _sqlType;
+    protected JdbcType _jdbcType;
     
-    public AbstractMethodInfo(int sqlType)
+    public AbstractMethodInfo(JdbcType jdbcType)
     {
-        _sqlType = sqlType;
+        _jdbcType = jdbcType;
     }
 
-    protected int getSqlType(ColumnInfo[] arguments)
+    protected JdbcType getSqlType(ColumnInfo[] arguments)
     {
-        return _sqlType;
+        return _jdbcType;
     }
 
     public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
     {
-        return new ExprColumn(parentTable, alias, getSQL(ExprColumn.STR_TABLE_ALIAS, parentTable.getSchema(), getSQLFragments(arguments)), getSqlType(arguments));
+        return new ExprColumn(parentTable, alias, getSQL(ExprColumn.STR_TABLE_ALIAS, parentTable.getSchema(), getSQLFragments(arguments)), getSqlType(arguments).sqlType);
     }
 
     public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias, int sqlType)
