@@ -32,24 +32,24 @@ public abstract class Method
 
     static
     {
-        labkeyMethod.put("abs", new JdbcMethod("abs", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("acos", new JdbcMethod("acos", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("atan", new JdbcMethod("atan", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("atan2", new JdbcMethod("atan2", Types.DOUBLE, 2, 2));
-        labkeyMethod.put("ceiling", new JdbcMethod("ceiling", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("cos", new JdbcMethod("cos", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("cot", new JdbcMethod("cot", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("degrees", new JdbcMethod("degrees", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("exp", new JdbcMethod("exp", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("floor", new JdbcMethod("floor", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("log", new JdbcMethod("log", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("log10", new JdbcMethod("log10", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("mod", new JdbcMethod("mod", Types.DOUBLE, 2, 2));
-        labkeyMethod.put("pi", new JdbcMethod("pi", Types.DOUBLE, 0, 0));
-        labkeyMethod.put("power", new JdbcMethod("power", Types.DOUBLE, 2, 2));
-        labkeyMethod.put("radians", new JdbcMethod("radians", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("rand", new JdbcMethod("rand", Types.DOUBLE, 0, 1));
-        labkeyMethod.put("round", new Method("round", Types.DOUBLE, 1, 2)
+        labkeyMethod.put("abs", new JdbcMethod("abs", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("acos", new JdbcMethod("acos", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("atan", new JdbcMethod("atan", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("atan2", new JdbcMethod("atan2", JdbcType.DOUBLE, 2, 2));
+        labkeyMethod.put("ceiling", new JdbcMethod("ceiling", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("cos", new JdbcMethod("cos", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("cot", new JdbcMethod("cot", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("degrees", new JdbcMethod("degrees", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("exp", new JdbcMethod("exp", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("floor", new JdbcMethod("floor", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("log", new JdbcMethod("log", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("log10", new JdbcMethod("log10", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("mod", new JdbcMethod("mod", JdbcType.DOUBLE, 2, 2));
+        labkeyMethod.put("pi", new JdbcMethod("pi", JdbcType.DOUBLE, 0, 0));
+        labkeyMethod.put("power", new JdbcMethod("power", JdbcType.DOUBLE, 2, 2));
+        labkeyMethod.put("radians", new JdbcMethod("radians", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("rand", new JdbcMethod("rand", JdbcType.DOUBLE, 0, 1));
+        labkeyMethod.put("round", new Method("round", JdbcType.DOUBLE, 1, 2)
 			{
 				@Override
 				public MethodInfo getMethodInfo()
@@ -57,21 +57,21 @@ public abstract class Method
 					return new RoundInfo();
 				}
 			});
-        labkeyMethod.put("sign", new JdbcMethod("sign", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("sin", new JdbcMethod("sin", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("sqrt", new JdbcMethod("sqrt", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("tan", new JdbcMethod("tan", Types.DOUBLE, 1, 1));
-        labkeyMethod.put("truncate", new JdbcMethod("truncate", Types.DOUBLE, 2, 2));
+        labkeyMethod.put("sign", new JdbcMethod("sign", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("sin", new JdbcMethod("sin", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("sqrt", new JdbcMethod("sqrt", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("tan", new JdbcMethod("tan", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
 
 
-        labkeyMethod.put("lcase", new JdbcMethod("lcase", Types.VARCHAR, 1, 1));
-        labkeyMethod.put("lower", new JdbcMethod("lcase", Types.VARCHAR, 1, 1));
-        labkeyMethod.put("left", new JdbcMethod("left", Types.VARCHAR, 2, 2));
-        labkeyMethod.put("locate", new Method("locate", Types.INTEGER, 2, 3)
+        labkeyMethod.put("lcase", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("lower", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("left", new JdbcMethod("left", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("locate", new Method("locate", JdbcType.INTEGER, 2, 3)
             {
                 public MethodInfo getMethodInfo()
                 {
-                    return new AbstractMethodInfo(_sqlType)
+                    return new AbstractMethodInfo(_jdbcType)
                     {
                         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
                         {
@@ -84,30 +84,30 @@ public abstract class Method
                     };
                 }
             });
-        labkeyMethod.put("ltrim", new JdbcMethod("ltrim", Types.VARCHAR, 1, 1));
-        labkeyMethod.put("repeat", new JdbcMethod("repeat", Types.VARCHAR, 2, 2));
-        labkeyMethod.put("rtrim", new JdbcMethod("rtrim", Types.VARCHAR, 1, 1));
-        labkeyMethod.put("substring", new JdbcMethod("substring", Types.VARCHAR, 2, 3));
-        labkeyMethod.put("ucase", new JdbcMethod("ucase", Types.VARCHAR, 1, 1));
-        labkeyMethod.put("upper", new JdbcMethod("ucase", Types.VARCHAR, 1, 1));
-        labkeyMethod.put("length", new JdbcMethod("length", Types.INTEGER, 1, 1));
+        labkeyMethod.put("ltrim", new JdbcMethod("ltrim", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("rtrim", new JdbcMethod("rtrim", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("substring", new JdbcMethod("substring", JdbcType.VARCHAR, 2, 3));
+        labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("length", new JdbcMethod("length", JdbcType.INTEGER, 1, 1));
 
 
-        labkeyMethod.put("curdate", new JdbcMethod("curdate", Types.DATE, 0, 0));
-        labkeyMethod.put("curtime", new JdbcMethod("curtime", Types.DATE, 0, 0));
-        labkeyMethod.put("dayofmonth", new JdbcMethod("dayofmonth", Types.INTEGER, 1, 1));
-        labkeyMethod.put("dayofweek", new JdbcMethod("dayofweek", Types.INTEGER, 1, 1));
-        labkeyMethod.put("dayofyear", new JdbcMethod("dayofyear", Types.INTEGER, 1, 1));
-        labkeyMethod.put("hour", new JdbcMethod("hour", Types.INTEGER, 1, 1));
-        labkeyMethod.put("minute", new JdbcMethod("minute", Types.INTEGER, 1, 1));
-        labkeyMethod.put("month", new JdbcMethod("month", Types.INTEGER, 1, 1));
-        labkeyMethod.put("monthname", new JdbcMethod("monthname", Types.VARCHAR, 1, 1));
-        labkeyMethod.put("now", new JdbcMethod("now", Types.TIMESTAMP, 0, 0));
-        labkeyMethod.put("quarter", new JdbcMethod("quarter", Types.INTEGER, 1, 1));
-        labkeyMethod.put("second", new JdbcMethod("second", Types.INTEGER, 1, 1));
-        labkeyMethod.put("week", new JdbcMethod("week", Types.INTEGER, 1, 1));
-        labkeyMethod.put("year", new JdbcMethod("year", Types.INTEGER, 1, 1));
-	    labkeyMethod.put("timestampadd", new Method("timestampadd", Types.TIMESTAMP, 3, 3)
+        labkeyMethod.put("curdate", new JdbcMethod("curdate", JdbcType.DATE, 0, 0));
+        labkeyMethod.put("curtime", new JdbcMethod("curtime", JdbcType.DATE, 0, 0));
+        labkeyMethod.put("dayofmonth", new JdbcMethod("dayofmonth", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("dayofweek", new JdbcMethod("dayofweek", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("dayofyear", new JdbcMethod("dayofyear", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("hour", new JdbcMethod("hour", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("minute", new JdbcMethod("minute", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("month", new JdbcMethod("month", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("monthname", new JdbcMethod("monthname", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("now", new JdbcMethod("now", JdbcType.TIMESTAMP, 0, 0));
+        labkeyMethod.put("quarter", new JdbcMethod("quarter", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("second", new JdbcMethod("second", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("week", new JdbcMethod("week", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("year", new JdbcMethod("year", JdbcType.INTEGER, 1, 1));
+	    labkeyMethod.put("timestampadd", new Method("timestampadd", JdbcType.TIMESTAMP, 3, 3)
 			{
 				@Override
 				public MethodInfo getMethodInfo()
@@ -115,7 +115,7 @@ public abstract class Method
 					return new TimestampInfo(this);
 				}
 			});
-        labkeyMethod.put("timestampdiff", new Method("timestampdiff", Types.INTEGER, 3, 3)
+        labkeyMethod.put("timestampdiff", new Method("timestampdiff", JdbcType.INTEGER, 3, 3)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -123,7 +123,7 @@ public abstract class Method
                     return new TimestampInfo(this);
                 }
             });
-        labkeyMethod.put("age_in_months", new Method(Types.INTEGER, 2, 2)
+        labkeyMethod.put("age_in_months", new Method(JdbcType.INTEGER, 2, 2)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -131,7 +131,7 @@ public abstract class Method
                     return new AgeInMonthsMethodInfo();
                 }
             });
-        labkeyMethod.put("age", new Method(Types.INTEGER, 2, 3)
+        labkeyMethod.put("age", new Method(JdbcType.INTEGER, 2, 3)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -139,7 +139,7 @@ public abstract class Method
                     return new AgeMethodInfo();
                 }
             });
-        labkeyMethod.put("age_in_years", new Method(Types.INTEGER, 2, 2)
+        labkeyMethod.put("age_in_years", new Method(JdbcType.INTEGER, 2, 2)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -149,8 +149,15 @@ public abstract class Method
             });
 
 
-        labkeyMethod.put("ifnull", new JdbcMethod("ifnull", Types.OTHER, 2, 2));
-        labkeyMethod.put("cast", new Method("convert", Types.OTHER, 2, 2)
+        labkeyMethod.put("ifnull", new JdbcMethod("ifnull", JdbcType.OTHER, 2, 2));
+        labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2){
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsEqualInfo();
+            }
+        });
+        labkeyMethod.put("cast", new Method("convert", JdbcType.OTHER, 2, 2)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -158,7 +165,7 @@ public abstract class Method
                     return new ConvertInfo();
                 }
             });
-        labkeyMethod.put("convert", new Method("convert", Types.OTHER, 2, 2)
+        labkeyMethod.put("convert", new Method("convert", JdbcType.OTHER, 2, 2)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -166,31 +173,31 @@ public abstract class Method
                     return new ConvertInfo();
                 }
             });
-        labkeyMethod.put("coalesce", new Method("coalesce", Types.OTHER, 0, Integer.MAX_VALUE)
+        labkeyMethod.put("coalesce", new Method("coalesce", JdbcType.OTHER, 0, Integer.MAX_VALUE)
             {
                 @Override
                 public MethodInfo getMethodInfo()
                 {
-                    return new PassthroughInfo("coalesce", Types.OTHER);
+                    return new PassthroughInfo("coalesce", JdbcType.OTHER);
                 }
             });
     }
 
 
-    final int _sqlType;
+    final JdbcType _jdbcType;
     final String _name;
     final int _minArgs;
     final int _maxArgs;
     
-    Method(int sqlType, int min, int max)
+    Method(JdbcType jdbcType, int min, int max)
     {
-        this("#UNDEF#", sqlType, min, max);
+        this("#UNDEF#", jdbcType, min, max);
     }
 
-    Method(String name, int sqlType, int min, int max)
+    Method(String name, JdbcType jdbcType, int min, int max)
     {
         _name = name;
-        _sqlType = sqlType;
+        _jdbcType = jdbcType;
         _minArgs = min;
         _maxArgs = max;
     }
@@ -202,9 +209,9 @@ public abstract class Method
     {
         String _name;
 
-        public JdbcMethodInfoImpl(String name, int sqlType)
+        public JdbcMethodInfoImpl(String name, JdbcType jdbcType)
         {
-            super(sqlType);
+            super(jdbcType);
             _name = name;
         }
 
@@ -231,7 +238,7 @@ public abstract class Method
     {
         public TimestampInfo(Method method)
         {
-            super(method._name, method._sqlType);
+            super(method._name, method._jdbcType);
         }
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] argumentsIN)
@@ -276,40 +283,40 @@ public abstract class Method
     {
         public ConvertInfo()
         {
-            super(Types.OTHER);
+            super(JdbcType.OTHER);
         }
 
         @Override
         public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
         {
             SQLFragment[] fragments = getSQLFragments(arguments);
-            int sqlType = _sqlType;
+            JdbcType jdbcType = _jdbcType;
             if (fragments.length >= 2)
             {
                 try
                 {
                     String sqlEscapeTypeName = getTypeArgument(fragments);
-                    sqlType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType.sqlType;
+                    jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
                 }
                 catch (IllegalArgumentException x)
                 {
                     /* */
                 }
             }
-            return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema(), fragments), sqlType);
+            return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema(), fragments), jdbcType.sqlType);
         }
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] fragments)
         {
-            int sqlType = _sqlType;
+            JdbcType jdbcType = _jdbcType;
             if (fragments.length >= 2)
             {
                 String sqlEscapeTypeName = getTypeArgument(fragments);
                 String typeName = sqlEscapeTypeName;
                 try
                 {
-                    sqlType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType.sqlType;
-                    typeName = schema.getSqlDialect().sqlTypeNameFromSqlType(sqlType);
+                    jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
+                    typeName = schema.getSqlDialect().sqlTypeNameFromSqlType(jdbcType.sqlType);
                     fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
                 }
                 catch (IllegalArgumentException x)
@@ -348,19 +355,19 @@ public abstract class Method
     {
         String _name;
 
-        public PassthroughInfo(String method, int sqlType)
+        public PassthroughInfo(String method, JdbcType jdbcType)
         {
-            super(sqlType);
+            super(jdbcType);
             _name = method;
         }
 
         @Override
-        protected int getSqlType(ColumnInfo[] arguments)
+        protected JdbcType getSqlType(ColumnInfo[] arguments)
         {
-            int sqlType = _sqlType;
-            if (sqlType == Types.OTHER)
-                sqlType = arguments.length > 0 ? arguments[0].getSqlTypeInt() : Types.VARCHAR;
-            return sqlType;
+            JdbcType jdbcType = _jdbcType;
+            if (jdbcType == JdbcType.OTHER)
+                jdbcType = arguments.length > 0 ? arguments[0].getJdbcType() : JdbcType.VARCHAR;
+            return jdbcType;
         }
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
@@ -383,7 +390,7 @@ public abstract class Method
 	{
 		RoundInfo()
 		{
-			super("round", Types.DOUBLE);
+			super("round", JdbcType.DOUBLE);
 		}
 
 		// https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
@@ -430,7 +437,7 @@ public abstract class Method
     {
         AgeMethodInfo()
         {
-            super(Types.INTEGER);
+            super(JdbcType.INTEGER);
         }
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
@@ -451,7 +458,7 @@ public abstract class Method
     {
         AgeInYearsMethodInfo()
         {
-            super(Types.INTEGER);
+            super(JdbcType.INTEGER);
         }
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
@@ -486,7 +493,7 @@ public abstract class Method
     {
         AgeInMonthsMethodInfo()
         {
-            super(Types.INTEGER);
+            super(JdbcType.INTEGER);
         }
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
@@ -519,31 +526,55 @@ public abstract class Method
     }
 
 
+    class IsEqualInfo extends AbstractMethodInfo
+    {
+        IsEqualInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            SQLFragment a = arguments[0];
+            SQLFragment b = arguments[1];
+
+            ret.append("(");
+            ret.append("(").append(a).append(")=(").append(b).append(")");
+            ret.append(" OR (");
+            ret.append("(").append(a).append(") IS NULL AND (").append(b).append(") IS NULL");
+            ret.append("))");
+
+            return ret;
+        }
+    }
+
+
     private static class JdbcMethod extends Method
     {
-        JdbcMethod(String name, int sqlType, int min, int max)
+        JdbcMethod(String name, JdbcType jdbcType, int min, int max)
         {
-            super(name, sqlType, min, max);
+            super(name, jdbcType, min, max);
         }
 
         @Override
         public MethodInfo getMethodInfo()
         {
-            return new JdbcMethodInfoImpl(_name, _sqlType);
+            return new JdbcMethodInfoImpl(_name, _jdbcType);
         }
     }
 
     private static class PassthroughMethod extends Method
     {
-        PassthroughMethod(String name, int sqlType, int min, int max)
+        PassthroughMethod(String name, JdbcType jdbcType, int min, int max)
         {
-            super(name, sqlType, min, max);
+            super(name, jdbcType, min, max);
         }
 
         @Override
         public MethodInfo getMethodInfo()
         {
-            return new PassthroughInfo(_name, _sqlType);
+            return new PassthroughInfo(_name, _jdbcType);
         }
     }
 
@@ -578,52 +609,52 @@ public abstract class Method
     static CaseInsensitiveHashMap<Method> postgresMethods = new CaseInsensitiveHashMap<Method>();
     static
     {
-        postgresMethods.put("ascii",new PassthroughMethod("ascii",Types.INTEGER,1,1));
-        postgresMethods.put("btrim",new PassthroughMethod("btrim",Types.VARCHAR,1,2));
-        postgresMethods.put("char_length",new PassthroughMethod("char_length",Types.INTEGER,1,1));
-        postgresMethods.put("character_length",new PassthroughMethod("character_length",Types.INTEGER,1,1));
-        postgresMethods.put("chr",new PassthroughMethod("chr",Types.VARCHAR,1,1));
-        postgresMethods.put("decode",new PassthroughMethod("decode",Types.VARCHAR,2,2));
-        postgresMethods.put("encode",new PassthroughMethod("encode",Types.VARCHAR,2,2));
-        postgresMethods.put("initcap",new PassthroughMethod("initcap",Types.VARCHAR,1,1));
-        postgresMethods.put("lpad",new PassthroughMethod("lpad",Types.VARCHAR,2,3));
-        postgresMethods.put("md5",new PassthroughMethod("md5",Types.VARCHAR,1,1));
-        postgresMethods.put("octet_length",new PassthroughMethod("octet_length",Types.INTEGER,1,1));
-        postgresMethods.put("quote_ident",new PassthroughMethod("quote_ident",Types.VARCHAR,1,1));
-        postgresMethods.put("quote_literal",new PassthroughMethod("quote_literal",Types.VARCHAR,1,1));
-        postgresMethods.put("regexp_replace",new PassthroughMethod("regexp_replace",Types.VARCHAR,3,4));
-        postgresMethods.put("repeat",new PassthroughMethod("repeat",Types.VARCHAR,2,2));
-        postgresMethods.put("replace",new PassthroughMethod("replace",Types.VARCHAR,3,3));
-        postgresMethods.put("rpad",new PassthroughMethod("rpad",Types.VARCHAR,2,3));
-        postgresMethods.put("split_part",new PassthroughMethod("split_part",Types.VARCHAR,3,3));
-        postgresMethods.put("strpos",new PassthroughMethod("strpos",Types.VARCHAR,2,2));
-        postgresMethods.put("substr",new PassthroughMethod("substr",Types.VARCHAR,2,3));
-        postgresMethods.put("to_ascii",new PassthroughMethod("to_ascii",Types.VARCHAR,1,2));
-        postgresMethods.put("to_hex",new PassthroughMethod("to_hex",Types.VARCHAR,1,1));
-        postgresMethods.put("translate",new PassthroughMethod("translate",Types.VARCHAR,3,3));
-        postgresMethods.put("to_char",new PassthroughMethod("to_char",Types.VARCHAR,2,2));
-        postgresMethods.put("to_date",new PassthroughMethod("to_date",Types.DATE,2,2));
-        postgresMethods.put("to_timestamp",new PassthroughMethod("to_timestamp",Types.TIMESTAMP,2,2));
-        postgresMethods.put("to_number",new PassthroughMethod("to_number",Types.NUMERIC,2,2));
+        postgresMethods.put("ascii",new PassthroughMethod("ascii",JdbcType.INTEGER,1,1));
+        postgresMethods.put("btrim",new PassthroughMethod("btrim",JdbcType.VARCHAR,1,2));
+        postgresMethods.put("char_length",new PassthroughMethod("char_length",JdbcType.INTEGER,1,1));
+        postgresMethods.put("character_length",new PassthroughMethod("character_length",JdbcType.INTEGER,1,1));
+        postgresMethods.put("chr",new PassthroughMethod("chr",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("decode",new PassthroughMethod("decode",JdbcType.VARCHAR,2,2));
+        postgresMethods.put("encode",new PassthroughMethod("encode",JdbcType.VARCHAR,2,2));
+        postgresMethods.put("initcap",new PassthroughMethod("initcap",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("lpad",new PassthroughMethod("lpad",JdbcType.VARCHAR,2,3));
+        postgresMethods.put("md5",new PassthroughMethod("md5",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("octet_length",new PassthroughMethod("octet_length",JdbcType.INTEGER,1,1));
+        postgresMethods.put("quote_ident",new PassthroughMethod("quote_ident",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("quote_literal",new PassthroughMethod("quote_literal",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("regexp_replace",new PassthroughMethod("regexp_replace",JdbcType.VARCHAR,3,4));
+        postgresMethods.put("repeat",new PassthroughMethod("repeat",JdbcType.VARCHAR,2,2));
+        postgresMethods.put("replace",new PassthroughMethod("replace",JdbcType.VARCHAR,3,3));
+        postgresMethods.put("rpad",new PassthroughMethod("rpad",JdbcType.VARCHAR,2,3));
+        postgresMethods.put("split_part",new PassthroughMethod("split_part",JdbcType.VARCHAR,3,3));
+        postgresMethods.put("strpos",new PassthroughMethod("strpos",JdbcType.VARCHAR,2,2));
+        postgresMethods.put("substr",new PassthroughMethod("substr",JdbcType.VARCHAR,2,3));
+        postgresMethods.put("to_ascii",new PassthroughMethod("to_ascii",JdbcType.VARCHAR,1,2));
+        postgresMethods.put("to_hex",new PassthroughMethod("to_hex",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("translate",new PassthroughMethod("translate",JdbcType.VARCHAR,3,3));
+        postgresMethods.put("to_char",new PassthroughMethod("to_char",JdbcType.VARCHAR,2,2));
+        postgresMethods.put("to_date",new PassthroughMethod("to_date",JdbcType.DATE,2,2));
+        postgresMethods.put("to_timestamp",new PassthroughMethod("to_timestamp",JdbcType.TIMESTAMP,2,2));
+        postgresMethods.put("to_number",new PassthroughMethod("to_number",JdbcType.DECIMAL,2,2));
     }
 
     static CaseInsensitiveHashMap<Method> mssqlMethods = new CaseInsensitiveHashMap<Method>();
     static
     {
-        mssqlMethods.put("ascii",new PassthroughMethod("ascii",Types.INTEGER,1,1));
-        mssqlMethods.put("char",new PassthroughMethod("char",Types.VARCHAR,1,1));
-        mssqlMethods.put("charindex",new PassthroughMethod("charindex",Types.INTEGER,2,3));
-        mssqlMethods.put("difference",new PassthroughMethod("difference",Types.INTEGER,2,2));
-        mssqlMethods.put("len",new PassthroughMethod("len",Types.INTEGER,1,1));
-        mssqlMethods.put("patindex",new PassthroughMethod("patindex",Types.INTEGER,2,2));
-        mssqlMethods.put("quotename",new PassthroughMethod("quotename",Types.VARCHAR,1,2));
-        mssqlMethods.put("replace",new PassthroughMethod("replace",Types.VARCHAR,3,3));
-        mssqlMethods.put("replicate",new PassthroughMethod("replicate",Types.VARCHAR,2,2));
-        mssqlMethods.put("reverse",new PassthroughMethod("reverse",Types.VARCHAR,1,1));
-        mssqlMethods.put("right",new PassthroughMethod("right",Types.VARCHAR,2,2));
-        mssqlMethods.put("soundex",new PassthroughMethod("soundex",Types.VARCHAR,1,1));
-        mssqlMethods.put("space",new PassthroughMethod("space",Types.VARCHAR,1,1));
-        mssqlMethods.put("str",new PassthroughMethod("str",Types.VARCHAR,1,3));
-        mssqlMethods.put("stuff",new PassthroughMethod("stuff",Types.VARCHAR,4,4));
+        mssqlMethods.put("ascii",new PassthroughMethod("ascii",JdbcType.INTEGER,1,1));
+        mssqlMethods.put("char",new PassthroughMethod("char",JdbcType.VARCHAR,1,1));
+        mssqlMethods.put("charindex",new PassthroughMethod("charindex",JdbcType.INTEGER,2,3));
+        mssqlMethods.put("difference",new PassthroughMethod("difference",JdbcType.INTEGER,2,2));
+        mssqlMethods.put("len",new PassthroughMethod("len",JdbcType.INTEGER,1,1));
+        mssqlMethods.put("patindex",new PassthroughMethod("patindex",JdbcType.INTEGER,2,2));
+        mssqlMethods.put("quotename",new PassthroughMethod("quotename",JdbcType.VARCHAR,1,2));
+        mssqlMethods.put("replace",new PassthroughMethod("replace",JdbcType.VARCHAR,3,3));
+        mssqlMethods.put("replicate",new PassthroughMethod("replicate",JdbcType.VARCHAR,2,2));
+        mssqlMethods.put("reverse",new PassthroughMethod("reverse",JdbcType.VARCHAR,1,1));
+        mssqlMethods.put("right",new PassthroughMethod("right",JdbcType.VARCHAR,2,2));
+        mssqlMethods.put("soundex",new PassthroughMethod("soundex",JdbcType.VARCHAR,1,1));
+        mssqlMethods.put("space",new PassthroughMethod("space",JdbcType.VARCHAR,1,1));
+        mssqlMethods.put("str",new PassthroughMethod("str",JdbcType.VARCHAR,1,3));
+        mssqlMethods.put("stuff",new PassthroughMethod("stuff",JdbcType.VARCHAR,4,4));
     }
 }
