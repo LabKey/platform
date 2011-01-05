@@ -1,0 +1,5 @@
+{table}
+Filename|Component|Version|Source|License|LabKey Dev|Purpose
+antlr-3.3.jar|ANTLR|3.3|{link:ANTLR|http://www.antlr.org/}|{link:BSD|http://www.antlr.org/license.html}|mbellew|Query language parsing
+batik-1.7-all.jar|Apache Batik|1.7|{link:Apache|http://xmlgraphics.apache.org/batik/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|newton|Used for exporting SVG visualizations to image and PDF formats. This jar includes dependencies.
+{table}
