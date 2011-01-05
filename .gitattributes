@@ -1976,11 +1976,11 @@ query/webapp/reports/r.gif -text
 query/webapp/reports/xls.gif -text
 search/Search.iml -text
 search/build.xml -text
-search/lib/lucene-3.0.2-src.zip -text
-search/lib/lucene-3.0.2.zip -text
-search/lib/lucene-core-3.0.2.jar -text
-search/lib/lucene-snowball-3.0.2-javadoc.jar -text
-search/lib/lucene-snowball-3.0.2.jar -text
+search/lib/lucene-3.0.3-src.zip -text
+search/lib/lucene-3.0.3.zip -text
+search/lib/lucene-core-3.0.3.jar -text
+search/lib/lucene-snowball-3.0.3-javadoc.jar -text
+search/lib/lucene-snowball-3.0.3.jar -text
 search/lib/tika-app-0.8.jar -text
 search/module.properties -text
 search/resources/schemas/dbscripts/postgresql/obsolete/search-0.00-0.03.sql -text
