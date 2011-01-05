@@ -294,7 +294,7 @@ public class OntologyManager
 		try
 		{
             conn = scope.getConnection();
-            parameterMap = QueryService.get().insertStatement(conn, user, tableInsert);
+            parameterMap = ((UpdateableTableInfo)tableInsert).insertStatement(conn, user);
             List<ValidationError> errors = new ArrayList<ValidationError>();
 
             Map<String, IPropertyValidator[]> validatorMap = new HashMap<String, IPropertyValidator[]>();

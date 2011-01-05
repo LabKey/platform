@@ -3,6 +3,7 @@ package org.labkey.api.study.assay;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.OORDisplayColumnFactory;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -18,7 +19,11 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.security.User;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -246,5 +251,11 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
     {
         return null;
+    }
+
+    @Override
+    public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+    {
+        return QueryService.get().insertStatement(conn, user, this);
     }
 }

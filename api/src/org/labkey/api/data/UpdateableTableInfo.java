@@ -17,7 +17,10 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.security.User;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
 
 /**
@@ -76,4 +79,7 @@ public interface UpdateableTableInfo
      */
     @Nullable
     CaseInsensitiveHashMap<String> remapSchemaColumns();
+
+
+    Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException;
 }

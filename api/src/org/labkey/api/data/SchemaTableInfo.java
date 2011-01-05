@@ -39,6 +39,7 @@ import org.labkey.data.xml.TableType;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -955,6 +956,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
     {
         return null;
+    }
+
+    @Override
+    public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+    {
+        return QueryService.get().insertStatement(conn, user, this);
     }
 
     /** Move an existing column to a different spot in the ordered list */
