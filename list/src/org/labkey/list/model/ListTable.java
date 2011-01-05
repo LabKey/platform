@@ -23,6 +23,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MVDisplayColumnFactory;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.PropertyColumn;
@@ -33,12 +34,15 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.list.view.AttachmentDisplayColumn;
 import org.labkey.list.view.ListController;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -273,5 +277,11 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
             return m;
         }
         return null;
+    }
+
+    @Override
+    public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+    {
+        return QueryService.get().insertStatement(conn, user, this);
     }
 }
