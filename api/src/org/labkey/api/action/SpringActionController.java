@@ -56,7 +56,6 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 17, 2007
  * Time: 10:17:36 AM
