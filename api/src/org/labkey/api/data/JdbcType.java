@@ -122,7 +122,7 @@ public enum JdbcType
 
     VARCHAR(Types.VARCHAR, String.class),
 
-    OTHER(Types.OTHER, String.class);
+    OTHER(Types.OTHER, Object.class);
 
 
 

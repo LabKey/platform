@@ -236,8 +236,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         {
             for (ColumnInfo column : columns)
             {
-                // TODO: Fix this to work better with Matt's JdbcType change 
-                if (column.isStringType() && (null != column.getSqlTypeName() && !column.getSqlTypeName().equalsIgnoreCase("entityid")))
+                if (column.isStringType() && !column.getSqlTypeName().equalsIgnoreCase("entityid"))
                 {
                     titleColumn = column.getName();
                     break;
