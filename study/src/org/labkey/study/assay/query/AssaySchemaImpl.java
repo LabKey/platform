@@ -121,30 +121,42 @@ public class AssaySchemaImpl extends AssaySchema
         {
             for (ExpProtocol protocol : getProtocols())
             {
+                TableInfo table = null;
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider != null)
                 {
                     if (name.equalsIgnoreCase(getBatchesTableName(protocol)))
                     {
-                        return createBatchesTable(protocol, provider, null);
+                        table = createBatchesTable(protocol, provider, null);
                     }
-                    if (name.equalsIgnoreCase(getRunsTableName(protocol)))
+                    else if (name.equalsIgnoreCase(getRunsTableName(protocol)))
                     {
-                        return createRunTable(protocol, provider);
+                        table = createRunTable(protocol, provider);
                     }
-                    if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
+                    else if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
                     {
-                        TableInfo t = provider.createDataTable(this, protocol);
-                        if (t != null && null != t.getColumn("Properties"))
-                            fixupPropertyURLs(t.getColumn("Properties"));
-                        return t;
+                        table = provider.createDataTable(this, protocol);
+                        if (table != null && null != table.getColumn("Properties"))
+                            fixupPropertyURLs(table.getColumn("Properties"));
                     }
+                    else
+                    {
+                        AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
+                        if (providerSchema != null && name.startsWith(protocol.getName() + " "))
+                        {
+                            table = providerSchema.createTable(name);
+                        }
+                    }
+                }
 
-                    AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
-                    if (providerSchema != null && name.startsWith(protocol.getName() + " "))
+                if (table != null)
+                {
+                    // CONSIDER: Move fixupRenderers code to where Query performs the metadata overlay.
+                    for (ColumnInfo col : table.getColumns())
                     {
-                        return providerSchema.createTable(name);
+                        fixupRenderers(col, col);
                     }
+                    return table;
                 }
             }
         }
@@ -187,15 +199,6 @@ public class AssaySchemaImpl extends AssaySchema
         {
             // Will be null if the domain doesn't have any properties
             propsCol.setFk(new AssayPropertyForeignKey(batchDomain));
-        }
-
-        for (ColumnInfo col : result.getColumns())
-        {
-            if (col instanceof PropertyColumn)
-            {
-                PropertyDescriptor pd = ((PropertyColumn) col).getPropertyDescriptor();
-                fixupRenderers(pd, col);
-            }
         }
 
         result.setDescription("Contains a row per " + protocol.getName() + " batch, a group of runs that were loaded at the same time.");
@@ -308,9 +311,9 @@ public class AssaySchemaImpl extends AssaySchema
             fixupPropertyURL(fk, c);
     }
 
-    public void fixupRenderers(final PropertyDescriptor pd, ColumnInfo columnInfo)
+    public void fixupRenderers(final ColumnRenderProperties col, ColumnInfo columnInfo)
     {
-        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
+        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(col.getName()))
         {
             columnInfo.setFk(new LookupForeignKey("Folder", "Label")
             {
@@ -344,15 +347,19 @@ public class AssaySchemaImpl extends AssaySchema
                 }
             });
         }
-        if (pd.getPropertyType() == PropertyType.FILE_LINK)
+        if (col instanceof PropertyColumn)
         {
-            columnInfo.setDisplayColumnFactory(new DisplayColumnFactory()
+            final PropertyDescriptor pd = ((PropertyColumn)col).getPropertyDescriptor();
+            if (pd.getPropertyType() == PropertyType.FILE_LINK)
             {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                columnInfo.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
-                    return new FileLinkDisplayColumn(colInfo, pd, new ActionURL(AssayController.DownloadFileAction.class, _container));
-                }
-            });
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new FileLinkDisplayColumn(colInfo, pd, new ActionURL(AssayController.DownloadFileAction.class, _container));
+                    }
+                });
+            }
         }
     }
 
