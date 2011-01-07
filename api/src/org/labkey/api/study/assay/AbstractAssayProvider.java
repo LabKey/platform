@@ -602,7 +602,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             addProperty(domain, PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, PARTICIPANT_VISIT_RESOLVER_PROPERTY_CAPTION, PropertyType.STRING).setRequired(true);
 
         DomainProperty studyProp = addProperty(domain, TARGET_STUDY_PROPERTY_NAME, TARGET_STUDY_PROPERTY_CAPTION, PropertyType.STRING);
-        studyProp.setLookup(new Lookup(null, "study", "Study"));
+        studyProp.setShownInInsertView(true);
 
         domain.setDescription("The user is prompted for batch properties once for each set of runs they import. The batch " +
                 "is a convenience to let users set properties that seldom change in one place and import many runs " +
@@ -756,6 +756,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         try
         {
+            // UNDONE: look for TargetStudy in result domain
             ParticipantVisitResolver resolver = null;
             if (resolverType != null)
             {
@@ -1024,38 +1025,34 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return ExperimentService.get().insertSimpleProtocol(protocol, user);
     }
 
+    public Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol)
+    {
+        DomainProperty targetStudyDP = null;
+
+        Domain domain = getResultsDomain(protocol);
+        if (domain != null && null != (targetStudyDP = domain.getPropertyByName(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)))
+            return new Pair(ExpProtocol.AssayDomainTypes.Result, targetStudyDP);
+
+        domain = getRunDomain(protocol);
+        if (domain != null && null != (targetStudyDP = domain.getPropertyByName(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)))
+            return new Pair(ExpProtocol.AssayDomainTypes.Run, targetStudyDP);
+
+        domain = getBatchDomain(protocol);
+        if (domain != null && null != (targetStudyDP = domain.getPropertyByName(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)))
+            return new Pair(ExpProtocol.AssayDomainTypes.Batch, targetStudyDP);
+
+        return null;
+    }
+
+    // CONSIDER: combing with .getTargetStudy()
     public Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId)
     {
-        boolean onRunObject = false;
-        DomainProperty targetStudyColumn = null;
-        Domain runDomain = getRunDomain(protocol);
-        DomainProperty[] runColumns = runDomain.getProperties();
-        for (DomainProperty pd : runColumns)
-        {
-            if (TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
-            {
-                targetStudyColumn = pd;
-                onRunObject = true;
-                break;
-            }
-        }
-
-        if (targetStudyColumn == null)
-        {
-            Domain batchDomain = getBatchDomain(protocol);
-            DomainProperty[] domainColumns = batchDomain.getProperties();
-            for (DomainProperty pd : domainColumns)
-            {
-                if (TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
-                {
-                    targetStudyColumn = pd;
-                    break;
-                }
-            }
-        }
-
-        if (targetStudyColumn == null)
+        Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = findTargetStudyProperty(protocol);
+        if (pair == null)
             return null;
+
+        DomainProperty targetStudyColumn = pair.second;
+
         ExpData data = getDataForDataRow(dataId, protocol);
         if (data == null)
             return null;
@@ -1064,13 +1061,21 @@ public abstract class AbstractAssayProvider implements AssayProvider
             return null;
 
         ExpObject source;
-        if (onRunObject)
+        switch (pair.first)
         {
-            source = run;
-        }
-        else
-        {
-            source = AssayService.get().findBatch(run);
+            case Result:
+                // XXX: this isn't right -- need to get the result row
+                source = data;
+                break;
+
+            case Run:
+                source = run;
+                break;
+
+            case Batch:
+            default:
+                source = AssayService.get().findBatch(run);
+                break;
         }
 
         if (source != null)
@@ -1089,6 +1094,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (targetStudyId != null)
                 return ContainerManager.getForId(targetStudyId);
         }
+        
         return null;
     }
 
@@ -1265,6 +1271,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 domainLsid.getNamespacePrefix().equals(ExpProtocol.ASSAY_DOMAIN_RUN);
     }
 
+    // UNDONE: also look at result row for TargetStudy
+    // CONSIDER: combine with .getAssociatedStudyContainer()
     public Container getTargetStudy(ExpRun run)
     {
         ExpProtocol protocol = run.getProtocol();

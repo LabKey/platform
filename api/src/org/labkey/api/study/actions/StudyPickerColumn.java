@@ -21,6 +21,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -38,8 +39,14 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
 
     public StudyPickerColumn(ColumnInfo col)
     {
-        super("Target Study", "targetStudy");
+        this(col, "targetStudy");
+    }
+
+    public StudyPickerColumn(ColumnInfo col, String inputName)
+    {
+        super(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION, inputName);
         _colInfo = col;
+        _colInfo.setInputType("select");
     }
 
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException

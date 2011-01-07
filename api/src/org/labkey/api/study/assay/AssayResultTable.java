@@ -68,6 +68,9 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 
+        ColumnInfo specimenIdCol = null;
+        boolean foundTargetStudyCol = false;
+
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
             ColumnInfo col;
@@ -112,22 +115,46 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                     addColumn(rawValueCol);
                 }
 
-                // Add FK to specimens
-                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()) && col.getFk() == null)
-                {
-                    for (DomainProperty batchDP : _provider.getBatchDomain(_protocol).getProperties())
-                    {
-                        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(batchDP.getName()))
-                        {
-                            col.setFk(new SpecimenForeignKey(_schema, _provider, _protocol));
-                            break;
-                        }
-                    }
-                }
+                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(col.getName()))
+                    foundTargetStudyCol = true;
+
+                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
+                    specimenIdCol = col;
             }
 
             if (col != null && !col.isHidden() && !col.isUnselectable())
                 visibleColumns.add(col.getFieldKey());
+        }
+
+        // Add FK to specimens
+        if (specimenIdCol != null && specimenIdCol.getFk() == null)
+        {
+            if (!foundTargetStudyCol)
+            {
+                for (DomainProperty runDP : _provider.getRunDomain(_protocol).getProperties())
+                {
+                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(runDP.getName()))
+                    {
+                        foundTargetStudyCol = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!foundTargetStudyCol)
+            {
+                for (DomainProperty batchDP : _provider.getBatchDomain(_protocol).getProperties())
+                {
+                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(batchDP.getName()))
+                    {
+                        foundTargetStudyCol = true;
+                        break;
+                    }
+                }
+            }
+
+            if (foundTargetStudyCol)
+                specimenIdCol.setFk(new SpecimenForeignKey(_schema, _provider, _protocol));
         }
 
         ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment("(SELECT RunId FROM exp.Data WHERE RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)"), Types.INTEGER);

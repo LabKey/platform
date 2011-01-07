@@ -2166,11 +2166,12 @@ public class DataRegion extends DisplayElement
                     out.write("  if (document.getElementById('" + groupName + "CheckBox') != null && document.getElementById('" + groupName + "CheckBox').checked) {\n");
 
                     String valueProperty = "value";
-                    if (col0.inputType.equalsIgnoreCase("select"))
+                    String inputType = col0.getInputType();
+                    if ("select".equalsIgnoreCase(inputType))
                     {
                         valueProperty = "selectedIndex";
                     }
-                    else if (col0.inputType.equalsIgnoreCase("checkbox"))
+                    else if ("checkbox".equalsIgnoreCase(inputType))
                     {
                         valueProperty = "checked";
                     }

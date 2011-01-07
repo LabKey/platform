@@ -15,9 +15,12 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.util.Pair;
 
 /**
  * User: jeckels
@@ -28,6 +31,7 @@ public class AssayTableMetadata
     private FieldKey _runFieldKey;
     private FieldKey _resultRowIdFieldKey;
     private FieldKey _specimenDetailParentFieldKey;
+    private FieldKey _targetStudyFieldKey;
 
     public AssayTableMetadata(FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
     {
@@ -83,9 +87,57 @@ public class AssayTableMetadata
         return _resultRowIdFieldKey;
     }
 
-    /** @return relative to the run object */
-    public FieldKey getTargetStudyFieldKey()
+    /**
+     * Get the FieldKey to the TargetStudy column relative to the results table.  The assay instance
+     * may define the TargetStudy column on the results table itself, the run table, or the batch table.
+     *
+     * @param provider provider
+     * @param protocol protocol
+     * @return relative to the assay's results table, the FieldKey that gets to the TargetStudy
+     */
+    public FieldKey getTargetStudyFieldKey(AssayProvider provider, ExpProtocol protocol)
     {
-        return FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
+        if (_targetStudyFieldKey == null)
+            _targetStudyFieldKey = _getTargetStudyFieldKey(provider, protocol);
+        
+        return _targetStudyFieldKey;
     }
+
+    protected FieldKey _getTargetStudyFieldKey(AssayProvider provider, ExpProtocol protocol)
+    {
+        Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = provider.findTargetStudyProperty(protocol);
+        if (pair == null)
+            return null;
+
+        switch (pair.first)
+        {
+            case Result:
+                return getTargetStudyFieldKeyOnResults();
+
+            case Run:
+                return getTargetStudyFieldKeyOnRun();
+
+            case Batch:
+            default:
+                return getTargetStudyFieldKeyOnBatch();
+        }
+    }
+
+    protected FieldKey getTargetStudyFieldKeyOnResults()
+    {
+        return new FieldKey(null, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
+    }
+
+    protected FieldKey getTargetStudyFieldKeyOnRun()
+    {
+        FieldKey runFK = getRunFieldKeyFromResults();
+        return new FieldKey(runFK, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
+    }
+
+    protected FieldKey getTargetStudyFieldKeyOnBatch()
+    {
+        FieldKey batchFK = new FieldKey(getRunRowIdFieldKeyFromResults().getParent(), AssayService.BATCH_COLUMN_NAME);
+        return new FieldKey(batchFK, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
+    }
+    
 }

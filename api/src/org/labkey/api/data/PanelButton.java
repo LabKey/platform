@@ -50,14 +50,14 @@ public class PanelButton extends ActionButton
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         String requiresSelectionDataRegion = _requiresSelection ? ctx.getCurrentRegion().getName() : null;
-        // XXX: id is not unique if both top and bottom button bars render this button.
-        String attributes = "id=\"" + getId() + "\"";
+        String id = getId();
+        String attributes = "panelId=\"" + id + "\"";
         if (requiresSelectionDataRegion != null)
             attributes += " labkey-requires-selection=\"" + PageFlowUtil.filter(requiresSelectionDataRegion) + "\"";
 
-        boolean includeContent = !ctx.containsKey(getId());
+        boolean includeContent = !ctx.containsKey(id);
         // Remember that we've already rendered the content once
-        ctx.put(getId(), true);
+        ctx.put(id, true);
 
         StringBuilder config = new StringBuilder("{ items: [");
         String separator = "";
@@ -66,7 +66,7 @@ public class PanelButton extends ActionButton
             config.append(separator);
             separator = ", ";
             config.append("new Ext.ux.GroupTab({ mainItem: 0, expanded: false, frame: true, headerAsText: true, hideBorders: false, items: [{layout: 'fit', contentEl:");
-            String subPanelId = getId() + PageFlowUtil.filter(entry.getKey());
+            String subPanelId = id + PageFlowUtil.filter(entry.getKey());
             config.append(PageFlowUtil.jsString(subPanelId));
             config.append(", title:");
             config.append(PageFlowUtil.jsString(entry.getKey()));

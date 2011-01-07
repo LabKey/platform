@@ -865,11 +865,12 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
      */
     showButtonPanel : function (panelButton, tabPanelConfig)
     {
-        var regionHeader = Ext.get(panelButton).parent(".labkey-data-region-header");
+        panelButton = Ext.get(panelButton);
+        var regionHeader = panelButton.parent(".labkey-data-region-header");
         if (!regionHeader)
             return;
 
-        this._showButtonPanel(regionHeader, panelButton.id, true, tabPanelConfig);
+        this._showButtonPanel(regionHeader, panelButton.getAttribute("panelId"), true, tabPanelConfig);
     },
 
     _showButtonPanel : function(headerOrFooter, panelId, animate, tabPanelConfig)

@@ -201,8 +201,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         DisplayColumn targetStudyCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
         if (targetStudyCol != null)
         {
+            ColumnInfo col = targetStudyCol.getColumnInfo();
             view.getDataRegion().replaceDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME,
-                    new StudyPickerColumn(targetStudyCol.getColumnInfo()));
+                    new StudyPickerColumn(col));
         }
 
         DisplayColumn participantVisitResolverCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);

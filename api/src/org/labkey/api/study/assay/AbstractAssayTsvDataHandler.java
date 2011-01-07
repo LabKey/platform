@@ -170,6 +170,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
+    // UNDONE: Look for TargetStudy in result domain (haven't yet inserted the result domain values)
     protected ParticipantVisitResolver createResolver(User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Container container)
             throws SQLException, IOException, ExperimentException
     {
@@ -459,6 +460,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     errorSB.append(ColumnInfo.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())).append(". ");
                 }
             }
+            // UNDONE: look on result row for TargetStudy
             ParticipantVisit participantVisit = resolver.resolve(specimenID, participantID, visitID, date);
             if (participantPD != null && map.get(participantPD.getName()) == null)
             {

@@ -18,7 +18,6 @@ package org.labkey.api.study.assay;
 import org.labkey.api.query.PropertyColumnDecorator;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.data.ColumnInfo;
 
 /**
@@ -46,14 +45,7 @@ public class SpecimenPropertyColumnDecorator implements PropertyColumnDecorator
             if (_hasTargetStudy == null)
             {
                 // Cache this so that we don't have to figure it out for every single property
-                _hasTargetStudy = Boolean.FALSE;
-                for (DomainProperty batchDP : _provider.getBatchDomain(_protocol).getProperties())
-                {
-                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(batchDP.getName()))
-                    {
-                        _hasTargetStudy = Boolean.TRUE;
-                    }
-                }
+                _hasTargetStudy = _provider.findTargetStudyProperty(_protocol) != null;
             }
 
             if (Boolean.TRUE.equals(_hasTargetStudy))

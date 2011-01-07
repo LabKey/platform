@@ -86,6 +86,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     HttpView getDataDescriptionView(AssayRunUploadForm form);
 
+    Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol);
+
     Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId);
 
     /** @return the URL used to import data when the user still needs to upload data files */
