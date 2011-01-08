@@ -265,9 +265,6 @@ public class QueryController extends SpringActionController
      * assertQueryExists throws NotFound if the query/table does not exist.
      * Does not guarantee that the query is syntactically correct, or can execute.
      *
-     * @param form
-     * @throws ServletException
-     *
      *  TODO rename, this sounds like a debug-only method
      */
     protected void assertQueryExists(QueryForm form) throws ServletException
@@ -495,7 +492,7 @@ public class QueryController extends SpringActionController
         {
             if (form.getSchema() == null)
             {
-                if (form.getSchemaName() == null || form.getSchemaName().isEmpty())
+                if (form.getSchemaName().isEmpty())
                     HttpView.throwNotFound("Schema name not specified");
                 else
                     HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
@@ -1199,9 +1196,7 @@ public class QueryController extends SpringActionController
         public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
         {
             _successURL = QuerySnapshotService.get(form.getSchemaName().toString()).createSnapshot(form, errors);
-            if (errors.hasErrors())
-                return false;
-            return true;
+            return !errors.hasErrors();
         }
 
         public ActionURL getSuccessURL(QuerySnapshotForm queryForm)
@@ -1864,7 +1859,7 @@ public class QueryController extends SpringActionController
             QueryDefinition queryDef = form.getQueryDef();
             _queryName = form.getQueryName();
             if (queryDef == null || !queryDef.getContainer().getId().equals(getContainer().getId()))
-                HttpView.throwNotFound("Query not found");
+                throw new NotFoundException("Query not found");
 
 			_form = form;
 			
@@ -3648,7 +3643,7 @@ public class QueryController extends SpringActionController
             }
             catch (Throwable t)
             {
-                Logger.getInstance(QueryController.class).error("Error", t);
+                Logger.getLogger(QueryController.class).error("Error", t);
                 errors.add(new QueryParseException("Unhandled exception: " + t, null, 0, 0));
             }
             for (QueryParseException e : errors)
@@ -3815,7 +3810,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (Exception e)
                 {
-                    Logger.getInstance(QueryController.class).error("Error", e);
+                    Logger.getLogger(QueryController.class).error("Error", e);
                     errors.reject(ERROR_MSG, "An exception occurred: " + e);
                     return false;
                 }
@@ -3881,7 +3876,7 @@ public class QueryController extends SpringActionController
 
         public void validateForm(SelectAllForm form, Errors errors)
         {
-            if (form.getSchemaName() == null ||
+            if (form.getSchemaName().isEmpty() ||
                 form.getQueryName() == null)
             {
                 errors.reject(ERROR_MSG, "schemaName and queryName required");
@@ -4402,7 +4397,7 @@ public class QueryController extends SpringActionController
                 if (null != x.getCause() && x != x.getCause())
                     x = x.getCause();
                 html.add("<br>" + PageFlowUtil.filter(x.toString()));
-                Category.getInstance(QueryController.class).debug(expr,x);
+                Logger.getLogger(QueryController.class).debug(expr,x);
             }
             if (null != e)
             {

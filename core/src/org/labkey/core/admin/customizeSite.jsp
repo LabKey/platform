@@ -73,22 +73,6 @@ function testMascot()
     mascotForm.submit();
 }
     
-function testSequest()
-{
-    var preferenceForm = document.forms['preferences'];
-    var sequestForm = document.forms['sequesttest'];
-    if (preferenceForm.sequestServer.value.length == 0)
-    {
-        alert("Please specify your Sequest server before testing.");
-        try {preferenceForm.sequestServer.focus();} catch(x){}
-        return;
-    }
-    sequestForm.sequestServer.value = preferenceForm.sequestServer.value;
-
-    sequestForm.action = "<%= request.getContextPath() %>/ms2/sequestTest.view";
-    sequestForm.submit();
-}
-
 function submitSystemMaintenance()
 {
     document.forms['systemMaintenance'].submit();
@@ -319,22 +303,6 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td></td>
     <td><%=textLink("Test Mascot settings", "javascript:testMascot()")%>
-</td>
-</tr>
-
-<tr>
-    <td>&nbsp;</td>
-</tr>
-<tr>
-    <td colspan=2>Configure Sequest settings (<%=bean.helpLink%>)</td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Sequest server</td>
-    <td><input type="text" name="sequestServer" size="64" value="<%=appProps.getSequestServer()%>"></td>
-</tr>
-<tr>
-    <td></td>
-    <td><%=textLink("Test Sequest settings", "javascript:testSequest()")%>
 </td>
 </tr>
 

@@ -975,19 +975,6 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            if (!"".equals(form.getSequestServer()))
-            {
-                // we perform the Sequest setting test here in case user did not do so
-                SearchClient sequestClient = MS2Service.get().createSearchClient("sequest",form.getSequestServer(), Logger.getLogger("null"),
-                    null, null);
-                sequestClient.findWorkableSettings(true);
-                if (0 != sequestClient.getErrorCode())
-                {
-                    errors.reject(ERROR_MSG, sequestClient.getErrorString());
-                    return false;
-                }
-            }
-
             if (form.getDefaultLsidAuthority() == null || "".equals(form.getDefaultLsidAuthority().trim()))
             {
                 errors.reject(ERROR_MSG, "Default LSID Authority may not be blank");
@@ -999,7 +986,6 @@ public class AdminController extends SpringActionController
             props.setDefaultDomain(form.getDefaultDomain());
             props.setDefaultLsidAuthority(form.getDefaultLsidAuthority());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
-            props.setSequestServer(form.getSequestServer());
             props.setSSLRequired(form.isSslRequired());
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
@@ -1331,8 +1317,6 @@ public class AdminController extends SpringActionController
         private String _defaultDomain;
         private String _defaultLsidAuthority;
         private String _pipelineToolsDirectory;
-        private boolean _sequest;
-        private String _sequestServer;
         private boolean _sslRequired;
         private boolean _adminOnlyMode;
         private String _adminOnlyMessage;
@@ -1424,26 +1408,6 @@ public class AdminController extends SpringActionController
         public void setPipelineToolsDirectory(String pipelineToolsDirectory)
         {
             _pipelineToolsDirectory = pipelineToolsDirectory;
-        }
-
-        public boolean isSequest()
-        {
-            return _sequest;
-        }
-
-        public void setSequest(boolean sequest)
-        {
-            _sequest = sequest;
-        }
-
-        public String getSequestServer()
-        {
-            return (null == _sequestServer) ? "" : _sequestServer;
-        }
-
-        public void setSequestServer(String sequestServer)
-        {
-            _sequestServer = sequestServer;
         }
 
         public boolean isSslRequired()

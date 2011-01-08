@@ -188,10 +188,11 @@ public class PathMapperImpl implements PathMapper
         else
             ret = start.equals(prefix);
 
+        // Accept either a slash or a colon from a Windows drive letter
         return ret &&
             (lenPath == lenPrefix ||
-             prefix.charAt(lenPrefix - 1) == '/' ||
-             path.charAt(lenPrefix) == '/');
+             prefix.charAt(lenPrefix - 1) == '/' || prefix.charAt(lenPrefix - 1) == ':' ||
+             path.charAt(lenPrefix) == '/' || path.charAt(lenPrefix) == ':');
     }
 
     public static class TestCase extends Assert
