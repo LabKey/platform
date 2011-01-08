@@ -26,9 +26,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.wiki.BaseWikiPermissions;
-import org.labkey.wiki.WikiSelectManager;
 import org.labkey.wiki.WikiController;
-import org.labkey.wiki.WikiManager;
+import org.labkey.wiki.WikiSelectManager;
 
 import java.sql.SQLException;
 
