@@ -399,7 +399,7 @@ public class SimpleFilter implements Filter
         if (null == filter)
             return;
         SimpleFilter src = (SimpleFilter) filter;
-        this._clauses = (ArrayList<FilterClause>) src._clauses.clone();
+        _clauses = (ArrayList<FilterClause>) src._clauses.clone();
     }
 
     public SimpleFilter(String colName, Object value)
