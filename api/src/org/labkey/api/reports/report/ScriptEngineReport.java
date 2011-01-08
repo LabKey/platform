@@ -149,6 +149,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
             DataView dataView = view.createDataView();
             DataRegion rgn = dataView.getDataRegion();
             RenderContext ctx = dataView.getRenderContext();
+            rgn.setAllowAsync(false);
 
             // temporary code until we add a more generic way to specify a filter or grouping on the chart
             final String filterParam = descriptor.getProperty(ReportDescriptor.Prop.filterParam);

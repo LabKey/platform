@@ -54,7 +54,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String BASE_SERVER_URL_PROP = "baseServerURL";
     protected static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
     protected static final String PIPELINE_TOOLS_DIR_PROP = "pipelineToolsDirectory";    
-    protected static final String SEQUEST_SERVER_PROP = "SequestServer";
     protected static final String SSL_REQUIRED = "sslRequired";
     protected static final String SSL_PORT = "sslPort";
     protected static final String USER_REQUESTED_ADMIN_ONLY_MODE = "adminOnlyMode";
@@ -253,13 +252,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     // CONSIDER: All the following should probably be migrated into look & feel settings, making them overrideable at the project level
 
-    public String getHomePageName()
-    {
-        //return getSystemShortName() + " Home";
-        // Per George's request, try dropping app name from homepage link title:
-        return "Home";
-    }
-
     public String getHomePageUrl()
     {
         return getHomePageActionURL().getLocalURIString();
@@ -292,16 +284,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
         File binDir = new File(webappDir.getParentFile(), "bin");
 
         return lookupStringValue(PIPELINE_TOOLS_DIR_PROP, binDir.getAbsolutePath());
-    }
-
-    public boolean hasSequest()
-    {
-        return !lookupStringValue(SEQUEST_SERVER_PROP, "").equals("");
-    }
-
-    public String getSequestServer()
-    {
-        return lookupStringValue(SEQUEST_SERVER_PROP, "");
     }
 
     public boolean isSSLRequired()

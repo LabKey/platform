@@ -1067,7 +1067,7 @@ abstract public class PipelineJob extends Job implements Serializable
             int result = proc.waitFor();
             if (result != 0)
             {
-                throw new PipelineJobException("Failed running " + pb.command().get(0) + ", exit code " + result);
+                throw new ToolExecutionException("Failed running " + pb.command().get(0) + ", exit code " + result, result);
             }
         }
         catch (InterruptedException ei)

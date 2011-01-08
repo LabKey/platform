@@ -131,15 +131,6 @@ public class WriteableAppProps extends AppProps
         storeStringValue(PIPELINE_TOOLS_DIR_PROP, toolsDir);
     }
 
-    /**
-     * Sets the database prop.properties for the value of SequestServer
-     * @param sequestServer   name of sequest HTTP server.
-     */
-    public void setSequestServer(String sequestServer)
-    {
-        storeStringValue(SEQUEST_SERVER_PROP, sequestServer);
-    }
-
     public void setSSLRequired(boolean sslRequired)
     {
         storeBooleanValue(SSL_REQUIRED, sslRequired);

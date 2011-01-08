@@ -182,6 +182,8 @@ public class XarContext
             String uri = "file:" + (path.startsWith("/") ? path : "/" + path);
             // This PathMapper considers "local" from a cluster node's point of view.
             String mappedURI = PipelineJobService.get().getGlobusClientProperties().getPathMapper().localToRemote(uri);
+            // If we have translated Windows paths, they won't be legal URIs, so convert slashes
+            mappedURI = mappedURI.replace('\\', '/');
             try
             {
                 f = new File(new URI(mappedURI));
