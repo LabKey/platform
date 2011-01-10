@@ -53,7 +53,6 @@
 <%
     ViewContext context = HttpView.currentContext();
     UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
-    String contextPath = request.getContextPath();
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
     StudyManager.ParticipantViewConfig bean = me.getModelBean();
 
@@ -110,7 +109,7 @@
 
             %>
             <tr class="labkey-header">
-            <th nowrap colspan="<%=2%>" align="left" class="labkey-expandable-row-header"><a title="Click to expand" href="<%=new ActionURL("Study", "expandStateNotify", study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
+            <th nowrap colspan="<%=2%>" align="left" class="labkey-expandable-row-header"><a title="Click to expand" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
             if (null != StringUtils.trimToNull(dataSet.getDescription()))
             {
                 %><%=PageFlowUtil.helpPopup(dataSet.getDisplayString(), dataSet.getDescription())%><%

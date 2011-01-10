@@ -240,7 +240,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
         {
             if (_report != null)
             {
-                ActionURL configure = new ActionURL("Study-Reports", "configureEnrollmentReport.view", getViewContext().getContainer());
+                ActionURL configure = new ActionURL(ReportsController.ConfigureEnrollmentReportAction.class, getViewContext().getContainer());
 
                 final ReportDescriptor descriptor = _report.getDescriptor();
 

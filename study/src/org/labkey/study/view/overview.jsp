@@ -33,6 +33,7 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -46,6 +47,7 @@
     boolean showCohorts = manager.showCohorts(container, user);
     CohortImpl selectedCohort = null;
     CohortImpl[] cohorts = null;
+
     if (showCohorts)
     {
         selectedCohort = bean.cohortFilter != null ? bean.cohortFilter.getCohort(container, user) : null;
@@ -72,7 +74,7 @@
 
 %><%= bean.canManage ? textLink("Manage Study", "manageStudy.view") : ""%>
 &nbsp;<%= textLink("Views", new ActionURL(ReportsController.BeginAction.class, container))%>&nbsp;
-&nbsp;<%= textLink("Specimens", new ActionURL("Study-Samples", "begin", container))%>&nbsp;
+&nbsp;<%= textLink("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
 <%
     boolean hasHiddenData = false;
     for (int i = 0; i < visits.length && !hasHiddenData; i++)

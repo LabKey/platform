@@ -15,22 +15,26 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.api.study.assay.AssayService" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="org.labkey.study.view.AssayRunsWebPartFactory" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.study.assay.AssayService" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.view.AssayBaseWebPartFactory" %>
 <%@ page import="org.labkey.study.view.AssayBaseWebPartFactory.EditViewBean" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayBaseWebPartFactory.EditViewBean> me = (JspView<EditViewBean>) HttpView.currentView();
     EditViewBean bean = me.getModelBean();
     Portal.WebPart webPart = bean.webPart;
     ViewContext ctx = me.getViewContext();
-    ActionURL postUrl = new ActionURL("Project", "customizeWebPart.post", ctx.getContainer());
+    ActionURL postUrl = urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
     Integer viewProtocolId = AssayBaseWebPartFactory.getProtocolId(webPart);
 
     // show buttons should be checked by default for a new assay details webpart.  Otherwise, we preserve the persisted setting:

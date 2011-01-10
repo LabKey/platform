@@ -15,19 +15,23 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
-<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory" %>
 <%@ page import="java.util.EnumSet" %>
-<%@ page import="org.labkey.study.model.QCStateSet" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart bean = me.getModelBean();
     ViewContext ctx = me.getViewContext();
-    ActionURL postUrl = new ActionURL("Project", "customizeWebPart.post", ctx.getContainer());
+    ActionURL postUrl = urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
     String participantId = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY);
     String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(ctx.getContainer(), SpecimenService.CompletionType.ParticipantId);
 

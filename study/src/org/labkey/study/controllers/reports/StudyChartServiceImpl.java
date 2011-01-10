@@ -178,7 +178,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         {
             ReportService.get().saveReport(_context, key, report);
 
-            ActionURL url = new ActionURL("Study", "participant", _context.getContainer());
+            ActionURL url = new ActionURL(StudyController.ParticipantAction.class, _context.getContainer());
             url.addParameter("datasetId", key);
             url.addParameter("participantId", report.getDescriptor().getProperty("participantId"));
 

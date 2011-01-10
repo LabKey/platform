@@ -93,11 +93,11 @@
         }
     });
 
-    //Need to use URLHelper insetad of ViewURLHelper so that .view is not appended to files automatically
+    //Need to use URLHelper instead of ActionURL so that .view is not appended to files automatically
     URLHelper fileUrl = new URLHelper(new ActionURL("files", "", context.getContainer()).toString());
     if (null != me.getFileSet())
         fileUrl.addParameter("fileSet", me.getFileSet());
-    ActionURL addAttachmentUrl = new ActionURL("FileContent", "addAttachment.view", context.getContainer());
+    ActionURL addAttachmentUrl = new ActionURL(FileContentController.AddAttachmentAction.class, context.getContainer());
     addAttachmentUrl.addParameter("entityId", parent.getEntityId());
 
     if (me.isWide())

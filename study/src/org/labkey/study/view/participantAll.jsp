@@ -17,11 +17,19 @@
 %>
 <%@ page import="org.apache.commons.beanutils.ConvertUtils"%>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
-<%@ page import="org.labkey.api.data.SimpleFilter"%>
-<%@ page import="org.labkey.api.data.Table"%>
-<%@ page import="org.labkey.api.data.TableInfo"%>
-<%@ page import="org.labkey.api.exp.LsidManager"%>
-<%@ page import="org.labkey.api.query.QueryService"%>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet"%>
+<%@ page import="org.labkey.api.collections.MultiValueMap"%>
+<%@ page import="org.labkey.api.data.ColumnInfo"%>
+<%@ page import="org.labkey.api.data.DbSchema"%>
+<%@ page import="org.labkey.api.data.Results"%>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="org.labkey.api.data.Table" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.exp.LsidManager" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
@@ -33,8 +41,11 @@
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.util.ResultSetUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -42,22 +53,23 @@
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.study.model.*" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.QCState" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.sql.ResultSet" %>
-<%@ page import="java.util.*" %>
-<%@ page import="org.labkey.api.data.SQLFragment" %>
-<%@ page import="org.labkey.api.data.Sort" %>
-<%@ page import="org.labkey.api.util.ResultSetUtil" %>
-<%@ page import="org.labkey.api.data.DbSchema" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.data.CachedRowSetImpl" %>
-<%@ page import="org.labkey.api.data.ColumnInfo" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.collections.MultiValueMap" %>
-<%@ page import="org.labkey.api.data.Results" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.TreeMap" %>
+<%@ page import="java.util.TreeSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -264,7 +276,7 @@
 
             %>
             <tr class="labkey-header">
-            <th nowrap align="left" class="labkey-expandable-row-header"><a title="Click to expand" href="<%=new ActionURL("Study", "expandStateNotify", study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataset.getDisplayString())%></a><%
+            <th nowrap align="left" class="labkey-expandable-row-header"><a title="Click to expand" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataset.getDisplayString())%></a><%
             if (null != StringUtils.trimToNull(dataset.getDescription()))
             {
                 %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%

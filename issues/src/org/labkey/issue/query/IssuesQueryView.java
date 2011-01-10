@@ -214,7 +214,7 @@ public class IssuesQueryView extends QueryView
         switch (action)
         {
             case exportRowsTsv:
-                final ActionURL url =  _context.cloneActionURL().setAction(IssuesController.ExportTsvAction.class);
+                final ActionURL url = _context.cloneActionURL().setAction(IssuesController.ExportTsvAction.class);
                 for (Pair<String, String> param : super.urlFor(action).getParameters())
                 {
                     url.addParameter(param.getKey(), param.getValue());

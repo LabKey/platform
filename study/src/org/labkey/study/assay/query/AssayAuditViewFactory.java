@@ -31,6 +31,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.Study;
 import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 
@@ -188,7 +189,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
                 if (s != null)
                 {
                     out.write("<a href=\"" +
-                            new ActionURL("Study", "dataset", c).addParameter(DataSetDefinition.DATASETKEY, datasetId) + "\">");
+                            new ActionURL(StudyController.DatasetAction.class, c).addParameter(DataSetDefinition.DATASETKEY, datasetId) + "\">");
                     out.write(s.getLabel().replaceAll(" ", "&nbsp;") + "</a>");
                 }
             }
@@ -230,7 +231,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
             if (c == null)
                 return null;
 
-            return new DetailsURL(new ActionURL("Study", "publishHistoryDetails", c), _columns).eval(ctx);
+            return new DetailsURL(new ActionURL(StudyController.PublishHistoryDetailsAction.class, c), _columns).eval(ctx);
         }
 
         @Override

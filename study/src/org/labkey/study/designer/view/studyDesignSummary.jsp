@@ -28,6 +28,8 @@
 <%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = HttpView.currentContext().getContainer();
@@ -35,7 +37,7 @@
     if (null == study)
     {      %>
     No study is active in the current container.<br>
-    <%=generateButton("Create Study", new ActionURL("Study", "manageStudyProperties.view", c))%>
+    <%=generateButton("Create Study", new ActionURL(StudyController.ManageStudyPropertiesAction.class, c))%>
 <%
         return;
     }
@@ -87,7 +89,7 @@ This study was created from a vaccine study protocol with the following descript
 %>
     <br>
 <%
-    ActionURL url = new ActionURL("Study-Designer", "designer.view", info.getContainer());
+    ActionURL url = new ActionURL(DesignerController.DesignerAction.class, info.getContainer());
     url.replaceParameter("studyId", String.valueOf(info.getStudyId()));
 %>
 <%=textLink("View Complete Protocol", url)%>
