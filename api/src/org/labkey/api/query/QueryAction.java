@@ -20,7 +20,6 @@ public enum QueryAction
 {
     begin,
     schema,
-    newQuery,
     designQuery,
     sourceQuery,
     metadataQuery,
@@ -38,8 +37,6 @@ public enum QueryAction
     updateQueryRow,
     chooseColumns,
     saveColumns,
-    deleteView,
-    createChart,
     createRReport,
     tableInfo,
     excelWebQueryDefinition,
