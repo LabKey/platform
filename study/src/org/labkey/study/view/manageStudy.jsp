@@ -15,27 +15,26 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.importer.StudyReload" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.StudyPropertiesQueryView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.importer.StudyReload" %>
-<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
@@ -131,12 +130,12 @@
     <tr>
         <th align="left">Reports/Views</th>
         <td>Manage views for this Study</td>
-        <td><%= PageFlowUtil.textLink("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, c)) %></td>
+        <td><%=textLink("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Quality Control States</th>
         <td>Manage QC states for datasets in this Study</td>
-        <td><%= PageFlowUtil.textLink("Manage Dataset QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
+        <td><%=textLink("Manage Dataset QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Comments</th>
