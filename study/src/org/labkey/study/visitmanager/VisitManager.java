@@ -2,24 +2,43 @@ package org.labkey.study.visitmanager;
 
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.study.Visit;
-import org.labkey.study.model.QCStateSet;
-import org.labkey.study.StudySchema;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.model.*;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitMapKey;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Copyright (c) 2008-2010 LabKey Corporation
@@ -411,7 +430,7 @@ public abstract class VisitManager
         }
         //No demographic data, so just set to study start date.
         String sqlUpdateStartDates = "UPDATE " + tableParticipant + " SET StartDate = ? WHERE Container = ? AND StartDate IS NULL";
-        Parameter.TypedValue startDateParam = new Parameter.TypedValue(getStudy().getStartDate(), Types.TIMESTAMP);
+        Parameter.TypedValue startDateParam = new Parameter.TypedValue(getStudy().getStartDate(), JdbcType.TIMESTAMP);
         Table.execute(schema, sqlUpdateStartDates, new Object[] {startDateParam, getStudy().getContainer()});
     }
 
