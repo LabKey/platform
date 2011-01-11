@@ -38,6 +38,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
@@ -49,6 +50,7 @@ import java.text.Format;
 import java.text.NumberFormat;
 import java.util.*;
 
+// TODO: it seems to me that data region and its views (ParameterView) don't belong in this package (matt)
 
 public class DataRegion extends DisplayElement
 {
@@ -444,6 +446,11 @@ public class DataRegion extends DisplayElement
         return _settings != null ? _settings.getMaxRows() : _maxRows;
     }
 
+    public Map<String,Object> getQueryParameters()
+    {
+        return null==_settings ? Collections.EMPTY_MAP : _settings.getQueryParameters();
+    }
+
     /** Use {@link QuerySettings#setMaxRows(int)}. */
     @Deprecated
     public void setMaxRows(int maxRows)
@@ -631,7 +638,7 @@ public class DataRegion extends DisplayElement
     protected Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
         LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
-        return ctx.getResultSet(selectKeyMap, getTable(), getMaxRows(), getOffset(), getName(), async);
+        return ctx.getResultSet(selectKeyMap, getTable(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
     }
 
 
@@ -732,6 +739,25 @@ public class DataRegion extends DisplayElement
         return buf.toString();
     }
 
+    public class ParameterViewBean
+    {
+        public String dataRegion = "query";
+        public Collection<QueryService.ParameterDecl> params;
+        public Map<String,Object> values;
+        ParameterViewBean(Collection<QueryService.ParameterDecl> params,Map<String,Object> values)
+        {
+            this.params = params;
+            this.values = values;
+        }
+    }
+
+    public class ParameterView extends JspView<ParameterViewBean>
+    {
+        ParameterView(Collection<QueryService.ParameterDecl> params, Map<String,Object> defaults)
+        {
+            super(DataRegion.class, "parameterForm.jsp", new ParameterViewBean(params,defaults));
+        }
+    }
 
     protected void _renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
@@ -747,14 +773,41 @@ public class DataRegion extends DisplayElement
             StringBuilder headerMessage = new StringBuilder();
             SQLException sqlx = null;
 
+            boolean showParameterForm = false;
             try
             {
-                rs = getResultSet(ctx);
+                if (!getTable().getNamedParameters().isEmpty() && getQueryParameters().isEmpty())
+                    showParameterForm = true;
+                else
+                    rs = getResultSet(ctx);
+            }
+            catch (QueryService.NamedParameterNotProvided x)
+            {
+                showParameterForm = true;
             }
             catch (SQLException x)
             {
                 sqlx = x;
                 headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
+            }
+
+
+            if (showParameterForm)
+            {
+                try
+                {
+                    Collection<QueryService.ParameterDecl> params = getTable().getNamedParameters();
+                    (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
+                    return;
+                }
+                catch (IOException io)
+                {
+                    throw io;
+                }
+                catch (Exception x)
+                {
+                    throw new RuntimeException(x);
+                }
             }
 
             List<DisplayColumn> renderers = getDisplayColumns();
@@ -1601,7 +1654,7 @@ public class DataRegion extends DisplayElement
         else
         {
             LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
-            rs = Table.selectForDisplay(tinfoMain, selectKeyMap.values(), ctx.getBaseFilter(), ctx.getBaseSort(), getMaxRows(), getOffset());
+            rs = Table.selectForDisplay(tinfoMain, selectKeyMap.values(), getQueryParameters(), ctx.getBaseFilter(), ctx.getBaseSort(), getMaxRows(), getOffset());
             ctx.setResults(rs);
         }
     }

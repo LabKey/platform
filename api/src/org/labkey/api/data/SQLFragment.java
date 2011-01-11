@@ -20,6 +20,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.DateUtil;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -95,7 +96,8 @@ public class SQLFragment
                 for (int i = 0; i < params.size(); i++)
                 {
                     Object o = params.get(i);
-                    Object value = Parameter.getValueToBind(o);
+                    Object value = o;
+                    try { value = Parameter.getValueToBind(o); } catch (SQLException x) {;}
                     if (value == null)
                     {
                         result.append("NULL");

@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -135,10 +136,19 @@ public class AuthFilter implements Filter
             req = new AuthenticatedRequest(req, user);
         }
 
-        chain.doFilter(req, resp);
+        QueryService.get().setEnvironment(QueryService.Environment.USERID, null==user ? User.guest.getUserId() : user.getUserId());
 
-        // Clear all the request attributes that have been set.  This helps memtracker.  See #10747.
-        assert clearRequestAttributes(req);
+        try
+        {
+            chain.doFilter(req, resp);
+        }
+        finally
+        {
+            QueryService.get().clearEnvironment();
+            
+            // Clear all the request attributes that have been set.  This helps memtracker.  See #10747.
+            assert clearRequestAttributes(req);
+        }
     }
 
 

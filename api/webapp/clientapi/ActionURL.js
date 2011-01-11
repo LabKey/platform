@@ -238,26 +238,46 @@ that points back to the current page:
             var newUrl = LABKEY.contextPath + "/" + controller + containerPath + action;
             if (-1 == action.indexOf('.'))
                 newUrl += '.view';
-            if (parameters)
-            {
-                newUrl += '?';
-                for (var parameter in parameters)
-                {
-                    var pval = parameters[parameter];
-                    if (Ext.isArray(pval))
-                    {
-                        for (var idx = 0; idx < pval.length; ++idx)
-                        {
-                            newUrl += encodeURIComponent(parameter) + '=' + encodeURIComponent(pval[idx]) + '&';
-                        }
-                    }
-                    else
-                        newUrl += encodeURIComponent(parameter) + '=' + encodeURIComponent(pval) + '&';
-                }
-                newUrl = newUrl.substring(0, newUrl.length - 1);
-            }
+            var query = LABKEY.ActionURL.queryString(parameters);
+            if (query)
+                newUrl += '?' + query;
             return newUrl;
         },
+
+
+        /**
+         * Turn the parameter object into a query string
+         * e.g. {x:'fred'} -> "x=fred"
+         * the returned query string is not prepended with a question mark ('?')
+         * 
+         * @param parameters
+         */
+        queryString : function(parameters)
+        {
+            if (!parameters)
+                return '';
+            var query = '';
+            var and = '';
+            for (var parameter in parameters)
+            {
+                var pval = parameters[parameter];
+                if (Ext.isArray(pval))
+                {
+                    for (var idx = 0; idx < pval.length; ++idx)
+                    {
+                        query += and + encodeURIComponent(parameter) + '=' + encodeURIComponent(pval[idx]);
+                        and = '&';
+                    }
+                }
+                else
+                {
+                    query += and + encodeURIComponent(parameter) + '=' + encodeURIComponent(pval);
+                    and = '&';
+                }
+            }
+            return query;
+        },
+
 
         /**
          * Get the current base URL, which includes context path

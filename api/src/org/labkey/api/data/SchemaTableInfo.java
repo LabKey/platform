@@ -894,6 +894,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
+    public Collection<QueryService.ParameterDecl> getNamedParameters()
+    {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
     public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors) throws ValidationException
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");

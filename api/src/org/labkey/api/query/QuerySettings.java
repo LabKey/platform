@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -37,9 +38,11 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class QuerySettings
 {
+    public static final String URL_PARAMETER_MARKER = "!";
     private String _schemaName;
     private String _queryName;
     private String _viewName;
@@ -277,6 +280,32 @@ public class QuerySettings
         String selectionKey = StringUtils.trimToNull(_getParameter(param(QueryParam.selectionKey)));
         if (null != selectionKey)
             setSelectionKey(selectionKey);
+
+        _parseQueryParameters(_filterSort);
+    }
+
+
+    Map<String,Object> _queryParameters = new CaseInsensitiveHashMap<Object>();
+
+    public Map<String,Object> getQueryParameters()
+    {
+        return _queryParameters;
+    }
+    
+    void _parseQueryParameters(PropertyValues pvs)
+    {
+        String paramPrefix = (StringUtils.defaultString(getDataRegionName(),"") + URL_PARAMETER_MARKER).toLowerCase();
+        for (PropertyValue pv : pvs.getPropertyValues())
+        {
+            if (!pv.getName().toLowerCase().startsWith(paramPrefix))
+                continue;
+            _queryParameters.put(pv.getName().substring(paramPrefix.length()),pv.getValue());
+        }
+    }
+
+    void setQueryParameter(String name, Object value)
+    {
+        _queryParameters.put(name,value);
     }
 
 	public void setSchemaName(HString schemaName)

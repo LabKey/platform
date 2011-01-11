@@ -93,8 +93,12 @@ abstract public class QueryService
     abstract public String findMetadataOverride(Container container, String schemaName, String tableName, boolean customQuery);
 
 	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
-	abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException;
-	abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset);
+    public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
+    {
+        return select(table,columns,filter,sort,Collections.EMPTY_MAP);
+    }
+	abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Map<String,Object> parameters) throws SQLException;
+    abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset);
     abstract public Parameter.ParameterMap insertStatement(Connection conn, User user, TableInfo tableInsert) throws SQLException;
 
 
@@ -105,4 +109,47 @@ abstract public class QueryService
     }
 
     abstract public void addQueryListener(QueryListener listener);
+
+    //
+    // Thread local environment for executing a query
+    //
+    // currently only supports USERID for implementing the USERID() method
+    //
+    public enum Environment
+    {
+        USERID(JdbcType.INTEGER);
+
+        public JdbcType type;
+
+        Environment(JdbcType type)
+        {
+            this.type = type;
+        }
+    }
+
+    abstract public void setEnvironment(Environment e, Object value);
+    abstract public void clearEnvironment();
+    abstract public Object cloneEnvironment();
+    abstract public void copyEnvironment(Object o);
+
+
+    public interface ParameterDecl
+    {
+        String getName();
+        JdbcType getType();
+        Object getDefault();
+        boolean isRequired();
+    }
+
+
+    public static class NamedParameterNotProvided extends SQLException
+    {
+        public NamedParameterNotProvided(String name)
+        {
+            super("Parameter not provided: " + name);
+        }
+    }
+
+    abstract public void bindNamedParameters(SQLFragment frag, Map<String,Object> in);
+    abstract public void validateNamedParameters(SQLFragment frag) throws SQLException;
 }

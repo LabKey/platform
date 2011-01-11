@@ -274,7 +274,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         return _rs.getFieldMap();
     }
 
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, Map<String,Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url = getViewContext().cloneActionURL();
 
@@ -285,7 +285,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         if (null != QueryService.get())
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, _ignoredColumnFilters);
 
-        _rs = selectForDisplay(tinfo, cols, filter, sort, maxRows, offset, async);
+        _rs = selectForDisplay(tinfo, cols, parameters, filter, sort, maxRows, offset, async);
         return _rs;
     }
 
@@ -408,15 +408,15 @@ public class RenderContext extends BoundMap // extends ViewContext
         filter.addClause(clause);
     }
 
-    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String,Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         if (async)
         {
-            return Table.selectForDisplayAsync(table, columns, filter, sort, maxRows, offset, getCache(), false, getViewContext().getResponse());
+            return Table.selectForDisplayAsync(table, columns, parameters, filter, sort, maxRows, offset, getCache(), false, getViewContext().getResponse());
         }
         else
         {
-            return Table.selectForDisplay(table, columns, filter, sort, maxRows, offset, getCache(), false);
+            return Table.selectForDisplay(table, columns, parameters, filter, sort, maxRows, offset, getCache(), false);
         }
     }
 

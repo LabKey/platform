@@ -54,7 +54,7 @@ public enum JdbcType
 
     CHAR(Types.CHAR, String.class),
 
-    DECIMAL(Types.DECIMAL, BigDecimal.class)
+    DECIMAL(Types.DECIMAL, BigDecimal.class, "numberfield")
             {
                 @Override
                 protected Object _fromNumber(Number n)
@@ -63,7 +63,7 @@ public enum JdbcType
                 }
             },
 
-    DOUBLE(Types.DOUBLE, Double.class)
+    DOUBLE(Types.DOUBLE, Double.class, "numberfield")
             {
                 @Override
                 protected Object _fromNumber(Number n)
@@ -72,7 +72,7 @@ public enum JdbcType
                 }
             },
 
-    INTEGER(Types.INTEGER, Integer.class)
+    INTEGER(Types.INTEGER, Integer.class, "numberfield")
             {
                 @Override
                 protected Object _fromNumber(Number n)
@@ -85,7 +85,7 @@ public enum JdbcType
 
     LONGVARCHAR(Types.LONGVARCHAR, String.class),
 
-    REAL(Types.REAL, Float.class)
+    REAL(Types.REAL, Float.class, "numberfield")
             {
                 @Override
                 protected Object _fromNumber(Number n)
@@ -94,7 +94,7 @@ public enum JdbcType
                 }
             },
 
-    SMALLINT(Types.SMALLINT, Short.class)
+    SMALLINT(Types.SMALLINT, Short.class, "numberfield")
             {
                 @Override
                 protected Object _fromNumber(Number n)
@@ -103,13 +103,13 @@ public enum JdbcType
                 }
             },
 
-    DATE(Types.DATE, java.sql.Date.class),
+    DATE(Types.DATE, java.sql.Date.class, "datefield"),
 
-    TIME(Types.TIME, java.sql.Time.class),
+    TIME(Types.TIME, java.sql.Time.class, "timefield"),
 
-    TIMESTAMP(Types.TIMESTAMP, java.sql.Timestamp.class),
+    TIMESTAMP(Types.TIMESTAMP, java.sql.Timestamp.class, "datefield"),
 
-    TINYINT(Types.TINYINT, Short.class)
+    TINYINT(Types.TINYINT, Short.class, "numberfield")
             {
                 @Override
                 protected Object _fromNumber(Number n)
@@ -122,20 +122,29 @@ public enum JdbcType
 
     VARCHAR(Types.VARCHAR, String.class),
 
-    OTHER(Types.OTHER, Object.class);
+    NULL(Types.NULL, Object.class),
 
+    OTHER(Types.OTHER, Object.class);
 
 
     public final int sqlType;
     public final Class cls;
+    public final String xtype;
 
 
     JdbcType(int type, Class cls)
     {
         this.sqlType = type;
         this.cls = cls;
+        xtype = "textfield";
     }
 
+    JdbcType(int type, Class cls, String xtype)
+    {
+        this.sqlType = type;
+        this.cls = cls;
+        this.xtype = xtype;
+    }
 
     public static JdbcType valueOf(int type)
     {

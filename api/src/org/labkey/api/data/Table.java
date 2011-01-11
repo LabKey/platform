@@ -235,7 +235,7 @@ public class Table
                 }
             }
 
-            Parameter p = new Parameter(stmt, i, Types.JAVA_OBJECT);
+            Parameter p = new Parameter(stmt, i);
             p.setValue(value);
             i++;
         }
@@ -1324,17 +1324,17 @@ public class Table
     }
 
 
-    public static Results selectForDisplay(TableInfo table, Set<String> select, Filter filter, Sort sort, int rowCount, long offset)
+    public static Results selectForDisplay(TableInfo table, Set<String> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset)
             throws SQLException
     {
-        return selectForDisplay(table, columnInfosList(table, select), filter, sort, rowCount, offset);
+        return selectForDisplay(table, columnInfosList(table, select), parameters, filter, sort, rowCount, offset);
     }
 
 
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset)
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset)
             throws SQLException
     {
-        return selectForDisplay(table, select, filter, sort, rowCount, offset, true, false);
+        return selectForDisplay(table, select, parameters, filter, sort, rowCount, offset, true, false);
     }
 
     public static Map<String, Aggregate.Result>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, Collection<ColumnInfo> select, Filter filter, boolean cache) throws SQLException
@@ -1403,14 +1403,14 @@ public class Table
     }
 
 
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable)
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable)
             throws SQLException
     {
-        return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, scrollable, null, null);
+        return selectForDisplay(table, select, parameters, filter, sort, rowCount, offset, cache, scrollable, null, null);
     }
 
 
-    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log)
+    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
@@ -1427,6 +1427,8 @@ public class Table
 
         int decideRowCount = decideRowCount(queryRowCount, null);
         SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount, queryOffset);
+        QueryService.get().bindNamedParameters(sql, parameters);
+        QueryService.get().validateNamedParameters(sql);
         Integer statementRowCount = (table.getSqlDialect().requiresStatementMaxRows() ? decideRowCount : null);  // TODO: clean this all up
         Table.TableResultSet rs = (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, scrollable, asyncRequest, log, statementRowCount);
 
@@ -1434,15 +1436,18 @@ public class Table
     }
 
 
-    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
+    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, Map<String,Object> parameters, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
     {
         final Logger log = ConnectionWrapper.getConnectionLogger();
         final AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response);
+        final Map<String,Object> parametersCopy = new CaseInsensitiveHashMap<Object>();
+        if (null != parameters)
+            parametersCopy.putAll(parameters);
         return asyncRequest.waitForResult(new Callable<Results>()
 		{
             public Results call() throws Exception
             {
-                return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, scrollable, asyncRequest, log);
+                return selectForDisplay(table, select, parametersCopy, filter, sort, rowCount, offset, cache, scrollable, asyncRequest, log);
             }
         });
     }
@@ -1920,14 +1925,14 @@ public class Table
         {
             TableInfo tinfo = _core.getTableInfoPrincipals();
 
-            Results rsAll = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, 0, 0);
+            Results rsAll = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, null, 0, 0);
             rsAll.last();
             int rowCount = rsAll.getRow();
             assertTrue(((Table.TableResultSet)rsAll.getResultSet()).isComplete());
             rsAll.close();
 
             rowCount -= 2;
-            Results rs = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, rowCount, 0);
+            Results rs = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, null, rowCount, 0);
             rs.last();
             int row = rs.getRow();
             assertTrue(row == rowCount);
@@ -2015,7 +2020,7 @@ public class Table
                 String sql = "INSERT INTO " + name + " VALUES (?, ?)";
                 stmt = conn.prepareStatement(sql);
                 Parameter s = new Parameter(stmt, 1);
-                Parameter d = new Parameter(stmt, 2, Types.TIMESTAMP);
+                Parameter d = new Parameter(stmt, 2, JdbcType.TIMESTAMP);
 
                 s.setValue(4);
                 d.setValue(GregorianCalendar.getInstance());

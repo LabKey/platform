@@ -702,6 +702,11 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
+    @Override
+    public Collection<QueryService.ParameterDecl> getNamedParameters()
+    {
+        return Collections.EMPTY_LIST;
+    }
 
     /**
      * return true if all rows from this table come from a single container.

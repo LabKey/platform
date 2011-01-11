@@ -153,10 +153,10 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async)
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, Map<String,Object> parameters, int maxRows, long offset, String name, boolean async)
             throws SQLException, IOException
     {
-        return _ctx.getResultSet(fieldMap, tinfo, maxRows, offset, name, async);
+        return _ctx.getResultSet(fieldMap, tinfo, parameters, maxRows, offset, name, async);
     }
 
     @Override
@@ -185,10 +185,10 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
+    public Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String,Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
             throws SQLException, IOException
     {
-        return _ctx.selectForDisplay(table, columns, filter, sort, maxRows, offset, async);
+        return _ctx.selectForDisplay(table, columns, parameters, filter, sort, maxRows, offset, async);
     }
 
     @Override

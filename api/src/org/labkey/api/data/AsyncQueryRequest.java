@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.query.QueryService;
 import org.labkey.api.util.UnexpectedException;
 import org.apache.log4j.Logger;
 
@@ -60,10 +61,14 @@ public class AsyncQueryRequest<T>
 
     synchronized public T waitForResult(final Callable<T> callable) throws SQLException, IOException
     {
+        final QueryService qs = QueryService.get();
+        final Object state = qs.cloneEnvironment();
+        
         Runnable runnable = new Runnable()
         {
             public void run()
             {
+                qs.copyEnvironment(state);
                 try
                 {
                     setResult(callable.call());
@@ -71,6 +76,10 @@ public class AsyncQueryRequest<T>
                 catch (Throwable t)
                 {
                     setException(t);
+                }
+                finally
+                {
+                    qs.clearEnvironment();    
                 }
             }
         };
@@ -99,6 +108,8 @@ public class AsyncQueryRequest<T>
 
             if (_exception != null)
             {
+                if (_exception instanceof QueryService.NamedParameterNotProvided)
+                    throw (QueryService.NamedParameterNotProvided)_exception;
                 if (_exception instanceof SQLException)
                 {
                     SQLException sqlE = (SQLException) _exception;

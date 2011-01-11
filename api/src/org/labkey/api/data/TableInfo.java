@@ -24,6 +24,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -220,6 +221,15 @@ public interface TableInfo
             return name.substring(0, 1) + name.toLowerCase().substring(1, name.length());
         }
     }
+
+
+    /**
+     * Queries may have named parameters, SELECT queries (the only kind we have right now) may
+     * return TableInfos.  This is how you find out if a TableInfo representing a query has named
+     * parameters
+     */
+
+    public Collection<QueryService.ParameterDecl> getNamedParameters();
 
     /**
      * Executes any trigger scripts for this table.

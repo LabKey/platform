@@ -202,7 +202,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             SimpleFilter filter = new SimpleFilter();
             filter.addClause(new SimpleFilter.InClause(runFieldKey.toString(), runIds, true));
 
-            ResultSet rs = Table.selectForDisplay(table, Arrays.asList(dataRowIdColumn, runIdColumn), filter, new Sort(runFieldKey.toString()), Table.ALL_ROWS, 0);
+            ResultSet rs = Table.selectForDisplay(table, Arrays.asList(dataRowIdColumn, runIdColumn), null, filter, new Sort(runFieldKey.toString()), Table.ALL_ROWS, 0);
             try
             {
                 // Pull out the data row ids

@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
@@ -32,6 +33,7 @@ import java.sql.Types;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * User: matthewb
@@ -55,12 +57,12 @@ public class Parameter
     public static class TypedValue
     {
         Object _value;
-        int    _sqlType;
+        JdbcType _type;
 
-        public TypedValue(Object value, int sqlType)
+        public TypedValue(Object value, JdbcType type)
         {
             this._value = value;
-            this._sqlType = sqlType;
+            this._type = type;
         }
 
         public String toString()
@@ -70,7 +72,7 @@ public class Parameter
     }
 
 
-    public static Object NULL_MARKER = new TypedValue(null, Types.JAVA_OBJECT)
+    public static Object NULL_MARKER = new TypedValue(null, JdbcType.NULL)
     {
         @Override
         public String toString()
@@ -80,7 +82,7 @@ public class Parameter
     };
 
     
-    public static TypedValue nullParameter(int sqlType)
+    public static TypedValue nullParameter(JdbcType sqlType)
     {
         return new TypedValue(null, sqlType);
     }
@@ -88,7 +90,7 @@ public class Parameter
 
     private String _name;
     private String _uri = null;  // for migration of ontology based code
-    private final int _sqlType;
+    private final JdbcType _type;
 
     // only allow setting once, do not clear
     private boolean _constant = false;
@@ -99,36 +101,36 @@ public class Parameter
 
     public Parameter(PreparedStatement stmt, int index)
     {
-        this(stmt, index, Types.JAVA_OBJECT);
+        this(stmt, index, null);
     }
 
-    public Parameter(PreparedStatement stmt, int index, int sqlType)
+    public Parameter(PreparedStatement stmt, int index, JdbcType type)
     {
         _stmt = stmt;
         _index = index;
-        _sqlType = sqlType;
+        _type = type;
     }
-
-    public Parameter(String name, int index, int sqlType)
+    
+    public Parameter(String name, int index, JdbcType type)
     {
         _name = name;
         _index = index;
-        _sqlType = sqlType;
+        _type = type;
     }
-
+    
     public Parameter(String name, String uri, int index, int sqlType)
     {
         _name = name;
         _uri = uri;
         _index = index;
-        _sqlType = sqlType;
+        _type = JdbcType.valueOf(sqlType);
     }
 
     public Parameter(ColumnInfo c, int index)
     {
         _name = c.getName();
         _uri = c.getPropertyURI();
-        _sqlType = c.getSqlTypeInt();
+        _type = c.getJdbcType();
         _index = index;
     }
 
@@ -147,9 +149,9 @@ public class Parameter
         return _index;
     }
 
-    public int getType()
+    public JdbcType getType()
     {
-        return _sqlType;
+        return _type;
     }
 
     public void setValue(Object in, boolean constant) throws SQLException
@@ -164,21 +166,21 @@ public class Parameter
             throw new IllegalStateException("Can't set constant parameter");
 
         Object value = getValueToBind(in);
-        int sqlType = _sqlType;
+        JdbcType type = _type;
 
         try
         {
-            if (sqlType == Types.JAVA_OBJECT)
+            if (null == type)
             {
                 if (in instanceof TypedValue)
-                    sqlType = ((TypedValue)in)._sqlType;
+                    type = ((TypedValue)in)._type;
                 else if (in instanceof StringExpression)
-                    sqlType = Types.VARCHAR;
+                    type = JdbcType.VARCHAR;
             }
 
             if (null == value)
             {
-                _stmt.setNull(_index, sqlType==Types.JAVA_OBJECT ? Types.VARCHAR : sqlType);
+                _stmt.setNull(_index, null==type ? Types.VARCHAR : type.sqlType);
                 return;
             }
 
@@ -202,21 +204,45 @@ public class Parameter
                 }
             }
 
-            if (sqlType == Types.JAVA_OBJECT)
+            if (null == type)
                 _stmt.setObject(_index, value);
             else
-                _stmt.setObject(_index, value, sqlType);
+                _stmt.setObject(_index, value, type.sqlType);
         }
         catch (SQLException e)
         {
-            LOG.error("Exception converting \"" + value + "\" to type " + _sqlType);
+            LOG.error("Exception converting \"" + value + "\" to type " + _type);
             throw e;
         }
     }
 
     
-    public static Object getValueToBind(Object value)
+    public static Object getValueToBind(Object value) throws SQLException
     {
+        if (value instanceof Callable)
+        {
+            try
+            {
+                value = ((Callable)value).call();
+            }
+            catch (SQLException x)
+            {
+                throw x;
+            }
+            catch (Exception x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
+
+        if (value instanceof QueryService.ParameterDecl)
+        {
+            QueryService.ParameterDecl decl = (QueryService.ParameterDecl)value;
+            if (decl.isRequired())
+                throw new QueryService.NamedParameterNotProvided(decl.getName());
+            value = decl.getDefault();
+        }
+
         if (value instanceof TypedValue)
             value = ((TypedValue)value)._value;
 

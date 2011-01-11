@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 
@@ -30,6 +31,12 @@ public class ExprColumn extends ColumnInfo
     private ColumnInfo[] _dependentColumns;
 
     
+    public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
+    {
+        this(parent, key, sql, type.sqlType, dependentColumns);
+    }
+
+    @Deprecated // use JdbcType
     public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, int sqltype, ColumnInfo ... dependentColumns)
     {
         super(key, parent);
@@ -51,6 +58,12 @@ public class ExprColumn extends ColumnInfo
     }
 
     
+    public ExprColumn(TableInfo parent, String name, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
+    {
+        this(parent, FieldKey.fromString(name), sql, type.sqlType, dependentColumns);
+    }
+
+    @Deprecated // use JdbcType
     public ExprColumn(TableInfo parent, String name, SQLFragment sql, int sqltype, ColumnInfo ... dependentColumns)
     {
         this(parent, FieldKey.fromString(name), sql, sqltype, dependentColumns);
