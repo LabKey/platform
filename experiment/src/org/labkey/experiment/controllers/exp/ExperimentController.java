@@ -468,23 +468,16 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static final class SaveMaterialsForm implements ApiJsonForm
+    public static final class SaveMaterialsForm extends SimpleApiJsonForm
     {
-        private JSONObject jsonObj;
-
-        public void setJsonObject(JSONObject jsonObj)
-        {
-            this.jsonObj = jsonObj;
-        }
-
         public String getName()
         {
-            return jsonObj.getString("name");
+            return json.getString("name");
         }
 
         public List<Map<String, Object>> getMaterials()
         {
-            JSONArray materials = jsonObj.getJSONArray("materials");
+            JSONArray materials = json.getJSONArray("materials");
             List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
             for (int i=0; i<materials.length(); i++)
             {

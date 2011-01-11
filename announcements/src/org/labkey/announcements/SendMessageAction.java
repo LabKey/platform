@@ -20,10 +20,10 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MailHelper;
@@ -158,18 +158,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         }
     }
 
-    public static class MessageForm implements ApiJsonForm
+    public static class MessageForm extends SimpleApiJsonForm
     {
-        private JSONObject _json;
-
-        public void setJsonObject(JSONObject jsonObj)
-        {
-            _json = jsonObj;
-        }
-
-        public JSONObject getJsonObject()
-        {
-            return _json;
-        }
     }
 }

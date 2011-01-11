@@ -64,7 +64,7 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
     {
         if (form.getJsonObject() == null)
         {
-            form.setJsonObject(new JSONObject());
+            form.bindProperties(new JSONObject());
         }
         int assayId = form.getJsonObject().getInt(ASSAY_ID);
 

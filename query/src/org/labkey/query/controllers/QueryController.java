@@ -30,12 +30,12 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.FormHandlerAction;
@@ -2652,19 +2652,8 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class ApiSaveRowsForm implements ApiJsonForm
+    public static class ApiSaveRowsForm extends SimpleApiJsonForm
     {
-        private JSONObject _json;
-
-        public void setJsonObject(JSONObject jsonObj)
-        {
-            _json = jsonObj;
-        }
-
-        public JSONObject getJsonObject()
-        {
-            return _json;
-        }
     }
 
     private enum CommandType
