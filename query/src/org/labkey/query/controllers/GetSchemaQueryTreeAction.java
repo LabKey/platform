@@ -154,7 +154,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     {
                         String qname = queryNames.get(i);
                         QueryDefinition qdef = queryDefMap.get(qname);
-                        if (!qdef.isHidden())
+//                        if (!qdef.isHidden())
                         {
                             addQueryToList(schemaName, qname, qdef.getDescription(), userDefined);
                             addedQueryCount++;
