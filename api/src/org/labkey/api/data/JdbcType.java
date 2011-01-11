@@ -31,7 +31,7 @@ import java.sql.Types;
 
 public enum JdbcType
 {
-    BIGINT(Types.BIGINT, Long.class)
+    BIGINT(Types.BIGINT, Long.class, "numberfield")
             {
                 @Override
                 protected Object _fromNumber(Number n)

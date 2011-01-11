@@ -29,7 +29,6 @@ import org.labkey.api.util.StringExpression;
 import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.Map;
@@ -118,12 +117,12 @@ public class Parameter
         _type = type;
     }
     
-    public Parameter(String name, String uri, int index, int sqlType)
+    public Parameter(String name, String uri, int index, JdbcType jdbcType)
     {
         _name = name;
         _uri = uri;
         _index = index;
-        _type = JdbcType.valueOf(sqlType);
+        _type = jdbcType;
     }
 
     public Parameter(ColumnInfo c, int index)
@@ -180,7 +179,7 @@ public class Parameter
 
             if (null == value)
             {
-                _stmt.setNull(_index, null==type ? Types.VARCHAR : type.sqlType);
+                _stmt.setNull(_index, null==type ? JdbcType.VARCHAR.sqlType : type.sqlType);
                 return;
             }
 

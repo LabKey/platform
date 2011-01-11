@@ -52,7 +52,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -833,7 +832,7 @@ public class Table
             fields.put(colModified.getName(), date);
 
         ColumnInfo colVersion = table.getVersionColumn();
-        if (null != colVersion && colVersion != colModified && colVersion.getSqlTypeInt() == Types.TIMESTAMP)
+        if (null != colVersion && colVersion != colModified && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
             fields.put(colVersion.getName(), date);
     }
 
@@ -850,7 +849,7 @@ public class Table
 
         ColumnInfo colModified = table.getColumn("Modified");
         ColumnInfo colVersion = table.getVersionColumn();
-        if (null != colVersion && colVersion != colModified && colVersion.getSqlTypeInt() == Types.TIMESTAMP)
+        if (null != colVersion && colVersion != colModified && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
             _setProperty(returnObject, colVersion.getName(), fields.get(colVersion.getName()));
     }
 
@@ -2013,7 +2012,7 @@ public class Table
             try
             {
                 PreparedStatement stmt = conn.prepareStatement("CREATE " + dialect.getTempTableKeyword() + " TABLE " + name +
-                        "(s VARCHAR(36), d " + dialect.sqlTypeNameFromSqlType(Types.TIMESTAMP) + ")");
+                        "(s VARCHAR(36), d " + dialect.sqlTypeNameFromSqlType(JdbcType.TIMESTAMP.sqlType) + ")");
                 stmt.execute();
                 stmt.close();
 
