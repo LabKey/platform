@@ -27,8 +27,24 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
@@ -38,16 +54,38 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.query.data.SimpleUserSchema;
-import org.labkey.query.persist.*;
+import org.labkey.query.persist.CstmView;
+import org.labkey.query.persist.ExternalSchemaDef;
+import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
+import org.labkey.query.persist.QuerySnapshotDef;
 import org.labkey.query.sql.Query;
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -59,8 +97,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 
 public class QueryServiceImpl extends QueryService
 {
@@ -1404,7 +1451,7 @@ public class QueryServiceImpl extends QueryService
             comma = ",";
         }
         ColumnInfo colVersion = table.getVersionColumn();
-        if (null != colVersion && !done.contains(colVersion.getName()) && colVersion.getSqlTypeInt() == Types.TIMESTAMP)
+        if (null != colVersion && !done.contains(colVersion.getName()) && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
         {
             cols.append(comma).append(colVersion.getSelectName());
             values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
@@ -1472,10 +1519,10 @@ public class QueryServiceImpl extends QueryService
                 sqlfObjectProperty.append(objectIdVar);
                 sqlfObjectProperty.append(",").append(dp.getPropertyId());
                 sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
-                Parameter mv = new Parameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, parameters.size()+1, Types.VARCHAR);
+                Parameter mv = new Parameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, parameters.size()+1, JdbcType.VARCHAR);
                 parameters.add(mv);
                 sqlfObjectProperty.append(",").append(p(d,useVariables,mv.getIndex()));
-                Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), parameters.size()+1, propertyType.getSqlType());
+                Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), parameters.size()+1, propertyType.getJdbcType());
                 parameters.add(v);
                 sqlfObjectProperty.append(",").append(p(d,useVariables,v.getIndex()));
                 sqlfObjectProperty.append(");\n");

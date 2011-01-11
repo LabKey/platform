@@ -21,9 +21,8 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.JdbcType;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
-import java.sql.Types;
-import java.math.BigInteger;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public class QNumber extends QExpr implements IConstant
 {

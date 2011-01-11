@@ -18,7 +18,6 @@ package org.labkey.query.sql;
 
 import org.labkey.api.data.JdbcType;
 
-import java.sql.Types;
 
 final public class QOperator extends QExpr
 {

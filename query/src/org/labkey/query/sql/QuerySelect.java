@@ -15,21 +15,40 @@
  */
 package org.labkey.query.sql;
 
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.*;
-import org.labkey.api.util.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.settings.AppProps;
-import org.labkey.query.design.*;
+import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
-import org.apache.commons.lang.StringUtils;
+import org.labkey.query.design.DgColumn;
+import org.labkey.query.design.DgOrderByString;
+import org.labkey.query.design.DgQuery;
+import org.labkey.query.design.DgValue;
+import org.labkey.query.design.QueryDocument;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
-import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 public class QuerySelect extends QueryRelation

@@ -19,7 +19,6 @@ package org.labkey.query.sql;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 
-import java.sql.Types;
 
 public class QBoolean extends QExpr implements IConstant
 {

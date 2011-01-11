@@ -22,7 +22,6 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
 
-import java.sql.Types;
 import java.util.List;
 
 public class QAggregate extends QExpr

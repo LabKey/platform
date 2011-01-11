@@ -20,11 +20,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.ExprColumn;
-
-import java.sql.Types;
 
 
 public class QField extends QInternalExpr
