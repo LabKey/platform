@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.JdbcType;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.sql.Types;
@@ -27,7 +28,7 @@ import java.math.BigDecimal;
 public class QNumber extends QExpr implements IConstant
 {
 	Number _value = null;
-	int _sqlType = Types.DOUBLE;
+	JdbcType _sqlType = JdbcType.DOUBLE;
 	
 
 	public QNumber(String s)
@@ -77,11 +78,11 @@ public class QNumber extends QExpr implements IConstant
 	{
 		_value = value;
 		if (value instanceof Double || value instanceof Float)
-			_sqlType = Types.DOUBLE;
+			_sqlType = JdbcType.DOUBLE;
         else if (value instanceof Integer || value instanceof Long)
-			_sqlType = Types.INTEGER;
+			_sqlType = JdbcType.INTEGER;
 		else if (value instanceof BigInteger || value instanceof BigDecimal)
-			_sqlType = Types.DECIMAL;
+			_sqlType = JdbcType.DECIMAL;
         setTokenText(value.toString());
     }
 
@@ -101,7 +102,7 @@ public class QNumber extends QExpr implements IConstant
         builder.append(getValueString());
     }
 
-    public int getSqlType()
+    public JdbcType getSqlType()
     {
         return _sqlType;
     }

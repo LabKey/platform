@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.JdbcType;
 
 import java.sql.Types;
 
@@ -33,9 +34,9 @@ public class QString extends QExpr implements IConstant
         return str;
     }
 
-    public int getSqlType()
+    public JdbcType getSqlType()
     {
-        return Types.VARCHAR;
+        return JdbcType.VARCHAR;
     }
 
     static public String quote(String str)

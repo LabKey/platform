@@ -319,9 +319,9 @@ public class QueryLookupWrapper extends QueryRelation
             return _fk;
         }
 
-        public int getSqlTypeInt()
+        public JdbcType getJdbcType()
         {
-            return _wrapped.getSqlTypeInt();
+            return _wrapped.getJdbcType();
         }
 
         @Override
@@ -376,9 +376,9 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
 
-        public int getSqlTypeInt()
+        public JdbcType getJdbcType()
         {
-            return _lkCol.getSqlTypeInt();
+            return _lkCol.getJdbcType();
         }
 
         void copyColumnAttributesTo(ColumnInfo to)

@@ -166,7 +166,9 @@ public abstract class QueryRelation
         public abstract FieldKey getFieldKey();     // field key does NOT include table name/alias
         abstract String getAlias();
         abstract QueryRelation getTable();
-        public abstract int getSqlTypeInt();
+        
+        @NotNull
+        public abstract JdbcType getJdbcType();
 
         public SQLFragment getValueSql(String tableAlias)
         {

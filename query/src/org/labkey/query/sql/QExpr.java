@@ -16,6 +16,8 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ExprColumn;
@@ -24,7 +26,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ColumnInfo;
 
-import java.sql.Types;
 import java.util.List;
 
 
@@ -64,9 +65,10 @@ abstract public class QExpr extends QNode
         return null;
     }
 
-    public int getSqlType()
+    @NotNull
+    public JdbcType getSqlType()
     {
-        return Types.OTHER;
+        return JdbcType.OTHER;
     }
 
     public boolean isAggregate()
@@ -87,7 +89,7 @@ abstract public class QExpr extends QNode
     {
         DbSchema schema = table.getSchema();
         SQLFragment sql = getSqlFragment(schema);
-        return new ExprColumn(table, name, sql, getSqlType());
+        return new ExprColumn(table, name, sql, getSqlType().sqlType);
     }
 
     public QueryParseException fieldCheck(QNode parent, SqlDialect d)
@@ -96,35 +98,35 @@ abstract public class QExpr extends QNode
     }
 
     /** If all the children are the same type, return as that type. Otherwise, return Types.OTHER */
-    protected int getChildrenSqlType()
+    protected JdbcType getChildrenSqlType()
     {
         List<QNode> children = childList();
         if (children.isEmpty())
         {
-            return Types.OTHER;
+            return JdbcType.OTHER;
         }
         if (!(children.get(0) instanceof QExpr))
         {
-            return Types.OTHER;
+            return JdbcType.OTHER;
         }
-        int result = ((QExpr)children.get(0)).getSqlType();
+        JdbcType result = ((QExpr)children.get(0)).getSqlType();
         for (QNode qNode : childList())
         {
             if (qNode instanceof QExpr)
             {
-                int newType = ((QExpr) qNode).getSqlType();
-                if (result == Types.NULL)
+                JdbcType newType = ((QExpr) qNode).getSqlType();
+                if (JdbcType.NULL == result || JdbcType.OTHER == result)
                 {
                     result = newType;
                 }
-                else if (newType != Types.NULL && result != newType)
+                else if (JdbcType.NULL != newType && result != newType)
                 {
-                    return Types.OTHER;
+                    return JdbcType.OTHER;
                 }
             }
             else
             {
-                return Types.OTHER;
+                return JdbcType.OTHER;
             }
         }
         return result;

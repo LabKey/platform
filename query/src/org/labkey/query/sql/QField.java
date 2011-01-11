@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
@@ -117,20 +118,20 @@ public class QField extends QInternalExpr
     }
 
 
-    public int getSqlType()
+    public JdbcType getSqlType()
     {
         if (_column != null)
-            return _column.getSqlTypeInt();
+            return _column.getJdbcType();
         QueryRelation.RelationColumn col = getTable().getColumn(getName());
         if (col == null)
-            return Types.OTHER;
-        return col.getSqlTypeInt();
+            return JdbcType.OTHER;
+        return col.getJdbcType();
     }
 
 
     public ColumnInfo createColumnInfo(SQLTableInfo table, String alias)
     {
-        ExprColumn ret = new ExprColumn(table, alias,  getRelationColumn().getValueSql(_table.getAlias()),  getRelationColumn().getSqlTypeInt());
+        ExprColumn ret = new ExprColumn(table, alias, getRelationColumn().getValueSql(_table.getAlias()), getRelationColumn().getJdbcType());
         getRelationColumn().copyColumnAttributesTo(ret);
         return ret;
     }

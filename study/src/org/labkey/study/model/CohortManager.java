@@ -513,7 +513,7 @@ public class CohortManager
         if (cohortId != null)
             parameters.add(cohortId);
         else
-            parameters.add(Parameter.nullParameter(Types.INTEGER));
+            parameters.add(Parameter.nullParameter(JdbcType.INTEGER));
     }
 }
 

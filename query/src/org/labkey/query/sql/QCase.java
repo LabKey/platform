@@ -16,6 +16,8 @@
 
 package org.labkey.query.sql;
 
+import org.labkey.api.data.JdbcType;
+
 public class QCase extends QExpr
 {
     public void appendSql(SqlBuilder builder)
@@ -39,7 +41,7 @@ public class QCase extends QExpr
     }
 
     @Override
-    public int getSqlType()
+    public JdbcType getSqlType()
     {
         return getChildrenSqlType();
     }

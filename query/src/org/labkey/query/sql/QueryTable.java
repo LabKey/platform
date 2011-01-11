@@ -251,9 +251,9 @@ public class QueryTable extends QueryRelation
             return QueryTable.this;
         }
 
-        public int getSqlTypeInt()
+        public JdbcType getJdbcType()
         {
-            return _col.getSqlTypeInt();
+            return _col.getJdbcType();
         }
 
         void copyColumnAttributesTo(ColumnInfo to)

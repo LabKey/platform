@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
@@ -360,9 +361,9 @@ public class QueryUnion extends QueryRelation
             return QueryUnion.this;
         }
 
-        public int getSqlTypeInt()
+        public JdbcType getJdbcType()
         {
-            return _first.getSqlTypeInt();
+            return _first.getJdbcType();
         }
 
         @Override

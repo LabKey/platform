@@ -15,19 +15,25 @@
  */
 package org.labkey.query.sql;
 
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.query.QueryService;
+
+import java.lang.ref.Reference;
+
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jan 3, 2011
  * Time: 1:49:21 PM
  */
-public class QParameter extends QNode
+public class QParameter extends QExpr implements QueryService.ParameterDecl
 {
     QNode _decl;
     final String _name;
     final ParameterType _type;
     final boolean _required;
     final Object _defaultValue;
+
 
     QParameter(QNode decl, String name, ParameterType type, boolean required, Object def)
     {
@@ -38,6 +44,29 @@ public class QParameter extends QNode
         _type = type;
         _required = required;
         _defaultValue = def;
+    }
+
+    public String getName()
+    {
+        return _name;
+    }
+
+    @Override
+    public JdbcType getType()
+    {
+        return _type.type;
+    }
+
+    @Override
+    public Object getDefault()
+    {
+        return _defaultValue;
+    }
+
+    @Override
+    public boolean isRequired()
+    {
+        return _required;
     }
 
     @Override
@@ -56,5 +85,12 @@ public class QParameter extends QNode
             builder.append(" DEFAULT ");
             _decl.childList().get(2).appendSource(builder);
         }
+    }
+
+    @Override
+    public void appendSql(SqlBuilder builder)
+    {
+        builder.append("?");
+        builder.add(this);
     }
 }

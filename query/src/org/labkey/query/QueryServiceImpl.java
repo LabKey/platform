@@ -25,7 +25,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -902,15 +903,67 @@ public class QueryServiceImpl extends QueryService
 	}
 
 
-    public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
+    public void bindNamedParameters(SQLFragment frag, Map<String,Object> in)
+    {
+        Map<String,Object> params = null==in ? Collections.EMPTY_MAP :
+                in instanceof CaseInsensitiveHashMap ? in :
+                new CaseInsensitiveHashMap<Object>(in);
+
+        List<Object> list = frag.getParams();
+        for (int i=0 ; i<list.size() ; i++)
+        {
+            Object o = list.get(i);
+            if (!(o instanceof ParameterDecl))
+                continue;
+
+            ParameterDecl p = (ParameterDecl)o;
+            String name = p.getName();
+            Object value = p.getDefault();
+            boolean required = p.isRequired();
+            boolean provided = null != value;
+
+            if (params.containsKey(name))
+            {
+                value = params.get(p.getName());
+                provided = true;
+            }
+
+            if (required && !provided)
+            {
+                continue; // maybe someone else will bind it....
+            }
+
+            Object converted = p.getType().convert(value);
+            list.set(i, converted);
+        }
+    }
+
+
+    // verify that named parameters have been bound
+    public void validateNamedParameters(SQLFragment frag) throws SQLException
+    {
+        for (Object o : frag.getParams())
+        {
+            if (!(o instanceof ParameterDecl))
+                continue;
+            ParameterDecl p = (ParameterDecl)o;
+            throw new NamedParameterNotProvided(p.getName());
+        }
+    }
+
+
+    public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Map<String,Object> parameters) throws SQLException
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0);
+        bindNamedParameters(sql, parameters);
+        validateNamedParameters(sql);
 		ResultSet rs = Table.executeQuery(table.getSchema(), sql);
         return new ResultsImpl(rs, columns);
     }
 
 
-	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> selectColumns, Filter filter, Sort sort, int rowCount, long offset)
+	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> selectColumns, Filter filter, Sort sort,
+        int rowCount, long offset)
 	{
         if (null == selectColumns)
             selectColumns = table.getColumns();
@@ -1015,6 +1068,7 @@ public class QueryServiceImpl extends QueryService
 	    return ret;
     }
 
+
 	private static Sort createDefaultSort(Collection<ColumnInfo> columns)
 	{
 		Sort sort = new Sort();
@@ -1091,6 +1145,52 @@ public class QueryServiceImpl extends QueryService
             super(column.getParentTable(), name, column);
             setAlias(alias);
         }
+    }
+
+
+    static ThreadLocal<HashMap<Environment,Object>> environments = new ThreadLocal<HashMap<Environment, Object>>()
+    {
+        @Override
+        protected HashMap<Environment, Object> initialValue()
+        {
+            return new HashMap<Environment, Object>();
+        }
+    };
+
+
+    @Override
+    public void setEnvironment(QueryService.Environment e, Object value)
+    {
+        HashMap<Environment,Object> env = environments.get();
+        env.put(e,e.type.convert(value));
+    }
+
+    public Object getEnvironment(QueryService.Environment e)
+    {
+        HashMap<Environment,Object> env = environments.get();
+        return env.get(e);
+    }
+
+    @Override
+    public Object cloneEnvironment()
+    {
+        HashMap<Environment,Object> env = environments.get();
+        return new HashMap<Environment,Object>(env);
+    }
+
+    @Override
+    public void copyEnvironment(Object o)
+    {
+        HashMap<Environment,Object> env = environments.get();
+        env.clear();
+        env.putAll((HashMap<Environment,Object>)o);
+    }
+
+
+    @Override
+    public void clearEnvironment()
+    {
+        environments.get().clear();
     }
 
 
@@ -1216,7 +1316,7 @@ public class QueryServiceImpl extends QueryService
         Timestamp ts = new Timestamp(System.currentTimeMillis());
 
         String comma = "";
-        CaseInsensitiveHashSet done = new CaseInsensitiveHashSet();
+        Set done = Sets.newCaseInsensitiveHashSet();
 
         String objectIdVar = d.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
         String setKeyword = d.isPostgreSQL() ? "" : "SET ";
@@ -1241,12 +1341,12 @@ public class QueryServiceImpl extends QueryService
             {
                 useVariables = d.isPostgreSQL();
                 sqlfDeclare.append("DECLARE " + objectIdVar + " INT;\n");
-                Parameter c = new Parameter("container", parameters.size()+1, Types.VARCHAR);
+                Parameter c = new Parameter("container", parameters.size()+1, JdbcType.VARCHAR);
                 parameters.add(c);
                 String parameterName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
                         ? updatable.getObjectURIColumnName()
                         : "objecturi";
-                Parameter u = new Parameter(parameterName, parameters.size()+1, Types.VARCHAR);
+                Parameter u = new Parameter(parameterName, parameters.size()+1, JdbcType.VARCHAR);
                 parameters.add(u);
                 sqlfObject.append("INSERT INTO exp.Object (container, objecturi) ");
                 sqlfObject.append("VALUES(" + p(d,useVariables,c.getIndex()) + "," + p(d,useVariables,u.getIndex()) + ");\n");
@@ -1409,7 +1509,7 @@ public class QueryServiceImpl extends QueryService
             comma = "";
             for (Parameter p : parameters)
             {
-                String type = d.sqlTypeNameFromSqlType(p.getType());
+                String type = d.sqlTypeNameFromSqlType(p.getType().sqlType);
                 fn.append("\n").append(comma);
                 fn.append(p(d,useVariables,p.getIndex()));
                 fn.append(" ");

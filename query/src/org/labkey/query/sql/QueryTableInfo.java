@@ -18,6 +18,9 @@ package org.labkey.query.sql;
 
 import org.labkey.api.data.*;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.QueryService;
+
+import java.util.Collection;
 
 public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable
 {
@@ -52,7 +55,13 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
         // UNDONE: delay sql generation until it is asked for
         return _subquery.getFromSQL(alias);
     }
-    
+
+    @Override
+    public Collection<QueryService.ParameterDecl> getNamedParameters()
+    {
+        Query query = _relation._query;
+        return query.getParameters();
+    }
 
     @Override
     public boolean needsContainerClauseAdded()

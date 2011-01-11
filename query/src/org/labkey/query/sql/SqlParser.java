@@ -692,7 +692,7 @@ public class SqlParser
                     if (args.size() == 3)
                         validateTimestampConstant(args.get(2));
                 }
-
+                
                 try
                 {
                     Method m = Method.valueOf(name);
@@ -1010,6 +1010,8 @@ public class SqlParser
 			case ESCAPE:
 				_parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
 				 return null;
+            case DECLARATION:
+                return new QUnknownNode();
 			default:
 	            _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
 				return null;

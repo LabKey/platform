@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
@@ -27,6 +28,7 @@ import org.labkey.data.xml.ColumnType;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
+import java.sql.Types;
 import java.util.*;
 
 
@@ -52,17 +54,24 @@ public class QuerySelect extends QueryRelation
     private SQLTableInfo _subqueryTable;
     private AliasManager _aliasManager;
 
-    private QuerySelect(Query query, QuerySchema schema, String alias)
+    private Set<FieldKey> parametersInScope = new HashSet<FieldKey>(); 
+
+
+    private QuerySelect(@NotNull Query query, @NotNull QuerySchema schema, String alias)
     {
         super(query, schema, alias == null ? "_select" + query.incrementAliasCounter() : alias);
         _subqueryTable = new SQLTableInfo(_schema.getDbSchema());
         _aliasManager = new AliasManager(schema.getDbSchema());
-        _queryText = query == null ? null : query._querySource;
+        _queryText = query._querySource;
+
+        for (QParameter p : query._parameters)
+            parametersInScope.add(new FieldKey(null, p.getName()));
+        
         assert MemTracker.put(this);
     }
 
 
-	QuerySelect(Query query, QQuery root)
+	QuerySelect(@NotNull Query query, QQuery root)
 	{
 		this(query, query.getSchema(), null);
         this._query = query;
@@ -661,6 +670,8 @@ public class QuerySelect extends QueryRelation
         FieldKey key = expr.getFieldKey();
         if (key != null)
         {
+            if (null != resolveParameter(key))
+                return;
             RelationColumn column = declareField(key, expr);
             assert null!=column || getParseErrors().size() > 0;
             return;
@@ -743,6 +754,12 @@ public class QuerySelect extends QueryRelation
         FieldKey key = expr.getFieldKey();
         if (key != null)
         {
+            if (key.getParent() == null)
+            {
+                QParameter param = resolveParameter(key);
+                if (null != param)
+                    return param;
+            }
             QField ret = getField(key, expr);
             QueryParseException error = ret.fieldCheck(parent, getSqlDialect());
             if (error != null)
@@ -775,6 +792,21 @@ public class QuerySelect extends QueryRelation
         if (error != null)
             getParseErrors().add(error);
         return ret;
+    }
+
+
+    /* NOTE there is only one merged global list of parameters.
+     * However, we still want to make sure the parameter is in scope
+     * for this particular select
+     *
+     * declareField should catch the case of a parameter that exists in the global
+     * list, but is not in scope for this select.
+     */
+    QParameter resolveParameter(FieldKey key)
+    {
+        if (!parametersInScope.contains(key))
+            return null;
+        return _query.resolveParameter(key);
     }
 
 
@@ -1252,7 +1284,7 @@ public class QuerySelect extends QueryRelation
             {
                 _field = (QExpr) node;
                 FieldKey fk = _field.getFieldKey();
-                if (null != fk)
+                if (null != fk && !fk.getName().startsWith("@@"))
                     _key = new FieldKey(null, fk.getName());
             }
             String name = getName();
@@ -1311,9 +1343,9 @@ public class QuerySelect extends QueryRelation
             return QuerySelect.this;
         }
 
-        public int getSqlTypeInt()
+        public JdbcType getJdbcType()
         {
-            return 0;
+            return JdbcType.NULL;
         }
 
         ColumnInfo getColumnInfo()

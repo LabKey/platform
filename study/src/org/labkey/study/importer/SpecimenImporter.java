@@ -149,20 +149,20 @@ public class SpecimenImporter
             return _javaType;
         }
 
-        public int getSQLType()
+        public JdbcType getSQLType()
         {
             if (getJavaType() == String.class)
-                return Types.VARCHAR;
+                return JdbcType.VARCHAR;
             else if (getJavaType() == java.util.Date.class)
-                return Types.TIMESTAMP;
+                return JdbcType.TIMESTAMP;
             else if (getJavaType() == TimeOnlyDate.class)
-                return Types.TIMESTAMP;
+                return JdbcType.TIMESTAMP;
             else if (getJavaType() == Float.class)
-                return Types.FLOAT;
+                return JdbcType.REAL;
             else if (getJavaType() == Integer.class)
-                return Types.INTEGER;
+                return JdbcType.INTEGER;
             else if (getJavaType() == Boolean.class)
-                return Types.BIT;
+                return JdbcType.BOOLEAN;
             else
                 throw new UnsupportedOperationException("SQL type has not been defined for DB type " + _dbType + ", java type " + getJavaType());
         }
@@ -1449,11 +1449,11 @@ public class SpecimenImporter
 
                     int p = 1;
                     insertSql.append("INSERT INTO study.").append(tableName).append(" (Container");
-                    parametersInsert.add(new Parameter("Container", p++, Types.VARCHAR));
+                    parametersInsert.add(new Parameter("Container", p++, JdbcType.VARCHAR));
                     if (addEntityId)
                     {
                         insertSql.append(", EntityId");
-                        parametersInsert.add(new Parameter("EntityId", p++, Types.VARCHAR));
+                        parametersInsert.add(new Parameter("EntityId", p++, JdbcType.VARCHAR));
                     }
                     for (ImportableColumn col : availableColumns)
                     {
@@ -1481,7 +1481,7 @@ public class SpecimenImporter
                         }
                     }
                     updateSql.append(" WHERE Container = ?");
-                    parametersUpdate.add(new Parameter("Container", p++, Types.VARCHAR));
+                    parametersUpdate.add(new Parameter("Container", p++, JdbcType.VARCHAR));
                     separator = " AND ";
                     for (ImportableColumn col : availableColumns)
                     {

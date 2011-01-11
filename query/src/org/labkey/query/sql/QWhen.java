@@ -16,6 +16,8 @@
 
 package org.labkey.query.sql;
 
+import org.labkey.api.data.JdbcType;
+
 public class QWhen extends QExpr
 {
     public void appendSql(SqlBuilder builder)
@@ -37,7 +39,7 @@ public class QWhen extends QExpr
     }
 
     @Override
-    public int getSqlType()
+    public JdbcType getSqlType()
     {
         QNode valueChild = getLastChild();
         if (valueChild instanceof QExpr)

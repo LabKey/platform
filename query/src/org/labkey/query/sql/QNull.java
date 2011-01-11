@@ -16,9 +16,10 @@
 
 package org.labkey.query.sql;
 
-import java.sql.Types;
+import org.labkey.api.data.JdbcType;
 
-public class QNull extends QExpr
+
+public class QNull extends QExpr implements IConstant
 {
 	public QNull()
 	{
@@ -41,8 +42,14 @@ public class QNull extends QExpr
     }
 
     @Override
-    public int getSqlType()
+    public JdbcType getSqlType()
     {
-        return Types.NULL;
+        return JdbcType.NULL;
+    }
+
+    @Override
+    public Object getValue()
+    {
+        return null;
     }
 }

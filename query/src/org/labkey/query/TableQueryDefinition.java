@@ -100,7 +100,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                             {
                                 filter.addCondition(pk.getKey(), pk.getValue());
                             }
-                            rs = Table.selectForDisplay(table, selectCols.values(), filter, null, 1, 0);
+                            rs = Table.selectForDisplay(table, selectCols.values(), null, filter, null, 1, 0);
                             if (rs.next())
                             {
                                 RenderContext ctx = new RenderContext(null);

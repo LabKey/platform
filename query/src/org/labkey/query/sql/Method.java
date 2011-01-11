@@ -22,9 +22,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.security.Group;
+import org.labkey.query.QueryServiceImpl;
 
-import java.sql.Types;
 import java.util.HashMap;
+import java.util.concurrent.Callable;
 
 public abstract class Method
 {
@@ -181,6 +184,26 @@ public abstract class Method
                     return new PassthroughInfo("coalesce", JdbcType.OTHER);
                 }
             });
+
+        // special functions
+
+        labkeyMethod.put("userid", new Method("userid", JdbcType.INTEGER, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new UserIdInfo();
+            }
+        });
+
+        labkeyMethod.put("ismemberof", new Method("ismemberof", JdbcType.BOOLEAN, 1, 2) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsMemberInfo();
+            }
+        });
+
+        // USERID() is handled by SqlParser, converted to "@@USERID"
     }
 
 
@@ -546,6 +569,67 @@ public abstract class Method
             ret.append("))");
 
             return ret;
+        }
+    }
+
+    class UserIdInfo extends AbstractMethodInfo
+    {
+        UserIdInfo()
+        {
+            super(JdbcType.INTEGER);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment("?");
+            ret.add(new Callable(){
+                @Override
+                public Object call() throws Exception
+                {
+                    return QueryServiceImpl.get().getEnvironment(QueryService.Environment.USERID);
+                }
+            });
+            return ret;
+        }
+    }
+
+    class IsMemberInfo extends AbstractMethodInfo
+    {
+        IsMemberInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            SQLFragment group = arguments[0];
+            SQLFragment user;
+
+            if (arguments.length > 1)
+                user = arguments[1];
+            else
+                user = new UserIdInfo().getSQL(schema, null);
+
+            ret.append("(").append(group).append(") IN (SELECT groupid FROM core.members _M_ where _M_.userid=(").append(user).append(")");
+            ret.append(" UNION SELECT (").append(user).append(")");
+            ret.append(" UNION SELECT ").append(Group.groupGuests);
+            ret.append(" UNION SELECT ").append(Group.groupUsers).append(" WHERE 0 < (").append(user).append(")");
+            ret.append(")");
+            return ret;
+            /*
+            NOTE: the recursive version would look something like
+
+            WITH  Groups(principal) AS
+            (
+                SELECT <<userid>> UNION SELECT -2 UNION SELECT -3
+                UNION ALL
+                SELECT groupid
+                FROM core.Members INNER JOIN Groups ON Members.userid=Groups.principal INNER JOIN core.Principals ON Members.GroupId=Principals.userid
+                WHERE Principals.type='g'
+            )
+            SELECT * FROM Groups
+            */
         }
     }
 

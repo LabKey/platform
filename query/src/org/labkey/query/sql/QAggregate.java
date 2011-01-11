@@ -19,6 +19,7 @@ package org.labkey.query.sql;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
 
 import java.sql.Types;
@@ -81,19 +82,19 @@ public class QAggregate extends QExpr
         builder.append(")");
     }
 
-    public int getSqlType()
+    public JdbcType getSqlType()
     {
         if (COUNT.equalsIgnoreCase(getTokenText()))
         {
-            return Types.INTEGER;
+            return JdbcType.INTEGER;
         }
         if (GROUP_CONCAT.equalsIgnoreCase(getTokenText()))
         {
-            return Types.VARCHAR;
+            return JdbcType.VARCHAR;
         }
 		if (getFirstChild() != null)
 			return ((QExpr)getFirstChild()).getSqlType();
-        return Types.OTHER;
+        return JdbcType.OTHER;
     }
 
     public boolean isAggregate()

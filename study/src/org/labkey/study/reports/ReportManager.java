@@ -286,7 +286,7 @@ public class ReportManager implements StudyManager.DataSetListener
         columns.addAll(Arrays.asList(propertyColumns));
 
         Results rs;
-        rs = Table.selectForDisplay(tinfo, columns, filter, null, 0, 0);
+        rs = Table.selectForDisplay(tinfo, columns, null, filter, null, 0, 0);
         return rs;
     }
 

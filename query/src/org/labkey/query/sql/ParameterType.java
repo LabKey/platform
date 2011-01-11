@@ -30,6 +30,7 @@ public enum ParameterType
     DECIMAL(JdbcType.DECIMAL),
     DOUBLE(JdbcType.DOUBLE),
     FLOAT(JdbcType.DOUBLE),
+    INTEGER(JdbcType.INTEGER),
     LONGVARCHAR(JdbcType.LONGVARCHAR),
     NUMERIC(JdbcType.DECIMAL),
     REAL(JdbcType.REAL),

@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.CachedRowSetImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -97,7 +98,7 @@ public class Query
     private TablesDocument _metadata = null;
     private ContainerFilter _containerFilter;
     private QueryRelation _queryRoot;
-    private ArrayList<QParameter> _parameters;
+    ArrayList<QParameter> _parameters;
 
     private Query _parent; // only used to avoid recursion for now
 
@@ -203,6 +204,7 @@ public class Query
             SqlParser parser = new SqlParser();
 
             parser.parseQuery(queryText, _parseErrors);
+            _parameters = parser.getParameters();
 
 			QNode root = parser.getRoot();
             QueryRelation relation = null;
@@ -220,7 +222,6 @@ public class Query
                 return;
 
             _queryRoot = relation;
-            _parameters = parser.getParameters();
 
             if (_queryRoot._savedName == null && _name != null)
                 _queryRoot.setSavedName(_name);
@@ -376,14 +377,34 @@ public class Query
     }
 
 
-    public ArrayList<QParameter> getParameters()
+    public ArrayList<QueryService.ParameterDecl> getParameters()
     {
-
         if (_parseErrors.size() > 0)
             return null;
         if (null == _queryRoot)
             throw new IllegalStateException("call parse first");
-        return _parameters;
+        // don't return hidden parameters
+        ArrayList<QueryService.ParameterDecl> ret = new ArrayList<QueryService.ParameterDecl>(_parameters.size());
+        for (QParameter p : _parameters)
+        {
+           if (!p.getName().startsWith("@@"))
+               ret.add(p);
+        }
+        return ret;
+    }
+
+
+    QParameter resolveParameter(FieldKey key)
+    {
+        if (key.getParent() != null || _parameters == null)
+            return null;
+        String name = key.getName();
+        for (QParameter param : _parameters)
+        {
+            if (param.getName().equalsIgnoreCase(name))
+                return param;
+        }
+        return null;
     }
 
 
@@ -546,6 +567,9 @@ public class Query
                 return null;
             }
 
+            // merge parameter lists
+            mergeParameters(query);
+            
             QueryRelation ret = query._queryRoot;
             ret.setQuery(this);
             this.getParseErrors().addAll(query.getParseErrors());
@@ -562,6 +586,22 @@ public class Query
 
 		return null;
 	}
+
+
+    void mergeParameters(Query fromQuery)
+    {
+        CaseInsensitiveHashMap<QParameter> map = new CaseInsensitiveHashMap<QParameter>();
+        for (QParameter p : _parameters)
+            map.put(p.getName(),p);
+        for (QParameter p : fromQuery._parameters)
+        {
+            QParameter to = map.get(p.getName());
+            if (null == to)
+                _parameters.add(p);
+            else if (to.getType() != p.getType())
+                parseError(_parseErrors, "Parameter is declared with different types: " + p.getName(), to);
+        }
+    }
 
 
 	//
