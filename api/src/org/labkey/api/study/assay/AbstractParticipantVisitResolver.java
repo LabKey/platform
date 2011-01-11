@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.ParticipantVisit;
 import org.jetbrains.annotations.NotNull;
@@ -35,15 +36,15 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
     private Container _targetStudyContainer;
     private Map<ParticipantVisit, ParticipantVisit> _cache = new HashMap<ParticipantVisit, ParticipantVisit>();
 
-    public AbstractParticipantVisitResolver(Container runContainer, Container targetStudyContainer)
+    /**
+     * Create the resolver.
+     * @param runContainer The Container containing the assay run data.
+     * @param targetStudyContainer The TargetStudy Container discovered in the run or batch domain.
+     */
+    public AbstractParticipantVisitResolver(Container runContainer, @Nullable Container targetStudyContainer)
     {
         _runContainer = runContainer;
         _targetStudyContainer = targetStudyContainer;
-    }
-
-    protected Container getTargetStudyContainer()
-    {
-        return _targetStudyContainer;
     }
 
     protected Container getRunContainer()
@@ -54,9 +55,10 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
     /**
      * Looks up the specimen information, caching results to be used for future lookups as needed. Defers to subclasses
      * to do the actual resolution.
+     * The target study is considered on a row by row basis.  The target study from the result domain has the highest precendence followed by the run or batch domain.
      */
     @NotNull
-    public final ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date)
+    public final ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy)
     {
         specimenID = specimenID == null ? null : specimenID.trim();
         if (specimenID != null && specimenID.length() == 0)
@@ -68,18 +70,19 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
         {
             participantID = null;
         }
-        ParticipantVisit cacheKey = new ParticipantVisitImpl(specimenID, participantID, visitID, date, _runContainer);
+        Container studyContainer = resultDomainTargetStudy != null ? resultDomainTargetStudy : _targetStudyContainer;
+        ParticipantVisit cacheKey = new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), studyContainer);
         ParticipantVisit result = _cache.get(cacheKey);
         if (result != null)
         {
             return result;
         }
-        result = resolveParticipantVisit(specimenID, participantID, visitID, date);
+        result = resolveParticipantVisit(specimenID, participantID, visitID, date, studyContainer);
 
         _cache.put(cacheKey, result);
         return result;
     }
 
     @NotNull
-    protected abstract ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date);
+    protected abstract ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer);
 }

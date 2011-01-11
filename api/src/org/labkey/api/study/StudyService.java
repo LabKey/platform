@@ -16,6 +16,7 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -53,6 +54,17 @@ public class StudyService
          */
         @Nullable
         public Study getStudy(Container container);
+
+        /**
+         * Finds a study by either Container id or study label.
+         * @param studyReference Container instance, GUID instance, or String representing container id, container path, or study label.
+         * @param user Null or a User that must have ReadPermission to the study container.
+         *
+         * @return A singleton set if a container id or GUID is provided or a set of studies matching the study label.
+         * The set will be empty if no Study is found or the user doesn't have permission to the Container.
+         */
+        @NotNull
+        public Set<Study> findStudy(@NotNull Object studyReference, @Nullable User user);
 
         @Nullable
         public String getStudyName(Container container);

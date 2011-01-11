@@ -31,7 +31,8 @@ import java.io.File;
 public interface AssayUrls extends UrlProvider
 {
     ActionURL getProtocolURL(Container container, ExpProtocol protocol, Class<? extends Controller> action);
-    
+
+    ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
     ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
     ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL);
 

@@ -21,13 +21,14 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Map;
+import java.util.Set;
 
 /**
 * User: jeckels
@@ -47,6 +48,16 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         super(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION, inputName);
         _colInfo = col;
         _colInfo.setInputType("select");
+    }
+
+    protected Object calculateValue(RenderContext ctx)
+    {
+        return super.getValue(ctx);
+    }
+
+    public Object getValue(RenderContext ctx)
+    {
+        return calculateValue(ctx);
     }
 
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
@@ -81,20 +92,26 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         return getColumnInfo().getDefaultValueType() == DefaultValueType.FIXED_NON_EDITABLE;
     }
 
+    @Override
+    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    {
+        this.renderInputHtml(ctx, out, getValue(ctx));
+    }
+
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        Map<Container, String> studies = AssayPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ReadPermission.class);
+        Set<Study> studies = AssayPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ReadPermission.class);
 
         boolean disabled = isDisabledInput();
         out.write("<select name=\"" + _inputName + "\"" + (disabled ? " DISABLED" : "") + ">\n");
         out.write("    <option value=\"\">[None]</option>\n");
-        for (Map.Entry<Container, String> entry : studies.entrySet())
+        for (Study study : studies)
         {
-            Container container = entry.getKey();
+            Container container = study.getContainer();
             out.write("    <option value=\"" + PageFlowUtil.filter(container.getId()) + "\"");
             if (container.getId().equals(value))
                 out.write(" SELECTED");
-            out.write(">" + PageFlowUtil.filter(container.getPath() + " (" + entry.getValue()) + ")</option>\n");
+            out.write(">" + PageFlowUtil.filter(container.getPath() + " (" + study.getLabel()) + ")</option>\n");
         }
         out.write("</select>");
         if (disabled)

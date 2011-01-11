@@ -18,6 +18,7 @@ package org.labkey.api.study.actions;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -26,6 +27,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.query.PublishResultsQueryView;
@@ -48,11 +51,11 @@ import java.util.*;
 public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.PublishConfirmForm>
 {
     private ExpProtocol _protocol;
-    private String _targetStudyName;
+    @Nullable private String _targetStudyName;
 
     public static class PublishConfirmForm extends ProtocolIdForm implements DataRegionSelection.DataSelectionKeyForm
     {
-        private String _targetStudy;
+        private String[] _targetStudy;
         private String[] _participantId;
         private String[] _visitId;
         private String[] _date;
@@ -84,12 +87,12 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
 
-        public String getTargetStudy()
+        public String[] getTargetStudy()
         {
             return _targetStudy;
         }
 
-        public void setTargetStudy(String targetStudy)
+        public void setTargetStudy(String[] targetStudy)
         {
             _targetStudy = targetStudy;
         }
@@ -195,22 +198,33 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         else
             allObjects = new ArrayList<Integer>(selectedObjects);
 
-        Container targetStudy = ContainerManager.getForId(publishConfirmForm.getTargetStudy());
-        if (targetStudy == null)
+        // Check if a single target study was posted for the entire run (the common case)
+        Container targetStudy = null;
+        if (publishConfirmForm.getTargetStudy() != null && publishConfirmForm.getTargetStudy().length == 1)
         {
-            throw new NotFoundException("Could not find target study");
+            targetStudy = ContainerManager.getForId(publishConfirmForm.getTargetStudy()[0]);
+            if (targetStudy == null)
+            {
+                throw new NotFoundException("Could not find target study");
+            }
         }
         Map<Object, String> postedVisits = null;
         Map<Object, String> postedPtids = null;
-        TimepointType timepointType = AssayPublishService.get().getTimepointType(targetStudy);
-        _targetStudyName = AssayPublishService.get().getStudyName(targetStudy);
-        
+        Map<Object, String> postedTargetStudies = null;
+        TimepointType timepointType = null;
+        if (targetStudy != null)
+        {
+            timepointType = AssayPublishService.get().getTimepointType(targetStudy);
+            _targetStudyName = AssayPublishService.get().getStudyName(targetStudy);
+        }
+
         // todo: this isn't a great way to determine if this is our final post, but it'll do for now:
         if (publishConfirmForm.isAttemptPublish() && publishConfirmForm.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
         {
             postedVisits = new HashMap<Object, String>();
             postedPtids = new HashMap<Object, String>();
-            attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedVisits, postedPtids, timepointType);
+            postedTargetStudies = new HashMap<Object, String>();
+            attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedTargetStudies, postedVisits, postedPtids, timepointType);
         }
 
         AssaySchema schema = AssayService.get().createSchema(context.getUser(), getContainer());
@@ -223,7 +237,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         QuerySettings settings = schema.getSettings(context, name, name);
         settings.setAllowChooseView(false);
         PublishResultsQueryView queryView = new PublishResultsQueryView(_protocol, schema, settings,
-                allObjects, targetStudy, postedVisits, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
+                allObjects, targetStudy, postedTargetStudies, postedVisits, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
 
         if (publishConfirmForm.getContainerFilterName() != null)
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
@@ -275,16 +289,28 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                 new PublishConfirmBean(timepointType, mismatched), errors), queryView);
     }
 
-    private void attemptCopy(PublishConfirmForm publishConfirmForm, BindException errors, ViewContext context, AssayProvider provider, Set<Integer> selectedObjects, List<Integer> allObjects, Container targetStudy, Map<Object, String> postedVisits, Map<Object, String> postedPtids, TimepointType timepointType)
+    private void attemptCopy(PublishConfirmForm publishConfirmForm, BindException errors,
+                             ViewContext context, AssayProvider provider,
+                             Set<Integer> selectedObjects, List<Integer> allObjects,
+                             Container targetStudy,
+                             Map<Object, String> postedTargetStudies,
+                             Map<Object, String> postedVisits,
+                             Map<Object, String> postedPtids,
+                             @Nullable TimepointType timepointType)
             throws RedirectException
     {
         Map<Integer, AssayPublishKey> publishData = new LinkedHashMap<Integer, AssayPublishKey>();
         String[] participantIds = publishConfirmForm.getParticipantId();
         String[] visitIds = publishConfirmForm.getVisitId();
         String[] dates = publishConfirmForm.getDate();
+        String[] targetStudies = publishConfirmForm.getTargetStudy();
+
+        Map<Object, Container> resolvedStudies = new HashMap<Object, Container>();
+
         boolean missingPtid = false;
         boolean missingVisitId = false;
         boolean missingDate = false;
+        boolean missingStudy = false;
         boolean badVisitIds = false;
         boolean badDates = false;
         int index = 0;
@@ -303,6 +329,31 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             }
             else
                 participantId = participantId.trim();
+
+            Container rowLevelTargetStudy = null;
+            if (targetStudies != null && targetStudies.length > index)
+            {
+                if (resolvedStudies.containsKey(targetStudies[index]))
+                    rowLevelTargetStudy = resolvedStudies.get(targetStudies[index]);
+                else
+                {
+                    Set<Study> studies = StudyService.get().findStudy(targetStudies[index], context.getUser());
+                    if (studies != null && !studies.isEmpty())
+                    {
+                        rowLevelTargetStudy = studies.iterator().next().getContainer();
+                        resolvedStudies.put(targetStudies[index], rowLevelTargetStudy);
+                    }
+                }
+            }
+
+            // No row level targetStudy found, use run level targetStudy.
+            if (rowLevelTargetStudy == null)
+                rowLevelTargetStudy = targetStudy;
+
+            if (rowLevelTargetStudy == null)
+                missingStudy = true;
+            else
+                postedTargetStudies.put(objectId, rowLevelTargetStudy.getId());
 
             if (timepointType == TimepointType.VISIT)
             {
@@ -329,9 +380,9 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                 postedPtids.put(objectId, participantId);
                 postedVisits.put(objectId, visitIdStr);
                 if (visitId != null && selected)
-                    publishData.put(objectId, new AssayPublishKey(participantId, visitId.floatValue(), objectId));
+                    publishData.put(objectId, new AssayPublishKey(rowLevelTargetStudy, participantId, visitId.floatValue(), objectId));
             }
-            else // TimepointType.DATE
+            else // TimepointType.DATE or CONTINUOUS
             {
                 String dateStr = dates != null && dates.length > index ? dates[index] : null;
                 Date date = null;
@@ -356,10 +407,12 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                 postedPtids.put(objectId, participantId);
                 postedVisits.put(objectId, dateStr);
                 if (date != null && selected)
-                    publishData.put(objectId, new AssayPublishKey(participantId, date, objectId));
+                    publishData.put(objectId, new AssayPublishKey(rowLevelTargetStudy, participantId, date, objectId));
             }
             index++;
         }
+        if (missingStudy)
+            errors.reject(null, "You must specify a Target Study for all selected rows.");
         if (missingPtid)
             errors.reject(null, "You must specify a Participant ID for all selected rows.");
         if (missingVisitId)
@@ -416,7 +469,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
     {
         NavTree result = super.appendNavTrail(root);
         result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        result.addChild("Copy to " + _targetStudyName + ": Verify Results");
+        result.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
         return result;
     }
 

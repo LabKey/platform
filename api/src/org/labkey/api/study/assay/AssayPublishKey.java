@@ -16,6 +16,8 @@
 
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.Container;
+
 import java.util.Date;
 
 /**
@@ -25,23 +27,31 @@ import java.util.Date;
  */
 public class AssayPublishKey
 {
+    private Container _targetStudy;
     private String _participantId;
     private float _visitId;
     private Date _date;
     private int _dataId;
 
-    public AssayPublishKey(String participantId, float visitId, int dataId)
+    public AssayPublishKey(Container targetStudy, String participantId, float visitId, int dataId)
     {
+        _targetStudy = targetStudy;
         _participantId = participantId;
         _visitId = visitId;
         _dataId = dataId;
     }
 
-    public AssayPublishKey(String participantId, Date date, int dataId)
+    public AssayPublishKey(Container targetStudy, String participantId, Date date, int dataId)
     {
+        _targetStudy = targetStudy;
         _participantId = participantId;
         _date = date;
         _dataId = dataId;
+    }
+
+    public Container getTargetStudy()
+    {
+        return _targetStudy;
     }
 
     public String getParticipantId()

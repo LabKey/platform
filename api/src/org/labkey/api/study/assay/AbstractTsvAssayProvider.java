@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
@@ -102,12 +103,10 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     @Override
     public abstract FilteredTable createDataTable(AssaySchema schema, ExpProtocol protocol);
 
-    public ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
+    public ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
         try
         {
-            TimepointType studyType = AssayPublishService.get().getTimepointType(study);
-
             SimpleFilter filter = new SimpleFilter();
             filter.addInClause(getTableMetadata().getResultRowIdFieldKey().toString(), dataKeys.keySet());
 
@@ -122,16 +121,13 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 
             CopyToStudyContext context = new CopyToStudyContext(protocol, viewContext.getUser());
 
-            Set<PropertyDescriptor> typeList = new LinkedHashSet<PropertyDescriptor>();
-            typeList.add(createPublishPropertyDescriptor(study, "ObjectId", PropertyType.INTEGER));
-            typeList.add(createPublishPropertyDescriptor(study, "SourceLSID", PropertyType.INTEGER));
-
             Container sourceContainer = null;
 
             // little hack here: since the property descriptors created by the 'addProperty' calls below are not in the database,
             // they have no RowId, and such are never equal to each other.  Since the loop below is run once for each row of data,
             // this will produce a types set that contains rowCount*columnCount property descriptors unless we prevent additions
             // to the map after the first row.  This is done by nulling out the 'tempTypes' object after the first iteration:
+            Set<PropertyDescriptor> typeList = new LinkedHashSet<PropertyDescriptor>();
             Set<PropertyDescriptor> tempTypes = typeList;
 
             Map<PropertyDescriptor, ColumnInfo> pdsToColumns = new HashMap<PropertyDescriptor, ColumnInfo>();
@@ -154,9 +150,24 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                 rs = Table.executeQuery(dataTable.getSchema(), sql);
                 while (rs.next())
                 {
+                    AssayPublishKey publishKey = dataKeys.get(((Integer)dataTable.getColumn("RowId").getValue(rs)).intValue());
+
+                    Container targetStudyContainer = study;
+                    if (publishKey.getTargetStudy() != null)
+                        targetStudyContainer = publishKey.getTargetStudy();
+                    assert targetStudyContainer != null;
+
+                    TimepointType studyType = AssayPublishService.get().getTimepointType(targetStudyContainer);
+                    if (tempTypes != null)
+                    {
+                        tempTypes.add(createPublishPropertyDescriptor(targetStudyContainer, "ObjectId", PropertyType.INTEGER));
+                        tempTypes.add(createPublishPropertyDescriptor(targetStudyContainer, "SourceLSID", PropertyType.INTEGER));
+                    }
+
                     Map<String, Object> dataMap = new HashMap<String, Object>();
                     for (Map.Entry<PropertyDescriptor, ColumnInfo> entry : pdsToColumns.entrySet())
                     {
+
                         PropertyDescriptor pd = entry.getKey();
                         // We should skip properties that are set by the resolver: participantID,
                         // and either date or visit, depending on the type of study
@@ -189,7 +200,6 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                     ExpRun run = context.getRun(((Integer)dataTable.getColumn("Run").getValue(rs)).intValue());
                     sourceContainer = run.getContainer();
 
-                    AssayPublishKey publishKey = dataKeys.get(((Integer)dataTable.getColumn("RowId").getValue(rs)).intValue());
                     dataMap.put("ParticipantID", publishKey.getParticipantId());
                     dataMap.put("SequenceNum", publishKey.getVisitId());
                     if (TimepointType.DATE == studyType)
@@ -198,12 +208,15 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                     }
                     dataMap.put("SourceLSID", run.getLSID());
                     dataMap.put("ObjectId", publishKey.getDataId());
+                    dataMap.put("TargetStudy", targetStudyContainer);
 
-                    addStandardRunPublishProperties(study, tempTypes, dataMap, run, context);
+                    // CONSIDER: only add run publish properties to target study dataset (avoiding extra columns)
+                    addStandardRunPublishProperties(targetStudyContainer, tempTypes, dataMap, run, context);
 
                     dataMaps.add(dataMap);
                     tempTypes = null;
                 }
+                
                 return AssayPublishService.get().publishAssayData(viewContext.getUser(), sourceContainer, study, protocol.getName(), protocol,
                         dataMaps, new ArrayList<PropertyDescriptor>(typeList), "ObjectId", errors);
             }

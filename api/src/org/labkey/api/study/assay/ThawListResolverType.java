@@ -29,8 +29,9 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.ParticipantVisit;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.springframework.web.servlet.ModelAndView;
@@ -43,6 +44,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -134,7 +136,20 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                     throw new ExperimentException("The Date column in the thaw list must be a date.");
                 }
                 Date date = (Date) dateObject;
-                values.put(index == null ? null : index.toString(), new ParticipantVisitImpl(specimenID, participantID, visitID, date, runContainer));
+
+                Container rowLevelTargetStudy = null;
+                if (data.get("TargetStudy") != null)
+                {
+                    Set<Study> studies = StudyService.get().findStudy(data.get("TargetStudy"), null);
+                    if (!studies.isEmpty())
+                    {
+                        Study study = studies.iterator().next();
+                        rowLevelTargetStudy = study != null ? study.getContainer() : null;
+                    }
+                }
+
+                Container targetStudy = rowLevelTargetStudy != null ? rowLevelTargetStudy : targetStudyContainer;
+                values.put(index == null ? null : index.toString(), new ParticipantVisitImpl(specimenID, participantID, visitID, date, runContainer, targetStudy));
             }
             return new ThawListFileResolver(childResolver, values, runContainer);
         }

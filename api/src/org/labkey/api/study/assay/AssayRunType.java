@@ -62,7 +62,7 @@ public class AssayRunType extends ExperimentRunType
 
         if (AssayService.get().getProvider(_protocol).canCopyToStudy())
         {
-            ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(context.getContainer(), _protocol, PublishStartAction.class);
+            ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(context.getContainer(), _protocol);
             copyURL.addParameter("runIds", true);
             if (table.getContainerFilter() != null)
                 copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());

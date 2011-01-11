@@ -84,7 +84,7 @@ public class ResultsQueryView extends AssayBaseQueryView
 
                 AssayProvider provider = AssayService.get().getProvider(_protocol);
 
-                ActionURL publishURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, PublishStartAction.class);
+                ActionURL publishURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(getContainer(), _protocol);
                 for (Pair<String, String> param : publishURL.getParameters())
                 {
                     if (!"rowId".equalsIgnoreCase(param.getKey()))

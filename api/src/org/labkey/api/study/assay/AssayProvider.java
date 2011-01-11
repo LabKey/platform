@@ -99,7 +99,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol);
 
-    ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
+    /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
+    ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
 
     boolean canCopyToStudy();
 

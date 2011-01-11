@@ -31,7 +31,6 @@ public class AssayTableMetadata
     private FieldKey _runFieldKey;
     private FieldKey _resultRowIdFieldKey;
     private FieldKey _specimenDetailParentFieldKey;
-    private FieldKey _targetStudyFieldKey;
 
     public AssayTableMetadata(FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
     {
@@ -67,7 +66,7 @@ public class AssayTableMetadata
         }
         else
         {
-            throw new IllegalArgumentException("Unknown timepoint type: " + timepointType);
+            return null;
         }
     }
 
@@ -96,14 +95,6 @@ public class AssayTableMetadata
      * @return relative to the assay's results table, the FieldKey that gets to the TargetStudy
      */
     public FieldKey getTargetStudyFieldKey(AssayProvider provider, ExpProtocol protocol)
-    {
-        if (_targetStudyFieldKey == null)
-            _targetStudyFieldKey = _getTargetStudyFieldKey(provider, protocol);
-        
-        return _targetStudyFieldKey;
-    }
-
-    protected FieldKey _getTargetStudyFieldKey(AssayProvider provider, ExpProtocol protocol)
     {
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = provider.findTargetStudyProperty(protocol);
         if (pair == null)

@@ -132,6 +132,10 @@ public abstract class DisplayColumn extends RenderColumn
     /** return a set of FieldKeys that this DisplayColumn depends on */
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
+        ColumnInfo col = getColumnInfo();
+        if (col != null)
+            keys.add(col.getFieldKey());
+        
         StringExpression se = null;
         if (null != _urlExpression)
             se = _urlExpression;
@@ -146,7 +150,7 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
 
-    /** implement getQueryFieldKeys() instead */
+    /** implement addQueryFieldKeys() instead */
     @Deprecated
     public void addQueryColumns(Set<ColumnInfo> columns)
     {

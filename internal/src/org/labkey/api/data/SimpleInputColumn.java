@@ -72,7 +72,7 @@ public class SimpleInputColumn<T> extends DisplayColumn
 
     public boolean isSortable()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public boolean isFilterable()

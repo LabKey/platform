@@ -18,9 +18,11 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Study;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -29,7 +31,7 @@ import java.util.Set;
 */
 public class StudyContainerFilter extends ContainerFilter
 {
-    private Set<String> _ids;
+    private Collection<String> _ids;
     private final AssaySchema _schema;
 
     public StudyContainerFilter(AssaySchema schema)
@@ -54,7 +56,11 @@ public class StudyContainerFilter extends ContainerFilter
             }
             else
             {
-                _ids = ContainerFilter.toIds(AssayPublishService.get().getValidPublishTargets(_schema.getUser(), ReadPermission.class).keySet());
+                Set<Study> studies = AssayPublishService.get().getValidPublishTargets(_schema.getUser(), ReadPermission.class);
+                Set<String> ids = new HashSet<String>();
+                for (Study study : studies)
+                    ids.add(study.getContainer().getId());
+                _ids = ids;
             }
         }
         return _ids;

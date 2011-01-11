@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.study.ParticipantVisit;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,5 +29,5 @@ import java.util.Date;
 public interface ParticipantVisitResolver
 {
     @NotNull
-    ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date);
+    ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy);
 }

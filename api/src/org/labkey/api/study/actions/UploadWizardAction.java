@@ -437,6 +437,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return result;
     }
 
+    // XXX: merge with PublishResultsQueryView.InputColumn and SimpleInputColumn
     protected static class InputDisplayColumn extends SimpleDisplayColumn
     {
         protected String _inputName;

@@ -21,6 +21,8 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.api.study.assay.*;
@@ -328,12 +330,12 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             {
                 return "[None]";
             }
-            Map<Container, String> targets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
+            Set<Study> targets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
             Container container = ContainerManager.getForId(value);
-            String studyName = targets.get(container);
-            if (studyName != null)
+            Study study = StudyService.get().getStudy(container);
+            if (study != null && targets.contains(study))
             {
-                return container.getPath() + " (" + studyName + ")";
+                return container.getPath() + " (" + study.getLabel() + ")";
             }
         }
         else if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(key.getName()))

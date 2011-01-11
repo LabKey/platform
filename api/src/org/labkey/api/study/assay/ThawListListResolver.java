@@ -18,12 +18,15 @@ package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,6 +34,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -41,7 +45,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
     private TableInfo _tableInfo;
     private final ParticipantVisitResolver _childResolver;
 
-    public ThawListListResolver(Container runContainer, Container targetStudyContainer,
+    public ThawListListResolver(Container runContainer, @Nullable Container targetStudyContainer,
                                 Container listContainer, String schemaName, String queryName, User user, ParticipantVisitResolver childResolver) throws ExperimentException
     {
         super(runContainer, targetStudyContainer);
@@ -59,7 +63,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
     }
 
     @NotNull
-    protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date)
+    protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer)
     {
         List<String> pkNames = _tableInfo.getPkColumnNames();
         assert pkNames.size() == 1;
@@ -72,7 +76,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         catch (ConversionException e)
         {
             // It's OK, there just won't be a match for this row
-            return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer());
+            return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), targetStudyContainer);
         }
 
         try
@@ -81,12 +85,13 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
             assert rows.length <= 1;
             if (rows.length == 0)
             {
-                return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer());
+                return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), targetStudyContainer);
             }
             else
             {
                 String childSpecimenID = rows[0].get("SpecimenID") == null ? null : rows[0].get("SpecimenID").toString();
                 String childParticipantID = rows[0].get("ParticipantID") == null ? null : rows[0].get("ParticipantID").toString();
+
                 Double childVisitID = null;
                 if (rows[0].get("VisitID") instanceof Number)
                 {
@@ -100,6 +105,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
                     }
                     catch (NumberFormatException e) {}
                 }
+
                 Date childDate = null;
                 if (rows[0].get("Date") instanceof Date)
                 {
@@ -113,7 +119,19 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
                     }
                     catch (ConversionException e) {}
                 }
-                return _childResolver.resolve(childSpecimenID, childParticipantID, childVisitID, childDate);
+
+                Container childTargetStudy = null;
+                if (rows[0].get("TargetStudy") != null)
+                {
+                    Set<Study> studies = StudyService.get().findStudy(rows[0].get("TargetStudy"), null);
+                    if (!studies.isEmpty())
+                    {
+                        Study study = studies.iterator().next();
+                        childTargetStudy = study != null ? study.getContainer() : null;
+                    }
+                }
+
+                return _childResolver.resolve(childSpecimenID, childParticipantID, childVisitID, childDate, childTargetStudy);
             }
         }
         catch (SQLException e)

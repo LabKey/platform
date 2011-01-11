@@ -36,7 +36,8 @@ public class ParticipantVisitImpl implements ParticipantVisit
     private Double _visitID;
     private String _specimenID;
     private Integer _cohortID;
-    private Container _container;
+    private Container _runContainer;
+    private Container _studyContainer;
     private ExpMaterial _material;
     private Date _date;
     private static final Object CREATE_MATERIAL_SYNC_OBJ = new Object();
@@ -44,16 +45,17 @@ public class ParticipantVisitImpl implements ParticipantVisit
     /** Used for completely unspecified participant visit information */
     public ParticipantVisitImpl(Container runContainer)
     {
-        this(null, null, null, null, runContainer);
+        this(null, null, null, null, runContainer, null);
     }
 
-    public ParticipantVisitImpl(String specimenID, String participantID, Double visitID, Date date, Container runContainer)
+    public ParticipantVisitImpl(String specimenID, String participantID, Double visitID, Date date, Container runContainer, Container studyContainer)
     {
         _specimenID = specimenID;
         _participantID = participantID;
         _visitID = visitID;
         _date = date;
-        _container = runContainer;
+        _runContainer = runContainer;
+        _studyContainer = studyContainer;
     }
 
     public String getParticipantID()
@@ -69,6 +71,16 @@ public class ParticipantVisitImpl implements ParticipantVisit
     public String getSpecimenID()
     {
         return _specimenID;
+    }
+
+    public Container getRunContainer()
+    {
+        return _runContainer;
+    }
+
+    public Container getStudyContainer()
+    {
+        return _studyContainer;
     }
 
     public ExpMaterial getMaterial()
@@ -115,14 +127,14 @@ public class ParticipantVisitImpl implements ParticipantVisit
             }
 
             // the study couldn't find a good material, so we'll have to mock one up
-            String lsid = new Lsid(ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _container.getRowId(), name.toString()).toString();
+            String lsid = new Lsid(ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _runContainer.getRowId(), name.toString()).toString();
             // synchronized to prevent duplicate 'save' calls with the same LSID.  (See bug 8685)
             synchronized (CREATE_MATERIAL_SYNC_OBJ)
             {
                 _material = ExperimentService.get().getExpMaterial(lsid);
                 if (_material == null)
                 {
-                    _material = ExperimentService.get().createExpMaterial(_container, lsid, name.toString());
+                    _material = ExperimentService.get().createExpMaterial(_runContainer, lsid, name.toString());
                     _material.save(null);
                 }
             }
@@ -162,7 +174,11 @@ public class ParticipantVisitImpl implements ParticipantVisit
             return false;
         if (_specimenID != null ? !_specimenID.equals(that._specimenID) : that._specimenID != null) return false;
         if (_cohortID != null ? !_cohortID.equals(that._cohortID) : that._cohortID != null) return false;
-        return !(_visitID != null ? !_visitID.equals(that._visitID) : that._visitID != null);
+        if (_visitID != null ? !_visitID.equals(that._visitID) : that._visitID != null) return false;
+        if (_runContainer != null ? !_runContainer.equals(that._runContainer) : that._runContainer != null) return false;
+        if (_studyContainer != null ? !_studyContainer.equals(that._studyContainer) : that._studyContainer != null) return false;
+
+        return true;
     }
 
     public int hashCode()
@@ -173,6 +189,8 @@ public class ParticipantVisitImpl implements ParticipantVisit
         result = 31 * result + (_specimenID != null ? _specimenID.hashCode() : 0);
         result = 31 * result + (_cohortID != null ? _cohortID.hashCode() : 0);
         result = 31 * result + (_date != null ? _date.hashCode() : 0);
+        result = 31 * result + (_runContainer != null ? _runContainer.hashCode() : 0);
+        result = 31 * result + (_studyContainer != null ? _studyContainer.hashCode() : 0);
         return result;
     }
 }

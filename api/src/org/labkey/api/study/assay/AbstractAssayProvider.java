@@ -756,7 +756,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         try
         {
-            // UNDONE: look for TargetStudy in result domain
             ParticipantVisitResolver resolver = null;
             if (resolverType != null)
             {
@@ -1044,7 +1043,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return null;
     }
 
-    // CONSIDER: combing with .getTargetStudy()
+    // CONSIDER: combining with .getTargetStudy()
+    // UNDONE: Doesn't look at TargetStudy in Results domain yet.
     public Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId)
     {
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = findTargetStudyProperty(protocol);
@@ -1063,15 +1063,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
         ExpObject source;
         switch (pair.first)
         {
-            case Result:
-                // XXX: this isn't right -- need to get the result row
-                source = data;
-                break;
 
             case Run:
                 source = run;
                 break;
 
+            case Result:
+                // Ignore Results domain TargetStudy for now.
+                // The participant resolver will find the TargetStudy on the row.
             case Batch:
             default:
                 source = AssayService.get().findBatch(run);

@@ -42,13 +42,13 @@ public class ThawListFileResolver implements ParticipantVisitResolver
     }
     
     @NotNull
-    public ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date)
+    public ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy)
     {
         ParticipantVisit values = _aliases.get(specimenID);
         if (values == null)
         {
             return new ParticipantVisitImpl(_runContainer);
         }
-        return _childResolver.resolve(values.getSpecimenID(), values.getParticipantID(), values.getVisitID(), date);
+        return _childResolver.resolve(values.getSpecimenID(), values.getParticipantID(), values.getVisitID(), date, resultDomainTargetStudy);
     }
 }

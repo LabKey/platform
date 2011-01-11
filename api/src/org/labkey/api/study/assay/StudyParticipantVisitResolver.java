@@ -50,21 +50,23 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
                 originalInfo.getParticipantID() == null ? studyInfo.getParticipantID() : originalInfo.getParticipantID(),
                 originalInfo.getVisitID() == null ? studyInfo.getVisitID() : originalInfo.getVisitID(),
                 originalInfo.getDate() == null ? studyInfo.getDate() : originalInfo.getDate(),
-                getRunContainer());
+                getRunContainer(),
+                // If we made it here, the originalInfo's study container should always be non-null and match the studyInfo's study container.
+                originalInfo.getStudyContainer());
     }
 
     @NotNull
-    protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date)
+    protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer)
     {
-        ParticipantVisitImpl originalInfo = new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer());
+        ParticipantVisitImpl originalInfo = new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), targetStudyContainer);
 
-        if (getTargetStudyContainer() != null)
+        if (targetStudyContainer != null)
         {
             try
             {
                 if (specimenID != null)
                 {
-                    return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(getTargetStudyContainer(), specimenID));
+                    return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(targetStudyContainer, specimenID));
                 }
             }
             catch (SQLException e)

@@ -33,6 +33,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.study.actions.PlateUploadForm;
 import org.labkey.api.util.FileType;
@@ -123,10 +125,12 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
             String participantID = null;
             Double visitID = null;
             Date date = null;
+            Container targetStudy = null;
             DomainProperty participantProperty = null;
             DomainProperty visitProperty = null;
             DomainProperty dateProperty = null;
             DomainProperty specimenIDProperty = null;
+            DomainProperty targetStudyProperty = null;
             for (Map.Entry<DomainProperty, String> property : properties.entrySet())
             {
                 if (PARTICIPANTID_PROPERTY_NAME.equals(property.getKey().getName()))
@@ -161,13 +165,23 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
                     }
                     catch (ConversionException x) {}
                 }
+                else if (TARGET_STUDY_PROPERTY_NAME.equals(property.getKey().getName()))
+                {
+                    targetStudyProperty = property.getKey();
+                    Set<Study> studies = StudyService.get().findStudy(property.getValue(), context.getUser());
+                    if (!studies.isEmpty())
+                    {
+                        Study study = studies.iterator().next();
+                        targetStudy = study != null ? study.getContainer() : null;
+                    }
+                }
             }
 
             WellGroupTemplate wellgroup = entry.getKey();
             ExpMaterial originalMaterial = null;
             if (resolver != null)
             {
-                ParticipantVisit pv = resolver.resolve(specimenID, participantID, visitID, date);
+                ParticipantVisit pv = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
                 originalMaterial = pv.getMaterial();
                 Map<DomainProperty, String> wellgroupProperties = materialProperties.get(entry.getKey());
                 if (specimenIDProperty != null)
@@ -178,6 +192,8 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
                     wellgroupProperties.put(visitProperty, pv.getVisitID() != null ? "" + pv.getVisitID() : null);
                 if (dateProperty != null)
                     wellgroupProperties.put(dateProperty, pv.getDate() != null ? "" + pv.getDate() : null);
+                if (targetStudyProperty != null)
+                    wellgroupProperties.put(targetStudyProperty, pv.getStudyContainer() != null ? "" + pv.getStudyContainer() : null);
             }
             originalMaterials.put(wellgroup, originalMaterial);
         }

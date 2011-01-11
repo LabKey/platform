@@ -27,6 +27,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -170,7 +172,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    // UNDONE: Look for TargetStudy in result domain (haven't yet inserted the result domain values)
     protected ParticipantVisitResolver createResolver(User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Container container)
             throws SQLException, IOException, ExperimentException
     {
@@ -187,7 +188,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
         ParticipantVisitResolver resolver = null;
 
-        Container targetContainer = null;
+        Container targetStudyContainer = null;
         for (DomainProperty runProp : allProps)
         {
             if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
@@ -195,7 +196,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 Object targetObject = props.get(runProp.getPropertyURI());
                 if (targetObject instanceof String)
                 {
-                    targetContainer = ContainerManager.getForId((String)targetObject);
+                    targetStudyContainer = ContainerManager.getForId((String)targetObject);
                     break;
                 }
             }
@@ -209,7 +210,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (targetObject instanceof String)
                 {
                     ParticipantVisitResolverType resolverType = AbstractAssayProvider.findType((String)targetObject, provider.getParticipantVisitResolverTypes());
-                    resolver = resolverType.createResolver(ExperimentService.get().getExpRun(run.getRowId()), targetContainer, user);
+                    resolver = resolverType.createResolver(ExperimentService.get().getExpRun(run.getRowId()), targetStudyContainer, user);
                     break;
                 }
             }
@@ -217,7 +218,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         if (resolver == null)
         {
-            resolver = new StudyParticipantVisitResolver(container, targetContainer);
+            resolver = new StudyParticipantVisitResolver(container, targetStudyContainer);
         }
 
         return resolver;
@@ -347,6 +348,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty specimenPD = null;
         DomainProperty visitPD = null;
         DomainProperty datePD = null;
+        DomainProperty targetStudyPD = null;
 
         DomainProperty[] columns = dataDomain.getProperties();
 
@@ -371,6 +373,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     pd.getPropertyDescriptor().getPropertyType() == PropertyType.DATE_TIME)
             {
                 datePD = pd;
+            }
+            else if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME) &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
+            {
+                targetStudyPD = pd;
             }
         }
 
@@ -402,6 +409,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             String specimenID = null;
             Double visitID = null;
             Date date = null;
+            Container targetStudy = null;
 
             for (DomainProperty pd : columns)
             {
@@ -418,9 +426,26 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     visitID = o instanceof Number ? ((Number)o).doubleValue() : null;
                 }
-                else if (datePD == pd & o != null)
+                else if (datePD == pd && o != null)
                 {
                     date = o instanceof Date ? (Date) o : null;
+                }
+                else if (targetStudyPD == pd && o != null)
+                {
+                    Set<Study> studies = StudyService.get().findStudy(o, null);
+                    if (studies.isEmpty())
+                    {
+                        errorSB.append("Couldn't resolve ").append(pd.getName()).append(" '").append(o.toString()).append("' to a study folder.");
+                    }
+                    else if (studies.size() > 1)
+                    {
+                        errorSB.append("Ambigious ").append(pd.getName()).append(" '").append(o.toString()).append("'.");
+                    }
+                    if (!studies.isEmpty())
+                    {
+                        Study study = studies.iterator().next();
+                        targetStudy = study != null ? study.getContainer() : null;
+                    }
                 }
                 boolean valueMissing;
                 if (o == null)
@@ -460,8 +485,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     errorSB.append(ColumnInfo.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())).append(". ");
                 }
             }
-            // UNDONE: look on result row for TargetStudy
-            ParticipantVisit participantVisit = resolver.resolve(specimenID, participantID, visitID, date);
+
+            ParticipantVisit participantVisit = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
             if (participantPD != null && map.get(participantPD.getName()) == null)
             {
                 map.put(participantPD.getName(), participantVisit.getParticipantID());
@@ -475,6 +500,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (datePD != null && map.get(datePD.getName()) == null)
             {
                 map.put(datePD.getName(), participantVisit.getDate());
+                iter.set(map);
+            }
+            if (targetStudyPD != null && participantVisit.getStudyContainer() != null)
+            {
+                // Original TargetStudy value may have been a container id, container path, or a study label.
+                // Store all TargetStudy values as Container ID string.
+                map.put(targetStudyPD.getName(), participantVisit.getStudyContainer().getId());
                 iter.set(map);
             }
 

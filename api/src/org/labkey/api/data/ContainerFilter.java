@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.util.Collection;
@@ -165,10 +166,12 @@ public abstract class ContainerFilter
     private static abstract class ContainerFilterWithUser extends ContainerFilter
     {
         protected final User _user;
+        protected final Class<? extends Permission> _perm;
 
-        public ContainerFilterWithUser(User user)
+        public ContainerFilterWithUser(User user, Class<? extends Permission> perm)
         {
             _user = user;
+            _perm = perm;
         }
     }
 
@@ -198,7 +201,12 @@ public abstract class ContainerFilter
 
         public CurrentPlusExtras(User user, Container... extraContainers)
         {
-            super(user);
+            this(user, ReadPermission.class, extraContainers);
+        }
+
+        public CurrentPlusExtras(User user, Class<? extends Permission> perm, Container... extraContainers)
+        {
+            super(user, perm);
             _extraContainers = extraContainers;
         }
 
@@ -208,7 +216,7 @@ public abstract class ContainerFilter
             containers.add(currentContainer);
             for (Container extraContainer : _extraContainers)
             {
-                if (extraContainer.hasPermission(_user, ReadPermission.class))
+                if (extraContainer.hasPermission(_user, _perm))
                 {
                     containers.add(extraContainer);
                 }
@@ -226,12 +234,17 @@ public abstract class ContainerFilter
     {
         public CurrentAndSubfolders(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentAndSubfolders(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(currentContainer, _user));
+            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(currentContainer, _user, _perm));
             containers.add(currentContainer);
             return toIds(containers);
         }
@@ -246,7 +259,12 @@ public abstract class ContainerFilter
     {
         public CurrentPlusProject(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentPlusProject(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         public Collection<String> getIds(Container currentContainer)
@@ -254,7 +272,7 @@ public abstract class ContainerFilter
             Set<Container> containers = new HashSet<Container>();
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
-            if (project != null && project.hasPermission(_user, ReadPermission.class))
+            if (project != null && project.hasPermission(_user, _perm))
             {
                 containers.add(project);
             }
@@ -271,7 +289,12 @@ public abstract class ContainerFilter
     {
         public CurrentAndParents(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentAndParents(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         public Collection<String> getIds(Container currentContainer)
@@ -279,7 +302,7 @@ public abstract class ContainerFilter
             Set<Container> containers = new HashSet<Container>();
             do
             {
-                if (currentContainer.hasPermission(_user, ReadPermission.class))
+                if (currentContainer.hasPermission(_user, _perm))
                 {
                     containers.add(currentContainer);
                 }
@@ -299,14 +322,19 @@ public abstract class ContainerFilter
     {
         public WorkbookAssay(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public WorkbookAssay(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         @Override
         public Collection<String> getIds(Container currentContainer)
         {
             Collection<String> result = super.getIds(currentContainer);
-            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, ReadPermission.class))
+            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getParent().getId());
             }
@@ -324,18 +352,23 @@ public abstract class ContainerFilter
     {
         public WorkbookAndParent(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public WorkbookAndParent(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         @Override
         public Collection<String> getIds(Container currentContainer)
         {
             Set<String> result = new HashSet<String>();
-            if (currentContainer.hasPermission(_user, ReadPermission.class))
+            if (currentContainer.hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getId());
             }
-            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, ReadPermission.class))
+            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getParent().getId());
             }
@@ -354,7 +387,12 @@ public abstract class ContainerFilter
     {
         public CurrentPlusProjectAndShared(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentPlusProjectAndShared(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         public Collection<String> getIds(Container currentContainer)
@@ -362,12 +400,12 @@ public abstract class ContainerFilter
             Set<Container> containers = new HashSet<Container>();
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
-            if (project != null && project.hasPermission(_user, ReadPermission.class))
+            if (project != null && project.hasPermission(_user, _perm))
             {
                 containers.add(project);
             }
             Container shared = ContainerManager.getSharedContainer();
-            if (shared.hasPermission(_user, ReadPermission.class))
+            if (shared.hasPermission(_user, _perm))
             {
                 containers.add(shared);
             }
@@ -384,7 +422,12 @@ public abstract class ContainerFilter
     {
         public AllInProject(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public AllInProject(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         public Collection<String> getIds(Container currentContainer)
@@ -395,7 +438,7 @@ public abstract class ContainerFilter
                 // Don't allow anything
                 return Collections.emptySet();
             }
-            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(project, _user));
+            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(project, _user, _perm));
             containers.add(project);
             return toIds(containers);
         }
@@ -410,7 +453,12 @@ public abstract class ContainerFilter
     {
         public AllFolders(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public AllFolders(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         public Collection<String> getIds(Container currentContainer)
@@ -420,7 +468,7 @@ public abstract class ContainerFilter
                 // Don't bother filtering, the user can see everything
                 return null;
             }
-            return ContainerManager.getIds(_user, ReadPermission.class);
+            return ContainerManager.getIds(_user, _perm);
         }
 
         public Type getType()
