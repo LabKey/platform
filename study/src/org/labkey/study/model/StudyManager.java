@@ -351,7 +351,13 @@ public class StudyManager
     @NotNull
     public Study[] getAllStudies(Container root, User user) throws SQLException
     {
-        FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, new ContainerFilter.CurrentAndSubfolders(user));
+        return getAllStudies(root, user, ReadPermission.class);
+    }
+
+    @NotNull
+    public Study[] getAllStudies(Container root, User user, Class<? extends Permission> perm) throws SQLException
+    {
+        FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, new ContainerFilter.CurrentAndSubfolders(user, perm));
         t.wrapAllColumns(true);
         return Table.select(t, Table.ALL_COLUMNS, null, null, StudyImpl.class);
     }

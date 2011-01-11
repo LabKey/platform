@@ -16,6 +16,10 @@
 
 package org.labkey.study;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -30,11 +34,13 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -517,6 +523,64 @@ public class StudyServiceImpl implements StudyService.Service
     public ActionURL getDatasetURL(Container container, int datasetId)
     {
         return new ActionURL(StudyController.DatasetAction.class, container).addParameter("datasetId", datasetId);
+    }
+
+    public Set<Study> findStudy(@NotNull Object studyReference, @Nullable User user)
+    {
+        if (studyReference == null)
+            return Collections.emptySet();
+        
+        Container c = null;
+        if (studyReference instanceof Container)
+            c = (Container)studyReference;
+
+        if (studyReference instanceof GUID)
+            c = ContainerManager.getForId((GUID)studyReference);
+
+        if (studyReference instanceof String)
+        {
+            try
+            {
+                c = (Container)ConvertUtils.convert((String)studyReference, Container.class);
+            }
+            catch (ConversionException ce)
+            {
+                // Ignore. Input may have been a Study label.
+            }
+        }
+
+        if (c != null)
+        {
+            Study study = null;
+            if (user == null || c.hasPermission(user, ReadPermission.class))
+                study = getStudy(c);
+            return study != null ? Collections.singleton(study) : Collections.<Study>emptySet();
+        }
+
+        Set<Study> result = new HashSet<Study>();
+        if (studyReference instanceof String)
+        {
+            String studyRef = (String)studyReference;
+            try
+            {
+                // look for study by label
+                Study[] studies = user == null ?
+                        StudyManager.getInstance().getAllStudies() :
+                        StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, ReadPermission.class);
+
+                for (Study study : studies)
+                {
+                    if (studyRef.equals(study.getLabel()))
+                        result.add(study);
+                }
+            }
+            catch (SQLException e)
+            {
+                UnexpectedException.rethrow(e);
+            }
+        }
+
+        return result;
     }
 
     public Set<Container> getStudyContainersForAssayProtocol(int protocolId)

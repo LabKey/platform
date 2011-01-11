@@ -29,7 +29,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Iterator" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PublishStartAction.PublishBean> me = (JspView<PublishStartAction.PublishBean>) HttpView.currentView();
@@ -110,13 +110,13 @@
                 <select name="targetStudy">
                 <%
 
-                    Map<Container, String> targets = AssayPublishService.get().getValidPublishTargets(getViewContext().getUser(), InsertPermission.class);
-                    for (Map.Entry<Container, String> target : targets.entrySet())
+                    Set<Study> studies = AssayPublishService.get().getValidPublishTargets(getViewContext().getUser(), InsertPermission.class);
+                    for (Study study : studies)
                     {
-                        String path = target.getKey().getPath();
+                        String path = study.getContainer().getPath();
                         boolean selected = firstStudyContainer != null && firstStudyContainer.getPath().equals(path);
                 %>
-                    <option value="<%= h(target.getKey().getId()) %>" <%= selected ? "SELECTED" : "" %>><%= h(path)%> (<%= h(target.getValue()) %>)</option>
+                    <option value="<%= h(study.getContainer().getId()) %>" <%= selected ? "SELECTED" : "" %>><%= h(path)%> (<%= h(study.getLabel()) %>)</option>
                 <%
                     }
                 %>

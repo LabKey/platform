@@ -29,7 +29,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.Specimen;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.controllers.samples.AutoCompleteAction;
 
 import java.sql.ResultSet;
@@ -45,20 +44,26 @@ public class SpecimenServiceImpl implements SpecimenService.Service
 {
     private class StudyParticipantVisit implements ParticipantVisit
     {
-        private Container _container;
+        private Container _studyContainer;
         private String _participantID;
         private Double _visitID;
         private String _specimenID;
         private ExpMaterial _material;
         private Date _date;
 
-        public StudyParticipantVisit(Container container, String specimenID, String participantID, Double visitID, Date date)
+        public StudyParticipantVisit(Container studyContainer, String specimenID, String participantID, Double visitID, Date date)
         {
-            _container = container;
+            _studyContainer = studyContainer;
             _specimenID = specimenID;
             _participantID = participantID;
             _visitID = visitID;
             _date = date;
+        }
+
+        @Override
+        public Container getStudyContainer()
+        {
+            return _studyContainer;
         }
 
         public String getParticipantID()
@@ -87,21 +92,21 @@ public class SpecimenServiceImpl implements SpecimenService.Service
             {
                 if (_specimenID != null)
                 {
-                    Lsid lsid = getSpecimenMaterialLsid(_container, _specimenID);
+                    Lsid lsid = getSpecimenMaterialLsid(_studyContainer, _specimenID);
                     _material = ExperimentService.get().getExpMaterial(lsid.toString());
                     if (_material == null)
                     {
-                        _material = ExperimentService.get().createExpMaterial(_container, lsid.toString(), _specimenID);
+                        _material = ExperimentService.get().createExpMaterial(_studyContainer, lsid.toString(), _specimenID);
                         _material.save(null);
                     }
                 }
                 else
                 {
-                    String lsid = new Lsid(ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _container.getRowId(), "Unknown").toString();
+                    String lsid = new Lsid(ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _studyContainer.getRowId(), "Unknown").toString();
                     _material = ExperimentService.get().getExpMaterial(lsid);
                     if (_material == null)
                     {
-                        _material = ExperimentService.get().createExpMaterial(_container, lsid, "Unknown");
+                        _material = ExperimentService.get().createExpMaterial(_studyContainer, lsid, "Unknown");
                         _material.save(null);
                     }
                 }
@@ -177,7 +182,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         String dateExpr = truncateTime ? StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("DrawTimestamp") : "DrawTimestamp";
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, " + dateExpr + " AS DrawTimestamp FROM " +
-        StudySchema.getInstance().getTableInfoSpecimen() + " WHERE Container = ?;", studyContainer.getId());
+            StudySchema.getInstance().getTableInfoSpecimen() + " WHERE Container = ?;", studyContainer.getId());
 
         Set<Pair<String, Date>> sampleInfo = new HashSet<Pair<String, Date>>();
         ResultSet rs = null;
@@ -203,7 +208,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     public Set<Pair<String, Double>> getSampleInfo(Container studyContainer) throws SQLException
     {
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, VisitValue FROM " +
-        StudySchema.getInstance().getTableInfoSpecimen() + " WHERE Container = ?;", studyContainer.getId());
+            StudySchema.getInstance().getTableInfoSpecimen() + " WHERE Container = ?;", studyContainer.getId());
 
         Set<Pair<String, Double>> sampleInfo = new HashSet<Pair<String, Double>>();
         ResultSet rs = null;

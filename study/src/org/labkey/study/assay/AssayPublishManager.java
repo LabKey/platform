@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -83,44 +84,22 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     /**
-     * Container -> study label
+     * Studies that the user has permission to.
      */
-    public Map<Container, String> getValidPublishTargets(User user, Class<? extends Permission> permission)
+    public Set<Study> getValidPublishTargets(User user, Class<? extends Permission> permission)
     {
-        final Set<Container> allowedContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), user, permission);
-        Map<Container, String> result = new TreeMap<Container, String>(new Comparator<Container>()
-        {
-            public int compare(Container c1, Container c2)
-            {
-                return c1.getPath().compareToIgnoreCase(c2.getPath());
-            }
-        });
-
-        TableInfo studyTable = StudySchema.getInstance().getTableInfoStudy();
-
-        ResultSet rs = null;
         try
         {
-            rs = Table.select(studyTable, PageFlowUtil.set("container", "label"), null, null);
-            while (rs.next())
-            {
-                String containerId = rs.getString("container");
-                String label = rs.getString("label");
-                Container container = ContainerManager.getForId(containerId);
-                if (!"/".equals(container.getPath()) && allowedContainers.contains(container))
-                    result.put(container, label);
-            }
+            Study[] studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
+
+            Set<Study> result = new HashSet<Study>();
+            result.addAll(Arrays.asList(studies));
+            return result;
         }
         catch (SQLException e)
         {
             throw UnexpectedException.wrap(e);
         }
-        finally
-        {
-            if (rs != null) try {rs.close();} catch (SQLException se) {}
-        }
-        
-        return result;
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
@@ -184,9 +163,43 @@ public class AssayPublishManager implements AssayPublishService.Service
         return targetPds;
     }
 
-    public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
+    public ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
                                           List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
+        // Partition dataMaps by targetStudy.
+        Map<Container, List<Map<String, Object>>> partitionedDataMaps = new HashMap<Container, List<Map<String, Object>>>();
+        for (Map<String, Object> dataMap : dataMaps)
+        {
+            Container targetStudy = targetContainer;
+            if (dataMap.containsKey("TargetStudy"))
+                targetStudy = (Container)dataMap.get("TargetStudy");
+            assert targetStudy != null;
+
+            List<Map<String, Object>> maps = partitionedDataMaps.get(targetStudy);
+            if (maps == null)
+            {
+                maps = new ArrayList<Map<String, Object>>(dataMap.size());
+                partitionedDataMaps.put(targetStudy, maps);
+            }
+            maps.add(dataMap);
+        }
+
+        // CONSIDER: transact all copies together
+        // CONSIDER: returning list of URLS along with a count of rows copied to each study.
+        ActionURL url = null;
+        for (Map.Entry<Container, List<Map<String, Object>>> entry : partitionedDataMaps.entrySet())
+        {
+            Container targetStudy = entry.getKey();
+            List<Map<String, Object>> maps = entry.getValue();
+            url = _publishAssayData(user, sourceContainer, targetStudy, assayName, protocol, maps, columns, keyPropertyName, errors);
+        }
+        return url;
+    }
+
+    private ActionURL _publishAssayData(User user, Container sourceContainer, @NotNull Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
+                                      List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
+    {
+
         StudyImpl targetStudy = StudyManager.getInstance().getStudy(targetContainer);
         assert verifyRequiredColumns(dataMaps, targetStudy.getTimepointType());
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
@@ -374,6 +387,10 @@ public class AssayPublishManager implements AssayPublishService.Service
                 {
                     if ("Date".equalsIgnoreCase(entry.getKey()))
                         uri = DataSetDefinition.getVisitDateURI();
+
+                    // Skip "TargetStudy"
+                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
+                        continue;
                 }
                 assert uri != null : "Expected all properties to already be present in assay type";
                 newMap.put(uri, entry.getValue());
@@ -456,6 +473,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             newPdNames.addAll(dataMap.keySet());
         if (dataset.getStudy().getTimepointType() != TimepointType.VISIT)  // don't try to create a propertydescriptor for date
             newPdNames.remove("Date");
+        newPdNames.remove(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
 
         Map<String, PropertyDescriptor> typeMap = new HashMap<String, PropertyDescriptor>();
         for (PropertyDescriptor pd : types)
