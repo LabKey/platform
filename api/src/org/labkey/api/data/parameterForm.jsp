@@ -25,7 +25,8 @@ var decl = [
             value = p.getDefault();
         %><%=COMMA%><%
         %>{name:<%=q(p.getName())%><%
-        %>,type:<%=q(p.getType().name())%><%
+        %>,jdbctype:<%=q(p.getType().name())%><%
+        %>,jsontype:<%=q(p.getType().json)%><%
         %>,xtype:<%=q(p.getType().xtype)%><%
         %>,defaultValue:<%=q(org.apache.commons.beanutils.ConvertUtils.convert(p.getDefault()))%><%
         %>,value:<%=q(org.apache.commons.beanutils.ConvertUtils.convert(value))%><%
@@ -50,8 +51,11 @@ Ext.onReady(function()
         var p = decl[i];
         var item = {};
         item.xtype = p.xtype || 'textfield';
+        if (p.jsontype == 'int')
+            item.decimalPrecision=0;
         item.fieldLabel = p.name;
         item.name = dataregion + "!" + p.name;
+        item.value=p.value;
         items.push(item);
     }
     formpanel = new Ext.form.FormPanel({

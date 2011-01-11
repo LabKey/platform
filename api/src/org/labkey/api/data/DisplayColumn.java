@@ -135,7 +135,7 @@ public abstract class DisplayColumn extends RenderColumn
         ColumnInfo col = getColumnInfo();
         if (col != null)
             keys.add(col.getFieldKey());
-        
+
         StringExpression se = null;
         if (null != _urlExpression)
             se = _urlExpression;
@@ -289,7 +289,7 @@ public abstract class DisplayColumn extends RenderColumn
         return getJsonTypeName(getValueClass());
     }
 
-    private String getJsonTypeName(Class valueClass)
+    public static String getJsonTypeName(Class valueClass)
     {
         if(String.class.isAssignableFrom(valueClass))
             return "string";

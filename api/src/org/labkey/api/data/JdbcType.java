@@ -31,7 +31,7 @@ import java.sql.Types;
 
 public enum JdbcType
 {
-    BIGINT(Types.BIGINT, Long.class, "numberfield")
+    BIGINT(Types.BIGINT, Long.class)
             {
                 @Override
                 protected Object _fromNumber(Number n)
@@ -130,13 +130,12 @@ public enum JdbcType
     public final int sqlType;
     public final Class cls;
     public final String xtype;
+    public final String json;
 
 
     JdbcType(int type, Class cls)
     {
-        this.sqlType = type;
-        this.cls = cls;
-        xtype = "textfield";
+        this(type,cls,"textfield");
     }
 
     JdbcType(int type, Class cls, String xtype)
@@ -144,6 +143,7 @@ public enum JdbcType
         this.sqlType = type;
         this.cls = cls;
         this.xtype = xtype;
+        this.json = DisplayColumn.getJsonTypeName(cls);
     }
 
     public static JdbcType valueOf(int type)

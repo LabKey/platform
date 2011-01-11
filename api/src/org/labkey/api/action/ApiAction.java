@@ -244,15 +244,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
     protected BindException populateForm(JSONObject jsonObj, FORM form) throws Exception
     {
-        if(null == jsonObj)
+        if (null == jsonObj)
             return new NullSafeBindException(form, "form");
 
-        if(form instanceof ApiJsonForm)
-        {
-            ((ApiJsonForm)form).setJsonObject(jsonObj);
-            return new NullSafeBindException(form, "form");
-        }
-        else if(form instanceof CustomApiForm)
+        if (form instanceof CustomApiForm)
         {
             ((CustomApiForm)form).bindProperties(jsonObj);
             return new NullSafeBindException(form, "form");

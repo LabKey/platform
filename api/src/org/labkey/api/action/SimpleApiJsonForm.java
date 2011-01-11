@@ -17,18 +17,23 @@ package org.labkey.api.action;
 
 import org.json.JSONObject;
 
+import java.util.Map;
+
 /**
  * User: jgarms
  * Date: Aug 13, 2008
  * Time: 3:39:02 PM
  */
-public class SimpleApiJsonForm implements ApiJsonForm
+public class SimpleApiJsonForm implements CustomApiForm
 {
-    private JSONObject json;
+    protected JSONObject json;
 
-    public void setJsonObject(JSONObject jsonObj)
+    public void bindProperties(Map<String,Object> properties)
     {
-        json = jsonObj;
+        if (properties instanceof JSONObject)
+            json = (JSONObject)properties;
+        else
+            json = new JSONObject(properties);
     }
 
     public JSONObject getJsonObject()

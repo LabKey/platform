@@ -20,7 +20,6 @@ api/src/org/labkey/api/action/AjaxAction.java -text
 api/src/org/labkey/api/action/AjaxCompletionAction.java -text
 api/src/org/labkey/api/action/ApiAction.java -text
 api/src/org/labkey/api/action/ApiBeanResponse.java -text
-api/src/org/labkey/api/action/ApiJsonForm.java -text
 api/src/org/labkey/api/action/ApiJsonWriter.java -text
 api/src/org/labkey/api/action/ApiQueryResponse.java -text
 api/src/org/labkey/api/action/ApiResponse.java -text
