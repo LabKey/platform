@@ -21,7 +21,7 @@ var decl = [
     for (QueryService.ParameterDecl p : decls)
     {
         Object value = null==values?null:values.get(p.getName());
-        if (null == value && p.isRequired())
+        if (null == value)
             value = p.getDefault();
         %><%=COMMA%><%
         %>{name:<%=q(p.getName())%><%
@@ -44,8 +44,6 @@ function submitHandler()
 }
 Ext.onReady(function()
 {
-    Ext.get(divId).update("hey");
-
     var items = [];
     for (var i=0 ; i<decl.length ; i++)
     {
