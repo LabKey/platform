@@ -16,19 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.reports.report.JavaScriptReport.JavaScriptReportBean" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<JavaScriptReportBean> me = (HttpView<JavaScriptReportBean>) HttpView.currentView();
-    JavaScriptReportBean bean = me.getModelBean();
-    String uniqueName = "foo";
-    String containingFunctionName = "cf_" + uniqueName;
+    JavaScriptReportBean bean = (JavaScriptReportBean)getModelBean();
+    String uniqueDivName = "div_" + getRequestScopedUID();  // Unique div name to support multiple reports per page
 %>
-<div id="<%=uniqueName%>"></div>    <% // TODO: Make uniqueName unique to support multiple JavaScript reports on a page %>
+<div id="<%=uniqueDivName%>"></div>
 <script language="javascript" type="text/javascript">
-    <%=containingFunctionName%>(document.getElementById("<%=uniqueName%>"));
-
-    function <%=containingFunctionName%>(div)
+    (function()
     {
         if (typeof render == 'function')
         {
@@ -36,7 +31,7 @@
 <%=bean.model.getStandardJavaScriptParameters(16)%>
             };
 
-            render(query, div);
+            render(query, document.getElementById("<%=uniqueDivName%>"));
         }
         else
         {
@@ -44,5 +39,5 @@
         }
 
         <%=bean.script%>
-    }
+    })();
 </script>
