@@ -497,6 +497,16 @@ td.labkey-ms1-filter
     background-color: #<%= grid %>;
 }
 
+.gwt-TabBar .gwt-TabBarItem
+{
+    background-color: #<%= grid %>;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected
+{
+    background: transparent;
+}
+
 /* YUI */
 div.yuimenu h6, div.yuimenubar h6
 {

@@ -153,7 +153,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         return false;
     }
 
-    public boolean isParticipant(PipelineJob job) throws IOException, SQLException
+    public boolean isParticipant(PipelineJob job) throws IOException
     {
         if (!super.isParticipant(job))
             return false;

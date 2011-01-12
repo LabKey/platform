@@ -166,7 +166,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             return (getOutputPaths().size() > 0);
         }
 
-        public boolean isParticipant(PipelineJob job) throws IOException, SQLException
+        public boolean isParticipant(PipelineJob job) throws IOException
         {
             if (!super.isParticipant(job))
             {
