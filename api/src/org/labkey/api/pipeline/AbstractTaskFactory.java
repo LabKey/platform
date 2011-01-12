@@ -99,10 +99,8 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
      *
      * @param job the <code>PipelineJob</code> about which task is being interrogated
      * @return true if task is part of processing this job
-     * @throws IOException
-     * @throws SQLException
      */
-    public boolean isParticipant(PipelineJob job) throws IOException, SQLException
+    public boolean isParticipant(PipelineJob job) throws IOException
     {
         if (_dependencyId != null)
         {

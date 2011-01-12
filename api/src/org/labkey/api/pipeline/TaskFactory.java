@@ -57,9 +57,10 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     boolean isJoin();
 
+    /** Invoked on the web server to figure out if the task has already been run */
     boolean isJobComplete(PipelineJob job);
 
-    boolean isParticipant(PipelineJob job) throws IOException, SQLException;
+    boolean isParticipant(PipelineJob job) throws IOException;
 
     boolean isAutoRetryEnabled(PipelineJob job); 
 

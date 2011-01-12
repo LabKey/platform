@@ -721,11 +721,6 @@ abstract public class PipelineJob extends Job implements Serializable
                 error(e.getMessage());
                 return false;
             }
-            catch (SQLException e)
-            {
-                error(e.getMessage());
-                return false;
-            }
 
             i++;
         }
@@ -935,6 +930,10 @@ abstract public class PipelineJob extends Job implements Serializable
         runSubProcess(pb, dirWork, null, 0);
     }
 
+    /**
+     * If logLineInterval is greater than 1, the first logLineInterval lines of output will be written to the
+     * job's main log file.
+     */
     public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile, int logLineInterval)
             throws PipelineJobException
     {
@@ -1033,13 +1032,15 @@ abstract public class PipelineJob extends Job implements Serializable
                         info(line);
                     else
                     {
+                        if (logLineInterval > 0 && count < logLineInterval)
+                            info(line);
+                        else if (count == logLineInterval)
+                            info("Writing additional tool output lines to " + outputFile.getName());
                         fileWriter.println(line);
-                        if (logLineInterval > 0 && (count % logLineInterval == 0))
-                            info(count + " lines");
                     }
                 }
                 if (fileWriter != null)
-                    info(count + " lines written total");
+                    info(count + " lines written total to " + outputFile.getName());
             }
             catch (IOException eio)
             {

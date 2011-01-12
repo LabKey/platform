@@ -409,6 +409,11 @@ public class FileType implements Serializable
         return !(_suffixes != null ? !_suffixes.equals(fileType._suffixes) : fileType._suffixes != null);
     }
 
+    public String getDefaultSuffix()
+    {
+        return _defaultSuffix;
+    }
+
     public int hashCode()
     {
         int result;
