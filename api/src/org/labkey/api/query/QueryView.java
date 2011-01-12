@@ -1231,7 +1231,6 @@ public class QueryView extends WebPartView<Object>
 
         rgn.setTable(getTable());
 
-
         // We first apply the button bar config from the table:
         ButtonBarConfig tableBarConfig = getTable().getButtonBarConfig();
         if (tableBarConfig != null)
