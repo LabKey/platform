@@ -19,9 +19,7 @@ package org.labkey.api.reports.report.view;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 
 import java.util.ArrayList;

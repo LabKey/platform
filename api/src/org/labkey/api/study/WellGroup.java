@@ -16,8 +16,6 @@
 
 package org.labkey.api.study;
 
-import org.labkey.api.study.DilutionCurve;
-
 import java.util.List;
 import java.util.Set;
 

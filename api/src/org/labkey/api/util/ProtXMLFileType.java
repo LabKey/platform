@@ -16,12 +16,6 @@
 
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * protXML FileType  class
  * for .prot.xml, .prot.xml.gz, .protxml, etc

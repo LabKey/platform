@@ -16,16 +16,26 @@
 
 package org.labkey.api.gwt.client.ui.reports;
 
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.Widget;
 import org.labkey.api.gwt.client.model.GWTChart;
-import org.labkey.api.gwt.client.model.GWTChartRenderer;
 import org.labkey.api.gwt.client.model.GWTChartColumn;
-import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.model.GWTChartRenderer;
+import org.labkey.api.gwt.client.ui.ChartServiceAsync;
+import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.ui.WebPartPanel;
+import org.labkey.api.gwt.client.ui.WidgetUpdatable;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.

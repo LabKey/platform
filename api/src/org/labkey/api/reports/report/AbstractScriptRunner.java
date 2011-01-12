@@ -18,19 +18,17 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.Pair;
 
 import java.io.File;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 

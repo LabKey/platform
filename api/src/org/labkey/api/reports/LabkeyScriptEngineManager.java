@@ -16,9 +16,8 @@
 package org.labkey.api.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.BooleanUtils;
-import org.labkey.api.data.ContainerManager;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.services.ServiceRegistry;
@@ -26,7 +25,11 @@ import org.labkey.api.services.ServiceRegistry;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: Karl Lum

@@ -18,20 +18,18 @@ package org.labkey.api.gwt.client.ui.reports;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
-import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.ui.ChartServiceAsync;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.WebPartPanel;
-import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.

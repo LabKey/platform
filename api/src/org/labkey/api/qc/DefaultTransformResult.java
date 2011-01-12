@@ -16,15 +16,13 @@
 
 package org.labkey.api.qc;
 
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.

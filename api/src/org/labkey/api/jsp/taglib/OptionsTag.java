@@ -16,15 +16,12 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.jsp.taglib.SimpleTagBase;
 import org.apache.commons.lang.ObjectUtils;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
-import java.util.AbstractMap;
 
 public class OptionsTag extends SimpleTagBase
 {

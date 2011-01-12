@@ -16,21 +16,25 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.data.*;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.sql.ResultSet;
 import java.util.Map;
 
 /**

@@ -19,10 +19,8 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.DynaBean;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

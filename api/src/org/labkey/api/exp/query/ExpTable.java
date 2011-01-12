@@ -16,12 +16,13 @@
 
 package org.labkey.api.exp.query;
 
-import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.permissions.Permission;
 
 abstract public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo

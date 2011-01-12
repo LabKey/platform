@@ -36,10 +36,13 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     private final LinkedHashMap<List<Object>, String> _distinctValuesToClass = new LinkedHashMap<List<Object>, String>();
     private final FieldKey[] _fields;
 
-    private int _uid;
+    protected int _uid;
+
     private String _hoverFunctionName = "hover" + _uid;
     private String _unhoverFunctionName = "unhover" + _uid;
+    private String _clickFunctionName = "click" + _uid;
     private String _highlightColor = "yellow";
+    private boolean _locking = true;
 
     public HighlightingDisplayColumn(DisplayColumn column, FieldKey... distinguishingFields)
     {
@@ -49,19 +52,28 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
 
     // Call to set a different highlight color (yellow is the default)
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setHighlightColor(String color)
+    public HighlightingDisplayColumn setHighlightColor(String color)
     {
         _highlightColor = color;
+        return this;
+    }
+
+    // Call to enable locking/unlocking (click on a span to lock the style in place, click again to unlock it)
+    @SuppressWarnings({"UnusedDeclaration"})
+    public HighlightingDisplayColumn setLocking(boolean locking)
+    {
+        _locking = locking;
+        return this;
     }
 
     // Override to provide custom javascript that sets the span style on hover
-    public String getHoverStyle()
+    public String getHoverStyleCode()
     {
         return "\t\tstyle.backgroundColor = '" + _highlightColor + "';\n";
     }
 
     // Override to provide custom javascript that resets the span style on unhover
-    public String getUnhoverStyle()
+    public String getUnhoverStyleCode()
     {
         // Note: Setting backgroundColor = null works in every browser except IE; blank string seems to work universally.
         return "\t\tstyle.backgroundColor = '';\n";
@@ -89,16 +101,25 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException, SQLException
     {
         super.renderGridHeaderCell(ctx, out);
+
         _uid = UniqueID.getRequestScopedUID(ctx.getRequest());
         _hoverFunctionName = "hover" + _uid;
         _unhoverFunctionName = "unhover" + _uid;
+        _clickFunctionName = "click" + _uid;
     }
 
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         String styleClass = getStyleClass(ctx);
-        out.write("<span class=\"" + styleClass + "\" onmouseover=\"" + _hoverFunctionName + "(this);\" onmouseout=\"" + _unhoverFunctionName + "(this);\">");
+        out.write("<span class=\"" + styleClass + "\"" +
+                " onmouseover=\"" + _hoverFunctionName + "(this);\"" +
+                " onmouseout=\"" + _unhoverFunctionName + "(this);\"");
+
+        if (_locking)
+            out.write(" onclick=\"" + _clickFunctionName + "(this);\"");
+
+        out.write(">");
         super.renderGridCellContents(ctx, out);
         out.write("</span>");
     }
@@ -109,14 +130,19 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         super.renderGridEnd(ctx, out);
 
         String styleMapName = "styleMap" + _uid;
+        String lockedStylesName = "lockedStyles" + _uid;
 
         out.write("<script type=\"text/javascript\">\n");
 
         out.write(
             "// Code to support dynamic highlighting for \"" + getName() + "\" column\n" +
-            "var " + styleMapName + " = {};\n\n" +
+            "var " + styleMapName + " = {};\n");
 
-            "// Initialize the stylesheet and populate the styleMap via an anonymous function\n" +
+        if (_locking)
+            out.write("var " + lockedStylesName + " = {};\n");
+
+        out.write(
+            "\n// Initialize the stylesheet and populate the styleMap via an anonymous function\n" +
             "(function()\n" +
             "{\n" +
             "\t// Create a new stylesheet for this column's styles\n" +
@@ -134,7 +160,9 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
             out.write("\taddStyle(ss, \"span." + style.toLowerCase() + "\");\n");
         }
 
-        out.write("\n\t// Add all the styles to a name -> style \"map\", which may perform better than iterating all the styles every time\n" +
+        out.write
+        (
+            "\n\t// Add all the styles to a name -> style \"map\", which may perform better than iterating all the styles every time\n" +
             "\tvar rules = rules(ss);\n\n" +
             "\t// Force name to lowercase -- different browsers use different casing\n" +
             "\tfor (var i = 0; i < rules.length; i++)\n" +
@@ -166,26 +194,56 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
             "\n" +
             "\t\treturn rules;\n" +
             "\t}\n" +
-            "}).call();\n\n" +
+            "})();\n\n" +
 
             // hover()
             "function " + _hoverFunctionName + "(el)\n" +
             "{\n" +
-            "\tvar style = " + styleMapName + "[(el.tagName + \".\" + el.className).toLowerCase()];\n" +
+            "\tvar styleName = (el.tagName + \".\" + el.className).toLowerCase();\n" +
+            "\tvar style = " + styleMapName + "[styleName];\n" +
             "\n" +
-            "\tif (style)\n" +
-            getHoverStyle() +
+            "\tif (style" + (_locking ? " && !" + lockedStylesName + "[styleName]" : "") + ")\n" +
+            "\t{\n" +
+            getHoverStyleCode() +
+            "\t}\n" +
             "}\n" +
             "\n" +
 
             // unhover()
             "function " + _unhoverFunctionName + "(el)\n" +
             "{\n" +
-            "\tvar style = " + styleMapName + "[(el.tagName + \".\" + el.className).toLowerCase()];\n" +
+            "\tvar styleName = (el.tagName + \".\" + el.className).toLowerCase();\n" +
+            "\tvar style = " + styleMapName + "[styleName];\n" +
             "\n" +
-            "\tif (style)\n" +
-            getUnhoverStyle() +
-            "}\n" +
-            "</script>\n");
+            "\tif (style" + (_locking ? " && !" + lockedStylesName + "[styleName]" : "") + ")\n" +
+            "\t{\n" +
+            getUnhoverStyleCode() +
+            "\t}\n" +
+            "}\n"
+        );
+
+        if (_locking)
+        {
+            out.write
+            (
+                // onclick()
+                "\nfunction " + _clickFunctionName + "(el)\n" +
+                "{\n" +
+                "\tvar styleName = (el.tagName + \".\" + el.className).toLowerCase();\n\n" +
+                "\tif (!" + lockedStylesName + "[styleName])\n" +
+                "\t{\n" +
+                "\t\t" + _hoverFunctionName + "(el);\n" +
+                "\t\t" + lockedStylesName + "[styleName] = true;\n" +
+                "\t}\n" +
+                "\telse\n" +
+                "\t{\n" +
+                "\t\t" + lockedStylesName + "[styleName] = null;\n" +
+                "\t\t" + _unhoverFunctionName + "(el);\n" +
+                "\t}\n" +
+                "}\n"
+            );
+        }
+
+        out.write("</script>\n");
     }
 }

@@ -15,20 +15,18 @@
  */
 package org.labkey.api.query.snapshot;
 
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryView;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.util.HString;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 /*
  * User: Karl Lum

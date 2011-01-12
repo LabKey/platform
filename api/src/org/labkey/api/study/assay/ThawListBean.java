@@ -17,7 +17,6 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.view.GWTView;
 import org.springframework.web.servlet.ModelAndView;
 
 /**

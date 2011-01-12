@@ -16,15 +16,15 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.*;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 
-import java.sql.Types;
 import java.util.Collections;
 import java.util.Map;
 

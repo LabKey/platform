@@ -19,16 +19,12 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
-import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.InsertView;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;

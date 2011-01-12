@@ -21,7 +21,6 @@ import org.labkey.api.security.User;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.

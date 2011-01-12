@@ -3,9 +3,7 @@ package org.labkey.api.nab;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.view.ActionURL;
-import org.springframework.web.servlet.mvc.Controller;
 
 /**
  * Copyright (c) 2010 LabKey Corporation

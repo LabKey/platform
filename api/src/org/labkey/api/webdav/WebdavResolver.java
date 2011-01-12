@@ -22,7 +22,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.

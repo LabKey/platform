@@ -22,9 +22,6 @@ import org.labkey.api.data.TableViewForm;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Extension of the class TableViewForm which deals with the fact that we don't have much control over the names
  * of fields in a user-defined table.

@@ -18,11 +18,7 @@ package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.ui.ListBox;
 
-import java.util.Map;
-import java.util.HashMap;
-
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 23, 2007
  * Time: 5:16:30 PM

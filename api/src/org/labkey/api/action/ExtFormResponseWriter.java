@@ -15,7 +15,6 @@
  */
 package org.labkey.api.action;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;

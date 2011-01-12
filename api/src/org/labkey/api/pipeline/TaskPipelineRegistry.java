@@ -15,8 +15,6 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.module.SpringModule;
-
 /**
  * <code>TaskPipelineRegistry</code>
 *

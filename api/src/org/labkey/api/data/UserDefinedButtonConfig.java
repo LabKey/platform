@@ -21,11 +21,9 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 
-import java.net.URISyntaxException;
 import java.util.List;
 
 /**

@@ -19,13 +19,11 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.OutputStream;
-import java.io.IOException;
 import java.util.List;
 
 /**

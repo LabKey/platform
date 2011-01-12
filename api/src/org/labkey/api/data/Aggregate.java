@@ -174,6 +174,7 @@ public class Aggregate
     {
         List<Aggregate> aggregates = new LinkedList<Aggregate>();
         String prefix = regionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + ".";
+
         for (PropertyValue val : pvs.getPropertyValues())
         {
             if (val.getName().startsWith(prefix))
@@ -193,7 +194,7 @@ public class Aggregate
                 aggregates.add(new Aggregate(columnName, type));
             }
         }
+
         return aggregates;
     }
-
 }

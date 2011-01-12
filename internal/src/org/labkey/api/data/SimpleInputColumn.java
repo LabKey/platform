@@ -17,12 +17,10 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.query.FieldKey;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
-import java.util.Collections;
 
 /**
  * User: migra

@@ -16,14 +16,11 @@
 
 package org.labkey.api.exp.api;
 
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.security.User;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.sql.SQLException;
 
 public interface ExpRun extends ExpObject
 {

@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 
 import java.util.List;
