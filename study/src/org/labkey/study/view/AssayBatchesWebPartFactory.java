@@ -16,15 +16,13 @@
 
 package org.labkey.study.view;
 
-import org.labkey.api.view.*;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AssayBatchesView;
 import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.controllers.assay.AssayController;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 
 /**
  * User: kevink

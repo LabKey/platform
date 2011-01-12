@@ -16,6 +16,7 @@
 package org.labkey.pipeline;
 
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
@@ -1216,7 +1217,7 @@ public class PipelineController extends SpringActionController
             return urlBrowse(container, referer, null);
         }
 
-        public ActionURL urlBrowse(Container container, String referer, String path)
+        public ActionURL urlBrowse(Container container, String referer, @Nullable String path)
         {
             ActionURL url = new ActionURL(BrowseAction.class, container);
             url.addParameter(Params.referer, referer);

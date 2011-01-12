@@ -16,26 +16,19 @@
 package org.labkey.filecontent;
 
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.security.User;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 4, 2010
  * Time: 4:24:36 PM
- * To change this template use File | Settings | File Templates.
  */
 public class FilePropertiesDomainKind extends AbstractDomainKind
 {

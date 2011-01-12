@@ -16,9 +16,6 @@
 package org.labkey.query.metadata.client;
 
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-
-import java.util.Map;
 
 /**
  * User: jeckels

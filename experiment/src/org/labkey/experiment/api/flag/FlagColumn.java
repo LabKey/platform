@@ -16,18 +16,11 @@
 
 package org.labkey.experiment.api.flag;
 
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.PropertyForeignKey;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.exp.property.ExperimentProperty;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.property.ExperimentProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-
-import java.sql.Types;
 
 public class FlagColumn extends PropertyColumn
 {

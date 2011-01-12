@@ -1,10 +1,8 @@
 package org.labkey.study.view;
 
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.samples.SampleSearchBean;
 
 /**
  * Copyright (c) 2010 LabKey Corporation

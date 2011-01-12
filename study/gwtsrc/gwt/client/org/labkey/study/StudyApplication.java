@@ -18,14 +18,11 @@ package gwt.client.org.labkey.study;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.RunAsyncCallback;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 31, 2010
  * Time: 1:59:56 PM

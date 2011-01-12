@@ -17,22 +17,19 @@
 package org.labkey.experiment.xar;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.exp.*;
+import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.experiment.api.property.DomainImpl;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
-import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
-import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
+import org.labkey.api.security.User;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: jeckels

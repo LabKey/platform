@@ -17,21 +17,18 @@
 package org.labkey.experiment.xar;
 
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.experiment.XarExporter;
-import org.labkey.experiment.URLRewriter;
-import org.labkey.experiment.DataURLRelativizer;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.experiment.ArchiveURLRewriter;
-import org.labkey.experiment.api.ExperimentRun;
+import org.labkey.experiment.URLRewriter;
+import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.Protocol;
 
-import java.sql.SQLException;
 import java.io.Serializable;
-import java.util.List;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * User: jeckels

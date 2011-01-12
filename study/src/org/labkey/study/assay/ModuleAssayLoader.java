@@ -16,23 +16,20 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.module.*;
+import org.apache.xmlbeans.XmlException;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleResourceLoadException;
+import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
-import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.study.StudyModule;
-import org.labkey.study.assay.xml.DomainDocument;
 import org.labkey.study.assay.xml.ProviderDocument;
 import org.labkey.study.assay.xml.ProviderType;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlError;
-import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * User: kevink

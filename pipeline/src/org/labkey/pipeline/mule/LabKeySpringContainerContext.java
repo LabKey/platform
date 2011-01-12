@@ -17,7 +17,6 @@ package org.labkey.pipeline.mule;
 
 import org.mule.extras.spring.SpringContainerContext;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 /*
 * User: jeckels

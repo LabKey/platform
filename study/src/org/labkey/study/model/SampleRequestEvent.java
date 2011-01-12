@@ -16,13 +16,10 @@
 
 package org.labkey.study.model;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.Attachment;
+import org.labkey.api.data.Container;
 
 import java.util.Date;
-import java.util.Collection;
-import java.io.File;
 
 /**
  * User: brittp

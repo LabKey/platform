@@ -15,21 +15,20 @@
  */
 package org.labkey.core.workbook;
 
-import org.labkey.api.query.QueryView;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
-import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.core.CoreController;
-import org.labkey.core.admin.AdminController;
+import org.labkey.core.query.CoreQuerySchema;
 
 /**
- * Created by IntelliJ IDEA.
  * User: labkey
  * Date: Jan 5, 2010
  * Time: 5:09:55 PM

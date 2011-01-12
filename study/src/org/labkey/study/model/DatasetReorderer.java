@@ -17,12 +17,11 @@ package org.labkey.study.model;
 
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.DataSet;
 
+import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedHashMap;
-import java.sql.SQLException;
 
 /**
  * User: adam

@@ -10,15 +10,14 @@
 
 package org.labkey.pipeline.mule.routing;
 
-import org.mule.impl.MuleMessage;
-import org.mule.umo.UMOMessage;
-import org.mule.umo.endpoint.UMOEndpoint;
-import org.mule.routing.outbound.AbstractMessageSplitter;
-import org.mule.routing.outbound.FilteringListMessageSplitter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
+import org.mule.impl.MuleMessage;
+import org.mule.routing.outbound.FilteringListMessageSplitter;
+import org.mule.umo.UMOMessage;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <code>PipelineJobMessageSplitter</code> accepts a PipelineJob as a message payload

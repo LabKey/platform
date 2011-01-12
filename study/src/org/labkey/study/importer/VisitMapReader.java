@@ -16,7 +16,6 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.study.StudyImportException;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 

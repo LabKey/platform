@@ -17,7 +17,6 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.io.IOUtils;
-import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -32,7 +31,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 
 /**
  * Created by IntelliJ IDEA.

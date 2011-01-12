@@ -18,13 +18,10 @@ package org.labkey.cbcassay;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssaySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssaySchema;
+import org.labkey.api.study.assay.AssayService;
 
 public class CBCAssayManager
 {

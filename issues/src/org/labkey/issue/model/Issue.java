@@ -15,18 +15,21 @@
  */
 package org.labkey.issue.model;
 
+import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
-import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.HString;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.MemTracker;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 
 public class Issue extends Entity implements Serializable, Cloneable

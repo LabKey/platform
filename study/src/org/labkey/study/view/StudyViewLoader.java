@@ -1,11 +1,9 @@
 package org.labkey.study.view;
 
-import org.apache.commons.io.IOUtils;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.study.StudyService;
 import org.labkey.study.StudyModule;
 import org.labkey.study.model.StudyManager;
 

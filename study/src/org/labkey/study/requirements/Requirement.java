@@ -18,7 +18,6 @@ package org.labkey.study.requirements;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.study.model.SampleRequestActor;
 
 /**
  * User: brittp

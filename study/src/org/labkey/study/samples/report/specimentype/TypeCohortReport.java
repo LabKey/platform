@@ -1,13 +1,11 @@
 package org.labkey.study.samples.report.specimentype;
 
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.study.samples.report.SpecimenVisitReportParameters;
-import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.samples.report.SpecimenTypeVisitReport;
+import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 
 /**
  * Copyright (c) 2008-2009 LabKey Corporation

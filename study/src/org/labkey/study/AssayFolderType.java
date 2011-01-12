@@ -21,21 +21,13 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.Portal;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.data.Container;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.exp.list.ListService;
-import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.assay.AssayController;
 
-import java.util.Set;
-import java.util.Collections;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * User: kevink

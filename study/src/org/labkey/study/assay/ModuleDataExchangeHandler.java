@@ -16,17 +16,15 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.ExperimentDataHandler;
-import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.qc.TsvDataExchangeHandler;
+import org.labkey.api.study.assay.AssayRunUploadContext;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.

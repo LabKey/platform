@@ -16,20 +16,16 @@
 
 package org.labkey.query.view;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.query.CustomView;
+import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.util.MemTracker;
 import org.labkey.query.persist.CstmView;
-import org.labkey.query.CustomViewImpl;
-import org.labkey.query.QueryDefinitionImpl;
-import org.apache.commons.lang.ObjectUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
-import java.util.Map;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 public class CustomViewSetKey implements Serializable
 {

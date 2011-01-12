@@ -15,15 +15,13 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.query.ExpDataInputTable;
-import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.exp.query.ExpMaterialInputTable;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: jeckels
