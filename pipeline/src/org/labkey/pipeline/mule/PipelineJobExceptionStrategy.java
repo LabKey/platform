@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.mule;
 
+import org.apache.log4j.Logger;
 import org.mule.impl.DefaultComponentExceptionStrategy;
 import org.mule.impl.RequestContext;
 import org.mule.umo.UMOEvent;
@@ -28,6 +29,8 @@ import org.labkey.api.pipeline.PipelineJobService;
 */
 public class PipelineJobExceptionStrategy extends DefaultComponentExceptionStrategy
 {
+    private static final Logger LOGGER = Logger.getLogger(PipelineJobExceptionStrategy.class);
+
     protected void defaultHandler(Throwable t)
     {
         super.defaultHandler(t);
@@ -37,7 +40,15 @@ public class PipelineJobExceptionStrategy extends DefaultComponentExceptionStrat
             Object payload = event.getMessage().getPayload();
             if (payload instanceof PipelineJob)
             {
-                handleJobError(t, (PipelineJob)payload);
+                try
+                {
+                    handleJobError(t, (PipelineJob)payload);
+                }
+                catch (RuntimeException e)
+                {
+                    // Don't let this propagate up the stack or it can kill the Mule thread
+                    LOGGER.error("Failed to fully handle setting error", e);
+                }
             }
             else
             {
