@@ -16,12 +16,15 @@
 package org.labkey.study.assay;
 
 import gwt.client.org.labkey.assay.designer.client.AssayImporterService;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
@@ -39,6 +42,7 @@ import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,12 +96,48 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException
+    public ImportStatus importData(GWTDomain gwtDomain, Map<String, String> mappedColumnNames) throws ImportException
     {
         ImportStatus status = new ImportStatus();
 
-        status.setComplete(true);
-//        status.setMessages(errors);
+        Domain domain = PropertyService.get().getDomain(gwtDomain.getDomainId());
+        if (domain != null)
+        {
+            boolean changed = false;
+
+            // for any column mappings, we want to handle by setting the import alias for the domain property
+            for (Map.Entry<String, String> entry : mappedColumnNames.entrySet())
+            {
+                if (!entry.getKey().equals(entry.getValue()))
+                {
+                    DomainProperty dp = domain.getPropertyByName(entry.getValue().toLowerCase());
+                    if (dp != null)
+                    {
+                        Set<String> alias = new LinkedHashSet<String>();
+                        alias.addAll(dp.getImportAliasSet());
+
+                        alias.add(entry.getKey());
+
+                        dp.setImportAliasSet(alias);
+                        changed = true;
+                    }
+                }
+            }
+            if (changed)
+            {
+                try {
+                    domain.save(getUser());
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw new ImportException(e.getMessage());
+                }
+            }
+
+            status.setComplete(true);
+        }
+        else
+            throw new IllegalArgumentException("Attempt to import data into a non-existent domain");
 
         return status;
     }
@@ -145,6 +185,8 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             {
                 ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
                 Domain domain = provider.getResultsDomain(protocol);
+
+                Set<String> reservedNames = domain.getDomainKind().getReservedPropertyNames(domain);
 
                 return domain.getTypeURI();
             }

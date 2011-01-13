@@ -45,6 +45,7 @@ import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -95,7 +96,7 @@ public class AssayImporter implements EntryPoint
     private void addButtonBar(RootPanel root)
     {
         HorizontalPanel btnBar = new HorizontalPanel();
-        btnBar.add(new ImageButton("Next", new ClickHandler(){
+        btnBar.add(new ImageButton("Begin import", new ClickHandler(){
             public void onClick(ClickEvent event)
             {
                 String assayName = _assayName != null ? _assayName.getString() : null;
@@ -116,6 +117,41 @@ public class AssayImporter implements EntryPoint
                     public void onSuccess(GWTProtocol protocol)
                     {
                         _protocol = protocol;
+
+                        if (_domainImporter != null)
+                        {
+                            // create the columns on the server then redirect to the assay import
+                            _domainImporter.handleImport();
+                        }
+                        else
+                            // just redirect to the assay import
+                            gotoProtocolImport();
+                    }
+                });
+            }
+        }));
+        btnBar.add(new ImageButton("Show Assay Designer", new ClickHandler(){
+            public void onClick(ClickEvent event)
+            {
+                String assayName = _assayName != null ? _assayName.getString() : null;
+
+                if (StringUtils.isEmpty(assayName))
+                {
+                    Window.alert("Please enter a valid assay name.");
+                    return;
+                }
+
+                // on import create the protocol using the assay name specified
+                getService().createProtocol(PropertyUtil.getServerProperty("providerName"), _assayName.getString(), new ErrorDialogAsyncCallback<GWTProtocol>()
+                {
+                    public void handleFailure(String message, Throwable caught)
+                    {
+                    }
+
+                    public void onSuccess(GWTProtocol protocol)
+                    {
+                        _protocol = protocol;
+                        _showEditor.setBool(true);
 
                         if (_domainImporter != null)
                         {
@@ -160,8 +196,10 @@ public class AssayImporter implements EntryPoint
         namePanel.add(new HelpPopup("Advanced Assay Designer", "This wizard allows you to quickly design an assay based on the columns in " +
                 "a spreadsheet or text file. If you want to define other custom columns check this box and the advanced " +
                 "assay designer will be displayed after the next button is clicked."));
+/*
         table.setWidget(row, 0, namePanel);
         table.setWidget(row++, 1, showEditor);
+*/
 
         WebPartPanel infoPanel = new WebPartPanel("Assay Properties", panel);
         infoPanel.setWidth("100%");
@@ -173,12 +211,17 @@ public class AssayImporter implements EntryPoint
     private void addImporterWebPart(RootPanel root)
     {
         Set<String> baseColumnNames = new HashSet<String>();
+        List<String> columnsToMap = new ArrayList<String>();
+        
         String baseColNamesString = PropertyUtil.getServerProperty("baseColumnNames");
         if (baseColNamesString != null)
         {
             String[] baseColArray = baseColNamesString.split(",");
             for (String s : baseColArray)
+            {
                 baseColumnNames.add(s);
+                columnsToMap.add(s);
+            }
         }
 
         VerticalPanel panel = new VerticalPanel();
@@ -187,7 +230,7 @@ public class AssayImporter implements EntryPoint
         root.add(columnsPanel);
 
         // create an importer instance, we will manage the buttons externally
-        _domainImporter = new AssayDomainImporter(getService(), Collections.<String>emptyList(), baseColumnNames);
+        _domainImporter = new AssayDomainImporter(getService(), columnsToMap, baseColumnNames);
         _domainImporter.setHideButtons(true);
 
         HTML title = new HTML("Columns for Assay Data");
@@ -325,7 +368,7 @@ public class AssayImporter implements EntryPoint
          * steps on a provider specific basis.
          */
         @Override
-        protected void importData(GWTDomain domain)
+        protected void onFinish()
         {
             gotoProtocolImport();
         }

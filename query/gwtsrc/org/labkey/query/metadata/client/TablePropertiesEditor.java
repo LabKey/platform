@@ -163,6 +163,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         PropertyPane<GWTTableInfo, GWTColumnInfo> formatPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Format");
         formatPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(formatPane));
         formatPane.addItem(new ConditionalFormatItem<GWTTableInfo, GWTColumnInfo>(getRootPanel(), formatPane));
+        addChangeHandler(formatPane.getChangeListener());
 
         PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Additional Properties");
         propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
@@ -171,7 +172,8 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         propertyPane.addItem(new MeasureItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new DimensionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));
-
+        addChangeHandler(propertyPane.getChangeListener());
+        
         List<PropertyPane<GWTTableInfo, GWTColumnInfo>> result = new ArrayList<PropertyPane<GWTTableInfo, GWTColumnInfo>>();
         result.add(propertyPane);
         result.add(formatPane);
