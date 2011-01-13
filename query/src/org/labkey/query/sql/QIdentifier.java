@@ -76,4 +76,10 @@ public class QIdentifier extends QFieldKey
     {
         return getTokenText();
     }
+
+    @Override
+    public boolean equalsNode(QNode other)
+    {
+        return other instanceof QIdentifier && getIdentifier().equalsIgnoreCase(((QIdentifier) other).getIdentifier());
+    }
 }

@@ -17,9 +17,15 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.UnexpectedException;
 
+import javax.servlet.ServletException;
 import java.io.PrintWriter;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.IdentityHashMap;
@@ -167,6 +173,40 @@ abstract public class QNode implements Cloneable
         }
     }
 
+    public QNode copyTree()
+    {
+        QNode ret = clone();
+        for (QNode c : children())
+            ret._children.add(c.copyTree());
+        return ret;
+    }
+
+
+    @Override
+    public boolean equals(Object other)
+    {
+        if (!(other instanceof QNode))
+            return false;
+        if (!equalsNode((QNode)other))
+            return false;
+        if (((QNode)other).childList().size() != childList().size())
+            return false;
+        for (int i=0 ; i<childList().size() ; i++)
+        {
+            if (!childList().get(i).equals(((QNode)other).childList().get(i)))
+                return false;
+        }
+        return true;
+    }
+
+
+    protected boolean equalsNode(QNode other)
+    {
+        // currently implemented by subclasses of QExpr
+        throw new UnsupportedOperationException();
+    }
+
+
     public int getLine()
     {
         return _line;
@@ -227,5 +267,56 @@ abstract public class QNode implements Cloneable
 		if (!seen)
 			for (QNode c : children())
             	c.dump(out, nl + "    |", dumped);
+    }
+
+
+
+    public static class TestCase extends Assert
+    {
+        SqlParser parser = new SqlParser();
+        private QNode p(String x)
+        {
+            List<QueryParseException> errors = new ArrayList<QueryParseException>();
+            QNode node = parser.parseExpr(x, errors);
+            assertTrue(errors.isEmpty());
+            return node;
+        }
+
+        private void assertNotEquals(Object a, Object b)
+        {
+            assertFalse(a.equals(b));
+        }
+        
+
+        private void test(String t)
+        {
+            test(t,t);
+        }
+
+        private void test(String exprA, String exprB)
+        {
+            QNode a = p(exprA);
+            QNode b = p(exprB); 
+            assertEquals(a, b);
+        }
+
+        @Test
+        public void testEquals() throws SQLException, ServletException
+        {
+            // identifiers case insensitive
+            test("a");
+            test("a","A");
+            test("a", "\"a\"");
+            test("a","\"A\"");
+
+            // string case sensitive
+            test("'a'");
+            assertNotEquals(p("'a'"), p("'A'"));
+
+            test("3 * 5 + 4");
+            test("CASE WHEN 1=1 THEN TRUE ELSE FALSE END");
+            test("fn(A,5+4)");
+            assertNotEquals(p("SUM(a)"), p("COUNT(a)"));
+        }
     }
 }

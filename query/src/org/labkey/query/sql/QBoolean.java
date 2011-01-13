@@ -58,4 +58,10 @@ public class QBoolean extends QExpr implements IConstant
     {
         return getValue().toString();
     }
+
+    @Override
+    public boolean equalsNode(QNode other)
+    {
+        return other instanceof QBoolean & getValue() == getValue();
+    }
 }

@@ -152,4 +152,12 @@ public class QAggregate extends QExpr
     {
         _distinct = distinct;
     }
+
+    @Override
+    public boolean equalsNode(QNode other)
+    {
+        return other instanceof QAggregate &&
+                ((QAggregate) other).getType() == getType() &&
+                _distinct == ((QAggregate)other)._distinct;
+    }
 }

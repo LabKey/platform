@@ -131,4 +131,17 @@ abstract public class QExpr extends QNode
         }
         return result;
     }
+
+
+    @Override
+    public QExpr copyTree()
+    {
+        return (QExpr)super.copyTree();
+    }
+
+    @Override
+    public boolean equalsNode(QNode other)
+    {
+        return getClass() == other.getClass();
+    }
 }

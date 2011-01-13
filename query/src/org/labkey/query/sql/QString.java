@@ -73,4 +73,10 @@ public class QString extends QExpr implements IConstant
     {
         return getTokenText();
     }
+
+    @Override
+    public boolean equalsNode(QNode other)
+    {
+        return other instanceof QString && getValue().equals(((QString) other).getValue());
+    }
 }

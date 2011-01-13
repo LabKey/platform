@@ -16,7 +16,6 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -29,10 +28,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,11 +42,14 @@ public class QueryPivot extends QueryRelation
 {
     QuerySelect _from;
     
-    // all columns in the select except the pivot column
-    LinkedHashMap<String,RelationColumn> _select;
+    // all columns in the select except the pivot column, in original order
+    LinkedHashMap<String,RelationColumn> _select = new LinkedHashMap<String,RelationColumn>();
 
-    // subset of 'fact' columns to pivot
-    Map<String,QAggregate.Type> _aggregates;
+    // the grouping keys (except the pivot column)
+    final HashMap<String,RelationColumn> _grouping = new HashMap<String,RelationColumn>();
+
+    // pivoted aggregate columms
+    final Map<String,QAggregate.Type> _aggregates = new HashMap<String,QAggregate.Type>();
 
     // the pivot column
     RelationColumn _pivotColumn;
@@ -59,6 +59,10 @@ public class QueryPivot extends QueryRelation
     public QueryPivot(Query query, QuerySelect from, QQuery root)
     {
         super(query);
+
+        // We may need to modify the QuerySelect a little
+        // make sure all group by columns are selected
+        // grab orderby and limit
         _from = from;
 
         QPivot pivotClause = root.getChildOfType(QPivot.class);
@@ -68,18 +72,32 @@ public class QueryPivot extends QueryRelation
 
         // this column is not selected, its values become columns
         _pivotColumn = _from.getColumn(byId.getIdentifier());
-
+        if (null == _pivotColumn)
+        {
+            parseError("Can not find pivot column: " + byId.getIdentifier(), byId);
+            return;
+        }
+        
         // get all the columns, but delete the pivot column
         _select = new LinkedHashMap<String,RelationColumn>();
         _select.putAll(_from.getAllColumns());
         _select.remove(_pivotColumn.getFieldKey().getName());
 
+        // modify QuerySelect _from (after we copy the original select list)
+        prepareQuerySelect();
+        if (!getParseErrors().isEmpty())
+            return;
+
         // inspect the agg columns
-        _aggregates = new HashMap<String,QAggregate.Type>();
         for (QNode node : aggsList.childList())
         {
             QIdentifier id = (QIdentifier)node;
             QuerySelect.SelectColumn col = _from.getColumn(id.getIdentifier());
+            if (null == col)
+            {
+                parseError("Can not find column in select list: " + id.getIdentifier(), id);
+                continue;
+            }
             QNode source = col._node;
             if (source instanceof QAs)
                 source = source.childList().get(0);
@@ -115,6 +133,31 @@ public class QueryPivot extends QueryRelation
             IConstant constant = (IConstant) node;
             _pivotValues.put(constant.getValue().toString(), constant);
         }
+    }
+
+
+    void prepareQuerySelect()
+    {
+        // undone copy order by
+        // undone copy limit
+        _from._limit = null;
+        _from._orderBy = null;
+
+        // make sure all group by columns are selected
+        Map<String, QuerySelect.SelectColumn> map = _from.getGroupByColumns();
+        boolean pivotFound = false;
+        for (Map.Entry<String, QuerySelect.SelectColumn> entry : map.entrySet())
+        {
+            if (entry.getValue() == _pivotColumn)
+            {
+                pivotFound = true;
+                continue;
+            }
+            _grouping.put(entry.getKey(), entry.getValue());
+            // find/verify
+        }
+        if (!pivotFound)
+            parseError("Could not find pivot column in group by list: " + _pivotColumn.getAlias(), null);
     }
 
 
@@ -207,18 +250,27 @@ public class QueryPivot extends QueryRelation
         private SQLFragment getSql()
         {
             String tableAlias = "_t";
-            SQLFragment sql = new SQLFragment();
+            SqlBuilder sql = new SqlBuilder(getSqlDialect());
             sql.appendComment("<QueryPivot>", getSqlDialect());
             sql.append("SELECT ");
             String comma = "";
+
             for (RelationColumn col : _select.values())
             {
                 String name = col.getFieldKey().getName();
                 boolean isAgg = _aggregates.containsKey(name);
+                boolean isKey = _grouping.containsKey(name);
 
+                if (isKey)
+                {
+                    sql.append(comma).append(col.getValueSql(tableAlias)).append(" AS ").append(col.getAlias());
+                    comma = ",\n";
+                    continue;
+                }
+                
                 if (!isAgg)
                 {
-                    sql.append(comma).append(col.getValueSql(tableAlias));
+                    sql.append(comma).append("MAX(").append(col.getValueSql(tableAlias)).append(") AS ").append(col.getAlias());
                     comma = ",\n";
                     continue;
                 }
@@ -250,14 +302,14 @@ public class QueryPivot extends QueryRelation
             sql.append("\n FROM (").append(_from._getSql(true)).append(") ").append(tableAlias).append("\n");
 
             // UNDONE: separate grouping columns from extra 'fact' columns
-            sql.append("GROUP BY ");
-            comma = "";
-            for (RelationColumn col : _select.values())
+            // sql.append("GROUP BY ");
+            sql.pushPrefix("GROUP BY ");
+            for (RelationColumn col : _grouping.values())
             {
                 if (_aggregates.containsKey(col.getFieldKey().getName()))
                     continue;
-                sql.append(comma);
                 sql.append(col.getValueSql(tableAlias));
+                sql.nextPrefix(",");
             }
             sql.appendComment("</QueryPivot>", getSqlDialect());
             return sql;
@@ -347,4 +399,21 @@ public class QueryPivot extends QueryRelation
             return null;
         }
     }
+
+    private void parseError(String message, QNode node)
+    {
+        Query.parseError(getParseErrors(), message, node);
+    }
 }
+
+
+/***  TODO
+
+  ORDER BY, LIMIT
+  case-sensitive grouping in Postgres
+  non-string pivot column (allow?)
+  dynamic pivot column list (IN not specified)
+  requires pg 8.3.7?
+  QuerySelect.getGroupByColumns() needs to be called after resolveFields()?
+
+***/

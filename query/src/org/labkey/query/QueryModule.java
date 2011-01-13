@@ -51,6 +51,7 @@ import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.ConvertType;
+import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.QueryWebPartFactory;
@@ -164,7 +165,8 @@ public class QueryModule extends DefaultModule
                 SqlParser.TestCase.class,
                 Query.TestCase.class,
                 QueryServiceImpl.TestCase.class,
-                JdbcType.TestCase.class
+                JdbcType.TestCase.class,
+                QNode.TestCase.class
         ));
     }
 

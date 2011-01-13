@@ -144,4 +144,10 @@ public class QNumber extends QExpr implements IConstant
 			return new BigDecimal(s);
 		}
 	}
+
+    @Override
+     public boolean equalsNode(QNode other)
+    {
+        return other instanceof QNumber && getValue().equals(((QNumber) other).getValue());
+    }
 }

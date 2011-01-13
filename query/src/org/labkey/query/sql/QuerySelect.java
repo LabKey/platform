@@ -56,12 +56,14 @@ public class QuerySelect extends QueryRelation
     private String _queryText = null;
     private Map<FieldKey, SelectColumn> _columns;
 
-    private QGroupBy _groupBy;
-    private QOrder _orderBy;
+    // these three fields are accessed by QueryPivot
+    QGroupBy _groupBy;
+    QOrder _orderBy;
+    QLimit _limit;
+
     private QWhere _where;
     private QWhere _having;
     QQuery _root;
-    private QLimit _limit;
     private QDistinct _distinct;
 
     private Map<FieldKey, QTable> _parsedTables;
@@ -134,6 +136,38 @@ public class QuerySelect extends QueryRelation
     }
 
 
+    /*
+     * used by QueryPivot
+     * find each group by field in the select list
+     * add a new column if we can't find it
+     */
+    Map<String,SelectColumn> getGroupByColumns()
+    {
+        // CONSIDER: find selected group keys if they are already in the select list
+        Map<String,SelectColumn> ret = new HashMap<String,SelectColumn>();
+        int index = 0;
+groupByLoop:        
+        for (QNode gb : _groupBy.childList())
+        {
+            index++;
+            for (SelectColumn c : _columns.values())
+            {
+                QNode n = c._field;
+                if (n.equals(gb))
+                {
+                    ret.put(c.getName(), c);
+                    continue groupByLoop;
+                }
+            }
+            QExpr copy = ((QExpr)gb).copyTree();
+            SelectColumn col = new SelectColumn(copy, "__gb_key__" + index);
+            _columns.put(col.getFieldKey(), col);
+            ret.put(col.getName(), col);
+        }
+        return ret;
+    }
+
+    
     private void initializeSelect()
     {
         _columns = new LinkedHashMap<FieldKey,SelectColumn>();
@@ -1299,6 +1333,14 @@ public class QuerySelect extends QueryRelation
             _field = QFieldKey.of(fk);
             _key = new FieldKey(null, fk.getName());
             _alias = _aliasManager.decideAlias(getName());
+        }
+
+        public SelectColumn(QExpr expr, String aliasPrefix)
+        {
+            _node = expr;
+            _field = expr;
+            _alias = _aliasManager.decideAlias(aliasPrefix);
+            _key = new FieldKey(null,_alias);
         }
 
         public SelectColumn(QNode node)
