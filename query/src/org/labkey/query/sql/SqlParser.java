@@ -924,6 +924,9 @@ public class SqlParser
             case SELECT:
                 q = new QSelect();
 				break;
+            case PIVOT:
+                q = new QPivot();
+                break;
             case QUERY:
                 q = new QQuery();
 				break;

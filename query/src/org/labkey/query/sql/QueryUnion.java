@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -223,11 +224,19 @@ public class QueryUnion extends QueryRelation
             dialect.limitRows(unionSql, _limit.getLimit());
         }
 
+        final SQLFragment sql = unionSql;
+        UnionTableInfoImpl ret = new UnionTableInfoImpl(this, "_union")
+        {
+            @NotNull
+            @Override
+            public SQLFragment getFromSQL(String alias)
+            {
+                SQLFragment f = new SQLFragment();
+                f.append("(").append(sql).append(") ").append(alias);
+                return f;
+            }
+        };
 
-        SQLTableInfo sti = new SQLTableInfo(_schema.getDbSchema());
-        sti.setName("_union");
-        sti.setFromSQL(unionSql);
-        UnionTableInfoImpl ret = new UnionTableInfoImpl(this, sti, "_union");
         for (UnionColumn unioncol : _unionColumns.values())
         {
             ColumnInfo ucol = new RelationColumnInfo(ret, unioncol);

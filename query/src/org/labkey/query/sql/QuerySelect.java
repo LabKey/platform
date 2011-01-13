@@ -79,7 +79,11 @@ public class QuerySelect extends QueryRelation
     private QuerySelect(@NotNull Query query, @NotNull QuerySchema schema, String alias)
     {
         super(query, schema, alias == null ? "_select" + query.incrementAliasCounter() : alias);
+
+        // subqueryTable is only for expr.createColumnInfo()
+        // should refactor so tableinfo is not necessary, maybe expr.setColumnAttributes(target)
         _subqueryTable = new SQLTableInfo(_schema.getDbSchema());
+
         _aliasManager = new AliasManager(schema.getDbSchema());
         _queryText = query._querySource;
 
@@ -868,17 +872,27 @@ public class QuerySelect extends QueryRelation
      */
     public QueryTableInfo getTableInfo()
     {
-        SQLFragment sql = _getSql(true);
+        final SQLFragment sql = _getSql(true);
         if (null == sql)
             return null;
 
-        QueryTableInfo ret = new QueryTableInfo(this, _subqueryTable, "_select");
+        QueryTableInfo ret = new QueryTableInfo(this, "_select")
+        {
+            @NotNull
+            @Override
+            public SQLFragment getFromSQL(String alias)
+            {
+                SQLFragment f = new SQLFragment();
+                f.append("(").append(sql).append(") ").append(alias);
+                return f;
+            }
+        };
+
         for (SelectColumn col : _columns.values())
         {
             ColumnInfo aliasedColumn = new RelationColumnInfo(ret, col);
             ret.addColumn(aliasedColumn);
         }
-        _subqueryTable.setFromSQL(sql);
         assert MemTracker.put(ret);
         return ret;
     }
@@ -895,7 +909,6 @@ public class QuerySelect extends QueryRelation
         if (getParseErrors().size() != 0)
             return null;
 
-        _subqueryTable.setName("_select");
         declareFields();
         if (getParseErrors().size() != 0)
             return null;

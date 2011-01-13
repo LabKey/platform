@@ -26,9 +26,15 @@ import java.util.List;
 
 public class QAggregate extends QExpr
 {
-    public static final String STDDEV = "stddev";
     public static final String COUNT = "count";
     public static final String GROUP_CONCAT = "group_concat";
+
+    public enum Type
+    {
+        COUNT, SUM, MIN, MAX, AVG, STDDEV, GROUP_CONCAT
+    }
+
+    private Type _type;
     private boolean _distinct;
 
     public QAggregate()
@@ -36,10 +42,23 @@ public class QAggregate extends QExpr
         super(QNode.class);
     }
 
+
+    public Type getType()
+    {
+        if (null == _type)
+        {
+            String function = getTokenText();
+            _type = Type.valueOf(function.toUpperCase());
+        }
+        return _type;
+    }
+    
+
     public void appendSql(SqlBuilder builder)
     {
-        String function = getTokenText();
-        if (GROUP_CONCAT.equalsIgnoreCase(function))
+        Type type = getType();
+
+        if (type == Type.GROUP_CONCAT)
         {
             SqlBuilder nestedBuilder = new SqlBuilder(builder.getDialect());
             for (QNode child : children())
@@ -50,10 +69,10 @@ public class QAggregate extends QExpr
         }
         else
         {
-            if (STDDEV.equalsIgnoreCase(function))
-            {
+            String function = type.name();
+            if (type == Type.STDDEV)
                 function = builder.getDialect().getStdDevFunction();
-            }
+
             builder.append(" " + function + "(");
             if (_distinct)
             {
@@ -83,11 +102,11 @@ public class QAggregate extends QExpr
 
     public JdbcType getSqlType()
     {
-        if (COUNT.equalsIgnoreCase(getTokenText()))
+        if (getType() == Type.COUNT)
         {
             return JdbcType.INTEGER;
         }
-        if (GROUP_CONCAT.equalsIgnoreCase(getTokenText()))
+        if (getType() == Type.GROUP_CONCAT)
         {
             return JdbcType.VARCHAR;
         }
@@ -104,7 +123,7 @@ public class QAggregate extends QExpr
     public ColumnInfo createColumnInfo(SQLTableInfo table, String alias)
     {
         ColumnInfo ret = super.createColumnInfo(table, alias);
-        if ("max".equalsIgnoreCase(getTokenText()) || "min".equalsIgnoreCase(getTokenText()))
+        if (getType() == Type.MAX || getType() == Type.MIN)
         {
             List<QNode> children = childList();
             if (children.size() == 1 && children.get(0) instanceof QField)
@@ -114,7 +133,7 @@ public class QAggregate extends QExpr
                 ret.setLabel(null);
             }
         }
-        if (GROUP_CONCAT.equalsIgnoreCase(getTokenText()))
+        if (getType() == Type.GROUP_CONCAT)
         {
             final DisplayColumnFactory originalFactory = ret.getDisplayColumnFactory();
             ret.setDisplayColumnFactory(new DisplayColumnFactory()

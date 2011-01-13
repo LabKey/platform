@@ -142,6 +142,7 @@ ON : 'on';
 OR : 'or';
 ORDER : 'order';
 OUTER : 'outer';
+PIVOT : 'pivot';
 RIGHT : 'right';
 SELECT : 'select';
 SET : 'set';
@@ -263,8 +264,8 @@ unionTerm
 
 
 select
-	: (selectFrom (whereClause)? (groupByClause (havingClause)?)?)
-	    -> ^(QUERY selectFrom whereClause? groupByClause? havingClause?)
+	: (selectFrom (whereClause)? (groupByClause (havingClause)?)? pivotClause?)
+	    -> ^(QUERY selectFrom whereClause? groupByClause? havingClause? pivotClause?)
     ;
 
 
@@ -300,6 +301,7 @@ fromRange
 	    )
 	;
 
+
 onClause
 	: ON^ logicalExpression
 	;
@@ -309,6 +311,11 @@ groupByClause
 	: GROUP^ 'by'! expression ( COMMA! expression )*
 	;
 
+
+pivotClause
+    : PIVOT^ identifierList 'by'! identifier IN! OPEN! constantList CLOSE!
+    ;
+    
 
 orderByClause
 	: ORDER^ 'by'! orderElement ( COMMA! orderElement )*
@@ -349,6 +356,16 @@ selectedPropertiesList
 aliasedSelectExpression
 	: (expression (AS? identifier)?) -> ^(ALIAS expression identifier?)
 	| starAtom
+	;
+
+
+identifierList
+	: identifier (COMMA identifier)* -> ^(EXPR_LIST identifier*)
+	;
+
+
+constantList
+	: constant (COMMA constant)* -> ^(EXPR_LIST constant*)
 	;
 
 
@@ -574,7 +591,6 @@ exprList
 	: exprListFragment -> ^(EXPR_LIST exprListFragment?)
  	;
 
-fragment
 exprListFragment
     : (expression (COMMA! expression)*)?
     ; 

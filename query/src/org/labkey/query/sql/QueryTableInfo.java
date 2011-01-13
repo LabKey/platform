@@ -24,14 +24,12 @@ import java.util.Collection;
 
 public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable
 {
-    TableInfo _subquery;
     QueryRelation _relation;
     private ContainerFilter _containerFilter;
 
-    public QueryTableInfo(QueryRelation relation, TableInfo subquery, String name)
+    public QueryTableInfo(QueryRelation relation, String name)
     {
-        super(subquery.getSchema());
-        _subquery = subquery;
+        super(relation._query.getSchema().getDbSchema());
         _relation = relation;
         setName(name);
     }
@@ -52,9 +50,12 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        // UNDONE: delay sql generation until it is asked for
-        return _subquery.getFromSQL(alias);
+        SQLFragment f = new SQLFragment();
+        SQLFragment sql = _relation.getSql();
+        f.append("(").append(sql).append(") ").append(alias);
+        return f;
     }
+
 
     @Override
     public Collection<QueryService.ParameterDecl> getNamedParameters()

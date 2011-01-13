@@ -207,16 +207,7 @@ public class Query
             _parameters = parser.getParameters();
 
 			QNode root = parser.getRoot();
-            QueryRelation relation = null;
-
-			if (root instanceof QQuery)
-			{
-				relation = new QuerySelect(this, (QQuery)root);
-			}
-			else if (root instanceof QUnion)
-			{
-				relation = new QueryUnion(this, (QUnion)root);
-			}
+            QueryRelation relation = createQueryRelation(root);
 
             if (relation == null)
                 return;
@@ -235,6 +226,25 @@ public class Query
 			throw wrapRuntimeException(ex, _querySource);
 		}
     }
+
+
+    QueryRelation createQueryRelation(QNode root)
+    {
+        if (root instanceof QUnion)
+            return new QueryUnion(this, (QUnion)root);
+
+        if (!(root instanceof QQuery))
+            return null;
+
+        QuerySelect select = new QuerySelect(this, (QQuery)root);
+
+        if (null == root.getChildOfType(QPivot.class))
+            return select;
+
+        QueryPivot pivot = new QueryPivot(this, select, (QQuery)root);
+        return pivot;
+    }
+
 
 
     /**
