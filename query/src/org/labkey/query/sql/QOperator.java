@@ -113,4 +113,11 @@ final public class QOperator extends QExpr
 
         return super.getSqlType();
     }
+
+    @Override
+    public boolean equalsNode(QNode other)
+    {
+        return other instanceof QOperator &&
+            _op == ((QOperator) other)._op;
+    }
 }

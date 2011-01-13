@@ -1119,7 +1119,10 @@ public class SqlParser
         // nested JOINS
         "SELECT R.a, \"S\".b FROM R LEFT OUTER JOIN (S RIGHT OUTER JOIN T ON S.y = T.y) ON R.x = S.x",
         // .*
-        "SELECT R.* FROM R"
+        "SELECT R.* FROM R",
+
+        // PIVOT
+        "SELECT R.a, R.b, SUM(x) sumX FROM R GROUP BY R.a, R.b PIVOT sumX BY b IN (0,1,2)"
     };
 
 
@@ -1139,7 +1142,9 @@ public class SqlParser
         // missing FROM
         "SELECT R.a WHERE R.a > 5",
         // no table name
-        "SELECT S.a AS lutefisk FROM"
+        "SELECT S.a AS lutefisk FROM",
+        // no group by
+        "SELECT R.a, R.b, SUM(x) sumX FROM R PIVOT sumX BY b IN (0,1,2)"
     };
 
 

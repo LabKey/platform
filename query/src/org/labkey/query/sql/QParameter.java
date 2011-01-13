@@ -93,4 +93,11 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
         builder.append("?");
         builder.add(this);
     }
+
+    @Override
+    public boolean equalsNode(QNode other)
+    {
+        return other instanceof QParameter &&
+                _name.equals(((QParameter)other)._name);
+    }
 }

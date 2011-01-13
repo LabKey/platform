@@ -872,6 +872,8 @@ public class Query
         // quoted identifiers
         new SqlTest("SELECT T.\"count\", T.\"Opened By\", T.Seven, T.MonthName FROM (SELECT R.d as \"count\", R.seven as \"Seven\", R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby as \"Opened By\", R.month as MonthName FROM R) T", 4, Rsize),
 
+        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6)", 2, 12), // (twelve,C), C has fk for pivot values    
+
         // saved queries
         new SqlTest("Rquery",
                 "SELECT R.rowid, R.rowid*2 as rowid2, R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R",
@@ -956,7 +958,10 @@ public class Query
         new FailTest("SELECT SUM(*) FROM R"),
         new FailTest("SELECT d FROM R A inner join R B on 1=1"),            // ambiguous
         new FailTest("SELECT A.*, B.* FROM R A inner join R B on 1=1"),     // ambiguous
-        new FailTest("SELECT R.d, seven FROM lists.R A")                    // R is hidden
+        new FailTest("SELECT R.d, seven FROM lists.R A"),                    // R is hidden
+
+        // UNDONE: should work since R.seven and seven are the same
+        new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6)"),
 	};
 
 

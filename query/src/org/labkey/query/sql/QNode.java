@@ -308,6 +308,8 @@ abstract public class QNode implements Cloneable
             test("a","A");
             test("a", "\"a\"");
             test("a","\"A\"");
+            assertNotEquals(p("a"), p("a.b"));
+            assertNotEquals(p("b"), p("a.b"));
 
             // string case sensitive
             test("'a'");
@@ -317,6 +319,9 @@ abstract public class QNode implements Cloneable
             test("CASE WHEN 1=1 THEN TRUE ELSE FALSE END");
             test("fn(A,5+4)");
             assertNotEquals(p("SUM(a)"), p("COUNT(a)"));
+            assertNotEquals(p("a+b"), p("a-b"));
+            // tree equals does not do arithmetic
+            assertNotEquals(p("1+2"), p("2+1"));
         }
     }
 }
