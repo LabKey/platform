@@ -584,7 +584,7 @@ String projectInfo(Container c, boolean returnID)
     function checkOptions(el, param)
     {
         var cat = Ext.getCmp(el)
-        if(cat)
+        if (cat)
         {
             cat = cat.getValue();
         }
@@ -699,7 +699,7 @@ String projectInfo(Container c, boolean returnID)
                             {
                                 chkbox.setValue(true);
                             }
-                            else if(params['container'] == "")
+                            else if (params['container'] == "")
                             {
                                 chkbox.setValue(true);
                             }
@@ -788,7 +788,7 @@ String projectInfo(Container c, boolean returnID)
     function showPanel()
     {
         var ppanel = Ext.get('advancedPanelDiv');
-        if(!(seen) && ppanel)
+        if (!(seen) && ppanel)
         {
             Ext.getCmp('advanced-panel').show();
             var adv = <%=form.isShowAdvanced()%>;
@@ -800,7 +800,7 @@ String projectInfo(Container c, boolean returnID)
             seen = true;
             document.getElementById('adv-search-btn').src = minus_img.src;
         }
-        else if(ppanel){
+        else if (ppanel) {
             ppanel.hide();
             hidehelp();
             seen = false;

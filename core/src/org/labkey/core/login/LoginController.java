@@ -392,7 +392,7 @@ public class LoginController extends SpringActionController
         {
             String content = "The site is currently undergoing maintenance.";
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-            if(null != wikiService)
+            if (null != wikiService)
             {
                 WikiRenderer formatter = wikiService.getRenderer(WikiRendererType.RADEOX);
                 content = formatter.format(ModuleLoader.getInstance().getAdminOnlyMessage()).getHtml();
@@ -1089,7 +1089,7 @@ public class LoginController extends SpringActionController
                 else
                 {
                     User user = UserManager.getUser(_email);
-                    if(null != user && !user.isActive())
+                    if (null != user && !user.isActive())
                         errors.reject("reset", "The password for this account may not be reset because this account has been deactivated. Please contact your administrator to re-activate this account.");
                 }
             }

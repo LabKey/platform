@@ -205,7 +205,7 @@
     <labkey:button text="Save" onclick="designer.needToPrompt = false; document.getElementById('ff_redirect').value = 'designQuery';" />
 
     <labkey:button text="Edit Source" onclick="designer.needToPrompt = false; document.getElementById('ff_redirect').value = 'sourceQuery'" />
-    <% if(form.getQueryDef().isMetadataEditable()) { %>
+    <% if (form.getQueryDef().isMetadataEditable()) { %>
         <labkey:button text="Edit Metadata" onclick="designer.needToPrompt = false; document.getElementById('ff_redirect').value = 'metadataQuery'" />
     <% } %>
     <labkey:button text="View Data" onclick="designer.needToPrompt = false; document.getElementById('ff_redirect').value = 'executeQuery'" />

@@ -60,7 +60,7 @@ if (!form.getQueryDef().isTableQueryDefinition())
 {
     %><labkey:button text="Design Query" onclick="submit_onclick('designQuery')" />&nbsp;<%
 }%>
-<% if(canEdit && form.getQueryDef().isMetadataEditable()) { %>
+<% if (canEdit && form.getQueryDef().isMetadataEditable()) { %>
     <labkey:button text="Edit Metadata" onclick="submit_onclick('metadataQuery')" />&nbsp;
 <% }
     String topic = "labkeySql";

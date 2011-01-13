@@ -93,7 +93,7 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
             if (null == model)
                 return null;
             
-            if(!perm.allowRead(model))
+            if (!perm.allowRead(model))
                 return null;
         }
         catch (SQLException e)

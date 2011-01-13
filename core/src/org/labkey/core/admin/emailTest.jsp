@@ -30,11 +30,11 @@
 message to the address specified in the 'To' text box containing the content specificed in the
 'Body' text box.</p>
 
-<% if(null != form.getException()) { %>
+<% if (null != form.getException()) { %>
 <div class="labkey-status-error">Your message could not be sent for the following reason(s):<br/>
 <%=h(form.getException().getMessage())%>
 </div>
-<% } else if(null != form.getTo()) { %>
+<% } else if (null != form.getTo()) { %>
 <div class="labkey-status-info">Your email was successfully sent to <%=h(form.getTo())%>.</div>
 <% } %>
 

@@ -63,9 +63,9 @@
 
     function getXmlHttpRequest()
     {
-        if(window.XMLHttpRequest)
+        if (window.XMLHttpRequest)
             return new XMLHttpRequest();
-        else if(window.ActiveXObject)
+        else if (window.ActiveXObject)
             return new ActiveXObject("Msxml2.XMLHTTP");
         else
             return null;
@@ -76,10 +76,10 @@
         startTime = new Date();
         var url = document.getElementById("txtUrlGet").value;
         var req = getXmlHttpRequest();
-        if(null == url || url.length == 0)
+        if (null == url || url.length == 0)
             return;
 
-        if(null == req)
+        if (null == req)
         {
             onError("Couldn't get the XMLHttpRequest object!");
             return;
@@ -91,11 +91,11 @@
         {
             req.onreadystatechange = function()
             {
-                if(req.readyState == 4)
+                if (req.readyState == 4)
                 {
-                    if(req.status == 200 && onSuccess)
+                    if (req.status == 200 && onSuccess)
                         onSuccess(req.responseText);
-                    if(req.status != 200 && onError)
+                    if (req.status != 200 && onError)
                         onError(req.statusText, req.responseText);
                 }
             };
@@ -135,14 +135,14 @@
         updateStats(responseText);
         setError(message);
         var resp = document.getElementById("lblResponse");
-        if(null != resp && null != responseText)
+        if (null != resp && null != responseText)
             resp.innerHTML = responseText;
     }
 
     function onSuccess(responseText)
     {
         var resp = document.getElementById("lblResponse");
-        if(null != resp)
+        if (null != resp)
         {
             // save the json response
             responseJSON = responseText;
@@ -160,10 +160,10 @@
         var url = document.getElementById("txtUrlPost").value;
         var req = getXmlHttpRequest();
         var postMsg = document.getElementById("txtPost").value;
-        if(null == url || url.length == 0)
+        if (null == url || url.length == 0)
             return;
 
-        if(null == req)
+        if (null == req)
         {
             onError("Couldn't get the XMLHttpRequest object!");
             return;
@@ -175,11 +175,11 @@
         {
             req.onreadystatechange = function()
             {
-                if(req.readyState == 4)
+                if (req.readyState == 4)
                 {
-                    if(req.status == 200 && onSuccess)
+                    if (req.status == 200 && onSuccess)
                         onSuccess(req.responseText);
-                    if(req.status != 200 && onError)
+                    if (req.status != 200 && onError)
                         onError(req.statusText, req.responseText);
                 }
             };
@@ -196,10 +196,10 @@
     function setStatus(msg, styleClass)
     {
         var div = document.getElementById("lblStatus");
-        if(null != div)
+        if (null != div)
         {
             div.innerHTML = msg;
-            if(null != styleClass)
+            if (null != styleClass)
                 div.className = styleClass;
             else
                 div.className = "status";
@@ -246,7 +246,7 @@
 
         var req = getXmlHttpRequest();
 
-        if(null == req)
+        if (null == req)
         {
             onError("Couldn't get the XMLHttpRequest object!");
             return;
@@ -257,11 +257,11 @@
         {
             req.onreadystatechange = function()
             {
-                if(req.readyState == 4)
+                if (req.readyState == 4)
                 {
-                    if(req.status == 200 && onSuccess)
+                    if (req.status == 200 && onSuccess)
                         showTest(req.responseText);
-                    if(req.status != 200 && onError)
+                    if (req.status != 200 && onError)
                         onError(req.statusText, req.responseText);
                 }
             };
@@ -307,7 +307,7 @@
     {
         var evt = event || window.event;
         var code = evt.charCode || evt.keyCode;
-        if(code === 13)
+        if (code === 13)
             getUrl();
     }
 

@@ -1001,10 +1001,10 @@ public class AnnouncementsController extends SpringActionController
             {
                 String rendererTypeName = (String) form.get("rendererType");
                 WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
-                if(null == currentRendererType)
+                if (null == currentRendererType)
                 {
                     WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-                    if(null != wikiService)
+                    if (null != wikiService)
                         currentRendererType = wikiService.getDefaultMessageRendererType();
                 }
                 sendNotificationEmails(insert, currentRendererType);

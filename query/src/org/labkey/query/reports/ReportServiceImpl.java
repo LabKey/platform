@@ -97,11 +97,14 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             if (_descriptors.containsKey(typeName))
             {
                 Class clazz = _descriptors.get(typeName);
-                try {
+
+                try
+                {
                     if (ReportDescriptor.class.isAssignableFrom(clazz))
                     {
                         return (ReportDescriptor)clazz.newInstance();
                     }
+
                     throw new IllegalArgumentException("The specified class: " + clazz.getName() + " is not an instance of ReportDescriptor");
                 }
                 catch (Exception e)
@@ -110,6 +113,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
                 }
             }
         }
+
         return null;
     }
 

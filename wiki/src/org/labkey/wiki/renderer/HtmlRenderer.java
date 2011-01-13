@@ -222,7 +222,7 @@ public class HtmlRenderer implements WikiRenderer
                     else
                         paramMap.put(paramMatcher.group(1), paramMatcher.group(2));
                 }
-                else if(param.trim().length() > 0)
+                else if (param.trim().length() > 0)
                     paramErrors.add(param.trim());
             }
 

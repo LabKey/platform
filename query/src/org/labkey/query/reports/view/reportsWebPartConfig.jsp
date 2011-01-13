@@ -107,7 +107,7 @@
 
     function handleSuccess(o)
     {
-        if(o.responseText !== undefined)
+        if (o.responseText !== undefined)
         {
             var status = eval("(" + o.responseText + ')');
             var row = document.getElementById('visibleSections');

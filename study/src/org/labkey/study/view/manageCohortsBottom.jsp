@@ -107,7 +107,7 @@
         <tr>
             <td><%= h(entry.getKey().getParticipantId()) %></td>
             <td><%
-                if(!study.isManualCohortAssignment())
+                if (!study.isManualCohortAssignment())
                 {
                     org.labkey.api.study.Cohort cohort = entry.getValue();
                     String label = cohort == null ? "" : cohort.getLabel();

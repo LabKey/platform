@@ -319,7 +319,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
 
                     //ensure that the user has edit perms in this container
-                    if(!canUpdateProtocols())
+                    if (!canUpdateProtocols())
                         throw new AssayException("You do not have sufficient permissions to update this Assay");
 
                     if (!protocol.getContainer().equals(getContainer()))

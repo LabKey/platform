@@ -298,7 +298,7 @@ public class ChartReportView extends AbstractReportView
         public void updatePolicy(ViewContext context, MutableSecurityPolicy policy)
         {
             super.updatePolicy(context, policy);
-            if(null != _parent)
+            if (null != _parent)
             {
                 for(Report child : _parent.getChildReports(context))
                 {

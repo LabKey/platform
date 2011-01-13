@@ -27,7 +27,7 @@
     function submitSearch()
     {
         var frm = document.getElementById("frmSearch");
-        if(frm)
+        if (frm)
             frm.submit();
     }
 </script>

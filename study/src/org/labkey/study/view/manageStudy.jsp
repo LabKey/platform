@@ -61,7 +61,7 @@
 %>
 <table>
     <%
-        if(c.hasPermission(user, AdminPermission.class))
+        if (c.hasPermission(user, AdminPermission.class))
         {
     %>
     <tr>
@@ -161,7 +161,7 @@
 <%
     } // admin permission
 
-    if(c.hasPermission(user, ManageRequestSettingsPermission.class))
+    if (c.hasPermission(user, ManageRequestSettingsPermission.class))
     {
 %>
     <%
@@ -216,7 +216,7 @@
     %>
 </table><br>
 <%
-    if(c.hasPermission(user, AdminPermission.class))
+    if (c.hasPermission(user, AdminPermission.class))
     {
 %>
 <%=generateButton("Export Study", StudyController.ExportStudyAction.class)%>

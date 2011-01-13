@@ -73,7 +73,7 @@ public class WorkbookController extends SpringActionController
         public void validateCommand(CreateWorkbookForm target, Errors errors)
         {
             StringBuilder nameError = new StringBuilder();
-            if(!Container.isLegalName(StringUtils.trimToEmpty(target.getName()), nameError))
+            if (!Container.isLegalName(StringUtils.trimToEmpty(target.getName()), nameError))
                 errors.reject(nameError.toString());
         }
 

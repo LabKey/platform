@@ -39,7 +39,7 @@ public class WikiWebPart extends BaseWikiView
         // webPartContainer and name will be null in the new webpart case
         String containerId = props.get("webPartContainer");
         Container c = (null != containerId ? ContainerManager.getForId(props.get("webPartContainer")) : getViewContext().getContainer());
-        if(null == c)
+        if (null == c)
             throw new NotFoundException("The requested wiki page does not exist in the specified container!");
 
         String name = props.get("name");

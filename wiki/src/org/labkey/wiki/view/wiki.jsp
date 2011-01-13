@@ -42,7 +42,7 @@
     ActionURL printBranchURL = new ActionURL(PrintBranchAction.class, c);
     printBranchURL.addParameter("name", wiki.getName());
 
-    if(null == c)
+    if (null == c)
     {
         %><p><span class="labkey-error">This wiki page has an invalid parent container. Please delete this page.</span></p><%
         return;

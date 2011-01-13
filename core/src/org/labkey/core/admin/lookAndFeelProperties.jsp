@@ -193,7 +193,7 @@ if (AppProps.getInstance().isDevMode())
 
     function confirmReset()
     {
-        if(confirm('Are you sure you want to clear all look & feel properties?'))
+        if (confirm('Are you sure you want to clear all look & feel properties?'))
         {
             _form.setClean();
             return true;

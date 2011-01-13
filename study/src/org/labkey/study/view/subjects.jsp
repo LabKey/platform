@@ -1,11 +1,10 @@
-<%@ page import="org.labkey.study.view.SubjectsWebPart" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="java.text.NumberFormat" %>
+<%@ page import="org.labkey.study.view.SubjectsWebPart" %>
 <%
 /*
  * Copyright (c) 2010 LabKey Corporation
@@ -67,7 +66,7 @@ ul.subjectlist {
     function onFailure(errorInfo, options, responseObj)
     {
         var html;
-        if(errorInfo && errorInfo.exception)
+        if (errorInfo && errorInfo.exception)
             html = "Failure: " + errorInfo.exception;
         else
             html = "Failure: " + responseObj.statusText;

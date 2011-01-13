@@ -92,6 +92,7 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerDescriptor(new ChartReportDescriptor());
         ReportService.get().registerDescriptor(new QueryReportDescriptor());
         ReportService.get().registerDescriptor(new RReportDescriptor());
+        ReportService.get().registerDescriptor(new JavaScriptReportDescriptor());
 
         ReportService.get().registerReport(new QueryReport());
         ReportService.get().registerReport(new ChartQueryReport());

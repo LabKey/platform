@@ -1885,7 +1885,7 @@ public class IssuesController extends SpringActionController
         formattedComment.append(sbHTMLChanges);
         //render issues as plain text with links
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-        if(null != wikiService)
+        if (null != wikiService)
         {
             WikiRenderer w = wikiService.getRenderer(WikiRendererType.TEXT_WITH_LINKS);
             formattedComment.append(w.format(comment).getHtml());

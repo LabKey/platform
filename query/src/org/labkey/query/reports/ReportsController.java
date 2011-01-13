@@ -1685,27 +1685,34 @@ public class ReportsController extends SpringActionController
 
                 // may need a better way to determine sections, do we want to add to the interface?
                 response.put("success", true);
+
                 if (report instanceof RReport)
                 {
                     List<String> sectionNames = Collections.emptyList();
+
                     if (sections != null)
                     {
                         sections = PageFlowUtil.decode(sections);
                         sectionNames = Arrays.asList(sections.split("&"));
                     }
+
                     String script = report.getDescriptor().getProperty(RReportDescriptor.Prop.script);
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
+
                     for (ParamReplacement param : ParamReplacementSvc.get().getParamReplacements(script))
                     {
                         sb.append("<option value=\"");
                         sb.append(PageFlowUtil.filter(param.getName()));
+
                         if (sectionNames.contains(param.getName()))
                             sb.append("\" selected>");
                         else
                             sb.append("\">");
+
                         sb.append(PageFlowUtil.filter(param.toString()));
                         sb.append("</option>");
                     }
+
                     if (sb.length() > 0)
                         response.put("sectionNames", sb.toString());
                 }

@@ -64,7 +64,7 @@ if (!ft.isWorkbookType())
         requiredModules["<%=ft.getName()%>"] =  [<%
         for (Module m : ft.getActiveModules())
         {
-            if(null != m) //FIX: 4612: active module might not be present in the build
+            if (null != m) //FIX: 4612: active module might not be present in the build
             {
                 out.print(arraySep + "\"" + m.getName() + "\"");
                 arraySep = ",";
@@ -122,7 +122,7 @@ function updateDefaultOptions()
     var defaultDropdown = document.folderModules.defaultModule;
 
     var defaultName = "";
-    if(defaultDropdown.selectedIndex > -1 && defaultDropdown.options.length > 0)
+    if (defaultDropdown.selectedIndex > -1 && defaultDropdown.options.length > 0)
         defaultName = defaultDropdown.options[defaultDropdown.selectedIndex].value;
 
     defaultDropdown.options.length = 0;

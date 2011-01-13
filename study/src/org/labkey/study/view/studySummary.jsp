@@ -46,7 +46,7 @@
                 ActionURL importStudyURL = new ActionURL(StudyController.ImportStudyAction.class, c);
                 out.println(generateButton("Import Study", importStudyURL));
             }
-            else if(PipelineService.get().canModifyPipelineRoot(user, c))
+            else if (PipelineService.get().canModifyPipelineRoot(user, c))
             {
                 ActionURL pipelineURL = urlProvider(PipelineUrls.class).urlSetup(c);
                 out.println(generateButton("Pipeline Setup", pipelineURL));

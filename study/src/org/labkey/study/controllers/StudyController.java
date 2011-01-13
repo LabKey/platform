@@ -835,7 +835,7 @@ public class StudyController extends BaseStudyController
                     isAssayDataset = false;
             }
 
-            if(!isSnapshot && canWrite && !isAssayDataset)
+            if (!isSnapshot && canWrite && !isAssayDataset)
             {
                 ActionButton insertButton = queryView.createInsertButton();
                 if (insertButton != null)
@@ -1613,7 +1613,7 @@ public class StudyController extends BaseStudyController
                     errors.reject(null, "Unsupported operation for continuous date study");
                 
                 target.validate(errors, study);
-                if(errors.getErrorCount() > 0)
+                if (errors.getErrorCount() > 0)
                     return;
 
                 //check for overlapping visits
@@ -1806,7 +1806,7 @@ public class StudyController extends BaseStudyController
                     errors.reject(null, "Unsupported operation for continuous date study");
 
                 target.validate(errors, study);
-                if(errors.getErrorCount() > 0)
+                if (errors.getErrorCount() > 0)
                     return;
 
                 //check for overlapping visits

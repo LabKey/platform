@@ -97,11 +97,13 @@ function orderModule(down)
 function reorderDisabled()
 {
     var radios = document.reorder.resetToAlphabetical;
-    for(var i = 0; i < radios.length; i++)
+
+    for (var i = 0; i < radios.length; i++)
     {
-		if(radios[i].checked)
+		if (radios[i].checked)
 			return radios[i].value == "true";
 	}
+
     return false;
 }
 

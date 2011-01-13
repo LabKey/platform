@@ -56,7 +56,7 @@ public class WorkbookQueryView extends QueryView
     {
         DataView view = super.createDataView();
         DataRegion region = view.getDataRegion();
-        if(region.getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
+        if (region.getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
         {
             ButtonBar bar = region.getButtonBar(DataRegion.MODE_GRID);
             if (null != bar)

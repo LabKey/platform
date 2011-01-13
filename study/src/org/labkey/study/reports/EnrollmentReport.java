@@ -58,7 +58,6 @@ import java.util.Collections;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Feb 22, 2006
  * Time: 1:11:18 PM

@@ -37,7 +37,7 @@
 %>
 <labkey:errors />
 
-<% if(!bean.isActive()) {%>
+<% if (!bean.isActive()) {%>
 <div class="labkey-error"><b>NOTE:</b> This user account has been disabled, and thus has no permissions.
 However, If this account is re-enabled, it would have the following permissions.</div>
 <% } %>

@@ -123,7 +123,7 @@ function onSuccess(response, config)
 {
     //parse the response text as JSON
     var json = Ext.util.JSON.decode(response.responseText);
-    if(null != json)
+    if (null != json)
     {
         //add the page list to the global map so that we don't need to fetch it again
         m[config.params.id] = json.pages;
@@ -135,14 +135,14 @@ function onSuccess(response, config)
 
 function onError(response, config)
 {
-    if(response.status >= 500 && response.status <= 599)
+    if (response.status >= 500 && response.status <= 599)
     {
         //exception thrown within the server
         //parse the response text as JSON
         var json = Ext.util.JSON.decode(response.responseText);
         window.alert("The server experienced the following error: " + json.exception);
     }
-    else if(response.status >= 400 && response.status <= 499)
+    else if (response.status >= 400 && response.status <= 499)
     {
         //invalid container id
         var json = Ext.util.JSON.decode(response.responseText);
@@ -160,7 +160,7 @@ function onError(response, config)
 
 function restoreDefaultPage()
 {
-    if(!currentContainerId)
+    if (!currentContainerId)
         return;
 
     //set webPartContainer select value to current container

@@ -688,7 +688,7 @@ public class PipelineController extends SpringActionController
                         if (roleName == null)
                             continue;
                         Role role = RoleManager.getRole(roleName);
-                        if(null == role)
+                        if (null == role)
                             continue;
                         policy.addRoleAssignment(g, role);
                     }
