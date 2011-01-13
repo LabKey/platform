@@ -1696,7 +1696,7 @@ public class ReportsController extends SpringActionController
                         sectionNames = Arrays.asList(sections.split("&"));
                     }
 
-                    String script = report.getDescriptor().getProperty(RReportDescriptor.Prop.script);
+                    String script = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
                     StringBuilder sb = new StringBuilder();
 
                     for (ParamReplacement param : ParamReplacementSvc.get().getParamReplacements(script))
