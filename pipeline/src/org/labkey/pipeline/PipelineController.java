@@ -422,6 +422,7 @@ public class PipelineController extends SpringActionController
             bean.setShowDetails(true);
             bean.setAutoResize(false);
             bean.setStatePrefix(context.getContainer().getId() + "#fileContent");
+            bean.setFileUploadCollapsed(true);
 
             // pipeline is always enabled
             bean.setEnabled(true);

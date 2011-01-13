@@ -2852,7 +2852,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 this.applet.setEnabled(true);
                 this.applet.setAllowDirectoryUpload(canMkdir);
-                this.applet.setText( (canMkdir ? "Drop files and folders here" : "Drop files here")); // + "\nFolder: " +record.data.name);
+                this.applet.setText( (canMkdir ? "Drag and drop files and folders here\ndirectly from your computer" : "Drag and drop files here directly\nfrom your computer")); // + "\nFolder: " +record.data.name);
             }
             else
             {
@@ -3109,6 +3109,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         var items = [];
         var tbarConfig = {enableOverflow: true, items: items};
+        this.uploadEnabled = false;
 
         if (!this.tbarItems)
         {
@@ -3127,6 +3128,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             for (var i=0 ; i<this.tbarItems.length ; i++)
             {
                 var item = this.tbarItems[i];
+
+                if (item == 'upload')
+                    this.uploadEnabled = true;
+
                 if (typeof item == "string" && typeof this.actions[item] == "object")
                     items.push(this.actions[item]);
                 else
@@ -3155,6 +3160,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         actions.upload = new Ext.Action({
             text: 'Upload Files',
+            enableToggle: true,
+            pressed: !this.fileUploadCollapsed,
             iconCls: 'iconUpload',
             disabledClass:'x-button-disabled',
             tooltip: 'Upload files or folders from your local machine to the server',
@@ -3185,6 +3192,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         actions.folderTreeToggle = new Ext.Action({
             text: 'Toggle Folder Tree',
+            enableToggle: true,
             iconCls: 'iconFolderTree',
             disabledClass:'x-button-disabled',
             tooltip: 'Show or hide the folder tree',
@@ -3255,13 +3263,26 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }, scope:this}
             });
 
+            // the description field is hidden by default until a file is selected
+            this.descriptionField = new Ext.form.TextField({hidden:true, name: 'description', fieldLabel: 'Description', width: 350});
+            this.descriptionField.on('render', function(cmp){cmp.label.setVisible(false);});
+
+            // disable the upload button until a file is selected
+            var uploadBtnId = Ext.id();
+            this.fileUploadField.on('fileselected', function(){
+                var btn = Ext.getCmp(uploadBtnId);
+                if (btn)
+                    btn.enable();
+                this.descriptionField.label.setVisible(true);
+                this.descriptionField.setVisible(true);
+            }, this);
+
             this.uploadPanel = new Ext.FormPanel({
                 method : 'POST',
                 fileUpload: true,
                 enctype:'multipart/form-data',
                 border:false,
                 stateful: false,
-                height: 145,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 buttonAlign: 'left',
                 items: [
@@ -3269,17 +3290,16 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                         xtype: 'radiogroup',
                         fieldLabel: 'File Upload Type',
                         columns:2,
-                        width: 350,
+                        width: 300,
                         items: [
                             uploadPanel_rb1,
                             uploadPanel_rb2
                         ]},
-                    this.fileUploadField,
-                    {xtype: 'textfield', name: 'description', fieldLabel: 'Description', width: 350}
-                ],
-                buttons:[
-                    {text: 'Submit', handler:this.submitFileUploadForm, scope:this},
-                    {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel(this.uploadPanel.getId());}, scope:this}}
+                    {xtype:'compositefield', items:[
+                        this.fileUploadField,
+                        {xtype:'displayfield', value: '&nbsp;&nbsp;'},
+                        {xtype:'button', id: uploadBtnId, disabled: true, text: 'Upload', handler:this.submitFileUploadForm, scope:this}]},
+                    this.descriptionField
                 ],
                 listeners: {
                     "actioncomplete" : {fn: this.uploadSuccess, scope: this},
@@ -3302,12 +3322,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.progressBar = new Ext.ProgressBar();
             this.appletStatusBar = new LABKEY.ext.StatusBar({
                 defaultText:'', busyText:'Copying...',
-                width: 200,
+                width: 400,
                 hidden: true,
                 statusAlign: 'right',
                 style : 'background-color:#f0f0f0;',
                 items:[{
-                    xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:100, minWidth:100
+                    xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:250, minWidth:250
                 }]
             });
 
@@ -3321,8 +3341,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.uploadMultiPanel = new Ext.FormPanel({
                 border:false,
                 stateful: false,
-                height: 145,
-                bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 buttonAlign: 'left',
                 items: [{
                     xtype: 'radiogroup',
@@ -3333,13 +3351,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                         uploadMultiPanel_rb1,
                         uploadMultiPanel_rb2
                     ]},
-                    this.appletPanel
-                ],
-                buttons:[
-                    new Ext.Button(this.actions.appletFileAction),
-                    new Ext.Button(this.actions.appletDirAction),
-                    {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel(this.uploadMultiPanel.getId());}, scope:this}},
-                    this.appletStatusBar
+                    {xtype:'compositefield', items:[this.appletPanel, {xtype:'displayfield', value:'&nbsp;OR&nbsp;'},
+                        new Ext.Panel({border:false, bodyStyle : 'background-color:#f0f0f0', items:[
+                            new Ext.Button(this.actions.appletFileAction), 
+                            new Ext.Button(this.actions.appletDirAction)]})]}
                 ]
             });
             this.uploadMultiPanel.on('beforeshow', function(c){uploadMultiPanel_rb1.setValue(false); uploadMultiPanel_rb2.setValue(true);}, this);
@@ -3348,6 +3363,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 region: 'north',
                 collapseMode: 'mini',
                 layout: 'card',
+                height: 135,
+                defaults: {
+                    labelWidth: 130,
+                    labelAlign: 'right',
+                    labelPad: 15,
+                    bodyStyle : 'background-color:#f0f0f0'
+                },
                 activeItem: this.uploadPanel.getId(),
                 header: false,
                 margins:'0 0 0 0',
@@ -3355,10 +3377,23 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 bodyStyle: 'background-color:#f0f0f0;',
                 cmargins:'0 0 0 0',
                 collapsible: true,
-                collapsed: true,
+                collapsed: this.fileUploadCollapsed || !this.uploadEnabled,
                 hideCollapseTool: true,
                 deferredRender: false,
-                items: [this.uploadPanel, this.uploadMultiPanel]
+                items: [this.uploadPanel, this.uploadMultiPanel],
+                tbar: {
+                    height: 25,
+                    style:{backgroundColor :'#f0f0f0'},
+                    items:[ this.appletStatusBar,
+                            '->',{iconCls:'iconClose', tooltip:'Close the file upload panel', scope: this,
+                            handler: function(){
+                                this.fileUploadPanel.collapse();
+                                this.actions.upload.each(function(cmp){
+                                    cmp.toggle(false);                                    
+                                });
+                            }}
+                    ]
+                }
             });
 
             layoutItems.push(this.fileUploadPanel);
