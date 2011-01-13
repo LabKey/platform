@@ -223,6 +223,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         if (publishConfirmForm.isAttemptPublish() && publishConfirmForm.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
         {
             postedVisits = new HashMap<Object, String>();
+            postedDates = new HashMap<Object, String>();
             postedPtids = new HashMap<Object, String>();
             postedTargetStudies = new HashMap<Object, String>();
             attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids);
