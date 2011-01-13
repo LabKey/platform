@@ -42,7 +42,7 @@ import java.util.Map;
 
 public class QuerySettings
 {
-    public static final String URL_PARAMETER_MARKER = "!";
+    public static final String URL_PARAMETER_PREFIX = "param.";
     private String _schemaName;
     private String _queryName;
     private String _viewName;
@@ -294,7 +294,7 @@ public class QuerySettings
     
     void _parseQueryParameters(PropertyValues pvs)
     {
-        String paramPrefix = (StringUtils.defaultString(getDataRegionName(),"") + URL_PARAMETER_MARKER).toLowerCase();
+        String paramPrefix = param(URL_PARAMETER_PREFIX).toLowerCase();
         for (PropertyValue pv : pvs.getPropertyValues())
         {
             if (!pv.getName().toLowerCase().startsWith(paramPrefix))

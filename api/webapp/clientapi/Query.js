@@ -38,7 +38,7 @@ LABKEY.Query = new function()
 {
     function sendJsonQueryRequest(config)
     {
-        if(config.timeout)
+        if (config.timeout)
             Ext.Ajax.timeout = config.timeout;
 
         var dataObject = {
@@ -70,13 +70,13 @@ LABKEY.Query = new function()
 
     function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope)
     {
-        if(!callbackFn)
+        if (!callbackFn)
             Ext.Msg.alert("Coding Error!", "You must supply a successCallback function in your configuration object!");
 
         return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
-            if(data && data.rows && stripHiddenCols)
+            if (data && data.rows && stripHiddenCols)
                 stripHiddenColData(data);
-            if(callbackFn)
+            if (callbackFn)
                 callbackFn.call(scope || this, data, options, response);
         }, this);
     }
@@ -90,7 +90,7 @@ LABKEY.Query = new function()
         var colModel = data.columnModel;
         for(var idx = 0; idx < colModel.length; ++idx)
         {
-            if(colModel[idx].hidden)
+            if (colModel[idx].hidden)
                 hiddenCols.push(colModel[idx].dataIndex);
             else
             {
@@ -204,7 +204,7 @@ LABKEY.Query = new function()
          */
         executeSql : function(config)
         {
-            if(config.timeout)
+            if (config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
             var dataObject = {
@@ -213,15 +213,15 @@ LABKEY.Query = new function()
             };
 
             //set optional parameters
-            if(config.maxRows && config.maxRows >= 0)
+            if (config.maxRows && config.maxRows >= 0)
                 dataObject.maxRows = config.maxRows;
-            if(config.offset && config.offset > 0)
+            if (config.offset && config.offset > 0)
                 dataObject.offset = config.offset;
 
-            if(config.containerFilter)
+            if (config.containerFilter)
                 dataObject.containerFilter = config.containerFilter;
 
-            if(config.requiredVersion)
+            if (config.requiredVersion)
                 dataObject.apiVersion = config.requiredVersion;
 
             var qsParams;
@@ -361,7 +361,7 @@ LABKEY.Query = new function()
 &lt;script type="text/javascript"&gt;
 	function onFailure(errorInfo, options, responseObj)
 	{
-	    if(errorInfo && errorInfo.exception)
+	    if (errorInfo && errorInfo.exception)
 	        alert("Failure: " + errorInfo.exception);
 	    else
 	        alert("Failure: " + responseObj.statusText);
@@ -387,7 +387,7 @@ LABKEY.Query = new function()
         selectRows : function(config)
         {
             //check for old-style separate arguments
-            if(arguments.length > 1)
+            if (arguments.length > 1)
             {
                 config = {
                     schemaName: arguments[0],
@@ -400,9 +400,9 @@ LABKEY.Query = new function()
                 };
             }
 
-            if(!config.schemaName)
+            if (!config.schemaName)
                 throw "You must specify a schemaName!";
-            if(!config.queryName)
+            if (!config.queryName)
                 throw "You must specify a queryName!";
 
             var dataObject = this.buildQueryParams(
@@ -414,12 +414,12 @@ LABKEY.Query = new function()
 
             if (!config.showRows || config.showRows == 'paginated')
             {
-                if(config.offset)
+                if (config.offset)
                     dataObject['query.offset'] = config.offset;
 
-                if(config.maxRows != undefined)
+                if (config.maxRows != undefined)
                 {
-                    if(config.maxRows < 0)
+                    if (config.maxRows < 0)
                         dataObject['query.showRows'] = "all";
                     else
                         dataObject['query.maxRows'] = config.maxRows;
@@ -431,25 +431,29 @@ LABKEY.Query = new function()
             }
 
 
-            if(config.viewName)
+            if (config.viewName)
                 dataObject['query.viewName'] = config.viewName;
 
-            if(config.columns)
+            if (config.columns)
                 dataObject['query.columns'] = Ext.isArray(config.columns) ? config.columns.join(",") : config.columns;
 
             if (config.selectionKey)
                 dataObject['query.selectionKey'] = config.selectionKey;
 
-            if(config.timeout)
+            if (config.parameters)
+                for (var propName in config.parameters)
+                    dataObject['query.param.' + propName] = config.parameters[propName];
+
+            if (config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
-            if(config.requiredVersion)
+            if (config.requiredVersion)
                 dataObject.apiVersion = config.requiredVersion;
 
-            if(config.containerFilter)
+            if (config.containerFilter)
                 dataObject.containerFilter = config.containerFilter;
 
-            if(config.includeTotalCount)
+            if (config.includeTotalCount)
                 dataObject.includeTotalCount = config.includeTotalCount;
 
             Ext.Ajax.request({
@@ -490,7 +494,7 @@ LABKEY.Query = new function()
         */
         updateRows : function(config)
         {
-            if(arguments.length > 1)
+            if (arguments.length > 1)
                 config = configFromArgs(arguments);
             config.action = "updateRows";
             sendJsonQueryRequest(config);
@@ -528,9 +532,9 @@ LABKEY.Query = new function()
         */
         saveRows : function(config)
         {
-            if(config.length > 1)
+            if (config.length > 1)
                 config = configFromArgs(arguments);
-            if(config.timeout)
+            if (config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
             Ext.Ajax.request({
@@ -598,7 +602,7 @@ LABKEY.Query = new function()
         */
         insertRows : function(config)
         {
-            if(arguments.length > 1)
+            if (arguments.length > 1)
                 config = configFromArgs(arguments);
             config.action = "insertRows";
             sendJsonQueryRequest(config);
@@ -632,7 +636,7 @@ LABKEY.Query = new function()
         */
         deleteRows : function(config)
         {
-            if(arguments.length > 1)
+            if (arguments.length > 1)
                 config = configFromArgs(arguments);
             config.action = "deleteRows";
             sendJsonQueryRequest(config);
@@ -809,13 +813,13 @@ LABKEY.Query = new function()
         getQueryViews : function(config)
         {
             var params = {};
-            if(config.schemaName)
+            if (config.schemaName)
                 params.schemaName = config.schemaName;
-            if(config.queryName)
+            if (config.queryName)
                 params.queryName = config.queryName;
-            if(config.viewName)
+            if (config.viewName)
                 params.viewName = config.viewName;
-            if(config.metadata)
+            if (config.metadata)
                 params.metadata = config.metadata;
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryViews', config.containerPath),
@@ -984,7 +988,7 @@ LABKEY.Query = new function()
                 success: LABKEY.Utils.getCallbackWrapper(function(json){
                     var d;
                     var onSuccess = LABKEY.Utils.getOnSuccess(config);
-                    if(json && json.date && onSuccess)
+                    if (json && json.date && onSuccess)
                     {
                         d = new Date(json.date);
                         onSuccess(d);

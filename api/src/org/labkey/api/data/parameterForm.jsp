@@ -54,7 +54,7 @@ Ext.onReady(function()
         if (p.jsontype == 'int')
             item.decimalPrecision=0;
         item.fieldLabel = p.name;
-        item.name = dataregion + "!" + p.name;
+        item.name = dataregion + ".param." + p.name;
         item.value=p.value;
         items.push(item);
     }
