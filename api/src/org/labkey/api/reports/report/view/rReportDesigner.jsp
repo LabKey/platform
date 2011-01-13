@@ -305,7 +305,7 @@
             req.open("POST", "<%=urlProvider(ReportUrls.class).urlSaveRReportState(c).getLocalURIString()%>");
             req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             req.send(url);
-        }
+        };
 
         function processRequest()
         {

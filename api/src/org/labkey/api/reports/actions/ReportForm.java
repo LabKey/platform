@@ -20,7 +20,6 @@ import org.labkey.api.view.ViewForm;
 import org.springframework.validation.BindException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jan 30, 2008
  */

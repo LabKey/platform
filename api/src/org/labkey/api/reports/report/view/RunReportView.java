@@ -28,7 +28,6 @@ import java.io.PrintWriter;
 import java.net.URISyntaxException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Feb 5, 2008
  */

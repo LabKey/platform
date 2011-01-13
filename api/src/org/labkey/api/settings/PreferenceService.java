@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Stack;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jan 19, 2007
  */

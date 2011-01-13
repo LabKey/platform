@@ -69,6 +69,7 @@
             {
                 %>No handler for view: <%=h(tabId)%><%
             }
-        %></div>
+        %>
+        </div>
     </div>
 </div>
