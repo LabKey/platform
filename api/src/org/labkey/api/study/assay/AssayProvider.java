@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -95,7 +96,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /** @return may return null if no results/data are tracked by this assay type */
     @Nullable
-    TableInfo createDataTable(AssaySchema schema, ExpProtocol protocol);
+    ContainerFilterable createDataTable(AssaySchema schema, ExpProtocol protocol);
 
     ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol);
 

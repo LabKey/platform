@@ -105,21 +105,26 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 
     public ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
+        return copyToStudy(this, viewContext, protocol, study, dataKeys, errors);
+    }
+
+    public static ActionURL copyToStudy(AbstractAssayProvider provider, ViewContext viewContext, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
+    {
         try
         {
             SimpleFilter filter = new SimpleFilter();
-            filter.addInClause(getTableMetadata().getResultRowIdFieldKey().toString(), dataKeys.keySet());
+            filter.addInClause(provider.getTableMetadata().getResultRowIdFieldKey().toString(), dataKeys.keySet());
 
             AssaySchema schema = AssayService.get().createSchema(viewContext.getUser(), viewContext.getContainer());
-            FilteredTable dataTable = createDataTable(schema, protocol);
+            ContainerFilterable dataTable = provider.createDataTable(schema, protocol);
             dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(viewContext.getUser()));
             List<ColumnInfo> columns = dataTable.getColumns();
             SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns, filter,
-                    new Sort(getTableMetadata().getResultRowIdFieldKey().toString()), Table.ALL_ROWS, 0);
+                    new Sort(provider.getTableMetadata().getResultRowIdFieldKey().toString()), Table.ALL_ROWS, 0);
 
             List<Map<String, Object>> dataMaps = new ArrayList<Map<String, Object>>();
 
-            CopyToStudyContext context = new CopyToStudyContext(protocol, viewContext.getUser());
+            AbstractAssayProvider.CopyToStudyContext context = provider.new CopyToStudyContext(protocol, viewContext.getUser());
 
             Container sourceContainer = null;
 
@@ -131,7 +136,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             Set<PropertyDescriptor> tempTypes = typeList;
 
             Map<PropertyDescriptor, ColumnInfo> pdsToColumns = new HashMap<PropertyDescriptor, ColumnInfo>();
-            for (DomainProperty prop : getResultsDomain(protocol).getProperties())
+            for (DomainProperty prop : provider.getResultsDomain(protocol).getProperties())
             {
                 for (ColumnInfo column : columns)
                 {
@@ -160,8 +165,8 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                     TimepointType studyType = AssayPublishService.get().getTimepointType(targetStudyContainer);
                     if (tempTypes != null)
                     {
-                        tempTypes.add(createPublishPropertyDescriptor(targetStudyContainer, "ObjectId", PropertyType.INTEGER));
-                        tempTypes.add(createPublishPropertyDescriptor(targetStudyContainer, "SourceLSID", PropertyType.INTEGER));
+                        tempTypes.add(provider.createPublishPropertyDescriptor(targetStudyContainer, "ObjectId", PropertyType.INTEGER));
+                        tempTypes.add(provider.createPublishPropertyDescriptor(targetStudyContainer, "SourceLSID", PropertyType.INTEGER));
                     }
 
                     Map<String, Object> dataMap = new HashMap<String, Object>();
@@ -171,12 +176,12 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                         PropertyDescriptor pd = entry.getKey();
                         // We should skip properties that are set by the resolver: participantID,
                         // and either date or visit, depending on the type of study
-                        boolean skipProperty = PARTICIPANTID_PROPERTY_NAME.equals(pd.getName());
+                        boolean skipProperty = AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(pd.getName());
 
                         if (TimepointType.DATE == studyType)
-                            skipProperty = skipProperty || DATE_PROPERTY_NAME.equals(pd.getName());
+                            skipProperty = skipProperty || AbstractAssayProvider.DATE_PROPERTY_NAME.equals(pd.getName());
                         else // it's visit-based
-                            skipProperty = skipProperty || VISITID_PROPERTY_NAME.equals(pd.getName());
+                            skipProperty = skipProperty || AbstractAssayProvider.VISITID_PROPERTY_NAME.equals(pd.getName());
 
                         if (!skipProperty)
                         {
@@ -193,7 +198,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                                     }
                                 }
                             }
-                            addProperty(pd, value, dataMap, tempTypes);
+                            provider.addProperty(pd, value, dataMap, tempTypes);
                         }
                     }
 
@@ -211,12 +216,12 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                     dataMap.put("TargetStudy", targetStudyContainer);
 
                     // CONSIDER: only add run publish properties to target study dataset (avoiding extra columns)
-                    addStandardRunPublishProperties(targetStudyContainer, tempTypes, dataMap, run, context);
+                    provider.addStandardRunPublishProperties(targetStudyContainer, tempTypes, dataMap, run, context);
 
                     dataMaps.add(dataMap);
                     tempTypes = null;
                 }
-                
+
                 return AssayPublishService.get().publishAssayData(viewContext.getUser(), sourceContainer, study, protocol.getName(), protocol,
                         dataMaps, new ArrayList<PropertyDescriptor>(typeList), "ObjectId", errors);
             }
