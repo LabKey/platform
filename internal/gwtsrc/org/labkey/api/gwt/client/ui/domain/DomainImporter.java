@@ -27,6 +27,7 @@ import com.google.gwt.user.client.ui.FormSubmitEvent;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Panel;
@@ -39,6 +40,7 @@ import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.incubator.ProgressBar;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +59,7 @@ import java.util.Set;
 public class DomainImporter
 {
     private DomainImporterServiceAsync service;
+    private GWTDomain _domain;
 
     /**
      * Contains the list of columns from the data file that must be mapped
@@ -83,7 +86,7 @@ public class DomainImporter
     private ProgressBarText progressBarText;
     private ProgressBar progressBar = null;
     private List<InferencedColumn> columns;
-    private DomainImportGrid grid;
+    private DomainImportGrid<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> grid;
     private ColumnMapper columnMapper;
 
     private boolean cancelRequested = false;
@@ -202,21 +205,12 @@ public class DomainImporter
         else
             ignoredColumns = new HashSet<String>(); // emptySet is not serializable
         List<GWTPropertyDescriptor> newProps = newDomain.getFields();
-        for (InferencedColumn column : columns)
+        for (GWTPropertyDescriptor prop : grid.getColumns())
         {
             // Don't create properties for columns we're mapping, or that are already in the base table
-            GWTPropertyDescriptor prop = column.getPropertyDescriptor();
             String propName = prop.getName();
             if (ignoredColumns.contains(propName) || baseColumnNames.contains(propName.toLowerCase()))
                 continue;
-
-            DomainImportGrid.Type selectedType = grid.getTypeForColumn(column);
-            if (selectedType != null)
-            {
-                prop.setRangeURI(selectedType.getXsdType());
-                boolean isMvEnabled = grid.isMVEnabledForColumn(column);
-                prop.setMvEnabled(isMvEnabled);
-            }
 
             newProps.add(prop);
         }
@@ -347,9 +341,9 @@ public class DomainImporter
         if (grid == null)
         {
             needGridAndButtons = true;
-            grid = new DomainImportGrid();
+            grid = new DomainImportGrid(service, _domain);
             VerticalPanel gridPanel = new VerticalPanel();
-            gridPanel.add(new HTML("Showing first " + columns.get(0).getData().size() + " rows:<p>"));
+            gridPanel.add(new HTML("Showing first " + columns.get(0).getData().size() + " rows (uncheck column checkboxes to ignore import):<p>"));
             gridPanel.add(grid);
             mainPanel.add(gridPanel);
         }
@@ -486,7 +480,7 @@ public class DomainImporter
     public static native void back() /*-{
         $wnd.history.back();
     }-*/;
-
+    
     private class UploadFormHandler extends ErrorDialogAsyncCallback<List<InferencedColumn>> implements FormHandler
     {
         public void onSubmit(FormSubmitEvent event)
@@ -551,7 +545,12 @@ public class DomainImporter
             super();
             columnSelectors = new ArrayList<ListBox>();
 
-            add(new HTML("Column Mapping:"));
+            add(new HTML("<br/>"));
+            add(new HTML("<b>Column Mapping:</b>"));
+            add(new InlineHTML("The list below are columns that already exist in the Domain and can be mapped with the " +
+                    "inferred columns from the uploaded file.<br>Establish a mapping by selecting a column from the dropdown list to match " +
+                    "the exising Domain column.<br>When the data is imported, the data from the inferred column will be added to the " +
+                    "mapped Domain column.<br>To ignore a mapping, select '&lt;none&gt;' from the dropdown list.<br/><br/>"));
 
             Grid mappingGrid = new Grid(columnsToMap.size(), 3);
             add(mappingGrid);
@@ -561,14 +560,16 @@ public class DomainImporter
                 String destinationColumn = columnsToMap.get(row);
                 ListBox selector = new ListBox();
                 selector.setName(destinationColumn);
-                int rowToSelect = row;
+                int rowToSelect = 0;
+
+                selector.addItem("<none>", null);
                 for (int inferencedIndex = 0; inferencedIndex < columns.size(); inferencedIndex++)
                 {
                     InferencedColumn column = columns.get(inferencedIndex);
                     String name = column.getPropertyDescriptor().getName();
                     selector.addItem(name);
                     if (areColumnNamesEquivalent(name,destinationColumn))
-                        rowToSelect = inferencedIndex;
+                        rowToSelect = inferencedIndex + 1;
                 }
                 selector.setItemSelected(rowToSelect, true); // Cascade down the columns
                 columnSelectors.add(selector);
@@ -584,7 +585,9 @@ public class DomainImporter
             Set<String> columnNames = new HashSet<String>();
             for (ListBox listBox : columnSelectors)
             {
-                columnNames.add(listBox.getItemText(listBox.getSelectedIndex()));
+                String value = StringUtils.trimToNull(listBox.getValue(listBox.getSelectedIndex()));
+                if (value != null)
+                    columnNames.add(value);
             }
             return columnNames;
         }
@@ -600,9 +603,9 @@ public class DomainImporter
             {
                 String dataColumn = columnsToMap.get(i);
                 ListBox selector = columnSelectors.get(i);
-                String fileColumn = selector.getItemText(selector.getSelectedIndex());
-
-                result.put(fileColumn, dataColumn);
+                String fileColumn = StringUtils.trimToNull(selector.getValue(selector.getSelectedIndex()));
+                if (fileColumn != null)
+                    result.put(fileColumn, dataColumn);
             }
 
             return result;

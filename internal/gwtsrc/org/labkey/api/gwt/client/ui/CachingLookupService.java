@@ -29,11 +29,11 @@ import java.util.Map;
 * Time: 9:28:41 AM
 * To change this template use File | Settings | File Templates.
 */
-class CachingLookupService implements LookupServiceAsync
+public class CachingLookupService implements LookupServiceAsync
 {
     final LookupServiceAsync _impl;
 
-    CachingLookupService(LookupServiceAsync i)
+    public CachingLookupService(LookupServiceAsync i)
     {
         _impl = i;
     }

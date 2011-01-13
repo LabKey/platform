@@ -29,6 +29,7 @@ import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.DockPanel;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.property.*;
@@ -36,7 +37,11 @@ import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,7 +49,7 @@ import java.util.*;
  * Date: Apr 24, 2007
  * Time: 2:10:20 PM
  */
-public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor>
+public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> implements DomainProvider
 {
     boolean useConceptPicker = true;
     
@@ -317,14 +322,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         displayPane.addItem(new DescriptionItem<DomainType, FieldType>(displayPane));
         displayPane.addItem(new URLItem<DomainType, FieldType>(displayPane));
         displayPane.addItem(new VisibilityItem<DomainType, FieldType>(displayPane));
+        addChangeHandler(displayPane.getChangeListener());
 
         PropertyPane<DomainType, FieldType> formatPane = new PropertyPane<DomainType, FieldType>(this, "Format");
         formatPane.addItem(new FormatItem<DomainType, FieldType>(formatPane));
         formatPane.addItem(new ConditionalFormatItem<DomainType, FieldType>(getRootPanel(), formatPane));
+        addChangeHandler(formatPane.getChangeListener());
 
         PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
         validatorPane.addItem(new RequiredItem<DomainType, FieldType>(validatorPane));
         validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(validatorPane));
+        addChangeHandler(validatorPane.getChangeListener());
 
         PropertyPane<DomainType, FieldType> advancedPane = new PropertyPane<DomainType, FieldType>(this, "Advanced");
         advancedPane.addItem(new MvEnabledItem<DomainType, FieldType>(advancedPane));
@@ -333,6 +341,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new MeasureItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new DimensionItem<DomainType, FieldType>(advancedPane));
+        addChangeHandler(advancedPane.getChangeListener());
 
         List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
         result.add(displayPane);

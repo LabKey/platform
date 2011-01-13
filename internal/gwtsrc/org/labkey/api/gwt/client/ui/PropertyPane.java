@@ -37,7 +37,7 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 {
     private FieldType _currentPD;
 
-    private PropertiesEditor<DomainType, FieldType> _propertiesEditor;
+    private DomainProvider _domainProvider;
     private final String _name;
     private ChangeListenerCollection _changeListeners = new ChangeListenerCollection();
 
@@ -45,24 +45,10 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 
     private List<PropertyPaneItem<DomainType, FieldType>> _items = new ArrayList<PropertyPaneItem<DomainType, FieldType>>();
 
-    public PropertyPane(PropertiesEditor<DomainType, FieldType> propertiesEditor, String name)
+    public PropertyPane(DomainProvider provider, String name)
     {
-        _propertiesEditor = propertiesEditor;
+        _domainProvider = provider;
         _name = name;
-
-        propertiesEditor.addChangeHandler(new ChangeHandler()
-        {
-            public void onChange(ChangeEvent e)
-            {
-                if (_currentPD != null)
-                {
-                    for (PropertyPaneItem<DomainType, FieldType> item : _items)
-                    {
-                        item.propertyDescriptorChanged(_currentPD);
-                    }
-                }
-            }
-        });
     }
 
     public String getName()
@@ -110,7 +96,7 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 
     public int getDomainId()
     {
-        return _propertiesEditor.getCurrentDomain().getDomainId();
+        return getCurrentDomain().getDomainId();
     }
 
     public void showPropertyDescriptor(FieldType newPD, boolean editable)
@@ -125,10 +111,10 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
         {
             DOM.setStyleAttribute(getElement(), "display", "block");
             DOM.setStyleAttribute(getElement(), "backgroundColor", "#eeeeee");
-            
+
             for (PropertyPaneItem<DomainType, FieldType> item : _items)
             {
-                item.showPropertyDescriptor(_propertiesEditor.getCurrentDomain(), _currentPD);
+                item.showPropertyDescriptor(getCurrentDomain(), _currentPD);
             }
         }
         else
@@ -143,5 +129,34 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
         return _currentPD;
     }
 
+    public DomainProvider getDomainProvider()
+    {
+        return _domainProvider;
+    }
 
+    public void setDomainProvider(DomainProvider domainProvider)
+    {
+        _domainProvider = domainProvider;
+    }
+
+    public DomainType getCurrentDomain()
+    {
+        return (DomainType)_domainProvider.getCurrentDomain();
+    }
+
+    public ChangeHandler getChangeListener()
+    {
+        return new ChangeHandler(){
+            public void onChange(ChangeEvent e)
+            {
+                if (_currentPD != null)
+                {
+                    for (PropertyPaneItem<DomainType, FieldType> item : _items)
+                    {
+                        item.propertyDescriptorChanged(_currentPD);
+                    }
+                }
+            }
+        };
+    }
 }

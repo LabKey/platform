@@ -15,11 +15,41 @@
  */
 package org.labkey.api.gwt.client.ui.domain;
 
+import com.extjs.gxt.ui.client.event.ComponentEvent;
+import com.extjs.gxt.ui.client.event.IconButtonEvent;
+import com.extjs.gxt.ui.client.event.SelectionListener;
+import com.extjs.gxt.ui.client.util.Point;
+import com.extjs.gxt.ui.client.widget.Dialog;
+import com.extjs.gxt.ui.client.widget.HorizontalPanel;
+import com.extjs.gxt.ui.client.widget.TabItem;
+import com.extjs.gxt.ui.client.widget.TabPanel;
+import com.extjs.gxt.ui.client.widget.button.ToolButton;
+import com.extjs.gxt.ui.client.widget.layout.FitLayout;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.DockPanel;
 import com.google.gwt.user.client.ui.Grid;
-import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.InlineHTML;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.ui.BoundCheckBox;
+import org.labkey.api.gwt.client.ui.CachingLookupService;
+import org.labkey.api.gwt.client.ui.ConceptPicker;
+import org.labkey.api.gwt.client.ui.DomainProvider;
+import org.labkey.api.gwt.client.ui.LookupServiceAsync;
+import org.labkey.api.gwt.client.ui.PropertyPane;
+import org.labkey.api.gwt.client.ui.property.DescriptionItem;
+import org.labkey.api.gwt.client.ui.property.DimensionItem;
+import org.labkey.api.gwt.client.ui.property.FormatItem;
+import org.labkey.api.gwt.client.ui.property.ImportAliasesItem;
+import org.labkey.api.gwt.client.ui.property.MeasureItem;
+import org.labkey.api.gwt.client.ui.property.MvEnabledItem;
+import org.labkey.api.gwt.client.ui.property.RequiredItem;
+import org.labkey.api.gwt.client.ui.property.URLItem;
+import org.labkey.api.gwt.client.ui.property.ValidatorItem;
+import org.labkey.api.gwt.client.ui.property.VisibilityItem;
+import org.labkey.api.gwt.client.util.BooleanProperty;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,12 +58,25 @@ import java.util.Map;
  * User: jgarms
  * Date: Nov 5, 2008
  */
-public class DomainImportGrid extends Grid
+public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends Grid implements DomainProvider
 {
-    Map<InferencedColumn,TypeListBox> column2typePicker = new HashMap<InferencedColumn,TypeListBox>();
-    public DomainImportGrid()
+    List<FieldType> _columns = new ArrayList<FieldType>();
+    Map<GWTPropertyDescriptor, BooleanProperty> _importColumnMap = new HashMap<GWTPropertyDescriptor, BooleanProperty>();
+    CachingLookupService _lookupService;
+    DomainType _domain;
+    boolean _showPropertiesPanel;
+    Dialog _propertiesPanel;
+    List<PropertyPane<DomainType, FieldType>> _properties;
+
+
+    public DomainImportGrid(LookupServiceAsync service, DomainType domain)
     {
         super(1,0);
+
+        _lookupService = new CachingLookupService(service);
+        _domain = domain;
+        _showPropertiesPanel = false;
+
         setStyleName("labkey-data-region labkey-show-borders");
 
         RowFormatter rowFormatter = new RowFormatter();
@@ -53,11 +96,45 @@ public class DomainImportGrid extends Grid
             InferencedColumn column = columns.get(columnIndex);
             GWTPropertyDescriptor prop = column.getPropertyDescriptor();
 
-            setWidget(0, columnIndex, new HTML("<b>" + prop.getName() + "</b>"));
+            // name panel with checkbox to enable/disable import
+            HorizontalPanel namePanel = new HorizontalPanel();
+            BooleanProperty include = new BooleanProperty(true);
+            BoundCheckBox includeInImport = new BoundCheckBox("id_import_" + prop.getName(), include, null);
+            namePanel.add(includeInImport);
+            namePanel.add(new InlineHTML("&nbsp;<b>" + prop.getName() + "</b>&nbsp;"));
 
-            TypeListBox typePicker = new TypeListBox(prop);
-            setWidget(1, columnIndex, typePicker);
-            column2typePicker.put(column, typePicker);
+            if (_showPropertiesPanel)
+            {
+                ToolButton btn = new ToolButton("x-tool-right", new SelectionListener<IconButtonEvent>()
+                {
+                    public void componentSelected(IconButtonEvent event)
+                    {
+                        for (PropertyPane<DomainType, FieldType> prop : _properties)
+                            prop.showPropertyDescriptor(_columns.get(0), true);
+
+                        Point pt = event.getXY();
+
+                        _propertiesPanel.setPagePosition(pt.x + Window.getScrollLeft(), pt.y + Window.getScrollTop());
+                        _propertiesPanel.show();
+                    }
+                });
+                btn.setToolTip("Click to edit additional properties for this column");
+                namePanel.add(btn);
+            }
+            setWidget(0, columnIndex, namePanel);
+
+            // save in the import map
+            _importColumnMap.put(prop, include);
+            _columns.add((FieldType)prop);
+
+            // type picker
+            ConceptPicker picker = new ConceptPicker.Bound(_lookupService, "ff_type" + columnIndex, prop);
+            setWidget(1, columnIndex, picker);
+
+            // don't allow file and attachment properties for import (they don't really make sense here)
+            picker.setAllowAttachmentProperties(false);
+            picker.setAllowFileLinkProperties(false);
+            //picker.setIsRangeEditable(false);
 
             List<String> data = column.getData();
             for (int row=0; row<numDataRows; row++)
@@ -74,131 +151,83 @@ public class DomainImportGrid extends Grid
                 setHTML(row+2, columnIndex, cellData);
             }
         }
-    }
 
-    public Type getTypeForColumn(InferencedColumn col)
-    {
-        return column2typePicker.get(col).getSelectedType();
-    }
-
-    public boolean isMVEnabledForColumn(InferencedColumn col)
-    {
-        return column2typePicker.get(col).isMVEnabled();
-    }
-
-    private class TypeListBox extends ListBox
-    {
-        private static final String MV_SUPPORT_SUFFIX = " with missing value support";
-        public TypeListBox(GWTPropertyDescriptor prop)
+        if (_showPropertiesPanel)
         {
-            super();
-            Type type = Type.getTypeByXsdType(prop.getRangeURI());
-            boolean missingValuesFound = prop.getMvEnabled();
-            switch(type)
+            TabPanel tabPanel = new TabPanel();
+            _properties = createPropertyPanes(null);
+
+            for (PropertyPane<DomainType, FieldType> propertiesPane : _properties)
             {
-                case StringType:
-                    addItem(Type.StringType, false);
-                    if (missingValuesFound)
-                        addItem(Type.StringType, true);
-                    break;
-                case IntType:
-                    addItem(Type.IntType, missingValuesFound);
-                    addItem(Type.DoubleType, missingValuesFound);
-                    addItem(Type.StringType, false);
-                    if (missingValuesFound)
-                        addItem(Type.StringType, true);
-                    break;
-                case DoubleType:
-                    addItem(Type.DoubleType, missingValuesFound);
-                    addItem(Type.StringType, false);
-                    if (missingValuesFound)
-                        addItem(Type.StringType, true);
-                    break;
-                case DateTimeType:
-                    addItem(Type.DateTimeType, missingValuesFound);
-                    addItem(Type.StringType, false);
-                    if (missingValuesFound)
-                        addItem(Type.StringType, true);
-                    break;
-                case BooleanType:
-                    addItem(Type.BooleanType, missingValuesFound);
-                    addItem(Type.StringType, false);
-                    if (missingValuesFound)
-                        addItem(Type.StringType, true);
-                    break;
+                TabItem item = new TabItem(propertiesPane.getName());
+
+                item.setSize(300, 400);
+                item.setLayout(new FitLayout());
+                item.add(propertiesPane);
+
+                tabPanel.add(item);
             }
-        }
+            _propertiesPanel = new Dialog();
+            _propertiesPanel.setModal(true);
+            _propertiesPanel.setPlain(true);
+            _propertiesPanel.setHeading("Column Properties");
+            _propertiesPanel.setSize(300, 400);
+            _propertiesPanel.setHideOnButtonClick(true);
+            _propertiesPanel.setButtons(Dialog.OKCANCEL);
 
-        private void addItem(Type type, boolean mvEnabled)
-        {
-            String label = type.getLabel() + (mvEnabled ? MV_SUPPORT_SUFFIX : "");
-            addItem(label);
-        }
-
-        public Type getSelectedType()
-        {
-            String selectedLabel = getValue(getSelectedIndex());
-            if (isMVEnabled())
-                selectedLabel = selectedLabel.substring(0, selectedLabel.length() - MV_SUPPORT_SUFFIX.length());
-            return Type.getTypeByLabel(selectedLabel);
-        }
-
-        public boolean isMVEnabled()
-        {
-            String selectedLabel = getValue(getSelectedIndex());
-            return selectedLabel.endsWith(MV_SUPPORT_SUFFIX);
+            _propertiesPanel.add(tabPanel);
         }
     }
 
-
-    // TODO: Switch to using org.labkey.api.exp.property.Type enum
-    public enum Type
+    public List<FieldType> getColumns()
     {
-        StringType("Text (String)", "xsd:string"),
-        IntType("Integer", "xsd:int"),
-        DoubleType("Number (Double)", "xsd:double"),
-        DateTimeType("DateTime", "xsd:dateTime"),
-        BooleanType("Boolean", "xsd:boolean");
+        // don't include columns that are unselected for import
+        List<FieldType> columns = new ArrayList<FieldType>();
 
-        private String label;
-        private String xsd;
-
-        private Type(String label, String xsd)
+        for (FieldType prop : _columns)
         {
-            this.label = label;
-            this.xsd = xsd;
+            if (isImportEnabled(prop))
+                columns.add(prop);
         }
-
-        public String getLabel()
-        {
-            return label;
-        }
-
-        public String getXsdType()
-        {
-            return xsd;
-        }
-
-        public static Type getTypeByLabel(String label)
-        {
-            for (Type type : values())
-            {
-                if (type.getLabel().equals(label))
-                    return type;
-            }
-            return null;
-        }
-
-        public static Type getTypeByXsdType(String xsd)
-        {
-            for (Type type : values())
-            {
-                if (type.getXsdType().equals(xsd))
-                    return type;
-            }
-            return null;
-        }
-
+        return columns;
     }
-    
+
+    public boolean isImportEnabled(GWTPropertyDescriptor prop)
+    {
+        return _importColumnMap.get(prop).booleanValue();
+    }
+
+    private List<PropertyPane<DomainType, FieldType>> createPropertyPanes(DockPanel propertyDock)
+    {
+        PropertyPane<DomainType, FieldType> displayPane = new PropertyPane<DomainType, FieldType>(this, "Display");
+        displayPane.addItem(new DescriptionItem<DomainType, FieldType>(displayPane));
+        displayPane.addItem(new URLItem<DomainType, FieldType>(displayPane));
+        displayPane.addItem(new VisibilityItem<DomainType, FieldType>(displayPane));
+
+        PropertyPane<DomainType, FieldType> formatPane = new PropertyPane<DomainType, FieldType>(this, "Format");
+        formatPane.addItem(new FormatItem<DomainType, FieldType>(formatPane));
+
+        PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
+        validatorPane.addItem(new RequiredItem<DomainType, FieldType>(validatorPane));
+        validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(validatorPane));
+
+        PropertyPane<DomainType, FieldType> advancedPane = new PropertyPane<DomainType, FieldType>(this, "Advanced");
+        advancedPane.addItem(new MvEnabledItem<DomainType, FieldType>(advancedPane));
+        advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
+        advancedPane.addItem(new MeasureItem<DomainType, FieldType>(advancedPane));
+        advancedPane.addItem(new DimensionItem<DomainType, FieldType>(advancedPane));
+
+        List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
+        result.add(displayPane);
+        result.add(formatPane);
+        result.add(validatorPane);
+        result.add(advancedPane);
+
+        return result;
+    }
+
+    public DomainType getCurrentDomain()
+    {
+        return _domain;
+    }
 }

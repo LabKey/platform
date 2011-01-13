@@ -42,7 +42,7 @@ import java.util.Map;
  * User: jgarms
  * Date: Nov 4, 2008
  */
-public abstract class DomainImporterServiceBase extends BaseRemoteService implements DomainImporterService
+public abstract class DomainImporterServiceBase extends DomainEditorServiceBase implements DomainImporterService
 {
     /** The number of sample data rows to return **/
     private static final int NUM_SAMPLE_ROWS = 5;
