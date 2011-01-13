@@ -449,7 +449,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 errors.addAll(domainErrors);
         }
 
-        if(0 == numProps)
+        if (0 == numProps)
             errors.add("You must create at least one Property.");
 
         if (errors.size() > 0)

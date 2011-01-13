@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.reports.report;
 
-import org.apache.commons.beanutils.Converter;
-import org.labkey.api.reports.ReportService;
-
 /*
-* User: Dave
-* Date: Dec 15, 2008
-* Time: 1:53:34 PM
+* User: adam
+* Date: Jan 12, 2011
+* Time: 4:40:05 PM
 */
-public class ReportIdentifierConverter implements Converter
+public class JavaScriptReportDescriptor extends ScriptReportDescriptor
 {
-    public Object convert(Class type, Object value)
+    static final String TYPE = "jsReportDescriptor";
+
+    public JavaScriptReportDescriptor()
     {
-        if (null == value || value.equals("null") || !type.equals(ReportIdentifier.class))
-            return null;
-        else
-            return ReportService.get().getReportIdentifier(value.toString());
+        setDescriptorType(TYPE);
     }
 }

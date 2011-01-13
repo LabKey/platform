@@ -41,14 +41,13 @@
     RReportBean bean = me.getModelBean();
     List<Report> sharedReports = ReportUtil.getAvailableSharedRScripts(context, bean);
     List<String> includedReports = bean.getIncludedReports();
-    String renderAction = (String)context.getRequest().getAttribute("renderAction");
     Container c = context.getContainer();
 
     // the url for the execute script button
     ActionURL executeUrl = context.cloneActionURL().replaceParameter(TabStripView.TAB_PARAM, RunReportView.TAB_VIEW).
             replaceParameter(RunReportView.CACHE_PARAM, String.valueOf(bean.getReportId()));
 
-    boolean readOnly = (Boolean)context.getRequest().getAttribute("readOnly");
+    boolean readOnly = bean.isReadOnly();
     boolean isAdmin = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
 
     // is this report associated with a query view
@@ -122,7 +121,7 @@
             }
             else
             {
-                document.getElementById('renderReport').action = '<%=renderAction%>';
+                document.getElementById('renderReport').action = '<%=bean.getRenderURL()%>';
                 name.value = "";
             }
         }
@@ -145,7 +144,7 @@
 
 <labkey:errors/>
 
-<form id="renderReport" action="<%=renderAction%>" method="post">
+<form id="renderReport" action="<%=bean.getRenderURL()%>" method="post">
     <table class="labkey-wp">
         <tr class="labkey-wp-header"><th align="left">R View Builder</th></tr>
         <tr><td>Create an R script to be executed on the server:<br/></td></tr>
@@ -161,7 +160,7 @@
         <tr><td>
             <textarea id="script"
                       name="script"
-                      <% if(readOnly){ %>readonly="true"<% } %>
+                      <% if (readOnly){ %>readonly="true"<% } %>
                       style="width: 100%;"
                       cols="120"
                       wrap="on"
@@ -170,7 +169,7 @@
         <tr><td>
 <%          if (!readOnly)
             {
-                if (renderAction == null)
+                if (bean.getRenderURL() == null)
                     out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:switchTab('" + executeUrl.getLocalURIString() + "', saveChanges)"));
                 else
                     out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:runScript()"));
@@ -219,7 +218,7 @@
     <input type="hidden" name="schemaName" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
     <input type="hidden" name="dataRegionName" value="<%=StringUtils.trimToEmpty(bean.getDataRegionName())%>">
     <input type="hidden" name="redirectUrl" value="<%=h(bean.getRedirectUrl())%>">
-    <% if(null != bean.getReportId()) { %>
+    <% if (null != bean.getReportId()) { %>
         <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
     <% } %>
     <input type="hidden" name="cacheKey" value="<%=RunRReportView.getReportCacheKey(bean.getReportId(), c)%>">

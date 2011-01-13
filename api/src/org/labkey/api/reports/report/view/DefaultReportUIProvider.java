@@ -46,7 +46,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         for(String name : params)
         {
             String value = context.getActionURL().getParameter(name);
-            if(null != value)
+            if (null != value)
                 url.replaceParameter(name, value);
         }
         return url;

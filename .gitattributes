@@ -650,6 +650,7 @@ api/src/org/labkey/api/reports/report/DbReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/ExternalScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/InternalScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/JavaScriptReport.java -text
+api/src/org/labkey/api/reports/report/JavaScriptReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleQueryRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleReportIdentifier.java -text
@@ -666,6 +667,7 @@ api/src/org/labkey/api/reports/report/ReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/ReportIdentifierConverter.java -text
 api/src/org/labkey/api/reports/report/ReportUrls.java -text
 api/src/org/labkey/api/reports/report/ScriptEngineReport.java -text
+api/src/org/labkey/api/reports/report/ScriptReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/r/AbstractParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacementSvc.java -text

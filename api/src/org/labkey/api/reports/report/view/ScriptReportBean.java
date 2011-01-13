@@ -21,6 +21,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.util.Pair;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.view.ActionURL;
 
 import java.util.List;
 
@@ -35,6 +36,9 @@ public class ScriptReportBean extends ReportDesignBean
     protected boolean _runInBackground;
     protected boolean _isDirty;
     protected String _scriptExtension;
+    private boolean _isReadOnly;
+    private ActionURL _renderURL;
+    private boolean _inherited;
 
     public ScriptReportBean(){}
     public ScriptReportBean(QuerySettings settings)
@@ -79,22 +83,27 @@ public class ScriptReportBean extends ReportDesignBean
         if (report != null)
         {
             ReportDescriptor descriptor = report.getDescriptor();
+
+            if (getScript() != null)
+                descriptor.setProperty(RReportDescriptor.Prop.script, getScript());
+
+            descriptor.setProperty(RReportDescriptor.Prop.scriptExtension, _scriptExtension);
+
+            if (!isShareReport())
+                descriptor.setOwner(getUser().getUserId());
+            else
+                descriptor.setOwner(null);
+
+            if (getRedirectUrl() != null)
+                descriptor.setProperty("redirectUrl", getRedirectUrl());
+
+            // TODO: Refactor... this looks wrong
             if (RReportDescriptor.class.isAssignableFrom(descriptor.getClass()))
             {
-                if (getScript() != null) descriptor.setProperty(RReportDescriptor.Prop.script, getScript());
                 descriptor.setProperty(RReportDescriptor.Prop.runInBackground, _runInBackground);
-                descriptor.setProperty(RReportDescriptor.Prop.scriptExtension, _scriptExtension);
-                if (!isShareReport())
-                    descriptor.setOwner(getUser().getUserId());
-                else
-                    descriptor.setOwner(null);
-
-                if (getRedirectUrl() != null)
-                    descriptor.setProperty("redirectUrl", getRedirectUrl());
             }
-            else
-                return null;
         }
+
         return report;
     }
 
@@ -122,5 +131,35 @@ public class ScriptReportBean extends ReportDesignBean
     public void setScriptExtension(String scriptExtension)
     {
         _scriptExtension = scriptExtension;
+    }
+
+    public boolean isReadOnly()
+    {
+        return _isReadOnly;
+    }
+
+    public void setReadOnly(boolean readOnly)
+    {
+        _isReadOnly = readOnly;
+    }
+
+    public ActionURL getRenderURL()
+    {
+        return _renderURL;
+    }
+
+    public void setRenderURL(ActionURL renderURL)
+    {
+        _renderURL = renderURL;
+    }
+
+    public boolean isInherited()
+    {
+        return _inherited;
+    }
+
+    public void setInherited(boolean inherited)
+    {
+        _inherited = inherited;
     }
 }

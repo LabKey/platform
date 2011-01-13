@@ -69,10 +69,11 @@ public class RunScriptReportView extends RunReportView
     protected void renderTitle(Object model, PrintWriter out) throws Exception
     {
         ScriptReportBean bean = getReportForm();
+
         if (null != bean.getReportId())
         {
+            bean.setInherited(isReportInherited(getReport()));
             ModelAndView title = new JspView<ScriptReportBean>("/org/labkey/api/reports/report/view/reportHeader.jsp", bean);
-            title.addObject("isReportInherited", isReportInherited(getReport()));
 
             include(title);
         }
@@ -127,32 +128,37 @@ public class RunScriptReportView extends RunReportView
         else if (_report != null)
         {
             ReportDescriptor reportDescriptor = _report.getDescriptor();
+
+            form.setQueryName(reportDescriptor.getProperty(ReportDescriptor.Prop.queryName));
+            form.setSchemaName(reportDescriptor.getProperty(ReportDescriptor.Prop.schemaName));
+            form.setViewName(reportDescriptor.getProperty(ReportDescriptor.Prop.viewName));
+            form.setDataRegionName(reportDescriptor.getProperty(ReportDescriptor.Prop.dataRegionName));
+            form.setReportName(reportDescriptor.getProperty(ReportDescriptor.Prop.reportName));
+            form.setReportType(reportDescriptor.getProperty(ReportDescriptor.Prop.reportType));
+            form.setFilterParam(reportDescriptor.getProperty(ReportDescriptor.Prop.filterParam));
+            form.setShareReport((reportDescriptor.getOwner() == null));
+            form.setInheritable((reportDescriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
+            form.setCached(BooleanUtils.toBoolean(reportDescriptor.getProperty(ReportDescriptor.Prop.cached)));
+
+            form.setScriptExtension(reportDescriptor.getProperty(RReportDescriptor.Prop.scriptExtension));
+            form.setScript(reportDescriptor.getProperty(RReportDescriptor.Prop.script));
+
+            //if (descriptor.getProperty("redirectUrl") != null)
+            //    form.setRedirectUrl(descriptor.getProperty("redirectUrl"));
+            form.setRedirectUrl(getViewContext().getActionURL().getParameter("redirectUrl"));
+
+            // TODO: Refactor
             if (reportDescriptor instanceof RReportDescriptor)
             {
                 RReportDescriptor descriptor = (RReportDescriptor)reportDescriptor;
 
-                form.setQueryName(descriptor.getProperty(ReportDescriptor.Prop.queryName));
-                form.setSchemaName(descriptor.getProperty(ReportDescriptor.Prop.schemaName));
-                form.setViewName(descriptor.getProperty(ReportDescriptor.Prop.viewName));
-                form.setDataRegionName(descriptor.getProperty(ReportDescriptor.Prop.dataRegionName));
-                form.setReportName(descriptor.getProperty(ReportDescriptor.Prop.reportName));
-                form.setReportType(descriptor.getProperty(ReportDescriptor.Prop.reportType));
-                form.setScript(descriptor.getProperty(RReportDescriptor.Prop.script));
                 form.setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(RReportDescriptor.Prop.runInBackground)));
-                form.setFilterParam(descriptor.getProperty(ReportDescriptor.Prop.filterParam));
-                form.setShareReport((descriptor.getOwner() == null));
-                form.setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
-                form.setCached(BooleanUtils.toBoolean(descriptor.getProperty(ReportDescriptor.Prop.cached)));
-                form.setScriptExtension(descriptor.getProperty(RReportDescriptor.Prop.scriptExtension));
-
-                //if (descriptor.getProperty("redirectUrl") != null)
-                //    form.setRedirectUrl(descriptor.getProperty("redirectUrl"));
-                form.setRedirectUrl(getViewContext().getActionURL().getParameter("redirectUrl"));
-
-                // finally save in session cache
-                updateReportCache(form, true);
             }
+
+            // finally save in session cache
+            updateReportCache(form, true);
         }
+
         return form;
     }
 
@@ -225,14 +231,12 @@ public class RunScriptReportView extends RunReportView
     {
         VBox view = new VBox();
         ScriptReportBean form = getReportForm();
+
         if (TAB_SOURCE.equals(tabId))
         {
+            form.setRenderURL(getRenderAction());
+            form.setReadOnly(!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()));
             JspView designer = new JspView<ScriptReportBean>("/org/labkey/api/reports/report/view/scriptReportDesigner.jsp", form, form.getErrors());
-            if (getRenderAction() != null)
-                designer.addObject("renderAction", getRenderAction().getLocalURIString());
-
-            boolean isReadOnly = !_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer());
-            designer.addObject("readOnly", isReadOnly);
 
             view.addView(designer);
 

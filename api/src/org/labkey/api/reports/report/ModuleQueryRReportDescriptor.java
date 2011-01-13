@@ -32,7 +32,8 @@ import java.util.HashMap;
  */
 public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
 {
-    private static Map<String,String> _reportTypeMap = new HashMap<String,String>();
+    private static Map<String, String> _reportTypeMap = new HashMap<String,String>();
+
     static
     {
         _reportTypeMap.put("ms1/Features", "MS1.R.Features");
@@ -44,11 +45,11 @@ public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
     {
         super(module, reportKey, sourceFile, reportPath);
 
-        if(null == getProperty(ReportDescriptor.Prop.schemaName))
+        if (null == getProperty(ReportDescriptor.Prop.schemaName))
         {
             //key is <schema-name>/<query-name>
             String[] keyParts = reportKey.split("/");
-            if(keyParts.length >= 2)
+            if (keyParts.length >= 2)
             {
                 setProperty(ReportDescriptor.Prop.schemaName, keyParts[0]);
                 setProperty(ReportDescriptor.Prop.queryName, keyParts[1]);

@@ -80,15 +80,16 @@ public class ModuleRReportDescriptor extends RReportDescriptor
 
     protected void loadMetaData()
     {
-        if(_metaDataFile.exists() && _metaDataFile.isFile())
+        if (_metaDataFile.exists() && _metaDataFile.isFile())
         {
             try
             {
                 String xml = getFileContents(_metaDataFile);
                 List<Pair<String,String>> props = createPropsFromXML(xml);
 
-                if(null != props)
+                if (null != props)
                     setProperties(props);
+
                 _metaDataLastModified = _metaDataFile.lastModified();
             }
             catch(IOException e)
@@ -103,7 +104,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public String getProperty(ReportProperty prop)
     {
         //if the key = script, ensure we have it
-        if(prop.equals(Prop.script))
+        if (prop.equals(Prop.script))
             ensureScriptCurrent();
 
         return super.getProperty(prop);
@@ -113,7 +114,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public String getProperty(String key)
     {
         //if the key = script, ensure we have it
-        if(key.equalsIgnoreCase(Prop.script.name()))
+        if (key.equalsIgnoreCase(Prop.script.name()))
             ensureScriptCurrent();
 
         return super.getProperty(key);
@@ -123,17 +124,17 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public Map<String, Object> getProperties()
     {
         ensureScriptCurrent();
-        return super.getProperties();    //To change body of overridden methods use File | Settings | File Templates.
+        return super.getProperties();
     }
 
     protected void ensureScriptCurrent()
     {
-        if(_sourceFile.exists() && _sourceFile.lastModified() != _sourceLastModified)
+        if (_sourceFile.exists() && _sourceFile.lastModified() != _sourceLastModified)
         {
             try
             {
                 String script = getFileContents(_sourceFile);
-                if(null != script)
+                if (null != script)
                 {
                     setProperty(Prop.script, script);
                     _sourceLastModified = _sourceFile.lastModified();

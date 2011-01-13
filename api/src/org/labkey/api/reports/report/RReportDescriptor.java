@@ -35,7 +35,7 @@ public class RReportDescriptor extends ReportDescriptor
         runInBackground,
         includedReports,
         script,
-        scriptExtension,
+        scriptExtension
     }
 
     public RReportDescriptor()
@@ -54,7 +54,7 @@ public class RReportDescriptor extends ReportDescriptor
         if (reports != null && List.class.isAssignableFrom(reports.getClass()))
             return (List<String>)reports;
 
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
     
     public boolean isArrayType(String prop)

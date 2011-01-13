@@ -108,7 +108,7 @@
   <%}%>
 </tr>
 <%
-    if(hasWarnings)
+    if (hasWarnings)
     {
 %>
 <tr id="labkey-warning-messages-area" <%=me.isUserHidingWarningMessages() ? "style=display:none;" : ""%>>

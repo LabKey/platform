@@ -71,7 +71,7 @@
 	var handleFailure = function(o)
     {
         var div = document.getElementById('container');
-	    if(o.responseText !== undefined)
+	    if (o.responseText !== undefined)
         {
             var msg = "<font class=\"labkey-error\">"
             msg += "An error occurred trying to start the job";

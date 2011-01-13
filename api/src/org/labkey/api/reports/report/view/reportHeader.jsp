@@ -48,7 +48,7 @@
     String viewName = form.getViewName();
     viewName = viewName != null ? viewName : "";
 
-    boolean isReportInherited = (Boolean)context.getRequest().getAttribute("isReportInherited");
+    boolean isReportInherited = form.isInherited();
 
     QueryDefinition queryDef = QueryService.get().getQueryDef(context.getUser(), context.getContainer(),
             form.getSchemaName(),

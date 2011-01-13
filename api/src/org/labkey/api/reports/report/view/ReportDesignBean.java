@@ -51,7 +51,10 @@ public class ReportDesignBean extends ReportForm
     protected boolean _inheritable;
     protected boolean _cached;
 
-    public ReportDesignBean(){}
+    public ReportDesignBean()
+    {
+    }
+
     public ReportDesignBean(QuerySettings settings)
     {
         setSchemaName(settings.getSchemaName());
@@ -203,7 +206,7 @@ public class ReportDesignBean extends ReportForm
     public Report getReport() throws Exception
     {
         Report report = null;
-        if(null != getReportId())
+        if (null != getReportId())
             report = getReportId().getReport();
         if (report == null)
             report = ReportService.get().createReportInstance(getReportType());
@@ -227,6 +230,7 @@ public class ReportDesignBean extends ReportForm
             if (null != getContainer())
                 descriptor.setContainer(getContainer().getId());
         }
+
         return report;
     }
 

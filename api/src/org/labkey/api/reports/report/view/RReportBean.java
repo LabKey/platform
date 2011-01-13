@@ -47,7 +47,7 @@ public class RReportBean extends ScriptReportBean
 
     public List<String> getIncludedReports()
     {
-        return _includedReports != null ? _includedReports : Collections.EMPTY_LIST;
+        return _includedReports != null ? _includedReports : Collections.<String>emptyList();
     }
 
     public Report getReport() throws Exception
@@ -61,9 +61,8 @@ public class RReportBean extends ScriptReportBean
             {
                 ((RReportDescriptor)descriptor).setIncludedReports(_includedReports);
             }
-            else
-                return null;
         }
+
         return report;
     }
 

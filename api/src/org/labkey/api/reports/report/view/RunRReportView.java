@@ -84,6 +84,7 @@ public class RunRReportView extends RunScriptReportView
         else if (_report != null)
         {
             ReportDescriptor reportDescriptor = _report.getDescriptor();
+
             if (reportDescriptor instanceof RReportDescriptor)
             {
                 RReportDescriptor descriptor = (RReportDescriptor)reportDescriptor;
@@ -111,6 +112,7 @@ public class RunRReportView extends RunScriptReportView
                 updateReportCache(form, true);
             }
         }
+
         return form;
     }
 
@@ -175,13 +177,12 @@ public class RunRReportView extends RunScriptReportView
         if (TAB_SOURCE.equals(tabId))
         {
             JspView designer = new JspView<RReportBean>("/org/labkey/api/reports/report/view/rReportDesigner.jsp", form, form.getErrors());
-            if (getRenderAction() != null)
-                designer.addObject("renderAction", getRenderAction().getLocalURIString());
+            form.setRenderURL(getRenderAction());
 
             if (_report != null)
             {
                 boolean isReadOnly = !_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer());
-                designer.addObject("readOnly", isReadOnly);
+                form.setReadOnly(isReadOnly);
 
                 view.addView(designer);
 

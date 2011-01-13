@@ -26,7 +26,7 @@ public abstract class AbstractReportIdentifier implements ReportIdentifier
 {
     public static ReportIdentifier fromString(String id)
     {
-        if(null == id || id.length() == 0)
+        if (null == id || id.length() == 0)
             return null;
 
         try {return new DbReportIdentifier(id);}
