@@ -19,6 +19,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.view.ActionURL;
@@ -85,9 +86,9 @@ public class ScriptReportBean extends ReportDesignBean
             ReportDescriptor descriptor = report.getDescriptor();
 
             if (getScript() != null)
-                descriptor.setProperty(RReportDescriptor.Prop.script, getScript());
+                descriptor.setProperty(ScriptReportDescriptor.Prop.script, getScript());
 
-            descriptor.setProperty(RReportDescriptor.Prop.scriptExtension, _scriptExtension);
+            descriptor.setProperty(ScriptReportDescriptor.Prop.scriptExtension, _scriptExtension);
 
             if (!isShareReport())
                 descriptor.setOwner(getUser().getUserId());
@@ -112,13 +113,13 @@ public class ScriptReportBean extends ReportDesignBean
         List<Pair<String, String>> list = super.getParameters();
 
         if (!StringUtils.isEmpty(_script))
-            list.add(new Pair<String, String>(RReportDescriptor.Prop.script.toString(), _script));
+            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.script.toString(), _script));
         if (_runInBackground)
             list.add(new Pair<String, String>(RReportDescriptor.Prop.runInBackground.toString(), String.valueOf(_runInBackground)));
         if (_isDirty)
             list.add(new Pair<String, String>("isDirty", String.valueOf(_isDirty)));
 
-        list.add(new Pair<String, String>(RReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
+        list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
 
         return list;
     }

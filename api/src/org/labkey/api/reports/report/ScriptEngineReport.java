@@ -121,7 +121,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
 
     public ScriptEngine getScriptEngine()
     {
-        String extension = getDescriptor().getProperty(RReportDescriptor.Prop.scriptExtension);
+        String extension = getDescriptor().getProperty(ScriptReportDescriptor.Prop.scriptExtension);
         ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
         return mgr.getEngineByExtension(extension);
@@ -415,7 +415,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
      */
     protected String createScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws Exception
     {
-        return processScript(context, getDescriptor().getProperty(RReportDescriptor.Prop.script), inputDataTsv, outputSubst);
+        return processScript(context, getDescriptor().getProperty(ScriptReportDescriptor.Prop.script), inputDataTsv, outputSubst);
     }
 
     public abstract String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws ScriptException;
@@ -468,7 +468,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
             try
             {
                 writer = directory.getPrintWriter(scriptFileName);
-                writer.write(descriptor.getProperty(RReportDescriptor.Prop.script));
+                writer.write(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
             }
             finally
             {
@@ -523,7 +523,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
                         sb.append('\n');
                     }
 
-                    getDescriptor().setProperty(RReportDescriptor.Prop.script, sb.toString());
+                    getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, sb.toString());
                 }
                 finally
                 {

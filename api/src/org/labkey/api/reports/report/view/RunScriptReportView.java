@@ -24,6 +24,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -140,8 +141,8 @@ public class RunScriptReportView extends RunReportView
             form.setInheritable((reportDescriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
             form.setCached(BooleanUtils.toBoolean(reportDescriptor.getProperty(ReportDescriptor.Prop.cached)));
 
-            form.setScriptExtension(reportDescriptor.getProperty(RReportDescriptor.Prop.scriptExtension));
-            form.setScript(reportDescriptor.getProperty(RReportDescriptor.Prop.script));
+            form.setScriptExtension(reportDescriptor.getProperty(ScriptReportDescriptor.Prop.scriptExtension));
+            form.setScript(reportDescriptor.getProperty(ScriptReportDescriptor.Prop.script));
 
             //if (descriptor.getProperty("redirectUrl") != null)
             //    form.setRedirectUrl(descriptor.getProperty("redirectUrl"));

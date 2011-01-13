@@ -104,7 +104,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public String getProperty(ReportProperty prop)
     {
         //if the key = script, ensure we have it
-        if (prop.equals(Prop.script))
+        if (prop.equals(ScriptReportDescriptor.Prop.script))
             ensureScriptCurrent();
 
         return super.getProperty(prop);
@@ -114,7 +114,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public String getProperty(String key)
     {
         //if the key = script, ensure we have it
-        if (key.equalsIgnoreCase(Prop.script.name()))
+        if (key.equalsIgnoreCase(ScriptReportDescriptor.Prop.script.name()))
             ensureScriptCurrent();
 
         return super.getProperty(key);
@@ -136,7 +136,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
                 String script = getFileContents(_sourceFile);
                 if (null != script)
                 {
-                    setProperty(Prop.script, script);
+                    setProperty(ScriptReportDescriptor.Prop.script, script);
                     _sourceLastModified = _sourceFile.lastModified();
                 }
             }

@@ -76,7 +76,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public HttpView renderReport(ViewContext context) throws Exception
     {
         VBox view = new VBox();
-        String script = getDescriptor().getProperty(RReportDescriptor.Prop.script);
+        String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
 
 /*
         if (validateConfiguration(getRExe(), getRCmd(), getTempFolder(), getRScriptHandler()) != null)

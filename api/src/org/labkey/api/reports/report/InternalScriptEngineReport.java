@@ -55,7 +55,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     public HttpView renderReport(ViewContext context) throws Exception
     {
         VBox view = new VBox();
-        String script = getDescriptor().getProperty(RReportDescriptor.Prop.script);
+        String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
 
         List<String> errors = new ArrayList<String>();
         if (!validateScript(script, errors))

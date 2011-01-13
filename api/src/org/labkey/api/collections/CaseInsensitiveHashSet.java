@@ -27,7 +27,7 @@ import java.util.HashSet;
  * User: arauch
  * Date: Dec 25, 2004
  */
-@Deprecated  // Use Sets.newCaseInsensitiveHashSet() instead -- it's more complete and better performing than this implementation
+// TODO: Merge CaseInsensitiveHashSet and CaseInsensitiveHashMap implementations
 public class CaseInsensitiveHashSet extends HashSet<String>
 {
     public CaseInsensitiveHashSet()

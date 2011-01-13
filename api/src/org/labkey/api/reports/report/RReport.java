@@ -146,7 +146,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
 
     public void setScriptSource(String script)
     {
-        getDescriptor().setProperty(RReportDescriptor.Prop.script, script);
+        getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, script);
     }
 
 
@@ -169,7 +169,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
                 if (validateSharedPermissions(context, report) && RReport.class.isAssignableFrom(report.getClass()))
                 {
                     final String rName = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
-                    final String rScript = report.getDescriptor().getProperty(RReportDescriptor.Prop.script);
+                    final String rScript = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
                     final File rScriptFile = new File(getReportDir(), rName + ".R");
 
                     String includedScript = processScript(context, rScript, inputData, outputSubst);

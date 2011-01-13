@@ -71,7 +71,7 @@ public class JavaScriptReport extends QueryViewReport
         {
             QueryView qv = createQueryView(context, getDescriptor());
             model = new CreateJavaScriptModel(qv);
-            script = getDescriptor().getProperty(RReportDescriptor.Prop.script);
+            script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
         }
     }
 }

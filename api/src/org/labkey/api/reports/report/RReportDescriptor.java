@@ -26,16 +26,14 @@ import java.util.Collections;
  * User: Karl Lum
  * Date: Jul 12, 2007
  */
-public class RReportDescriptor extends ReportDescriptor
+public class RReportDescriptor extends ScriptReportDescriptor
 {
     public static final String TYPE = "rReportDescriptor";
 
     public enum Prop implements ReportProperty
     {
-        runInBackground,
-        includedReports,
-        script,
-        scriptExtension
+        runInBackground,  // TODO: Move to ScriptReportDescriptor and handle in ScriptReport classes?  Allow other script reports to run in the background?
+        includedReports
     }
 
     public RReportDescriptor()

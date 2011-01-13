@@ -28,6 +28,7 @@ import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.RReportJob;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HtmlView;
@@ -95,14 +96,14 @@ public class RunRReportView extends RunScriptReportView
                 form.setDataRegionName(descriptor.getProperty(ReportDescriptor.Prop.dataRegionName));
                 form.setReportName(descriptor.getProperty(ReportDescriptor.Prop.reportName));
                 form.setReportType(descriptor.getProperty(ReportDescriptor.Prop.reportType));
-                form.setScript(descriptor.getProperty(RReportDescriptor.Prop.script));
+                form.setScript(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
                 form.setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(RReportDescriptor.Prop.runInBackground)));
                 form.setFilterParam(descriptor.getProperty(ReportDescriptor.Prop.filterParam));
                 form.setShareReport((descriptor.getOwner() == null));
                 ((RReportBean)form).setIncludedReports(descriptor.getIncludedReports());
                 form.setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
                 form.setCached(BooleanUtils.toBoolean(descriptor.getProperty(ReportDescriptor.Prop.cached)));
-                form.setScriptExtension(descriptor.getProperty(RReportDescriptor.Prop.scriptExtension));
+                form.setScriptExtension(descriptor.getProperty(ScriptReportDescriptor.Prop.scriptExtension));
 
                 //if (descriptor.getProperty("redirectUrl") != null)
                 //    form.setRedirectUrl(descriptor.getProperty("redirectUrl"));
