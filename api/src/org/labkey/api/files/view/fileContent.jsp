@@ -153,6 +153,7 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
         showAddressBar: <%=bean.isShowAddressBar()%>,
         showFolderTree: <%=bean.isShowFolderTree()%>,
         folderTreeCollapsed: isFolderTreeCollapsed,
+        fileUploadCollapsed: <%=bean.isFileUploadCollapsed()%>,
         showProperties: false,
         showDetails: <%=bean.isShowDetails()%>,
         allowChangeDirectory: true,

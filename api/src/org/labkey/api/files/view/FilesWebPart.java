@@ -350,6 +350,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _isPipelineRoot;
         private String _statePrefix;
         private File _rootDirectory;
+        private boolean _fileUploadCollapsed;
 
         public enum actions {
             download,
@@ -511,6 +512,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public void setRootDirectory(File rootDirectory)
         {
             _rootDirectory = rootDirectory;
+        }
+
+        public boolean isFileUploadCollapsed()
+        {
+            return _fileUploadCollapsed;
+        }
+
+        public void setFileUploadCollapsed(boolean fileUploadCollapsed)
+        {
+            _fileUploadCollapsed = fileUploadCollapsed;
         }
     }
 }

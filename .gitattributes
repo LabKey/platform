@@ -2650,6 +2650,7 @@ internal/webapp/_images/cancel.png -text
 internal/webapp/_images/cart.gif -text
 internal/webapp/_images/cart_added.gif -text
 internal/webapp/_images/check.png -text
+internal/webapp/_images/close.png -text
 internal/webapp/_images/collapse_folders.gif -text
 internal/webapp/_images/computer.png -text
 internal/webapp/_images/configure.png -text
