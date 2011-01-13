@@ -62,6 +62,7 @@ public class PublishResultsQueryView extends ResultsQueryView
     private final boolean _mismatched;
     private final TimepointType _timepointType;
     private Map<Object, String> _reshowVisits;
+    private Map<Object, String> _reshowDates;
     private Map<Object, String> _reshowPtids;
     private Map<Object, String> _reshowTargetStudies;
 
@@ -117,6 +118,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                                    @Nullable Container targetStudyContainer,
                                    Map<Object, String> reshowTargetStudies,
                                    Map<Object, String> reshowVisits,
+                                   Map<Object, String> reshowDates,
                                    Map<Object, String> reshowPtids,
                                    DefaultValueSource defaultValueSource, boolean mismatched)
     {
@@ -133,6 +135,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         _filter.addInClause(provider.getTableMetadata().getResultRowIdFieldKey().toString(), objectIds);
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;
+        _reshowDates = reshowDates;
         _reshowTargetStudies = reshowTargetStudies;
         setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
 
@@ -217,7 +220,7 @@ public class PublishResultsQueryView extends ResultsQueryView
     protected Set<String> getHiddenColumnCaptions()
     {
         HashSet<String> hidden = new HashSet<String>(Collections.singleton("Assay Match"));
-        if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first == ExpProtocol.AssayDomainTypes.Result)
+        if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first != ExpProtocol.AssayDomainTypes.Result)
             hidden.add(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION);
         return hidden;
     }
@@ -228,26 +231,31 @@ public class PublishResultsQueryView extends ResultsQueryView
         private final ColumnInfo _objectIdCol;
         private final ColumnInfo _ptidCol;
         private final ColumnInfo _visitIdCol;
+        private final ColumnInfo _dateCol;
         private final ColumnInfo _specimenIDCol;
         private final ColumnInfo _assayMatchCol;
         private final ColumnInfo _specimenPTIDCol;
         private final ColumnInfo _specimenVisitCol;
+        private final ColumnInfo _specimenDateCol;
         private final ColumnInfo _targetStudyCol;
         private Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<Integer, ParticipantVisitResolver>();
 
         public ResolverHelper(ColumnInfo runIdCol, ColumnInfo objectIdCol,
-                              ColumnInfo ptidCol, ColumnInfo visitIdCol,
+                              ColumnInfo ptidCol, ColumnInfo visitIdCol, ColumnInfo dateCol,
                               ColumnInfo specimenIDCol, ColumnInfo assayMatchCol,
-                              ColumnInfo specimenPTIDCol, ColumnInfo specimenVisitCol, ColumnInfo targetStudyCol)
+                              ColumnInfo specimenPTIDCol, ColumnInfo specimenVisitCol, ColumnInfo specimenDateCol,
+                              ColumnInfo targetStudyCol)
         {
             _runIdCol = runIdCol;
             _objectIdCol = objectIdCol;
             _ptidCol = ptidCol;
             _visitIdCol = visitIdCol;
+            _dateCol = dateCol;
             _specimenIDCol = specimenIDCol;
             _assayMatchCol = assayMatchCol;
             _specimenPTIDCol = specimenPTIDCol;
             _specimenVisitCol = specimenVisitCol;
+            _specimenDateCol = specimenDateCol;
             _targetStudyCol = targetStudyCol;
         }
 
@@ -294,24 +302,28 @@ public class PublishResultsQueryView extends ResultsQueryView
                 return null;
             }
 
-            Object visitID = _visitIdCol == null ? null : _visitIdCol.getValue(ctx);
-            String specimenID = _specimenIDCol == null ? null : (_specimenIDCol.getValue(ctx) == null ? null : _specimenIDCol.getValue(ctx).toString());
-            String participantID = _ptidCol == null ? null : (_ptidCol.getValue(ctx) == null ? null : _ptidCol.getValue(ctx).toString());
-
-            Container targetStudyContainer = null;
-            Object resultsDomainTargetStudyValue = _targetStudyCol == null ? null : _targetStudyCol.getValue(ctx);
-            if (resultsDomainTargetStudyValue != null)
+            Study targetStudy = null;
+            if (_targetStudyContainer == null)
             {
-                Set<Study> studies = StudyService.get().findStudy(resultsDomainTargetStudyValue, null);
-                if (!studies.isEmpty())
+                Object resultsDomainTargetStudyValue = _targetStudyCol == null ? null : _targetStudyCol.getValue(ctx);
+                if (resultsDomainTargetStudyValue != null)
                 {
-                    Study study = studies.iterator().next();
-                    if (study != null)
-                        targetStudyContainer = study.getContainer();
+                    Set<Study> studies = StudyService.get().findStudy(resultsDomainTargetStudyValue, null);
+                    if (!studies.isEmpty())
+                        targetStudy = studies.iterator().next();
                 }
             }
 
-            return resolver.resolve(specimenID, participantID, visitID instanceof Double ? (Double) visitID : null, visitID instanceof Date ? (Date)visitID : null, targetStudyContainer);
+            TimepointType timepointType = targetStudy == null ? null : targetStudy.getTimepointType();
+            Container targetStudyContainer = targetStudy == null ? null : targetStudy.getContainer();
+
+            Object visitID = _visitIdCol != null && timepointType == TimepointType.VISIT ? _visitIdCol.getValue(ctx) : null;
+            Object date = _dateCol != null && timepointType == TimepointType.DATE ? _dateCol.getValue(ctx) : null;
+
+            String specimenID = _specimenIDCol == null ? null : (_specimenIDCol.getValue(ctx) == null ? null : _specimenIDCol.getValue(ctx).toString());
+            String participantID = _ptidCol == null ? null : (_ptidCol.getValue(ctx) == null ? null : _ptidCol.getValue(ctx).toString());
+
+            return resolver.resolve(specimenID, participantID, visitID instanceof Double ? (Double) visitID : null, date instanceof Date ? (Date)date : null, targetStudyContainer);
         }
 
         public Object getUserVisitId(RenderContext ctx) throws IOException
@@ -349,12 +361,12 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         public Object getUserDate(RenderContext ctx) throws IOException
         {
-            if (_reshowVisits != null)
+            if (_reshowDates != null)
             {
                 Object key = ctx.getRow().get(_objectIdCol.getName());
-                return _reshowVisits.get(key);
+                return _reshowDates.get(key);
             }
-            Date result = _visitIdCol == null ? null : (_visitIdCol.getValue(ctx) instanceof Date ? (Date)_visitIdCol.getValue(ctx) : null);
+            Date result = _dateCol == null ? null : (_dateCol.getValue(ctx) instanceof Date ? (Date)_dateCol.getValue(ctx) : null);
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -447,6 +459,9 @@ public class PublishResultsQueryView extends ResultsQueryView
             if (targetStudy == null)
                 return new Pair<Boolean, String>(false, "<p>No target study selected for this row.</p>");
 
+            Study study = StudyService.get().getStudy(targetStudy);
+            TimepointType timepointType = study.getTimepointType();
+
             // First, figure out if we can match the specimen ID to the study
             Boolean assayAndTargetSpecimenMatch;
             if (_assayMatchCol == null)
@@ -467,7 +482,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 boolean userInputMatchesASpecimen;
 
                 String userParticipantId = getUserParticipantId(ctx);
-                if (_timepointType == TimepointType.VISIT)
+                if (timepointType == TimepointType.VISIT)
                 {
                     Double userVisitId = convertObjectToDouble(getUserVisitId(ctx));
                     userInputMatchesASpecimen = isValidPtidVisit(targetStudy, userParticipantId, userVisitId);
@@ -488,11 +503,11 @@ public class PublishResultsQueryView extends ResultsQueryView
                 {
                     Date userDate = convertObjectToDate(getUserDate(ctx));
                     userInputMatchesASpecimen = isValidPtidDate(targetStudy, userParticipantId, userDate);
-                    if (_specimenVisitCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
+                    if (_specimenDateCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
                     {
                         // Need to grab the study specimen's participant and date
                         String targetSpecimenPTID = convertObjectToString(_specimenPTIDCol.getValue(ctx));
-                        Date targetSpecimenDate = convertObjectToDate(_specimenVisitCol.getValue(ctx));
+                        Date targetSpecimenDate = convertObjectToDate(_specimenDateCol.getValue(ctx));
                         if (userDate == null || targetSpecimenDate == null)
                         {
                             // Do a simple object equality on the dates if one or both of them is null
@@ -535,7 +550,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                         sb.append(" <strong>not</strong>");
                     }
                     sb.append(" collected for the Participant ID and ");
-                    sb.append( _timepointType == TimepointType.VISIT ? "Visit ID" : "Date");
+                    sb.append(timepointType == TimepointType.VISIT ? "Visit ID" : "Date");
                     sb.append(" shown in this row.</p>");
                 }
 
@@ -543,7 +558,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 if (userInputMatchesTargetSpecimen != null)
                 {
                     sb.append("The Participant ID, ");
-                    sb.append( _timepointType == TimepointType.VISIT ? "Visit ID" : "Date");
+                    sb.append(timepointType == TimepointType.VISIT ? "Visit ID" : "Date");
                     sb.append(", and Specimen ID in this row ");
                     if (userInputMatchesTargetSpecimen.booleanValue())
                     {
@@ -616,6 +631,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             if (_runIdCol != null) { set.add(_runIdCol); }
             if (_ptidCol != null) { set.add(_ptidCol); }
             if (_visitIdCol != null) { set.add(_visitIdCol); }
+            if (_dateCol != null) { set.add(_dateCol); }
             if (_objectIdCol != null) { set.add(_objectIdCol); }
             if (_specimenIDCol != null) { set.add(_specimenIDCol); }
             if (_targetStudyCol != null) { set.add(_targetStudyCol); }
@@ -809,12 +825,14 @@ public class PublishResultsQueryView extends ResultsQueryView
         FieldKey runIdFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
         FieldKey objectIdFieldKey = tableMetadata.getResultRowIdFieldKey();
         FieldKey assayPTIDFieldKey = _defaultValueSource.getParticipantIDFieldKey(tableMetadata);
-        FieldKey assayVisitIDFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, _timepointType);
+        FieldKey assayVisitIDFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.VISIT);
+        FieldKey assayDateFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.DATE);
         FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
         FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
         FieldKey specimenPTIDFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "ParticipantID");
-        FieldKey specimenVisitFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), _timepointType == TimepointType.VISIT ? "Visit" : "DrawTimestamp");
-        Set<FieldKey> fieldKeys = new HashSet<FieldKey>(Arrays.asList(runIdFieldKey, objectIdFieldKey, assayPTIDFieldKey, assayVisitIDFieldKey, specimenIDFieldKey, matchFieldKey, specimenPTIDFieldKey, specimenVisitFieldKey));
+        FieldKey specimenVisitFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "Visit");
+        FieldKey specimenDateFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "DrawTimestamp");
+        Set<FieldKey> fieldKeys = new HashSet<FieldKey>(Arrays.asList(runIdFieldKey, objectIdFieldKey, assayPTIDFieldKey, assayVisitIDFieldKey, assayDateFieldKey, specimenIDFieldKey, matchFieldKey, specimenPTIDFieldKey, specimenVisitFieldKey, specimenDateFieldKey));
 
         // Add the TargetStudy FieldKey only if it exists on the Result domain.
         FieldKey targetStudyFieldKey = null;
@@ -832,13 +850,15 @@ public class PublishResultsQueryView extends ResultsQueryView
         ColumnInfo assayPTIDCol = colInfos.get(assayPTIDFieldKey);
         ColumnInfo runIdCol = colInfos.get(runIdFieldKey);
         ColumnInfo assayVisitIDCol = colInfos.get(assayVisitIDFieldKey);
+        ColumnInfo assayDateCol = colInfos.get(assayDateFieldKey);
         ColumnInfo specimenIDCol = colInfos.get(specimenIDFieldKey);
         ColumnInfo matchCol = colInfos.get(matchFieldKey);
         ColumnInfo specimenPTIDCol = colInfos.get(specimenPTIDFieldKey);
         ColumnInfo specimenVisitCol = colInfos.get(specimenVisitFieldKey);
+        ColumnInfo specimenDateCol = colInfos.get(specimenDateFieldKey);
         ColumnInfo targetStudyCol = colInfos.get(targetStudyFieldKey);
 
-        ResolverHelper resolverHelper = new ResolverHelper(runIdCol, objectIdCol, assayPTIDCol, assayVisitIDCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, targetStudyCol);
+        ResolverHelper resolverHelper = new ResolverHelper(runIdCol, objectIdCol, assayPTIDCol, assayVisitIDCol, assayDateCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, specimenDateCol, targetStudyCol);
 
         if (targetStudyCol != null)
             columns.add(new TargetStudyInputColumn(resolverHelper, targetStudyCol));
@@ -857,6 +877,13 @@ public class PublishResultsQueryView extends ResultsQueryView
             c.setVisible(false);
             columns.add(c);
         }
+        if (specimenDateCol != null)
+        {
+            // This is ugly but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
+            DataColumn c = new DataColumn(specimenDateCol);
+            c.setVisible(false);
+            columns.add(c);
+        }
         if (matchCol != null)
         {
             // This is ugly but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
@@ -871,16 +898,20 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         columns.add(new ObjectIDDataInputColumn(null, resolverHelper, objectIdCol));
 
+        // UNDONE: Make the completion work on the row's current target study container.
         String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(_targetStudyContainer,
                 SpecimenService.CompletionType.ParticipantId);
         columns.add(new ParticipantIDDataInputColumn(ptidCompletionBase, resolverHelper, assayPTIDCol));
 
         String visitCompletionBase = SpecimenService.get().getCompletionURLBase(_targetStudyContainer,
                 SpecimenService.CompletionType.VisitId);
-        if (_timepointType == TimepointType.VISIT)
+
+        // UNDONE: If selected ids contain studies of different timepoint types, include both Date and Visit columns and enable and disable the inputs when the study picker changes.
+        // For now, just include both Date and Visit columns if the target study isn't known yet.
+        if (_timepointType == null || _timepointType == TimepointType.VISIT)
             columns.add(new VisitIDDataInputColumn(visitCompletionBase, resolverHelper, assayVisitIDCol));
-        else
-            columns.add(new DateDataInputColumn(null, resolverHelper, assayVisitIDCol));
+        if (_timepointType == null || _timepointType == TimepointType.DATE || _timepointType == TimepointType.CONTINUOUS)
+            columns.add(new DateDataInputColumn(null, resolverHelper, assayDateCol));
 
         if (_mismatched)
         {

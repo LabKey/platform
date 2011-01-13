@@ -18,11 +18,26 @@
 <%@ page import="org.labkey.api.study.actions.PublishConfirmAction"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PublishConfirmAction.PublishConfirmBean> me = (JspView<PublishConfirmAction.PublishConfirmBean>) HttpView.currentView();
     PublishConfirmAction.PublishConfirmBean bean = me.getModelBean();
+
+    String dateOrVisit;
+    if (bean.getTimepointType() == TimepointType.VISIT)
+    {
+        dateOrVisit = "Visit IDs";
+    }
+    else if (bean.getTimepointType() == TimepointType.DATE)
+    {
+        dateOrVisit = "Dates";
+    }
+    else
+    {
+        dateOrVisit = "either Dates or Visit IDs";
+    }
 %>
 <labkey:errors/>
 
@@ -35,9 +50,9 @@
 </script>
 <% if (bean.isMismatched()) { %>
 <p>
-    To reshow this form with ParticipantIDs and <%= bean.isDateBased() ? "Date" : "Visit ID" %>s associated with
+    To reshow this form with Participant IDs and <%= dateOrVisit %> associated with
     the specimens in the study, click on the Reset with Specimen Data button. To reshow with information from the assay,
     click on the Reset with Assay Data button.
 </p>
 <% } %>
-    Participant IDs and <%= bean.isDateBased() ? "Date" : "Visit ID" %>s are required for all rows.
+    Participant IDs and <%= dateOrVisit %> are required for all rows.

@@ -1019,10 +1019,11 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     for (var fieldKey in additionalFields)
                         fields.push(fieldKey);
 
+                    var viewName = (this.view && this.view.name) || this.viewName || "";
                     LABKEY.Query.getQueryDetails({
                         schemaName: this.schemaName,
                         queryName: this.queryName,
-                        viewName: (this.view && this.viewName) || "",
+                        viewName: viewName,
                         fields: fields,
                         successCallback: function (json, response, options) {
                             if (timerId > 0)
@@ -1040,7 +1041,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                                 dataRegion: this,
                                 schemaName: this.schemaName,
                                 queryName: this.queryName,
-                                viewName: this.viewName,
+                                viewName: viewName,
                                 query: json,
                                 allowableContainerFilters: this.allowableContainerFilters
                             });

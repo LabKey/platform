@@ -209,6 +209,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             }
         }
         Map<Object, String> postedVisits = null;
+        Map<Object, String> postedDates = null;
         Map<Object, String> postedPtids = null;
         Map<Object, String> postedTargetStudies = null;
         TimepointType timepointType = null;
@@ -224,7 +225,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             postedVisits = new HashMap<Object, String>();
             postedPtids = new HashMap<Object, String>();
             postedTargetStudies = new HashMap<Object, String>();
-            attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedTargetStudies, postedVisits, postedPtids, timepointType);
+            attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids);
         }
 
         AssaySchema schema = AssayService.get().createSchema(context.getUser(), getContainer());
@@ -237,7 +238,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         QuerySettings settings = schema.getSettings(context, name, name);
         settings.setAllowChooseView(false);
         PublishResultsQueryView queryView = new PublishResultsQueryView(_protocol, schema, settings,
-                allObjects, targetStudy, postedTargetStudies, postedVisits, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
+                allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
 
         if (publishConfirmForm.getContainerFilterName() != null)
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
@@ -295,8 +296,8 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                              Container targetStudy,
                              Map<Object, String> postedTargetStudies,
                              Map<Object, String> postedVisits,
-                             Map<Object, String> postedPtids,
-                             @Nullable TimepointType timepointType)
+                             Map<Object, String> postedDates,
+                             Map<Object, String> postedPtids)
             throws RedirectException
     {
         Map<Integer, AssayPublishKey> publishData = new LinkedHashMap<Integer, AssayPublishKey>();
@@ -351,66 +352,72 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                 rowLevelTargetStudy = targetStudy;
 
             if (rowLevelTargetStudy == null)
-                missingStudy = true;
+            {
+                if (selected)
+                    missingStudy = true;
+            }
             else
+            {
                 postedTargetStudies.put(objectId, rowLevelTargetStudy.getId());
 
-            if (timepointType == TimepointType.VISIT)
-            {
-                String visitIdStr = visitIds != null && visitIds.length > index ? visitIds[index] : null;
-                Float visitId = null;
-                if (visitIdStr == null || visitIdStr.trim().length() == 0)
+                if (AssayPublishService.get().getTimepointType(rowLevelTargetStudy) == TimepointType.VISIT)
                 {
-                    if (selected)
-                        missingVisitId = true;
-                }
-                else
-                {
-                    visitIdStr = visitIdStr.trim();
-                    try
-                    {
-                        visitId = Float.parseFloat(visitIdStr);
-                    }
-                    catch (NumberFormatException e)
+                    String visitIdStr = visitIds != null && visitIds.length > index ? visitIds[index] : null;
+                    Float visitId = null;
+                    if (visitIdStr == null || visitIdStr.trim().length() == 0)
                     {
                         if (selected)
-                            badVisitIds = true;
+                            missingVisitId = true;
                     }
-                }
-                postedPtids.put(objectId, participantId);
-                postedVisits.put(objectId, visitIdStr);
-                if (visitId != null && selected)
-                    publishData.put(objectId, new AssayPublishKey(rowLevelTargetStudy, participantId, visitId.floatValue(), objectId));
-            }
-            else // TimepointType.DATE or CONTINUOUS
-            {
-                String dateStr = dates != null && dates.length > index ? dates[index] : null;
-                Date date = null;
-                if (dateStr == null || dateStr.trim().length() == 0)
-                {
-                    if (selected)
-                        missingDate = true;
-                }
-                else
-                {
-                    dateStr = dateStr.trim();
-                    try
+                    else
                     {
-                        date = (Date) ConvertUtils.convert(dateStr, Date.class);
+                        visitIdStr = visitIdStr.trim();
+                        try
+                        {
+                            visitId = Float.parseFloat(visitIdStr);
+                        }
+                        catch (NumberFormatException e)
+                        {
+                            if (selected)
+                                badVisitIds = true;
+                        }
                     }
-                    catch (ConversionException e)
+                    postedPtids.put(objectId, participantId);
+                    postedVisits.put(objectId, visitIdStr);
+                    if (visitId != null && selected)
+                        publishData.put(objectId, new AssayPublishKey(rowLevelTargetStudy, participantId, visitId.floatValue(), objectId));
+                }
+                else // TimepointType.DATE or CONTINUOUS
+                {
+                    String dateStr = dates != null && dates.length > index ? dates[index] : null;
+                    Date date = null;
+                    if (dateStr == null || dateStr.trim().length() == 0)
                     {
                         if (selected)
-                            badDates = true;
+                            missingDate = true;
                     }
+                    else
+                    {
+                        dateStr = dateStr.trim();
+                        try
+                        {
+                            date = (Date) ConvertUtils.convert(dateStr, Date.class);
+                        }
+                        catch (ConversionException e)
+                        {
+                            if (selected)
+                                badDates = true;
+                        }
+                    }
+                    postedPtids.put(objectId, participantId);
+                    postedDates.put(objectId, dateStr);
+                    if (date != null && selected)
+                        publishData.put(objectId, new AssayPublishKey(rowLevelTargetStudy, participantId, date, objectId));
                 }
-                postedPtids.put(objectId, participantId);
-                postedVisits.put(objectId, dateStr);
-                if (date != null && selected)
-                    publishData.put(objectId, new AssayPublishKey(rowLevelTargetStudy, participantId, date, objectId));
             }
             index++;
         }
+
         if (missingStudy)
             errors.reject(null, "You must specify a Target Study for all selected rows.");
         if (missingPtid)
@@ -440,18 +447,18 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
     public static class PublishConfirmBean
     {
-        private boolean _dateBased;
+        private TimepointType _timepointType;
         private final boolean _mismatched;
 
         public PublishConfirmBean(TimepointType timepointType, boolean mismatched)
         {
-            _dateBased = timepointType != TimepointType.VISIT;
+            _timepointType = timepointType;
             _mismatched = mismatched;
         }
 
-        public boolean isDateBased()
+        public TimepointType getTimepointType()
         {
-            return _dateBased;
+            return _timepointType;
         }
 
         public boolean isMismatched()

@@ -839,7 +839,7 @@ public class DataRegion extends DisplayElement
             String filterErrorMsg = getFilterErrorMessage(ctx);
             String filterDescription = isShowFilterDescription() ? getFilterDescription(ctx) : null;
             if (filterErrorMsg != null && filterErrorMsg.length() > 0)
-                headerMessage.append("<span class=\"error\">").append(PageFlowUtil.filter(filterErrorMsg)).append("</span>");
+                headerMessage.append("<span class=\"labkey-error\">").append(PageFlowUtil.filter(filterErrorMsg)).append("</span>");
 
             if (filterDescription != null)
             {
