@@ -42,9 +42,10 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Dec 21, 2007
  */
@@ -58,10 +59,10 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private static Map<String, String> _reportIcons = new HashMap<String, String>();
 
     /** maps descriptor types to providers */
-    private final Map<String, Class> _descriptors = new HashMap<String, Class>();
+    private final ConcurrentMap<String, Class> _descriptors = new ConcurrentHashMap<String, Class>();
 
     /** maps report types to implementations */
-    private final Map<String, Class> _reports = new HashMap<String, Class>();
+    private final ConcurrentMap<String, Class> _reports = new ConcurrentHashMap<String, Class>();
 
     public ReportServiceImpl()
     {
@@ -80,81 +81,66 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         if (descriptor == null)
             throw new IllegalArgumentException("Invalid descriptor instance");
 
-        synchronized(_descriptors)
-        {
-            if (_descriptors.containsKey(descriptor.getDescriptorType()))
-                 _log.warn("Descriptor type : " + descriptor.getDescriptorType() + " has previously been registered.");
-                //throw new IllegalStateException("Descriptor type : " + descriptor.getDescriptorType() + " has previously been registered.");
-
-            _descriptors.put(descriptor.getDescriptorType(), descriptor.getClass());
-        }
+        if (null != _descriptors.putIfAbsent(descriptor.getDescriptorType(), descriptor.getClass()))
+            _log.warn("Descriptor type : " + descriptor.getDescriptorType() + " has previously been registered.");
+           //throw new IllegalStateException("Descriptor type : " + descriptor.getDescriptorType() + " has previously been registered.");
     }
 
     public ReportDescriptor createDescriptorInstance(String typeName)
     {
-        synchronized(_descriptors)
+        Class clazz = _descriptors.get(typeName);
+
+        if (null == clazz)
+            return null;
+
+        try
         {
-            if (_descriptors.containsKey(typeName))
+            if (ReportDescriptor.class.isAssignableFrom(clazz))
             {
-                Class clazz = _descriptors.get(typeName);
-
-                try
-                {
-                    if (ReportDescriptor.class.isAssignableFrom(clazz))
-                    {
-                        return (ReportDescriptor)clazz.newInstance();
-                    }
-
-                    throw new IllegalArgumentException("The specified class: " + clazz.getName() + " is not an instance of ReportDescriptor");
-                }
-                catch (Exception e)
-                {
-                    throw new IllegalArgumentException("The specified class could not be created: " + clazz.getName());
-                }
+                return (ReportDescriptor)clazz.newInstance();
             }
-        }
 
-        return null;
+            throw new IllegalArgumentException("The specified class: " + clazz.getName() + " is not an instance of ReportDescriptor");
+        }
+        catch (Exception e)
+        {
+            throw new IllegalArgumentException("The specified class could not be created: " + clazz.getName());
+        }
     }
 
     public void registerReport(Report report)
     {
         if (report == null)
             throw new IllegalArgumentException("Invalid report instance");
-        synchronized(_reports)
-        {
-            if (_reports.containsKey(report.getType()))
-                _log.warn("Report type : " + report.getType() + " has previously been registered.");
-                //throw new IllegalStateException("Report type : " + report.getType() + " has previously been registered.");
 
-            _reports.put(report.getType(), report.getClass());
-        }
+        if (null != _reports.putIfAbsent(report.getType(), report.getClass()))
+            _log.warn("Report type : " + report.getType() + " has previously been registered.");
+            //throw new IllegalStateException("Report type : " + report.getType() + " has previously been registered.");
     }
 
     public Report createReportInstance(String typeName)
     {
-        synchronized(_reports)
-        {
-            if (_reports.containsKey(typeName))
-            {
-                Class clazz = _reports.get(typeName);
-                try {
-                    if (Report.class.isAssignableFrom(clazz))
-                    {
-                        Report report = (Report)clazz.newInstance();
-                        report.getDescriptor().setReportType(typeName);
+        Class clazz = _reports.get(typeName);
 
-                        return report;
-                    }
-                    throw new IllegalArgumentException("The specified class: " + clazz.getName() + " is not an instance of Report");
-                }
-                catch (Exception e)
-                {
-                    throw new IllegalArgumentException("The specified class could not be created: " + clazz.getName());
-                }
+        if (null == clazz)
+            return null;
+
+        try
+        {
+            if (Report.class.isAssignableFrom(clazz))
+            {
+                Report report = (Report)clazz.newInstance();
+                report.getDescriptor().setReportType(typeName);
+
+                return report;
             }
+
+            throw new IllegalArgumentException("The specified class: " + clazz.getName() + " is not an instance of Report");
         }
-        return null;
+        catch (Exception e)
+        {
+            throw new IllegalArgumentException("The specified class could not be created: " + clazz.getName());
+        }
     }
 
     public Report createReportInstance(ReportDescriptor descriptor)
@@ -282,12 +268,14 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         //ensure that descriptor id is a DbReportIdentifier
         DbReportIdentifier reportId;
-        if(null == descriptor.getReportId() || descriptor.getReportId() instanceof DbReportIdentifier)
+
+        if (null == descriptor.getReportId() || descriptor.getReportId() instanceof DbReportIdentifier)
             reportId = (DbReportIdentifier)(descriptor.getReportId());
         else
             throw new RuntimeException("Can't save a report that is not stored in the database!");
 
         ReportDB reportDB = new ReportDB(c, user.getUserId(), key, descriptor);
+
         if (null != reportId && reportExists(reportId.getRowId()))
             reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId());
         else
@@ -300,8 +288,10 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         if (r != null)
         {
-            try {
+            try
+            {
                 ReportDescriptor descriptor = ReportDescriptor.createFromXML(r.getDescriptorXML());
+
                 if (descriptor != null)
                 {
                     BeanUtils.copyProperties(descriptor, r);
@@ -320,6 +310,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
                 throw new RuntimeException(e);
             }
         }
+
         return null;
     }
 
@@ -397,6 +388,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         {
             String type = descriptor.getReportType();
             Report report = createReportInstance(type);
+
             if (report != null)
             {
                 // the descriptor is a securable resource, so it must have a non-null container id, since file-based
@@ -473,6 +465,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         for (ReportService.UIProvider provider : _uiProviders)
         {
             String iconPath = provider.getReportIcon(context, reportType);
+
             if (iconPath != null)
             {
                 _reportIcons.put(reportType, iconPath);
@@ -544,8 +537,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         Report report = deserialize(reportFile);
         ReportDescriptor descriptor = report.getDescriptor();
-
         String key = descriptor.getReportKey();
+
         if (StringUtils.isBlank(key))
         {
             // use the default key used by query views
@@ -553,6 +546,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
 
         Report[] existingReports = getReports(user, container, key);
+
         for (Report existingReport : existingReports)
         {
             if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
@@ -563,6 +557,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
                 }, existingReport);
             }
         }
+
         int rowId = _saveReport(user, container, key, descriptor).getRowId();
         descriptor.setReportId(new DbReportIdentifier(rowId));
 
@@ -571,7 +566,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     private void _uncacheDependent(CustomView view)
     {
-        try {
+        try
+        {
             QueryDefinition def = view.getQueryDefinition();
             String key = ReportUtil.getReportKey(def.getSchemaName(), def.getName());
 
@@ -592,6 +588,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         private static final ReportComparator _instance = new ReportComparator();
 
         private ReportComparator(){}
+
         public static ReportComparator getInstance()
         {
             return _instance;

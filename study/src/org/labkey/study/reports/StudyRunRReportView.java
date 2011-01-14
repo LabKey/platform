@@ -65,16 +65,21 @@ public class StudyRunRReportView extends RunRReportView
 
                 view.addView(ReportsController.getParticipantNavTrail(context, participants));
             }
+
             view.addView(super.getTabView(tabId));
+
             return view;
         }
+
         return super.getTabView(tabId);
     }
 
     protected DataSetDefinition getDataSetDefinition()
     {
-        try {
+        try
+        {
             final Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
+
             if (study != null)
             {
                 return StudyManager.getInstance().

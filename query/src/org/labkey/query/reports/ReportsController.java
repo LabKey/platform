@@ -455,7 +455,7 @@ public class ReportsController extends SpringActionController
         public boolean handlePost(RReportBean bean, BindException errors) throws Exception
         {
             bean.setIsDirty(true);
-            RunRReportView.updateReportCache(bean, true);
+            ReportDesignerSessionCache.updateReportCache(bean, true);
             return true;
         }
 
@@ -475,7 +475,7 @@ public class ReportsController extends SpringActionController
             Report report = form.getReport();
             if (report instanceof RReport)
                 report.clearCache();
-            RunRReportView.updateReportCache(form, false);
+            ReportDesignerSessionCache.updateReportCache(form, false);
             return true;
         }
     }
@@ -722,8 +722,8 @@ public class ReportsController extends SpringActionController
             {
                 // report not saved yet, get state from the cache
                 String key = getViewContext().getActionURL().getParameter(RunRReportView.CACHE_PARAM);
-                if (key != null && RunRReportView.isCacheValid(key, context))
-                    RunRReportView.populateBeanFromCache(form, key, context);
+                if (key != null && ReportDesignerSessionCache.isCacheValid(key, context))
+                    ReportDesignerSessionCache.populateBeanFromCache(form, key, context);
                 report = form.getReport();
                 job = new RReportJob(ReportsPipelineProvider.NAME, info, form, root);
             }
