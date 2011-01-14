@@ -15,13 +15,13 @@
  */
 package org.labkey.api.reports.report.view;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.Pair;
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.view.ActionURL;
 
 import java.util.List;
@@ -122,6 +122,16 @@ public class ScriptReportBean extends ReportDesignBean
         list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
 
         return list;
+    }
+
+    void populateFromDescriptor(ReportDescriptor descriptor)
+    {
+        super.populateFromDescriptor(descriptor);
+
+        setScriptExtension(descriptor.getProperty(ScriptReportDescriptor.Prop.scriptExtension));
+        setScript(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
+
+        // TODO: Move setRunInBackground() here?
     }
 
     public String getScriptExtension()

@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.view;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
@@ -30,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Dec 4, 2007
  */
@@ -268,5 +268,21 @@ public class ReportDesignBean extends ReportForm
             list.add(new Pair<String, String>(ReportDescriptor.Prop.cached.name(), String.valueOf(_cached)));
 
         return list;
+    }
+
+    void populateFromDescriptor(ReportDescriptor descriptor)
+    {
+        setQueryName(descriptor.getProperty(ReportDescriptor.Prop.queryName));
+        setSchemaName(descriptor.getProperty(ReportDescriptor.Prop.schemaName));
+        setViewName(descriptor.getProperty(ReportDescriptor.Prop.viewName));
+        setDataRegionName(descriptor.getProperty(ReportDescriptor.Prop.dataRegionName));
+        setReportName(descriptor.getProperty(ReportDescriptor.Prop.reportName));
+        setReportType(descriptor.getProperty(ReportDescriptor.Prop.reportType));
+        setFilterParam(descriptor.getProperty(ReportDescriptor.Prop.filterParam));
+        setCached(BooleanUtils.toBoolean(descriptor.getProperty(ReportDescriptor.Prop.cached)));
+
+        setShareReport((descriptor.getOwner() == null));
+        setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
+        setRedirectUrl(getViewContext().getActionURL().getParameter("redirectUrl"));
     }
 }

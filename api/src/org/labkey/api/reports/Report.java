@@ -150,7 +150,8 @@ public interface Report
         public void renderImage(ViewContext context) throws Exception;        
     }
 
-    enum renderParam {
+    enum renderParam
+    {
         reportWebPart,
         reportId,
         showTabs,

@@ -87,7 +87,7 @@
         var saveDiv = YAHOO.util.Dom.get('saveDialog');
         saveDiv.style.display = "";
 
-        document.getElementById('renderReport').action = '<%=urlProvider(ReportUrls.class).urlSaveRReport(c)%>';
+        document.getElementById('renderReport').action = '<%=urlProvider(ReportUrls.class).urlSaveScriptReport(c)%>';
 
         var reportName = YAHOO.util.Dom.get('reportName');
         if (reportName.value == null || reportName.value.length == 0)
@@ -275,7 +275,7 @@
 
         this.send = function()
         {
-            req.open("POST", "<%=urlProvider(ReportUrls.class).urlSaveRReportState(c).getLocalURIString()%>");
+            req.open("POST", "<%=urlProvider(ReportUrls.class).urlSaveScriptReportState(c).getLocalURIString()%>");
             req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             req.send(url);
         };

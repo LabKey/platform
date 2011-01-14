@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.view;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.RReportDescriptor;
@@ -26,10 +27,9 @@ import java.util.List;
 import java.util.Collections;
 
 /**
- * Created by IntelliJ IDEA.
-* User: Karl Lum
-* Date: Dec 4, 2007
-*/
+ * User: Karl Lum
+ * Date: Dec 4, 2007
+ */
 public class RReportBean extends ScriptReportBean
 {
     protected List<String> _includedReports;
@@ -74,5 +74,18 @@ public class RReportBean extends ScriptReportBean
             list.add(new Pair<String, String>(RReportDescriptor.Prop.includedReports.toString(), report));
 
         return list;
+    }
+
+    @Override
+    void populateFromDescriptor(ReportDescriptor descriptor)
+    {
+        assert descriptor instanceof RReportDescriptor;
+
+        super.populateFromDescriptor(descriptor);
+
+        RReportDescriptor rDescriptor = (RReportDescriptor)descriptor;
+
+        setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(RReportDescriptor.Prop.runInBackground)));
+        setIncludedReports(rDescriptor.getIncludedReports());
     }
 }

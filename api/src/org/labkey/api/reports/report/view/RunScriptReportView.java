@@ -16,7 +16,6 @@
 package org.labkey.api.reports.report.view;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Container;
@@ -24,7 +23,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -67,9 +65,10 @@ public class RunScriptReportView extends RunReportView
         }
     }
 
+
     protected void renderTitle(Object model, PrintWriter out) throws Exception
     {
-        ScriptReportBean bean = getReportForm();
+        ScriptReportBean bean = getReportBean();
 
         if (null != bean.getReportId())
         {
@@ -80,10 +79,12 @@ public class RunScriptReportView extends RunReportView
         }
     }
 
+
     protected Report getReport()
     {
         return _report;
     }
+
 
     public List<NavTree> getTabList()
     {
@@ -100,17 +101,19 @@ public class RunScriptReportView extends RunReportView
         return tabs;
     }
 
+
     /**
      * Populates the form with cached report state information.
      * @throws Exception
      */
-    public static void initFormFromCache(ScriptReportBean form, String key, ViewContext context) throws Exception
+    public static void populateBeanFromCache(ScriptReportBean bean, String key, ViewContext context) throws Exception
     {
         HttpSession session = context.getRequest().getSession(true);
-        Map<String, Object> bean = (Map<String, Object>)session.getAttribute(getReportCacheKey(key, context.getContainer()));
+        Map<String, Object> map = (Map<String, Object>)session.getAttribute(getReportCacheKey(key, context.getContainer()));
 
-        BeanUtils.populate(form, bean);
+        BeanUtils.populate(bean, map);
     }
+
 
     public static boolean isCacheValid(String key, ViewContext context) throws Exception
     {
@@ -119,54 +122,33 @@ public class RunScriptReportView extends RunReportView
         return session.getAttribute(getReportCacheKey(key, context.getContainer())) != null;
     }
 
-    protected ScriptReportBean initReportCache(ScriptReportBean form) throws Exception
+
+    protected ScriptReportBean initReportCache(ScriptReportBean bean) throws Exception
     {
         String key = getViewContext().getActionURL().getParameter(CACHE_PARAM);
+
         if (!StringUtils.isEmpty(key) && isCacheValid(key, getViewContext()))
         {
-            initFormFromCache(form, key, getViewContext());
+            populateBeanFromCache(bean, key, getViewContext());
         }
         else if (_report != null)
         {
             ReportDescriptor reportDescriptor = _report.getDescriptor();
+            bean.populateFromDescriptor(reportDescriptor);
 
-            form.setQueryName(reportDescriptor.getProperty(ReportDescriptor.Prop.queryName));
-            form.setSchemaName(reportDescriptor.getProperty(ReportDescriptor.Prop.schemaName));
-            form.setViewName(reportDescriptor.getProperty(ReportDescriptor.Prop.viewName));
-            form.setDataRegionName(reportDescriptor.getProperty(ReportDescriptor.Prop.dataRegionName));
-            form.setReportName(reportDescriptor.getProperty(ReportDescriptor.Prop.reportName));
-            form.setReportType(reportDescriptor.getProperty(ReportDescriptor.Prop.reportType));
-            form.setFilterParam(reportDescriptor.getProperty(ReportDescriptor.Prop.filterParam));
-            form.setShareReport((reportDescriptor.getOwner() == null));
-            form.setInheritable((reportDescriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
-            form.setCached(BooleanUtils.toBoolean(reportDescriptor.getProperty(ReportDescriptor.Prop.cached)));
-
-            form.setScriptExtension(reportDescriptor.getProperty(ScriptReportDescriptor.Prop.scriptExtension));
-            form.setScript(reportDescriptor.getProperty(ScriptReportDescriptor.Prop.script));
-
-            //if (descriptor.getProperty("redirectUrl") != null)
-            //    form.setRedirectUrl(descriptor.getProperty("redirectUrl"));
-            form.setRedirectUrl(getViewContext().getActionURL().getParameter("redirectUrl"));
-
-            // TODO: Refactor
-            if (reportDescriptor instanceof RReportDescriptor)
-            {
-                RReportDescriptor descriptor = (RReportDescriptor)reportDescriptor;
-
-                form.setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(RReportDescriptor.Prop.runInBackground)));
-            }
-
-            // finally save in session cache
-            updateReportCache(form, true);
+            // save in session cache
+            updateReportCache(bean, true);
         }
 
-        return form;
+        return bean;
     }
 
+
     public static final String SCRIPT_REPORT_CACHE_PREFIX = "ScriptReportCache/";
+
     public static String getReportCacheKey(Object reportId, Container c)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         sb.append(SCRIPT_REPORT_CACHE_PREFIX);
         sb.append(c.getId());
@@ -176,31 +158,47 @@ public class RunScriptReportView extends RunReportView
         return sb.toString();
     }
 
+
     public static void updateReportCache(ScriptReportBean form, boolean replace) throws Exception
     {
         // saves report editing state in session
-        Map<String, Object> bean = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<String, Object>();
+
         for (Pair<String, String> param : form.getParameters())
-            bean.put(param.getKey(), param.getValue());
+            map.put(param.getKey(), param.getValue());
+
+        // bad, need a better way to handle the bean type mismatch
+        if (form instanceof RReportBean)
+        {
+            if (!((RReportBean)form).getIncludedReports().isEmpty())
+                map.put(RReportDescriptor.Prop.includedReports.name(), ((RReportBean)form).getIncludedReports());
+        }
 
         HttpSession session = form.getRequest().getSession(true);
+
         if (replace)
-            session.setAttribute(getReportCacheKey(form.getReportId(), form.getContainer()), bean);
+        {
+            session.setAttribute(getReportCacheKey(form.getReportId(), form.getContainer()), map);
+        }
         else
         {
             String key = getReportCacheKey(form.getReportId(), form.getContainer());
             Object o = session.getAttribute(key);
+
             if (o instanceof Map)
             {
                 ((Map)o).put(ReportDescriptor.Prop.viewName.name(), null);
-                ((Map)o).putAll(bean);
+                ((Map)o).putAll(map);
             }
             else
-                session.setAttribute(key, bean);
+            {
+                session.setAttribute(key, map);
+            }
         }
     }
 
-    private ScriptReportBean getReportForm() throws Exception
+
+    private ScriptReportBean getReportBean() throws Exception
     {
         ScriptReportBean form = new ScriptReportBean();
         form.setReportId(_reportId);
@@ -223,15 +221,17 @@ public class RunScriptReportView extends RunReportView
         return form;
     }
 
+
     protected ActionURL getRenderAction() throws Exception
     {
         return null;
     }
 
+
     public HttpView getTabView(String tabId) throws Exception
     {
         VBox view = new VBox();
-        ScriptReportBean form = getReportForm();
+        ScriptReportBean form = getReportBean();
 
         if (TAB_SOURCE.equals(tabId))
         {
@@ -265,6 +265,7 @@ public class RunScriptReportView extends RunReportView
 
         return view;
     }
+
 
     protected static class ScriptTabInfo extends ReportTabInfo
     {
