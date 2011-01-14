@@ -228,6 +228,12 @@ LABKEY.Query = new function()
             if (config.sort)
                 qsParams = {"query.sort": config.sort};
 
+            if (config.parameters)
+            {
+                for (var n in config.parameters)
+                    qsParams["query.param." + n] = config.parameters[n];
+            }
+
             return Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams),
                 method : 'POST',

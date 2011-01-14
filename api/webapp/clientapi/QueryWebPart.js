@@ -266,6 +266,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     createParams : function () {
         //setup the params
         var params = {};
+        var name;
         params["webpart.name"] = "Query";
         LABKEY.Utils.applyTranslated(params, this, this._paramTranslationMap, true, false);
 
@@ -288,8 +289,14 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         //add user filters (already in encoded form)
         if (this.userFilters)
         {
-            for (var name in this.userFilters)
+            for (name in this.userFilters)
                 params[name] = this.userFilters[name];
+        }
+
+        if (this.parameters)
+        {
+            for (name in this.parameters)
+                params[this.dataRegionName  + ".param." + name] = this.parameters[name];
         }
 
         // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
