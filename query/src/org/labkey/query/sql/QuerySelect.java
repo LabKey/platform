@@ -61,6 +61,7 @@ public class QuerySelect extends QueryRelation
     QOrder _orderBy;
     QLimit _limit;
 
+    private QSelect _select;
     private QWhere _where;
     private QWhere _having;
     QQuery _root;
@@ -100,29 +101,43 @@ public class QuerySelect extends QueryRelation
 	{
 		this(query, query.getSchema(), null);
         this._query = query;
-		this._root = root;
+		initializeFromQQuery(root);
 		initializeSelect();
         assert MemTracker.put(this);
 	}
 
 
-    private QuerySelect(QuerySelect parent, QQuery query, boolean inFromClause, String alias)
+    // create a simple QuerySelect over a QRelation
+    QuerySelect(QueryRelation from, QOrder order, QLimit limit)
     {
-        this(parent._query, parent._schema, alias);
+        this(from._query, from.getSchema(), null);
 
-        assert inFromClause == (alias != null);
-        this._query = parent._query;
-        _parent = parent;
-        _root = query;
-        _inFromClause = inFromClause;
-        try
-        {
-            initializeSelect();
-        }
-        catch (RuntimeException ex)
-        {
-            throw Query.wrapRuntimeException(ex, _queryText);
-        }
+        String alias = StringUtils.defaultString(from.getAlias(), "T");
+        from.setAlias(alias);
+
+        _orderBy = order;
+        _limit = limit;
+        
+        QTable t = new QTable(from, alias);
+        _parsedJoins = new ArrayList<QJoinOrTable>();
+        _parsedJoins.add(t);
+        _onExpressions = Collections.EMPTY_LIST;
+        _parsedTables = new LinkedHashMap<FieldKey, QTable>();
+        _parsedTables.put(t.getTableKey(), t);
+        _select = new QSelect();
+        _select.childList().add(new QRowStar());
+        initializeSelect();
+    }
+
+
+    QueryRelation createSubquery(QQuery qquery, boolean inFromClause, String alias)
+    {
+        QueryRelation sub = Query.createQueryRelation(this._query, qquery);
+        sub._parent = this;
+        sub._inFromClause = inFromClause;
+        if (null != alias)
+            sub.setAlias(alias);
+        return sub;
     }
 
 
@@ -167,17 +182,15 @@ groupByLoop:
         return ret;
     }
 
-    
-    private void initializeSelect()
+    private void initializeFromQQuery(QQuery root)
     {
-        _columns = new LinkedHashMap<FieldKey,SelectColumn>();
-        if (_root == null)
+        _root = root;
+        if (root == null)
             return;
-        _limit = _root.getLimit();
-        QSelect select = _root.getSelect();
+        _limit = root.getLimit();
+        QSelect select = root.getSelect();
 
-        _tables = new HashMap<FieldKey, QueryRelation>();
-        QFrom from = _root.getFrom();
+        QFrom from = root.getFrom();
         if (from == null)
         {
             _parsedTables = Collections.EMPTY_MAP;
@@ -191,10 +204,19 @@ groupByLoop:
             _parsedJoins = p.getJoins();
             _onExpressions = p.getOns();
         }
-        _where = _root.getWhere();
-        _having = _root.getHaving();
-        _groupBy = _root.getGroupBy();
-        _orderBy = _root.getOrderBy();
+        _select = root.getSelect();
+        _where = root.getWhere();
+        _having = root.getHaving();
+        _groupBy = root.getGroupBy();
+        _orderBy = root.getOrderBy();
+    }
+
+
+    private void initializeSelect()
+    {
+        _columns = new LinkedHashMap<FieldKey,SelectColumn>();
+        _tables = new HashMap<FieldKey, QueryRelation>();
+
         for (QTable qtable : _parsedTables.values())
         {
             FieldKey key = qtable.getTableKey();
@@ -202,9 +224,13 @@ groupByLoop:
             QNode node = qtable.getTable();
 
             QueryRelation relation;
-            if (node instanceof QQuery)
+            if (null != qtable.getQueryRelation())
             {
-                relation = new QuerySelect(this, (QQuery) node, true, alias);
+                relation = qtable.getQueryRelation();
+            }
+            else if (node instanceof QQuery)
+            {
+                relation = createSubquery((QQuery) node, true, alias);
             }
             else if (node instanceof  QUnion)
             {
@@ -229,9 +255,9 @@ groupByLoop:
         }
 
         ArrayList<SelectColumn> columnList = new ArrayList<SelectColumn>();
-        if (select != null)
+        if (_select != null)
         {
-            LinkedList<QNode> process = new LinkedList(_root.getSelect().childList());
+            LinkedList<QNode> process = new LinkedList(_select.childList());
             while (!process.isEmpty())
             {
                 QNode node = process.removeFirst();
@@ -699,10 +725,10 @@ groupByLoop:
         }
         if (expr instanceof QQuery)
         {
-            QuerySelect sub = ((QQuery)expr).getQuerySelect();
+            QueryRelation sub = ((QQuery)expr).getQuerySelect();
             if (sub == null)
             {
-                sub = new QuerySelect(this, (QQuery)expr, false, null);
+                sub = createSubquery((QQuery)expr, false, null);
                 ((QQuery)expr)._select = sub;
             }
             sub.declareFields();
@@ -800,7 +826,7 @@ groupByLoop:
     {
         if (expr instanceof QQuery)
         {
-            QuerySelect subquery = new QuerySelect(this, (QQuery) expr, false, null);
+            QueryRelation subquery = createSubquery((QQuery) expr, false, null);
             return new QQuery(subquery);
         }
         if (expr instanceof QRowStar)

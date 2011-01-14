@@ -207,7 +207,7 @@ public class Query
             _parameters = parser.getParameters();
 
 			QNode root = parser.getRoot();
-            QueryRelation relation = createQueryRelation(root);
+            QueryRelation relation = createQueryRelation(this, root);
 
             if (relation == null)
                 return;
@@ -228,21 +228,28 @@ public class Query
     }
 
 
-    QueryRelation createQueryRelation(QNode root)
+
+    public static QueryRelation createQueryRelation(Query query, QNode root)
     {
         if (root instanceof QUnion)
-            return new QueryUnion(this, (QUnion)root);
+            return new QueryUnion(query, (QUnion)root);
 
         if (!(root instanceof QQuery))
             return null;
 
-        QuerySelect select = new QuerySelect(this, (QQuery)root);
+        QuerySelect select = new QuerySelect(query, (QQuery)root);
 
         if (null == root.getChildOfType(QPivot.class))
             return select;
 
-        QueryPivot pivot = new QueryPivot(this, select, (QQuery)root);
-        return pivot;
+        QueryPivot pivot = new QueryPivot(query, select, (QQuery)root);
+        pivot.setAlias("_pivot");
+
+        if (null == ((QQuery) root).getLimit() && null == ((QQuery) root).getOrderBy())
+            return pivot;
+
+        QuerySelect qob = new QuerySelect(pivot, ((QQuery)root).getOrderBy(), ((QQuery)root).getLimit());        
+        return qob;
     }
 
 
@@ -872,7 +879,14 @@ public class Query
         // quoted identifiers
         new SqlTest("SELECT T.\"count\", T.\"Opened By\", T.Seven, T.MonthName FROM (SELECT R.d as \"count\", R.seven as \"Seven\", R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby as \"Opened By\", R.month as MonthName FROM R) T", 4, Rsize),
 
+        // PIVOT
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6)", 2, 12), // (twelve,C), C has fk for pivot values    
+        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6) ORDER BY seven LIMIT 4", 2, 4), // (twelve,C), C has fk for pivot values
+        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6) ORDER BY C.\"0\"", 2, 4), // (twelve,C), C has fk for pivot values
+        new SqlTest("SELECT seven, month, count(*) C\n" +
+                "FROM R\n" +
+                "GROUP BY seven, month\n" +
+                "PIVOT C BY month IN('January','February','March','April','May','June','July','August','September','October','November','December')"),
 
         // saved queries
         new SqlTest("Rquery",
@@ -1020,6 +1034,18 @@ public class Query
             addProperties(S);
             S.save(user);
             S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
+
+            if (0==1)
+            {
+                try{
+                    ListDefinition RHOME = s.createList(ContainerManager.getForPath("/home"), "R");
+                    RHOME.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
+                    RHOME.setKeyName("rowid");
+                    addProperties(RHOME);
+                    RHOME.save(user);
+                    RHOME.insertListItems(user, new TestDataLoader(RHOME.getName() + hash, Rsize), null, null);
+                } catch (Exception x){};
+            }
         }
 
 

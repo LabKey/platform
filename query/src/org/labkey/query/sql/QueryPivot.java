@@ -16,12 +16,15 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -41,7 +44,7 @@ import java.util.Map;
 public class QueryPivot extends QueryRelation
 {
     QuerySelect _from;
-    
+
     // all columns in the select except the pivot column, in original order
     LinkedHashMap<String,RelationColumn> _select = new LinkedHashMap<String,RelationColumn>();
 
@@ -174,16 +177,82 @@ public class QueryPivot extends QueryRelation
         return qti;
     }
 
+
+    class PivotColumn extends RelationColumn
+    {
+        RelationColumn _s;
+
+        PivotColumn(RelationColumn s)
+        {
+            _s = s;
+        }
+
+        @Override
+        SQLFragment getInternalSql()
+        {
+            SQLFragment ret = _s.getInternalSql();
+            return ret;
+        }
+
+        // wrapper methods
+
+        @Override
+        public FieldKey getFieldKey()
+        {
+            return _s.getFieldKey();
+        }
+
+        @Override
+        String getAlias()
+        {
+            return _s.getAlias();
+        }
+
+        @Override
+        QueryRelation getTable()
+        {
+            return QueryPivot.this;
+        }
+
+        @NotNull
+        @Override
+        public JdbcType getJdbcType()
+        {
+            return _s.getJdbcType();
+        }
+
+        @Override
+        void copyColumnAttributesTo(ColumnInfo to)
+        {
+            _s.copyColumnAttributesTo(to);
+        }
+    }
+
+
+    Map<String,RelationColumn> _columns = null;
+
     @Override
     protected Map<String, RelationColumn> getAllColumns()
     {
-        return _select;
+        if (null == _columns)
+        {
+            _columns = new CaseInsensitiveMapWrapper<RelationColumn>(new LinkedHashMap<String, RelationColumn>(_select.size()*2));
+            for (Map.Entry<String,RelationColumn> entry : _select.entrySet())
+            {
+                String name = entry.getKey();
+                RelationColumn s = entry.getValue();
+                RelationColumn p = new PivotColumn(s);
+                _columns.put(name, p);
+            }
+        }
+
+        return _columns;
     }
 
     @Override
     RelationColumn getColumn(@NotNull String name)
     {
-        return _select.get(name);
+        return getAllColumns().get(name);
     }
 
     @Override
@@ -207,7 +276,69 @@ public class QueryPivot extends QueryRelation
     @Override
     public SQLFragment getSql()
     {
-        return _from.getSql();
+        String tableAlias = "_t";
+        SqlBuilder sql = new SqlBuilder(getSqlDialect());
+        sql.appendComment("<QueryPivot>", getSqlDialect());
+        sql.append("SELECT ");
+        String comma = "";
+
+        for (RelationColumn col : _select.values())
+        {
+            String name = col.getFieldKey().getName();
+            boolean isAgg = _aggregates.containsKey(name);
+            boolean isKey = _grouping.containsKey(name);
+
+            if (isKey)
+            {
+                sql.append(comma).append(col.getValueSql(tableAlias)).append(" AS ").append(col.getAlias());
+                comma = ",\n";
+                continue;
+            }
+
+            if (!isAgg)
+            {
+                sql.append(comma).append("MAX(").append(col.getValueSql(tableAlias)).append(") AS ").append(col.getAlias());
+                comma = ",\n";
+                continue;
+            }
+
+            QAggregate.Type type = _aggregates.get(name);
+            if (null == type)
+            {
+                sql.append(comma).append("NULL AS ").append(col.getAlias());
+                comma = ",\n";
+            }
+            else
+            {
+                String agg = type.name();
+                sql.append(comma).append(agg).append("(").append(col.getValueSql(tableAlias)).append(") AS ").append(col.getAlias());
+                comma = ",\n";
+            }
+
+            // add aggregate expressions
+            for (Map.Entry<String,IConstant> pivotValues : _pivotValues.entrySet())
+            {
+                QNode value = (QNode)pivotValues.getValue();
+                String alias = makePivotColumnAlias(col.getFieldKey(), pivotValues.getKey());
+                sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql(tableAlias)).append("=").append(value.getSourceText());
+                sql.append(") THEN (").append(col.getValueSql(tableAlias)).append(") ELSE NULL END) AS ").append(alias);
+                comma = ",\n";
+            }
+        }
+        sql.append("\n FROM (").append(_from._getSql(true)).append(") ").append(tableAlias).append("\n");
+
+        // UNDONE: separate grouping columns from extra 'fact' columns
+        // sql.append("GROUP BY ");
+        sql.pushPrefix("GROUP BY ");
+        for (RelationColumn col : _grouping.values())
+        {
+            if (_aggregates.containsKey(col.getFieldKey().getName()))
+                continue;
+            sql.append(col.getValueSql(tableAlias));
+            sql.nextPrefix(",");
+        }
+        sql.appendComment("</QueryPivot>", getSqlDialect());
+        return sql;
     }
 
     @Override
@@ -246,78 +377,30 @@ public class QueryPivot extends QueryRelation
             f.append("(").append(getSql()).append(") ").append(pivotTableAlias);
             return f;
         }
-
-        private SQLFragment getSql()
-        {
-            String tableAlias = "_t";
-            SqlBuilder sql = new SqlBuilder(getSqlDialect());
-            sql.appendComment("<QueryPivot>", getSqlDialect());
-            sql.append("SELECT ");
-            String comma = "";
-
-            for (RelationColumn col : _select.values())
-            {
-                String name = col.getFieldKey().getName();
-                boolean isAgg = _aggregates.containsKey(name);
-                boolean isKey = _grouping.containsKey(name);
-
-                if (isKey)
-                {
-                    sql.append(comma).append(col.getValueSql(tableAlias)).append(" AS ").append(col.getAlias());
-                    comma = ",\n";
-                    continue;
-                }
-                
-                if (!isAgg)
-                {
-                    sql.append(comma).append("MAX(").append(col.getValueSql(tableAlias)).append(") AS ").append(col.getAlias());
-                    comma = ",\n";
-                    continue;
-                }
-
-                QAggregate.Type type = _aggregates.get(name);
-                if (null == type)
-                {
-                    sql.append(comma).append("NULL AS ").append(col.getAlias());
-                    comma = ",\n";
-                }
-                else
-                {
-                    String agg = type.name();
-                    sql.append(comma).append(agg).append("(").append(col.getValueSql(tableAlias)).append(") AS ").append(col.getAlias());
-                    comma = ",\n";
-                }
-
-                // add aggregate expressions
-                for (Map.Entry<String,IConstant> pivotValues : _pivotValues.entrySet())
-                {
-                    FieldKey key = new FieldKey(col.getFieldKey(), pivotValues.getKey().toLowerCase());
-                    QNode value = (QNode)pivotValues.getValue();
-                    String alias = AliasManager.makeLegalName(key.toString(),getSqlDialect());
-                    sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql(tableAlias)).append("=").append(value.getSourceText());
-                    sql.append(") THEN (").append(col.getValueSql(tableAlias)).append(") ELSE NULL END) AS ").append(alias);
-                    comma = ",\n";
-                }
-            }
-            sql.append("\n FROM (").append(_from._getSql(true)).append(") ").append(tableAlias).append("\n");
-
-            // UNDONE: separate grouping columns from extra 'fact' columns
-            // sql.append("GROUP BY ");
-            sql.pushPrefix("GROUP BY ");
-            for (RelationColumn col : _grouping.values())
-            {
-                if (_aggregates.containsKey(col.getFieldKey().getName()))
-                    continue;
-                sql.append(col.getValueSql(tableAlias));
-                sql.nextPrefix(",");
-            }
-            sql.appendComment("</QueryPivot>", getSqlDialect());
-            return sql;
-        }
     }
 
 
 
+    SqlDialect _dialect;
+    
+    SqlDialect getSqlDialect()
+    {
+        if (null == _dialect)
+            _dialect = _query.getSchema().getDbSchema().getSqlDialect();
+        return _dialect;
+    }
+
+
+    
+    // We could use aliasManager and remember these
+    // but its easier if we can generate names we expect to be unique
+    String makePivotColumnAlias(FieldKey agg, String pivotValueName)
+    {
+        FieldKey key = new FieldKey(agg, pivotValueName);
+        String alias =  AliasManager.makeLegalName("_p_" + key.toString().toLowerCase(), getSqlDialect());
+        return alias;
+    }
+    
 
     class PivotForeignKey implements ForeignKey
     {
@@ -338,7 +421,7 @@ public class QueryPivot extends QueryRelation
                 return null;
             }
             FieldKey key = new FieldKey(_agg.getFieldKey(), displayField.toLowerCase());
-            String alias = AliasManager.makeLegalName(key.toString(),parent.getSqlDialect());
+            String alias = makePivotColumnAlias(parent.getFieldKey(), displayField);
             return new ExprColumn(parent.getParentTable(), key, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + alias), parent.getJdbcType());
         }
 
@@ -408,12 +491,9 @@ public class QueryPivot extends QueryRelation
 
 
 /***  TODO
-
-  ORDER BY, LIMIT
   case-sensitive grouping in Postgres
   non-string pivot column (allow?)
   dynamic pivot column list (IN not specified)
-  requires pg 8.3.7?
-  QuerySelect.getGroupByColumns() needs to be called after resolveFields()?
-
+  QuerySelect.getGroupByColumns() after resolveFields() would give better expression matching
+  NOTE bugs with postgres < 8.3.7?
 ***/

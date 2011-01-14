@@ -30,6 +30,14 @@ public class QTable implements QJoinOrTable
         _table = table;
     }
 
+
+    public QTable(QueryRelation t, String alias)
+    {
+        _queryRelation = t;
+        _alias = new QIdentifier(alias);
+        _table = _alias;
+    }
+
     public void setAlias(QIdentifier alias)
     {
         _alias = alias;

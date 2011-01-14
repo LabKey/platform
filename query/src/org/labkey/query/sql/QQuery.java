@@ -23,19 +23,19 @@ import org.labkey.api.query.QueryParseException;
 
 public class QQuery extends QExpr
 {
-    QuerySelect _select;
+    QueryRelation _select;
 
     public QQuery()
     {
 		super(QNode.class);
     }
 
-    public QQuery(QuerySelect query)
+    public QQuery(QueryRelation query)
     {
         _select = query;
     }
 
-    public QuerySelect getQuerySelect()
+    public QueryRelation getQuerySelect()
     {
         return _select;
     }
