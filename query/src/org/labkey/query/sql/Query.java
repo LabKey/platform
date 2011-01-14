@@ -732,7 +732,7 @@ public class Query
 			countRows = rows;
 		}
 
-        void validate(Query.TestCase test)
+        void validate(QueryTestCase test)
         {
             // HACK!!  We're not testing any ORDER BY SQL!!  TODO: Remove this once #11273 is fixed
             if (sql.contains("ORDER BY"))
@@ -744,9 +744,9 @@ public class Query
                 rs = test.resultset(sql);
                 ResultSetMetaData md = rs.getMetaData();
                 if (countColumns >= 0)
-                    TestCase.assertEquals(sql, countColumns, md.getColumnCount());
+                    QueryTestCase.assertEquals(sql, countColumns, md.getColumnCount());
                 if (countRows >= 0)
-                    TestCase.assertEquals(sql, countRows, rs.getSize());
+                    QueryTestCase.assertEquals(sql, countRows, rs.getSize());
 
 				if (name != null)
 				{
@@ -763,7 +763,7 @@ public class Query
             }
             catch (Exception x)
             {
-                TestCase.fail(x.toString() + "\n" + sql);
+                QueryTestCase.fail(x.toString() + "\n" + sql);
             }
             finally
             {
@@ -781,13 +781,13 @@ public class Query
         }
 
         @Override
-        void validate(Query.TestCase test)
+        void validate(QueryTestCase test)
         {
             CachedRowSetImpl rs = null;
             try
             {
                 rs = (CachedRowSetImpl)QueryService.get().select(test.lists, sql);
-                TestCase.fail("should fail: " + sql);
+                QueryTestCase.fail("should fail: " + sql);
             }
             catch (SQLException x)
             {
@@ -799,7 +799,7 @@ public class Query
             }
             catch (Exception x)
             {
-                TestCase.fail("unexpected exception: " + x.toString());
+                QueryTestCase.fail("unexpected exception: " + x.toString());
             }
             finally
             {
@@ -980,7 +980,7 @@ public class Query
 
 
 
-    public static class TestCase extends Assert
+    public static class QueryTestCase extends Assert
     {
         private String hash = GUID.makeHash();
         private QuerySchema lists;
@@ -1035,7 +1035,7 @@ public class Query
             S.save(user);
             S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
 
-            if (0==1)
+            if (1==1)
             {
                 try{
                     ListDefinition RHOME = s.createList(ContainerManager.getForPath("/home"), "R");

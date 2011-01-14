@@ -50,7 +50,6 @@ import org.labkey.query.reports.*;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
-import org.labkey.query.sql.ConvertType;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
@@ -163,7 +162,7 @@ public class QueryModule extends DefaultModule
     {
         return new HashSet<Class>(Arrays.asList(
                 SqlParser.TestCase.class,
-                Query.TestCase.class,
+                Query.QueryTestCase.class,
                 QueryServiceImpl.TestCase.class,
                 JdbcType.TestCase.class,
                 QNode.TestCase.class
