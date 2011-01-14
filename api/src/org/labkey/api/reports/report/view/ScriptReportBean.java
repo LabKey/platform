@@ -24,7 +24,9 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
 * User: Karl Lum
@@ -132,6 +134,17 @@ public class ScriptReportBean extends ReportDesignBean
         setScript(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
 
         // TODO: Move setRunInBackground() here?
+    }
+
+    Map<String, Object> getCacheableMap()
+    {
+        // saves report editing state in session
+        Map<String, Object> map = new HashMap<String, Object>();
+
+        for (Pair<String, String> param : getParameters())
+            map.put(param.getKey(), param.getValue());
+
+        return map;
     }
 
     public String getScriptExtension()

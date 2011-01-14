@@ -50,12 +50,15 @@ public abstract class RunReportView extends TabStripView
             include(new HtmlView("Unable to find the specified report"));
             return;
         }
+
         renderTitle(model, out);
+
         if (getViewContext().getActionURL().getParameter(MSG_PARAM) != null)
             getErrors().reject(MSG_PARAM, getViewContext().getActionURL().getParameter(MSG_PARAM));
 
         super.renderInternal(model, out);
     }
+
 
     protected void renderTitle(Object model, PrintWriter out) throws Exception
     {
@@ -131,7 +134,8 @@ public abstract class RunReportView extends TabStripView
         ActionURL url = getViewContext().getActionURL();
         String returnURL = url.getParameter("returnURL");
 
-        try {
+        try
+        {
             if (!StringUtils.isBlank(returnURL))
                 return new URLHelper(returnURL);
             else

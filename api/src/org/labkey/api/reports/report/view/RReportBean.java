@@ -25,6 +25,7 @@ import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * User: Karl Lum
@@ -87,5 +88,19 @@ public class RReportBean extends ScriptReportBean
 
         setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(RReportDescriptor.Prop.runInBackground)));
         setIncludedReports(rDescriptor.getIncludedReports());
+    }
+
+    @Override
+    Map<String, Object> getCacheableMap()
+    {
+        Map<String, Object> map = super.getCacheableMap();
+
+        // bad, need a better way to handle the bean type mismatch
+        List<String> includedReports = getIncludedReports();
+
+        if (!includedReports.isEmpty())
+            map.put(RReportDescriptor.Prop.includedReports.name(), includedReports);
+
+        return map;
     }
 }

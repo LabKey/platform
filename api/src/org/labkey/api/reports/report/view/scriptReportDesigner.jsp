@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportDesignerSessionCache" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -194,7 +195,7 @@
     <% if (null != bean.getReportId()) { %>
         <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
     <% } %>
-    <input type="hidden" name="cacheKey" value="<%=RunRReportView.getReportCacheKey(bean.getReportId(), c)%>">
+    <input type="hidden" name="cacheKey" value="<%=org.labkey.api.reports.report.view.ReportDesignerSessionCache.getReportCacheKey(bean.getReportId(), c)%>">
     <input type="hidden" name="showDebug" value="true">
     <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
 

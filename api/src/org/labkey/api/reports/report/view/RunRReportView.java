@@ -16,17 +16,13 @@
 
 package org.labkey.api.reports.report.view;
 
-import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.RReportJob;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -34,13 +30,10 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 
-import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: Karl Lum
@@ -54,6 +47,7 @@ public class RunRReportView extends RunScriptReportView
     {
         super(report);
     }
+
 
     public List<NavTree> getTabList()
     {
@@ -72,72 +66,17 @@ public class RunRReportView extends RunScriptReportView
     }
 
 
-    public static void updateReportCache(ScriptReportBean form, boolean replace) throws Exception
-    {
-        // saves report editing state in session
-        Map<String, Object> map = new HashMap<String, Object>();
-
-        for (Pair<String, String> param : form.getParameters())
-            map.put(param.getKey(), param.getValue());
-
-        // bad, need a better way to handle the bean type mismatch
-        if (form instanceof RReportBean)
-        {
-            if (!((RReportBean) form).getIncludedReports().isEmpty())
-                map.put(RReportDescriptor.Prop.includedReports.name(), ((RReportBean) form).getIncludedReports());
-        }
-
-        HttpSession session = form.getRequest().getSession(true);
-
-        if (replace)
-        {
-            session.setAttribute(getReportCacheKey(form.getReportId(), form.getContainer()), map);
-        }
-        else
-        {
-            String key = getReportCacheKey(form.getReportId(), form.getContainer());
-            Object o = session.getAttribute(key);
-
-            if (o instanceof Map)
-            {
-                ((Map)o).put(ReportDescriptor.Prop.viewName.name(), null);
-                ((Map)o).putAll(map);
-            }
-            else
-            {
-                session.setAttribute(key, map);
-            }
-        }
-    }
-
-
     private RReportBean getReportForm() throws Exception
     {
-        RReportBean form = new RReportBean();
-        form.setReportId(_reportId);
-        form.setViewContext(getViewContext());
-
-        if (getErrors() != null)
-            form.setErrors(getErrors());
-        else
-            form.setErrors(new NullSafeBindException(form, "form"));
-
-        initReportCache(form);
-
-        // set the default redirect url
-        if (form.getRedirectUrl() == null)
-            form.setRedirectUrl(getBaseUrl().
-                    //deleteParameter(TAB_PARAM).
-                    replaceParameter(TAB_PARAM, TAB_SOURCE).                            
-                    deleteParameter(CACHE_PARAM).getLocalURIString());
-
-        return form;
+        return populateReportForm(new RReportBean());
     }
+
 
     public HttpView getTabView(String tabId) throws Exception
     {
         VBox view = new VBox();
         RReportBean form = getReportForm();
+
         if (TAB_SOURCE.equals(tabId))
         {
             JspView designer = new JspView<RReportBean>("/org/labkey/api/reports/report/view/rReportDesigner.jsp", form, form.getErrors());
@@ -198,7 +137,7 @@ public class RunRReportView extends RunScriptReportView
                 if (report != null)
                 {
                     if (form.getIsDirty())
-                        ((RReport)report).clearCache();
+                        report.clearCache();
                     view.addView(report.renderReport(getViewContext()));
                 }
             }
