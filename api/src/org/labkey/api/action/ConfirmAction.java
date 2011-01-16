@@ -34,7 +34,6 @@ import org.labkey.api.util.URLHelper;
  */
 public abstract class ConfirmAction<FORM> extends BaseViewAction
 {
-    public static final String CONFIRMACTION = ConfirmAction.class.getName();
     boolean includeHeader = true;
 
     protected ConfirmAction()
@@ -97,8 +96,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
             else
             {
                 ModelAndView confirmView = getConfirmView(form, errors);
-                JspView confirmWrapper = new JspView("/org/labkey/api/action/confirmWrapper.jsp");
-                confirmWrapper.addObject(CONFIRMACTION, this);
+                JspView<ConfirmAction> confirmWrapper = new JspView<ConfirmAction>("/org/labkey/api/action/confirmWrapper.jsp", this);
                 confirmWrapper.setBody(confirmView);
                 getPageConfig().setTemplate(PageConfig.Template.Dialog);
                 return confirmWrapper;

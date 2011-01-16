@@ -130,10 +130,12 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
     public String getTypeDescription()
     {
         ScriptEngine engine = getScriptEngine();
+
         if (engine != null)
         {
             return engine.getFactory().getLanguageName();
         }
+
         return "Script Engine Report";        
         //throw new RuntimeException("No Script Engine is available for this Report");
     }
@@ -157,6 +159,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
             if (!StringUtils.isEmpty(filterParam))
             {
                 final String filterValue = (String)context.get(filterParam);
+
                 if (filterValue != null)
                 {
                     SimpleFilter filter = new SimpleFilter();
@@ -171,6 +174,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
 
             return new ResultsImpl(ctx);
         }
+
         return null;
     }
 

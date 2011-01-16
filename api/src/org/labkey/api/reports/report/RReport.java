@@ -94,7 +94,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
 
     protected String getScriptProlog(ViewContext context, File inputFile)
     {
-        StringBuffer labkey = new StringBuffer();
+        StringBuilder labkey = new StringBuilder();
 
         if (inputFile != null && inputFile.exists())
         {
@@ -103,11 +103,11 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
 
         labkey.append("labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
             "labkey.resolveLSID <- function(lsid){paste(labkey.url.base,\"experiment/resolveLSID.view?lsid=\",lsid,sep=\"\");}\n");
-        labkey.append("labkey.user.email=\"" + context.getUser().getEmail() + "\"\n");
+        labkey.append("labkey.user.email=\"").append(context.getUser().getEmail()).append("\"\n");
 
         ActionURL url = context.getActionURL();
-        labkey.append("labkey.url.path=\"" + url.getExtraPath() + "/\"\n");
-        labkey.append("labkey.url.base=\"" + url.getBaseServerURI() + context.getContextPath() + "/\"\n");
+        labkey.append("labkey.url.path=\"").append(url.getExtraPath()).append("/\"\n");
+        labkey.append("labkey.url.base=\"").append(url.getBaseServerURI()).append(context.getContextPath()).append("/\"\n");
 
         // url parameters
         Pair<String, String>[] params = url.getParameters();
@@ -115,6 +115,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         {
             String sep = "";
             labkey.append("labkey.url.params <- list(");
+
             for (Pair<String, String> param : params)
             {
                 labkey.append(sep);
@@ -127,6 +128,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
                 labkey.append("\"");
                 sep = ",";
             }
+
             labkey.append(")\n");
         }
         else
@@ -140,6 +142,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
             labkey.append(PageFlowUtil.getCookieValue(context.getRequest().getCookies(), "JSESSIONID", ""));
             labkey.append("\"\n");
         }
+
         return labkey.toString();
     }
 

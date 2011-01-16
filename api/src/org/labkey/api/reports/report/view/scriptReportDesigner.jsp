@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
-<%@ page import="org.labkey.api.reports.report.view.RunRReportView" %>
+<%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.RunReportView" %>
 <%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
@@ -34,8 +34,6 @@
 <%@ page import="org.labkey.api.view.TabStripView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
-<%@ page import="org.labkey.api.reports.report.view.ReportDesignerSessionCache" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
