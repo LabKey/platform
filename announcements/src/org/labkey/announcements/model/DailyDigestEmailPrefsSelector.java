@@ -16,15 +16,14 @@
 
 package org.labkey.announcements.model;
 
+import org.labkey.announcements.model.AnnouncementManager.EmailPref;
 import org.labkey.api.data.Container;
-import org.labkey.announcements.model.AnnouncementModel;
-import org.labkey.announcements.model.AnnouncementManager.*;
 import org.labkey.api.security.User;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: adam

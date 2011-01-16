@@ -16,10 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.audit.AuditLogService"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
-    String currentView = (String)request.getAttribute("currentView");
+    String currentView = (String)HttpView.currentModel();
     AuditLogService.AuditViewFactory[] factories = AuditLogService.get().getAuditViewFactories();
 
     if (currentView == null)

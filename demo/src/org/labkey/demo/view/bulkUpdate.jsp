@@ -15,31 +15,23 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.demo.model.Person"%>
-<%@ page import="org.springframework.validation.BindException"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.demo.model.Person" %>
+<%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    /*
-    JspView<BulkUpdatePage> me = (JspView<BulkUpdatePage>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
-
-    /* This is one way to pass parameters, which we usually use
-    BulkUpdatePage pageInfo = me.getModelBean();
-    BindException errors = me.getErrors();
-    List<org.labkey.demo.model.Person> people = pageInfo.getList();
-    */
-
-    // here is typical spring way
-    BindException errors = (BindException)request.getAttribute("errors");
-    List<Person> people = (List<Person>)request.getAttribute("people");
+    JspView<List<Person>> me = (JspView<List<Person>>) HttpView.currentView();
+    Errors errors = getErrors("form");
+    List<Person> people = me.getModelBean();
 
     if (null != errors)
     {
-        // since we're don't showing errors field-by-field don't show duplicates
+        // since we're not showing errors field-by-field don't show duplicates
         Set<String> messages = new HashSet<String>();
         for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
         {

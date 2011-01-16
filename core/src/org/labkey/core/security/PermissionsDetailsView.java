@@ -44,7 +44,7 @@ import java.util.List;
 */
 public class PermissionsDetailsView extends WebPartView
 {
-    String helpText = "<b>Admin:</b> Users have all permissions on a folder.<br><br>" +
+    private final String helpText = "<b>Admin:</b> Users have all permissions on a folder.<br><br>" +
             "<b>Editor:</b> Users can modify data, but cannot perform administrative actions.<br><br>" +
             "<b>Author:</b> Users can modify their own data, but can only read others' data.<br><br>" +
             "<b>Reader:</b> Users can read text and data, but cannot modify it.<br><br>" +
@@ -52,13 +52,16 @@ public class PermissionsDetailsView extends WebPartView
             "<b>No Permissions:</b> Users cannot view or modify any information in a folder.<br><br>" +
             "See the LabKey Server <a target=\"_new\" href=\"" + (new HelpTopic("configuringPerms")).getHelpTopicLink() + "\">security</a> help topics for more information.";
 
-    Container _c;
-    Container _project;
+    private final Container _c;
+    private final Container _project;
+    private final String _view;
 
 
+    // TODO: view is always "container" -- hard-code or remove?
     PermissionsDetailsView(Container c, String view)
     {
         _c = c;
+        _view = view;
 
         // get project for this container
         String path = _c.getPath();
@@ -67,9 +70,7 @@ public class PermissionsDetailsView extends WebPartView
         String project = path.substring(0, i);
         _project = ContainerManager.getForPath(project);
 
-        addObject("view", view);
-
-        if(c.isRoot())
+        if (c.isRoot())
             setTitle("Default permissions for new projects");
         else
             setTitle("Permissions for " + _c.getPath());
@@ -88,7 +89,7 @@ public class PermissionsDetailsView extends WebPartView
         String htmlId = "group." + Integer.toHexString(id);
         out.print("<tr><td class='labkey-form-label'>");
         out.print(PageFlowUtil.filter(displayName));
-        out.print("</td><td><select onchange=\"if(document.updatePermissions.inheritPermissions) document.updatePermissions.inheritPermissions.checked=false;\" id=");
+        out.print("</td><td><select onchange=\"if (document.updatePermissions.inheritPermissions) document.updatePermissions.inheritPermissions.checked=false;\" id=");
         out.print(htmlId);
         out.print(" name=");
         out.print(htmlId);
@@ -97,14 +98,16 @@ public class PermissionsDetailsView extends WebPartView
         List<Role> assignedRoles = policy.getAssignedRoles(group);
         Role assignedRole = assignedRoles.size() > 0 ? assignedRoles.get(0) : new NoPermissionsRole();
         Collection<Role> allRoles = RoleManager.getAllRoles(); 
-        for(Role role : allRoles)
+
+        for (Role role : allRoles)
         {
-            if(role.isAssignable())
+            if (role.isAssignable())
                 out.print(getPermissionsOption(role, assignedRole));
         }
 
-        if(!allRoles.contains(assignedRole))
+        if (!allRoles.contains(assignedRole))
             out.print("<option value=" + assignedRole.getUniqueName() + ">" + assignedRole.getName() + "</option>");
+
         out.print("</select>");
         out.print("</td>");
         out.print("<td>");
@@ -129,10 +132,12 @@ public class PermissionsDetailsView extends WebPartView
         if (SecurityManager.isAdminOnlyPermissions(_c))
         {
             out.println("<b>Note: </b> Only administrators currently have access to this " + (_c.isProject() ? "project" : "") + " folder. <br>");
+
             if (_c.hasChildren())
             {
                 Container[] children = ContainerManager.getAllChildren(_c);
                 boolean childrenAdminOnly = true;
+
                 for (Container child : children)
                 {
                     if (!SecurityManager.isAdminOnlyPermissions(child))
@@ -141,6 +146,7 @@ public class PermissionsDetailsView extends WebPartView
                         break;
                     }
                 }
+
                 out.println((childrenAdminOnly ? "No" : "Some") + " child folders can be accessed by non-administrators.");
             }
         }
@@ -152,12 +158,12 @@ public class PermissionsDetailsView extends WebPartView
         out.println("<form name=\"updatePermissions\" action=\"updatePermissions.post\" method=\"POST\">");
         out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + CSRFUtil.getExpectedToken(getViewContext().getRequest()) + "\">");
         
-        if(_c.isProject())
+        if (_c.isProject())
         {
             boolean subfoldersInherit = SecurityManager.shouldNewSubfoldersInheritPermissions(_c);
             out.println("<input type=\"checkbox\" name=\"newSubfoldersInheritPermissions\" " + (subfoldersInherit ? "checked=\"true\"" : "") + "> Newly created subfolders should inherit permissions");
         }
-        else if(!_c.isRoot())
+        else if (!_c.isRoot())
         {
             out.println("<input type=checkbox name=inheritPermissions " + (_c.isInheritedAcl() ? "checked" : "")
                     + "> Inherit permissions from " + (_c.isProject() ? "Global Groups" : _c.getParent().getPath()));
@@ -174,13 +180,14 @@ public class PermissionsDetailsView extends WebPartView
         Group[] globalGroups = SecurityManager.getGroups(ContainerManager.getRoot(), true);
         Group usersGroup = null;
         Group guestsGroup = null;
-        for(Group group : globalGroups)
+
+        for (Group group : globalGroups)
         {
-            if(group.isGuests())
+            if (group.isGuests())
                 guestsGroup = group;
-            else if(group.isUsers())
+            else if (group.isUsers())
                 usersGroup = group;
-            else if(group.isAdministrators())
+            else if (group.isAdministrators())
             {
                 // for groups that we don't want to display, we still have to output a hidden input
                 // for the ACL value; otherwise, a submit with 'inherit' turned off will result in the
@@ -205,7 +212,7 @@ public class PermissionsDetailsView extends WebPartView
         out.println("</table>");
         out.println(PageFlowUtil.generateSubmitButton("Update"));
         out.println("<input name=objectId type=hidden value=\"" + _c.getId() + "\">");
-        out.println("<input name=view type=hidden value=\"" + getViewContext().get("view") + "\">");
+        out.println("<input name=view type=hidden value=\"" + _view + "\">");
         out.println("</form><br>");
 
         // Now render all the module-specific views registered for this page

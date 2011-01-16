@@ -40,7 +40,7 @@
 %>
 <%
     TestController.SimpleForm form = (TestController.SimpleForm) getModelBean();
-    String enctype = StringUtils.defaultString((String) request.getAttribute("enctype"), "application/x-www-form-urlencoded");
+    String enctype = StringUtils.defaultString(form.encType, "application/x-www-form-urlencoded");
     assert enctype.equals("multipart/form-data") || enctype.equals("application/x-www-form-urlencoded");
 %>
 <%=formatErrorsForPath("form")%>

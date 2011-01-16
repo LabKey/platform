@@ -16,12 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%
-    JspView me = (JspView) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
-    boolean useVisualEditor = ((Boolean)ctx.get("useVisualEditor")).booleanValue();
+    boolean useVisualEditor = (Boolean)HttpView.currentView().getModelBean();
 %>
 <table>
     <tr>

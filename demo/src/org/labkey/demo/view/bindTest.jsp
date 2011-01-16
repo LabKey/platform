@@ -15,17 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.demo.DemoController.BindActionBean" %>
 <%@ page import="org.springframework.validation.BindException" %>
+<%@ page import="org.springframework.validation.Errors" %>
+<%@ page import="org.springframework.validation.FieldError" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.demo.DemoController" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.springframework.validation.FieldError" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<form  method=POST>
+<form method=post>
 <%
-    DemoController.BindActionBean form = (DemoController.BindActionBean) request.getAttribute("form");
-    BindException errors = (BindException) request.getAttribute("errors");
+    BindActionBean form = (BindActionBean)getModelBean();
+    Errors errors = getErrors("form");
+
     if (null == errors)
         errors = new BindException(null, "form");
 
@@ -81,24 +84,26 @@
         {
             %><font class="labkey-error"><em>form</em> is NULL</font><br><%
         }
-        // since we're don't showing errors field-by-field don't show duplicates
+        // since we're not showing errors field-by-field don't show duplicates
         if (null == errors)
         {
             %><font class="labkey-error"><em>errors</em> is NULL</font><br><%
         }
         else
+        {
             for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
             {
                 String message = getMessage(e);
                 %><font class="labkey-error"><%=h(message)%></font><br><%
             }
+        }
     }
 %>
 <input type=submit>
 </form>
 
 <hr>
-<b>All errors</b><%
+<b>All errors</b><br><%
 for (ObjectError e : (List<ObjectError>)errors.getAllErrors())
 {
     %><%=(e instanceof FieldError)?((FieldError)e).getField()+": ":""%><%=h(getMessage(e))%><br><%

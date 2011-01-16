@@ -210,7 +210,7 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    private abstract class ProjectActionExtStyle extends SimpleViewAction<PermissionsForm>
+    public class ProjectAction extends SimpleViewAction<PermissionsForm>
     {
         public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
         {
@@ -447,28 +447,6 @@ public class SecurityController extends SpringActionController
         }
 
         return body;
-    }
-
-
-//    @RequiresPermissionClass(AdminPermission.class)
-//    private abstract class ProjectActionOldSChool extends SimpleViewAction<PermissionsForm>
-//    {
-//        public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
-//        {
-//            return renderContainerPermissions(null, null, null, form.isWizard());
-//        }
-//
-//        public NavTree appendNavTrail(NavTree root)
-//        {
-//            root.addChild("Permissions");
-//            return root;
-//        }
-//    }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ProjectAction extends ProjectActionExtStyle
-    {
     }
 
 

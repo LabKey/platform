@@ -91,6 +91,7 @@ public class SecurityController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
             Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
             HashSet<Integer> set = new HashSet<Integer>(groups.length*2);
+
             for (Group g : groups)
                 set.add(g.getUserId());
 
@@ -173,7 +174,7 @@ public class SecurityController extends SpringActionController
                 // Data that comes back is a list of permissions and groups separated by underscores.
                 // e.g. "NONE_1182" or "READ_-1"
                 List<String> permsAndGroups = getViewContext().getList("dataset." + dsDef.getDataSetId());
-                Map<Integer,String> group2Perm = convertToGroupsAndPermissions(permsAndGroups);
+                Map<Integer, String> group2Perm = convertToGroupsAndPermissions(permsAndGroups);
 
                 if (group2Perm != null)
                 {
@@ -186,11 +187,13 @@ public class SecurityController extends SpringActionController
         /**
          * convert list of "perm_groupid" strings to a map of groupid -> perm
          */
-        private Map<Integer,String> convertToGroupsAndPermissions(List<String> permsAndGroups)
+        private Map<Integer, String> convertToGroupsAndPermissions(List<String> permsAndGroups)
         {
             if (permsAndGroups == null)
                 return null;
-            Map<Integer,String> groupToPermission = new HashMap<Integer,String>();
+
+            Map<Integer, String> groupToPermission = new HashMap<Integer, String>();
+
             for (String permAndGroup : permsAndGroups)
             {
                 int underscoreIndex = permAndGroup.indexOf("_");
@@ -199,9 +202,9 @@ public class SecurityController extends SpringActionController
                     continue;
 
                 String perm = permAndGroup.substring(0, underscoreIndex);
-
                 String gIdString = permAndGroup.substring(underscoreIndex + 1);
                 int gid;
+
                 try
                 {
                     gid = Integer.parseInt(gIdString);
@@ -216,11 +219,11 @@ public class SecurityController extends SpringActionController
             return groupToPermission;
         }
 
-        private MutableSecurityPolicy policyFromPost(Map<Integer,String> group2Perm, HashSet<Integer> groupsInProject, DataSet dsDef)
+        private MutableSecurityPolicy policyFromPost(Map<Integer, String> group2Perm, HashSet<Integer> groupsInProject, DataSet dsDef)
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(dsDef);
 
-            for (Map.Entry<Integer,String> entry : group2Perm.entrySet())
+            for (Map.Entry<Integer, String> entry : group2Perm.entrySet())
             {
                 int gid = entry.getKey().intValue();
                 if (groupsInProject.contains(gid))
@@ -534,10 +537,12 @@ public class SecurityController extends SpringActionController
             studyView.setTitle("Study Security");
             if (redirect != null)
                 studyView.addObject("redirect", redirect.getLocalURIString());
+
             JspView<StudyImpl> dsView = new JspView<StudyImpl>("/org/labkey/study/security/datasets.jsp", study);
             dsView.setTitle("Per Dataset Permissions");
             if (redirect != null)
                 dsView.addObject("redirect", redirect.getLocalURIString());
+
             JspView<StudyImpl> siteView = new JspView<StudyImpl>("/org/labkey/study/security/sites.jsp", study);
             siteView.setTitle("Restricted Dataset Permissions (per Site)");
 

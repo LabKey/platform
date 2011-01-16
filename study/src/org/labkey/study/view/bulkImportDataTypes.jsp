@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.BaseStudyController"%>
-<%@ page import="org.labkey.study.controllers.StudyController"%>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     BaseStudyController.StudyJspView<StudyController.BulkImportTypesForm> me = (BaseStudyController.StudyJspView<StudyController.BulkImportTypesForm>) HttpView.currentView();
     StudyController.BulkImportTypesForm bean = me.getModelBean();

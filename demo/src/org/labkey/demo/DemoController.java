@@ -130,6 +130,7 @@ public class DemoController extends SpringActionController
             {
                 errors.addError(new ObjectError("main", null, null, "Insert failed: " + x.getMessage()));
             }
+
             return showForm(request, response, errors, null);
         }
 
@@ -148,7 +149,7 @@ public class DemoController extends SpringActionController
 
 
     /**
-     * This is uses my own home-brewed base class FormViewAction
+     * This uses my own home-brewed base class FormViewAction
      *
      * Using PersonForm (rather than Person) to make UpdateView reshow work  
      */
@@ -234,10 +235,7 @@ public class DemoController extends SpringActionController
         public ModelAndView getView(BulkUpdateForm form, boolean reshow, BindException errors) throws Exception
         {
             List<Person> people = Arrays.asList(DemoManager.getInstance().getPeople(getViewContext().getContainer()));
-            ModelAndView mv = new ModelAndView("/org/labkey/demo/view/bulkUpdate.jsp");
-            mv.addObject("people", people);
-            mv.addObject("errors", errors);
-            return mv;
+            return new JspView<List<Person>>("/org/labkey/demo/view/bulkUpdate.jsp", people, errors);
         }
 
         public boolean handlePost(BulkUpdateForm form, BindException errors) throws Exception
@@ -263,6 +261,7 @@ public class DemoController extends SpringActionController
                     DemoManager.getInstance().updatePerson(getViewContext().getContainer(), getViewContext().getUser(), update, null);
                 }
             }
+
             return true;
         }
 
@@ -335,7 +334,8 @@ public class DemoController extends SpringActionController
         rgn.setColumns(tableInfo.getColumns("RowId, FirstName, LastName, Age"));
 
         DisplayColumn col = rgn.getDisplayColumn("RowId");
-        col.setURL("update.view?rowId=${RowId}");
+        ActionURL updateURL = new ActionURL(UpdateAction.class, getContainer());
+        col.setURL(updateURL.toString() + "rowId=${RowId}");
         col.setDisplayPermission(UpdatePermission.class);
 
         ButtonBar gridButtonBar = new ButtonBar();
@@ -344,6 +344,7 @@ public class DemoController extends SpringActionController
         ActionButton delete = new ActionButton(DeleteAction.class, "Delete");
         delete.setActionType(ActionButton.Action.POST);
         delete.setDisplayPermission(DeletePermission.class);
+        delete.setRequiresSelection(true, "Are you sure you want to delete this person?", "Are you sure you want to delete these people?");
         gridButtonBar.add(delete);
 
         ActionButton insert = new ActionButton(InsertAction.class, "Add Person");
@@ -351,7 +352,7 @@ public class DemoController extends SpringActionController
         insert.setDisplayPermission(InsertPermission.class);
         gridButtonBar.add(insert);
 
-        ActionButton update = new ActionButton(new BulkUpdateAction().getURL(), "Bulk Update");
+        ActionButton update = new ActionButton("Bulk Update", new BulkUpdateAction().getURL());
         update.setDisplayPermission(UpdatePermission.class);
         gridButtonBar.add(update);
 
@@ -372,14 +373,6 @@ public class DemoController extends SpringActionController
         {
             this();
             set("rowid", String.valueOf(rowid));
-        }
-
-
-        // spring
-        public void validate(BindException errors)
-        {
-            // assume bind errors were taken care of already
-            DemoManager.validate(getBean(), errors);
         }
     }
 
@@ -467,8 +460,6 @@ public class DemoController extends SpringActionController
     /*
      * This code is for testing various form binding scenarios 
      */
-
-
     public static class SubBean
     {
         private int x;
@@ -682,15 +673,13 @@ public class DemoController extends SpringActionController
 
                 setProperties(m);
             }
+
             return super.handleRequest();
         }
 
         public ModelAndView getView(BindActionBean form, BindException errors) throws Exception
         {
-            ModelAndView mv = new ModelAndView("/org/labkey/demo/view/bindTest.jsp");
-            mv.addObject("form", form);
-            mv.addObject("errors", errors);
-            return mv;
+            return new JspView<BindActionBean>("/org/labkey/demo/view/bindTest.jsp", form, errors);
         }
 
 

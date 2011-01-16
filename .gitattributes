@@ -2,6 +2,7 @@
 announcements/module.properties -text
 announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-2.00.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-10.30-10.31.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.10-9.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.30-10.10.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
@@ -33,6 +34,7 @@ announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-9.31-9.32.sql
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-9.32-9.33.sql -text
 announcements/resources/schemas/dbscripts/postgresql/obsolete/cpas-0.00-0.59.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-2.00.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-10.30-10.31.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.10-9.20.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.30-10.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
@@ -625,7 +627,6 @@ demo/src/org/labkey/demo/DemoModule.java -text
 demo/src/org/labkey/demo/DemoSchema.java -text
 demo/src/org/labkey/demo/model/DemoManager.java -text
 demo/src/org/labkey/demo/model/Person.java -text
-demo/src/org/labkey/demo/view/BulkUpdatePage.java -text
 demo/src/org/labkey/demo/view/DemoWebPart.java -text
 demo/src/org/labkey/demo/view/bindTest.jsp -text
 demo/src/org/labkey/demo/view/bulkUpdate.jsp -text

@@ -20,13 +20,11 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.demo.DemoController" %>
 <%@ page import="org.labkey.demo.model.Person" %>
-<%@ page import="org.labkey.demo.view.BulkUpdatePage" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = HttpView.currentContext();
-    org.labkey.demo.view.BulkUpdatePage pageInfo = (BulkUpdatePage) (HttpView.currentModel());
-    List<Person> people = pageInfo.getList();
+    List<Person> people = (List<Person>) (HttpView.currentModel());
 %>
-This container contains <%= people.size() %> people.<br>
+This folder contains <%= people.size() %> people.<br>
 <%= generateButton("View Grid", new ActionURL(DemoController.BeginAction.class, context.getContainer())) %>

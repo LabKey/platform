@@ -27,17 +27,15 @@ import java.sql.SQLException;
 
 public class DemoManager
 {
-    private static DemoManager _instance;
+    private static final DemoManager _instance = new DemoManager();
 
     private DemoManager()
     {
         // prevent external construction with a private default constructor
     }
 
-    public static synchronized DemoManager getInstance()
+    public static DemoManager getInstance()
     {
-        if (_instance == null)
-            _instance = new DemoManager();
         return _instance;
     }
 
@@ -92,18 +90,19 @@ public class DemoManager
             person.setContainerId(c.getId());
         if (!person.getContainerId().equals(c.getId()))
             throw new IllegalStateException("Can't update a row with a null rowId");
+
         return Table.update(user, DemoSchema.getInstance().getTableInfoPerson(), person, person.getRowId());
     }
 
 
     public static void validate(Person person, Errors errors)
     {
-    if (StringUtils.trimToNull(person.getLastName()) == null)
-        errors.rejectValue("lastName", null, null, "Last Name is required.");
-//        errors.addError(new ObjectError("lastname", null, null, "Last Name is required."));
-    if (StringUtils.trimToNull(person.getFirstName()) == null)
-        errors.rejectValue("firstName", null, null, "First Name is required.");
-    if (person.getAge() != null && (person.getAge() < 0 || person.getAge() > 120))
-        errors.rejectValue("age", null, null, "Age should be between 0 and 120.");
+        if (StringUtils.trimToNull(person.getLastName()) == null)
+            errors.rejectValue("lastName", null, null, "Last Name is required.");
+    //        errors.addError(new ObjectError("lastname", null, null, "Last Name is required."));
+        if (StringUtils.trimToNull(person.getFirstName()) == null)
+            errors.rejectValue("firstName", null, null, "First Name is required.");
+        if (person.getAge() != null && (person.getAge() < 0 || person.getAge() > 120))
+            errors.rejectValue("age", null, null, "Age should be between 0 and 120.");
     }
 }

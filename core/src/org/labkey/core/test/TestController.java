@@ -103,16 +103,15 @@ public class TestController extends SpringActionController
     {
         String _enctype = "application/x-www-form-urlencoded";
         
-        public void validateCommand(SimpleForm target, Errors errors)
+        public void validateCommand(SimpleForm form, Errors errors)
         {
-            target.validate(errors);
+            form.validate(errors);
         }
 
-        public ModelAndView getView(SimpleForm simpleForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(SimpleForm form, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView mv = jspView("form.jsp", simpleForm, errors);
-            mv.addObject("enctype", _enctype); // request attribute
-            return mv;
+            form.encType = _enctype;
+            return jspView("form.jsp", form, errors);
         }
 
         public boolean handlePost(SimpleForm simpleForm, BindException errors) throws Exception
@@ -120,7 +119,7 @@ public class TestController extends SpringActionController
             return false;
         }
 
-        public ActionURL getSuccessURL(SimpleForm simpleForm)
+        public ActionURL getSuccessURL(SimpleForm form)
         {
             return null;
         }
@@ -375,7 +374,7 @@ public class TestController extends SpringActionController
 
     public static class SimpleForm extends TestBean
     {
-
+        public String encType = null;
     }
 
 

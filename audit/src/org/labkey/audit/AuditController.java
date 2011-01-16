@@ -68,12 +68,10 @@ public class AuditController extends SpringActionController
         {
             if (!getViewContext().getUser().isAdministrator())
                 HttpView.throwUnauthorized();
+
             VBox view = new VBox();
 
-            String selected = form.getView();
-
-            JspView jspView = new JspView("/org/labkey/audit/auditLog.jsp");
-            ((ModelAndView)jspView).addObject("currentView", selected);
+            JspView<String> jspView = new JspView<String>("/org/labkey/audit/auditLog.jsp", form.getView());
 
             view.addView(jspView);
             view.addView(createInitializedQueryView(form, errors, false, null));
@@ -113,6 +111,7 @@ public class AuditController extends SpringActionController
             return _view;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setView(String view)
         {
             _view = view;
@@ -140,12 +139,13 @@ public class AuditController extends SpringActionController
     {
         public ModelAndView getView(SiteSettingsAuditDetailsForm form, BindException errors) throws Exception
         {
-            if(null == form.getId() || form.getId().intValue() < 0)
+            if (null == form.getId() || form.getId().intValue() < 0)
                 throw new NotFoundException("The audit log details key was not provided!");
 
             //get the audit event
             AuditLogEvent event = AuditLogService.get().getEvent(form.getId().intValue());
-            if(null == event)
+
+            if (null == event)
                 throw new NotFoundException("Could not find the audit log event with id '" + form.getId().toString() + "'!");
 
             Map<String, Object> eventProps = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
