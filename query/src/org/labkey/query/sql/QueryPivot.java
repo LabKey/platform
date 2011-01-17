@@ -30,6 +30,8 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
@@ -62,6 +64,8 @@ public class QueryPivot extends QueryRelation
     // the pivot column
     RelationColumn _pivotColumn;
     Map<String,IConstant> _pivotValues;
+
+    QueryRelation _inQuery;
 
 
     public QueryPivot(Query query, QuerySelect from, QQuery root)
@@ -134,9 +138,15 @@ public class QueryPivot extends QueryRelation
             _aggregates.put(col.getFieldKey().getName(), rollupType);
         }
 
-        // in list
-        if (null != inList)
+        if (inList instanceof QQuery)
         {
+            _inQuery = createSubquery((QQuery)inList, "_pivotValues");
+            // call getSql() here to generate errors (quick fail)
+            _inQuery.getSql();
+        }
+        else if (inList instanceof QSelect)
+        {
+            // simple in list
             _pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
             for (QNode node : inList.childList())
             {
@@ -162,6 +172,17 @@ public class QueryPivot extends QueryRelation
                     _pivotValues.put(name, constant);
             }
         }
+    }
+
+
+    QueryRelation createSubquery(QQuery qquery, String alias)
+    {
+        QueryRelation sub = Query.createQueryRelation(this._query, qquery);
+        sub._parent = this;
+        sub._inFromClause = true;
+        if (null != alias)
+            sub.setAlias(alias);
+        return sub;
     }
 
 
@@ -191,7 +212,7 @@ public class QueryPivot extends QueryRelation
 
 
 
-    Map<String,IConstant> getPivotValues()
+    Map<String,IConstant> getPivotValues() throws SQLException
     {
         if (null != _pivotValues)
             return _pivotValues;
@@ -200,15 +221,24 @@ public class QueryPivot extends QueryRelation
         try
         {
             _pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
+            SQLFragment sqlPivotValues;
 
-            // CONSIDER: _from.clone() and then simplify the select
-            // execute query
+            if (null != _inQuery)
+            {
+                // explicit subquery case
+                sqlPivotValues = _inQuery.getSql();
+            }
+            else
+            {
+                // implicit sub query
 
-            SQLFragment sqlFrom = _from.getSql();
-            SQLFragment sqlPivotValues = new SQLFragment();
-            sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql("_pivotValues"));
-            sqlPivotValues.append("\nFROM (").append(_from.getSql()).append(") _pivotValues");
-            sqlPivotValues.append("\nORDER BY 1 ASC");
+                // CONSIDER: _from.clone() and then simplify the select
+                // execute query
+                sqlPivotValues = new SQLFragment();
+                sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql("_pivotValues"));
+                sqlPivotValues.append("\nFROM (").append(_from.getSql()).append(") _pivotValues");
+                sqlPivotValues.append("\nORDER BY 1 ASC");
+            }
             rs = Table.executeQuery(getSchema().getDbSchema(), sqlPivotValues);
             JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
             while (rs.next())
@@ -218,10 +248,6 @@ public class QueryPivot extends QueryRelation
                 String name = toName(wrap);
                 _pivotValues.put(name, wrap);
             }
-        }
-        catch (SQLException x)
-        {
-            parseError("Could not compute pivot column list", null);
         }
         finally
         {
@@ -268,10 +294,25 @@ public class QueryPivot extends QueryRelation
         _from.declareFields();
     }
 
+
     @Override
     TableInfo getTableInfo()
     {
         QueryTableInfo qti = new PivotTableInfo();
+        try
+        {
+            getPivotValues();
+        }
+        catch (QueryService.NamedParameterNotProvided x)
+        {
+            parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
+            return null;
+        }
+        catch (SQLException x)
+        {
+            parseError("Could not compute pivot column list", null);
+            return null;
+        }
         return qti;
     }
 
@@ -415,7 +456,20 @@ public class QueryPivot extends QueryRelation
                 comma = ",\n";
             }
 
-            Map<String,IConstant> pivotValues = getPivotValues();
+            // getSql() does not return
+            Map<String,IConstant> pivotValues;
+            try
+            {
+                pivotValues = getPivotValues();
+            }
+            catch (QueryService.NamedParameterNotProvided x)
+            {
+                throw new QueryParseException("When used with parameterized query, PIVOT requires an explicit values list", null);
+            }
+            catch (SQLException x)
+            {
+                throw new QueryParseException("Could not compute pivot column list", null);
+            }
             
             // add aggregate expressions
             for (Map.Entry<String,IConstant> pivotValue : pivotValues.entrySet())
@@ -430,6 +484,12 @@ public class QueryPivot extends QueryRelation
                 sql.append(") THEN (").append(col.getValueSql(tableAlias)).append(") ELSE NULL END) AS ").append(alias);
                 comma = ",\n";
             }
+        }
+        SQLFragment fromSql = _from._getSql(true);
+        if (null == fromSql)
+        {
+            assert !getParseErrors().isEmpty();
+            return null;
         }
         sql.append("\n FROM (").append(_from._getSql(true)).append(") ").append(tableAlias).append("\n");
 
@@ -480,7 +540,10 @@ public class QueryPivot extends QueryRelation
         public SQLFragment getFromSQL(String pivotTableAlias)
         {
             SQLFragment f = new SQLFragment();
-            f.append("(").append(getSql()).append(") ").append(pivotTableAlias);
+            SQLFragment fromSql = getSql();
+            if (null == fromSql)
+                return null;
+            f.append("(").append(fromSql).append(") ").append(pivotTableAlias);
             return f;
         }
     }
@@ -520,7 +583,16 @@ public class QueryPivot extends QueryRelation
         @Override
         public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
         {
-            Map<String, IConstant> pivotValues = getPivotValues();
+            Map<String, IConstant> pivotValues;
+            try
+            {
+                pivotValues = getPivotValues();
+            }
+            catch (SQLException x)
+            {
+                return null;
+            }
+            
             if (null == pivotValues)
             {
                 assert(!getParseErrors().isEmpty());
@@ -548,7 +620,15 @@ public class QueryPivot extends QueryRelation
                     return null;
                 }
             };
-            Map<String, IConstant> pivotValues = getPivotValues();
+            Map<String, IConstant> pivotValues;
+            try
+            {
+                pivotValues = getPivotValues();
+            }
+            catch (SQLException x)
+            {
+                return null;
+            }
             if (null == pivotValues)
             {
                 assert(!getParseErrors().isEmpty());
@@ -611,7 +691,6 @@ public class QueryPivot extends QueryRelation
 /***  TODO
   case-sensitive grouping in Postgres
   non-string pivot column (allow?)
-  dynamic pivot column list (IN not specified)
   QuerySelect.getGroupByColumns() after resolveFields() would give better expression matching
   NOTE bugs with postgres < 8.3.7?
 ***/

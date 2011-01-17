@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.QueryService;
 
 import java.util.Collection;
+import java.util.Collections;
 
 public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable
 {
@@ -61,7 +62,10 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     public Collection<QueryService.ParameterDecl> getNamedParameters()
     {
         Query query = _relation._query;
-        return query.getParameters();
+        Collection<QueryService.ParameterDecl> ret = query.getParameters();
+        if (null == ret)
+            return Collections.EMPTY_LIST;
+        return ret;
     }
 
     @Override
