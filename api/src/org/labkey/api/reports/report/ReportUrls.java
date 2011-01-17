@@ -22,7 +22,6 @@ import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Feb 29, 2008
  */

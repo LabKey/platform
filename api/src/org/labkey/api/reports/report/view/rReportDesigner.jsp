@@ -38,7 +38,6 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
     JspView<RReportBean> me = (JspView<RReportBean>) HttpView.currentView();
     ViewContext context = me.getViewContext();
@@ -86,6 +85,7 @@
         }
 %>
     }
+
     YAHOO.util.Event.addListener(window, "load", init);
 
     function saveReport()
@@ -95,8 +95,8 @@
         saveDiv.style.display = "";
 
         document.getElementById('renderReport').action = '<%=urlProvider(ReportUrls.class).urlSaveScriptReport(c)%>';
-
         var reportName = YAHOO.util.Dom.get('reportName');
+
         if (reportName.value == null || reportName.value.length == 0)
         {
             dialogHelper.render();

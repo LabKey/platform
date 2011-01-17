@@ -662,22 +662,6 @@ public class Portal
     }
 
 
-    public static class BrokenWebPart extends WebPartView
-    {
-        public BrokenWebPart(String name)
-        {
-            setTitle("Web part not found: " + name);
-            addObject("name", name);
-        }
-
-        @Override
-        public void renderView(Object model, PrintWriter out)
-        {
-            out.print("error loading web part: " + getViewContext().get("name"));
-        }
-    }
-
-
     public static WebPartFactory getPortalPart(String name)
     {
         return getViewMap().get(name);

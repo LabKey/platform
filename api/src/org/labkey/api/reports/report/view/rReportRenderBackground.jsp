@@ -28,7 +28,6 @@
 <%@ page import="java.io.File" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
     JspView<RReport> me = (JspView<RReport>) HttpView.currentView();
     RReport bean = me.getModelBean();
@@ -40,7 +39,6 @@
     boolean autoRefresh = statusFile != null &&
             (statusFile.getStatus().equals(PipelineJob.WAITING_STATUS) || statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS));
 %>
-
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
 <script type="text/javascript">LABKEY.requiresYahoo("event");</script>
 <script type="text/javascript">LABKEY.requiresYahoo("connection");</script>
@@ -83,7 +81,7 @@
             msg += "</font>";
             div.innerHTML = msg;
         }
-	}
+	};
 
     function postProcess(o)
     {
