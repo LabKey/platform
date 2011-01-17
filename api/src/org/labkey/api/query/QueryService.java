@@ -20,8 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.TableType;
 
 import java.io.File;
 import java.sql.Connection;
@@ -32,6 +34,8 @@ import java.util.*;
 abstract public class QueryService
 {
     static private QueryService instance;
+
+    public static final String MODULE_QUERIES_DIRECTORY = "queries";
 
     static public QueryService get()
     {
@@ -90,7 +94,8 @@ abstract public class QueryService
 
     abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 
-    abstract public String findMetadataOverride(Container container, String schemaName, String tableName, boolean customQuery);
+    abstract public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors);
+    abstract public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors, Path dir);
 
 	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
     public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException

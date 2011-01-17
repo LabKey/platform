@@ -354,20 +354,15 @@ public class ModuleLoader implements Filter
                 }
                 else
                 {
-                    //assume that module name is directory name
-                    SimpleModule simpleModule = new SimpleModule(moduleDir.getName());
-                    simpleModule.setSourcePath(moduleDir.getAbsolutePath());
-
                     //check for simple .properties file
                     File modulePropsFile = new File(moduleDir, "config/module.properties");
+                    Properties props = new Properties();
                     if (modulePropsFile.exists())
                     {
                         FileInputStream in = new FileInputStream(modulePropsFile);
                         try
                         {
-                            Properties props = new Properties();
                             props.load(in);
-                            BeanUtils.populate(simpleModule, props);
                         }
                         catch (IOException e)
                         {
@@ -378,6 +373,15 @@ public class ModuleLoader implements Filter
                             in.close();
                         }
                     }
+
+                    //assume that module name is directory name
+                    String moduleName = moduleDir.getName();
+                    if (props.containsKey("name"))
+                        moduleName = props.getProperty("name");
+
+                    SimpleModule simpleModule = new SimpleModule(moduleName);
+                    simpleModule.setSourcePath(moduleDir.getAbsolutePath());
+                    BeanUtils.populate(simpleModule, props);
 
                     module = simpleModule;
                 }

@@ -113,6 +113,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return null;
     }
 
+    @Override
+    public String getResourceName()
+    {
+        return getName();
+    }
+
     protected void setStandardPropertyAttributes(ColumnInfo colInfo, PropertyDescriptor studyPd)
     {
         studyPd.setLabel(colInfo.getLabel());

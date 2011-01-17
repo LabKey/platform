@@ -28,15 +28,17 @@ import org.labkey.api.security.User;
  */
 public abstract class AssaySchema extends UserSchema
 {
+    private final ExpProtocol _protocol;
     protected Container _targetStudy;
 
     public static final String ASSAY_LIST_TABLE_NAME = "AssayList";
     public static String NAME = "assay";
     public static final String DESCR = "Contains data about the set of defined assays and their associated batches and runs.";
 
-    public AssaySchema(String name, User user, Container container, DbSchema dbSchema)
+    public AssaySchema(String name, User user, Container container, DbSchema dbSchema, ExpProtocol protocol)
     {
         super(name, DESCR, user, container, dbSchema);
+        _protocol = protocol;
     }
 
     public void setTargetStudy(Container studyContainer)
@@ -47,6 +49,11 @@ public abstract class AssaySchema extends UserSchema
     public Container getTargetStudy()
     {
         return _targetStudy;
+    }
+
+    public ExpProtocol getProtocol()
+    {
+        return _protocol;
     }
 
     public abstract TableInfo createTable(String name);
@@ -71,4 +78,4 @@ public abstract class AssaySchema extends UserSchema
         assert tableName != null;
         return protocol.getName() + " " + tableName;
     }
-}
+        }

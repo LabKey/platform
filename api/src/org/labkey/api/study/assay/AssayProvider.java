@@ -79,6 +79,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     String getName();
 
+    /** Get the root resource name.  Usually this is the same as the AssayProvider name. */
+    String getResourceName();
+
     AssayTableMetadata getTableMetadata();
 
     ExpProtocol createAssayDefinition(User user, Container container, String name, String description) throws ExperimentException;

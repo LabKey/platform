@@ -847,6 +847,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         // no-op, we don't support metadata overrides
     }
 
+    @Override
+    public void overlayMetadata(TableType metadata, UserSchema schema, Collection<QueryException> errors)
+    {
+        // no-op, we don't support metadata overrides
+    }
+
     public ButtonBarConfig getButtonBarConfig()
     {
         return _buttonBarConfig;

@@ -32,6 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.TableType;
 
 import java.util.Collection;
 import java.util.List;
@@ -181,6 +182,8 @@ public interface TableInfo
     public ContainerFilter getContainerFilter();
 
     public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors);
+
+    public void overlayMetadata(TableType metadata, UserSchema schema, Collection<QueryException> errors);
 
     public boolean isMetadataOverrideable();
 

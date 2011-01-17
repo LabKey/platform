@@ -100,7 +100,7 @@ abstract public class UserSchema extends AbstractSchema
         if (table != null)
         {
             if (includeExtraMetadata)
-                table.overlayMetadata(name, this, errors);
+                overlayMetadata(table, name, errors);
             afterConstruct(table);
             return table;
         }
@@ -114,6 +114,11 @@ abstract public class UserSchema extends AbstractSchema
             def.setMetadataXml(null);
 
         return def;
+    }
+
+    protected void overlayMetadata(TableInfo table, String name, Collection<QueryException> errors)
+    {
+        table.overlayMetadata(name, this, errors);
     }
 
     public final TableInfo getTable(String name)
@@ -409,4 +414,5 @@ abstract public class UserSchema extends AbstractSchema
     {
         return null;
     }
+
 }

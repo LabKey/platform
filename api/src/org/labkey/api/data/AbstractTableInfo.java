@@ -632,30 +632,16 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         if (isMetadataOverrideable())
         {
-            String metadataXML = QueryService.get().findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, false);
+            TableType metadata = QueryService.get().findMetadataOverride(schema, tableName, false, errors);
+            overlayMetadata(metadata, schema, errors);
+        }
+    }
 
-            // Only bother parsing if there's some actual content, otherwise skip the override completely
-            if (metadataXML != null && StringUtils.isNotBlank(metadataXML))
-            {
-                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-                List<XmlError> xmlErrors = new ArrayList<XmlError>();
-                options.setErrorListener(xmlErrors);
-                try
-                {
-                    TablesDocument doc = TablesDocument.Factory.parse(metadataXML, options);
-                    TablesDocument.Tables tables = doc.getTables();
-                    if (tables != null && tables.sizeOfTableArray() > 0)
-                        loadFromXML(schema, tables.getTableArray(0), errors);
-                }
-                catch (XmlException e)
-                {
-                    errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(e)));
-                }
-                for (XmlError xmle : xmlErrors)
-                {
-                    errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
-                }
-            }
+    public void overlayMetadata(TableType metadata, UserSchema schema, Collection<QueryException> errors)
+    {
+        if (metadata != null && isMetadataOverrideable())
+        {
+            loadFromXML(schema, metadata, errors);
         }
     }
 
