@@ -30,6 +30,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -38,7 +40,7 @@
     StudyManageReportsBean bean = me.getModelBean();
 
     ViewContext context = HttpView.currentContext();
-    ActionURL url = context.cloneActionURL();
+    Container c = context.getContainer();
     User user = context.getUser();
 
     // group by query name
@@ -106,12 +108,12 @@
     else if (bean.getAdminView())
         out.println("</table>");
 
-    if (user.isAdministrator() || context.getContainer().hasPermission(user, AdminPermission.class)) {
+    if (user.isAdministrator() || c.hasPermission(user, AdminPermission.class)) {
 %>
         <table>
             <tr><td>&nbsp;</td></tr>
             <tr><td colspan="4">
-            <%=textLink("Manage Views", h(url.relativeUrl("manageReports.view", null, "Study-Reports")))%>
+            <%=textLink("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, c))%>
             </td></tr>
         </table>
 <%

@@ -828,6 +828,7 @@ public class StudyController extends BaseStudyController
             boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel());
             boolean isAssayDataset = def.getProtocolId() != null;
             ExpProtocol protocol = null;
+
             if (isAssayDataset)
             {
                 protocol = ExperimentService.get().getExpProtocol(def.getProtocolId().intValue());
@@ -1941,6 +1942,7 @@ public class StudyController extends BaseStudyController
         {
             Study study = getStudy();
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getDatasetId());
+
             if (null == def || def.getTypeURI() == null)
             {
                 return new HtmlView("Error",
@@ -1951,8 +1953,10 @@ public class StudyController extends BaseStudyController
                 return new RequirePipelineView(getStudy(), true, errors);
 
             form.setTypeURI(StudyManager.getInstance().getDatasetType(getContainer(), form.getDatasetId()));
+
             if (form.getTypeURI() == null)
                 return HttpView.throwNotFound();
+
             form.setKeys(StringUtils.join(def.getDisplayKeyNames(), ", "));
 
             return new JspView<ImportDataSetForm>("/org/labkey/study/view/importDataset.jsp", form, errors);
@@ -1971,6 +1975,7 @@ public class StudyController extends BaseStudyController
             if (null != PipelineService.get().findPipelineRoot(getContainer()))
             {
                 String formKeys = StringUtils.trimToEmpty(form.getKeys());
+
                 if (formKeys != null && formKeys.length() > 0)
                 {
                     String[] keysPOST = formKeys.split(",");
@@ -2005,10 +2010,12 @@ public class StudyController extends BaseStudyController
                     StudyServiceImpl.addDatasetAuditEvent(
                             getUser(), getContainer(), dsd, comment, result.getValue());
                 }
+
                 for (String error : errorList)
                 {
                     errors.reject("showImportDataset", error);
                 }
+
                 return errorList.isEmpty();
             }
             return false;

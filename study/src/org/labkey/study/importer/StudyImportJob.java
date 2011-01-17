@@ -25,7 +25,7 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -108,7 +108,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
 
     public ActionURL getStatusHref()
     {
-        return new ActionURL(StudyController.OverviewAction.class, getInfo().getContainer());
+        return BaseStudyController.getStudyOverviewURL(getInfo().getContainer());
     }
 
     public String getDescription()

@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!-- saveReportView.jsp -->
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
@@ -66,7 +67,7 @@
 %>
 </table>
 
-<form method="post" action="<%=h(context.getActionURL().relativeUrl("saveReportView", null, "Study-Reports"))%>" onsubmit="return validateForm();">
+<form method="post" action="<%=h(new ActionURL(ReportsController.SaveReportViewAction.class, context.getContainer()))%>" onsubmit="return validateForm();">
     <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=bean.getSchemaName()%>">
     <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=bean.getQueryName()%>">
     <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=bean.getViewName()%>">

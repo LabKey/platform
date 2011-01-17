@@ -376,14 +376,16 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            org.labkey.api.reports.Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudy(), true);
+            Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudy(), true);
+
             if (report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY) == null)
             {
                 if (!getViewContext().hasPermission(AdminPermission.class))
                     return new HtmlView("<font class=labkey-error>This view must be configured by an administrator.</font>");
 
-                return HttpView.redirect(getViewContext().getActionURL().relativeUrl("configureEnrollmentReport", null));
+                return HttpView.redirect(new ActionURL(ConfigureEnrollmentReportAction.class, getContainer()));
             }
+
             return new EnrollmentReport.EnrollmentView(report);
         }
 
@@ -399,7 +401,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(ColumnPickerForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("enrollmentView"));
-            org.labkey.api.reports.Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudy(), true);
+            Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudy(), true);
             final ReportDescriptor descriptor = report.getDescriptor();
 
             if (form.getDatasetId() != null)
@@ -1446,7 +1448,7 @@ public class ReportsController extends BaseStudyController
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
             out.write("<form method='post' action='");
-            out.write(PageFlowUtil.filter(getViewContext().getActionURL().relativeUrl("saveReportView", null, "Study-Reports")));
+            out.write(PageFlowUtil.filter(new ActionURL(SaveReportViewAction.class, getViewContext().getContainer())));
             out.write("'>");
             out.write("<table><tr>");
             if (confirm)
@@ -2052,10 +2054,10 @@ public class ReportsController extends BaseStudyController
 
     private NavTree _appendNavTrail(NavTree root, String name)
     {
-        try {
+        try
+        {
             Study study = getStudy();
-            ActionURL url = getViewContext().getActionURL();
-            root.addChild(study.getLabel(), url.relativeUrl("overview", null, "Study"));
+            root.addChild(study.getLabel(), getStudyOverviewURL());
 
             if (getUser().isAdministrator())
                 root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
@@ -2072,7 +2074,7 @@ public class ReportsController extends BaseStudyController
         try {
             Study study = getStudy();
             ActionURL url = getViewContext().getActionURL();
-            root.addChild(study.getLabel(), url.relativeUrl("overview", null, "Study"));
+            root.addChild(study.getLabel(), getStudyOverviewURL());
             if (getUser().isAdministrator())
                 root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
             

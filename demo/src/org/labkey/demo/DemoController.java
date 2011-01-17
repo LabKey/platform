@@ -88,7 +88,6 @@ public class DemoController extends SpringActionController
     }
 
 
-
     /**
      * Here is another Spring controller using a Spring base class
      */

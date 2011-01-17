@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     User user = (User)request.getUserPrincipal();
@@ -90,8 +91,8 @@
 </ul>
     </td>
         <td valign="top">
-            <a href="<%=h(url.setAction(StudyController.OverviewAction.class).getLocalURIString())%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a><br>
-            <%=textLink("Study Navigator", url.setAction(StudyController.OverviewAction.class))%>
+            <a href="<%=h(BaseStudyController.getStudyOverviewURL(getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a><br>
+            <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(getStudy().getContainer()))%>
         </td>
     </tr>
     </table>

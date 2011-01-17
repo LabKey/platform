@@ -21,7 +21,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.BaseStudyController;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,7 +46,7 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
     public ActionURL getStatusHref()
     {
         // where should this go???
-        return new ActionURL(StudyController.OverviewAction.class, getInfo().getContainer());
+        return BaseStudyController.getStudyOverviewURL(getInfo().getContainer());
     }
 
     public String getDescription()

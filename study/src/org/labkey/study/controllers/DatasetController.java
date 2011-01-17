@@ -417,7 +417,7 @@ public class DatasetController extends BaseStudyController
             {
                 Study study = getStudy();
                 root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-                root.addChild("Study Overview", new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild("Study Overview", getStudyOverviewURL());
                 root.addChild("Dataset Entry History");
                 return root;
             }
@@ -528,7 +528,7 @@ public class DatasetController extends BaseStudyController
             {
                 Study study = getStudy();
                 root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-                root.addChild("Study Overview", new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild("Study Overview", getStudyOverviewURL());
                 root.addChild("Define Dataset from File");
                 return root;
             }

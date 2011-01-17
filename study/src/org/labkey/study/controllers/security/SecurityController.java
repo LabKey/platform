@@ -31,6 +31,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.SecurityType;
@@ -55,7 +56,6 @@ public class SecurityController extends SpringActionController
 
     public SecurityController() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
@@ -382,9 +382,10 @@ public class SecurityController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try {
+            try
+            {
                 Study study = StudyManager.getInstance().getStudy(getContainer());
-                root.addChild(study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild(study.getLabel(), BaseStudyController.getStudyOverviewURL(getContainer()));
 
                 if (getUser().isAdministrator())
                     root.addChild("Manage Views",

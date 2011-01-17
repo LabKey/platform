@@ -17,22 +17,20 @@
 %>
 <%@ page import="org.labkey.api.exp.DomainDescriptor"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.experiment.types.TypesController.TypeBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-Map<String,DomainDescriptor> g = (Map<String,DomainDescriptor>)HttpView.currentView().getViewContext().get("globals");
-Map<String,DomainDescriptor> l = (Map<String,DomainDescriptor>)HttpView.currentView().getViewContext().get("locals");
+    TypeBean bean = (TypeBean)getModelBean();
 %><h3>global types</h3><%
-for (DomainDescriptor type : g.values())
-    {
+for (DomainDescriptor type : bean.globals.values())
+{
     %><a href="typeDetails.view?type=<%=h(PageFlowUtil.encode(type.getDomainURI()))%>"><%=h(type.getName())%></a><br /><%
-    }
+}
 %><h3>local types</h3><%
-for (DomainDescriptor type : l.values())
-    {
+for (DomainDescriptor type : bean.locals.values())
+{
     %><a href="typeDetails.view?type=<%=h(PageFlowUtil.encode(type.getDomainURI()))%>"><%=h(type.getName())%></a><br /><%
-    }
+}
 %>
 <!--<p>
 [ <a href="importTypes.view">Import Types</a> ]

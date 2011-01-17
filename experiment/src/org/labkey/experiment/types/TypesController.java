@@ -130,6 +130,7 @@ public class TypesController extends SpringActionController
         public boolean handlePost(ImportVocabularyForm o, BindException errors) throws Exception
         {
             Map<String, MultipartFile> fileMap = getFileMap();
+
             if (!fileMap.isEmpty())
             {
                 //noinspection unchecked
@@ -137,6 +138,7 @@ public class TypesController extends SpringActionController
                 String name = entry.getKey();
                 MultipartFile file = entry.getValue();
                 byte[] bytes = file.getBytes();
+
                 if (null != bytes && bytes.length > 0)
                 {
                     String tsv = new String(bytes, "UTF-8");
@@ -149,6 +151,7 @@ public class TypesController extends SpringActionController
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -181,21 +184,18 @@ public class TypesController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             DomainDescriptor[] types = OntologyManager.getDomainDescriptors(getViewContext().getContainer());
-            TreeMap<String,DomainDescriptor> locals = new TreeMap<String,DomainDescriptor>();
-            TreeMap<String,DomainDescriptor> globals = new TreeMap<String,DomainDescriptor>();
+            TypeBean bean = new TypeBean();
             Container shared = ContainerManager.getSharedContainer();
+
             for (DomainDescriptor t : types)
             {
                 if (null == t.getContainer() || t.getContainer().equals(shared))
-                    globals.put(t.getName(), t);
+                    bean.globals.put(t.getName(), t);
                 else
-                    locals.put(t.getName(), t);
+                    bean.locals.put(t.getName(), t);
             }
 
-            HttpView view = new JspView("/org/labkey/experiment/types/types.jsp");
-            view.addObject("locals", locals);
-            view.addObject("globals", globals);
-            return view;
+            return new JspView<TypeBean>("/org/labkey/experiment/types/types.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -204,6 +204,13 @@ public class TypesController extends SpringActionController
             root.addChild("Defined Types", new ActionURL(TypesAction.class, getViewContext().getContainer()));
             return root;
         }
+    }
+
+
+    public static class TypeBean
+    {
+        public TreeMap<String, DomainDescriptor> locals = new TreeMap<String, DomainDescriptor>();
+        public TreeMap<String, DomainDescriptor> globals = new TreeMap<String, DomainDescriptor>();
     }
 
 
@@ -226,21 +233,18 @@ public class TypesController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public static class TypeDetailsAction extends SimpleViewAction<TypeForm>
     {
-        String typeName;
+        public String typeName;
+        public PropertyDescriptor properties[] = new PropertyDescriptor[0];
 
         public ModelAndView getView(TypeForm form, BindException errors) throws Exception
         {
             // UNDONE: verify container against Types table when we have a Types table
             typeName = StringUtils.trimToEmpty(form.getType());             
 
-            PropertyDescriptor properties[] = new PropertyDescriptor[0];
             if (null != typeName)
                 properties = OntologyManager.getPropertiesForType(typeName, getViewContext().getContainer());
 
-            HttpView view = new JspView("/org/labkey/experiment/types/typeDetails.jsp");
-            view.addObject("typeName", typeName);
-            view.addObject("properties", properties);
-            return view;
+            return new JspView<TypeDetailsAction>("/org/labkey/experiment/types/typeDetails.jsp", this);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -248,6 +252,11 @@ public class TypesController extends SpringActionController
             (new TypesAction(getViewContext())).appendNavTrail(root);
             root.addChild("Type -- " + StringUtils.defaultIfEmpty(typeName,"unspecified"), new ActionURL(TypeDetailsAction.class, getViewContext().getContainer()));
             return root;
+        }
+
+        public class TypeDetailsBean
+        {
+
         }
     }
 
@@ -277,7 +286,7 @@ public class TypesController extends SpringActionController
 
             if (notEmpty(form.query) || notEmpty(form.concept) || notEmpty(form.semanticType))
             {
-//          UNDONE: how are we distinguising 'concepts' now?
+//          UNDONE: how are we distinguishing 'concepts' now?
 //            String where = "P.DomainURI IS NULL";
 //            String and = " AND ";
                 String where = "";
@@ -338,6 +347,7 @@ public class TypesController extends SpringActionController
 
             HashMap<String, String> parentMap = new HashMap<String, String>(rows.length * 2);
             String pr, c1, c2, c3;
+
             for (Map<String, Object> row : rows)
             {
                 pr = (String)row.get("PropertyURI");
@@ -372,6 +382,7 @@ public class TypesController extends SpringActionController
                     else if (searchTerms.contains('|' + p))
                         score += 100;
                 }
+
                 row.put("Score", score);
 
                 // PATH
@@ -383,6 +394,7 @@ public class TypesController extends SpringActionController
             }
 
             Arrays.sort(rows, new CompareScore());
+
             if (rows.length > 1000)
             {
                 errors.reject(ERROR_MSG, "Warning: Results truncated after 1000 hits.");
@@ -392,10 +404,8 @@ public class TypesController extends SpringActionController
                 rows = t;
             }
 
-            HttpView view = new JspView("/org/labkey/experiment/types/findConcepts.jsp");
-            view.addObject("form", form);
-            view.addObject("concepts", rows);
-            return view;
+            form.concepts = rows;
+            return new JspView<SearchForm>("/org/labkey/experiment/types/findConcepts.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -556,6 +566,8 @@ public class TypesController extends SpringActionController
         private boolean prefixMatch = false;
         private String semanticType;
         private String query;
+
+        public Map<String,Object>[] concepts;
 
         public String getQuery()
         {

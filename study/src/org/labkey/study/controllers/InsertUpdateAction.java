@@ -191,7 +191,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         {
             Study study = getStudy();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getViewContext().getContainer()));
-            root.addChild("Study Overview", new ActionURL(StudyController.OverviewAction.class, getViewContext().getContainer()));
+            root.addChild("Study Overview", BaseStudyController.getStudyOverviewURL(getViewContext().getContainer()));
             appendExtraNavTrail(root);
         }
         catch (ServletException e) {}

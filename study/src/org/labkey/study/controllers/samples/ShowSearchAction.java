@@ -21,6 +21,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.*;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.samples.SampleSearchBean;
@@ -74,7 +75,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
     public NavTree appendNavTrail(NavTree root)
     {
-        root.addChild(_study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getViewContext().getContainer()));
+        root.addChild(_study.getLabel(), BaseStudyController.getStudyOverviewURL(getViewContext().getContainer()));
         root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getViewContext().getContainer()));
         root.addChild(_title);
 

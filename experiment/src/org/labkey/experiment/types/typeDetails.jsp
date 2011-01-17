@@ -18,19 +18,20 @@
 <%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
 <%@ page import="org.labkey.api.exp.PropertyType"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.experiment.types.TypesController.TypeDetailsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-String typeName = (String)HttpView.currentView().getViewContext().get("typeName");
-PropertyDescriptor[] properties = (PropertyDescriptor[])HttpView.currentView().getViewContext().get("properties");
+    TypeDetailsAction bean = (TypeDetailsAction)getModelBean();
+    String typeName = bean.typeName;
+    PropertyDescriptor[] properties = bean.properties;
 %><h3><%=h(typeName)%></h3>
 <table>
 <tr><th>Name</th><th>PropertyURI</th><th>Type</th></tr><%
-for (PropertyDescriptor pd : properties)
-{
-    PropertyType t = pd.getPropertyType();
-    %><tr><td><%=h(pd.getName())%></td><td><%=h(pd.getPropertyURI())%></td><td><%=h(t.getXmlName())%></td></tr><%
-}
+    for (PropertyDescriptor pd : properties)
+    {
+        PropertyType t = pd.getPropertyType();
+        %><tr><td><%=h(pd.getName())%></td><td><%=h(pd.getPropertyURI())%></td><td><%=h(t.getXmlName())%></td></tr><%
+    }
 %></table>
 <!-- <p>
 [ <a href="types.view">View Types</a> ]<br>

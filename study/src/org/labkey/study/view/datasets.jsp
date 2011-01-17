@@ -44,7 +44,7 @@ if (null == datasets || datasets.length == 0)
     out.print("No datasets defined<br><br>");
     if (container.hasPermission(user, AdminPermission.class))
     {
-        out.print(textLink("Manage Datasets", ctx.getActionURL().relativeUrl("manageTypes.view", null, "Study")));
+        out.print(textLink("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));
     }
     return;
 }
@@ -68,7 +68,7 @@ int datasetsPerCol = userDatasets.size() / 3;
 </tr></table>
 <%
     if (container.hasPermission(user, AdminPermission.class))
-        out.print("<br>" + textLink("Manage Datasets", ctx.getActionURL().relativeUrl("manageTypes.view", null, "Study")));
+        out.print("<br>" + textLink("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));
 %>
     <%!
         String renderDatasets(ViewContext ctx, List<DataSetDefinition> datasets, int startIndex, int endIndex)

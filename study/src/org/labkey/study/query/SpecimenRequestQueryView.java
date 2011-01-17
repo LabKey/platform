@@ -21,6 +21,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SampleManager;
@@ -94,11 +95,13 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             StringBuilder content = new StringBuilder();
+
             if (_extraLinks != null)
             {
                 for (NavTree link : _extraLinks)
                     content.append(PageFlowUtil.generateButton(link.getKey(), link.getValue())).append(" ");
             }
+
             if (_showOptionLinks)
             {
                 if (_cartEnabled)
@@ -116,13 +119,15 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                             throw new RuntimeSQLException(e);
                         }
                     }
+
                     Integer statusId = (Integer) _colStatus.getValue(ctx);
                     Integer ownerId = (Integer) _colCreatedBy.getValue(ctx);
                     boolean canEdit = _userIsSpecimenManager || (_userCanRequest && ownerId == _userId);
+
                     if (statusId.intValue() == _shoppingCartStatusRowId.intValue() && canEdit)
                     {
-                        String submitLink = ctx.getViewContext().getActionURL().relativeUrl("submitRequest", "id=${requestId}");
-                        String cancelLink = ctx.getViewContext().getActionURL().relativeUrl("deleteRequest", "id=${requestId}");
+                        String submitLink = (new ActionURL(SpecimenController.SubmitRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
+                        String cancelLink = (new ActionURL(SpecimenController.DeleteRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
 
                         content.append(PageFlowUtil.generateButton("Submit", submitLink,
                                 "return confirm('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")).append(" ");
@@ -130,9 +135,11 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                                 "return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")).append(" ");
                     }
                 }
-                String detailsLink = ctx.getViewContext().getActionURL().relativeUrl("manageRequest", "id=${requestId}");
+
+                String detailsLink = (new ActionURL(SpecimenController.ManageRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
                 content.append(PageFlowUtil.generateButton("Details", detailsLink));
             }
+
             setDisplayHtml(content.toString());
             super.renderGridCellContents(ctx, out);
         }
@@ -155,7 +162,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String queryName = "SpecimenRequest";
         QuerySettings qs = schema.getSettings(context, queryName, queryName);
-        return new SpecimenRequestQueryView(context, schema, qs, addFilterClauses(context, filter), createDefaultSort());
+        return new SpecimenRequestQueryView(context, schema, qs, addFilterClauses(filter), createDefaultSort());
     }
     
     private static Sort createDefaultSort()
@@ -163,7 +170,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         return new Sort("-Created");
     }
 
-    private static SimpleFilter addFilterClauses(ViewContext context, SimpleFilter filter)
+    private static SimpleFilter addFilterClauses(SimpleFilter filter)
     {
         if (filter == null)
             filter = new SimpleFilter();

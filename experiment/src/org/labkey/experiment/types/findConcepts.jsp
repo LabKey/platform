@@ -27,8 +27,8 @@
 //
 // SEARCH FORM
 //
-TypesController.SearchForm form = (TypesController.SearchForm) HttpView.currentContext().get("form");
-Map<String, Object>[] concepts = (Map<String, Object>[]) HttpView.currentContext().get("concepts");
+TypesController.SearchForm form = (TypesController.SearchForm) HttpView.currentModel();
+Map<String, Object>[] concepts = form.concepts;
 
 String[] semanticTypes = TypesController.getSemanticTypes();
 

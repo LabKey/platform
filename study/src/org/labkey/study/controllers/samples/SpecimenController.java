@@ -327,7 +327,7 @@ public class SpecimenController extends BaseStudyController
 
         public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view, Set<Pair<String, String>> filteredPtidVisits)
         {
-            Map<String,String[]> params = context.getRequest().getParameterMap();
+            Map<String, String[]> params = context.getRequest().getParameterMap();
 
             String currentTable = view.isShowingVials() ? "SpecimenDetail" : "SpecimenSummary";
             String otherTable =   view.isShowingVials() ? "SpecimenSummary" : "SpecimenDetail";
@@ -338,27 +338,32 @@ public class SpecimenController extends BaseStudyController
             StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
 
             TableInfo otherTableInfo = schema.getTable(otherTable);
-            for (Map.Entry<String,String[]> param : params.entrySet())
+
+            for (Map.Entry<String, String[]> param : params.entrySet())
             {
                 int dotIndex = param.getKey().indexOf('.');
+
                 if (dotIndex >= 0)
                 {
                     String table = param.getKey().substring(0, dotIndex);
                     String columnClause = param.getKey().substring(dotIndex + 1);
                     String[] columnClauseParts = columnClause.split("~");
                     String column = columnClauseParts[0];
+
                     if (table.equals(currentTable))
                     {
                         // use the query service to check to see if the current filter column is present
                         // in the other view.  If so, we'll add a filter parameter with the same value on the
                         // other view.  Otherwise, we'll keep the parameter, but we won't map it to the other view:
                         boolean translatable = column.equals("sort");
+
                         if (!translatable)
                         {
                             Map<FieldKey, ColumnInfo> presentCols = QueryService.get().getColumns(otherTableInfo,
                                     Collections.singleton(FieldKey.fromString(column)));
                             translatable = !presentCols.isEmpty();
                         }
+
                         if (translatable)
                         {
                             String key = otherTable + "." + columnClause;
@@ -366,6 +371,7 @@ public class SpecimenController extends BaseStudyController
                             continue;
                         }
                     }
+
                     if (table.equals(currentTable) || table.equals(otherTable))
                         otherView.addParameter(param.getKey(), param.getValue()[0]);
                 }
@@ -1719,6 +1725,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
     
+
     public static class AddToExistingRequestBean extends SamplesViewBean
     {
         private SpecimenRequestQueryView _requestsGrid;
@@ -1727,10 +1734,12 @@ public class SpecimenController extends BaseStudyController
         public AddToExistingRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens) throws SQLException, ServletException
         {
             super(context, requestedSpecimens.getSpecimens(), false, false, false, true);
+
             _providingLocations = requestedSpecimens.getProvidingLocations();
             StringBuilder params = new StringBuilder();
             params.append(IdForm.PARAMS.id.name()).append("=${requestId}&" + AddToSampleRequestForm.PARAMS.specimenIds + "=");
             String separator = "";
+
             if (requestedSpecimens.getSpecimens() != null)
             {
                 for (Specimen specimen : requestedSpecimens.getSpecimens())
@@ -1739,7 +1748,9 @@ public class SpecimenController extends BaseStudyController
                     separator=",";
                 }
             }
+
             SimpleFilter filter = null;
+
             if (!context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class))
             {
                 if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer()))
@@ -1747,7 +1758,8 @@ public class SpecimenController extends BaseStudyController
                 SampleRequestStatus cartStatus = SampleManager.getInstance().getRequestShoppingCartStatus(context.getContainer(), context.getUser());
                 filter = new SimpleFilter("StatusId", cartStatus.getRowId());
             }
-            String addLink = context.getActionURL().relativeUrl("handleAddRequestSamples", params.toString());
+
+            String addLink = new ActionURL(HandleAddRequestSamplesAction.class, context.getContainer()).toString() + params.toString();
             _requestsGrid = SpecimenRequestQueryView.createView(context, filter);
             _requestsGrid.setExtraLinks(false, new NavTree("Select", addLink));
             _requestsGrid.setShowCustomizeLink(false);
@@ -3755,7 +3767,7 @@ public class SpecimenController extends BaseStudyController
             try {
                 setHelpTopic(new HelpTopic(_helpTopic));
 
-                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
                 root.addChild(_title);
             }
@@ -4207,7 +4219,7 @@ public class SpecimenController extends BaseStudyController
             try {
                 setHelpTopic(new HelpTopic("specimenRequest"));
 
-                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
                 root.addChild("Manage New Request Form");
 
@@ -4355,7 +4367,7 @@ public class SpecimenController extends BaseStudyController
             try {
                 setHelpTopic(new HelpTopic("specimenRequest"));
 
-                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
                 root.addChild("Manage Notifications");
 
@@ -4405,10 +4417,11 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try {
+            try
+            {
                 setHelpTopic(new HelpTopic("specimenRequest"));
 
-                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
                 root.addChild("Manage Display Settings");
 
@@ -4915,7 +4928,7 @@ public class SpecimenController extends BaseStudyController
         {
             try
             {
-                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
             }
             catch (ServletException e)
             {

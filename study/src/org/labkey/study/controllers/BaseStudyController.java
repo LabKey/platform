@@ -25,19 +25,21 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import static org.labkey.api.util.PageFlowUtil.jsString;
-
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.BaseStudyPage;
 import org.labkey.study.view.StudyNavigationView;
-import org.labkey.study.CohortFilter;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -45,6 +47,8 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.ServletException;
 import java.io.PrintWriter;
 import java.util.Collection;
+
+import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
  * User: Karl Lum
@@ -56,7 +60,18 @@ public abstract class BaseStudyController extends SpringActionController
     {
         QCState
     }
+
     static final boolean extprototype = false;
+
+    public static ActionURL getStudyOverviewURL(Container c)
+    {
+        return new ActionURL(StudyController.OverviewAction.class, c);
+    }
+
+    protected ActionURL getStudyOverviewURL()
+    {
+        return getStudyOverviewURL(getContainer());
+    }
 
     protected SpecimenUtils getUtils()
     {
@@ -203,7 +218,7 @@ public abstract class BaseStudyController extends SpringActionController
         try {
             Study study = getStudy();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-            ActionURL overviewURL = new ActionURL(StudyController.OverviewAction.class, getContainer());
+            ActionURL overviewURL = getStudyOverviewURL();
             if (cohortFilter != null)
                 cohortFilter.addURLParameters(overviewURL);
             root.addChild("Study Overview", overviewURL);
@@ -224,7 +239,7 @@ public abstract class BaseStudyController extends SpringActionController
         try {
             Study study = getStudy();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-            ActionURL overviewURL = new ActionURL(StudyController.OverviewAction.class, getContainer());
+            ActionURL overviewURL = getStudyOverviewURL();
             if (cohortFilter != null)
                 cohortFilter.addURLParameters(overviewURL);
             if (qcStateSetFormValue != null)

@@ -60,6 +60,7 @@ public class DotGraph
     Set<String> writtenConnects;
     Integer focusId = null;
     String objectType = null;
+
     // following are used in URLs to generate lineage graphs
     public static String TYPECODE_MATERIAL = "M";
     public static String TYPECODE_DATA = "D";
