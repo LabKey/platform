@@ -688,7 +688,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
-    @Override
+    @Override @NotNull
     public Collection<QueryService.ParameterDecl> getNamedParameters()
     {
         return Collections.EMPTY_LIST;

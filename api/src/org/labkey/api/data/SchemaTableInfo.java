@@ -899,7 +899,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return null;
     }
 
-    @Override
+    @Override @NotNull
     public Collection<QueryService.ParameterDecl> getNamedParameters()
     {
         return Collections.EMPTY_LIST;

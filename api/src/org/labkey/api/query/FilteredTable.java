@@ -369,7 +369,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _public = aPublic;
     }
 
-    @Override
+    @Override @NotNull
     public Collection<QueryService.ParameterDecl> getNamedParameters()
     {
         return _rootTable.getNamedParameters();

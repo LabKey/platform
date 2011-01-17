@@ -776,7 +776,8 @@ public class DataRegion extends DisplayElement
             boolean showParameterForm = false;
             try
             {
-                if (!getTable().getNamedParameters().isEmpty() && getQueryParameters().isEmpty())
+                TableInfo t = getTable();
+                if (null != t && !t.getNamedParameters().isEmpty() && getQueryParameters().isEmpty())
                     showParameterForm = true;
                 else
                     rs = getResultSet(ctx);

@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -232,6 +233,7 @@ public interface TableInfo
      * parameters
      */
 
+    @NotNull
     public Collection<QueryService.ParameterDecl> getNamedParameters();
 
     /**
