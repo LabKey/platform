@@ -19,6 +19,9 @@ package org.labkey.query;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
@@ -60,8 +63,10 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -78,8 +83,11 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.data.SimpleUserSchema;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -115,7 +123,6 @@ public class QueryServiceImpl extends QueryService
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
     private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
     private static final String CUSTOMVIEW_SET_CACHE_ENTRY = "CUSTOMVIEW:";
-    protected static final String MODULE_QUERIES_DIRECTORY = "queries";
 
     static public QueryServiceImpl get()
     {
@@ -418,7 +425,7 @@ public class QueryServiceImpl extends QueryService
 
         List<ModuleCustomViewDef> customViews = new ArrayList<ModuleCustomViewDef>();
 
-        Path path = new Path(QueryServiceImpl.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(schema), FileUtil.makeLegalName(query));
+        Path path = new Path(MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(schema), FileUtil.makeLegalName(query));
         Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
         for (Module module : modules)
         {
@@ -845,10 +852,46 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public String findMetadataOverride(Container container, String schemaName, String tableName, boolean customQuery)
+    public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors)
     {
-        QueryDef queryDef = findMetadataOverrideImpl(container, schemaName, tableName, customQuery);
-        return queryDef == null ? null : queryDef.getMetaData();
+        Path dir = new Path(QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(schema.getName()));
+        return findMetadataOverride(schema, tableName, customQuery, errors, dir);
+    }
+
+    public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors, Path dir)
+    {
+        QueryDef queryDef = findMetadataOverrideImpl(schema, tableName, customQuery, dir);
+        if (queryDef == null)
+            return null;
+
+        return parseMetadata(queryDef.getMetaData(), errors);
+    }
+
+    protected TableType parseMetadata(String metadataXML, Collection<QueryException> errors)
+    {
+        if (metadataXML == null || StringUtils.isBlank(metadataXML))
+            return null;
+
+        XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+        List<XmlError> xmlErrors = new ArrayList<XmlError>();
+        options.setErrorListener(xmlErrors);
+        try
+        {
+            TablesDocument doc = TablesDocument.Factory.parse(metadataXML, options);
+            TablesDocument.Tables tables = doc.getTables();
+            if (tables != null && tables.sizeOfTableArray() > 0)
+                return tables.getTableArray(0);
+        }
+        catch (XmlException e)
+        {
+            errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(e)));
+        }
+        for (XmlError xmle : xmlErrors)
+        {
+            errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
+        }
+
+        return null;
     }
 
 
@@ -856,9 +899,10 @@ public class QueryServiceImpl extends QueryService
      * Looks in the current folder, parent folders up to and including the project, and the shared
      * container
      */
-    public QueryDef findMetadataOverrideImpl(Container container, String schemaName, String tableName, boolean customQuery)
+    public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, Path dir)
     {
-        Container originalContainer = container;
+        String schemaName = schema.getName();
+        Container container = schema.getContainer();
         QueryDef queryDef;
         do
         {
@@ -880,26 +924,26 @@ public class QueryServiceImpl extends QueryService
         }
 
         // Finally, look for file-based definitions in modules
-        for (Module module : originalContainer.getActiveModules())
+        for (Module module : schema.getContainer().getActiveModules())
         {
             Collection<? extends Resource> queryMetadatas;
 
             //always scan the file system in dev mode
             if (AppProps.getInstance().isDevMode())
             {
-                Resource schemaDir = module.getModuleResolver().lookup(new Path(MODULE_QUERIES_DIRECTORY, schemaName));
+                Resource schemaDir = module.getModuleResolver().lookup(dir);
                 queryMetadatas = getModuleQueries(schemaDir, ModuleQueryDef.META_FILE_EXTENSION);
             }
             else
             {
                 //in production, cache the set of query defs for each module on first request
-                String fileSetCacheKey = QUERYDEF_METADATA_SET_CACHE_ENTRY + module.toString() + "." + schemaName;
+                String fileSetCacheKey = QUERYDEF_METADATA_SET_CACHE_ENTRY + dir.toString();
                 //noinspection unchecked
                 queryMetadatas = (Collection<? extends Resource>) MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
 
                 if (null == queryMetadatas)
                 {
-                    Resource schemaDir = module.getModuleResolver().lookup(new Path(MODULE_QUERIES_DIRECTORY, schemaName));
+                    Resource schemaDir = module.getModuleResolver().lookup(dir);
                     queryMetadatas = getModuleQueries(schemaDir, ModuleQueryDef.META_FILE_EXTENSION);
                     MODULE_RESOURCES_CACHE.put(fileSetCacheKey, queryMetadatas);
                 }

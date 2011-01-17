@@ -37,8 +37,8 @@ import java.util.Set;
  */
 public class ModuleAssayLoader implements ModuleResourceLoader
 {
-    /*package*/ static final String ASSAY_DIR_NAME = "assay";
-    /*package*/ static final String DOMAINS_DIR_NAME = "domains";
+    public static final String ASSAY_DIR_NAME = "assay";
+    public static final String DOMAINS_DIR_NAME = "domains";
 
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
@@ -58,19 +58,22 @@ public class ModuleAssayLoader implements ModuleResourceLoader
             {
                 if (!assayProviderDir.isCollection())
                     continue;
-                loadAssayProvider(module, assayProviderDir);
+
+                // As of 11.1, a config.xml file is required to define the file-based module assay.
+                Resource configFile = assayProviderDir.find("config.xml");
+                if (configFile == null || !configFile.isFile())
+                    continue;
+
+                loadAssayProvider(module, assayProviderDir, configFile);
             }
         }
     }
 
-    private void loadAssayProvider(Module module, Resource assayProviderDir) throws IOException, ModuleResourceLoadException
+    private void loadAssayProvider(Module module, Resource assayProviderDir, Resource configFile) throws IOException, ModuleResourceLoadException
     {
         String assayName = assayProviderDir.getName();
 
-        Resource configFile = assayProviderDir.find("config.xml");
-        ProviderType providerConfig = null;
-        if (configFile != null && configFile.isFile())
-            providerConfig = parseProvider(configFile);
+        ProviderType providerConfig = parseProvider(configFile);
         if (providerConfig == null)
             providerConfig = ProviderDocument.Factory.newInstance().addNewProvider();
 

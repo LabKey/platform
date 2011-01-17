@@ -169,6 +169,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
+    public String getResourceName()
+    {
+        return basePath.getName();
+    }
+
+    @Override
     public String getDescription()
     {
         return description;

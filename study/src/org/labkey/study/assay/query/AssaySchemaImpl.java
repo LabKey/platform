@@ -32,9 +32,12 @@ import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.TableType;
+import org.labkey.study.assay.ModuleAssayLoader;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 
@@ -65,7 +68,7 @@ public class AssaySchemaImpl extends AssaySchema
 
     public AssaySchemaImpl(User user, Container container)
     {
-        super(NAME, user, container, ExperimentService.get().getSchema());
+        super(NAME, user, container, ExperimentService.get().getSchema(), null);
     }
 
 
@@ -147,21 +150,45 @@ public class AssaySchemaImpl extends AssaySchema
                             table = providerSchema.createTable(name);
                         }
                     }
-                }
 
-                if (table != null)
-                {
-                    // CONSIDER: Move fixupRenderers code to where Query performs the metadata overlay.
-                    for (ColumnInfo col : table.getColumns())
+                    if (table != null)
                     {
-                        fixupRenderers(col, col);
+                        overlayMetadata(provider, protocol, table, name);
+                        return table;
                     }
-                    return table;
                 }
             }
         }
         return null;
     }
+
+    // NOTE: It would be nice if we could just override the UserSchema.overlayMetadata() method, but we need
+    // to know the protocol name and provider's resource directory to find the metadata.  If AssaySchema.createTable()
+    // returned an AssayTable type that knew it's protocol, we could override the UserSchema.overlayMetadata() method.
+    protected void overlayMetadata(AssayProvider provider, ExpProtocol protocol, TableInfo table, String name)
+    {
+        for (ColumnInfo col : table.getColumns())
+        {
+            fixupRenderers(col, col);
+        }
+
+        // Look for metadata using the table's raw name (ie. not prefixed with the provider's name)
+        String prefix = protocol.getName() + " ";
+        if (name.startsWith(prefix))
+        {
+            String unprefixedTableName = name.substring(prefix.length());
+
+            ArrayList<QueryException> errors = new ArrayList<QueryException>();
+            Path dir = new Path(ModuleAssayLoader.ASSAY_DIR_NAME, provider.getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
+            TableType metadata = QueryService.get().findMetadataOverride(this, unprefixedTableName, false, errors, dir);
+            if (errors.isEmpty())
+                table.overlayMetadata(metadata, this, errors);
+
+            if (!errors.isEmpty())
+                throw errors.get(0);
+        }
+    }
+
 
     public ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
     {
