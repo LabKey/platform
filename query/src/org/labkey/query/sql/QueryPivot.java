@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
@@ -23,14 +24,18 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -71,7 +76,7 @@ public class QueryPivot extends QueryRelation
         QPivot pivotClause = root.getChildOfType(QPivot.class);
         QNode aggsList = pivotClause.childList().get(0);
         QIdentifier byId = (QIdentifier)pivotClause.childList().get(1);
-        QNode inList = pivotClause.childList().get(2);
+        QNode inList = pivotClause.childList().size() > 2 ? pivotClause.childList().get(2) : null;
 
         // this column is not selected, its values become columns
         _pivotColumn = _from.getColumn(byId.getIdentifier());
@@ -130,33 +135,32 @@ public class QueryPivot extends QueryRelation
         }
 
         // in list
-        _pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
-        for (QNode node : inList.childList())
+        if (null != inList)
         {
-            IConstant constant;
-            String name = null;
+            _pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
+            for (QNode node : inList.childList())
+            {
+                IConstant constant;
+                String name = null;
 
-            if (node instanceof IConstant)
-                constant = (IConstant) node;
-            else
-            {
-                assert node instanceof QAs;
-                constant = (IConstant)node.childList().get(0);
-                if (node.childList().size() > 1)
-                    name = ((QIdentifier)node.childList().get(1)).getIdentifier();
-            }
-            if (null == name)
-            {
-                if (constant instanceof QNull)
-                    name = "NULL";
+                if (node instanceof IConstant)
+                    constant = (IConstant) node;
                 else
-                    name = constant.getValue().toString();
+                {
+                    assert node instanceof QAs;
+                    constant = (IConstant)node.childList().get(0);
+                    if (node.childList().size() > 1)
+                        name = ((QIdentifier)node.childList().get(1)).getIdentifier();
+                }
+                if (null == name)
+                    name = toName(constant);
+
+                // TODO check duplicate values as well as duplicate names
+                if (_pivotValues.containsKey(name))
+                    parseError("Duplicate pivot column name: " + name, node);
+                else
+                    _pivotValues.put(name, constant);
             }
-            // TODO check duplicate values as well as duplicate names
-            if (_pivotValues.containsKey(name))
-                parseError("Duplicate pivot column name: " + name, node);
-            else
-                _pivotValues.put(name, constant);
         }
     }
 
@@ -183,6 +187,78 @@ public class QueryPivot extends QueryRelation
         }
         if (!pivotFound)
             parseError("Could not find pivot column in group by list: " + _pivotColumn.getAlias(), null);
+    }
+
+
+
+    Map<String,IConstant> getPivotValues()
+    {
+        if (null != _pivotValues)
+            return _pivotValues;
+
+        ResultSet rs = null;
+        try
+        {
+            _pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
+
+            // CONSIDER: _from.clone() and then simplify the select
+            // execute query
+
+            SQLFragment sqlFrom = _from.getSql();
+            SQLFragment sqlPivotValues = new SQLFragment();
+            sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql("_pivotValues"));
+            sqlPivotValues.append("\nFROM (").append(_from.getSql()).append(") _pivotValues");
+            sqlPivotValues.append("\nORDER BY 1 ASC");
+            rs = Table.executeQuery(getSchema().getDbSchema(), sqlPivotValues);
+            JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
+            while (rs.next())
+            {
+                Object value = rs.getObject(1);
+                IConstant wrap = wrapConstant(value, type, rs.wasNull());
+                String name = toName(wrap);
+                _pivotValues.put(name, wrap);
+            }
+        }
+        catch (SQLException x)
+        {
+            parseError("Could not compute pivot column list", null);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+
+        return _pivotValues;
+    }
+
+
+    String toName(IConstant c)
+    {
+        if (c instanceof QNull)
+            return "NULL";
+        Object v = c.getValue();
+        if (v instanceof String)
+            return (String)v;
+        return ConvertUtils.convert(v);
+    }
+
+
+    IConstant wrapConstant(Object v, JdbcType t, boolean wasNull)
+    {
+        if (wasNull)
+            return new QNull();
+        if (t == JdbcType.BOOLEAN)
+        {
+            assert v instanceof Boolean;
+            return new QBoolean(v==Boolean.TRUE);
+        }
+        if (v instanceof Number)
+        {
+            return new QNumber((Number)v);
+        }
+        if (!(v instanceof String))
+            v = ConvertUtils.convert(v);
+        return new QString((String)v);
     }
 
 
@@ -247,6 +323,8 @@ public class QueryPivot extends QueryRelation
         void copyColumnAttributesTo(ColumnInfo to)
         {
             _s.copyColumnAttributesTo(to);
+            if (_aggregates.containsKey(_s.getFieldKey().getName()))
+                to.setFk(new PivotForeignKey(_s));
         }
     }
 
@@ -337,11 +415,13 @@ public class QueryPivot extends QueryRelation
                 comma = ",\n";
             }
 
+            Map<String,IConstant> pivotValues = getPivotValues();
+            
             // add aggregate expressions
-            for (Map.Entry<String,IConstant> pivotValues : _pivotValues.entrySet())
+            for (Map.Entry<String,IConstant> pivotValue : pivotValues.entrySet())
             {
-                QNode value = (QNode)pivotValues.getValue();
-                String alias = makePivotColumnAlias(col.getAlias(), pivotValues.getKey());
+                QNode value = (QNode)pivotValue.getValue();
+                String alias = makePivotColumnAlias(col.getAlias(), pivotValue.getKey());
                 sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql(tableAlias));
                 if (value instanceof QNull)
                     sql.append(" IS NULL");
@@ -440,7 +520,13 @@ public class QueryPivot extends QueryRelation
         @Override
         public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
         {
-            IConstant c = _pivotValues.get(displayField);
+            Map<String, IConstant> pivotValues = getPivotValues();
+            if (null == pivotValues)
+            {
+                assert(!getParseErrors().isEmpty());
+                return null;
+            }
+            IConstant c = pivotValues.get(displayField);
             if (null == c)
             {
                 // if dynamic columns return new NullColumnInfo
@@ -462,7 +548,13 @@ public class QueryPivot extends QueryRelation
                     return null;
                 }
             };
-            for (String displayField : _pivotValues.keySet())
+            Map<String, IConstant> pivotValues = getPivotValues();
+            if (null == pivotValues)
+            {
+                assert(!getParseErrors().isEmpty());
+                return null;
+            }
+            for (String displayField : pivotValues.keySet())
             {
                 ColumnInfo c = new RelationColumnInfo(t, _agg);
                 c.setName(displayField);

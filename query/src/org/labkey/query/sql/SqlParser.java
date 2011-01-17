@@ -1122,7 +1122,9 @@ public class SqlParser
         "SELECT R.* FROM R",
 
         // PIVOT
-        "SELECT R.a, R.b, SUM(x) sumX FROM R GROUP BY R.a, R.b PIVOT sumX BY b IN (0,1,2)"
+        "SELECT R.a, R.b, SUM(x) sumX FROM R GROUP BY R.a, R.b PIVOT sumX BY b",
+        "SELECT R.a, R.b, SUM(x) sumX FROM R GROUP BY R.a, R.b PIVOT sumX BY b IN (0,1,2)",
+        "SELECT R.a, R.b, SUM(x) sumX FROM R GROUP BY R.a, R.b PIVOT sumX BY b IN (0 AS Zero,1 ONE,2 TWO)"
     };
 
 
@@ -1149,7 +1151,7 @@ public class SqlParser
 
 
     
-    public static class TestCase extends Assert
+    public static class SqlParserTestCase extends Assert
     {
         Pair<String,String>[] exprs = new Pair[]
         {

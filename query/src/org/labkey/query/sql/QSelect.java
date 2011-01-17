@@ -37,6 +37,6 @@ public class QSelect extends QNode
     @Override
     protected boolean isValidChild(QNode n)
     {
-        return super.isValidChild(n) || n instanceof QAs;
+        return super.isValidChild(n) || n instanceof QAs || n instanceof QDistinct;
     }
 }

@@ -313,7 +313,7 @@ groupByClause
 
 
 pivotClause
-    : PIVOT^ identifierList 'by'! identifier IN! OPEN! constantAliasList CLOSE!
+    : PIVOT^ identifierList 'by'! identifier (IN! OPEN! constantAliasList CLOSE!)?
     ;
     
 

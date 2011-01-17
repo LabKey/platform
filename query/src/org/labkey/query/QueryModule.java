@@ -161,7 +161,7 @@ public class QueryModule extends DefaultModule
     public Set<Class> getJUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(
-                SqlParser.TestCase.class,
+                SqlParser.SqlParserTestCase.class,
                 Query.QueryTestCase.class,
                 QueryServiceImpl.TestCase.class,
                 JdbcType.TestCase.class,
