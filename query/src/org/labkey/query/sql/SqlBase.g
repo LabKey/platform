@@ -313,7 +313,7 @@ groupByClause
 
 
 pivotClause
-    : PIVOT^ identifierList 'by'! identifier IN! OPEN! constantList CLOSE!
+    : PIVOT^ identifierList 'by'! identifier IN! OPEN! constantAliasList CLOSE!
     ;
     
 
@@ -364,9 +364,14 @@ identifierList
 	;
 
 
-constantList
-	: constant (COMMA constant)* -> ^(EXPR_LIST constant*)
+constantAliasList
+	: constantAlias (COMMA constantAlias)* -> ^(SELECT constantAlias*)
 	;
+
+
+constantAlias
+    : constant (AS! identifier) -> ^(ALIAS constant identifier)
+    ;
 
 
 // expressions

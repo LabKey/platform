@@ -18,6 +18,11 @@ package org.labkey.query.sql;
 
 public class QSelect extends QNode
 {
+    QSelect()
+    {
+        super(QExpr.class);
+    }
+
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix("SELECT ");
@@ -27,5 +32,11 @@ public class QSelect extends QNode
             builder.nextPrefix(",\n");
         }
         builder.popPrefix();
+    }
+
+    @Override
+    protected boolean isValidChild(QNode n)
+    {
+        return super.isValidChild(n) || n instanceof QAs;
     }
 }

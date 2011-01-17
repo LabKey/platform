@@ -69,9 +69,9 @@ public class QueryPivot extends QueryRelation
         _from = from;
 
         QPivot pivotClause = root.getChildOfType(QPivot.class);
-        QExprList aggsList = (QExprList)pivotClause.childList().get(0);
+        QNode aggsList = pivotClause.childList().get(0);
         QIdentifier byId = (QIdentifier)pivotClause.childList().get(1);
-        QExprList inList = (QExprList)pivotClause.childList().get(2);
+        QNode inList = pivotClause.childList().get(2);
 
         // this column is not selected, its values become columns
         _pivotColumn = _from.getColumn(byId.getIdentifier());
@@ -130,11 +130,33 @@ public class QueryPivot extends QueryRelation
         }
 
         // in list
-        _pivotValues = new LinkedHashMap<String,IConstant>();
+        _pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
         for (QNode node : inList.childList())
         {
-            IConstant constant = (IConstant) node;
-            _pivotValues.put(constant.getValue().toString(), constant);
+            IConstant constant;
+            String name = null;
+
+            if (node instanceof IConstant)
+                constant = (IConstant) node;
+            else
+            {
+                assert node instanceof QAs;
+                constant = (IConstant)node.childList().get(0);
+                if (node.childList().size() > 1)
+                    name = ((QIdentifier)node.childList().get(1)).getIdentifier();
+            }
+            if (null == name)
+            {
+                if (constant instanceof QNull)
+                    name = "NULL";
+                else
+                    name = constant.getValue().toString();
+            }
+            // TODO check duplicate values as well as duplicate names
+            if (_pivotValues.containsKey(name))
+                parseError("Duplicate pivot column name: " + name, node);
+            else
+                _pivotValues.put(name, constant);
         }
     }
 
@@ -319,8 +341,12 @@ public class QueryPivot extends QueryRelation
             for (Map.Entry<String,IConstant> pivotValues : _pivotValues.entrySet())
             {
                 QNode value = (QNode)pivotValues.getValue();
-                String alias = makePivotColumnAlias(col.getFieldKey(), pivotValues.getKey());
-                sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql(tableAlias)).append("=").append(value.getSourceText());
+                String alias = makePivotColumnAlias(col.getAlias(), pivotValues.getKey());
+                sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql(tableAlias));
+                if (value instanceof QNull)
+                    sql.append(" IS NULL");
+                else
+                    sql.append("=").append(value.getSourceText());
                 sql.append(") THEN (").append(col.getValueSql(tableAlias)).append(") ELSE NULL END) AS ").append(alias);
                 comma = ",\n";
             }
@@ -394,10 +420,10 @@ public class QueryPivot extends QueryRelation
     
     // We could use aliasManager and remember these
     // but its easier if we can generate names we expect to be unique
-    String makePivotColumnAlias(FieldKey agg, String pivotValueName)
+    String makePivotColumnAlias(String aggAlias, String pivotValueName)
     {
-        FieldKey key = new FieldKey(agg, pivotValueName);
-        String alias =  AliasManager.makeLegalName("_p_" + key.toString().toLowerCase(), getSqlDialect());
+        FieldKey key = FieldKey.fromParts(aggAlias, "_p_", pivotValueName);
+        String alias =  AliasManager.makeLegalName(key.toString().toLowerCase(), getSqlDialect());
         return alias;
     }
     
@@ -421,7 +447,7 @@ public class QueryPivot extends QueryRelation
                 return null;
             }
             FieldKey key = new FieldKey(_agg.getFieldKey(), displayField.toLowerCase());
-            String alias = makePivotColumnAlias(parent.getFieldKey(), displayField);
+            String alias = makePivotColumnAlias(parent.getAlias(), displayField);
             return new ExprColumn(parent.getParentTable(), key, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + alias), parent.getJdbcType());
         }
 

@@ -122,15 +122,20 @@ abstract public class QNode implements Cloneable
 
     public void appendChild(QNode child)
     {
-		assert _validChildrenClass != null && _validChildrenClass.isAssignableFrom(child.getClass());
+		assert isValidChild(child);
 		_children.add(child);
     }
 
 	void _replaceChildren(LinkedList<QNode> list)
 	{
-		for (QNode n : list) assert _validChildrenClass != null && _validChildrenClass.isAssignableFrom(n.getClass());
+		for (QNode n : list) assert isValidChild(n);
 	   	_children = list;
 	}
+
+    protected boolean isValidChild(QNode n)
+    {
+        return _validChildrenClass != null && _validChildrenClass.isAssignableFrom(n.getClass());
+    }
 
     public QNode getFirstChild()
     {
