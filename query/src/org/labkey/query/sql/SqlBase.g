@@ -370,7 +370,7 @@ constantAliasList
 
 
 constantAlias
-    : constant (AS! identifier) -> ^(ALIAS constant identifier)
+    : constant (AS? identifier)? -> ^(ALIAS constant identifier?)
     ;
 
 
