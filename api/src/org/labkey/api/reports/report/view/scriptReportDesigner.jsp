@@ -69,6 +69,7 @@
 <script type="text/javascript">LABKEY.requiresYahoo("container");</script>
 <script type="text/javascript">LABKEY.requiresScript("utils/dialogBox.js");</script>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
+<script type="text/javascript">LABKEY.requiresScript("/editarea/edit_area_full.js");</script>
 <script type="text/javascript">
     var dialogHelper;
 
@@ -92,6 +93,8 @@
     function saveReport()
     {
         LABKEY.setSubmit(true);
+        updateScript();
+
         var saveDiv = YAHOO.util.Dom.get('saveDialog');
         saveDiv.style.display = "";
 
@@ -145,124 +148,20 @@
         LABKEY.setSubmit(false);
     }
 
-</script>
-
-<labkey:errors/>
-
-<form id="renderReport" action="<%=bean.getRenderURL()%>" method="post">
-    <table class="labkey-wp">
-        <tr class="labkey-wp-header"><th align="left"><%=h(report.getTypeDescription())%> Builder</th></tr>
-<%
-        if (hasData)
-        {
-%>
-        <tr><td><a href="javascript:void(0)" onclick="downloadData()">Download input data</a>
-            <%=PageFlowUtil.helpPopup("Download input data", report.getDownloadDataHelpMessage())%><br/><br/></td></tr>
-<%
-        }
-%>
-        <tr><td>Create a script to be executed <%=h(report.getExecutionLocation())%>:<br/></td></tr>
-        <tr><td>
-            <textarea id="script"
-                      name="script"
-                      <% if (readOnly){ %>readonly="true"<% } %>
-                      style="width: 100%;"
-                      cols="120"
-                      wrap="on"
-                      rows="20"><%=StringUtils.trimToEmpty(bean.getScript())%></textarea>
-        </td></tr>
-        <tr><td>
-<%          if (!readOnly)
-            {
-                if (bean.getRenderURL() == null)
-                    out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:switchTab('" + executeUrl.getLocalURIString() + "', saveChanges)"));
-                else
-                    out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:runScript()"));
-
-                if (!context.getUser().isGuest())
-                    out.println(PageFlowUtil.generateButton("Save View", "javascript:void(0)", "javascript:saveReport()"));
-            }
-%>
-        </td></tr>
-<%
-    if (!readOnly)
+    function updateScript()
     {
-        if (isAdmin)
-            out.println("<tr><td><input type=\"checkbox\" name=\"shareReport\" " + (bean.isShareReport() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Make this view available to all users.</td></tr>");
-
-        if (report.supportsPipeline())
-            out.println("<tr><td><input type=\"checkbox\" id=\"runInBackground\" name=\"" + ScriptReportDescriptor.Prop.runInBackground.name() + "\" " + (bean.isRunInBackground() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Run this view in the background as a pipeline job.</td></tr>");
-
-        if (isAdmin)
+        if (document.getElementById("script") && document.getElementById("edit_area_toggle_checkbox_script") && document.getElementById("edit_area_toggle_checkbox_script").checked)
         {
-            out.print("<tr><td><input type=\"checkbox\" name=\"inheritable\" " + (bean.isInheritable() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Make this view available in child folders.");
-            out.print(PageFlowUtil.helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
-                "where the schema and table are the same as this data grid."));
-            out.println("</td></tr>");
-        }
-
-        if (!sharedReports.isEmpty())
-        {
-%>
-        <tr><td>&nbsp;</td></tr>
-        <tr class="labkey-wp-header"><th align="left">Shared Scripts</th></tr>
-        <tr><td><i>You can execute any of the following scripts as part of your current script by calling: source('&lt;Script Name&gt;.r') after checking the box next to the &lt;Script Name&gt; you plan to use.</i></td></tr>
-<%
-            for (Report sharedReport : sharedReports)
-            {%>
-            <tr><td><input type="checkbox" name="<%=ScriptReportDescriptor.Prop.includedReports%>"
-                                    onchange="LABKEY.setDirty(true);return true;"
-                                    value="<%=sharedReport.getDescriptor().getReportId()%>"
-                                    <%=isScriptIncluded(sharedReport.getDescriptor().getReportId(), includedReports) ? "checked" : ""%>>
-                <%=sharedReport.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)%>
-            </td></tr>
-            <%}
+            document.getElementById("script").value = editAreaLoader.getValue("script");
         }
     }
-%>
-    </table>
-    <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=bean.getReportType()%>">
-    <input type="hidden" name="queryName" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
-    <input type="hidden" name="viewName" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
-    <input type="hidden" name="schemaName" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
-    <input type="hidden" name="dataRegionName" value="<%=StringUtils.trimToEmpty(bean.getDataRegionName())%>">
-    <input type="hidden" name="redirectUrl" value="<%=h(bean.getRedirectUrl())%>">
-    <% if (null != bean.getReportId()) { %>
-        <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
-    <% } %>
-    <input type="hidden" name="cacheKey" value="<%=org.labkey.api.reports.report.view.ReportDesignerSessionCache.getReportCacheKey(bean.getReportId(), c)%>">
-    <input type="hidden" name="showDebug" value="true">
-    <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
 
-    <div style="display:none;" id="saveDialog">
-        <div class="hd">Save View</div>
-        <div class="bd">
-            <table>
-                <tr><td>View name:</td></tr>
-                <tr><td width="275"><input id="reportName" name="reportName" style="width: 100%;" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>"></td></tr>
-                <tr><td>&nbsp;</td></tr>
-                <tr><td>
-                    <%=PageFlowUtil.generateButton("Save", "javascript:void(0)", "javascript:doSaveReport(true)")%>
-                    <%=PageFlowUtil.generateButton("Cancel", "javascript:void(0)", "javascript:doSaveReport(false)")%>
-            </table>
-        </div>
-    </div>
-<!--
-</form>
--->
-
-<%!
-    public boolean isScriptIncluded(ReportIdentifier id, List<String> includedScripts) {
-        return includedScripts.contains(String.valueOf(id));
-    }
-%>
-
-<script type="text/javascript">
     // javascript to help manage report dirty state across tabs and across views.
     //
     function saveChanges(destinationURL)
     {
         LABKEY.setSubmit(true);
+        updateScript();
 
         if (LABKEY.isDirty() || pageDirty())
         {
@@ -328,7 +227,12 @@
         }
     }
 
-    var origScript = byId("script").value;
+    var origScript;
+
+    Ext.onReady(function()
+    {
+        origScript = byId("script").value;
+    });
 
     function pageDirty()
     {
@@ -336,3 +240,131 @@
         return script && origScript != script.value;
     }
 </script>
+
+<%!
+    public boolean isScriptIncluded(ReportIdentifier id, List<String> includedScripts) {
+        return includedScripts.contains(String.valueOf(id));
+    }
+%>
+
+<labkey:errors/>
+
+<form id="renderReport" action="<%=bean.getRenderURL()%>" method="post">
+    <table class="labkey-wp">
+        <tr class="labkey-wp-header"><th align="left"><%=h(report.getTypeDescription())%> Builder</th></tr>
+        <tr><td>
+            <table width="100%">
+                <tr><td>This script will be executed <%=h(report.getExecutionLocation())%>:</td>
+<%
+        if (hasData)
+        {
+%>
+        <td align="right"><a href="javascript:void(0)" onclick="downloadData()">Download input data</a>
+            <%=PageFlowUtil.helpPopup("Download input data", report.getDownloadDataHelpMessage())%></td>
+<%
+        }
+%>
+                </tr>
+            </table>
+        </td></tr>
+        <tr><td>
+            <textarea id="script"
+                name="script"<%
+                if (readOnly)
+                { %>
+                readonly="true"<% } %>
+                style="width: 100%;"
+                cols="120"
+                wrap="on"
+                rows="20"><%=h(StringUtils.trimToEmpty(bean.getScript()))%></textarea>
+            <script type="text/javascript">
+                Ext.EventManager.on('script', 'keydown', handleTabsInTextArea);
+                editAreaLoader.init({
+                    id: "script",<%
+                    if (null != report.getEditAreaSyntax())
+                    { %>
+                    syntax: "<%=report.getEditAreaSyntax()%>",<%
+                    } %>
+                    start_highlight: true
+                });
+            </script>
+        </td></tr>
+<%
+    if (!readOnly)
+    {
+        if (isAdmin)
+        {
+            out.println("<tr><td><input type=\"checkbox\" name=\"shareReport\" " + (bean.isShareReport() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Make this view available to all users.</td></tr>");
+            out.print("<tr><td><input type=\"checkbox\" name=\"inheritable\" " + (bean.isInheritable() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Make this view available in child folders.");
+            out.print(PageFlowUtil.helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
+                "where the schema and table are the same as this data grid."));
+            out.println("</td></tr>");
+        }
+
+        if (report.supportsPipeline())
+            out.println("<tr><td><input type=\"checkbox\" id=\"runInBackground\" name=\"" + ScriptReportDescriptor.Prop.runInBackground.name() + "\" " + (bean.isRunInBackground() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Run this view in the background as a pipeline job.</td></tr>");
+
+        if (!sharedReports.isEmpty())
+        {
+%>
+        <tr><td>&nbsp;</td></tr>
+        <tr class="labkey-wp-header"><th align="left">Shared Scripts</th></tr>
+        <tr><td><i>You can execute any of the following scripts as part of your current script by calling: source('&lt;Script Name&gt;.r') after checking the box next to the &lt;Script Name&gt; you plan to use.</i></td></tr>
+<%
+            for (Report sharedReport : sharedReports)
+            {%>
+            <tr><td><input type="checkbox" name="<%=ScriptReportDescriptor.Prop.includedReports%>"
+                                    onchange="LABKEY.setDirty(true);return true;"
+                                    value="<%=sharedReport.getDescriptor().getReportId()%>"
+                                    <%=isScriptIncluded(sharedReport.getDescriptor().getReportId(), includedReports) ? "checked" : ""%>>
+                <%=sharedReport.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)%>
+            </td></tr>
+            <%}
+        }
+    }
+%>
+        <tr><td>
+<%
+    if (!readOnly)
+    {
+        if (bean.getRenderURL() == null)
+            out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:switchTab('" + h(executeUrl) + "', saveChanges)"));
+        else
+            out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:runScript()"));
+
+        if (!context.getUser().isGuest())
+            out.println(PageFlowUtil.generateButton("Save View", "javascript:void(0)", "javascript:saveReport()"));
+    }
+%>
+        </td></tr>
+    </table>
+    <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=bean.getReportType()%>">
+    <input type="hidden" name="queryName" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
+    <input type="hidden" name="viewName" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
+    <input type="hidden" name="schemaName" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
+    <input type="hidden" name="dataRegionName" value="<%=StringUtils.trimToEmpty(bean.getDataRegionName())%>">
+    <input type="hidden" name="redirectUrl" value="<%=h(bean.getRedirectUrl())%>"><%
+    if (null != bean.getReportId()) { %>
+    <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
+    <% } %>
+    <input type="hidden" name="cacheKey" value="<%=org.labkey.api.reports.report.view.ReportDesignerSessionCache.getReportCacheKey(bean.getReportId(), c)%>">
+    <input type="hidden" name="showDebug" value="true">
+    <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
+
+    <div style="display:none;" id="saveDialog">
+        <div class="hd">Save View</div>
+        <div class="bd">
+            <table>
+                <tr><td>View name:</td></tr>
+                <tr><td width="275"><input id="reportName" name="reportName" style="width: 100%;" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>"></td></tr>
+                <tr><td>&nbsp;</td></tr>
+                <tr><td>
+                    <%=PageFlowUtil.generateButton("Save", "javascript:void(0)", "javascript:doSaveReport(true)")%>
+                    <%=PageFlowUtil.generateButton("Cancel", "javascript:void(0)", "javascript:doSaveReport(false)")%>
+                </td></tr>
+            </table>
+        </div>
+    </div>
+<!--
+</form>
+-->

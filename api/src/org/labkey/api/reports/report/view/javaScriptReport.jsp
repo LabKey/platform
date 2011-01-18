@@ -28,7 +28,7 @@
         if (typeof render == 'function')
         {
             var query = {
-<%=bean.model.getStandardJavaScriptParameters(16)%>
+<%=bean.model.getStandardJavaScriptParameters(16, false)%>
             };
 
             render(query, document.getElementById("<%=uniqueDivName%>"));
@@ -38,6 +38,8 @@
             alert("Your script must define a function called 'render'");
         }
 
-        <%=bean.script%>
+// ========== Start of report writer's script ==========
+<%=bean.script%>
+// ========== End of report writer's script ==========
     })();
 </script>

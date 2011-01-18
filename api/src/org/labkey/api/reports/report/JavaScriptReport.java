@@ -57,6 +57,37 @@ public class JavaScriptReport extends ScriptReport
     }
 
     @Override
+    public String getEditAreaSyntax()
+    {
+        return "js";
+    }
+
+    @Override
+    public String getDefaultScript()
+    {
+        return
+            "var jsDiv;\n\n" +
+
+            "function render(queryConfig, div)\n" +
+            "{\n" +
+            "    jsDiv = div;\n" +
+            "    queryConfig.successCallback = onSuccess;\n" +
+            "    queryConfig.errorCallback = onError;\n" +
+            "    LABKEY.Query.selectRows(queryConfig);\n" +
+            "}\n\n" +
+
+            "function onSuccess(results)\n" +
+            "{\n" +
+            "    jsDiv.innerHTML = results.rows.length + ' rows returned';\n" +
+            "}\n\n" +
+
+            "function onError(errorInfo)\n" +
+            "{\n" +
+            "    jsDiv.innerHTML = errorInfo.exception;\n" +
+            "}";
+    }
+
+    @Override
     public boolean supportsPipeline()
     {
         return false;
@@ -65,7 +96,7 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public String getDownloadDataHelpMessage()
     {
-        return "LabKey Server provides your JavaScript render() function with a query config that your code can use to retrieve the data. You can download the data via this link to help with the development of your script.";
+        return "LabKey Server calls your render() function with a query config that your code can use to retrieve the data. You can download the data via this link to help with the development of your script.";
     }
 
     @Override

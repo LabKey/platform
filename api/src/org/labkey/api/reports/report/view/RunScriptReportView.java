@@ -19,6 +19,7 @@ package org.labkey.api.reports.report.view;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -112,6 +113,11 @@ public class RunScriptReportView extends RunReportView
 
         ReportDesignerSessionCache.initReportCache(form, _report);
 
+        if (null == form.getScript())
+        {
+            form.setScript(((ScriptReport)_report).getDefaultScript());
+        }
+
         // set the default redirect url
         if (form.getRedirectUrl() == null)
             form.setRedirectUrl(getViewContext().cloneActionURL().
@@ -146,7 +152,7 @@ public class RunScriptReportView extends RunReportView
         {
             form.setRenderURL(getRenderAction());
             form.setReadOnly(!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()));
-            JspView designer = new JspView<ScriptReportBean>("/org/labkey/api/reports/report/view/rReportDesigner.jsp", form, form.getErrors());
+            JspView designer = new JspView<ScriptReportBean>("/org/labkey/api/reports/report/view/scriptReportDesigner.jsp", form, form.getErrors());
 
             view.addView(designer);
 

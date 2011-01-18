@@ -85,7 +85,7 @@ public class CreateJavaScriptModel extends ExportScriptModel
 
     // Produce javascript code block containing all the standard query parameters.  Callers need to wrap this block in
     // curly braces (at a minimum) and modify any parameters they need to change.
-    public String getStandardJavaScriptParameters(int indentSpaces)
+    public String getStandardJavaScriptParameters(int indentSpaces, boolean includeStandardCallbacks)
     {
         String indent = StringUtils.repeat(" ", indentSpaces);
         StringBuilder params = new StringBuilder();
@@ -102,9 +102,14 @@ public class CreateJavaScriptModel extends ExportScriptModel
             params.append(indent).append("containerFilter: '").append(containerFilter.getType().name()).append("',\n");
         }
 
-        params.append(indent).append("sort: ").append(getSort()).append(",\n");
-        params.append(indent).append("successCallback: onSuccess,\n");
-        params.append(indent).append("errorCallback: onError");
+        params.append(indent).append("sort: ").append(getSort());
+
+        if (includeStandardCallbacks)
+        {
+            params.append(",\n");
+            params.append(indent).append("successCallback: onSuccess,\n");
+            params.append(indent).append("errorCallback: onError");
+        }
 
         return params.toString();
     }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
@@ -79,5 +80,16 @@ public abstract class ScriptReport extends AbstractReport
     public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean) throws Exception
     {
         return Collections.emptyList();
+    }
+
+    public @Nullable String getEditAreaSyntax()
+    {
+        return null;
+    }
+
+    // When creating a new script report, populate the editarea with this text
+    public String getDefaultScript()
+    {
+        return "";
     }
 }

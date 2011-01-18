@@ -20,7 +20,7 @@
     me.getViewContext().getResponse().setContentType("text/plain");
 %><script type="text/javascript">
     LABKEY.Query.selectRows({
-<%=model.getStandardJavaScriptParameters(8)%>
+<%=model.getStandardJavaScriptParameters(8, true)%>
     });
 
     function onSuccess(results)

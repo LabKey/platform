@@ -79,7 +79,7 @@ public class RunRReportView extends RunScriptReportView
 
         if (TAB_SOURCE.equals(tabId))
         {
-            JspView designer = new JspView<RReportBean>("/org/labkey/api/reports/report/view/rReportDesigner.jsp", form, form.getErrors());
+            JspView designer = new JspView<RReportBean>("/org/labkey/api/reports/report/view/scriptReportDesigner.jsp", form, form.getErrors());
             form.setRenderURL(getRenderAction());
 
             if (_report != null)
@@ -119,12 +119,14 @@ public class RunRReportView extends RunScriptReportView
             if (null != form.getReportId() && form.isRunInBackground())
             {
                 Report report = form.getReport();
+
                 if (report instanceof RReport)
                 {
                     view.addView(new JspView<RReport>("/org/labkey/api/reports/report/view/rReportRenderBackground.jsp", (RReport)report));
 
                     File logFile = new File(((RReport)report).getReportDir(), RReportJob.LOG_FILE_NAME);
                     PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile.getAbsolutePath());
+
                     if (statusFile != null &&
                             !(statusFile.getStatus().equals(PipelineJob.WAITING_STATUS) ||
                               statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS)))
@@ -134,6 +136,7 @@ public class RunRReportView extends RunScriptReportView
             else
             {
                 Report report = form.getReport();
+
                 if (report != null)
                 {
                     if (form.getIsDirty())
