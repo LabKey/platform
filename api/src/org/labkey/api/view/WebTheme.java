@@ -58,7 +58,7 @@ public class WebTheme
 
         // This is a custom theme, defined by the stylesheet given as a parameter -- only set during init
         _custom = true;
-        _stylesheet = "stylesheet103.css";
+        _stylesheet = "stylesheet.css";
     }
 
     private Color parseColor(String s)

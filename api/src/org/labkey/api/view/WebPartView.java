@@ -42,6 +42,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     private String _helpPopup;
     private FrameType _frame = FrameType.PORTAL;
     private int _webPartRowId = -1;
+    private NavTree _navMenu = null;
 
     public static enum FrameType
     {
@@ -188,6 +189,22 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         addObject("rootId", rootId);
     }
 
+    public void setNavMenu(NavTree navMenu)
+    {
+        _navMenu = navMenu;
+    }
+
+    /**
+     * Override to declare your own NavTree menu implementation that will be used by the
+     * WebPartView upon rendering your webpart. NOTE: The top level key of your tree
+     * will be overridden with the name/title of the Webpart.
+     * @return
+     */
+    public NavTree getNavMenu()
+    {
+        return _navMenu;
+    }
+    
     @Override
     protected final void renderInternal(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
@@ -393,11 +410,28 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                     }
                     else
                     {
-                        if (null != href)
-                            out.print("<a href=\"" + PageFlowUtil.filter(href) + "\">");
-                        out.print(PageFlowUtil.filter(title));
-                        if (null != href)
-                            out.print("</a>");
+                        try
+                        {
+                            NavTree menu = getNavMenu();                            
+                            if (menu != null && menu.hasChildren())
+                            {
+                                menu.setKey(title);
+                                include(new PopupWebpartView(context, menu), out);
+                            }
+                            else
+                            {
+                                if (null != href)
+                                    out.print("<a href=\"" + PageFlowUtil.filter(href) + "\">");
+                                out.print(PageFlowUtil.filter(title));
+                                if (null != href)
+                                    out.print("</a>");
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+
                     }
                     if (_helpPopup != null)
                     {
