@@ -30,46 +30,8 @@ public class RReportDescriptor extends ScriptReportDescriptor
 {
     public static final String TYPE = "rReportDescriptor";
 
-    public enum Prop implements ReportProperty
-    {
-        runInBackground,  // TODO: Move to ScriptReportDescriptor and handle in ScriptReport classes?  Allow other script reports to run in the background?
-        includedReports
-    }
-
     public RReportDescriptor()
     {
         setDescriptorType(TYPE);
-    }
-
-    public void setIncludedReports(List<String> reports)
-    {
-        _props.put(Prop.includedReports.toString(), reports);
-    }
-
-    public List<String> getIncludedReports()
-    {
-        Object reports = _props.get(Prop.includedReports.toString());
-        if (reports != null && List.class.isAssignableFrom(reports.getClass()))
-            return (List<String>)reports;
-
-        return Collections.emptyList();
-    }
-    
-    public boolean isArrayType(String prop)
-    {
-        if (!super.isArrayType(prop))
-        {
-            return Prop.includedReports.toString().equals(prop);
-        }
-        return true;
-    }
-
-    public boolean canEdit(ViewContext context)
-    {
-        if (RReport.canCreateScript(context))
-        {
-            return super.canEdit(context.getUser(), context.getContainer());
-        }
-        return false;
     }
 }

@@ -43,7 +43,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
 
     protected ActionURL addForwardParams(ActionURL url, ViewContext context, String[] params)
     {
-        for(String name : params)
+        for (String name : params)
         {
             String value = context.getActionURL().getParameter(name);
             if (null != value)

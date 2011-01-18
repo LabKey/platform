@@ -20,14 +20,13 @@
 <%@ page import="org.labkey.api.pipeline.PipeRoot"%>
 <%@ page import="org.labkey.api.pipeline.PipelineService"%>
 <%@ page import="org.labkey.api.reports.Report"%>
-<%@ page import="org.labkey.api.reports.report.RReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.reports.report.ScriptReport" %>
 <%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
-<%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
-<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.reports.report.view.RunReportView" %>
+<%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -39,21 +38,22 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<RReportBean> me = (JspView<RReportBean>) HttpView.currentView();
+    JspView<ScriptReportBean> me = (JspView<ScriptReportBean>) HttpView.currentView();
     ViewContext context = me.getViewContext();
-    RReportBean bean = me.getModelBean();
-    List<Report> sharedReports = ReportUtil.getAvailableSharedRScripts(context, bean);
-    List<String> includedReports = bean.getIncludedReports();
     Container c = context.getContainer();
+    ScriptReportBean bean = me.getModelBean();
+    ScriptReport report = (ScriptReport)bean.getReport();
+    List<Report> sharedReports = report.getAvailableSharedScripts(context, bean);
+    List<String> includedReports = bean.getIncludedReports();
 
-    // the url for the execute script button
+    // url for the execute script button
     ActionURL executeUrl = context.cloneActionURL().replaceParameter(TabStripView.TAB_PARAM, RunReportView.TAB_VIEW).
             replaceParameter(RunReportView.CACHE_PARAM, String.valueOf(bean.getReportId()));
 
     boolean readOnly = bean.isReadOnly();
-    boolean isAdmin = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
+    boolean isAdmin = c.hasPermission(context.getUser(), AdminPermission.class);
 
-    // is this report associated with a query view
+    // is this report associated with a query view?
     boolean hasData = bean.getQueryName() != null || bean.getSchemaName() != null;
 
     PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
@@ -77,7 +77,8 @@
         dialogHelper = new LABKEY.widget.DialogBox("saveDialog",{width:"375px", height:"120px"});
         dialogHelper.showEvent.subscribe(function(){YAHOO.util.Dom.get('reportName').focus()}, this, true);
 <%
-        if (pipelineRoot == null) {
+        if (pipelineRoot == null)
+        {
 %>
         var checkBox = YAHOO.util.Dom.get('runInBackground');
         checkBox.disabled = true;
@@ -140,7 +141,7 @@
     function downloadData()
     {
         LABKEY.setSubmit(true);
-        window.location = '<%=bean.getReport().getDownloadDataURL(context)%>';
+        window.location = '<%=report.getDownloadDataURL(context)%>';
         LABKEY.setSubmit(false);
     }
 
@@ -150,17 +151,17 @@
 
 <form id="renderReport" action="<%=bean.getRenderURL()%>" method="post">
     <table class="labkey-wp">
-        <tr class="labkey-wp-header"><th align="left">R View Builder</th></tr>
-        <tr><td>Create an R script to be executed on the server:<br/></td></tr>
+        <tr class="labkey-wp-header"><th align="left"><%=h(report.getTypeDescription())%> Builder</th></tr>
 <%
-        if (hasData) {
+        if (hasData)
+        {
 %>
-        <tr><td><a href="javascript:void(0)" onclick="javascript:downloadData()">Download input data
-            <%=PageFlowUtil.helpPopup("Download input data", "LabKey Server automatically exports your chosen dataset into " +
-                    "a data frame called: labkey.data. You can download it to help with the development of your R script.")%></a> <br/><br/></td></tr>
+        <tr><td><a href="javascript:void(0)" onclick="downloadData()">Download input data</a>
+            <%=PageFlowUtil.helpPopup("Download input data", report.getDownloadDataHelpMessage())%><br/><br/></td></tr>
 <%
         }
 %>
+        <tr><td>Create a script to be executed <%=h(report.getExecutionLocation())%>:<br/></td></tr>
         <tr><td>
             <textarea id="script"
                       name="script"
@@ -177,6 +178,7 @@
                     out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:switchTab('" + executeUrl.getLocalURIString() + "', saveChanges)"));
                 else
                     out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:runScript()"));
+
                 if (!context.getUser().isGuest())
                     out.println(PageFlowUtil.generateButton("Save View", "javascript:void(0)", "javascript:saveReport()"));
             }
@@ -187,7 +189,10 @@
     {
         if (isAdmin)
             out.println("<tr><td><input type=\"checkbox\" name=\"shareReport\" " + (bean.isShareReport() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Make this view available to all users.</td></tr>");
-        out.println("<tr><td><input type=\"checkbox\" id=\"runInBackground\" name=\"" + RReportDescriptor.Prop.runInBackground.name() + "\" " + (bean.isRunInBackground() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Run this view in the background as a pipeline job.</td></tr>");
+
+        if (report.supportsPipeline())
+            out.println("<tr><td><input type=\"checkbox\" id=\"runInBackground\" name=\"" + ScriptReportDescriptor.Prop.runInBackground.name() + "\" " + (bean.isRunInBackground() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Run this view in the background as a pipeline job.</td></tr>");
+
         if (isAdmin)
         {
             out.print("<tr><td><input type=\"checkbox\" name=\"inheritable\" " + (bean.isInheritable() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Make this view available in child folders.");
@@ -195,24 +200,24 @@
                 "where the schema and table are the same as this data grid."));
             out.println("</td></tr>");
         }
-    }
 
-    if (!readOnly && !sharedReports.isEmpty())
-    {
+        if (!sharedReports.isEmpty())
+        {
 %>
         <tr><td>&nbsp;</td></tr>
         <tr class="labkey-wp-header"><th align="left">Shared Scripts</th></tr>
         <tr><td><i>You can execute any of the following scripts as part of your current script by calling: source('&lt;Script Name&gt;.r') after checking the box next to the &lt;Script Name&gt; you plan to use.</i></td></tr>
 <%
-        for (Report report : sharedReports)
-        {%>
-            <tr><td><input type="checkbox" name="<%=RReportDescriptor.Prop.includedReports%>"
-                                    onchange="LABKEY.setDirty(true);return true;" 
-                                    value="<%=report.getDescriptor().getReportId()%>"
-                                    <%=isScriptIncluded(report.getDescriptor().getReportId(), includedReports) ? "checked" : ""%>>
-                <%=report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)%>
+            for (Report sharedReport : sharedReports)
+            {%>
+            <tr><td><input type="checkbox" name="<%=ScriptReportDescriptor.Prop.includedReports%>"
+                                    onchange="LABKEY.setDirty(true);return true;"
+                                    value="<%=sharedReport.getDescriptor().getReportId()%>"
+                                    <%=isScriptIncluded(sharedReport.getDescriptor().getReportId(), includedReports) ? "checked" : ""%>>
+                <%=sharedReport.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)%>
             </td></tr>
-        <%}
+            <%}
+        }
     }
 %>
     </table>
@@ -237,7 +242,7 @@
                 <tr><td width="275"><input id="reportName" name="reportName" style="width: 100%;" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>"></td></tr>
                 <tr><td>&nbsp;</td></tr>
                 <tr><td>
-                    <%=PageFlowUtil.generateButton("Save", "javascript:void(0)", "javascript:doSaveReport(true)")%> 
+                    <%=PageFlowUtil.generateButton("Save", "javascript:void(0)", "javascript:doSaveReport(true)")%>
                     <%=PageFlowUtil.generateButton("Cancel", "javascript:void(0)", "javascript:doSaveReport(false)")%>
             </table>
         </div>
@@ -258,6 +263,7 @@
     function saveChanges(destinationURL)
     {
         LABKEY.setSubmit(true);
+
         if (LABKEY.isDirty() || pageDirty())
         {
             var form = document.getElementById('renderReport');
@@ -269,7 +275,8 @@
             for (var i=0; i < length; i++)
             {
                 var e = form.elements[i];
-                if (e.name && !(e.type=="radio"&&e.selected==false) && !(e.type=="checkbox"&&e.checked==false))
+
+                if (e.name && !(e.type=="radio" && !e.selected) && !(e.type=="checkbox" && !e.checked))
                 {
                     if (e.value)
                     {
@@ -279,6 +286,7 @@
                     }
                 }
             }
+
             var ajax = new AJAXInteraction(pairs.join('&'), destinationURL);
             ajax.send();
         }
@@ -292,7 +300,6 @@
     function AJAXInteraction(url, redirectURL)
     {
         this.url = url;
-        var redirectURL = redirectURL;
         var req = init();
         req.onreadystatechange = processRequest;
 
@@ -322,11 +329,10 @@
     }
 
     var origScript = byId("script").value;
+
     function pageDirty()
     {
         var script = byId("script");
-        if (script && origScript != script.value)
-            return true;
-        return false;
+        return script && origScript != script.value;
     }
 </script>

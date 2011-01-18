@@ -656,7 +656,6 @@ api/src/org/labkey/api/reports/report/ModuleRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/QueryReport.java -text
 api/src/org/labkey/api/reports/report/QueryReportDescriptor.java -text
-api/src/org/labkey/api/reports/report/QueryViewReport.java -text
 api/src/org/labkey/api/reports/report/RReport.java -text
 api/src/org/labkey/api/reports/report/RReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/RReportJob.java -text
@@ -667,6 +666,7 @@ api/src/org/labkey/api/reports/report/ReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/ReportIdentifierConverter.java -text
 api/src/org/labkey/api/reports/report/ReportUrls.java -text
 api/src/org/labkey/api/reports/report/ScriptEngineReport.java -text
+api/src/org/labkey/api/reports/report/ScriptReport.java -text
 api/src/org/labkey/api/reports/report/ScriptReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/r/AbstractParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacement.java -text
@@ -701,7 +701,6 @@ api/src/org/labkey/api/reports/report/view/rReportDesignerSyntaxRef.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportRenderBackground.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportTabHandler.jsp -text
 api/src/org/labkey/api/reports/report/view/reportHeader.jsp -text
-api/src/org/labkey/api/reports/report/view/scriptReportDesigner.jsp -text
 api/src/org/labkey/api/resource/AbstractResource.java -text
 api/src/org/labkey/api/resource/AbstractResourceCollection.java -text
 api/src/org/labkey/api/resource/ClassResource.java -text

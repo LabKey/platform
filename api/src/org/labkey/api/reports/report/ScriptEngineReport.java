@@ -82,7 +82,7 @@ import java.util.regex.Pattern;
  *
  * A Report implementation that uses a ScriptEngine instance to execute the associated script.
 */
-public abstract class ScriptEngineReport extends QueryViewReport implements Report.ResultSetGenerator
+public abstract class ScriptEngineReport extends ScriptReport implements Report.ResultSetGenerator
 {
     public static final String INPUT_FILE_TSV = "input_data";
     public static Pattern scriptPattern = Pattern.compile("\\$\\{(.*?)\\}");
@@ -138,6 +138,18 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
 
         return "Script Engine Report";        
         //throw new RuntimeException("No Script Engine is available for this Report");
+    }
+
+    @Override
+    public String getExecutionLocation()
+    {
+        return "on the server";
+    }
+
+    @Override
+    public boolean supportsPipeline()
+    {
+        return true;
     }
 
     public Results generateResults(ViewContext context) throws Exception
@@ -227,7 +239,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
 
     public File getReportDir()
     {
-        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground));
+        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
         if (_tempFolder == null || _tempFolderPipeline != isPipeline)
         {
             File tempRoot = getTempRoot();
@@ -246,7 +258,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
 
     public void deleteReportDir()
     {
-        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground));
+        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
         try {
             File dir = getReportDir();
             if (!isPipeline)
@@ -264,7 +276,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
     {
         File tempRoot;
         String tempFolderName = null;// = getTempFolder();
-        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground));
+        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
 
         if (StringUtils.isEmpty(tempFolderName))
         {
@@ -395,7 +407,7 @@ public abstract class ScriptEngineReport extends QueryViewReport implements Repo
                 view.addView(param.render(context));
             }
         }
-        if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground)))
+        if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground)))
             view.addView(new TempFileCleanup(report.getReportDir().getAbsolutePath()));
     }
 

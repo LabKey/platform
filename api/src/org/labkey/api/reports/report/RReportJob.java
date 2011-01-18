@@ -66,6 +66,7 @@ public class RReportJob extends PipelineJob implements Serializable
     private void init()
     {
         Report report = getReport();
+
         if (report instanceof RReport)
         {
             File logFile = new File(((RReport)report).getReportDir(), LOG_FILE_NAME);
@@ -96,7 +97,8 @@ public class RReportJob extends PipelineJob implements Serializable
 
     private RReport getReport()
     {
-        try {
+        try
+        {
             Report report = null;
             if (_reportId != null)
                 report = _reportId.getReport();
@@ -117,6 +119,7 @@ public class RReportJob extends PipelineJob implements Serializable
     {
         setStatus(PROCESSING_STATUS, "Job started at: " + DateUtil.nowISO());
         RReport report = getReport();
+
         try
         {
             // get the input file which should have been previously created

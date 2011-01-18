@@ -21,15 +21,20 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.view.ReportQueryView;
+import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.view.ViewContext;
+
+import java.util.Collections;
+import java.util.List;
 
 /*
 * User: adam
 * Date: Dec 21, 2010
 * Time: 7:57:11 PM
 */
-public abstract class QueryViewReport extends AbstractReport
+public abstract class ScriptReport extends AbstractReport
 {
     /**
      * Create the query view used to generate the result set that this report operates on.
@@ -60,5 +65,19 @@ public abstract class QueryViewReport extends AbstractReport
         }
 
         return null;
+    }
+
+    public abstract String getExecutionLocation();
+    public abstract boolean supportsPipeline();
+
+    public String getDownloadDataHelpMessage()
+    {
+        return "You can download the data via this link to help with the development of your script.";
+    }
+
+    // At the moment, only R reports support shared scripts
+    public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean) throws Exception
+    {
+        return Collections.emptyList();
     }
 }

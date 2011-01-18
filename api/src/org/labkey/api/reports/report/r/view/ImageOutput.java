@@ -16,23 +16,23 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.apache.commons.lang.BooleanUtils;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.ReportUrls;
-import org.labkey.api.reports.report.RReportDescriptor;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.Report;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.apache.commons.lang.BooleanUtils;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * Created by IntelliJ IDEA.
@@ -66,7 +66,7 @@ public class ImageOutput extends AbstractParamReplacement
         if (report != null)
         {
             if (BooleanUtils.toBoolean(report.getDescriptor().getProperty(ReportDescriptor.Prop.cached)) ||
-                BooleanUtils.toBoolean(report.getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground)))
+                BooleanUtils.toBoolean(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground)))
                 deleteFile = false;
         }
         return new ImgReportView(this, deleteFile);

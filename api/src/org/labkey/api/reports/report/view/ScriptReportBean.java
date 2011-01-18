@@ -15,15 +15,16 @@
  */
 package org.labkey.api.reports.report.view;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,15 +36,17 @@ import java.util.Map;
 */
 public class ScriptReportBean extends ReportDesignBean
 {
-    protected String _script;
+    private String _script;
     protected boolean _runInBackground;
     protected boolean _isDirty;
     protected String _scriptExtension;
     private boolean _isReadOnly;
     private ActionURL _renderURL;
     private boolean _inherited;
+    private List<String> _includedReports = Collections.emptyList();
 
     public ScriptReportBean(){}
+
     public ScriptReportBean(QuerySettings settings)
     {
         super(settings);
@@ -100,11 +103,11 @@ public class ScriptReportBean extends ReportDesignBean
             if (getRedirectUrl() != null)
                 descriptor.setProperty("redirectUrl", getRedirectUrl());
 
-            // TODO: Refactor... this looks wrong
-            if (RReportDescriptor.class.isAssignableFrom(descriptor.getClass()))
-            {
-                descriptor.setProperty(RReportDescriptor.Prop.runInBackground, _runInBackground);
-            }
+            descriptor.setProperty(ScriptReportDescriptor.Prop.runInBackground, _runInBackground);
+
+            assert descriptor instanceof ScriptReportDescriptor;
+
+            ((ScriptReportDescriptor)descriptor).setIncludedReports(_includedReports);
         }
 
         return report;
@@ -117,11 +120,14 @@ public class ScriptReportBean extends ReportDesignBean
         if (!StringUtils.isEmpty(_script))
             list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.script.toString(), _script));
         if (_runInBackground)
-            list.add(new Pair<String, String>(RReportDescriptor.Prop.runInBackground.toString(), String.valueOf(_runInBackground)));
+            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.runInBackground.toString(), String.valueOf(_runInBackground)));
         if (_isDirty)
             list.add(new Pair<String, String>("isDirty", String.valueOf(_isDirty)));
 
         list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
+
+        for (String report : getIncludedReports())
+            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.includedReports.toString(), report));
 
         return list;
     }
@@ -133,7 +139,10 @@ public class ScriptReportBean extends ReportDesignBean
         setScriptExtension(descriptor.getProperty(ScriptReportDescriptor.Prop.scriptExtension));
         setScript(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
 
-        // TODO: Move setRunInBackground() here?
+        ScriptReportDescriptor srDescriptor = (ScriptReportDescriptor)descriptor;
+
+        setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground)));
+        setIncludedReports(srDescriptor.getIncludedReports());
     }
 
     Map<String, Object> getCacheableMap()
@@ -143,6 +152,12 @@ public class ScriptReportBean extends ReportDesignBean
 
         for (Pair<String, String> param : getParameters())
             map.put(param.getKey(), param.getValue());
+
+        // bad, need a better way to handle the bean type mismatch
+        List<String> includedReports = getIncludedReports();
+
+        if (!includedReports.isEmpty())
+            map.put(ScriptReportDescriptor.Prop.includedReports.name(), includedReports);
 
         return map;
     }
@@ -185,5 +200,15 @@ public class ScriptReportBean extends ReportDesignBean
     public void setInherited(boolean inherited)
     {
         _inherited = inherited;
+    }
+
+    public void setIncludedReports(List<String> includedReports)
+    {
+        _includedReports = includedReports;
+    }
+
+    public List<String> getIncludedReports()
+    {
+        return _includedReports;
     }
 }

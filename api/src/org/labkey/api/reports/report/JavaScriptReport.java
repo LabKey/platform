@@ -28,7 +28,7 @@ import org.labkey.api.view.ViewContext;
 * Date: Dec 14, 2010
 * Time: 5:38:37 PM
 */
-public class JavaScriptReport extends QueryViewReport
+public class JavaScriptReport extends ScriptReport
 {
     public static final String TYPE = "ReportService.JavaScriptReport";
 
@@ -47,7 +47,25 @@ public class JavaScriptReport extends QueryViewReport
     @Override
     public String getTypeDescription()
     {
-        return "I'm a JavaScript Report!!";
+        return "JavaScript Report";
+    }
+
+    @Override
+    public String getExecutionLocation()
+    {
+        return "by the client browser";
+    }
+
+    @Override
+    public boolean supportsPipeline()
+    {
+        return false;
+    }
+
+    @Override
+    public String getDownloadDataHelpMessage()
+    {
+        return "LabKey Server provides your JavaScript render() function with a query config that your code can use to retrieve the data. You can download the data via this link to help with the development of your script.";
     }
 
     @Override

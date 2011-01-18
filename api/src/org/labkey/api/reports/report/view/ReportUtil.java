@@ -123,7 +123,10 @@ public class ReportUtil
             }
         }
         else
+        {
             throw new IllegalArgumentException("Report must implement Report.ImageReport to use the plot chart action");
+        }
+        
         return url;
     }
 
@@ -239,22 +242,6 @@ public class ReportUtil
         outputStream.flush();
     }
 
-    public static List<Report> getAvailableSharedRScripts(ViewContext context, RReportBean bean) throws Exception
-    {
-        List<Report> scripts = new ArrayList<Report>();
-
-        String reportKey = ReportUtil.getReportKey(bean.getSchemaName(), bean.getQueryName());
-        String reportName = bean.getReportName();
-        for (Report r : getReports(context.getContainer(), context.getUser(), reportKey, true))
-        {
-            if (!RReportDescriptor.class.isAssignableFrom(r.getDescriptor().getClass()))
-                continue;
-            if (reportName == null || !reportName.equals(r.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)))
-                scripts.add(r);
-        }
-        return scripts;
-    }
-
     public static List<Report> getReports(Container c, User user, String reportKey, boolean inherited)
     {
         try
@@ -304,6 +291,11 @@ public class ReportUtil
             }
         }
         return false;
+    }
+
+    public static boolean canCreateScript(ViewContext context)
+    {
+        return UserManager.mayWriteScript(context.getUser());
     }
 
     public static interface ReportFilter

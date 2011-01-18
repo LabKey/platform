@@ -38,12 +38,12 @@ public class CreateJavaScriptModel extends ExportScriptModel
     public String getFilters()
     {
         List<String> filterExprs = getFilterExpressions();
-        if(null == filterExprs || filterExprs.size() == 0)
+        if (null == filterExprs || filterExprs.size() == 0)
             return "null";
         
         StringBuilder ret = new StringBuilder("[");
         String sep = "";
-        for(String filterExpr : filterExprs)
+        for (String filterExpr : filterExprs)
         {
             ret.append(sep);
             ret.append(filterExpr);
@@ -63,9 +63,9 @@ public class CreateJavaScriptModel extends ExportScriptModel
     {
         StringBuilder ret = new StringBuilder();
         String sep = "";
-        for(DisplayColumn dc : getQueryView().getDisplayColumns())
+        for (DisplayColumn dc : getQueryView().getDisplayColumns())
         {
-            if(dc.isQueryColumn())
+            if (dc.isQueryColumn())
             {
                 ret.append(sep);
                 ret.append(dc.getColumnInfo().getName());

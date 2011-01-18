@@ -146,7 +146,7 @@ public class RunScriptReportView extends RunReportView
         {
             form.setRenderURL(getRenderAction());
             form.setReadOnly(!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()));
-            JspView designer = new JspView<ScriptReportBean>("/org/labkey/api/reports/report/view/scriptReportDesigner.jsp", form, form.getErrors());
+            JspView designer = new JspView<ScriptReportBean>("/org/labkey/api/reports/report/view/rReportDesigner.jsp", form, form.getErrors());
 
             view.addView(designer);
 

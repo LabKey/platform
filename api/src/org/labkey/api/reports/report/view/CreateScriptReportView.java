@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.view;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.TabStripView;
@@ -63,7 +64,7 @@ public class CreateScriptReportView extends RunScriptReportView
     {
         for (ReportDescriptor.Prop prop : ReportDescriptor.Prop.values())
             _formParams.put(prop.name(), prop.name());
-        for (RReportDescriptor.Prop prop : RReportDescriptor.Prop.values())
+        for (ScriptReportDescriptor.Prop prop : ScriptReportDescriptor.Prop.values())
             _formParams.put(prop.name(), prop.name());
 
         _formParams.put(RunReportView.CACHE_PARAM, RunReportView.CACHE_PARAM);

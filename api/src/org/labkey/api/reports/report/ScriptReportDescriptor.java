@@ -16,6 +16,12 @@
 
 package org.labkey.api.reports.report;
 
+import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.view.ViewContext;
+
+import java.util.Collections;
+import java.util.List;
+
 /*
 * User: adam
 * Date: Jan 12, 2011
@@ -26,6 +32,41 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
     public enum Prop implements ReportProperty
     {
         script,
-        scriptExtension
+        scriptExtension,
+        includedReports,
+        runInBackground
+    }
+
+    public void setIncludedReports(List<String> reports)
+    {
+        _props.put(Prop.includedReports.toString(), reports);
+    }
+
+    public List<String> getIncludedReports()
+    {
+        Object reports = _props.get(Prop.includedReports.toString());
+        if (reports != null && List.class.isAssignableFrom(reports.getClass()))
+            return (List<String>)reports;
+
+        return Collections.emptyList();
+    }
+
+    public boolean isArrayType(String prop)
+    {
+        if (!super.isArrayType(prop))
+        {
+            return Prop.includedReports.toString().equals(prop);
+        }
+        return true;
+    }
+
+
+    public boolean canEdit(ViewContext context)
+    {
+        if (ReportUtil.canCreateScript(context))
+        {
+            return super.canEdit(context.getUser(), context.getContainer());
+        }
+        return false;
     }
 }

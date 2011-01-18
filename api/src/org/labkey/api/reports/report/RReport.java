@@ -22,17 +22,26 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunRReportView;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.ViewContext;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import java.io.*;
-import java.util.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RReport extends ExternalScriptEngineReport implements AttachmentParent
 {
@@ -62,11 +71,6 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         return mgr.getEngineByExtension("r") != null;
     }
 
-    public static boolean canCreateScript(ViewContext context)
-    {
-        return UserManager.mayWriteScript(context.getUser());
-    }
-
     public ScriptEngine getScriptEngine()
     {
         ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
@@ -83,12 +87,11 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
             {
                 public boolean accept(File dir, String name)
                 {
-                    if ("r.exe".equalsIgnoreCase(name) || "r".equalsIgnoreCase(name))
-                        return true;
-                    return false;
+                    return "r.exe".equalsIgnoreCase(name) || "r".equalsIgnoreCase(name);
                 }
             });
         }
+
         return DEFAULT_APP_PATH;
     }
 
@@ -132,7 +135,9 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
             labkey.append(")\n");
         }
         else
+        {
             labkey.append("labkey.url.params <- NULL\n");
+        }
 
         // session information
         if (context.getRequest() != null)
@@ -165,6 +170,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         for (String includedReport : ((RReportDescriptor)getDescriptor()).getIncludedReports())
         {
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(includedReport);
+
             if (reportId != null)
             {
                 Report report = reportId.getReport();
@@ -190,6 +196,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
                 }
             }
         }
+
         return script;
     }
 
@@ -205,9 +212,12 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
                     return ReportUtil.isReportInherited(context.getContainer(), report);
                 }
                 else
+                {
                     return true;
+                }
             }
         }
+
         return false;
     }
 
@@ -223,6 +233,30 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
             return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
         }
         return null;
+    }
+
+    public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean) throws Exception
+    {
+        List<Report> scripts = new ArrayList<Report>();
+
+        String reportKey = ReportUtil.getReportKey(bean.getSchemaName(), bean.getQueryName());
+        String reportName = bean.getReportName();
+
+        for (Report r : ReportUtil.getReports(context.getContainer(), context.getUser(), reportKey, true))
+        {
+            if (!ScriptReportDescriptor.class.isAssignableFrom(r.getDescriptor().getClass()))
+                continue;
+
+            if (reportName == null || !reportName.equals(r.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)))
+                scripts.add(r);
+        }
+
+        return scripts;
+    }
+
+    public String getDownloadDataHelpMessage()
+    {
+        return "LabKey Server automatically exports the data into a data frame called \"labkey.data\". You can download the data via this link to help with the development of your R script.";
     }
 }
 
