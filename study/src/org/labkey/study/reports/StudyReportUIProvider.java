@@ -43,18 +43,18 @@ import java.util.ArrayList;/*
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
     private static ReportService.ItemFilter _filter = new ReportService.ItemFilter(){
-                public boolean accept(String reportType, String label)
-                {
-                    if (StudyCrosstabReport.TYPE.equals(reportType)) return true;
-                    if (StudyChartQueryReport.TYPE.equals(reportType)) return true;
-                    if (ChartReportView.TYPE.equals(reportType)) return true;
-                    if (StudyRReport.TYPE.equals(reportType)) return true;
-                    if (ExternalReport.TYPE.equals(reportType)) return true;
-                    if (QuerySnapshotService.TYPE.equals(reportType)) return true;
-                    if (StudyQueryReport.TYPE.equals(reportType)) return true;
-                    return false;
-                }
-            };
+            public boolean accept(String reportType, String label)
+            {
+                if (StudyCrosstabReport.TYPE.equals(reportType)) return true;
+                if (StudyChartQueryReport.TYPE.equals(reportType)) return true;
+                if (ChartReportView.TYPE.equals(reportType)) return true;
+                if (StudyRReport.TYPE.equals(reportType)) return true;
+                if (ExternalReport.TYPE.equals(reportType)) return true;
+                if (QuerySnapshotService.TYPE.equals(reportType)) return true;
+                if (StudyQueryReport.TYPE.equals(reportType)) return true;
+                return false;
+            }
+        };
 
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
@@ -86,7 +86,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", url));
 
             // r report
-            if (RReport.canCreateScript(context) && RReport.isEnabled())
+            if (ReportUtil.canCreateScript(context) && RReport.isEnabled())
             {
                 RReportBean rBean = new RReportBean(settings);
                 rBean.setReportType(StudyRReport.TYPE);

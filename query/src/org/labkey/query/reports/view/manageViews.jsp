@@ -66,7 +66,7 @@
                 id: 'create_rView',
                 text:'R View',
                 icon: '<%=ReportService.get().getReportIcon(getViewContext(), RReport.TYPE)%>',
-                disabled: <%=!RReport.canCreateScript(context)%>,
+                disabled: <%=!ReportUtil.canCreateScript(context)%>,
                 listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}}]
             <% } %>
         };

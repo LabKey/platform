@@ -2071,24 +2071,31 @@ public class ReportsController extends BaseStudyController
 
     private NavTree _appendNavTrail(NavTree root, String name, int datasetId, int visitRowId)
     {
-        try {
+        try
+        {
             Study study = getStudy();
             ActionURL url = getViewContext().getActionURL();
             root.addChild(study.getLabel(), getStudyOverviewURL());
+
             if (getUser().isAdministrator())
                 root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
             
             VisitImpl visit = null;
+
             if (visitRowId > 0)
                 visit = StudyManager.getInstance().getVisitForRowId(getStudy(), visitRowId);
+
             if (datasetId > 0)
             {
                 DataSet dataSet = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+
                 if (dataSet != null)
                 {
                     String label = dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId();
+
                     if (0 == visitRowId && study.getTimepointType() != TimepointType.CONTINUOUS)
                         label += " (All Visits)";
+
                     ActionURL datasetUrl = url.clone();
                     datasetUrl.deleteParameter(VisitImpl.VISITKEY);
                     datasetUrl.setAction("dataset");
@@ -2096,6 +2103,7 @@ public class ReportsController extends BaseStudyController
                     root.addChild(label, datasetUrl.getLocalURIString());
                 }
             }
+
             if (null != visit)
                 root.addChild(visit.getDisplayString(), url.relativeUrl("dataset", null, "Study", false));
         }
@@ -2153,8 +2161,8 @@ public class ReportsController extends BaseStudyController
             {
                 RReportBean bean = (RReportBean)model;
                 boolean hasQuery = bean.getQueryName() != null || bean.getSchemaName() != null || bean.getViewName() != null;
-
                 out.print("<table>");
+
                 if (hasQuery)
                 {
                     String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
@@ -2169,6 +2177,7 @@ public class ReportsController extends BaseStudyController
                             " chart views allow the user to step through charts for each " + subjectNoun + " shown in any dataset grid."));
                     out.print("</td></tr>");
                 }
+
                 out.print("<tr><td><input type=\"checkbox\" name=\"cached\" " + (bean.isCached() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Automatically cache this report for faster reloading.</td></tr>");
                 out.print("</table>");
             }

@@ -629,7 +629,7 @@ public class ReportsController extends SpringActionController
 
     protected void validatePermissions() throws Exception
     {
-        if (!RReport.canCreateScript(getViewContext()))
+        if (!ReportUtil.canCreateScript(getViewContext()))
             HttpView.throwUnauthorized("Only members of the Site Admin and Site Developers groups are allowed to create and edit R views.");
     }
 

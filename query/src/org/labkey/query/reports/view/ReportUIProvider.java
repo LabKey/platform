@@ -56,7 +56,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         chartBean.setRedirectUrl(context.getActionURL().getLocalURIString());
         designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts", ReportUtil.getChartDesignerURL(context, chartBean)));
 
-        if (RReport.canCreateScript(context) && RReport.isEnabled())
+        if (ReportUtil.canCreateScript(context) && RReport.isEnabled())
         {
             RReportBean rBean = new RReportBean(settings);
             rBean.setReportType(RReport.TYPE);
