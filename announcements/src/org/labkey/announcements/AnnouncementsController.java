@@ -2301,6 +2301,30 @@ public class AnnouncementsController extends SpringActionController
             super("/org/labkey/announcements/announcementWebPart.jsp", new MessagesBean(c, url, user, settings, displayAll));
             setTitle(settings.getBoardName());
             setTitleHref(getBeginURL(c));
+
+            // TODO: Move this into a method
+            MessagesBean bean = new MessagesBean(c, url, user, settings, displayAll); // I'd prefer not to replicate like this, but super() call
+            NavTree menu = new NavTree("");
+            menu.addChild("Go to " + bean.settings.getConversationName().toLowerCase(), getBeginURL(c)); // Should be plural
+            if (bean.insertURL != null)
+                menu.addChild("New " + bean.settings.getConversationName().toLowerCase(), bean.insertURL);
+            if (bean.listURL != null)
+                menu.addChild("View List", bean.listURL);
+
+            if (bean.emailPrefsURL != null || bean.emailManageURL != null)
+            {
+                NavTree email = new NavTree("Email");
+                if (bean.emailPrefsURL != null)
+                    email.addChild("Preferences", bean.emailPrefsURL);
+                if (bean.emailManageURL != null)
+                    email.addChild("Administration", bean.emailManageURL);
+                menu.addChild(email);
+            }
+
+            if (bean.customizeURL != null)
+                menu.addChild("Customize", bean.customizeURL);
+            
+            setNavMenu(menu);
         }
 
         public AnnouncementWebPart(ViewContext ctx) throws SQLException, ServletException
@@ -2477,6 +2501,7 @@ public class AnnouncementsController extends SpringActionController
             SimpleFilter filter = getFilter(settings, perm, displayAll);
             gridView.setFilter(filter);
 
+            setNavMenu(new NavTree("Welcome to List View of Announcements!"));
             _vbox = new VBox(new ListLinkBar(c, url, user, settings, perm, displayAll), gridView);
         }
 

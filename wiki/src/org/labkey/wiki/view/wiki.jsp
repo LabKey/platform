@@ -20,17 +20,12 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
-<%@ page import="org.labkey.wiki.WikiController.PrintBranchAction" %>
 <%@ page import="org.labkey.wiki.model.BaseWikiView" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="javax.servlet.http.HttpServletResponse" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--wiki-->
 <%
@@ -39,8 +34,6 @@
     User user = context.getUser();
     Wiki wiki = view.wiki;
     Container c = (wiki != null && wiki.getContainerId() != null) ? ContainerManager.getForId(wiki.getContainerId()) : context.getContainer();
-    ActionURL printBranchURL = new ActionURL(PrintBranchAction.class, c);
-    printBranchURL.addParameter("name", wiki.getName());
 
     if (null == c)
     {
@@ -48,58 +41,19 @@
         return;
     }
 
-    boolean includeLinks = !(view.isEmbedded() && view.getFrame() == WebPartView.FrameType.NONE);
-    Map<String, String> printProperty = new HashMap<String, String>();
-    printProperty.put("target", "_blank");
-
-if (!c.hasPermission(user, ReadPermission.class))
-{
-    %><table width="100%"><tr><td align=left><%
-    if (user.isGuest())
+    if (!c.hasPermission(user, ReadPermission.class))
     {
-        %>Please log in to see this data.<%
+        %><table width="100%"><tr><td align=left><%
+        if (user.isGuest())
+        {
+            %>Please log in to see this data.<%
+        }
+        else
+        {
+            %>You do not have permission to see this data.<%
+        }%></td></tr></table><%
+        return;
     }
-    else
-    {
-        %>You do not have permission to see this data.<%
-    }%></td></tr></table><%
-    return;
-}
-
-//if page has content, write out commands
-if (view.hasContent && includeLinks)
-{
-    %><table class="labkey-wp-link-panel"><tr><td align="right"><%
-
-    if (null != view.updateContentURL)
-    {
-        %><%=textLink("edit", view.updateContentURL)%><%
-    }
-
-    //user must have update perms
-    if (null != view.manageURL)
-    {
-        %>&nbsp;<%=textLink("manage", view.manageURL)%><%
-    }
-
-    //user must have update perms
-    if (null != view.versionsURL)
-    {
-        %>&nbsp;<%=textLink("history", view.versionsURL)%><%
-    }
-
-    if (null != view.printURL)
-    {
-        %>&nbsp;<%=textLink("print", view.printURL.toString(), null, null, printProperty)%><%
-    }
-
-    if (null != view.printURL && wiki.hasChildren())
-    {
-        %>&nbsp;<%=textLink("print branch", printBranchURL.getLocalURIString(), null, null, printProperty)%><%
-    }
-    %>
-    </td></tr></table><%
-}
 
 //if page has no content, write out message and add content command
 if (!view.hasContent)

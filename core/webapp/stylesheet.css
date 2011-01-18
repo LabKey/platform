@@ -23,18 +23,25 @@ yui
 
 */
 
-/* defaults */
-body, div, td, th, table, img, form
-{
-    font-family: verdana, arial, helvetica, sans-serif;
-    font-size: 8pt;
-    margin: 0;
-    font-weight: normal;
-}
+
+/* defaults, general attributes */
 
 html, body
 {
     height: 100%;
+}
+
+body, div, td, th, table, img, form
+{
+    font-family: verdana, arial, helvetica, sans-serif;
+    margin: 0;
+	color: #000000;
+}
+
+body, div, td, th, table, img, form,
+.x-form-item, .x-panel-header, .x-btn button
+{
+    font-size: 13px;
 }
 
 img
@@ -42,31 +49,27 @@ img
     border: 0 none;
 }
 
-th
-{
-    font-weight: bold;
-}
-
 a, a:visited, .labkey-link, .labkey-link:visited
 {
-    color: #003399;
+    color: #126495;
     cursor: pointer;
     text-decoration: none;
 }
 
-input, .gwt-TextBox
+/* Skipped in themeStylesheet.jsp */
+a:hover, a:visited:hover, .labkey-link:hover, .labkey-link:visited:hover
 {
-	font-size:10pt;
+	color: #000000;
 }
 
-select
+h3
 {
-	font-size:10pt;
+	font-size: 14px;
 }
 
-body, td, .gwt-Label
+input, select, .gwt-TextBox
 {
-    color: #000000;
+	font-size:10pt;
 }
 
 fieldset
@@ -84,6 +87,20 @@ legend
     background-color: #EBF4FF;
 }
 
+table#header
+{
+    border-bottom: 10px solid #126495;
+}
+
+/* Quick options (admin, help, my account, signout) table */
+#headerDiv
+{
+    position: absolute;
+    top: 0; right: 0;
+    padding-right: 10px;
+}
+
+
 /* General */
 
 /* labkey-header is used for small headers, but it's most important use is in
@@ -91,28 +108,18 @@ legend
  lists*/
 .labkey-header
 {
-    color: #003399;
+    color: #126495;
     text-align: left;
     text-decoration: none;
     vertical-align: top;
+    padding: 1px;
     padding-right:4px;
 }
 
-a.labkey-header
+.labkey-header:hover
 {
-    border: 0;
-    font-weight: bold;
-    white-space: nowrap;
-}
-
-a.labkey-header span
-{
-    font-weight: normal;
-}
-
-td.labkey-header a
-{
-    text-align: left;
+    background-color: #E7EFF4;
+    cursor: pointer;
 }
 
 .labkey-header:active
@@ -120,9 +127,41 @@ td.labkey-header a
     outline: none;
 }
 
+th.labkey-header {
+    border: 0;
+    padding: 5px 0;
+    color: #000000;
+    float: left;
+}
+
+th.labkey-header a:hover {
+    color: #126495;
+    font-weight: normal;
+    text-transform: uppercase;
+}
+
+table.labkey-expandable-nav th.labkey-header {
+	width: 148px;
+	border-bottom: 1px solid #e5e5e5;
+}
+
+.labkey-expandable-nav-body {
+    border: 0;
+    padding: 0 0 10px 12px;
+}
+
+.labkey-nav-tree-node, td.labkey-nav-tree-node {
+    padding: 2px 0;
+    margin: 2px 0;
+}
+
+.labkey-nav-tree-text, td.labkey-nav-tree-text {
+    padding: 2px 0.3em;
+    margin: 2px 0;
+}
+
 /* Used for a slightly larger and black header */
-.labkey-header-large
-{
+.labkey-header-large {
     color: #000000;
     text-align: left;
     text-decoration: none;
@@ -133,24 +172,34 @@ td.labkey-header a
     font-weight:bold;
 }
 
+.labkey-header-large:hover {
+    background-color: #E7EFF4;
+    cursor: pointer;
+}
+
 /* Used for the titles in announcement threads and elsewhere for
  a normal size bold header */
 .labkey-announcement-title
 {
-    padding-top: 14px;
-    padding-bottom: 2px;
+    padding-top: 30px;
+    padding-bottom: 5px;
 }
 
 .labkey-announcement-title span, .labkey-announcement-title a
 {
     font-weight: bold;
-    color: #003399
+    color: #000000;
+}
+
+.labkey-announcement-title a {
+	color:#126495;
+	font-size: 14px;
 }
 
 /* Used for the single pixel horizontal dividing lines across the site */
 .labkey-title-area-line
 {
-    background-color: #89A1B4;
+    background-color: #e5e5e5;
     height: 1px;
     padding: 0;
 }
@@ -158,7 +207,7 @@ td.labkey-header a
 /*  Used across the site whenever there is a label with a colored background */
 .labkey-form-label, tr td.labkey-form-label
 {
-    background-color: #FFDF8C;
+    background-color: #e0e6ea;
     padding-right:4px;
     padding-left:4px;
     padding-top:1px;
@@ -166,7 +215,7 @@ td.labkey-header a
 }
 
 .labkey-form-label-nowrap, tr td.labkey-form-label-nowrap {
-	background-color: #FFDF8C;
+	background-color: #e0e6ea;
     padding: 4px;
     white-space: nowrap;
     vertical-align: top;
@@ -223,14 +272,16 @@ table.labkey-no-spacing
 
 /* Used for the status box that pops up on some forms, such as the wiki editor, which tells the user
  whether its through saving or not */
-.labkey-status-info
+div.labkey-status-info, .labkey-status-info
 {
     text-align: center;
-    background-color: #FFDF8C;
-    border: 1px solid #FFAD6A;
+    background-color: #eae0e0;
+    border: 1px solid #e1c6c6;
     padding: 2px;
-    font-weight: bold;
+	margin: 0 0 10px 0;
+	font-weight: bold;
 }
+
 
 /* Used for the status box that pops up on some forms, such as the wiki editor, which tells the user
  that there has been an error */
@@ -257,110 +308,140 @@ table.labkey-no-spacing
     background-image: none;
 }
 
+
+
+/* ********* Button bars ******** */
+
 /* Used for button bars across the site */
 div.labkey-button-bar,
 table.labkey-button-bar
 {
     white-space: nowrap;
-    background-color: #F4F4F4;
-    *padding: 4px;
+    background-color: #E7EFF4;
+    padding: 4px;
 }
 
-/* Used for the new css buttons, which consist of a link (<a>)
+/* Used for the new css menu buttons, which consist of a link (<a>)
     or a span wrapped around an input for submit buttons */
-.labkey-button,
-.labkey-button:visited,
-.labkey-menu-button,
-.labkey-menu-button:visited
-{
-    color: #000000;
-    background-color: #F4F4F4;
-    white-space: nowrap;
-    border: 1px solid black;
-    margin: 0.1em 0.4em 0.5em 0.0em;
-    line-height: 2.3em;
-    padding: 0.1em 0.2em;
-    position: relative;
-    *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
-                    is required for IE to recognize its position attribute, which in
-                    turn enables relative positioning of our menu button arrow gif. */
-    *line-height: 1.2em;
-    *padding: 0;
-    *white-space: normal;
-    *margin: 0;
-}
-
 .labkey-button-bar .labkey-button,
 .labkey-button-bar .labkey-menu-button,
 .labkey-button-bar .labkey-button:visited,
-.labkey-button-bar .labkey-menu-button:visited,
-.labkey-button-bar .labkey-disabled-button,
-.labkey-button-bar .labkey-disabled-button:visited
-{
-    border: 1px solid #F4F4F4;
+.labkey-button-bar .labkey-menu-button:visited {
+    background-color: #E7EFF4;
+    border: 1px solid #E7EFF4;
+
     margin: 0.1em 0.8em 0.5em 0;
-    *line-height: 1.2em;
+    padding: 4px;
+    position: relative;
+    vertical-align: middle;
+    white-space: nowrap;
+
+    color: #126495;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+
+	line-height: 2.3em;
+    *line-height: 1.9em;
+    *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
+                    is required for IE to recognize its position attribute, which in
+                    turn enables relative positioning of our menu button arrow gif. */
 }
 
-a.labkey-button span
-{
-    color: #000000 !important; /* need to override color at the link level because links within other containers (dataregions,
-                                    for example) may have colors that override the default labkey-button colors. */
-    *padding: 1px 5px 0px 5px;
+.labkey-button-bar .labkey-button:hover,
+.labkey-button-bar .labkey-menu-button:hover {
+    background-color: #FFFFFF;
+    border: 1px solid #676767;
+
+    margin: 0.1em 0.8em 0.5em 0;
+    padding: 4px;
+    position: relative;
+    vertical-align: middle;
+    white-space: nowrap;
+
+    color: #000000;
+    cursor:pointer;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
 }
 
-a.labkey-disabled-button span
-{
-    color: #808080 !important; /* need to override color at the link level because links within other containers (dataregions,
-                                    for example) may have colors that override the default labkey-button colors. */
-    *padding: 1px 5px 0px 5px;
+.labkey-button-bar .labkey-disabled-button,
+.labkey-button-bar .labkey-disabled-button:visited,
+.labkey-button-bar .labkey-disabled-button:hover
+.labkey-menu-button .labkey-disabled-button,
+.labkey-menu-button .labkey-disabled-button:visited,
+.labkey-menu-button .labkey-disabled-button:hover
+.labkey-disabled-menu-button,
+.labkey-disabled-menu-button:visited,
+.labkey-disabled-menu-button:hover {
+    background-color: #E7EFF4;
+    border: 1px solid #E7EFF4;
+
+    margin: 0.1em 0.8em 0.5em 0;
+    padding: 4px;
+    position: relative;
+    vertical-align: middle;
+    white-space: nowrap;
+
+    color: #808080;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: bold;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    cursor: default;
+
+    line-height: 2.3em;
+    *line-height: 1.9em;
+    *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
+                    is required for IE to recognize its position attribute, which in
+                    turn enables relative positioning of our menu button arrow gif. */
 }
 
-a.labkey-menu-button span, a.labkey-disabled-menu-button span
+/* this keeps the space between text and menu down arrows */
+a.labkey-menu-button span,
+a.labkey-disabled-menu-button span
 {
     padding-right: 1.0em;
 }
 
-a.labkey-menu-button span
+/* this keeps the enabled button text blue */
+a.labkey-menu-button
 {
-    color: black;
+    color: #126495;
 }
 
-a.labkey-button:hover,
-.labkey-button-bar .labkey-button:hover,
-.labkey-button-bar .labkey-menu-button:hover,
-a.labkey-menu-button:hover
-{
-    border: 1px solid black;
-    background-color: #F9F9F9;
-    cursor: pointer;
-}
-
+/* this keeps disabled button hover bg invisible and no hand cursor */
 .labkey-button-bar .labkey-disabled-button:hover
 {
-    border: 1px solid #F2F2F2;
-    background-color: #F2F2F2;
+    border: 1px solid #E7EFF4;
+    background-color: #E7EFF4;
+	cursor: default;
 }
 
-
-a.labkey-button:active, a.labkey-menu-button:active
+/* this keeps the hover state style for enabled buttons */
+a.labkey-menu-button:hover
+a.labkey-menu-button:hover span
 {
-    border: 1px solid black;
-    position: relative;
-    color: #000 !important;
-    background-color: #BEBEBE;
+    border: 1px solid #676767;
+    background-color: #FFFFFF;
+    cursor: pointer;
+	color: #000000;
 }
 
 /* This is the class for the down arrow that can be included in a button.
  The images src should be ./_images/button_arrow.gif */
 img.labkey-button-arrow
 {
-    background-color: transparent;
-    width: 0.728em;
-    height: auto;
-    position: absolute;
-    top: 0.7em;
-    right: 0.5em;
+    background-color:transparent;
+	width:0.728em;
+    height:auto;
+    position:absolute;
+	top:0.65em;
+    right:0.3em;
+
+    *top: 1.1em;   /* IE7 needs the image to be pushed down */
 }
 
 /* This is the class for the missing value indicator icon that can be included in a table cell.
@@ -368,7 +449,7 @@ img.labkey-button-arrow
 img.labkey-mv-indicator
 {
     background-color: transparent;
-    color: red;
+    color: #FF0000;
     width: 0.6em;
     height: auto;
     position: relative;
@@ -376,25 +457,73 @@ img.labkey-mv-indicator
     right: 0.1em;
 }
 
-.labkey-disabled-button,
-.labkey-disabled-button:visited,
-.labkey-disabled-menu-button,
-.labkey-disabled-menu-button:visited
-{
-    color: #808080;
-    background-color: #F4F4F4;
-    border: 1px solid black;
-    margin: 0.1em 0.4em 0.5em 0.0em;
-    cursor: default; /* cursor to indicate non-linked item */
-    line-height: 2.3em;
-    padding: 0.2em 0.2em;
-    position: relative;
 
-    *height: 1%;
-    *line-height: 1.2em;
-    *padding: 0;
-    *white-space: normal;
-    *margin: 0;
+
+/* ********* Standalone Buttons ******** */
+
+a.labkey-button,
+a.labkey-button:visited {
+    padding: 2px 5px;
+	margin-right: 5px;
+    border: 1px solid #5894b8;
+    background-color: #FFFFFF;
+    color: #126495;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+    white-space: nowrap;
+
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+
+    *padding: 1px 5px 0px 5px;
+}
+
+a.labkey-button:hover
+{
+    padding: 2px 5px;
+    border: 1px solid #676767;
+    background-color: #ffffff;
+    color: #000000;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+    cursor: pointer;
+
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+
+    *padding: 1px 5px 0px 5px;
+}
+
+.labkey-disabled-button,
+.labkey-disabled-button:visited
+a.labkey-disabled-button {
+    padding: 2px 5px;
+    border: 1px solid #676767;
+    margin-right: 5px;
+    background-color: #fff;
+    color: #808080;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+
+    *padding: 1px 5px 0px 5px;
+}
+
+a.labkey-button:active
+{
+    border: 1px solid #676767;
+    position: relative;
+    background-color: #FFFFFF;
 }
 
 /* Used across the site for simple indenting */
@@ -419,7 +548,8 @@ li.labkey-indented
 /* Not used for most of the bordering, but there are a some of simple cases that use the nav border */
 .labkey-nav-bordered
 {
-   border: solid 1px #89A1B4;
+    border: solid 1px #89A1B4;
+    border-top: 0;
 }
 
 /* This is used to give a heavier border, but keep the border color, for highlighting bordered
@@ -457,7 +587,7 @@ regions on mouseover */
  side panel */
 .labkey-frame
 {
-    background-color: #E1ECFC;
+    background-color: #E7EFF4;
 }
 
 /* "Pagination" is used with data views that don't display all the data on one page.  This
@@ -497,7 +627,7 @@ table.labkey-nav-trail
     padding-right:8;
     padding-top:12;
     padding-bottom:12;
-    background-color:#ffffff;
+    background-color:#FFFFFF;
     font-family:Arial,Verdana,sans-serif;
     font-size:18pt;
     font-weight:bold;
@@ -506,7 +636,7 @@ table.labkey-nav-trail
 table.labkey-app-bar td
 {
     width:100%;
-    background-color:#ffffff;
+    background-color:#FFFFFF;
     font-family:Arial,Verdana,sans-serif;
     font-size:18pt;
     font-weight:bold;
@@ -587,7 +717,7 @@ table.labkey-completion-text
 
 .labkey-completion-highlight
 {
-    background-color: #E1ECFC;
+    background-color: #E7EFF4;
 }
 
 .labkey-completion-nohighlight
@@ -618,7 +748,7 @@ span.labkey-help-pop-up
 /* Used for full screen pages such as for login or upgrade */
 .labkey-full-screen-background
 {
-    background-color: #336699;
+    background-color: #f8f8f8;
     padding: 30px;
     height: 100%;
     vertical-align: middle;
@@ -630,8 +760,7 @@ span.labkey-help-pop-up
     width: 100%;
     background-color: #FFFFFF;
     border-spacing: 0; *border-collapse: collapse;
-    border-top: 20px #DDDDDD solid;
-    border-bottom: 20px #DDDDDD solid;
+    border: 5px solid #e0e6ea;
 }
 
 /* Used for the middle part of full-screen pages */
@@ -667,11 +796,29 @@ table.labkey-customize-view
 
 .labkey-customize-view table
 {
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0;
+	*border-collapse: collapse;
+}
+
+table.labkey-customize-view td,
+table.labkey-customize-view a,
+table.labkey-customize-view .labkey-tab a:hover
+{
+    background: #FFFFFF;
+}
+
+table.labkey-customize-view .labkey-help-pop-up
+{
+    background: transparent;
+}
+
+table.labkey-customize-view td.labkey-tab-space,
+table.labkey-customize-view td.labkey-tab-space a
+{
+    background: transparent;
 }
 
 /* Data Region */
-
 
 /* There are some odd styles that are used so that the data
 regions look the same in IE, Safari, and Firefox */
@@ -688,13 +835,7 @@ table.labkey-show-surrounding-border
     border: 1px solid #DDDDDD;
 }
 
-.labkey-data-region A
-{
-    color: #003399;
-    text-decoration: none;
-}
-
-.labkey-data-region TH,
+.labkey-data-region th,
 .labkey-data-region .labkey-column-header
 {
     border-bottom: solid 1px #AAAAAA;
@@ -781,7 +922,7 @@ in the table tag.  They are necessary so that the borders take precedence correc
 
 .labkey-has-row-totals td
 {
-    *border-right: 0 none; 
+    *border-right: 0 none;
 }
 
 .labkey-has-col-totals td
@@ -820,12 +961,12 @@ in the table tag.  They are necessary so that the borders take precedence correc
 of filter options when clicked */
 th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th
 {
-    color: #003399;
+    color: #126495;
 }
 
 th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-col-header-filter th:hover
 {
-    background-color: #EBF4FF;
+    background-color: #E7EFF4;
     cursor: pointer;
 }
 
@@ -849,8 +990,8 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
 
 .labkey-data-region-header-container
 {
-    background-color: #F2F2F2;
-    border-bottom: 1px solid #AAAAAA;
+    background-color: #E7EFF4;
+    border: 1px solid #89a1b4;
     padding: 0;
 }
 
@@ -970,7 +1111,6 @@ img.labkey-grid-filter-icon
 .labkey-customview-item {
     border-top: 1px solid transparent;
     border-bottom: 1px solid transparent;
-    background: white;
 }
 
 .labkey-customview-item.x-view-selected {
@@ -1056,7 +1196,6 @@ img.labkey-grid-filter-icon
     background: gray;
 }
 
-
 /* Home Template */
 
 /* The body tag for the page */
@@ -1083,30 +1222,33 @@ img.labkey-grid-filter-icon
 }
 
 /* The table that is the entire page */
-.labkey-main
+table.labkey-main
 {
     width: 100%;
     height: 100%;
     padding: 0;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0;
+    *border-collapse: collapse;
+    background-color: #F8F8F8;
 }
 
 /* The top panel with the title and logo */
 #headerpanel
 {
     height: 56px;
+    background-color: #FFFFFF;
 }
 
 /* The top panel with the title and logo */
 .labkey-header-panel table
 {
     width: 100%;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
 .labkey-header-panel td, .labkey-header-panel th
 {
-    padding: 0;
+    padding: 0px;
 }
 
 /* Optional Top Menu */
@@ -1116,33 +1258,45 @@ img.labkey-grid-filter-icon
     height: 26px;
 }
 
-/* Quick options (admin, help, my account, signout) table */
-#headerDiv {
-    position: absolute;
-    top: 0; right: 0;
-    width: 475px;
-    padding-right: 10px;
+/* The side panel with the navigation and admin expandable menus */
+td.labkey-site-nav-panel {
+    background-color: #f8f8f8;
+    padding-top: 10px;
+    padding-left: 5px;
+    border-top: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-right: 1px solid #e0e6ea;
+    border-collapse: separate;
+	border-spacing: 2px;
+    vertical-align: top;
+    width: 120px;
+	overflow: auto;
 }
 
-/* The side panel with the navigation and admin expandable menus */
-.labkey-site-nav-panel
-{
-    background-color: #E1ECFC;
-    border-top: 1px solid #89A1B4;
-    border-right: 1px solid #89A1B4;
-    border-collapse: separate; border-spacing: 2px;
-    vertical-align: top;
-    padding: 0;
+div.menu-wrapper {
+    width: 175px;
+    overflow: hidden;
 }
 
 /* The project area (the rest of the page besides the side and top panels) */
-.labkey-proj
+table.labkey-proj
 {
     width: 100%;
     height: 100%;
     vertical-align: top;
-    padding: 0;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0;
+    padding: 0 30px 30px 30px;
+    *border-collapse: collapse;
+    *width: 95%;
+    *margin-left: auto;
+    *margin-right: auto;
+}
+
+td.labkey-proj
+{
+    *vertical-align: top; /* IE */
+    height: 100%;
 }
 
 /* The icon in the header panel */
@@ -1177,10 +1331,11 @@ td.labkey-main-title-area
 
 td.labkey-main-menu
 {
-    background-color:#e1ecfb;
     margin:4px;
     padding:4px;
-    border-top:1px solid #88a1b4;
+    border-top:1px solid #89a1b4;
+    background-color: #E7EFF4;
+    font-weight: normal;
 }
 
 td.labkey-main-menu a
@@ -1196,9 +1351,9 @@ td.labkey-main-menu a
 
 td.labkey-main-menu a.selected
 {
-    background-color:white;
-    color:black;
-    border-bottom-color:white;
+    background-color:#FFFFFF;
+    color:#000000;
+    border-bottom-color:#FFFFFF;
 }
 
 .labkey-webpart-menu
@@ -1207,7 +1362,7 @@ td.labkey-main-menu a.selected
     position:absolute;
     border:5px solid #dae1e6;
     margin:3;
-    background-color:white;
+    background-color:#FFFFFF;
     padding:8px;
     z-index:1000
 }
@@ -1215,7 +1370,7 @@ td.labkey-main-menu a.selected
 /* The site title */
 #labkey-main-title
 {
-    color: #666666;
+    color: #676767;
 }
 
 a.labkey-main-title
@@ -1223,7 +1378,7 @@ a.labkey-main-title
     font-family: arial, helvetica, sans-serif;
     font-size:14pt;
     vertical-align: bottom;
-    color: #666666;
+    color: #676767;
     text-decoration: none;
 }
 
@@ -1252,7 +1407,7 @@ table.labkey-main-search img {
 
 .labkey-main-search td
 {
-    height:16px; vertical-align:bottom;
+    vertical-align:bottom;
     width: 200px;
 }
 .labkey-main-search input
@@ -1265,7 +1420,7 @@ table.labkey-main-search img {
 {
     margin:0; top:0;
     width: 200px;
-    height: 16px;
+    padding; 0;
 }
 
 /* search results page */
@@ -1277,14 +1432,16 @@ table.labkey-main-search img {
     color: #000000;
     text-decoration: none;
 }
+
 .labkey-search-filter A, .labkey-search-filter A:visited
 {
     font-family: arial, helvetica, sans-serif;
     font-size:10pt;
     vertical-align: bottom;
-    color: #666666;
+    color: #676767;
     text-decoration: none;
 }
+
 .labkey-search-filter A:hover
 {
     text-decoration: underline;
@@ -1296,15 +1453,15 @@ table.labkey-main-search img {
 }
 .labkey-search-navresults H3
 {
-    color: #666666; margin-top:0;
+    color: #676767; margin-top:0;
 }
 .labkey-search-results TD
 {
-    color: #666666; margin-top:0;
+    color: #676767; margin-top:0;
 }
-FORM.labkey-search-form
+form.labkey-search-form
 {
-    padding:14px;
+    padding:0;
 }
 .labkey-search-title
 {
@@ -1320,29 +1477,22 @@ FORM.labkey-search-form
 }
 
 /* The table that contains the expandable nav panels */
-.labkey-expandable-nav-panel
+table.labkey-expandable-nav
 {
-    border-spacing: 0; *border-collapse: collapse;
+    background-color: #F8F8F8;
+    border: 0;
+    margin-top:5px;
+    margin-right:5px;
+    border-spacing: 0;
+	*border-collapse: collapse;
+    border-collapse: collapse;
+    width: 160px;
 }
 
 /* The individual expandable nav menus */
 .labkey-expandable-nav
 {
     padding: 0;
-}
-
-table.labkey-expandable-nav
-{
-    background-color: #FFFFFF;
-    border-left: 0;
-    border-top: 1px solid #89A1B4;
-    border-right: 1px solid #89A1B4;
-    border-bottom: 1px solid #89A1B4;
-    margin-top:5px;
-    margin-right:5px;
-    border-spacing: 0; *border-collapse: collapse;
-    border-collapse: collapse;
-    width: 146px;
 }
 
 #menuBarFolder_menu .labkey-expandable-nav
@@ -1366,13 +1516,13 @@ table.labkey-expandable-nav
 {
     width: 100%;
     vertical-align: top;
-    padding: 0;
+    padding: 10px 0 0 0;
 }
 
 /* The rest of the project area besides the project nav panel */
 .labkey-body-panel
 {
-    padding: 5px;
+    padding: 0;
     width: 100%;
     height: 100%;
     vertical-align: top;
@@ -1381,38 +1531,30 @@ table.labkey-expandable-nav
 /* The right side panel that is seen in views like portal */
 .labkey-side-panel
 {
-    padding: 5px;
+    padding: 0 0 0 20px;
     width: 240px;
     height: 100%;
     vertical-align: top;
 }
 
-/* The area under the top line on an expandable nav menu */
-.labkey-expandable-nav-body
-{
-    border-top: 1px solid #89A1B4;
-    width: 100%;
-    padding: 1px;
-}
-
 /* The cell that contains the expand/collapse image */
 td.labkey-expand-collapse-area
 {
-    width: 100% !important;
-    border-top: 1px solid #89A1B4;
-    border-right: 1px solid #89A1B4;
-    border-bottom: 1px solid #89A1B4;
+    border-bottom: 1px solid #e5e5e5;
 }
 
 td.labkey-expand-collapse-area a
 {
-    padding-top: 2px;
-    padding-bottom: 2px;
-    width: 12px;
+    font-weight: normal;
+    padding: 2px 0;
+    text-align: left;
+    white-space: nowrap;
+    color: #000000;
+    text-transform: uppercase;
+	width: 12px;
 }
 
-td.labkey-expand-collapse-area img
-{
+td.labkey-expand-collapse-area img {
 	margin-right: 3px;
 }
 
@@ -1431,7 +1573,7 @@ span.labkey-nav-tree-selected
 /* Each line of the expandable nav menus */
 tr.labkey-nav-tree-row
 {
-    color: #003399;
+    color: #126495;
     text-decoration: none;
     vertical-align: top;
     padding-right:4px;
@@ -1439,7 +1581,7 @@ tr.labkey-nav-tree-row
 
 tr.labkey-nav-tree-row:hover
 {
-    background-color: #EBF4FF;
+    background-color: #E7EFF4;
     cursor: pointer;
 }
 
@@ -1450,20 +1592,24 @@ td.labkey-nav-tree-node
     vertical-align: middle;
 }
 
+td.labkey-nav-tree-node img
+{
+    margin-right: 3px;
+}
+
 /* The link in an expandable nav menu */
 td.labkey-nav-tree-text
 {
-    padding: 0.3em;
+    padding: 5px 0;
     width: 100%;
     vertical-align: top;
+	line-height: 1.2em;
 }
 
 a.nav-tree-selected
 {
     font-weight: bold;
     font-style: italic;
-    background: url(./_images/square.gif) center right no-repeat;
-    padding-right: 8px;
 }
 
 /* The expandable nav rows sometimes have a total like in the Study module */
@@ -1497,27 +1643,26 @@ table.labkey-nav-tree-child
 
 table#navBar
 {
-    background-color:#ffffff;
+    background-color:#f8f8f8;
 }
 
 /* This is used for the links at the top of the project area to the containing folders  */
-td.labkey-crumb-trail
-{
-    padding-top:5px;
-    padding-left:5px;
+td.labkey-crumb-trail {
+    padding: 5px 0;
 }
 
 /* This is the title that is contained at the top of the project area */
 .labkey-nav-page-header-container
 {
-    padding-left: 12px;
-    
+    padding-left: 0;
+    padding-bottom: 0;
 }
 .labkey-nav-page-header
 {
-    font-weight: bold;
-    font-size: 11pt;
-    color: #003399;
+    font-size: 30px;
+    font-weight: normal;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #000000;
 }
 
 /* This is the table that contains each web part in the portal view */
@@ -1525,13 +1670,14 @@ table.labkey-wp
 {
     width: 100%;
     border-spacing: 0; *border-collapse: collapse;
+    border: 5px solid #e0e6ea;
 }
 
 /* This is the body of the web part */
 td.labkey-wp-body
 {
     width: 100%;
-    padding: 4px;
+    padding: 10px;
     background: #FFFFFF;
 }
 
@@ -1539,38 +1685,35 @@ td.labkey-wp-body
 help pop up */
 tr.labkey-wp-header
 {
-    background-color: #EBF4FF;
     font-weight: bold;
-}
-
-.labkey-wp-header th, .labkey-wp-header td
-{
-    border: 1px solid #89A1B4;
+    background-color: #e0e6ea;
+    border: 0;
 }
 
 .labkey-wp-header th, .labkey-wp-header td, .labkey-wp-title
 {
     font-weight: bold;
-    color: #003399;
-    padding-left: 6px;
-    padding-right: 4px;
-    padding-top: 2px;
-    padding-bottom: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 0;
+    padding-bottom: 5px;
     text-align: left;
     white-space:nowrap;
+    color:#000000;
+    font-size: 18px;
+	border: 0;
 }
 
 .labkey-wp-header a:link, .labkey-wp-header a:visited
 {
-    color:#003399;
+    color:#126495;
     text-decoration:none;
     cursor:pointer;
 }
 
 .labkey-wp-header a:hover
 {
-    color:#ff3300;
-    text-decoration:underline;
+    color:#000000;
     cursor:pointer;
 }
 
@@ -1598,9 +1741,29 @@ tr.labkey-wp-header
 
 
 /* This is used for the left side of the wp header and often contains the title */
-th.labkey-wp-title-left, td.labkey-wp-title-left
+td.labkey-wp-title-left
 {
     border-right: 0 none;
+}
+
+th.labkey-wp-title-left {
+    border-right: 0 none;
+    font-family: Arial, Helvetica, sans serif;
+    color: #000000;
+}
+
+th.labkey-wp-title-left a:link, th.labkey-wp-title-left a:visited {
+    color: #000000;
+    text-decoration: none;
+}
+
+th.labkey-wp-title-left a:hover {
+    color: #126495;
+	text-decoration: none;
+}
+
+th.labkey-wp-title-left img {
+	margin-top: 4px;
 }
 
 /* This is used for the right side of the wp header and often contains buttons */
@@ -1608,6 +1771,7 @@ th.labkey-wp-title-right, td.labkey-wp-title-right
 {
     text-align:  right;
     border-left:  0 none;
+	padding-top: 5px;
 }
 
 /* This is the panel of links right below the web part that is on the right side and has "edit",
@@ -1615,6 +1779,42 @@ th.labkey-wp-title-right, td.labkey-wp-title-right
 table.labkey-wp-link-panel
 {
     width: 100%;
+}
+
+a.labkey-text-link, a.labkey-text-link:visited {
+    color: #126495;
+    font-family: Verdana,Arial,Helvetica,sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 10px 2px 0;
+    text-transform: uppercase;
+    background-color: #FFFFFF;
+	background: url(./_images/arrow_link_button.png) top right no-repeat;
+	border: none;
+    position: relative;
+    vertical-align: middle;
+    white-space: nowrap;
+    margin: 0.1em 0.8em 0.5em 0;
+}
+
+a.labkey-text-link:hover {
+    background-color: #FFFFFF;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+    padding: 2px 10px 2px 0;
+	background: url(./_images/arrow_link_button_over.png) top right no-repeat;
+	border: none;
+	color: #000000;
+}
+
+a.no-arrow
+{
+    background: none !important;
+    padding-right: 2px !important;
+    padding-top: 0px !important;
+    margin: 0;
 }
 
 div.x-tree-node-leaf IMG.x-tree-node-icon.labkey-tree-error-icon
@@ -1674,7 +1874,7 @@ a.labkey-selected-link
 
 td.labkey-ms1-filter
 {
-    background: #E1ECFC;
+    background: #E7EFF4;
     text-align: center;
     border-top: 1px solid #AAAAAA;
     border-bottom: 1px solid #AAAAAA;
@@ -1773,6 +1973,9 @@ table.labkey-r-tsvout
     border-spacing: 0; *border-collapse: collapse;
 }
 
+
+
+
 /* GWT */
 
 .gwt-ToolTip {
@@ -1809,7 +2012,7 @@ table.labkey-r-tsvout
 }
 
 .gwt-DialogBox .Caption {
-  background-color: #EBF4FF;
+  background-color: #E7EFF4;
   border: 1px solid #89A1B4;
   padding: 3px;
   font-weight: bold;
@@ -1833,7 +2036,7 @@ table.labkey-r-tsvout
 }
 
 .gwt-MenuBar {
-  background-color: #E1ECFC;
+  background-color: #E7EFF4;
   border: 1px solid #89A1B4;
   cursor: default;
 }
@@ -1864,7 +2067,7 @@ table.labkey-r-tsvout
 .gwt-ProgressBar-shell .gwt-ProgressBar-text {
   padding: 0;
   margin: 0;
-  color: white;
+  color: #FFFFFF;
 }
 
 .gwt-PushButton {
@@ -1879,7 +2082,6 @@ table.labkey-r-tsvout
 	-khtml-opacity: 0.5;
 	opacity: 0.5;
 }
-
 
 .gwt-Tree {
 }
@@ -1896,7 +2098,7 @@ table.labkey-r-tsvout
 }
 
 .gwt-StackPanel .gwt-StackPanelItem {
-  background-color: #E1ECFC;
+  background-color: #E7EFF4;
   cursor: pointer;
 }
 
@@ -1917,21 +2119,17 @@ version: 2.2.2
 /* Menu styles */
 
 div.yuimenu {
-
     background-color:#FFFFFF;
     border:solid 1px #89A1B4;
     padding:1px;
-
 }
 
 /* Submenus are positioned absolute and hidden by default */
 
 div.yuimenu div.yuimenu,
 div.yuimenubar div.yuimenu {
-
     position:absolute;
     visibility:hidden;
-
 }
 
 /* MenuBar Styles */
@@ -1955,26 +2153,22 @@ div.clear, div.yuimenubar div.bd {
     Clear the module body for other browsers
 */
 div.clear:after, div.yuimenubar div.bd:after {
-
     content:'.';
     display:block;
     clear:both;
     visibility:hidden;
     height:0;
-
 }
 
 /* Matches the group title (H6) inside a Menu or MenuBar instance */
 
 div.yuimenu h6,
 div.yuimenubar h6 {
-
     font-size:100%;
     font-weight:normal;
     margin:0;
     border:solid 1px #89A1B4;
-    color:#003399;
-
+    color:#126495;
 }
 
 div.yuimenubar h6 {
@@ -2112,7 +2306,7 @@ div.yuimenubar li a {
         mouseout events bubble to the parent LI in IE.
     */
     zoom:1;
-    color:#003399;
+    color:#126495;
     text-decoration:none;
 
 }
@@ -2156,7 +2350,7 @@ div.yuimenu.visible li.hashelptext a.hashelptext {
 div.yuimenu li.selected,
 div.yuimenubar li.selected {
 
-    background-color:#E1ECFC;
+    background-color:#E7EFF4;
 
 }
 
@@ -2171,7 +2365,7 @@ div.yuimenu li.selected a.selected,
 div.yuimenu li.selected em.selected,
 div.yuimenubar li.selected a.selected {
 
-    color:#003399;
+    color:#126495;
 
 }
 
@@ -2341,14 +2535,19 @@ div.yuimenu li.checked em.checkedindicator.disabled {
  * These overrides were formerly in gtheme.css
  */
 
+
 .x-panel {
     border-color: #d0d0d0;
 }
 
 .x-panel-header {
-    color:#333;
-	border: 1px solid #99BBE8;
-    background: #EBF4FF none;
+    color:#000000;
+	border: 1px solid #89a1b4;
+    background: #E7EFF4;
+}
+
+.extContainer div.x-panel-header {
+	padding: 5px;
 }
 
 .x-panel-body {
@@ -2365,13 +2564,12 @@ div.yuimenu li.checked em.checkedindicator.disabled {
 
 .x-panel-tbar-noheader .x-toolbar, .x-panel-mc .x-panel-tbar .x-toolbar {
 	border:none;
-	/*border-bottom:1px solid #d0d0d0;*/
 }
 .x-panel-body-noheader, .x-panel-mc .x-panel-body {
     border-color:#d0d0d0;
 }
 .x-panel-tl .x-panel-header {
-    color:#333;
+    color:#000000;
 }
 .x-panel-tc {
 	background-image:none;
@@ -2392,7 +2590,7 @@ div.yuimenu li.checked em.checkedindicator.disabled {
 	background-image:none;
 }
 .x-panel-mc {
-    background:#f1f1f1;
+    background:#fff;
 	padding:0;
 }
 .x-panel-mc .x-panel-body {
@@ -2424,7 +2622,7 @@ div.yuimenu li.checked em.checkedindicator.disabled {
 
 .x-grid3-hd-inner {
 font-weight:normal;
-    color: #003399;
+    color: #126495;
 }
 
 td.sort-desc, td.sort-asc, td.x-grid3-hd-menu-open {
@@ -2432,7 +2630,7 @@ td.sort-desc, td.sort-asc, td.x-grid3-hd-menu-open {
 }
 
 .x-grid-group-hd {
-    border-color: #336699 ;
+    border-color: #89a1b4;
 }
 
 .x-grid3-hd-row td {
@@ -2440,13 +2638,12 @@ td.sort-desc, td.sort-asc, td.x-grid3-hd-menu-open {
 }
 
 td.x-grid3-hd-over, td.sort-desc, td.sort-asc, td.x-grid3-hd-menu-open {
-	/*border-left:1px solid #EEE;*/
 	border-left: none;
 	border-right:1px solid #D0D0D0;
 }
 
 td.sort-desc .x-grid3-hd-inner, td.sort-asc .x-grid3-hd-inner {
-	background-color: white;
+	background-color: #FFFFFF;
 	background-image:none;
 }
 
@@ -2465,22 +2662,29 @@ td a.x-grid3-hd-btn:hover {
 	background-position: -12px -41px;
 }
 
+/* File browser grid */
+#fileBrowser .x-grid3-cell-inner,
+#fileBrowser x-grid3-hd-inner
+{
+    padding: 2px 0px;
+}
+
 .x-menu {
     padding:0;
-    background: white none;
+    background: #FFFFFF none;
     border-color: #89A1B4;
 }
 .x-menu-sep {margin:1px 1px 0 1px;}
 
 li.x-menu-item-active {
-	background:#E0ECFF none repeat scroll 0 0;
+	background:#E7EFF4 none repeat scroll 0 0;
 	border: none;
 }
 
 li.x-menu-list-item, li.x-menu-item-active { padding:0; }
 
 li.x-menu-item-active a.x-menu-item {
-	color:black;
+	color:#000000;
 }
 
 .extContainer .x-menu-item-active {
@@ -2517,30 +2721,40 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-grid-panel .x-panel-mc .x-panel-body {
-    border:none;/*#d0d0d0;*/
+    border:none;
 }
+
 
 /* Buttons */
-/*
-.x-btn {
-	background:#ccc;
-	border:1px solid #999;
+.x-btn button {
+    font-size: 10px;
+    font-weight: bold;
+    color: #126495;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    padding-bottom: 3px;
+    text-transform: uppercase;
 }
-
-.x-btn-left{
-	background-image:none;
-}
-.x-btn-right{
-	background-image:none;
-}
-.x-btn-center{
-	background-image:none;
-}
-*/
 
 .x-btn-with-menu .x-btn-center em {
-    background:transparent url(./gtheme/img/btn-arrow.gif) no-repeat scroll right 0
+    background:transparent url(./gtheme/img/btn-arrow.gif) no-repeat scroll right 0;
 }
+
+.x-btn-over button {
+    color: #000000;
+}
+
+/* makes it more apparent that the item is disabled and works for IE */
+.x-button-disabled {
+    opacity: .35;
+    filter:alpha(opacity=35);
+}
+
+.x-btn-text {
+	font-size: 10px !important;
+	font-family: Verdana, Arial, sans serif;
+}
+
+
 /* Layout classes */
 
 .x-border-layout-ct {
@@ -2552,7 +2766,7 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-layout-collapsed{
-    background-color:#eee;
+    background-color:#eeeeee;
     border-color:#e0e0e0;
 }
 .x-layout-collapsed-over{
@@ -2572,11 +2786,11 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-toolbar .x-btn-over button {
-	color: black;
+	color: #000000;
 }
 
 .x-btn-tl, .x-btn-tr, .x-btn-tc, .x-btn-ml, .x-btn-mr, .x-btn-mc, .x-btn-bl, .x-btn-br, .x-btn-bc{
-	background-image:url(./gtheme/img/lkbtn.png);
+	background-image:url(./gtheme/img/lkbtn.gif);
 }
 
 /* Window */
@@ -2587,73 +2801,80 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text {
-    color:#fff;
+    color:#FFFFFF;
     font-weight: normal;
     font-size: 13px;
 }
 
+
 /*********** X-panel *******/
+
 .x-panel-tc {
-	background: #E1ECFC;
+    background: #FFFFFF;
+	font-size: 14px;
 }
 .x-panel-tl {
-	background: #E1ECFC;
+    background: #FFFFFF;
+    border-top: 1px solid #e0e6ea;
+    border-bottom: 1px solid #e0e6ea;
 }
 .x-panel-tr {
-	background: #E1ECFC;
+    background: #FFFFFF;
 }
 .x-panel-bc {
-	background: #E1ECFC;
+    background: #FFFFFF;
 }
 .x-panel-bl {
-	background: #E1ECFC;
-	padding-left:4px;
+    background: #FFFFFF;
+    padding-left:4px;
 }
 .x-panel-br {
-	background: #E1ECFC;
-	padding-right: 4px;
+    background: #FFFFFF;
+    padding-right: 4px;
 }
 .x-panel-mc {
     border:0px solid #d0d0d0;
-    background:white;
+    background:#FFFFFF;
 }
 
 .x-panel-ml {
-	background: #E1ECFC;
-	padding-left:4px;
+    background: #FFFFFF;
+    padding-left:4px;
 }
 .x-panel-mr{
-	background: #E1ECFC;
-	padding-right:4px;
+    background: #FFFFFF;
+    padding-right:4px;
 }
+
+
 
 /*********** X-tree ******/
 
 .x-tree-node .x-tree-selected {
-    background-color: E1ECFC;
+    background-color: #E7EFF4;
 }
 
 /*********** X-window ******/
 .x-window-tc {
-	background: #336699 ;
+	background: #126495;
 }
 .x-window-tl {
-	background: #336699;
+	background: #126495;
 	padding-left: 4px !important;
 }
 .x-window-tr {
-	background: #336699;
+	background: #126495;
 	padding-right: 4px !important;
 }
 .x-window-bc{
-	background: white;
+	background: #FFFFFF;
 }
 .x-window-bl {
-	background: #336699;
+	background: #126495;
 	padding-left:4px !important;
 }
 .x-window-br {
-	background: #336699;
+	background: #126495;
 	padding-right:4px !important;
 }
 .x-window-mc {
@@ -2662,17 +2883,17 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 }
 
 .x-window-footer {
-	border-bottom-color: #336699;
+	border-bottom-color: #126495;
     border-bottom-style: solid;
     border-bottom-width: 4px !important;
 }
 
 .x-window-ml {
-	background: #336699 ;
+	background: #126495;
 	padding-left:4px !important;
 }
 .x-window-mr {
-	background: #336699 ;
+	background: #126495;
 	padding-right:4px !important;
 }
 
@@ -2687,33 +2908,33 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 
 .x-window-plain .x-window-mc {
     background: #e8e8e8;
-    border-right:1px solid #eee;
-    border-bottom:1px solid #eee;
+    border-right:1px solid #eeeeee;
+    border-bottom:1px solid #eeeeee;
     border-top:1px solid #d0d0d0;
     border-left:1px solid #d0d0d0;
 	border:none;
 }
 
 .x-window-plain .x-window-body {
-    border-left:1px solid #eee;
-    border-top:1px solid #eee;
+    border-left:1px solid #eeeeee;
+    border-top:1px solid #eeeeee;
     border-bottom:1px solid #d0d0d0;
     border-right:1px solid #d0d0d0;
     background:transparent !important;
 }
 
 body.x-body-masked .x-window-mc, body.x-body-masked .x-window-plain .x-window-mc {
-    background-color: white;
+    background-color: #FFFFFF;
 }
 
 .x-window-maximized .x-window-tc {
-	background: #336699;
+	background: #126495;
 }
 
 
 .x-panel-nofooter .x-panel-bc, .x-panel-nofooter .x-window-bc {
 	height:4px;
-	background: #336699;
+	background: #126495;
 }
 
 body .x-window .x-window-tl .x-window-header {
@@ -2737,7 +2958,6 @@ body .x-window .x-window-tl .x-window-header {
 
 .x-panel-noborder .x-panel-tbar-noborder .x-toolbar {
     border-width:0;
-    /*border-bottom:1px solid #d0d0d0;*/
 }
 
 .x-panel-noborder .x-panel-bbar-noborder .x-toolbar {
@@ -2752,15 +2972,6 @@ body .x-window .x-window-tl .x-window-header {
     border-width:0;
 }
 
-
-/* SHADOWS */
-/*
-.x-shadow * {
-	display:none;
-	background: none;
-	visibility: hidden;
-}*/
-
 /* GRID ROWS */
 
 body .x-grid3 .x-grid3-row {
@@ -2771,17 +2982,13 @@ body .x-grid3 .x-grid3-row {
 
 body .x-grid3 .x-grid3-row-selected {
 	padding:0;
-    border: 1px solid #336699;
-    background: #E1ECFC !important;
+    border: 1px solid #126495;
+    background: #E7EFF4 !important;
 }
 
 body .x-grid3 .x-grid3-row-alt {
-	background: #EEE;
+	background: #EEEEEE;
 }
-/*
-body {
-	background: #ddd !important;
-}*/
 
 /* FORM */
 
@@ -2820,7 +3027,7 @@ td.labkey-export-tab-buttons
 
 .labkey-file-browser-elem
 {
-    border: 1px solid #999999;
+    border: 1px solid #DDD;
 }
 
 
@@ -2828,72 +3035,92 @@ td.labkey-export-tab-buttons
 /*****     TAB STRIPS     *****/
 
 
-/* labkey -- there are three different markups: <table>, table with wiki classes, and <ul> TODO pick one! (kill <table>) */
+/* labkey -- there are three different markups: <table>, table with wiki classes, and <ul> */
 
 table.labkey-tab-strip
 {
     width: 100%;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0;
+	*border-collapse: collapse;
+}
+
+.labkey-tab-strip {
+    border-top: 0;
+    /* This applies to both ul and table? see ul a little further down */
 }
 
 /* This tab has no bottom border so it looks like it is forward */
-td.labkey-tab-selected, .labkey-tab-selected
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border-top:solid 1px #89A1B4;
-    border-left:solid 1px #89A1B4;
-    border-right:solid 1px #89A1B4;
-    border-bottom:solid 1px #ffffff;
-    background-color:white;
-    color: #003399;
-    text-decoration: none;
-    white-space:nowrap;
-    font-weight: bold;
-    cursor: pointer;
+td.labkey-tab-selected, .labkey-tab-selected {
+	padding: 4px 7px;
+    border-top: solid 1px #89A1B4;
+    border-left: solid 1px #89A1B4;
+    border-right: solid 1px #89A1B4;
+    border-bottom: solid 1px #ffffff;
+    background-color: #fff;
+    color: #000000;
+	font-weight: bold;
+    white-space: nowrap;
+}
+
+.labkey-tab-selected a {
+	padding: 4px 7px;
+    border-top: solid 1px #89A1B4;
+    border-bottom: solid 1px #ffffff;
+    background-color: #fff;
+    color: #000000;
+	font-weight: bold;
+    white-space: nowrap;
 }
 
 /* This tab has a bottom border so it looks like it is back */
-td.labkey-tab, .labkey-tab
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border:solid 1px #89A1B4;
-    background-color:white;
-    color: #003399;
+td.labkey-tab, .labkey-tab {
+	padding: 4px 7px;
+    border: solid 1px #89A1B4;
+    background-color: #e7eff4;
+    color: #126495;
     text-decoration: none;
-    vertical-align:bottom;
-    white-space:nowrap;
+    vertical-align: bottom;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.labkey-tab a {
+	padding: 4px 7px;
+    background-color: #e7eff4;
+    color: #126495;
+	font-weight: bold;
+    text-decoration: none;
+    vertical-align: bottom;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.labkey-tab a:hover {
+	padding: 4px 7px;
+    background-color: #e7eff4;
+    color: #000000;
+	font-weight: bold;
+    text-decoration: none;
+    vertical-align: bottom;
+    white-space: nowrap;
     cursor: pointer;
 }
 
 /* This tab has a bottom border and its text is shaded so it looks like it is back and unselectable */
-td.labkey-tab-inactive
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
+td.labkey-tab-inactive {
+	padding: 4px 7px;
     border:solid 1px #89A1B4;
     text-decoration: none;
     color: #444444;
+	background-color: #e7e7e7;
 }
 
-td.labkey-tab-content, .labkey-tab-content
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
+td.labkey-tab-content, .labkey-tab-content {
+	padding: 4px 7px;
     border-left: solid 1px #89A1B4;
     border-right: solid 1px #89A1B4;
     border-bottom: solid 1px #89A1B4;
-    color: #003399;
-    background-color:white;
+    background-color:#FFFFFF;
     vertical-align:bottom;
 }
 
@@ -2933,46 +3160,47 @@ ul.labkey-tab-strip a
     border-right : 1px solid #89A1B4;
     border-left : 1px solid #89A1B4;
     border-bottom : none;
-    float : left;
+    float: left;
     line-height : 14px;
     margin-right : 8px;
-    padding : 2px 6px 2px 6px;
+    padding: 4px 7px;
     text-decoration : none;
 }
 
 li.labkey-tab-active a
 {
-    background-color : #E1ECFC;
-    font-weight: bold;
-    border-bottom : 1px solid #E1ECFC;
+    background-color : #fff;
+    border-bottom : 1px solid #fff;
     margin-bottom: -1px;
+	color: #000000;
+	font-weight: bold;
 }
 
 li.labkey-tab-inactive a
 {
-    background-color : #FFFFFF;
+    background-color: #E7EFF4;
     font-weight: bold;
 }
 
 .labkey-tab-strip-spacer
 {
-    height:4px;
-    background-color:#E1ECFC;
+    height: 4px;
+    background-color:#fff;
 	border-left : 1px solid #89A1B4;
 	border-right : 1px solid #89A1B4;
-	border-bottom : 1px solid #89A1B4;
+	border-bottom : 1px solid #fff;
     font-size:1px;
     line-height:1px;
 }
 
 .labkey-tab-strip-content
 {
-	background : #ffffff;
-	border : 1px solid #89A1B4;
-	border-top : none;
-	clear : both;
-	margin : 0;
-	padding : 15px;
+	background: #ffffff;
+	border: 1px solid #89A1B4;
+	border-top: none;
+	clear: both;
+	margin: 0;
+	padding: 15px;
 }
 
 /* This is used as the final tab in a tab strip */
@@ -2980,11 +3208,6 @@ li.labkey-tab-inactive a
 {
     padding-right: 5px;
     white-space: nowrap;
-}
-
-td.labkey-tab-space
-{
-    background-color:#ffffff;
 }
 
 /* Group Tabs (e.g. used in Export grid drop-down)*/
@@ -2999,10 +3222,13 @@ td.labkey-tab-space
 
 /* gwt */
 
-.gwt-TabPanelBottom { border: 1px solid #89A1B4; }
+.gwt-TabPanelBottom {
+	border: 1px solid #89A1B4;
+}
 
 .gwt-TabBar {
-  font-size: 8pt;
+  /* font-size: 8pt; */
+  font-weight: bold;
 }
 
 .gwt-TabBar .gwt-TabBarFirst {
@@ -3018,23 +3244,37 @@ td.labkey-tab-space
   border-left: 1px solid #89A1B4;
   border-right: 1px solid #89A1B4;
   margin-right: 6px;
-  padding: 2px;
+  padding: 4px 7px;
   cursor: pointer;
+  background-color: #E7EFF4;
 }
 
 .gwt-TabBar .gwt-TabBarItem-selected {
-  padding: 2px;
+  padding: 4px 7px;
   margin-right: 6px;
   cursor: default;
+  background-color: transparent;
 }
 
 .gwt-TabBar .gwt-TabBarItem-selected div {
   font-weight: bold;
 }
 
-.gwt-TabBar .gwt-TabBarItem {padding:2px 6px 2px 6px;}
+.gwt-TabBar .gwt-TabBarItem {
+	padding: 4px 7px;
+}
+
 
 /* ext */
+
+div.extContainer h2 {
+	font-size: 16px;
+	margin-bottom: 5px;
+}
+
+div.extContainer .x-tab-panel {
+    margin-top: 0;
+}
 
 .x-tab-panel-noborder .x-tab-panel-body-noborder {
 	border-width:0;
@@ -3067,48 +3307,61 @@ td.labkey-tab-space
 }
 
 .x-tab-panel-header, .x-tab-panel-footer {
-	background-color: #E1ECFC;
-	border-color: #89A1B4;
+	background-color: #fff;
+	border-color: none;
 	border: none;
 	border-left: none;
 	border-right: none;
 	padding-bottom: 3px;
 }
 
-ul.x-tab-strip-top { background: none; }
-ul.x-tab-strip-top { background: #ffffff none; padding-top:3px;}
+ul.x-tab-strip-top {
+	background: #ffffff none;
+	padding-top:3px;
+}
+
 ul.x-tab-strip-top li {
     margin-left:6px;
     border-top:1px solid #89A1B4;
     border-right:1px solid #89A1B4;
-    border-left:1px solid #89A1B4
+    border-left:1px solid #89A1B4;
+	background-color: #e7eff4;
 }
-.x-tab-strip-top .x-tab-strip-active .x-tab-right, .x-tab-strip-top .x-tab-strip-active .x-tab-close {
+
+.x-tab-strip-top .x-tab-strip-active .x-tab-right,
+.x-tab-strip-top .x-tab-strip-active .x-tab-close {
     margin-bottom:-1px;
-}
-.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-close {
-    border-bottom:1px solid #E1ECFC;
+	background-color: #fff;
 }
 
-.x-tab-strip span.x-tab-strip-text { color: #003399; }
+.x-tab-strip-top .x-tab-right,
+.x-tab-strip-top .x-tab-close {
+    border-bottom:1px solid #fff;
+}
 
-.x-tab-strip-top .x-tab-right { background:transparent none;}
-.x-tab-strip-top .x-tab-left { background:transparent none;}
-.x-tab-strip-top .x-tab-strip-inner {background:transparent none;}
+.x-tab-strip span.x-tab-strip-text {
+	color: #126495;
+	font-weight: bold;
+}
 
-/* .x-tab-strip-top .x-tab-strip-active  .x-tab-right { background:#E1ECFC none; color: white;} */
-.x-tab-strip-active span.x-tab-strip-text {color:black;}
+.x-tab-strip-top .x-tab-right,
+.x-tab-strip-top .x-tab-left,
+.x-tab-strip-top .x-tab-strip-inner {
+	background:transparent none;
+}
+
+.x-tab-strip-active span.x-tab-strip-text {color:#000000;}
 
 
 .x-tab-scroller-left {
-	background:white url(./gtheme/img/icons7.png) no-repeat scroll -160px -76px;	border-bottom:1px solid white; }
+	background:#FFFFFF url(./gtheme/img/icons7.png) no-repeat scroll -160px -76px;	border-bottom:1px solid #FFFFFF; }
 .x-tab-scroller-left-over { background-position: -160px -96px; }
-.x-tab-scroller-left-disabled {background:white;opacity:1;}
+.x-tab-scroller-left-disabled {background:#FFFFFF;opacity:1;}
 
 .x-tab-scroller-right {
-	background:white url(./gtheme/img/icons7.png) no-repeat scroll -139px -76px;	border-bottom:1px solid white;}
+	background:#FFFFFF url(./gtheme/img/icons7.png) no-repeat scroll -139px -76px;	border-bottom:1px solid #FFFFFF;}
 .x-tab-scroller-right-over { background-position: -139px -96px; }
-.x-tab-scroller-right-disabled {background:white;opacity:1;}
+.x-tab-scroller-right-disabled {background:#FFFFFF;opacity:1;}
 
 /* fix up spacer since the tabs no longer within a panel with background and border */
 .x-tab-panel-header-plain .x-tab-strip-spacer,
@@ -3116,32 +3369,35 @@ ul.x-tab-strip-top li {
 .x-tab-panel-header .x-tab-strip-spacer
 {
     height:4px;
-    border:1px solid #89A1B4;
-    font-size:1px;
-    line-height:1px;
+    border-left:1px solid #89A1B4;
+	border-right:1px solid #89A1B4;
+	border-top: none;
+	border-bottom: none;
+	background-color: #FFFFFF;
 }
+
 .x-tab-panel-header-plain .x-tab-strip-spacer,
 .x-tab-panel-header .x-tab-strip-spacer
 {
     border-top-width:0;
 }
 
-.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner{
-	background-image: none;
-}
-.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner{
+.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner {
 	background-image: none;
 }
 
-ul.x-tab-strip-top .x-tab-strip-active .x-tab-right, ul.x-tab-strip-top .x-tab-strip-active .x-tab-close {
-    background-color:#E1ECFC;
-    border-bottom-color:#E1ECFC;
+.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner {
+	background-image: none;
 }
 
-/* makes it more apparent that the item is disabled and works for IE */
-.x-button-disabled {
-    opacity: .35;
-    filter:alpha(opacity=35)
+.drag-target-table-positioner {
+  border-top: 2px solid green;
+  margin-top: 1px;
+}
+
+.x-grid3-hd-inner
+{
+    color: #126495;
 }
 
 .drag-target-table-positioner {

@@ -24,7 +24,9 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiSelectManager;
@@ -194,4 +196,31 @@ public abstract class BaseWikiView extends JspView<Object>
     }
 
     public abstract boolean isWebPart();
+
+    @Override
+    public NavTree getNavMenu()
+    {
+        if (hasContent && !(isEmbedded() && getFrame() == WebPartView.FrameType.NONE))
+        {
+            NavTree menu = new NavTree("");
+            String href = (String) getViewContext().get("href");
+            if (null != href)
+                menu.addChild("Go To Wiki", href);
+            if (null != updateContentURL)
+                menu.addChild("Edit", updateContentURL);
+            if (null != manageURL)
+                menu.addChild("Manage", manageURL);
+            if (null != versionsURL)
+                menu.addChild("History", versionsURL);
+            if (null != printURL)
+            {
+                menu.addChild("Print", printURL);
+                if (wiki.hasChildren())
+                    menu.addChild("Print Branch", new ActionURL(WikiController.PrintBranchAction.class,
+                            getContextContainer()).addParameter("name", wiki.getName()));
+            }
+            return menu;
+        }
+        return null;
+    }
 }
