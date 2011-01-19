@@ -627,7 +627,7 @@ public class Query
     private static class TestDataLoader extends DataLoader
     {
         private static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid", "createdby", "created"};
-        private static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "date", "string", "string", "int", "date"};
+        private static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "dateTime", "string", "string", "int", "dateTime"};
         private static final String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
         private static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
@@ -1036,7 +1036,7 @@ public class Query
             S.save(user);
             S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
 
-            if (1==1)
+            if (0==1)
             {
                 try{
                     ListDefinition RHOME = s.createList(ContainerManager.getForPath("/home"), "R");
