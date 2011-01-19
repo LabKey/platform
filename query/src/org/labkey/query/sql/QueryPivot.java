@@ -38,8 +38,11 @@ import org.labkey.data.xml.ColumnType;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -545,6 +548,39 @@ public class QueryPivot extends QueryRelation
                 return null;
             f.append("(").append(fromSql).append(") ").append(pivotTableAlias);
             return f;
+        }
+
+
+        @Override
+        public List<FieldKey> getDefaultVisibleColumns()
+        {
+            Map<String, IConstant> pivotValues;
+            try
+            {
+                pivotValues = getPivotValues();
+            }
+            catch (SQLException x)
+            {
+                pivotValues = Collections.EMPTY_MAP;
+            }
+            
+
+            ArrayList<FieldKey> list = new ArrayList<FieldKey>();
+            for (RelationColumn col : _select.values())
+            {
+                if (_aggregates.containsKey(col.getFieldKey().getName()))
+                {
+                    for (String displayField : pivotValues.keySet())
+                    {
+                        list.add(new FieldKey(col.getFieldKey(), displayField));
+                    }
+                }
+                else
+                {
+                    list.add(col.getFieldKey());
+                }
+            }
+            return list;
         }
     }
 
