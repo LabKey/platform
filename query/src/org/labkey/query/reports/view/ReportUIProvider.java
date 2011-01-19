@@ -56,7 +56,9 @@ public class ReportUIProvider extends DefaultReportUIProvider
         chartBean.setRedirectUrl(context.getActionURL().getLocalURIString());
         designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts", ReportUtil.getChartDesignerURL(context, chartBean)));
 
-        if (ReportUtil.canCreateScript(context) && RReport.isEnabled())
+        boolean canCreateScript = ReportUtil.canCreateScript(context);
+
+        if (canCreateScript && RReport.isEnabled())
         {
             RReportBean rBean = new RReportBean(settings);
             rBean.setReportType(RReport.TYPE);
@@ -69,7 +71,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         for (ScriptEngineFactory factory : manager.getEngineFactories())
         {
             // don't add an entry for R, since we have a specific report type above.
-            if (LabkeyScriptEngineManager.isFactoryEnabled(factory) && !factory.getLanguageName().equalsIgnoreCase("R"))
+            if (canCreateScript && LabkeyScriptEngineManager.isFactoryEnabled(factory) && !factory.getLanguageName().equalsIgnoreCase("R"))
             {
                 ScriptReportBean bean = new ScriptReportBean(settings);
                 bean.setRedirectUrl(context.getActionURL().getLocalURIString());
@@ -96,11 +98,14 @@ public class ReportUIProvider extends DefaultReportUIProvider
                 designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot", provider.getCreateWizardURL(settings, context)));
         }
 
-        ScriptReportBean bean = new ScriptReportBean(settings);
-        bean.setRedirectUrl(context.getActionURL().getLocalURIString());
-        bean.setScriptExtension(".js");
-        bean.setReportType(JavaScriptReport.TYPE);
-        designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "I'm a really cool javascript thingy", ReportUtil.getScriptReportDesignerURL(context, bean)));
+        if (canCreateScript)
+        {
+            ScriptReportBean bean = new ScriptReportBean(settings);
+            bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+            bean.setScriptExtension(".js");
+            bean.setReportType(JavaScriptReport.TYPE);
+            designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "I'm a really cool javascript thingy", ReportUtil.getScriptReportDesignerURL(context, bean)));
+        }
 
         return designers;
     }

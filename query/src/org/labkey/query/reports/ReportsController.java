@@ -107,6 +107,7 @@ public class ReportsController extends SpringActionController
             return new ActionURL(DesignChartAction.class, c);
         }
 
+        @Deprecated
         public ActionURL urlCreateRReport(Container c)
         {
             return new ActionURL(CreateRReportAction.class, c);
@@ -517,13 +518,17 @@ public class ReportsController extends SpringActionController
     @RequiresNoPermission
     public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
     {
+        private Report _report;
+
         public void validateCommand(ScriptReportBean target, Errors errors)
         {
         }
 
         public ModelAndView getView(ScriptReportBean form, boolean reshow, BindException errors) throws Exception
         {
-            RunScriptReportView view = new RunScriptReportView(form.getReport());
+            validatePermissions();
+            _report = form.getReport();
+            RunScriptReportView view = new RunScriptReportView(_report);
             view.setErrors(errors);
 
             return view;
@@ -541,7 +546,7 @@ public class ReportsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Script View Builder");
+            return root.addChild(_report.getTypeDescription() + " Builder");
         }
     }
 
@@ -550,11 +555,14 @@ public class ReportsController extends SpringActionController
     public class RunReportAction extends SimpleViewAction<ReportDesignBean>
     {
         Report _report;
+
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
             _report = null;
-            if(null != form.getReportId())
+
+            if (null != form.getReportId())
                 _report = form.getReportId().getReport();
+
             if (_report != null)
                 return _report.getRunReportView(getViewContext());
             
@@ -630,7 +638,7 @@ public class ReportsController extends SpringActionController
     protected void validatePermissions() throws Exception
     {
         if (!ReportUtil.canCreateScript(getViewContext()))
-            HttpView.throwUnauthorized("Only members of the Site Admin and Site Developers groups are allowed to create and edit R views.");
+            HttpView.throwUnauthorized("Only members of the Site Admin and Site Developers groups are allowed to create script views.");
     }
 
 
@@ -641,13 +649,16 @@ public class ReportsController extends SpringActionController
 
         public void validateCommand(RReportBean form, Errors errors)
         {
-            try {
+            try
+            {
                 if (getViewContext().getUser().isGuest())
                 {
                     errors.reject("saveScriptReport", "you must be logged in to be able to save reports");
                     return;
                 }
+
                 _report = form.getReport();
+
                 // on new reports, check for duplicates
                 if (null == _report.getDescriptor().getReportId())
                 {
@@ -1277,11 +1288,14 @@ public class ReportsController extends SpringActionController
         {
             ReportIdentifier reportId =  form.getReportId();
             _newReportName =  form.getReportName();
+
             if (!StringUtils.isEmpty(_newReportName))
             {
-                try {
-                    if(null != reportId)
+                try
+                {
+                    if (null != reportId)
                         _report = reportId.getReport();
+
                     if (_report != null)
                     {
                         if (!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
@@ -1289,6 +1303,7 @@ public class ReportsController extends SpringActionController
                             errors.reject("renameReportAction", "Unauthorized operation");
                             return;
                         }
+
                         if (reportNameExists(getViewContext(), _newReportName, _report.getDescriptor().getReportKey()))
                             errors.reject("renameReportAction", "There is already a view with the name of: " + _newReportName +
                                     ". Please specify a different name.");
