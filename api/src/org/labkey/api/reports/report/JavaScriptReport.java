@@ -20,6 +20,7 @@ import org.labkey.api.query.CreateJavaScriptModel;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.report.view.RunScriptReportView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 
@@ -65,26 +66,14 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public String getDefaultScript()
     {
-        return
-            "var jsDiv;\n\n" +
-
-            "function render(queryConfig, div)\n" +
-            "{\n" +
-            "    jsDiv = div;\n" +
-            "    queryConfig.successCallback = onSuccess;\n" +
-            "    queryConfig.errorCallback = onError;\n" +
-            "    LABKEY.Query.selectRows(queryConfig);\n" +
-            "}\n\n" +
-
-            "function onSuccess(results)\n" +
-            "{\n" +
-            "    jsDiv.innerHTML = results.rows.length + ' rows returned';\n" +
-            "}\n\n" +
-
-            "function onError(errorInfo)\n" +
-            "{\n" +
-            "    jsDiv.innerHTML = errorInfo.exception;\n" +
-            "}";
+        try
+        {
+            return (new JspTemplate("/org/labkey/api/reports/report/view/javaScriptReportExample.jsp")).render();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

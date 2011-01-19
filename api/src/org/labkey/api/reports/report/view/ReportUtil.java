@@ -66,6 +66,7 @@ public class ReportUtil
         return url;
     }
 
+    @Deprecated // use getScriptReportDesignerURL instead
     public static ActionURL getRReportDesignerURL(ViewContext context, RReportBean bean)
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateRReport(context.getContainer());

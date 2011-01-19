@@ -836,12 +836,13 @@ public class QueryView extends WebPartView<Object>
         if (_report == null)
         {
             List<ReportService.DesignerInfo> reportDesigners = new ArrayList<ReportService.DesignerInfo>();
-
             getSettings().setSchemaName(getSchema().getSchemaName());
+
             for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
             {
                 reportDesigners.addAll(provider.getDesignerInfo(getViewContext(), getSettings()));
             }
+
             NavTree submenu = null;
             String sep = "";
             ReportService.ItemFilter viewItemFilter = getItemFilter();
@@ -862,6 +863,7 @@ public class QueryView extends WebPartView<Object>
 
                     submenu.addChild(item);
                 }
+
                 // we want to keep track of the available report types that the base (built-in) item filter accepts
                 if (_itemFilter.accept(designer.getReportType(), designer.getLabel()))
                 {
@@ -871,6 +873,7 @@ public class QueryView extends WebPartView<Object>
                 }
             }
         }
+
         addCustomizeViewItems(button);
         addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),
                 "schemaName", getSchema().getSchemaName(),

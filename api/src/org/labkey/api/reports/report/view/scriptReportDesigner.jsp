@@ -251,23 +251,8 @@
 
 <form id="renderReport" action="<%=bean.getRenderURL()%>" method="post">
     <table class="labkey-wp">
-        <tr class="labkey-wp-header"><th align="left"><%=h(report.getTypeDescription())%> Builder</th></tr>
-        <tr><td>
-            <table width="100%">
-                <tr><td>This script will be executed <%=h(report.getExecutionLocation())%>:</td>
-<%
-        if (hasData)
-        {
-%>
-        <td align="right"><a href="javascript:void(0)" onclick="downloadData()">Download input data</a>
-            <%=PageFlowUtil.helpPopup("Download input data", report.getDownloadDataHelpMessage())%></td>
-<%
-        }
-%>
-                </tr>
-            </table>
-        </td></tr>
-        <tr><td>
+        <tr class="labkey-wp-header"><th align="left" colspan="2"><%=h(report.getTypeDescription())%> Builder</th></tr>
+        <tr><td colspan="2">
             <textarea id="script"
                 name="script"<%
                 if (readOnly)
@@ -276,7 +261,7 @@
                 style="width: 100%;"
                 cols="120"
                 wrap="on"
-                rows="20"><%=h(StringUtils.trimToEmpty(bean.getScript()))%></textarea>
+                rows="25"><%=h(StringUtils.trimToEmpty(bean.getScript()))%></textarea>
             <script type="text/javascript">
                 Ext.EventManager.on('script', 'keydown', handleTabsInTextArea);
                 editAreaLoader.init({
@@ -289,7 +274,8 @@
                 });
             </script>
         </td></tr>
-<%
+
+ <%
     if (!readOnly)
     {
         if (isAdmin)
@@ -308,8 +294,8 @@
         {
 %>
         <tr><td>&nbsp;</td></tr>
-        <tr class="labkey-wp-header"><th align="left">Shared Scripts</th></tr>
-        <tr><td><i>You can execute any of the following scripts as part of your current script by calling: source('&lt;Script Name&gt;.r') after checking the box next to the &lt;Script Name&gt; you plan to use.</i></td></tr>
+        <tr class="labkey-wp-header"><th align="left" colspan="2">Shared Scripts</th></tr>
+        <tr><td colspan="2"><i>You can execute any of the following scripts as part of your current script by calling: source('&lt;Script Name&gt;.r') after checking the box next to the &lt;Script Name&gt; you plan to use.</i></td></tr>
 <%
             for (Report sharedReport : sharedReports)
             {%>
@@ -336,7 +322,18 @@
             out.println(PageFlowUtil.generateButton("Save View", "javascript:void(0)", "javascript:saveReport()"));
     }
 %>
-        </td></tr>
+        </td>
+<%
+            if (hasData)
+            {
+    %>
+            <td align="right"><a href="javascript:void(0)" onclick="downloadData()">Download input data</a>
+                <%=PageFlowUtil.helpPopup("Download input data", report.getDownloadDataHelpMessage())%></td>
+    <%
+            }
+%>
+
+        </tr>
     </table>
     <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=bean.getReportType()%>">
     <input type="hidden" name="queryName" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">

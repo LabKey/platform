@@ -696,6 +696,7 @@ api/src/org/labkey/api/reports/report/view/RunReportView.java -text
 api/src/org/labkey/api/reports/report/view/RunScriptReportView.java -text
 api/src/org/labkey/api/reports/report/view/ScriptReportBean.java -text
 api/src/org/labkey/api/reports/report/view/javaScriptReport.jsp -text
+api/src/org/labkey/api/reports/report/view/javaScriptReportExample.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportDesignerSyntaxRef.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportRenderBackground.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportTabHandler.jsp -text

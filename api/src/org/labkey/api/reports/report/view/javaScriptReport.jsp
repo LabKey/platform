@@ -38,8 +38,8 @@
             alert("Your script must define a function called 'render'");
         }
 
-// ========== Start of report writer's script ==========
+// ========== Begin report writer's script ==========
 <%=bean.script%>
-// ========== End of report writer's script ==========
+// ========== End report writer's script ==========
     })();
 </script>
