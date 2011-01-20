@@ -3404,3 +3404,12 @@ ul.x-tab-strip-top li {
   border-top: 2px solid green;
   margin-top: 1px;
 }
+
+/* Added for Div-in-Wiki Feature */
+.bluebox
+{
+    background-color: #EDF0F1;
+    border: 1px solid #DEE0E1;
+    padding: 0 20px 0 20px;
+    margin: 0 25px 0 25px;
+}
