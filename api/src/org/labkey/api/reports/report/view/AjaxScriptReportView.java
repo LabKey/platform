@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.action;
 
-import java.util.Map;
+package org.labkey.api.reports.report.view;
 
-/**
- * Interface for API Responses.
- *
- * User: Dave
- * Date: Feb 13, 2008
- * Time: 2:02:12 PM
- */
-public interface ApiResponse
+import org.labkey.api.view.JspView;
+
+/*
+* User: adam
+* Date: Jan 18, 2011
+* Time: 5:20:27 PM
+*/
+public class AjaxScriptReportView extends JspView<ScriptReportBean>
 {
-    public Map<String, Object> getProperties();
+    public AjaxScriptReportView(ScriptReportBean bean) throws Exception
+    {
+        super("/org/labkey/api/reports/report/view/ajaxScriptReportDesigner.jsp", bean);
+        bean.init();
+    }
 }

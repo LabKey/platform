@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 %><%@ page import="org.labkey.api.reports.report.JavaScriptReport.JavaScriptReportBean"
+%><%@ page import="org.labkey.api.util.UniqueID"
 %><%@ page extends="org.labkey.api.jsp.JspBase"
 %>
 <%
     JavaScriptReportBean bean = (JavaScriptReportBean)getModelBean();
-    String uniqueDivName = "div_" + getRequestScopedUID();  // Unique div name to support multiple reports per page
+    String uniqueDivName = "div_" + UniqueID.getServerSessionScopedUID();  // Unique div name to support multiple reports per page
 %>
 <div id="<%=uniqueDivName%>"></div>
 <script language="javascript" type="text/javascript">

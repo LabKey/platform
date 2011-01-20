@@ -116,7 +116,7 @@
             req.open("POST", "<%=urlProvider(ReportUrls.class).urlUpdateRReportState(HttpView.currentContext().getContainer()).getLocalURIString()%>");
             req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             req.send(viewName);
-        }
+        };
 
         function processRequest()
         {
@@ -134,7 +134,6 @@
     }
 
 </script>
-
 
 <form id="reportHeader" method="post">
 <table width="100%"><tr class="labkey-wp-header"><td align="left">

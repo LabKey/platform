@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -50,6 +51,19 @@ public class ScriptReportBean extends ReportDesignBean
     public ScriptReportBean(QuerySettings settings)
     {
         super(settings);
+    }
+
+    // Bean has been populated and is about to be used in a view... initialize unset values and properties.
+    // This is redundant with RunScriptReportView.populateReportForm(), but we're trying to move all this handling into
+    // the bean.
+    public void init() throws Exception
+    {
+        ScriptReport report = (ScriptReport)getReport(); // TODO: Should use generics (ScriptReportBean<ScriptReport>)
+
+        if (null == _script)
+        {
+            _script = report.getDefaultScript();
+        }
     }
 
     public String getScript()

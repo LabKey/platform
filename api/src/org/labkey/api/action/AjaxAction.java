@@ -23,7 +23,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.AjaxResponse;
 
 /**
- * Use ApiAction istead.
+ * Use ApiAction instead.
  * @see ApiAction
  */
 @Deprecated()

@@ -68,6 +68,7 @@ public abstract class ScriptReport extends AbstractReport
         return null;
     }
 
+    // TODO: Delete this
     public abstract String getExecutionLocation();
     public abstract boolean supportsPipeline();
 
@@ -91,5 +92,10 @@ public abstract class ScriptReport extends AbstractReport
     public String getDefaultScript()
     {
         return "";
+    }
+
+    public @Nullable String getDesignerHelpHtml()
+    {
+        return null;
     }
 }

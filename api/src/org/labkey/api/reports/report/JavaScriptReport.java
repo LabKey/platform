@@ -23,6 +23,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 
 /*
 * User: adam
@@ -91,7 +92,9 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        return new JspView<JavaScriptReportBean>("/org/labkey/api/reports/report/view/javaScriptReport.jsp", new JavaScriptReportBean(context));
+        JspView<JavaScriptReportBean> view = new JspView<JavaScriptReportBean>("/org/labkey/api/reports/report/view/javaScriptReport.jsp", new JavaScriptReportBean(context));
+        view.setFrame(WebPartView.FrameType.NONE);
+        return view;
     }
 
     @Override

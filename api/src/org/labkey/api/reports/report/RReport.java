@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -29,6 +30,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
 
@@ -257,6 +259,18 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
     public String getDownloadDataHelpMessage()
     {
         return "LabKey Server automatically exports the data into a data frame called \"labkey.data\". You can download the data via this link to help with the development of your R script.";
+    }
+
+    public @Nullable String getDesignerHelpHtml()
+    {
+        try
+        {
+            return new JspTemplate("/org/labkey/api/reports/report/view/rReportDesignerSyntaxRef.jsp").render();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 }
 

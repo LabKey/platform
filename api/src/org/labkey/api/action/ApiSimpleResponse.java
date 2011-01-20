@@ -27,12 +27,11 @@ import java.util.Map;
 /**
  * Use this for simple responses from Api actions.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Feb 13, 2008
  * Time: 4:44:39 PM
  */
-public class ApiSimpleResponse extends HashMap<String,Object> implements ApiResponse
+public class ApiSimpleResponse extends HashMap<String, Object> implements ApiResponse
 {
     public ApiSimpleResponse()
     {

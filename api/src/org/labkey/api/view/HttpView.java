@@ -506,6 +506,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
 
+    // TODO: This doesn't actually work -- MockHttpServletResponse never calls getOutputStream().  See renderToString(), though.
     public static void renderToStream(ModelAndView mv, final OutputStream out) throws Exception
     {
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -532,6 +533,22 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         include(mv, request, response);
     }
     
+
+
+    public static String renderToString(ModelAndView mv, HttpServletRequest request) throws Exception
+    {
+        MockHttpServletResponse response = new MockHttpServletResponse(){
+            @Override
+            public void setStatus(int status)
+            {
+                if (status != HttpServletResponse.SC_OK)
+                    throw new RuntimeException("Unexpected Status: " + status);
+            }
+        };
+        include(mv, request, response);
+        return response.getContentAsString();
+    }
+
 
 
     /**
