@@ -16,12 +16,14 @@
 
 package org.labkey.api.data;
 
+import junit.framework.Assert;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -64,55 +66,20 @@ public enum CompareType
                 return value.equals(convert(filterValues[0], value.getClass()));
             }
         },
-    DATE_EQUAL("Equals", "dateeq", true, null, "DATE_EQUAL", OperatorType.DATEEQ)
+    DATE_EQUAL("(Date) Equals", "dateeq", true, null, "DATE_EQUAL", OperatorType.DATEEQ)
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return getDateCompareClause(colName, value);
-            }
-
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                if (value == null)
-                {
-                    return false;
-                }
-                if (paramVals.length == 2)
-                {
-                    Date dateValue = (Date)((value instanceof Date) ? value : ConvertUtils.convert(value.toString(), Date.class));
-                    Date begin = (Date)((paramVals[0] instanceof Date) ? paramVals[0] : ConvertUtils.convert(paramVals[0].toString(), Date.class));
-                    Date end = (Date)((paramVals[1] instanceof Date) ? paramVals[1] : ConvertUtils.convert(paramVals[1].toString(), Date.class));
-                    return dateValue.compareTo(begin) >= 0 && dateValue.compareTo(end) <= 0;
-                }
-                return false;
+                return new DateEqCompareClause(colName, toDatePart(asDate(value)));
             }
         },
-    DATE_NOT_EQUAL("Does Not Equal", "dateneq", true, " <> ?", "DATE_NOT_EQUAL", OperatorType.DATENEQ)
+    DATE_NOT_EQUAL("(Date) Does Not Equal", "dateneq", true, null, "DATE_NOT_EQUAL", OperatorType.DATENEQ)
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return getDateCompareClause(colName, value);
+                return new DateNeqCompareClause(colName, toDatePart(asDate(value)));
             }
-
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                if (value == null)
-                {
-                    return true;
-                }
-
-                if (paramVals.length == 2)
-                {
-                    Date dateValue = (Date)((value instanceof Date) ? value : ConvertUtils.convert(value.toString(), Date.class));
-                    Date begin = (Date)((paramVals[0] instanceof Date) ? paramVals[0] : ConvertUtils.convert(paramVals[0].toString(), Date.class));
-                    Date end = (Date)((paramVals[1] instanceof Date) ? paramVals[1] : ConvertUtils.convert(paramVals[1].toString(), Date.class));
-                    return !(dateValue.compareTo(begin) >= 0 && dateValue.compareTo(end) <= 0);
-                }
-
-                return false;
-            }},
+        },
     NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_MISSING", OperatorType.NEQORNULL)
         {
             public CompareClause createFilterClause(String colName, Object value)
@@ -166,7 +133,14 @@ public enum CompareType
                 return value != null;
             }
         },
-    GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN", OperatorType.GT)
+    DATE_GT("(Date) Is Greater Than", "dategt", true, " >= ?", "DATE_GREATER_THAN", OperatorType.GTE) // GT --> >= roundup(date)
+        {
+            public CompareClause createFilterClause(String colName, Object value)
+            {
+                return new DateGtCompareClause(colName, toDatePart(asDate(value)));
+            }
+        },
+    GT("Is Greater Than", "gt", true, " >= ?", "GREATER_THAN", OperatorType.GT)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
@@ -181,6 +155,13 @@ public enum CompareType
                     return false;
                 }
                 return ((Comparable)value).compareTo(filterValue) > 0;
+            }
+        },
+    DATE_LT("(Date) Is Less Than", "datelt", true, " < ?", "DATE_LESS_THAN", OperatorType.LT)
+        {
+            public CompareClause createFilterClause(String colName, Object value)
+            {
+                return new DateLtCompareClause(colName, toDatePart(asDate(value)));
             }
         },
     LT("Is Less Than", "lt", true, " < ?", "LESS_THAN", OperatorType.LT)
@@ -200,6 +181,13 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) < 0;
             }
         },
+    DATE_GTE("(Date) Is Greater Than or Equal To", "dategte", true, " >= ?", "DATE_GREATER_THAN_OR_EQUAL", OperatorType.GTE)
+        {
+            public CompareClause createFilterClause(String colName, Object value)
+            {
+                return new DateGteCompareClause(colName, toDatePart(asDate(value)));
+            }
+        },
     GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL", OperatorType.GTE)
         {
             @Override
@@ -215,6 +203,13 @@ public enum CompareType
                     return false;
                 }
                 return ((Comparable)value).compareTo(filterValue) >= 0;
+            }
+        },
+    DATE_LTE("(Date) Is Less Than or Equal To", "datelte", true, " < ?", "DATE_LESS_THAN_OR_EQUAL", OperatorType.LT)  // LTE --> < roundup(date)
+        {
+            public CompareClause createFilterClause(String colName, Object value)
+            {
+                return new DateLteCompareClause(colName, toDatePart(asDate(value)));
             }
         },
     LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL", OperatorType.LTE)
@@ -347,51 +342,6 @@ public enum CompareType
                 }
             };
 
-    // TODO: Better exception handling?
-    protected CompareClause getDateCompareClause(String colName, Object value)
-    {
-        //If only date (no time) is specified in a DATE_EQUAL clause
-        //return anything that happened during that day.
-        try
-        {
-            Date dt = (Date) ConvertUtils.convert((String)value, Date.class);
-            if (dt == null)
-            {
-                if (this == CompareType.DATE_EQUAL)
-                {
-                    return new CompareClause(colName, CompareType.ISBLANK, null);
-                }
-                else if (this == CompareType.DATE_NOT_EQUAL)
-                {
-                    return new CompareClause(colName, CompareType.NONBLANK, null);
-                }
-                else
-                {
-                    throw new IllegalArgumentException("Could not determine null version of comparison type " + this);
-                }
-            }
-
-            return new DateEqCompareClause(colName, this, dt);
-        }
-        catch (ConversionException e)
-        {
-            // Fall back to String comparison
-            CompareType stringCompareType;
-            if (this == CompareType.DATE_EQUAL)
-            {
-                stringCompareType = EQUAL;
-            }
-            else if (this == CompareType.DATE_NOT_EQUAL)
-            {
-                stringCompareType = NEQ;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Could not determine string version of comparison type " + this);
-            }
-            return new CompareClause(colName, stringCompareType, value);
-        }
-    }
 
     private String _preferredURLKey;
     private final OperatorType.Enum _xmlType;
@@ -418,27 +368,44 @@ public enum CompareType
         _scriptName = scriptName;
     }
 
+
     public static List<CompareType> getValidCompareSet(ColumnInfo info)
     {
         List<CompareType> types = new ArrayList<CompareType>();
-        if (!info.isLongTextType())
+
+        if (info.isDateTimeType())
         {
-            types.add(info.isDateTimeType() ? DATE_EQUAL : EQUAL);
-            types.add(info.isDateTimeType() ? DATE_NOT_EQUAL : NEQ);
+            types.add(DATE_EQUAL);
+            types.add(DATE_NOT_EQUAL);
+        }
+        else if (!info.isLongTextType())
+        {
+            types.add(EQUAL);
+            types.add(NEQ);
             types.add(IN);
         }
+        
         if (info.isNullable())
         {
             types.add(ISBLANK);
             types.add(NONBLANK);
         }
-        if (!info.isLongTextType() && !info.isBooleanType())
+
+        if (info.isDateTimeType())
+        {
+            types.add(DATE_GT);
+            types.add(DATE_LT);
+            types.add(DATE_GTE);
+            types.add(DATE_LTE);
+        }
+        else if (!info.isLongTextType() && !info.isBooleanType() )
         {
             types.add(GT);
             types.add(LT);
             types.add(GTE);
             types.add(LTE);
         }
+
         if (!info.isBooleanType() && !info.isDateTimeType())
         {
             types.add(STARTS_WITH);
@@ -446,6 +413,7 @@ public enum CompareType
         }
         return types;
     }
+
 
     private static <T> T convert(Object value, Class<T> targetClass)
     {
@@ -511,7 +479,11 @@ public enum CompareType
         return _scriptName;
     }
 
-    public abstract boolean meetsCriteria(Object value, Object[] paramVals);
+    public boolean meetsCriteria(Object value, Object[] paramVals)
+    {
+        // if not implemented, but be implemented by the FilterClause
+        throw new UnsupportedOperationException();
+    }
     
     // Each compare type uses CompareClause by default
     FilterClause createFilterClause(String colName, Object value)
@@ -685,53 +657,211 @@ public enum CompareType
     }
 
 
-    /**
-     * Compare clause for dateeq.
-     * If supplied date has no time component return anything during that day
-     */
-    private static class DateEqCompareClause extends CompareClause
+    public static Date asDate(Object v)
     {
-        DateEqCompareClause(String colName, CompareType compareClause, Date value)
+        if (v instanceof Date)
+            return (Date)v;
+        if (v instanceof Calendar)
+            return ((Calendar)v).getTime();
+        return new Date(DateUtil.parseDateTime(v.toString()));
+    }
+
+
+    public static Calendar toDatePart(Date d)
+    {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(d);
+        cal.clear(Calendar.SECOND);
+        cal.clear(Calendar.MILLISECOND);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.clear(Calendar.MINUTE);
+        return cal;
+    }
+
+
+    public static Calendar addOneDay(Calendar d)
+    {
+        assert d.get(Calendar.MILLISECOND) == 0;
+        assert d.get(Calendar.SECOND) == 0;
+        assert d.get(Calendar.MINUTE) == 0;
+        assert d.get(Calendar.HOUR_OF_DAY) == 0;
+        
+        Calendar cal = (Calendar)d.clone();
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        return cal;
+    }
+
+
+    /**
+     * Compare clause for date operators
+     *
+     * Note that for most date operators the logical operation does not match the
+     * actual sql operation   EQ --> BETWEEN, LTE --> LT, etc.
+     */
+    private abstract static class DateCompareClause extends CompareClause
+    {
+        String _filterTextDate;
+        String _filterTextOperator;
+        
+        DateCompareClause(String colName, CompareType t, String op, Calendar date, Calendar param0)
         {
-            super(colName, compareClause, value);
-            Date endDate;
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(value);
-            cal.clear(Calendar.SECOND);
-            cal.clear(Calendar.MILLISECOND);
-            cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.clear(Calendar.MINUTE);
-            if (cal.getTime().equals(value))
-            {
-                cal.add(Calendar.DAY_OF_MONTH, 1);
-                endDate = cal.getTime();
-                setParamVals(new Object[]{value, endDate});
-            }
-            else
-            {
-                _comparison = compareClause == CompareType.DATE_EQUAL ? CompareType.EQUAL : CompareType.NEQ;
-                setParamVals(new Object[]{value});
-            }
+            super(colName, t, param0.getTime());
+            _filterTextDate = ConvertUtils.convert(date.getTime());
+            _filterTextOperator = op;
+        }
+
+        DateCompareClause(String colName, CompareType t, String op, Calendar date, Calendar param0, Calendar param1)
+        {
+            super(colName, t, null);
+            _filterTextDate = ConvertUtils.convert(date.getTime());
+            _filterTextOperator = op;
+            setParamVals(new Object[]{param0.getTime(), param1.getTime()});
+        }
+
+        @Override
+        String toWhereClause(SqlDialect dialect, String alias)
+        {
+            return super.toWhereClause(dialect, alias);
+        }
+
+        @Override
+        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            sb.append("DATE(");
+            appendColumnName(sb, formatter);
+            sb.append(")");
+            sb.append(_filterTextOperator);
+            sb.append(_filterTextDate);
+        }
+    }
+
+
+    static class DateEqCompareClause extends DateCompareClause
+    {
+        DateEqCompareClause(String colName,Calendar startValue)
+        {
+            super(colName, DATE_EQUAL, " = ", startValue, startValue, addOneDay(startValue));
         }
 
         @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
             String selectName = dialect.getColumnSelectName(alias);
-            if (_comparison == CompareType.DATE_EQUAL)
-                return selectName + " >= ? AND " + selectName + " < ?";
-            else if (_comparison == CompareType.DATE_NOT_EQUAL)
-                return selectName + " < ? OR " + selectName + " >= ?";
-            else
-                return super.toWhereClause(dialect, alias);
+            return selectName + " >= ? AND " + selectName + " < ?";
         }
 
         @Override
-        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public boolean meetsCriteria(Object value)
         {
-            appendColumnName(sb, formatter);
-            sb.append(_comparison == CompareType.DATE_EQUAL ? " = " : " <> ");
-            sb.append(DateUtil.formatDate((Date)getParamVals()[0]));
+            if (value == null)
+                return false;
+            Date dateValue = asDate(value);
+            Date begin = asDate(getParamVals()[0]);
+            Date end = asDate(getParamVals()[1]);
+            return dateValue.compareTo(begin) >= 0 && dateValue.compareTo(end) < 0;
+        }
+    }
+
+
+    static class DateNeqCompareClause extends DateCompareClause
+    {
+        DateNeqCompareClause(String colName, Calendar startValue)
+        {
+            super(colName, DATE_NOT_EQUAL, " <> ", startValue, startValue, addOneDay(startValue));
+        }
+
+        @Override
+        String toWhereClause(SqlDialect dialect, String alias)
+        {
+            String selectName = dialect.getColumnSelectName(alias);
+            return selectName + " < ? OR " + selectName + " >= ?";
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            if (value == null)
+                return true;
+            Date dateValue = asDate(value);
+            Date begin = asDate(getParamVals()[0]);
+            Date end = asDate(getParamVals()[1]);
+            return !(dateValue.compareTo(begin) >= 0 && dateValue.compareTo(end) < 0);
+        }
+    }
+
+
+    static class DateGtCompareClause extends DateCompareClause
+    {
+        DateGtCompareClause(String colName, Calendar startValue)
+        {
+            super(colName, DATE_GT, " > ", startValue, addOneDay(startValue));
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            if (value == null)
+                return false;
+            Date dateValue = asDate(value);
+            Date param = asDate(getParamVals()[0]);
+            return dateValue.compareTo(param) >= 0;
+        }
+    }
+    
+
+    static class DateGteCompareClause extends DateCompareClause
+    {
+        DateGteCompareClause(String colName, Calendar startValue)
+        {
+            super(colName, DATE_GTE, " >= ", startValue, startValue);
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            if (value == null)
+                return false;
+            Date dateValue = asDate(value);
+            Date param = asDate(getParamVals()[0]);
+            return dateValue.compareTo(param) >= 0;
+        }
+    }
+
+
+    static class DateLtCompareClause extends DateCompareClause
+    {
+        DateLtCompareClause(String colName, Calendar startValue)
+        {
+            super(colName, DATE_LT, " < ", startValue, startValue);
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            if (value == null)
+                return false;
+            Date dateValue = asDate(value);
+            Date param = asDate(getParamVals()[0]);
+            return dateValue.compareTo(param) < 0;
+        }
+    }
+
+
+    static class DateLteCompareClause extends DateCompareClause
+    {
+        DateLteCompareClause(String colName, Calendar startValue)
+        {
+            super(colName, DATE_LTE, " <= ", startValue, addOneDay(startValue));
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            if (value == null)
+                return false;
+            Date dateValue = asDate(value);
+            Date param = asDate(getParamVals()[0]);
+            return dateValue.compareTo(param) < 0;
         }
     }
 

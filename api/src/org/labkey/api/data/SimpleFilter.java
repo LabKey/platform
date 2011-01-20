@@ -16,10 +16,14 @@
 
 package org.labkey.api.data;
 
+import junit.framework.Assert;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
+import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -81,7 +85,9 @@ public class SimpleFilter implements Filter
 
             for (Object o : paramVals)
             {
-                String param = o.toString();
+                if (o instanceof Calendar)
+                    o = ((Calendar)o).getTime();
+                String param = ConvertUtils.convert(o);
                 int i = sb.indexOf("?", fromIndex);
                 fromIndex += param.length();         // Protects against previous param values in this clause containing '?'
                 sb.replace(i, i + 1, param);
@@ -760,6 +766,97 @@ public class SimpleFilter implements Filter
         public String format(String columnName)
         {
             return FieldKey.fromString(columnName).getDisplayString();
+        }
+    }
+
+
+
+
+    public static class FilterTestCase extends Assert
+    {
+        Calendar asCalendar(Object x)
+        {
+            Calendar c = new GregorianCalendar();
+            c.setTimeInMillis(DateUtil.parseDateTime(x.toString()));
+            return c;
+        }
+
+        @Test
+        public void testMeetsCriteria()
+        {
+            //And
+            //Compare
+            //Contains
+            //Date*
+
+            Date dJan14 = new Date(DateUtil.parseDateTime("2001-01-14"));
+            Date dJan14noon = new Date(DateUtil.parseDateTime("2001-01-14 12:00:00"));
+            Date dJan15 = new Date(DateUtil.parseDateTime("2001-01-15"));
+            Date dJan15noon = new Date(DateUtil.parseDateTime("2001-01-15 12:00:00"));
+            Date dJan16 = new Date(DateUtil.parseDateTime("2001-01-16"));
+            Date dJan16noon = new Date(DateUtil.parseDateTime("2001-01-16 12:00:00"));
+
+            Calendar cJan15 = asCalendar("2001-01-15");
+
+            CompareClause eqCompareClause = new CompareType.DateEqCompareClause("x", cJan15);
+            assertFalse(eqCompareClause.meetsCriteria(dJan14));
+            assertFalse(eqCompareClause.meetsCriteria(dJan14noon));
+            assertTrue(eqCompareClause.meetsCriteria(dJan15));
+            assertTrue(eqCompareClause.meetsCriteria(dJan15noon));
+            assertFalse(eqCompareClause.meetsCriteria(dJan16));
+            assertFalse(eqCompareClause.meetsCriteria(dJan16noon));
+
+            CompareClause neqCompareClause = new CompareType.DateNeqCompareClause("x", cJan15);
+            assertTrue(neqCompareClause.meetsCriteria(dJan14));
+            assertTrue(neqCompareClause.meetsCriteria(dJan14noon));
+            assertFalse(neqCompareClause.meetsCriteria(dJan15));
+            assertFalse(neqCompareClause.meetsCriteria(dJan15noon));
+            assertTrue(neqCompareClause.meetsCriteria(dJan16));
+            assertTrue(neqCompareClause.meetsCriteria(dJan16noon));
+
+            CompareClause ltCompareClause = new CompareType.DateLtCompareClause("x", cJan15);
+            assertTrue(ltCompareClause.meetsCriteria(dJan14));
+            assertTrue(ltCompareClause.meetsCriteria(dJan14noon));
+            assertFalse(ltCompareClause.meetsCriteria(dJan15));
+            assertFalse(ltCompareClause.meetsCriteria(dJan15noon));
+            assertFalse(ltCompareClause.meetsCriteria(dJan16));
+            assertFalse(ltCompareClause.meetsCriteria(dJan16noon));
+
+            CompareClause lteCompareClause = new CompareType.DateLteCompareClause("x", cJan15);
+            assertTrue(lteCompareClause.meetsCriteria(dJan14));
+            assertTrue(lteCompareClause.meetsCriteria(dJan14noon));
+            assertTrue(lteCompareClause.meetsCriteria(dJan15));
+            assertTrue(lteCompareClause.meetsCriteria(dJan15noon));
+            assertFalse(lteCompareClause.meetsCriteria(dJan16));
+            assertFalse(lteCompareClause.meetsCriteria(dJan16noon));
+
+            CompareClause gtCompareClause = new CompareType.DateGtCompareClause("x", cJan15);
+            assertFalse(gtCompareClause.meetsCriteria(dJan14));
+            assertFalse(gtCompareClause.meetsCriteria(dJan14noon));
+            assertFalse(gtCompareClause.meetsCriteria(dJan15));
+            assertFalse(gtCompareClause.meetsCriteria(dJan15noon));
+            assertTrue(gtCompareClause.meetsCriteria(dJan16));
+            assertTrue(gtCompareClause.meetsCriteria(dJan16noon));
+
+            CompareClause gteCompareClause = new CompareType.DateGteCompareClause("x", cJan15);
+            assertFalse(gteCompareClause.meetsCriteria(dJan14));
+            assertFalse(gteCompareClause.meetsCriteria(dJan14noon));
+            assertTrue(gteCompareClause.meetsCriteria(dJan15));
+            assertTrue(gteCompareClause.meetsCriteria(dJan15noon));
+            assertTrue(gteCompareClause.meetsCriteria(dJan16));
+            assertTrue(gteCompareClause.meetsCriteria(dJan16noon));
+
+            //DoesNotContain
+            //DoesNotStartwith
+            //Equals
+            //In
+            //Like
+            //Not
+            //NotEqualOrNull
+            //NotEquals
+            //Operation
+            //Or
+            //StartsWith
         }
     }
 }
