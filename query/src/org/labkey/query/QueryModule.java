@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
@@ -165,7 +166,8 @@ public class QueryModule extends DefaultModule
                 Query.QueryTestCase.class,
                 QueryServiceImpl.TestCase.class,
                 JdbcType.TestCase.class,
-                QNode.TestCase.class
+                QNode.TestCase.class,
+                SimpleFilter.FilterTestCase.class
         ));
     }
 
