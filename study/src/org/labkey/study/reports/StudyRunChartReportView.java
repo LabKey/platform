@@ -96,7 +96,8 @@ public class StudyRunChartReportView extends RunChartReportView
 
     protected DataSetDefinition getDataSetDefinition()
     {
-        try {
+        try
+        {
             int datasetId = NumberUtils.toInt(getReport().getDescriptor().getProperty(DataSetDefinition.DATASETKEY));
             return StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getViewContext().getContainer()), datasetId);
         }

@@ -20,22 +20,65 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExtFormAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.*;
-import org.labkey.api.reports.*;
-import org.labkey.api.reports.report.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ViewOptions;
+import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.ExternalScriptEngineFactory;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ChartQueryReport;
+import org.labkey.api.reports.report.ChartReport;
+import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.RReportJob;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
-import org.labkey.api.reports.report.view.*;
-import org.labkey.api.security.*;
+import org.labkey.api.reports.report.view.AjaxScriptReportView;
+import org.labkey.api.reports.report.view.ChartDesignerBean;
+import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.view.ReportDesignBean;
+import org.labkey.api.reports.report.view.ReportDesignerSessionCache;
+import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.reports.report.view.RunRReportView;
+import org.labkey.api.reports.report.view.RunReportView;
+import org.labkey.api.reports.report.view.RunScriptReportView;
+import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -46,7 +89,16 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GWTView;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.query.ViewFilterItemImpl;
 import org.labkey.query.controllers.ChooseColumnsForm;
 import org.labkey.query.reports.chart.ChartServiceImpl;
@@ -60,10 +112,15 @@ import javax.script.ScriptEngineManager;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Apr 19, 2007
  */
@@ -111,6 +168,12 @@ public class ReportsController extends SpringActionController
         public ActionURL urlCreateRReport(Container c)
         {
             return new ActionURL(CreateRReportAction.class, c);
+        }
+
+        @Override
+        public ActionURL urlPreviewScriptReport(Container c)
+        {
+            return new ActionURL(PreviewScriptReportAction.class, c);
         }
 
         public ActionURL urlCreateScriptReport(Container c)
@@ -520,7 +583,7 @@ public class ReportsController extends SpringActionController
     {
         private Report _report;
 
-        public void validateCommand(ScriptReportBean target, Errors errors)
+        public void validateCommand(ScriptReportBean form, Errors errors)
         {
         }
 
@@ -528,10 +591,18 @@ public class ReportsController extends SpringActionController
         {
             validatePermissions();
             _report = form.getReport();
-            RunScriptReportView view = new RunScriptReportView(_report);
-            view.setErrors(errors);
 
-            return view;
+            // TODO: Remove old view
+            if ("1".equals(getViewContext().getActionURL().getParameter("old")))
+            {
+                RunScriptReportView oldView = new RunScriptReportView(_report);
+                oldView.setErrors(errors);
+                return oldView;
+            }
+            else
+            {
+                return new AjaxScriptReportView(form);
+            }
         }
 
         public boolean handlePost(ScriptReportBean form, BindException errors) throws Exception
@@ -547,6 +618,24 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild(_report.getTypeDescription() + " Builder");
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class PreviewScriptReportAction extends ApiAction<ScriptReportBean>
+    {
+        @Override
+        public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
+        {
+            // TODO: Do something with errors?
+
+            // ApiAction doesn't seem to bind URL parameters on POST... so manually populate them into the bean.
+            errors.addAllErrors(defaultBindParameters(bean, getViewContext().getBindPropertyValues()));
+            HttpView resultsView = bean.getReport().renderReport(getViewContext());
+            resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
+
+            return null;
         }
     }
 
@@ -842,7 +931,7 @@ public class ReportsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
     }
 
