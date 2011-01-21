@@ -24,7 +24,6 @@ import java.awt.*;
 public class WebTheme
 {
     private final String _friendlyName;
-    private final boolean _custom;
     private final String _stylesheet;
 
     private final String _textColor;
@@ -55,9 +54,7 @@ public class WebTheme
         _secondBGColor = secondaryBackgroundColor;
         _borderTitleColor = borderTitleColor;
         _webpartColor = webPartColor;
-
-        // This is a custom theme, defined by the stylesheet given as a parameter -- only set during init
-        _custom = true;
+        
         _stylesheet = "stylesheet.css";
     }
 
@@ -75,11 +72,6 @@ public class WebTheme
         int g = Integer.parseInt(s.substring(2, 4), 16);
         int b = Integer.parseInt(s.substring(4, 6), 16);
         return new Color(r, g, b);
-    }
-
-    public boolean isCustom()
-    {
-        return _custom;
     }
 
     public String getStyleSheet()

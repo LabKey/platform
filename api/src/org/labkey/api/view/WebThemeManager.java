@@ -31,15 +31,17 @@ import java.sql.SQLException;
  */
 public class WebThemeManager
 {
-    private static final WebTheme BLUE  = new WebTheme("Blue", "000000", "003399", "BEBEBE", "FFFFFF", "FFFFFF", "003399", "EBF4FF");
-    private static final WebTheme BROWN = new WebTheme("Brown", "000000", "003399", "B2B166","FFFFFF","FFFFFF", "003399", "B2B166");
+    private static final WebTheme BLUE  =      new WebTheme("Blue", "212121", "21309A", "E4E6EA", "F4F4F4", "FFFFFF", "3441A1", "D0DBEE");
+    private static final WebTheme BROWN =     new WebTheme("Brown", "212121", "682B16", "EBE2DB", "F4F4F4", "FFFFFF", "682B16", "DFDDD9");
+    private static final WebTheme HARVEST = new WebTheme("Harvest", "212121", "892405", "F5E2BB", "F4F4F4", "FFFFFF", "892405", "DBD8D2");
+    private static final WebTheme SAGE  =      new WebTheme("Sage", "212121", "0F4F0B", "D4E4D3", "F4F4F4", "FFFFFF", "386135", "E1E5E1");
     private static final WebTheme SEATTLE = new WebTheme("Seattle", "000000", "126495", "E7EFF4", "F8F8F8", "FFFFFF", "676767", "E0E6EA");
     
     // handle Web Theme color management
     private static final String THEME_NAMES_KEY = "themeNames";
     private static final String THEME_COLORS_KEY = "themeColors-";
 
-    private final static Map<String, WebTheme> _webThemeMap = new TreeMap<String, WebTheme>();
+    private static Map<String, WebTheme> _webThemeMap = new TreeMap<String, WebTheme>();
 
     static
     {
@@ -64,7 +66,7 @@ public class WebThemeManager
                     String[] themeColorsArray = (null == themeColors ? "" : themeColors).split(";");
                     if (null != themeColorsArray || themeColorsArray.length > 0)
                     {
-                        if (6 == themeColorsArray.length)
+                        if (6 == themeColorsArray.length || 7 == themeColorsArray.length)
                         {
                             // Works for backwards compatibility to bootstrap old theme types
                             if (themeName.equals(BLUE.getFriendlyName()))
@@ -79,36 +81,50 @@ public class WebThemeManager
                                         BROWN.getPrimaryBackgroundColor(), BROWN.getSecondaryBackgroundColor(),
                                         BROWN.getBorderTitleColor(), BROWN.getWebPartColor());
                             }
-                            else
-                                continue;  // Old custom design themes do not get bootstrapped.
-                        }
-                        if (7 != themeColorsArray.length)
-                        {
-                            // incorrect number of colors defined, let's just skip it
-                            continue;
-                        }
+                            else if (themeName.equals(HARVEST.getFriendlyName()))
+                            {
+                                updateWebTheme(themeName, HARVEST.getTextColor(), HARVEST.getLinkColor(), HARVEST.getGridColor(),
+                                        HARVEST.getPrimaryBackgroundColor(), HARVEST.getSecondaryBackgroundColor(),
+                                        HARVEST.getBorderTitleColor(), HARVEST.getWebPartColor());
+                            }
+                            else if (themeName.equals(SAGE.getFriendlyName()))
+                            {
+                                updateWebTheme(themeName, SAGE.getTextColor(), SAGE.getLinkColor(), SAGE.getGridColor(),
+                                        SAGE.getPrimaryBackgroundColor(), SAGE.getSecondaryBackgroundColor(),
+                                        SAGE.getBorderTitleColor(), SAGE.getWebPartColor());
+                            }
+                            else if (themeName.equals(SEATTLE.getFriendlyName()))
+                            {
+                                updateWebTheme(themeName, SEATTLE.getTextColor(), SEATTLE.getLinkColor(), SEATTLE.getGridColor(),
+                                        SEATTLE.getPrimaryBackgroundColor(), SEATTLE.getSecondaryBackgroundColor(),
+                                        SEATTLE.getBorderTitleColor(), SEATTLE.getWebPartColor());
+                            }
+                            else if (7 == themeColorsArray.length) {
 
-                        String textColor = themeColorsArray[0];
-                        String linkColor = themeColorsArray[1];
-                        String gridColor = themeColorsArray[2];
-                        String primaryBackgroundColor = themeColorsArray[3];
-                        String secondaryBackgroundColor = themeColorsArray[4];
-                        String borderTitleColor = themeColorsArray[5];
-                        String webPartColor = themeColorsArray[6];
+                                // Assume they are in the correct order
+                                String textColor = themeColorsArray[0];
+                                String linkColor = themeColorsArray[1];
+                                String gridColor = themeColorsArray[2];
+                                String primaryBackgroundColor = themeColorsArray[3];
+                                String secondaryBackgroundColor = themeColorsArray[4];
+                                String borderTitleColor = themeColorsArray[5];
+                                String webPartColor = themeColorsArray[6];
 
-                        try
-                        {
-                            WebTheme webTheme = new WebTheme(
-                                    themeName,
-                                    textColor, linkColor,
-                                    gridColor, primaryBackgroundColor,
-                                    secondaryBackgroundColor, borderTitleColor, webPartColor);
+                                try
+                                {
+                                    WebTheme webTheme = new WebTheme(
+                                            themeName,
+                                            textColor, linkColor,
+                                            gridColor, primaryBackgroundColor,
+                                            secondaryBackgroundColor, borderTitleColor, webPartColor);
 
-                            addToMap(webTheme);
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            // ignore color definition problem
+                                    addToMap(webTheme);
+                                }
+                                catch (IllegalArgumentException e)
+                                {
+                                    // ignore color definition problem
+                                }
+                            }
                         }
                     }
                 }
@@ -119,20 +135,11 @@ public class WebThemeManager
             // just continue
         }
 
-        if (!_webThemeMap.containsKey(BLUE.getFriendlyName()))
-        {
-            addToMap(BLUE);
-        }
-
-        if (!_webThemeMap.containsKey(BROWN.getFriendlyName()))
-        {
-            addToMap(BROWN);
-        }
-
-        if (!_webThemeMap.containsKey(SEATTLE.getFriendlyName()))
-        {
-            addToMap(SEATTLE);  // no pun intended
-        }
+        addToMap(BLUE);
+        addToMap(BROWN);
+        addToMap(HARVEST);
+        addToMap(SAGE);
+        addToMap(SEATTLE);
     }
 
     public final static WebTheme DEFAULT_THEME = SEATTLE;

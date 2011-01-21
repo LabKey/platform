@@ -1244,13 +1244,6 @@ public class PageFlowUtil
 
     public static String textLink(String text, HString href, String onClickScript, String id)
     {
-        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
-        {
-            return "[<a href=\"" + filter(href) + "\"" +
-                    (id != null ? " id=\"" + id + "\"" : "") +
-                    (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                    ">" + text + "</a>]";
-        }
         return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
@@ -1259,13 +1252,6 @@ public class PageFlowUtil
 
     public static String textLink(String text, String href, String onClickScript, String id)
     {
-        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
-        {
-            return "[<a href=\"" + filter(href) + "\"" +
-                    (id != null ? " id=\"" + id + "\"" : "") +
-                    (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                    ">" + text + "</a>]";
-        }
         return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
@@ -1280,13 +1266,6 @@ public class PageFlowUtil
             additions += entry.getKey() + "=\"" + entry.getValue() + "\" ";
         }
 
-        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
-        {
-            return "[<a " + additions + "href=\"" + filter(href) + "\"" +
-                    (id != null ? " id=\"" + id + "\"" : "") +
-                    (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                    ">" + text + "</a>]";
-        }
         return "<a class='labkey-text-link' " + additions + "href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
@@ -1295,13 +1274,6 @@ public class PageFlowUtil
 
     public static String textLink(String text, ActionURL url, String onClickScript, String id)
     {
-        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
-        {
-            return "[<a href=\"" + filter(url) + "\"" +
-                    (id != null ? " id=\"" + id + "\"" : "") +
-                    (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                    ">" + text + "</a>]";
-        }
         return "<a class='labkey-text-link' href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
@@ -1990,7 +1962,6 @@ public class PageFlowUtil
             sb.append(",project:{id:'").append(project.getId()).append("'");
             sb.append(",path:").append(jsString(project.getPath()));
             sb.append(",name:").append(jsString(project.getName()));
-            sb.append(",cssRespectedTheme:").append(WebThemeManager.getTheme(project).isCustom() ? "true" : "false");
             sb.append("}"); //end project object
         }
 

@@ -619,11 +619,8 @@ LABKEY.Utils.convertToExcel(
                         attrs += i.toString() + '=\"' + config[i] + '\" ';
                     }
                 }
-                if (LABKEY.project && LABKEY.project.cssRespectedTheme)
-                {
-                    return '<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>';
-                }
-                return '[<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>]';
+
+                return '<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>';
             }
             throw "Config object not found for textLink.";
         },
