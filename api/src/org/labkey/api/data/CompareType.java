@@ -140,7 +140,7 @@ public enum CompareType
                 return new DateGtCompareClause(colName, toDatePart(asDate(value)));
             }
         },
-    GT("Is Greater Than", "gt", true, " >= ?", "GREATER_THAN", OperatorType.GT)
+    GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN", OperatorType.GT)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
