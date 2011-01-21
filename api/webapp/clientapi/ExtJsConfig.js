@@ -22,3 +22,5 @@ Ext.BLANK_IMAGE_URL = LABKEY.contextPath + '/_.gif';  // 2.0
 
 // set csrf value for all requests
 Ext.Ajax.defaultHeaders = {'X-LABKEY-CSRF': LABKEY.CSRF};
+
+Ext.menu.DateMenu.prototype.addClass('extContainer');

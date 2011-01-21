@@ -377,7 +377,7 @@ LABKEY.DataRegion = function (config)
         if (false === this.fireEvent("beforesortchange", this, columnName, sortDirection))
             return;
 
-        var newSortString = this.alterSortString(getParameter(this.name + ".sort"), columnName, sortDirection);
+        var newSortString = this.alterSortString(LABKEY.DataRegion._filterUI.getParameter(this.name + ".sort"), columnName, sortDirection);
         this._setParam(".sort", newSortString, [".sort", ".offset"]);
     };
 
@@ -393,7 +393,7 @@ LABKEY.DataRegion = function (config)
         if (false === this.fireEvent("beforeclearsort", this, columnName))
             return;
 
-        var newSortString = this.alterSortString(getParameter(this.name + ".sort"), columnName, null);
+        var newSortString = this.alterSortString(LABKEY.DataRegion._filterUI.getParameter(this.name + ".sort"), columnName, null);
         if (newSortString.length > 0)
             this._setParam(".sort", newSortString, [".sort", ".offset"]);
         else
@@ -406,7 +406,7 @@ LABKEY.DataRegion = function (config)
         if (false === this.fireEvent("beforefilterchange", this, newParamValPairs))
             return;
 
-        setSearchString(this.name, newQueryString);
+        LABKEY.DataRegion._filterUI.setSearchString(this.name, newQueryString);
     };
 
     /**
@@ -439,7 +439,7 @@ LABKEY.DataRegion = function (config)
     this.getUserFilter = function ()
     {
         var userFilter = [];
-        var paramValPairs = getParamValPairs(this.requestURL, null);
+        var paramValPairs = LABKEY.DataRegion._filterUI.getParamValPairs(this.requestURL, null);
         for (var i = 0; i < paramValPairs.length; i++)
         {
             var pair = paramValPairs[i];
@@ -471,7 +471,7 @@ LABKEY.DataRegion = function (config)
      */
     this.getUserContainerFilter = function ()
     {
-        return getParameter(this.name + ".containerFilterName");
+        return LABKEY.DataRegion._filterUI.getParameter(this.name + ".containerFilterName");
     };
 
     /**
@@ -484,7 +484,7 @@ LABKEY.DataRegion = function (config)
     this.getUserSort = function ()
     {
         var userSort = [];
-        var sortParam = getParameter(this.name + ".sort");
+        var sortParam = LABKEY.DataRegion._filterUI.getParameter(this.name + ".sort");
         if (sortParam)
         {
             var sortArray = sortParam.split(",");
@@ -645,11 +645,11 @@ LABKEY.DataRegion = function (config)
     {
         var msg = (this.viewName ? "The current view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
         msg += " &nbsp;";
-        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].revertCustomView();'>Revert</span>";
+        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].revertCustomView();'>Revert</span>";
         msg += ", &nbsp;";
-        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showCustomizeView(undefined, true);'>Edit</span>";
+        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showCustomizeView(undefined, true);'>Edit</span>";
         msg += ", &nbsp;";
-        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].saveSessionCustomView();'>Save</span>";
+        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].saveSessionCustomView();'>Save</span>";
         this.showMessage(msg);
     }
 
@@ -770,7 +770,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         for (var i in skipPrefixes)
             skipPrefixes[i] = this.name + skipPrefixes[i];
 
-        var paramValPairs = getParamValPairs(this.requestURL, skipPrefixes);
+        var paramValPairs = LABKEY.DataRegion._filterUI.getParamValPairs(this.requestURL, skipPrefixes);
         if (newParamValPairs)
         {
             for (var i = 0; i < newParamValPairs.length; i++)
@@ -781,7 +781,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     paramValPairs[paramValPairs.length] = [this.name + param, value];
             }
         }
-        setSearchString(this.name, buildQueryString(paramValPairs));
+        LABKEY.DataRegion._filterUI.setSearchString(this.name, LABKEY.DataRegion._filterUI.buildQueryString(paramValPairs));
     },
 
     // private
@@ -826,14 +826,14 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     {
         if (this.showRecordSelectors)
         {
-            msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].selectNone();' title='Clear selection from all rows'>None</span>";
+            msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].selectNone();' title='Clear selection from all rows'>None</span>";
             var showOpts = new Array();
             if (this.showRows != "all")
-                showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showAll();' title='Show all rows'>All</span>");
+                showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showAll();' title='Show all rows'>All</span>");
             if (this.showRows != "selected")
-               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showSelected();' title='Show all selected rows'>Selected</span>");
+               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showSelected();' title='Show all selected rows'>Selected</span>");
             if (this.showRows != "unselected")
-               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showUnselected();' title='Show all unselected rows'>Unselected</span>");
+               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showUnselected();' title='Show all unselected rows'>Unselected</span>");
             msg += "&nbsp; Show: " + showOpts.join(", ");
         }
         this.showMessage(msg);
@@ -844,7 +844,8 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         var fn = hasSelected ? LABKEY.Utils.enableButton : LABKEY.Utils.disableButton;
 
         // 10566: for javascript perf on IE stash the requires selection buttons
-        if (!this._requiresSelectionButtons) {
+        if (!this._requiresSelectionButtons)
+        {
             // escape ' and \
             var escaped = this.name.replace(/('|\\)/g, "\\$1");
             this._requiresSelectionButtons = Ext.DomQuery.select("a[labkey-requires-selection='" + escaped + "']");
@@ -1493,113 +1494,135 @@ LABKEY.DataRegion.getSelected = function (config)
 
 // FILTER UI
 
-var _tableName = "";
-var _fieldName = "";
-var _fieldCaption = "";
-var _fieldType = "text";
-var _filterDiv = null;
-var _filterWin = null;
-var _filterQueryString = "";
+// TODO convert completely to Ext
+// NOTE filter UI is shared, but I still don't like all these global/single instance variables
 
-function setFilterQueryString(s)
+// private
+LABKEY.DataRegion._filterUI =
 {
-    _filterQueryString = s;
-}
+    _tableName : "",
+    _fieldName : "",
+    _fieldCaption : "",
+    _fieldType : "text",
+    _filterDiv : null,
+    _filterWin : null,
+    _filterQueryString : "",
+    _valueComponent1 : null,
+    _valueComponent2 : null,
 
-function getFilterDiv()
-{
-    if (!_filterDiv)
+    setFilterQueryString : function(s)
     {
-        LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
-        '  <table onkeypress="handleKey(event);">' +
-        '    <tr>' +
-        '      <td colspan=2 style="padding: 5px" nowrap>' +
-        '        <select id="compare_1" name="compare_1" onchange="doChange(this)">' +
-        '            <option value="">&lt;has any value></option>' +
-        '        </select><br>' +
-        '        <input disabled id="value_1" style="visibility:hidden" type=text name=value_1><br>' +
-        '        <span id="compareSpan_2" style="visibility:hidden">and<br>' +
-        '        <select id="compare_2" name="compare_2" onchange="doChange(this)">' +
-        '            <option value="">&lt;no other filter></option>' +
-        '        </select><br>' +
-        '        <input disabled style="visibility:hidden" id="value_2" type="text" name="value_2"><br><br>' +
-        '        </span>' +
-        '        <a class="labkey-button" id="filterPanelOKButton" href="#" onclick="doFilter();return false;"><span>OK</span> ' +
-        '        <a class="labkey-button" id="filterPanelCancelButton" href="#" onclick="hideFilterDiv();return false;"><span>Cancel</span> ' +
-        '        <a class="labkey-button" id="filterPanelClearFilterButton" href="#" onclick="clearFilter();return false;"><span>Clear Filter</span> ' +
-        '        <a class="labkey-button" id="filterPanelClearAllFiltersButton" href="#" onclick="clearAllFilters();return false;"><span>Clear All Filters</span> ' +
-        '      </td>' +
-        '    </tr>' +
-        '  </table>' +
-        '</div>');
-        _filterDiv = document.getElementById("filterDiv");
-    }
-    return _filterDiv;
-}
-
-function doChange(obj)
-{
-    var name = obj.name;
-    var index = name.split("_")[1];
-    var valueInput = document.getElementById("value_" + index);
-    var compare = obj.options[obj.selectedIndex].value;
-    if (compare == "" || compare == "isblank" || compare == "isnonblank" || compare == "nomvvalue" || compare == "hasmvvalue")
-    {
-        if (index == "1")
-            document.getElementById("compareSpan_2").style.visibility = "hidden";
-        valueInput.style.visibility = "hidden";
-        valueInput.disabled = true;
-    }
-    else
-    {
-        if (index == "1")
-            document.getElementById("compareSpan_2").style.visibility = "visible";
-        valueInput.style.visibility = "visible";
-        valueInput.disabled = false;
-        valueInput.focus();
-        valueInput.select();
-    }
-}
+        this._filterQueryString = s;
+    },
 
 
-function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback)
-{
-    _fieldName = colName;
-    _fieldCaption = caption;
-    _tableName = dataRegionName;
-    fillOptions(dataType, mvEnabled);
-
-    if (!queryString)
+    getFilterDiv : function ()
     {
-        queryString = LABKEY.DataRegions[dataRegionName] ? LABKEY.DataRegions[dataRegionName].requestURL : null;
-    }
-
-    if (!confirmCallback)
-    {
-        // Invoked as part of a regular filter dialog on a grid
-        changeFilterCallback = changeFilter;
-        document.getElementById("filterPanelClearAllFiltersButton").style.display="";
-        document.getElementById("filterPanelClearFilterButton").style.display="";
-    }
-    else
-    {
-        // Invoked from GWT, which will handle the commit itself
-        changeFilterCallback = confirmCallback;
-        document.getElementById("filterPanelClearAllFiltersButton").style.display="none";
-        document.getElementById("filterPanelClearFilterButton").style.display="none";
-    }
-
-    var paramValPairs = getParamValPairs(queryString, null);
-    //Fill in existing filters...
-    var filterIndex = 1;
-    for (var i = 0; i < paramValPairs.length; i++)
-    {
-        var textbox = document.getElementById("value_" + filterIndex);
-        textbox.value = "";
-        var pair = paramValPairs[i];
-        if (pair[0].indexOf(_tableName + "." + _fieldName + "~") == 0)
+        if (!this._filterDiv)
         {
-            var comparison = (pair[0].split("~"))[1];
+            LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
+            '  <table onkeypress="LABKEY.DataRegion._filterUI.handleKey(event);">' +
+            '    <tr>' +
+            '      <td colspan=2 style="padding: 5px" nowrap>' +
+            '        <select id="compare_1" name="compare_1" onchange="LABKEY.DataRegion._filterUI.doChange(this)">' +
+            '            <option value="">&lt;has any value></option>' +
+            '        </select><br>' +
+            '        <div id="filterDivInput1"></div><br>' +
+            '        <div id="compareDiv_2" style="visibility:hidden">and<br>' +
+            '        <select id="compare_2" name="compare_2" onchange="LABKEY.DataRegion._filterUI.doChange(this)">' +
+            '            <option value="">&lt;no other filter></option>' +
+            '        </select><br>' +
+            '        <div id="filterDivInput2"></div><br><br>' +
+            '        </div>' +
+            '        <a class="labkey-button" id="filterPanelOKButton" href="#" onclick="LABKEY.DataRegion._filterUI.doFilter();return false;"><span>OK</span> ' +
+            '        <a class="labkey-button" id="filterPanelCancelButton" href="#" onclick="LABKEY.DataRegion._filterUI.hideFilterDiv();return false;"><span>Cancel</span> ' +
+            '        <a class="labkey-button" id="filterPanelClearFilterButton" href="#" onclick="LABKEY.DataRegion._filterUI.clearFilter();return false;"><span>Clear Filter</span> ' +
+            '        <a class="labkey-button" id="filterPanelClearAllFiltersButton" href="#" onclick="LABKEY.DataRegion._filterUI.clearAllFilters();return false;"><span>Clear All Filters</span> ' +
+            '      </td>' +
+            '    </tr>' +
+            '  </table>' +
+            '</div>');
+            this._filterDiv = document.getElementById("filterDiv");
+        }
+        return this._filterDiv;
+    },
+
+
+    doChange : function(obj)
+    {
+        var index = obj.name.split("_")[1];
+
+        var valueComponent = index == "1" ? this._valueComponent1 : this._valueComponent2;
+
+        var compare = obj.options[obj.selectedIndex].value;
+        if (compare == "" || compare == "isblank" || compare == "isnonblank" || compare == "nomvvalue" || compare == "hasmvvalue")
+        {
+            if (index == "1")
+                document.getElementById("compareDiv_2").style.visibility = "hidden";
+            if (valueComponent)
+            {
+                valueComponent.setVisible(false);
+                valueComponent.setDisabled(true);
+            }
+        }
+        else
+        {
+            if (index == "1")
+                document.getElementById("compareDiv_2").style.visibility = "visible";
+            if (valueComponent)
+            {
+                valueComponent.setDisabled(false);
+                valueComponent.setVisible(true);
+                valueComponent.focus();
+                //TODO valueInput.select();
+            }
+        }
+    },
+
+
+    showFilterPanel : function(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback)
+    {
+        this._fieldName = colName;
+        this._fieldCaption = caption;
+        this._tableName = dataRegionName;
+
+        this.fillOptions(dataType, mvEnabled);
+        this.createInputs(dataType);
+
+        if (!queryString)
+        {
+            queryString = LABKEY.DataRegions[dataRegionName] ? LABKEY.DataRegions[dataRegionName].requestURL : null;
+        }
+
+        if (!confirmCallback)
+        {
+            // Invoked as part of a regular filter dialog on a grid
+            this.changeFilterCallback = this.changeFilter;
+            document.getElementById("filterPanelClearAllFiltersButton").style.display="";
+            document.getElementById("filterPanelClearFilterButton").style.display="";
+        }
+        else
+        {
+            // Invoked from GWT, which will handle the commit itself
+            this.changeFilterCallback = this.confirmCallback;
+            document.getElementById("filterPanelClearAllFiltersButton").style.display="none";
+            document.getElementById("filterPanelClearFilterButton").style.display="none";
+        }
+
+        var paramValPairs = this.getParamValPairs(queryString, null);
+        //Fill in existing filters...
+        var filterIndex = 1;
+        for (var i = 0; i < paramValPairs.length; i++)
+        {
+            var pair = paramValPairs[i];
+            var key = pair[0];
+            var value = pair.length > 1 ? pair[1] : "";
+
+            if (key.indexOf(this._tableName + "." + this._fieldName + "~") != 0)
+                continue;
+
+            // set dropdown
+            var comparison = (key.split("~"))[1];
             var select = document.getElementById("compare_" + filterIndex);
             for (var opt = 0; opt < select.options.length; opt++)
             {
@@ -1610,603 +1633,665 @@ function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, 
                 }
             }
 
-            if (pair.length > 1)
-            {
-                textbox = document.getElementById("value_" + filterIndex);
-                textbox.value = pair[1];
-            }
+            // set input
+            var valueComponent = filterIndex==1 ? this._valueComponent1 : this._valueComponent2;
+            valueComponent.setValue(value);
 
             filterIndex++;
             if (filterIndex > 2)
                 break;
         }
-    }
-    var div = getFilterDiv();
-    div.style.display = "block";
-    div.style.visibility = "visible";
+        var div = this.getFilterDiv();
+        div.style.display = "block";
+        div.style.visibility = "visible";
 
-    if (!_filterWin)
-    {
-        _filterWin = new Ext.Window({
-            contentEl: div,
-            width: 350,
-            autoHeight: true,
-            modal: true,
-            resizable: false,
-            closeAction: 'hide'
-        });
-
-        // 5975: Override focus behavior. Keeps Ext.Window from stealing focus after showing.
-        _filterWin.focus = function () {
-            doChange(document.getElementById("compare_1"));
-            doChange(document.getElementById("compare_2"));
-        };
-    }
-    else
-    {
-        _filterWin.center();
-    }
-
-    if (filterIndex == 2)
-        document.getElementById("compare_2").selectedIndex = 0;
-
-    _filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + caption);
-    _filterWin.show();
-}
-
-function hideFilterDiv()
-{
-    if (_filterWin)
-        _filterWin.hide();
-}
-
-var _typeMap = {
-    "BIGINT":"INT",
-    "BIGSERIAL":"INT",
-    "BIT":"BOOL",
-    "BOOL":"BOOL",
-    "BOOLEAN":"BOOL",
-    "CHAR":"TEXT",
-    "CLOB":"LONGTEXT",
-    "DATE":"DATE",
-    "DECIMAL":"DECIMAL",
-    "DOUBLE":"DECIMAL",
-    "DOUBLE PRECISION":"DECIMAL",
-    "FLOAT":"DECIMAL",
-    "INTEGER":"INT",
-    "LONGVARCHAR":"LONGTEXT",
-    "NTEXT":"LONGTEXT",
-    "NUMERIC":"DECIMAL",
-    "REAL":"DECIMAL",
-    "SMALLINT":"INT",
-    "TIME":"TEXT",
-    "TIMESTAMP":"DATE",
-    "TINYINT":"INT",
-    "VARCHAR":"TEXT",
-    "INT":"INT",
-    "INT IDENTITY":"INT",
-    "DATETIME":"DATE",
-    "TEXT":"TEXT",
-    "NVARCHAR":"TEXT",
-    "INT2":"INT",
-    "INT4":"INT",
-    "INT8":"INT",
-    "FLOAT4":"DECIMAL",
-    "FLOAT8":"DECIMAL",
-    "SERIAL":"INT",
-    "USERID":"INT"
-};
-var _mappedType = "TEXT";
-
-function fillOptions(dataType, mvEnabled)
-{
-    getFilterDiv();
-    var mappedType = _typeMap[dataType.toUpperCase()];
-    if (mappedType == undefined)
-        mappedType = dataType.toUpperCase();
-
-    for (var i = 1; i <= 2; i++)
-    {
-        var select = document.getElementById("compare_" + i);
-        var opt;
-        select.options.length = 1;
-
-        if (mappedType != "LONGTEXT")
+        if (!this._filterWin)
         {
-            opt = document.createElement("OPTION");
-            if (mappedType == "DATE")
-                opt.value = "dateeq";
+            this._filterWin = new Ext.Window({
+                contentEl: div,
+                width: 350,
+                autoHeight: true,
+                modal: true,
+                resizable: false,
+                closeAction: 'hide'
+            });
+
+            // 5975: Override focus behavior. Keeps Ext.Window from stealing focus after showing.
+            this._filterWin.focus = function () {
+                LABKEY.DataRegion._filterUI.doChange(document.getElementById("compare_1"));
+                LABKEY.DataRegion._filterUI.doChange(document.getElementById("compare_2"));
+            };
+        }
+        else
+        {
+            this._filterWin.center();
+        }
+
+        if (filterIndex == 2)
+            document.getElementById("compare_2").selectedIndex = 0;
+
+        this._filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + caption);
+        this._filterWin.show();
+    },
+
+    hideFilterDiv : function()
+    {
+        if (this._filterWin)
+            this._filterWin.hide();
+    },
+
+    _typeMap : {
+        "BIGINT":"INT",
+        "BIGSERIAL":"INT",
+        "BIT":"BOOL",
+        "BOOL":"BOOL",
+        "BOOLEAN":"BOOL",
+        "CHAR":"TEXT",
+        "CLOB":"LONGTEXT",
+        "DATE":"DATE",
+        "DECIMAL":"DECIMAL",
+        "DOUBLE":"DECIMAL",
+        "DOUBLE PRECISION":"DECIMAL",
+        "FLOAT":"DECIMAL",
+        "INTEGER":"INT",
+        "LONGVARCHAR":"LONGTEXT",
+        "NTEXT":"LONGTEXT",
+        "NUMERIC":"DECIMAL",
+        "REAL":"DECIMAL",
+        "SMALLINT":"INT",
+        "TIME":"TEXT",
+        "TIMESTAMP":"DATE",
+        "TINYINT":"INT",
+        "VARCHAR":"TEXT",
+        "INT":"INT",
+        "INT IDENTITY":"INT",
+        "DATETIME":"DATE",
+        "TEXT":"TEXT",
+        "NVARCHAR":"TEXT",
+        "INT2":"INT",
+        "INT4":"INT",
+        "INT8":"INT",
+        "FLOAT4":"DECIMAL",
+        "FLOAT8":"DECIMAL",
+        "SERIAL":"INT",
+        "USERID":"INT"
+    },
+
+    _mappedType : "TEXT",
+
+
+    getMappedType : function(dataType)
+    {
+        var mappedType = this._typeMap[dataType.toUpperCase()];
+        if (mappedType == undefined)
+            mappedType = dataType.toUpperCase();
+        return mappedType;
+    },
+
+
+    createInputs : function(dataType)
+    {
+        this.getFilterDiv();
+        var mappedType = this.getMappedType(dataType);
+        if (this._valueComponent1)
+            this._valueComponent1.destroy();
+        if (this._valueComponent2)
+            this._valueComponent2.destroy();
+        for (var i=1 ; i<=2 ; i++)
+        {
+            var id = "value_" + i; // still used by automated tests
+            var inputDiv = Ext.get("filterDivInput" + i);
+            var c;
+            if ("DATE" == mappedType)
+            {
+                c = new Ext.form.DateField({id: id, width:180, renderTo:inputDiv});
+            }
+            else if ("INT" == mappedType)
+            {
+                c = new Ext.form.NumberField({id: id, width:180, renderTo:inputDiv, allowDecimals:false});
+            }
+            else if ("DECIMAL" == mappedType)
+            {
+                c = new Ext.form.NumberField({id: id, width:180, renderTo:inputDiv, decimalPrecision:15});
+            }
             else
-                opt.value = "eq";
-            opt.text = "Equals";
-            appendOption(select, opt);
-            if (mappedType != "BOOL")
+            {
+                c = new Ext.form.TextField({id: id, width:180, renderTo:inputDiv});
+            }
+            if (i==1)
+                this._valueComponent1 = c;
+            else
+                this._valueComponent2 = c;
+        }
+    },
+
+
+    fillOptions : function(dataType, mvEnabled)
+    {
+        this.getFilterDiv();
+        var mappedType = this.getMappedType(dataType);
+
+        for (var i = 1; i <= 2; i++)
+        {
+            var select = document.getElementById("compare_" + i);
+            var opt;
+            select.options.length = 1;
+
+            if (mappedType != "LONGTEXT")
             {
                 opt = document.createElement("OPTION");
-                opt.value = "in";
-                opt.text = "Equals One Of (e.g. 'a;b;c')";
-                appendOption(select, opt);
-            }
-            opt = document.createElement("OPTION");
-            if (mappedType == "DATE")
-                opt.value = "dateneq";
-            else
-                opt.value = "neqornull";
-            opt.text = "Does not Equal";
-            appendOption(select, opt);
-        }
-
-        opt = document.createElement("OPTION");
-        opt.value = "isblank";
-        opt.text = "Is Blank";
-        appendOption(select, opt);
-
-        opt = document.createElement("OPTION");
-        opt.value = "isnonblank";
-        opt.text = "Is Not Blank";
-        appendOption(select, opt);
-
-        if (mappedType != "LONGTEXT" && mappedType != "BOOL")
-        {
-            opt = document.createElement("OPTION");
-            opt.value = "gt";
-            opt.text = "Is Greater Than";
-            appendOption(select, opt);
-            opt = document.createElement("OPTION");
-            opt.value = "lt";
-            opt.text = "Is Less Than";
-            appendOption(select, opt);
-            opt = document.createElement("OPTION");
-            opt.value = "gte";
-            opt.text = "Is Greater Than or Equal To";
-            appendOption(select, opt);
-            opt = document.createElement("OPTION");
-            opt.value = "lte";
-            opt.text = "Is Less Than or Equal To";
-            appendOption(select, opt);
-        }
-
-        if (mappedType == "TEXT" || mappedType == "LONGTEXT")
-        {
-            opt = document.createElement("OPTION");
-            opt.value = "startswith";
-            opt.text = "Starts With";
-            appendOption(select, opt);
-            opt = document.createElement("OPTION");
-            opt.value = "doesnotstartwith";
-            opt.text = "Does Not Start With";
-            appendOption(select, opt);
-            opt = document.createElement("OPTION");
-            opt.value = "contains";
-            opt.text = "Contains";
-            appendOption(select, opt);
-            opt = document.createElement("OPTION");
-            opt.value = "doesnotcontain";
-            opt.text = "Does Not Contain";
-            appendOption(select, opt);
-        }
-
-        if (mvEnabled)
-        {
-            opt = document.createElement("OPTION");
-            opt.value = "hasmvvalue";
-            opt.text = "Has a missing value indicator";
-            appendOption(select, opt);
-
-            opt = document.createElement("OPTION");
-            opt.value = "nomvvalue";
-            opt.text = "Does not have a missing value indicator";
-            appendOption(select, opt);
-        }
-
-        if (i == 1)
-            selectDefault(select, mappedType);
-    }
-
-    _mappedType = mappedType;
-}
-
-function appendOption(select, opt)
-{
-    select.options[select.options.length] = opt;
-}
-
-function selectDefault(select, mappedType)
-{
-    if (mappedType == "LONGTEXT")
-        selectByValue(select, "contains");
-    else if (mappedType == "DECIMAL")
-        selectByValue(select, "gte");
-    else if (mappedType == "TEXT")
-        selectByValue(select, "startswith");
-    else if (select.options.length > 1)
-        select.selectedIndex = 1;
-}
-
-function selectByValue(select, value)
-{
-    for (var i = 0; i < select.options.length; i++)
-        if (select.options[i].value == value)
-        {
-            select.selectedIndex = i;
-            return;
-        }
-}
-
-
-var savedSearchString = null;
-var filterListeners = [];
-
-function registerFilterListener(fn)
-{
-    filterListeners.push(fn);
-}
-
-function getSearchString()
-{
-    if (null == savedSearchString)
-        savedSearchString = document.location.search.substring(1) || "";
-    return savedSearchString;
-}
-
-function setSearchString(tableName, search)
-{
-    hideFilterDiv();
-    savedSearchString = search || "";
-    for (var i=0; i < filterListeners.length; i++)
-    {
-        if (filterListeners[i](tableName, search))
-        {
-            hideFilterDiv();
-            return;
-        }
-    }
-    // If the search string doesn't change and there is a hash on the url, the page won't reload.
-    // Remove the hash by setting the full path plus search string.
-    window.location.assign(window.location.pathname + "?" + savedSearchString);
-}
-
-
-function getParamValPairs(queryString, skipPrefixes)
-{
-    if (!queryString)
-    {
-        queryString = getSearchString();
-    }
-    else
-    {
-        if (queryString.indexOf("?") > -1)
-        {
-            queryString = queryString.substring(queryString.indexOf("?") + 1);
-        }
-    }
-    var iNew = 0;
-    //alert("getparamValPairs: " + queryString);
-    var newParamValPairs = new Array(0);
-    if (queryString != null && queryString.length > 0)
-    {
-        var paramValPairs = queryString.split("&");
-        PARAM_LOOP: for (var i = 0; i < paramValPairs.length; i++)
-        {
-            var paramPair = paramValPairs[i].split("=");
-            paramPair[0] = unescape(paramPair[0]);
-
-            if (paramPair[0] == ".lastFilter")
-                continue;
-
-            if (skipPrefixes)
-            {
-                for (var j = 0; j < skipPrefixes.length; j++)
+                opt.value = (mappedType == "DATE") ? "dateeq" : "eq";
+                opt.text = "Equals";
+                this.appendOption(select, opt);
+                if (mappedType != "BOOL" && mappedType != "DATE")
                 {
-                    var skipPrefix = skipPrefixes[j];
-                    if (skipPrefix && paramPair[0].indexOf(skipPrefix) == 0)
+                    opt = document.createElement("OPTION");
+                    opt.value = "in";
+                    opt.text = "Equals One Of (e.g. 'a;b;c')";
+                    this.appendOption(select, opt);
+                }
+                opt = document.createElement("OPTION");
+                opt.value = (mappedType == "DATE") ? "dateneq" : "neqornull";
+                opt.text = "Does not Equal";
+                this.appendOption(select, opt);
+            }
+
+            opt = document.createElement("OPTION");
+            opt.value = "isblank";
+            opt.text = "Is Blank";
+            this.appendOption(select, opt);
+
+            opt = document.createElement("OPTION");
+            opt.value = "isnonblank";
+            opt.text = "Is Not Blank";
+            this.appendOption(select, opt);
+
+            if (mappedType != "LONGTEXT" && mappedType != "BOOL")
+            {
+                opt = document.createElement("OPTION");
+                opt.value = (mappedType == "DATE") ? "dategt" : "gt";
+                opt.text = "Is Greater Than";
+                this.appendOption(select, opt);
+                opt = document.createElement("OPTION");
+                opt.value = (mappedType == "DATE") ? "datelt" : "lt";
+                opt.text = "Is Less Than";
+                this.appendOption(select, opt);
+                opt = document.createElement("OPTION");
+                opt.value = (mappedType == "DATE") ? "dategte" : "gte";
+                opt.text = "Is Greater Than or Equal To";
+                this.appendOption(select, opt);
+                opt = document.createElement("OPTION");
+                opt.value = (mappedType == "DATE") ? "datelte" : "lte";
+                opt.text = "Is Less Than or Equal To";
+                this.appendOption(select, opt);
+            }
+
+            if (mappedType == "TEXT" || mappedType == "LONGTEXT")
+            {
+                opt = document.createElement("OPTION");
+                opt.value = "startswith";
+                opt.text = "Starts With";
+                this.appendOption(select, opt);
+                opt = document.createElement("OPTION");
+                opt.value = "doesnotstartwith";
+                opt.text = "Does Not Start With";
+                this.appendOption(select, opt);
+                opt = document.createElement("OPTION");
+                opt.value = "contains";
+                opt.text = "Contains";
+                this.appendOption(select, opt);
+                opt = document.createElement("OPTION");
+                opt.value = "doesnotcontain";
+                opt.text = "Does Not Contain";
+                this.appendOption(select, opt);
+            }
+
+            if (mvEnabled)
+            {
+                opt = document.createElement("OPTION");
+                opt.value = "hasmvvalue";
+                opt.text = "Has a missing value indicator";
+                this.appendOption(select, opt);
+
+                opt = document.createElement("OPTION");
+                opt.value = "nomvvalue";
+                opt.text = "Does not have a missing value indicator";
+                this.appendOption(select, opt);
+            }
+
+            if (i == 1)
+                this.selectDefault(select, mappedType);
+        }
+
+        _mappedType = mappedType;
+    },
+
+    appendOption : function(select, opt)
+    {
+        select.options[select.options.length] = opt;
+    },
+
+    selectDefault : function(select, mappedType)
+    {
+        if (mappedType == "LONGTEXT")
+            this.selectByValue(select, "contains");
+        else if (mappedType == "DECIMAL")
+            this.selectByValue(select, "gte");
+        else if (mappedType == "TEXT")
+            this.selectByValue(select, "startswith");
+        else if (select.options.length > 1)
+            select.selectedIndex = 1;
+    },
+
+    selectByValue : function(select, value)
+    {
+        for (var i = 0; i < select.options.length; i++)
+            if (select.options[i].value == value)
+            {
+                select.selectedIndex = i;
+                return;
+            }
+    },
+
+    savedSearchString : null,
+    filterListeners : [],
+
+    registerFilterListener : function(fn)
+    {
+        filterListeners.push(fn);
+    },
+
+    getSearchString : function()
+    {
+        if (null == this.savedSearchString)
+            this.savedSearchString = document.location.search.substring(1) || "";
+        return this.savedSearchString;
+    },
+
+    setSearchString : function(tableName, search)
+    {
+        this.hideFilterDiv();
+        this.savedSearchString = search || "";
+        for (var i=0; i < this.filterListeners.length; i++)
+        {
+            if (this.filterListeners[i](tableName, search))
+            {
+                this.hideFilterDiv();
+                return;
+            }
+        }
+        // If the search string doesn't change and there is a hash on the url, the page won't reload.
+        // Remove the hash by setting the full path plus search string.
+        window.location.assign(window.location.pathname + "?" + this.savedSearchString);
+    },
+
+
+    getParamValPairs : function(queryString, skipPrefixes)
+    {
+        if (!queryString)
+        {
+            queryString = this.getSearchString();
+        }
+        else
+        {
+            if (queryString.indexOf("?") > -1)
+            {
+                queryString = queryString.substring(queryString.indexOf("?") + 1);
+            }
+        }
+        var iNew = 0;
+        //alert("getparamValPairs: " + queryString);
+        var newParamValPairs = new Array(0);
+        if (queryString != null && queryString.length > 0)
+        {
+            var paramValPairs = queryString.split("&");
+            PARAM_LOOP: for (var i = 0; i < paramValPairs.length; i++)
+            {
+                var paramPair = paramValPairs[i].split("=");
+                paramPair[0] = decodeURIComponent(paramPair[0]);
+
+                if (paramPair[0] == ".lastFilter")
+                    continue;
+
+                if (skipPrefixes)
+                {
+                    for (var j = 0; j < skipPrefixes.length; j++)
                     {
-                        // only skip filter params and sort.
-                        if (paramPair[0] == skipPrefix)
-                            continue PARAM_LOOP;
-                        if (paramPair[0].indexOf("~") > 0)
-                            continue PARAM_LOOP;
-                        if (paramPair[0] == skipPrefix + "sort")
-                            continue PARAM_LOOP;
+                        var skipPrefix = skipPrefixes[j];
+                        if (skipPrefix && paramPair[0].indexOf(skipPrefix) == 0)
+                        {
+                            // only skip filter params and sort.
+                            if (paramPair[0] == skipPrefix)
+                                continue PARAM_LOOP;
+                            if (paramPair[0].indexOf("~") > 0)
+                                continue PARAM_LOOP;
+                            if (paramPair[0] == skipPrefix + "sort")
+                                continue PARAM_LOOP;
+                        }
                     }
                 }
+                if (paramPair.length > 1)
+                    paramPair[1] = decodeURIComponent(paramPair[1]);
+                newParamValPairs[iNew] = paramPair;
+                iNew++;
             }
-            if (paramPair.length > 1)
-            {
-                // unescape doesn't handle '+' correctly, so swap them with ' ' first
-                paramPair[1] = unescape(paramPair[1].replace(/\+/g, " "));
-            }
-            newParamValPairs[iNew] = paramPair;
-            iNew++;
         }
-    }
-    return newParamValPairs;
-}
+        return newParamValPairs;
+    },
 
-function getParameter(paramName)
-{
-    var paramValPairs = getParamValPairs(null, null);
-    for (var i = 0; i < paramValPairs.length; i++)
-        if (paramValPairs[i][0] == paramName)
-            if (paramValPairs[i].length > 1)
-                return paramValPairs[i][1];
-            else
-                return "";
 
-    return null;
-}
-
-function buildQueryString(pairs)
-{
-    if (pairs == null || pairs.length == 0)
-        return "";
-
-    //alert("enter buildQueryString");
-    var paramArray = new Array(pairs.length);
-    for (var i = 0; i < pairs.length; i++)
+    getParameter : function(paramName)
     {
-        // alert("pair" + pairs[i]);
-        if (pairs[i].length > 1)
-            paramArray[i] = escape(pairs[i][0]) + "=" + escape(pairs[i][1]);
-        else
-            paramArray[i] = escape(pairs[i][0]);
-    }
+        var paramValPairs = this.getParamValPairs(null, null);
+        for (var i = 0; i < paramValPairs.length; i++)
+            if (paramValPairs[i][0] == paramName)
+                if (paramValPairs[i].length > 1)
+                    return paramValPairs[i][1];
+                else
+                    return "";
 
-    // Escape doesn't encode '+' properly
-    var queryString = paramArray.join("&").replace(/\+/g, "%2B");
-    // alert("exit buildQueryString: " + queryString);
-    return queryString;
-}
-
-function clearFilter()
-{
-    hideFilterDiv();
-    var dr = LABKEY.DataRegions[_tableName];
-    if (!dr)
-        return;
-    dr.clearFilter(_fieldName);
-}
-
-function clearAllFilters()
-{
-    hideFilterDiv();
-    var dr = LABKEY.DataRegions[_tableName];
-    if (!dr)
-        return;
-    dr.clearAllFilters();
-}
-
-function changeFilter(newParamValPairs, newQueryString)
-{
-    var dr = LABKEY.DataRegions[_tableName];
-    if (!dr)
-        return;
-    dr.changeFilter(newParamValPairs, newQueryString);
-}
-
-function doFilter()
-{
-    var queryString = LABKEY.DataRegions[_tableName] ? LABKEY.DataRegions[_tableName].requestURL : null;
-    var newParamValPairs = getParamValPairs(queryString, [_tableName + "." + _fieldName + "~", _tableName + ".offset"]);
-    var iNew = newParamValPairs.length;
-
-    var comparisons = getValidCompares();
-    if (null == comparisons)
-        return;
-
-    hideFilterDiv();
-
-    for (var i = 0; i < comparisons.length; i++)
-    {
-        newParamValPairs[iNew] = comparisons[i];
-        iNew ++;
-    }
-
-    var newQueryString = buildQueryString(newParamValPairs);
-    var filterParamsString = buildQueryString(comparisons);
-
-    changeFilterCallback.call(this, newParamValPairs, newQueryString, filterParamsString);
-}
-
-var changeFilterCallback = doFilter;
-
-function getValidComparesFromForm(formIndex, newParamValPairs)
-{
-    var obj = document.getElementById("compare_" + formIndex);
-    var comparison = obj.options[obj.selectedIndex].value;
-    var compareTo = document.getElementById("value_" + formIndex).value;
-    //alert("comparison: " + comparison + ", compareTo: " + compareTo);
-    if (comparison != "")
-    {
-        var pair;
-        if (comparison == "isblank" || comparison == "isnonblank" || comparison == "nomvvalue" || comparison == "hasmvvalue")
-        {
-            pair = [_tableName + "." + _fieldName + "~" + comparison];
-        }
-        else
-        {
-            var validCompareTo;
-            if (comparison == 'in')
-            {
-                validCompareTo = validateMultiple(compareTo);
-            }
-            else
-            {
-                validCompareTo = validate(compareTo);
-            }
-
-            if (validCompareTo == undefined)
-                return false;
-            pair = [_tableName + "." + _fieldName + "~" + comparison, validCompareTo];
-        }
-        newParamValPairs[newParamValPairs.length] = pair;
-    }
-    return true;
-}
-
-function getValidCompares()
-{
-    var newParamValPairs = new Array(0);
-
-    var success = getValidComparesFromForm(1, newParamValPairs);
-    if (!success)
-    {
         return null;
-    }
-    success = getValidComparesFromForm(2, newParamValPairs);
-    if (!success)
+    },
+
+
+    buildQueryString : function(pairs)
     {
-        return null;
-    }
-    return newParamValPairs;
-}
+        if (pairs == null || pairs.length == 0)
+            return "";
 
-function validateMultiple(allValues, mappedType, fieldName)
-{
-    if (!mappedType) mappedType = _mappedType;
-    if (!fieldName) fieldName = _fieldCaption || _fieldName;
-
-    if (!allValues)
-    {
-        alert("filter value for field '" + fieldName + "' cannot be empty.");
-        return undefined;
-    }
-    var values = allValues.split(";");
-    var result = '';
-    var separator = '';
-    for (var i = 0; i < values.length; i++)
-    {
-        var value = validate(values[i].trim(), mappedType, fieldName);
-        if (value == undefined)
-            return undefined;
-
-        result = result + separator + value;
-        separator = ";";
-    }
-    return result;
-}
-
-function validate(value, mappedType, fieldName)
-{
-    if (!mappedType) mappedType = _mappedType;
-    if (!fieldName) fieldName = _fieldCaption || _fieldName;
-
-    if (!value)
-    {
-        alert("filter value for field '" + fieldName + "' cannot be empty.");
-        return undefined
-    }
-
-    if (mappedType == "INT")
-    {
-        var intVal = parseInt(value);
-        if (isNaN(intVal))
+        var queryString = [];
+        for (var i = 0; i < pairs.length; i++)
         {
-            alert(value + " is not a valid integer for field '" + fieldName + "'.");
-            return undefined;
-        }
-        else
-            return "" + intVal;
-    }
-    else if (mappedType == "DECIMAL")
-    {
-        var decVal = parseFloat(value);
-        if (isNaN(decVal))
-        {
-            alert(value + " is not a valid decimal number for field '" + fieldName + "'.");
-            return undefined;
-        }
-        else
-            return "" + decVal;
-    }
-    else if (mappedType == "DATE")
-    {
-        var year, month, day, hour, minute;
-        hour = 0;
-        minute = 0;
+            var key = pairs[i][0];
+            var value = pairs[i].length > 1 ? pairs[i][1] : undefined;
 
-        //Javascript does not parse ISO dates, but if date matches we're done
-        if (value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$/) ||
-            value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d)\s*$/))
-        {
-            return value;
-        }
-        else
-        {
-            var dateVal = new Date(value);
-            if (isNaN(dateVal))
+            queryString.push(encodeURIComponent(key));
+            if (undefined != value)
             {
-                alert(value + " is not a valid date for field '" + fieldName + "'.");
+                if (Ext.isDate(value))
+                {
+                    value = value.toISOString();
+                    if (-1 != key.indexOf("~date"))
+                        value = value.substring(0,10);
+                    if (LABKEY.Utils.endsWith(value,"Z"))
+                        value = value.substring(0,value.length-1);
+                }
+                queryString.push("=");
+                queryString.push(encodeURIComponent(value));
+            }
+            queryString.push("&");
+        }
+
+        if (queryString.length > 0)
+            queryString.pop();
+
+        return queryString.join("");
+    },
+
+    clearFilter : function()
+    {
+        this.hideFilterDiv();
+        var dr = LABKEY.DataRegions[this._tableName];
+        if (!dr)
+            return;
+        dr.clearFilter(this._fieldName);
+    },
+
+    clearAllFilters : function()
+    {
+        this.hideFilterDiv();
+        var dr = LABKEY.DataRegions[this._tableName];
+        if (!dr)
+            return;
+        dr.clearAllFilters();
+    },
+
+    changeFilter : function(newParamValPairs, newQueryString)
+    {
+        var dr = LABKEY.DataRegions[this._tableName];
+        if (!dr)
+            return;
+        dr.changeFilter(newParamValPairs, newQueryString);
+    },
+
+    doFilter : function()
+    {
+        var queryString = LABKEY.DataRegions[this._tableName] ? LABKEY.DataRegions[this._tableName].requestURL : null;
+        var newParamValPairs = this.getParamValPairs(queryString, [this._tableName + "." + this._fieldName + "~", this._tableName + ".offset"]);
+        var iNew = newParamValPairs.length;
+
+        var comparisons = this.getValidCompares();
+        if (null == comparisons)
+            return;
+
+        this.hideFilterDiv();
+
+        for (var i = 0; i < comparisons.length; i++)
+        {
+            newParamValPairs[iNew] = comparisons[i];
+            iNew ++;
+        }
+
+        var newQueryString = this.buildQueryString(newParamValPairs);
+        var filterParamsString = this.buildQueryString(comparisons);
+
+        this.changeFilterCallback.call(this, newParamValPairs, newQueryString, filterParamsString);
+    },
+
+    changeFilterCallback : null,
+
+    getValidComparesFromForm : function(formIndex, newParamValPairs)
+    {
+        var obj = document.getElementById("compare_" + formIndex);
+        var comparison = obj.options[obj.selectedIndex].value;
+        var component = formIndex==1 ? this._valueComponent1 : this._valueComponent2;
+        var compareTo = component.getValue();
+        //alert("comparison: " + comparison + ", compareTo: " + compareTo);
+        if (comparison != "")
+        {
+            var pair;
+            if (comparison == "isblank" || comparison == "isnonblank" || comparison == "nomvvalue" || comparison == "hasmvvalue")
+            {
+                pair = [this._tableName + "." + this._fieldName + "~" + comparison];
+            }
+            else
+            {
+                var validCompareTo;
+                if (comparison == 'in')
+                {
+                    validCompareTo = this.validateMultiple(compareTo);
+                }
+                else
+                {
+                    validCompareTo = this.validate(compareTo);
+                }
+
+                if (validCompareTo == undefined)
+                    return false;
+                pair = [this._tableName + "." + this._fieldName + "~" + comparison, validCompareTo];
+            }
+            newParamValPairs[newParamValPairs.length] = pair;
+        }
+        return true;
+    },
+
+    getValidCompares : function()
+    {
+        var newParamValPairs = new Array(0);
+
+        var success = this.getValidComparesFromForm(1, newParamValPairs);
+        if (!success)
+        {
+            return null;
+        }
+        success = this.getValidComparesFromForm(2, newParamValPairs);
+        if (!success)
+        {
+            return null;
+        }
+        return newParamValPairs;
+    },
+
+    validateMultiple : function(allValues, mappedType, fieldName)
+    {
+        if (!mappedType) mappedType = _mappedType;
+        if (!fieldName) fieldName = this._fieldCaption || this._fieldName;
+
+        if (!allValues)
+        {
+            alert("filter value for field '" + fieldName + "' cannot be empty.");
+            return undefined;
+        }
+        var values = allValues.split(";");
+        var result = '';
+        var separator = '';
+        for (var i = 0; i < values.length; i++)
+        {
+            var value = this.validate(values[i].trim(), mappedType, fieldName);
+            if (value == undefined)
                 return undefined;
-            }
-            //Try to do something decent with 2 digit years!
-            //if we have mm/dd/yy (but not mm/dd/yyyy) in the date
-            //fix the broken date parsing
-            if (value.match(/\d+\/\d+\/\d{2}(\D|$)/))
-            {
-                if (dateVal.getFullYear() < new Date().getFullYear() - 80)
-                    dateVal.setFullYear(dateVal.getFullYear() + 100);
-            }
-            year = dateVal.getFullYear();
-            month = dateVal.getMonth() + 1;
-            day = dateVal.getDate();
-            hour = dateVal.getHours();
-            minute = dateVal.getMinutes();
-        }
-        var str = "" + year + "-" + twoDigit(month) + "-" + twoDigit(day);
-        if (hour != 0 || minute != 0)
-            str += " " + twoDigit(hour) + ":" + twoDigit(minute);
 
-        return str;
-    }
-    else if (mappedType == "BOOL")
+            result = result + separator + value;
+            separator = ";";
+        }
+        return result;
+    },
+
+    validate : function(value, mappedType, fieldName)
     {
-        var upperVal = value.toUpperCase();
-        if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "YES" || upperVal == "ON" || upperVal == "T")
-            return "1";
-        if (upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "NO" || upperVal == "OFF" || upperVal == "F")
-            return "0";
-        else
+        if (!mappedType) mappedType = this._mappedType;
+        if (!fieldName) fieldName = this._fieldCaption || this._fieldName;
+
+        if (!value)
         {
-            alert(value + " is not a valid boolean for field '" + fieldName + "'. Try true,false; yes,no; on,off; or 1,0.");
+            alert("filter value for field '" + fieldName + "' cannot be empty.");
             return undefined
         }
+
+        if (mappedType == "INT")
+        {
+            var intVal = parseInt(value);
+            if (isNaN(intVal))
+            {
+                alert(value + " is not a valid integer for field '" + fieldName + "'.");
+                return undefined;
+            }
+            else
+                return "" + intVal;
+        }
+        else if (mappedType == "DECIMAL")
+        {
+            var decVal = parseFloat(value);
+            if (isNaN(decVal))
+            {
+                alert(value + " is not a valid decimal number for field '" + fieldName + "'.");
+                return undefined;
+            }
+            else
+                return "" + decVal;
+        }
+        else if (mappedType == "DATE")
+        {
+            var year, month, day, hour, minute;
+            hour = 0;
+            minute = 0;
+
+            //Javascript does not parse ISO dates, but if date matches we're done
+            if (value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$/) ||
+                value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d)\s*$/))
+            {
+                return value;
+            }
+            else
+            {
+                var dateVal = new Date(value);
+                if (isNaN(dateVal))
+                {
+                    alert(value + " is not a valid date for field '" + fieldName + "'.");
+                    return undefined;
+                }
+                //Try to do something decent with 2 digit years!
+                //if we have mm/dd/yy (but not mm/dd/yyyy) in the date
+                //fix the broken date parsing
+                if (value.match(/\d+\/\d+\/\d{2}(\D|$)/))
+                {
+                    if (dateVal.getFullYear() < new Date().getFullYear() - 80)
+                        dateVal.setFullYear(dateVal.getFullYear() + 100);
+                }
+                year = dateVal.getFullYear();
+                month = dateVal.getMonth() + 1;
+                day = dateVal.getDate();
+                hour = dateVal.getHours();
+                minute = dateVal.getMinutes();
+            }
+            var str = "" + year + "-" + twoDigit(month) + "-" + twoDigit(day);
+            if (hour != 0 || minute != 0)
+                str += " " + twoDigit(hour) + ":" + twoDigit(minute);
+
+            return str;
+        }
+        else if (mappedType == "BOOL")
+        {
+            var upperVal = value.toUpperCase();
+            if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "YES" || upperVal == "ON" || upperVal == "T")
+                return "1";
+            if (upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "NO" || upperVal == "OFF" || upperVal == "F")
+                return "0";
+            else
+            {
+                alert(value + " is not a valid boolean for field '" + fieldName + "'. Try true,false; yes,no; on,off; or 1,0.");
+                return undefined
+            }
+        }
+        else
+            return value;
+    },
+
+    twoDigit : function(num)
+    {
+        if (num < 10)
+            return "0" + num;
+        else
+            return "" + num;
+    },
+
+    clearSort : function(tableName, columnName)
+    {
+        if(!tableName || !columnName)
+            return;
+
+        var dr = LABKEY.DataRegions[tableName];
+        if (!dr)
+            return;
+        dr.clearSort(columnName);
+    },
+
+
+    handleKey : function(event)
+    {
+        switch (event.keyCode)
+        {
+            case 13: // enter
+                this.doFilter();
+                break;
+
+            case 27: // esc
+                this.hideFilterDiv();
+                break;
+        }
     }
-    else
-        return value;
-}
+};
 
-function twoDigit(num)
+
+function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback)
 {
-    if (num < 10)
-        return "0" + num;
-    else
-        return "" + num;
+    LABKEY.DataRegion._filterUI.showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback);
 }
 
-function doSort(tableName, columnName, sortDirection)
-{
-    if (!tableName || !columnName)
-        return;
 
-    var dr = LABKEY.DataRegions[tableName];
-    if (!dr)
-        return;
-    dr.changeSort(columnName, sortDirection);
-}
-
-function clearSort(tableName, columnName)
-{
-    if(!tableName || !columnName)
-        return;
-
-    var dr = LABKEY.DataRegions[tableName];
-    if (!dr)
-        return;
-    dr.clearSort(columnName);
-}
-
-// If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.
+/**
+ * If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.
+ */
 function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singularConfirmText)
 {
     var checked = 0;
@@ -2244,16 +2329,14 @@ function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singul
     }
 }
 
-function handleKey(event)
-{
-    switch (event.keyCode)
-    {
-        case 13: // enter
-            doFilter();
-            break;
 
-        case 27: // esc
-            hideFilterDiv();
-            break;
-    }
+function doSort(tableName, columnName, sortDirection)
+{
+    if (!tableName || !columnName)
+        return;
+
+    var dr = LABKEY.DataRegions[tableName];
+    if (!dr)
+        return;
+    dr.changeSort(columnName, sortDirection);
 }
