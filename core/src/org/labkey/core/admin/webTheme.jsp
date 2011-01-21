@@ -319,17 +319,17 @@ if (null == webThemeErrors)
 </tr>
 <%}%>
 <tr>
-    <td class="labkey-form-label">Link Color</td>
-    <td>
-        <input type="text" name="linkColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getLinkColor() : StringUtils.trimToEmpty(bean.form.getLinkColor()))%>" <%=disabled%> onfocus="updateLinkColor()" onblur="updateLinkColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('linkColor')[0])"<%}%>>
-    </td>
-</tr>
-<tr>
     <td class="labkey-form-label">Text Color</td>
     <td>
         <input type="text" name="textColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getTextColor() : StringUtils.trimToEmpty(bean.form.getTextColor()))%>" <%=disabled%> onfocus="updateTextColor()" onblur="updateTextColor()">
         <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('textColor')[0])"<%}%>>
+    </td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Link Color</td>
+    <td>
+        <input type="text" name="linkColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getLinkColor() : StringUtils.trimToEmpty(bean.form.getLinkColor()))%>" <%=disabled%> onfocus="updateLinkColor()" onblur="updateLinkColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.getElementsByName('linkColor')[0])"<%}%>>
     </td>
 </tr>
 <tr>

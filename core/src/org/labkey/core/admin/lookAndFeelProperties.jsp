@@ -126,14 +126,6 @@
         <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ADMIN.toString()%>" <%=currentMode == FolderDisplayMode.ADMIN ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
     </td>
 </tr>
-<% if (!WebThemeManager.getTheme(c).isCustom()) {%>
-<tr>
-    <td class="labkey-form-label">Left navigation bar width (pixels)</td>
-    <td>
-        <input name="navigationBarWidth" value="<%=laf.getNavigationBarWidth() %>" type="text" size="4">
-    </td>
-</tr>
-<% } %>
 <%
 if (AppProps.getInstance().isDevMode())
 { %>
