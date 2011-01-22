@@ -20,6 +20,7 @@ import junit.framework.Assert;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.Converter;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +35,7 @@ import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import java.sql.Types;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: brittp
@@ -663,7 +665,29 @@ public enum CompareType
             return (Date)v;
         if (v instanceof Calendar)
             return ((Calendar)v).getTime();
-        return new Date(DateUtil.parseDateTime(v.toString()));
+        String s = v.toString();
+
+        try
+        {
+            if (!s.startsWith("-") && !s.startsWith("+"))
+                return new Date(DateUtil.parseDateTime(s));
+        }
+        catch (ConversionException x)
+        {
+        }
+
+        boolean add = true;
+        if (s.startsWith("-") || s.startsWith("+"))
+        {
+            add = s.startsWith("+");
+            s = s.substring(1);
+        }
+        if (NumberUtils.isDigits(s))
+            s = s + "d";
+        if (add)
+            return new Date(DateUtil.addDuration(System.currentTimeMillis(), s));
+        else
+            return new Date(DateUtil.subtractDuration(System.currentTimeMillis(), s));
     }
 
 
@@ -864,6 +888,11 @@ public enum CompareType
             return dateValue.compareTo(param) < 0;
         }
     }
+
+
+
+
+
 
     abstract private static class LikeClause extends CompareClause
     {

@@ -732,6 +732,8 @@ validNum:       {
     // PnYnMnDTnH nMnS,
     public static long parseDuration(String s)
     {
+        boolean period = false;
+        boolean monthInPeriod = false;
         int year = -1;
         int month = -1;
         int day = -1;
@@ -751,11 +753,13 @@ Parse:
             case 'P':
                 if (i != 0)
                     break Parse;
+                period = true;
                 startField = i+1;
                 break;
             case 'Y': case 'y':
                 if (year != -1 || month != -1 || day != -1)
                     break Parse;
+                period = true;
                 year = Integer.parseInt(s.substring(startField,i));
                 startField = i+1;
                 break;
@@ -763,6 +767,7 @@ Parse:
                 if (!time && month == -1)
                 {
                     month = Integer.parseInt(s.substring(startField,i));
+                    monthInPeriod = period;
                 }
                 else
                 {
@@ -814,8 +819,9 @@ Parse:
 
         // check if month should have been minute
         // can only happen if there is no day or hour specified
-        if (month != -1 && year == -1 && day == -1 && hour == -1 && min == -1)
+        if ((month != -1 && min == -1) && !monthInPeriod && !time)
         {
+            assert -1 == day && -1 == hour;
             min = month;
             month = -1;
         }
@@ -836,7 +842,9 @@ Parse:
     {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(d);
-        
+
+        boolean period = false;
+        boolean monthInPeriod = false;
         int year = -1;
         int month = -1;
         int day = -1;
@@ -856,11 +864,13 @@ Parse:
             case 'P':
                 if (i != 0)
                     break Parse;
+                period = true;
                 startField = i+1;
                 break;
             case 'Y': case 'y':
                 if (year != -1 || month != -1 || day != -1)
                     break Parse;
+                period = true;
                 year = Integer.parseInt(s.substring(startField,i));
                 startField = i+1;
                 break;
@@ -868,6 +878,7 @@ Parse:
                 if (!time && month == -1)
                 {
                     month = Integer.parseInt(s.substring(startField,i));
+                    monthInPeriod = period;
                 }
                 else
                 {
@@ -919,8 +930,9 @@ Parse:
 
         // check if month should have been minute
         // can only happen if there is no day or hour specified
-        if (month != -1 && year == -1 && day == -1 && hour == -1 && min == -1)
+        if ((month != -1 && min == -1) && !monthInPeriod && !time)
         {
+            assert -1 == day && -1 == hour;
             min = month;
             month = -1;
         }
@@ -1142,17 +1154,23 @@ Parse:
 
             long start = parseStringJDBC("2010-01-31");
             assertEquals(parseDateTime("2011-01-31"), addDuration(start,"1y"));
+            assertEquals(parseDateTime("2010-02-28"), addDuration(start,"P1m"));
             assertEquals(parseDateTime("2010-02-28"), addDuration(start,"1m0d"));
+            assertEquals(parseDateTime("2010-02-28"), addDuration(start,"0y1m"));
             assertEquals(parseDateTime("2010-02-01"), addDuration(start,"1d"));
             assertEquals(parseDateTime("2010-01-31 01:00:00"), addDuration(start,"1h"));
             assertEquals(parseDateTime("2010-01-31 00:01:00"), addDuration(start,"1m"));
+            assertEquals(parseDateTime("2010-01-31 00:01:00"), addDuration(start,"PT1m"));
             assertEquals(parseDateTime("2010-01-31 00:00:01"), addDuration(start,"1s"));
 
             assertEquals(parseDateTime("2009-01-31"), subtractDuration(start,"1y"));
+            assertEquals(parseDateTime("2009-12-31"), subtractDuration(start,"P1m"));
             assertEquals(parseDateTime("2009-12-31"), subtractDuration(start,"1m0d"));
+            assertEquals(parseDateTime("2009-12-31"), subtractDuration(start,"0y1m"));
             assertEquals(parseDateTime("2010-01-30"), subtractDuration(start,"1d"));
             assertEquals(parseDateTime("2010-01-30 23:00:00"), subtractDuration(start,"1h"));
             assertEquals(parseDateTime("2010-01-30 23:59:00"), subtractDuration(start,"1m"));
+            assertEquals(parseDateTime("2010-01-30 23:59:00"), subtractDuration(start,"PT1m"));
             assertEquals(parseDateTime("2010-01-30 23:59:59"), subtractDuration(start,"1s"));
         }
     }
