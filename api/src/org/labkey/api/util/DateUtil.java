@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 
 public class DateUtil
@@ -813,7 +814,7 @@ Parse:
 
         // check if month should have been minute
         // can only happen if there is no day or hour specified
-        if (month != -1 && day == -1 && hour == -1 && min == -1)
+        if (month != -1 && year == -1 && day == -1 && hour == -1 && min == -1)
         {
             min = month;
             month = -1;
@@ -830,12 +831,135 @@ Parse:
     }
 
 
+    /** handles year, and month **/
+    private static long _addDuration(long d, String s, int sign)
+    {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(d);
+        
+        int year = -1;
+        int month = -1;
+        int day = -1;
+        boolean time = false;
+        int hour = -1;
+        int min = -1;
+        double sec = -1;
+
+        int startField = 0;
+        int i;
+Parse:
+        for (i=0 ; i<s.length() ; i++)
+        {
+            char c = s.charAt(i);
+            switch (c)
+            {
+            case 'P':
+                if (i != 0)
+                    break Parse;
+                startField = i+1;
+                break;
+            case 'Y': case 'y':
+                if (year != -1 || month != -1 || day != -1)
+                    break Parse;
+                year = Integer.parseInt(s.substring(startField,i));
+                startField = i+1;
+                break;
+            case 'M': case 'm':
+                if (!time && month == -1)
+                {
+                    month = Integer.parseInt(s.substring(startField,i));
+                }
+                else
+                {
+                    if (min != -1 || sec != -1)
+                        break Parse;
+                    min = Integer.parseInt(s.substring(startField,i));
+                }
+                startField = i+1;
+                break;
+            case 'D': case 'd':
+                if (day != -1 || hour != -1)
+                    break Parse;
+                time = true;
+                day = Integer.parseInt(s.substring(startField,i));
+                startField = i+1;
+                break;
+            case 'T': case 't':
+                if (hour != -1 || min != -1 || sec != -1)
+                    break Parse;
+                time = true;
+                startField = i+1;
+                break;
+            case 'H': case 'h':
+                if (hour != -1 || min != -1)
+                    break Parse;
+                time = true;
+                hour = Integer.parseInt(s.substring(startField,i));
+                startField = i+1;
+                break;
+            case 'S': case 's':
+                if (sec != -1 || i != s.length()-1)
+                    break Parse;
+                sec = Double.parseDouble(s.substring(startField,i));
+                startField = i+1;
+                break;
+            case '0': case '1': case '2': case '3': case '4' : case '5': case '6': case '7': case'8': case '9':
+                break;
+            case '.':
+                if (i == startField)
+                    break Parse;
+                break;
+            default:
+                break Parse;
+            }
+        }
+
+        if (i < s.length())
+            throw new ConversionException("Illegal duration: " + s);
+
+        // check if month should have been minute
+        // can only happen if there is no day or hour specified
+        if (month != -1 && year == -1 && day == -1 && hour == -1 && min == -1)
+        {
+            min = month;
+            month = -1;
+        }
+
+        if (year > 0)
+            calendar.add(Calendar.YEAR, sign*year);
+        if (month > 0)
+            calendar.add(Calendar.MONTH, month*sign);
+        if (day > 0)
+            calendar.add(Calendar.DAY_OF_MONTH, day*sign);
+        if (hour > 0)
+            calendar.add(Calendar.HOUR_OF_DAY, hour*sign);
+        if (min > 0)
+            calendar.add(Calendar.MINUTE, min*sign);
+        if (sec > 0)
+            calendar.add(Calendar.MILLISECOND, (int)(1000*sec*sign));
+
+        return calendar.getTimeInMillis();
+    }
+
+
     private static long makeDuration(int day, int hour, int min, double sec)
     {
         return  day * DateUtils.MILLIS_PER_DAY +
                 hour * DateUtils.MILLIS_PER_HOUR +
                 min * DateUtils.MILLIS_PER_MINUTE +
                 (int)(sec * DateUtils.MILLIS_PER_SECOND);
+    }
+
+
+    public static long addDuration(long d, String s)
+    {
+        return _addDuration(d, s, 1);
+    }
+
+
+    public static long subtractDuration(long d, String s)
+    {
+        return _addDuration(d, s, -1);
     }
 
 
@@ -1015,6 +1139,21 @@ Parse:
             assertEquals("1d2h3m4s", formatDuration(makeDuration(1,2,3,4)));
             assertEquals("1h2m3.010s", formatDuration(makeDuration(0,1,2,3.010)));
             assertEquals("1h0m0.010s", formatDuration(makeDuration(0,1,0,0.010)));
+
+            long start = parseStringJDBC("2010-01-31");
+            assertEquals(parseDateTime("2011-01-31"), addDuration(start,"1y"));
+            assertEquals(parseDateTime("2010-02-28"), addDuration(start,"1m0d"));
+            assertEquals(parseDateTime("2010-02-01"), addDuration(start,"1d"));
+            assertEquals(parseDateTime("2010-01-31 01:00:00"), addDuration(start,"1h"));
+            assertEquals(parseDateTime("2010-01-31 00:01:00"), addDuration(start,"1m"));
+            assertEquals(parseDateTime("2010-01-31 00:00:01"), addDuration(start,"1s"));
+
+            assertEquals(parseDateTime("2009-01-31"), subtractDuration(start,"1y"));
+            assertEquals(parseDateTime("2009-12-31"), subtractDuration(start,"1m0d"));
+            assertEquals(parseDateTime("2010-01-30"), subtractDuration(start,"1d"));
+            assertEquals(parseDateTime("2010-01-30 23:00:00"), subtractDuration(start,"1h"));
+            assertEquals(parseDateTime("2010-01-30 23:59:00"), subtractDuration(start,"1m"));
+            assertEquals(parseDateTime("2010-01-30 23:59:59"), subtractDuration(start,"1s"));
         }
     }
 }
