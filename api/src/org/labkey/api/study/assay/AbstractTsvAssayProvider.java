@@ -279,7 +279,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             colMap.put(c.getName(), c);
         }
 
-        SQLFragment fromSQL = QueryService.get().getSelectSQL(fromTable, fromColumns.values(), null, new Sort("ObjectId"), Table.ALL_ROWS, 0);
+        SQLFragment fromSQL = QueryService.get().getSelectSQL(fromTable, fromColumns.values(), null, null, Table.ALL_ROWS, 0);
 
         // 
         SQLFragment insertInto = new SQLFragment("INSERT INTO " + toTable.getSelectName() + " (" + objectIdSpec.getName());
@@ -309,7 +309,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         }
         insertInto.append(")\n");
         insertInto.append(select);
-        insertInto.append("\n FROM (").append(fromSQL).append(") x");
+        insertInto.append("\n FROM (").append(fromSQL).append(") x ORDER BY ObjectId ");
 
         ModuleUpgrader.getLogger().info("Migrating data for [" + container.getPath() + "]  '" + protocol.getName() + "'");
         ModuleUpgrader.getLogger().info(insertInto.toString());
