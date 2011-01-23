@@ -17,7 +17,6 @@
 package org.labkey.announcements.model;
 
 import org.labkey.announcements.AnnouncementsController;
-import org.labkey.announcements.model.AnnouncementManager.EmailPref;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.announcements.DiscussionService;
@@ -35,7 +34,7 @@ public abstract class EmailPrefsSelector
 {
     // All project users' preferences plus anyone else who's signed up for notifications from this board.
     // Default option is set if this user has not indicated a preference.  Prefs with NONE have been removed.
-    protected List<EmailPref> _emailPrefs;
+    protected List<MessageConfigManager.EmailPref> _emailPrefs;
     protected Container _c;
 
     protected EmailPrefsSelector(Container c) throws SQLException
@@ -49,10 +48,10 @@ public abstract class EmailPrefsSelector
     private void initEmailPrefs(Container c) throws SQLException
     {
         int defaultOption = AnnouncementManager.getDefaultEmailOption(c);
-        EmailPref[] epArray = AnnouncementManager.getEmailPrefs(c, null);
-        _emailPrefs = new ArrayList<EmailPref>(epArray.length);
+        MessageConfigManager.EmailPref[] epArray = AnnouncementManager.getEmailPrefs(c, null);
+        _emailPrefs = new ArrayList<MessageConfigManager.EmailPref>(epArray.length);
 
-        for (EmailPref ep : epArray)
+        for (MessageConfigManager.EmailPref ep : epArray)
         {
             if (null == ep.getEmailOptionId())
                 ep.setEmailOptionId(defaultOption);
@@ -64,7 +63,7 @@ public abstract class EmailPrefsSelector
 
 
     // Override this to filter out other prefs
-    protected boolean includeEmailPref(EmailPref ep)
+    protected boolean includeEmailPref(MessageConfigManager.EmailPref ep)
     {
         return AnnouncementManager.EMAIL_PREFERENCE_NONE != ep.getEmailOptionId();
     }
@@ -75,14 +74,14 @@ public abstract class EmailPrefsSelector
     {
         Set<User> users = new HashSet<User>(_emailPrefs.size());
 
-        for (EmailPref ep : _emailPrefs)
+        for (MessageConfigManager.EmailPref ep : _emailPrefs)
             users.add(ep.getUser());
 
         return users;
     }
 
 
-    protected boolean shouldSend(AnnouncementModel ann, EmailPref ep) throws ServletException, SQLException
+    protected boolean shouldSend(AnnouncementModel ann, MessageConfigManager.EmailPref ep) throws ServletException, SQLException
     {
         int emailPreference = ep.getEmailOptionId() & AnnouncementManager.EMAIL_PREFERENCE_MASK;
 

@@ -1,0 +1,65 @@
+<%
+/*
+ * Copyright (c) 2009-2010 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.query.QueryView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.GUID" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    String guid = GUID.makeGUID();
+    String onClickScript = null;
+%>
+
+<table class="labkey-export-tab-contents">
+    <tr>
+        <td class="labkey-export-tab-options">
+            <table class="labkey-export-tab-layout">
+                <tr>
+                    <td><span class="labkey-strong">Set Folder default</span></td>
+                    <td><select>
+                        <option value="daily">Daily</option>
+                        <option value="individual">Individual</option>
+                        <option value="none">None</option>
+                    </select></td>
+                    <td><%=PageFlowUtil.generateButton("Set folder default", "javascript:void(0)", "onSetFolderDefault();")%></td>
+                </tr>
+                <tr>
+                    <td><span class="labkey-strong">Configure Selected Users</span></td>
+                    <td><select>
+                        <option value="default">Folder default</option>
+                        <option value="daily">Daily</option>
+                        <option value="individual">Individual</option>
+                        <option value="none">None</option>
+                    </select></td>
+                    <td><%=PageFlowUtil.generateSubmitButton("Configure selected users", null, "labkey-requires-selection=\"users\"")%></td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+<script type="text/javascript">
+
+    function onSetFolderDefault()
+    {
+        alert("on set folder default");    
+    }
+</script>
+

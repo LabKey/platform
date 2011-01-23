@@ -15,6 +15,7 @@
  */
 package org.labkey.announcements;
 
+import org.labkey.announcements.model.MessageConfigManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
@@ -67,7 +68,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
         //when user is deleted from site, remove any corresponding record from EmailPrefs table.
         try
         {
-            AnnouncementManager.deleteUserEmailPref(user, null);
+            MessageConfigManager.deleteUserEmailPref(user, null);
             AnnouncementManager.deleteUserFromAllMemberLists(user);
         }
         catch (SQLException e)
@@ -108,7 +109,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
                 try
                 {
 
-                    AnnouncementManager.deleteUserEmailPref(user, containerList);
+                    MessageConfigManager.deleteUserEmailPref(user, containerList);
                 }
                 catch (SQLException e)
                 {

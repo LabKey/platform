@@ -18,23 +18,74 @@ package org.labkey.announcements;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.labkey.announcements.EmailNotificationPage.Reason;
-import org.labkey.announcements.model.*;
-import org.labkey.announcements.model.AnnouncementManager.EmailOption;
-import org.labkey.announcements.model.AnnouncementManager.EmailPref;
-import org.labkey.api.action.*;
+import org.labkey.announcements.config.AnnouncementEmailConfig;
+import org.labkey.announcements.model.AnnouncementManager;
+import org.labkey.announcements.model.AnnouncementModel;
+import org.labkey.announcements.model.DailyDigest;
+import org.labkey.announcements.model.DiscussionServiceImpl;
+import org.labkey.announcements.model.IndividualEmailPrefsSelector;
+import org.labkey.announcements.model.NormalMessageBoardPermissions;
+import org.labkey.announcements.model.OptOutEmailPrefsSelector;
+import org.labkey.announcements.model.Permissions;
+import org.labkey.announcements.model.SecureMessageBoardPermissions;
+import org.labkey.api.action.AjaxCompletionAction;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.DiscussionService.Settings;
-import org.labkey.api.attachments.*;
-import org.labkey.api.data.*;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.DownloadURL;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.jsp.JspLoader;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserIdRenderer;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
@@ -42,9 +93,25 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GuidString;
+import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.ViewMessage;
-import org.labkey.api.view.*;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.AjaxCompletion;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
@@ -60,9 +127,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 
 /**
@@ -186,11 +265,13 @@ public class AnnouncementsController extends SpringActionController
 
     public static ActionURL getAdminEmailURL(Container c, URLHelper returnURL)
     {
-        ActionURL url = new ActionURL(AdminEmailAction.class, c);
+        ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getFolderSettingsURL(c);
+        url.addParameter("tabId", "messages");
         url.addReturnURL(returnURL);
         return url;
     }
 
+/*
     @RequiresPermissionClass(AdminPermission.class)
     public class AdminEmailAction extends SimpleViewAction<ReturnUrlForm>
     {
@@ -432,6 +513,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
+*/
 
     @RequiresSiteAdmin
     public class SendDailyDigestAction extends SimpleViewAction
@@ -1730,6 +1812,99 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SetEmailDefault extends ApiAction<AnnouncementEmailConfig.EmailConfigForm>
+    {
+        @Override
+        public ApiResponse execute(AnnouncementEmailConfig.EmailConfigForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            StringBuilder message = new StringBuilder("The current default has been updated to: ");
+
+            //save the default settings
+            AnnouncementManager.saveDefaultEmailOption(getContainer(), form.getDefaultEmailOption());
+
+            for (MessageConfigService.NotificationOption option : AnnouncementManager.getEmailOptions())
+            {
+                if (option.getEmailOptionId() == form.getDefaultEmailOption())
+                {
+                    message.append(option.getEmailOption());
+                    break;
+                }
+            }
+            resp.put("success", true);
+            resp.put("message", message.toString());
+
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SetBulkEmailOptions extends ApiAction<AnnouncementEmailConfig.EmailConfigForm>
+    {
+        @Override
+        public ApiResponse execute(AnnouncementEmailConfig.EmailConfigForm form, BindException errors) throws Exception
+        {
+            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, true);
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            if (!selections.isEmpty())
+            {
+                int newOption = form.getIndividualEmailOption();
+                for (String user : selections)
+                {
+
+                    User projectUser = UserManager.getUser(Integer.parseInt(user));
+                    int currentEmailOption = AnnouncementManager.getUserEmailOption(getContainer(), projectUser);
+
+                    //has this projectUser's option changed? if so, update
+                    //creating new record in EmailPrefs table if there isn't one, or deleting if set back to folder default
+                    if (currentEmailOption != newOption)
+                    {
+                        AnnouncementManager.saveEmailPreference(getUser(), getContainer(), projectUser, newOption);
+                    }
+                }
+                resp.put("success", true);
+            }
+            else
+            {
+                resp.put("success", false);
+                resp.put("message", "There were no users selected");
+            }
+            return resp;
+        }
+    }
+
+    /**
+     * Action to populate an Ext store with email notification options for admin settings
+     */
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetEmailOptions extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(AnnouncementEmailConfig.TYPE);
+            List<Map> options = new ArrayList<Map>();
+
+            // if the list of options is not for the folder default, add an option to use the folder default
+            if (getViewContext().get("isDefault") == null)
+                options.add(PageFlowUtil.map("id", -1, "label", "Folder default"));
+
+            for (MessageConfigService.NotificationOption option : provider.getOptions())
+            {
+                options.add(PageFlowUtil.map("id", option.getEmailOptionId(), "label", option.getEmailOption()));
+            }
+            resp.put("success", true);
+            if (!options.isEmpty())
+                resp.put("options", options);
+
+            return resp;
+        }
+    }
 
     private void sendNotificationEmails(AnnouncementModel a, WikiRendererType currentRendererType) throws Exception
     {
@@ -1891,6 +2066,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
+/*
     public static class BulkEditEmailPrefsForm extends ReturnUrlForm
     {
         private int[] _userId;
@@ -1916,6 +2092,7 @@ public class AnnouncementsController extends SpringActionController
             _userId = userId;
         }
     }
+*/
 
     public static class AnnouncementDeleteForm extends ReturnUrlForm
     {
@@ -2223,7 +2400,7 @@ public class AnnouncementsController extends SpringActionController
 
         public static class EmailDefaultsBean
         {
-            public List<AnnouncementManager.EmailOption> emailOptionsList;
+            public List<MessageConfigService.NotificationOption> emailOptionsList;
             public int defaultEmailOption;
             public URLHelper returnURL;
 
@@ -2768,4 +2945,5 @@ public class AnnouncementsController extends SpringActionController
             }
         }
     }
+
 }

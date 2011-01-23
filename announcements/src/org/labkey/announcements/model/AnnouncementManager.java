@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.announcements.AnnouncementsController;
+import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
@@ -38,6 +39,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -241,6 +243,16 @@ public class AnnouncementManager
         return ann[0];
     }
 
+    private static MessageConfigService.ConfigTypeProvider _configProvider;
+    public static MessageConfigService.ConfigTypeProvider getAnnouncementConfigProvider()
+    {
+        if (_configProvider == null)
+        {
+            _configProvider = MessageConfigService.getInstance().getConfigType(AnnouncementEmailConfig.TYPE);
+            assert(_configProvider != null);
+        }
+        return _configProvider;
+    }
 
     public static AnnouncementModel getAnnouncement(Container c, int rowId) throws SQLException
     {
@@ -254,38 +266,12 @@ public class AnnouncementManager
 
     public static synchronized void saveEmailPreference(User currentUser, Container c, User projectUser, int emailPreference) throws SQLException
     {
-        //determine whether user has record in EmailPrefs table.
-        EmailPref emailPref = getUserEmailPrefRecord(c, projectUser);
-
-        //insert new if user preference record does not yet exist
-        if (null == emailPref && emailPreference != EMAIL_PREFERENCE_DEFAULT)
-        {
-            emailPref = new EmailPref();
-            emailPref.setContainer(c.getId());
-            emailPref.setUserId(projectUser.getUserId());
-            emailPref.setEmailFormatId(EMAIL_FORMAT_HTML);
-            emailPref.setEmailOptionId(emailPreference);
-            emailPref.setPageTypeId(PAGE_TYPE_MESSAGE);
-            emailPref.setLastModifiedBy(currentUser.getUserId());
-            Table.insert(currentUser, _comm.getTableInfoEmailPrefs(), emailPref);
+        try {
+            getAnnouncementConfigProvider().savePreference(currentUser, c, projectUser, emailPreference);
         }
-        else
+        catch (Exception e)
         {
-            if (emailPreference == EMAIL_PREFERENCE_DEFAULT)
-            {
-                //if preference has been set back to default, delete user's email pref record
-                SimpleFilter filter = new SimpleFilter();
-                filter.addCondition("UserId", projectUser.getUserId());
-                Table.delete(_comm.getTableInfoEmailPrefs(), filter);
-            }
-            else
-            {
-                //otherwise update if it already exists
-                emailPref.setEmailOptionId(emailPreference);
-                emailPref.setLastModifiedBy(currentUser.getUserId());
-                Table.update(currentUser, _comm.getTableInfoEmailPrefs(), emailPref,
-                        new Object[]{c.getId(), projectUser.getUserId()});
-            }
+            throw new SQLException(e);
         }
     }
 
@@ -483,15 +469,22 @@ public class AnnouncementManager
 
     public static int getUserEmailOption(Container c, User user) throws SQLException
     {
-        EmailPref emailPref = getUserEmailPrefRecord(c, user);
+        try {
+            MessageConfigService.UserPreference emailPref = getAnnouncementConfigProvider().getPreference(c, user);
 
-        //user has not yet defined email preference; return project default
-        if (emailPref == null)
-            return EMAIL_PREFERENCE_DEFAULT;
-        else
-            return emailPref.getEmailOptionId();
+            //user has not yet defined email preference; return project default
+            if (emailPref == null)
+                return EMAIL_PREFERENCE_DEFAULT;
+            else
+                return emailPref.getEmailOptionId();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
+/*
     //returns explicit record from EmailPrefs table for this user if there is one.
     private static EmailPref getUserEmailPrefRecord(Container c, User user) throws SQLException
     {
@@ -513,10 +506,11 @@ public class AnnouncementManager
         else
             return emailPrefs[0];
     }
+*/
 
-    static EmailPref[] getEmailPrefs(Container c, User user) throws SQLException
+    static MessageConfigManager.EmailPref[] getEmailPrefs(Container c, User user) throws SQLException
     {
-        EmailPref[] emailPrefs;
+        MessageConfigManager.EmailPref[] emailPrefs;
 
         //return records for all project users, including those who have not explicitly set preference
         Object[] param;
@@ -534,11 +528,12 @@ public class AnnouncementManager
                 _comm.getSchema(),
                 sql,
                 param,
-                EmailPref.class
+                MessageConfigManager.EmailPref.class
                 );
 
         return emailPrefs;
     }
+/*
 
     public static ResultSet getEmailPrefsResultset(Container c) throws SQLException
     {
@@ -546,6 +541,7 @@ public class AnnouncementManager
         Object[] param = new Object[]{c.getId(), cProject.getId(), c.getId()};
         return Table.executeQuery(CommSchema.getInstance().getSchema(), _emailPrefsSql, param);
     }
+*/
 
     private static final String _emailPrefsSql;
 
@@ -585,14 +581,15 @@ public class AnnouncementManager
         return Table.executeSingleton(_comm.getSchema(), "SELECT COUNT(*) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
     }
 
-    public static EmailOption[] getEmailOptions() throws SQLException
+    public static MessageConfigService.NotificationOption[] getEmailOptions() throws SQLException
     {
-        return Table.select(_comm.getTableInfoEmailOptions(),
-                Table.ALL_COLUMNS,
-                null,
-                new Sort("EmailOptionId"),
-                EmailOption.class
-                );
+        try {
+            return getAnnouncementConfigProvider().getOptions();
+        }
+        catch (Exception e)
+        {
+            throw new SQLException(e);
+        }
     }
 
     public static void saveDefaultEmailOption(Container c, int emailOption) throws SQLException
@@ -616,36 +613,6 @@ public class AnnouncementManager
         else
             return EMAIL_DEFAULT_OPTION;
     }
-
-    //delete all user records regardless of container
-    public static void deleteUserEmailPref(User user, List<Container> containerList) throws SQLException
-    {
-        if (containerList == null)
-        {
-            Table.delete(_comm.getTableInfoEmailPrefs(),
-                    new SimpleFilter("UserId", user.getUserId()));
-        }
-        else
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("UserId", user.getUserId());
-            StringBuilder whereClause = new StringBuilder("Container IN (");
-            for (int i = 0; i < containerList.size(); i++)
-            {
-                Container c = containerList.get(i);
-                whereClause.append("'");
-                whereClause.append(c.getId());
-                whereClause.append("'");
-                if (i < containerList.size() - 1)
-                    whereClause.append(", ");
-            }
-            whereClause.append(")");
-            filter.addWhereClause(whereClause.toString(), null);
-
-            Table.delete(_comm.getTableInfoEmailPrefs(), filter);
-        }
-    }
-
 
     private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
 
@@ -690,187 +657,6 @@ public class AnnouncementManager
             _log.error("purgeContainer", x);
         }
     }
-
-    public static class EmailPref
-    {
-        String _container;
-        int _userId;
-        String _email;
-        String _firstName;
-        String _lastName;
-        String _displayName;
-        Integer _emailOptionId;
-        Integer _emailFormatId;
-        String _emailOption;
-        Integer _lastModifiedBy;
-        String _lastModifiedByName;
-
-        boolean _projectMember;
-
-        int _pageTypeId;
-
-        public String getLastModifiedByName()
-        {
-            return _lastModifiedByName;
-        }
-
-        public void setLastModifiedByName(String lastModifiedByName)
-        {
-            _lastModifiedByName = lastModifiedByName;
-        }
-
-        public Integer getLastModifiedBy()
-        {
-            return _lastModifiedBy;
-        }
-
-        public void setLastModifiedBy(Integer lastModifiedBy)
-        {
-            _lastModifiedBy = lastModifiedBy;
-        }
-
-        public String getEmail()
-        {
-            return _email;
-        }
-
-        public void setEmail(String email)
-        {
-            _email = email;
-        }
-
-        public String getContainer()
-        {
-            return _container;
-        }
-
-        public void setContainer(String container)
-        {
-            _container = container;
-        }
-
-        public String getEmailOption()
-        {
-            return _emailOption;
-        }
-
-        public void setEmailOption(String emailOption)
-        {
-            _emailOption = emailOption;
-        }
-
-        public String getFirstName()
-        {
-            return _firstName;
-        }
-
-        public void setFirstName(String firstName)
-        {
-            _firstName = firstName;
-        }
-
-        public String getLastName()
-        {
-            return _lastName;
-        }
-
-        public void setLastName(String lastName)
-        {
-            _lastName = lastName;
-        }
-
-        public String getDisplayName()
-        {
-            return _displayName;
-        }
-
-        public void setDisplayName(String displayName)
-        {
-            _displayName = displayName;
-        }
-
-        public Integer getEmailFormatId()
-        {
-            return _emailFormatId;
-        }
-
-        public void setEmailFormatId(Integer emailFormatId)
-        {
-            _emailFormatId = emailFormatId;
-        }
-
-        public Integer getEmailOptionId()
-        {
-            return _emailOptionId;
-        }
-
-        public void setEmailOptionId(Integer emailOptionId)
-        {
-            _emailOptionId = emailOptionId;
-        }
-
-        public int getUserId()
-        {
-            return _userId;
-        }
-
-        public void setUserId(int userId)
-        {
-            _userId = userId;
-        }
-
-        public int getPageTypeId()
-        {
-            return _pageTypeId;
-        }
-
-        public void setPageTypeId(int pageTypeId)
-        {
-            _pageTypeId = pageTypeId;
-        }
-
-        public boolean isProjectMember()
-        {
-            return _projectMember;
-        }
-
-        public void setProjectMember(boolean projectMember)
-        {
-            _projectMember = projectMember;
-        }
-
-        public User getUser()
-        {
-            return UserManager.getUser(_userId);
-        }
-    }
-
-    public static class EmailOption
-    {
-        int _emailOptionId;
-        String _emailOption;
-
-        public String getEmailOption()
-        {
-            return _emailOption;
-        }
-
-        public void setEmailOption(String emailOption)
-        {
-            _emailOption = emailOption;
-        }
-
-        public int getEmailOptionId()
-        {
-            return _emailOptionId;
-        }
-
-        public void setEmailOptionId(int emailOptionId)
-        {
-            _emailOptionId = emailOptionId;
-        }
-    }
-
 
     public static void indexMessages(SearchService.IndexTask task, Container c, Date modifiedSince)
     {

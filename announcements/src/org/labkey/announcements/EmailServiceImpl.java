@@ -37,6 +37,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -201,12 +202,18 @@ public class EmailServiceImpl implements EmailService.I
         @Override
         public void addContent(contentType type, ViewContext context, HttpView view) throws Exception
         {
+            addContent(type, context.getRequest(), view);
+        }
+
+        @Override
+        public void addContent(contentType type, HttpServletRequest request, HttpView view) throws Exception
+        {
             // set the frame type to none to remove the extra div that gets added otherwise.
             if (view instanceof JspView)
                 ((JspView)view).setFrame(WebPartView.FrameType.NONE);
 
             MockHttpServletResponse response = new MockHttpServletResponse();
-            HttpView.include(view, context.getRequest(), response);
+            HttpView.include(view, request, response);
 
             addContent(type, response.getContentAsString());
         }

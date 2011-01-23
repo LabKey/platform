@@ -30,6 +30,7 @@
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.core.admin.FolderSettingsAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -41,7 +42,7 @@ var defaultModules = new Object();
 <% //Generate javascript objects...
 final ViewContext context = HttpView.currentContext();
 Container c = context.getContainer();
-AdminController.FolderSettingsForm form = (AdminController.FolderSettingsForm) HttpView.currentModel();
+FolderSettingsAction.FolderSettingsForm form = (FolderSettingsAction.FolderSettingsForm) HttpView.currentModel();
 Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes();
 List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
 Collections.sort(allModules, new Comparator<Module>()

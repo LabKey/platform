@@ -34,7 +34,7 @@ public class OptOutEmailPrefsSelector extends EmailPrefsSelector
     }
 
     @Override
-    protected boolean includeEmailPref(AnnouncementManager.EmailPref ep)
+    protected boolean includeEmailPref(MessageConfigManager.EmailPref ep)
     {
         return ep.getEmailOptionId().intValue() == AnnouncementManager.EMAIL_PREFERENCE_NONE;
     }

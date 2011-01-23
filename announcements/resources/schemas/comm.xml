@@ -259,6 +259,7 @@
     <ns:columns>
       <ns:column columnName="EmailOptionId"/>
       <ns:column columnName="EmailOption"/>
+      <ns:column columnName="Type"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="PageTypes" tableDbType="TABLE">
@@ -271,6 +272,7 @@
     <ns:columns>
       <ns:column columnName="Container"/>
       <ns:column columnName="UserId"/>
+      <ns:column columnName="Type"/>
       <ns:column columnName="EmailOptionId"/>
       <ns:column columnName="EmailFormatId"/>
       <ns:column columnName="PageTypeId"/>

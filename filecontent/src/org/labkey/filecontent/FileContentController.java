@@ -38,6 +38,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.*;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailPrefFilter;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -61,6 +62,7 @@ import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.filecontent.message.FileEmailConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -1185,11 +1187,14 @@ public class FileContentController extends SpringActionController
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
             ApiSimpleResponse response =  new ApiSimpleResponse();
-            String pref = EmailService.get().getEmailPref(getUser(), getContainer(), new FileContentEmailPref());
+
+            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE);
+            MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), getUser());
+
             String prefWithDefault = EmailService.get().getEmailPref(getUser(), getContainer(),
                     new FileContentEmailPref(), new FileContentDefaultEmailPref());
 
-            response.put("emailPref", pref);
+            response.put("emailPref", pref != null ? pref.getEmailOptionId() : "-1");
             response.put("emailPrefDefault", prefWithDefault);
             response.put("success", true);
 
@@ -1205,45 +1210,8 @@ public class FileContentController extends SpringActionController
         {
             ApiSimpleResponse response =  new ApiSimpleResponse();
 
-            EmailService.get().setEmailPref(getUser(), getContainer(), new FileContentEmailPref(), String.valueOf(form.getEmailPref()));
-            response.put("success", true);
-
-            return response;
-        }
-    }
-
-    /**
-     * Returns group default email pref settings.
-     */
-    @RequiresPermissionClass(AdminPermission.class)
-    public class GetDefaultEmailPrefAction extends ApiAction<Object>
-    {
-        @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response =  new ApiSimpleResponse();
-            String pref = EmailService.get().getDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref());
-
-            EmailPrefFilter filter = new FileContentEmailPrefFilter(FileContentEmailPref.INDIVIDUAL);
-            User[] users = filter.getUsers(getContainer());
-
-            response.put("emailPref", pref);
-            response.put("individualEmailUsersCount", users.length);
-            response.put("success", true);
-
-            return response;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class SetDefaultEmailPrefAction extends MutatingApiAction<EmailPrefForm>
-    {
-        @Override
-        public ApiResponse execute(EmailPrefForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response =  new ApiSimpleResponse();
-
-            EmailService.get().setDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref(), String.valueOf(form.getEmailPref()));
+            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE);
+            provider.savePreference(getUser(), getContainer(), getUser(), form.getEmailPref());
             response.put("success", true);
 
             return response;

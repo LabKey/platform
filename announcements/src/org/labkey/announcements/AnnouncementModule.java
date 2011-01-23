@@ -17,12 +17,14 @@ package org.labkey.announcements;
 
 import org.apache.log4j.Logger;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
+import org.labkey.announcements.config.MessageConfigServiceImpl;
+import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
-import org.labkey.announcements.model.DailyDigest;
 import org.labkey.announcements.model.DiscussionServiceImpl;
 import org.labkey.announcements.model.DiscussionWebPartFactory;
 import org.labkey.announcements.model.SecureMessageBoardReadPermission;
 import org.labkey.announcements.model.SecureMessageBoardRespondPermission;
+import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.AnnouncementService;
@@ -32,6 +34,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
+import org.labkey.api.message.MessageSchema;
+import org.labkey.api.message.digest.DailyMessageDigest;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.notification.EmailService;
@@ -45,7 +50,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -84,7 +88,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     public double getVersion()
     {
-        return 10.31;
+        return 10.32;
     }
 
     protected void init()
@@ -92,6 +96,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         addController("announcements", AnnouncementsController.class);
         AnnouncementService.setInstance(new AnnouncementServiceImpl());
         AnnouncementSchema.register();
+        MessageSchema.register();
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -156,8 +161,14 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         editor.addPermission(SecureMessageBoardReadPermission.class);
         editor.addPermission(SecureMessageBoardRespondPermission.class);
 
-        DailyDigest.setTimer();
+        // initialize message digests
+        DailyMessageDigest.getInstance().initializeTimer();
+        DailyMessageDigest.getInstance().addProvider(new AnnouncementDigestProvider());
 
+        // initialize message config service and add a config provider for announcements
+        ServiceRegistry.get().registerService(MessageConfigService.I.class, new MessageConfigServiceImpl());
+        MessageConfigService.getInstance().registerConfigType(new AnnouncementEmailConfig());
+        
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)
         {
@@ -185,8 +196,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
             User installerUser = moduleContext.getUpgradeUser();
 
-            if (installerUser != null && !installerUser.isGuest())
-                AnnouncementManager.saveEmailPreference(installerUser, supportContainer, AnnouncementManager.EMAIL_PREFERENCE_ALL);
+            // TODO: is this really necessary anymore?
+            //if (installerUser != null && !installerUser.isGuest())
+            //    AnnouncementManager.saveEmailPreference(installerUser, supportContainer, AnnouncementManager.EMAIL_PREFERENCE_ALL);
         }
         catch (SQLException e)
         {

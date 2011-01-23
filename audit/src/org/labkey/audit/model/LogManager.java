@@ -59,8 +59,8 @@ public class LogManager
         return Table.selectObject(getTinfoAuditLog(), filter, null, AuditLogEvent.class);
     }
 
-    public AuditLogEvent[] getEvents(Filter filter) throws SQLException
+    public AuditLogEvent[] getEvents(Filter filter, Sort sort) throws SQLException
     {
-        return Table.select(getTinfoAuditLog(), Table.ALL_COLUMNS, filter, null, AuditLogEvent.class);
+        return Table.select(getTinfoAuditLog(), Table.ALL_COLUMNS, filter, sort, AuditLogEvent.class);
     }
 }

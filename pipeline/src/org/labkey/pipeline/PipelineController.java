@@ -550,13 +550,6 @@ public class PipelineController extends SpringActionController
             options.updateFromJSON(props);
             svc.setAdminOptions(getContainer(), options);
 
-            // kind of ugly, the email prefs are piggybacked on the admin panel, even through they are
-            // stored in the email service.
-            if (props.containsKey("emailPref"))
-            {
-                String pref = String.valueOf(props.get("emailPref"));
-                EmailService.get().setDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref(), pref);
-            }
             return new ApiSimpleResponse("success", true);
         }
     }

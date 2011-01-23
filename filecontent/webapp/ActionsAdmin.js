@@ -116,23 +116,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         }
 
         Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("filecontent", "getDefaultEmailPref"),
-            method:'GET',
-            disableCaching:false,
-            success : this.getEmailConfiguration,
-            failure: LABKEY.Utils.displayAjaxErrorResponse,
-            updateSelection: true,
-            scope: this
-        });
-    },
-
-    getEmailConfiguration : function(response)
-    {
-        var o = eval('var $=' + response.responseText + ';$;');
-        this.emailPref = o.success ? o.emailPref : 0;
-        this.individualEmailUsersCount = o.individualEmailUsersCount ? o.individualEmailUsersCount : 0;
-
-        Ext.Ajax.request({
             autoAbort:true,
             url:this.actionsURL,
             method:'GET',
@@ -142,8 +125,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             scope: this
         });
     },
-
-    // parse the response and create the data object
 
     getPipelineActions : function(response)
     {
@@ -198,7 +179,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         var actionPanel = this.createActionsPropertiesPanel(data);
         var filePanel = this.createFilePropertiesPanel();
         var toolbarPanel = this.createToolbarPanel();
-        var emailPanel = this.createEmailPanel();
 
         var tabPanel = new Ext.TabPanel({
             activeTab: 'actionTab',
@@ -207,7 +187,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 actionPanel,
                 filePanel,
                 toolbarPanel,
-                emailPanel
             ]
         });
 
@@ -740,94 +719,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         return new Ext.Action(config);
     },
 
-    /**
-     * Add the email preferences configuration panel
-     */
-    createEmailPanel : function()
-    {
-        var radioItems = [];
-        radioItems.push({xtype: 'radio',
-            checked: this.emailPref == 1,
-            id: 'rd-individual-email',
-            handler: this.onEmailPrefChanged,
-            scope: this,
-            boxLabel: '<span class="labkey-strong">Individual</span> - send a separate email for file changes.',
-            name: 'emailPref', inputValue: 1});
-        radioItems.push({xtype: 'radio',
-            checked: this.emailPref == 2,
-            handler: this.onEmailPrefChanged,
-            scope: this,
-            disabled: true,
-            hidden: true,
-            boxLabel: '<span class="labkey-strong">Daily Digest</span> - send one email each day that summarizes file changes in this folder.',
-            name: 'emailPref', inputValue: 2});
-        radioItems.push({xtype: 'radio',
-            checked: this.emailPref == 0,
-            handler: this.onEmailPrefChanged,
-            scope: this,
-            boxLabel: "<span class='labkey-strong'>None</span> - don't send any email for file changes in this folder.",
-            name: 'emailPref', inputValue: 0});
-
-        var radioGroup = new Ext.form.RadioGroup({
-            xtype: 'radiogroup',
-            //fieldLabel: 'Email Notification Settings',
-            columns: 1,
-            labelSeparator: '',
-            items: radioItems
-        });
-
-        var panel = new Ext.form.FormPanel({
-            bodyStyle : 'padding:10px;',
-            labelWidth: 10,
-            height: 150,
-            border: false,
-            defaultType: 'radio',
-            items: [radioGroup]
-        });
-
-        this.tooltip = new Ext.ToolTip({
-            target: 'rd-individual-email',
-            anchor: 'top',
-            hidden: true,
-            closable: true,
-            dismissDelay: 0,
-            anchorOffset: 125,
-            html: 'Email notifications for file uploads, deletions, and other changes (including file properties) may be ' +
-                    'sent to every user in this project that has read access to this folder. This list currently includes ' + 
-                    this.individualEmailUsersCount + ' user(s).'
-        });
-
-        var emailPanel = new Ext.Panel({
-            id: 'emailTab',
-            title: 'Email Admin',
-            bodyStyle : 'padding:10px;',
-            layout: 'vbox',
-            layoutConfig: {
-                align: 'stretch',
-                pack: 'start'
-            },
-            items: [
-                {html: '<span class="labkey-strong">Configure Email defaults</span><br>Select the default email notification options to apply ' +
-                       'to this folder. Project users will have the option to override or accept folder defaults.', border: false, height: 55, autoScroll:true},
-                panel
-            ]
-        });
-
-        emailPanel.on('beforehide', function(){this.tooltip.hide();}, this);
-        emailPanel.on('beforedestroy', function(){this.tooltip.destroy();}, this);
-
-        return emailPanel;
-    },
-
-    onEmailPrefChanged : function(cb, checked)
-    {
-        if (checked)
-        {
-            this.emailPref = cb.initialConfig.inputValue;
-            this.tooltip.setVisible(this.emailPref == 1);
-        }
-    },
-
     onFilePropConfigChanged : function(group, rb)
     {
         this.fileConfig = rb.getGroupValue();
@@ -914,7 +805,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         adminOptions.importDataEnabled = this.importDataEnabled;
         adminOptions.fileConfig = this.fileConfig;
-        adminOptions.emailPref = this.emailPref;
 
         // grid column model changes
         adminOptions.gridConfig = this.grid.getState();
@@ -985,19 +875,17 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
                 boxLabel: "<span class='labkey-strong'>Folder Default</span> - use the defaults configured for this folder by an administrator.",
                 name: 'emailPref', inputValue: -1});
             radioItems.push({xtype: 'radio',
-                checked: emailPref == 1,
-                boxLabel: '<span class="labkey-strong">Individual</span> - send a separate email for file changes.',
-                name: 'emailPref', inputValue: 1});
+                checked: emailPref == 513,
+                boxLabel: '<span class="labkey-strong">15 Minute Digest</span> - send a email for file changes within a fifteen minute span.',
+                name: 'emailPref', inputValue: 513});
             radioItems.push({xtype: 'radio',
-                checked: emailPref == 2,
-                disabled: true,
-                hidden: true,
+                checked: emailPref == 514,
                 boxLabel: '<span class="labkey-strong">Daily Digest</span> - send one email each day that summarizes file changes in this folder.',
-                name: 'emailPref', inputValue: 2});
+                name: 'emailPref', inputValue: 514});
             radioItems.push({xtype: 'radio',
-                checked: emailPref == 0,
+                checked: emailPref == 512,
                 boxLabel: "<span class='labkey-strong'>None</span> - don't send any email for file changes in this folder.",
-                name: 'emailPref', inputValue: 0});
+                name: 'emailPref', inputValue: 512});
 
             var radioGroup = new Ext.form.RadioGroup({
                 xtype: 'radiogroup',
@@ -1067,7 +955,7 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
             {
                 var win = new Ext.Window({
                     title: 'Email Notification Settings',
-                    width: 575,
+                    width: 650,
                     height: 250,
                     cls: 'extContainer',
                     autoScroll: true,
@@ -1102,9 +990,9 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
         if (checked)
         {
             var msg = 'The default setting for this folder is: <span class="labkey-strong">None</span>';
-            if (this.emailPrefDefault == 1)
-                msg = 'The default setting for this folder is: <span class="labkey-strong">Individual</span>';
-            else if (this.emailPrefDefault == 2)
+            if (this.emailPrefDefault == 512)
+                msg = 'The default setting for this folder is: <span class="labkey-strong">15 Minute Digest</span>';
+            else if (this.emailPrefDefault == 514)
                 msg = 'The default setting for this folder is: <span class="labkey-strong">Daily Digest</span>';
         }
         else

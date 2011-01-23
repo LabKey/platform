@@ -109,7 +109,7 @@ public class AuditModule extends DefaultModule
             SimpleFilter filter = new SimpleFilter();
             filter.addWhereClause("(Lsid IS NOT NULL) AND (EventType = ? OR EventType = ?)", new Object[]{"ListAuditEvent", "DatasetAuditEvent"});
 
-            for (AuditLogEvent event : LogManager.get().getEvents(filter))
+            for (AuditLogEvent event : LogManager.get().getEvents(filter, null))
             {
                 Map<String, ObjectProperty> dataMap = OntologyManager.getPropertyObjects(objectContainer, event.getLsid());
                 if (dataMap != null)

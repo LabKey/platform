@@ -3,6 +3,7 @@ announcements/module.properties -text
 announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-2.00.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-10.30-10.31.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-10.31-10.32.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.10-9.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.30-10.10.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
@@ -35,6 +36,7 @@ announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-9.32-9.33.sql
 announcements/resources/schemas/dbscripts/postgresql/obsolete/cpas-0.00-0.59.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-2.00.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-10.30-10.31.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-10.31-10.32.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.10-9.20.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.30-10.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
@@ -83,7 +85,8 @@ announcements/src/org/labkey/announcements/announcementThread.jsp -text
 announcements/src/org/labkey/announcements/announcementWebPart.jsp -text
 announcements/src/org/labkey/announcements/api/AnnouncementImpl.java -text
 announcements/src/org/labkey/announcements/api/AnnouncementServiceImpl.java -text
-announcements/src/org/labkey/announcements/bulkEdit.jsp -text
+announcements/src/org/labkey/announcements/config/AnnouncementEmailConfig.java -text
+announcements/src/org/labkey/announcements/config/MessageConfigServiceImpl.java -text
 announcements/src/org/labkey/announcements/confirmDelete.jsp -text
 announcements/src/org/labkey/announcements/confirmRemoveUser.jsp -text
 announcements/src/org/labkey/announcements/customize.jsp -text
@@ -95,6 +98,7 @@ announcements/src/org/labkey/announcements/emailNotification.jsp -text
 announcements/src/org/labkey/announcements/emailNotificationPlain.jsp -text
 announcements/src/org/labkey/announcements/emailPreferences.jsp -text
 announcements/src/org/labkey/announcements/insert.jsp -text
+announcements/src/org/labkey/announcements/model/AnnouncementDigestProvider.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementManager.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementModel.java -text
 announcements/src/org/labkey/announcements/model/DailyDigest.java -text
@@ -103,6 +107,7 @@ announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -tex
 announcements/src/org/labkey/announcements/model/DiscussionWebPartFactory.java -text
 announcements/src/org/labkey/announcements/model/EmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/IndividualEmailPrefsSelector.java -text
+announcements/src/org/labkey/announcements/model/MessageConfigManager.java -text
 announcements/src/org/labkey/announcements/model/NormalMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/OptOutEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/Permissions.java -text
@@ -112,6 +117,7 @@ announcements/src/org/labkey/announcements/model/SecureMessageBoardRespondPermis
 announcements/src/org/labkey/announcements/respond.jsp -text
 announcements/src/org/labkey/announcements/rss.jsp -text
 announcements/src/org/labkey/announcements/update.jsp -text
+announcements/src/org/labkey/announcements/view/announcementNotifySettings.jsp -text
 audit/module.properties -text
 audit/resources/schemas/audit.xml -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-8.30.sql -text
@@ -498,6 +504,7 @@ core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
 core/src/org/labkey/core/admin/ActionsView.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
 core/src/org/labkey/core/admin/FilesSiteSettingsAction.java -text
+core/src/org/labkey/core/admin/FolderSettingsAction.java -text
 core/src/org/labkey/core/admin/ProjectSettingsAction.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/admin.jsp -text
@@ -530,8 +537,10 @@ core/src/org/labkey/core/admin/sql/ViewHandler.java -text
 core/src/org/labkey/core/admin/sql/showRunningScripts.jsp -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
+core/src/org/labkey/core/admin/view/filesNotifySettings.jsp -text
 core/src/org/labkey/core/admin/view/filesProjectSettings.jsp -text
 core/src/org/labkey/core/admin/view/filesSiteSettings.jsp -text
+core/src/org/labkey/core/admin/view/folderSettingsHeader.jsp -text
 core/src/org/labkey/core/admin/webTheme.jsp -text
 core/src/org/labkey/core/analytics/AnalyticsController.java -text
 core/src/org/labkey/core/analytics/AnalyticsServiceImpl.java -text
@@ -1049,8 +1058,14 @@ filecontent/src/org/labkey/filecontent/FileRootManager.java -text
 filecontent/src/org/labkey/filecontent/FileSystemAttachmentParent.java -text
 filecontent/src/org/labkey/filecontent/FileWebdavProvider.java -text
 filecontent/src/org/labkey/filecontent/ManageWebPart.java -text
+filecontent/src/org/labkey/filecontent/message/FileContentDigestProvider.java -text
+filecontent/src/org/labkey/filecontent/message/FileEmailConfig.java -text
+filecontent/src/org/labkey/filecontent/message/ShortMessageDigest.java -text
 filecontent/src/org/labkey/filecontent/view/configure.jsp -text
 filecontent/src/org/labkey/filecontent/view/configureEmail.jsp -text
+filecontent/src/org/labkey/filecontent/view/fileDigestNotify.jsp -text
+filecontent/src/org/labkey/filecontent/view/fileDigestNotifyPlain.jsp -text
+filecontent/src/org/labkey/filecontent/view/fileNotifySettings.jsp -text
 filecontent/src/org/labkey/filecontent/view/files.jsp -text
 filecontent/src/org/labkey/filecontent/view/iframe.jsp -text
 filecontent/webapp/ActionsAdmin.js -text

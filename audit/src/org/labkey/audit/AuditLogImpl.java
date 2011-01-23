@@ -329,17 +329,37 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public List<AuditLogEvent> getEvents(String eventType, String key)
     {
-        return Collections.emptyList();
+        SimpleFilter filter = new SimpleFilter("EventType", eventType);
+        filter.addCondition("Key1", key);
+
+        return getEvents(filter);
     }
 
     public List<AuditLogEvent> getEvents(String eventType, int key)
     {
-        return Collections.emptyList();
+        SimpleFilter filter = new SimpleFilter("EventType", eventType);
+        filter.addCondition("IntKey1", key);
+
+        return getEvents(filter);
     }
 
     public List<AuditLogEvent> getEvents(SimpleFilter filter)
     {
-        return Collections.emptyList();
+        return getEvents(filter, null);
+    }
+
+    public List<AuditLogEvent> getEvents(SimpleFilter filter, Sort sort)
+    {
+        try {
+            if (LogManager.get().getTinfoAuditLog().getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB)
+                return Arrays.asList(LogManager.get().getEvents(filter, sort));
+
+            return Collections.emptyList();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public AuditLogEvent getEvent(int rowId)

@@ -754,7 +754,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         var win = new Ext.Window({
             title: 'Import Data',
-            width: 650,
+            width: 725,
             height: 400,
             cls: 'extContainer',
             autoScroll: true,

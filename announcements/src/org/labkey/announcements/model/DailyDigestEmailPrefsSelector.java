@@ -16,7 +16,7 @@
 
 package org.labkey.announcements.model;
 
-import org.labkey.announcements.model.AnnouncementManager.EmailPref;
+import org.labkey.announcements.model.MessageConfigManager.EmailPref;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -39,15 +39,15 @@ public class DailyDigestEmailPrefsSelector extends EmailPrefsSelector
         super(c);
 
         // Create a map for shouldSend()
-        _epMap = new HashMap<User, EmailPref>(_emailPrefs.size());
+        _epMap = new HashMap<User, MessageConfigManager.EmailPref>(_emailPrefs.size());
 
-        for (AnnouncementManager.EmailPref ep : _emailPrefs)
+        for (EmailPref ep : _emailPrefs)
             _epMap.put(ep.getUser(), ep);
     }
 
 
     @Override
-    protected boolean includeEmailPref(AnnouncementManager.EmailPref ep)
+    protected boolean includeEmailPref(EmailPref ep)
     {
         return super.includeEmailPref(ep) && ((ep.getEmailOptionId() & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST) != 0);
     }

@@ -16,7 +16,7 @@
 
 package org.labkey.announcements.model;
 
-import org.labkey.announcements.model.AnnouncementManager.EmailPref;
+import org.labkey.announcements.model.MessageConfigManager.EmailPref;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -39,7 +39,7 @@ public class IndividualEmailPrefsSelector extends EmailPrefsSelector
 
 
     @Override
-    protected boolean includeEmailPref(AnnouncementManager.EmailPref ep)
+    protected boolean includeEmailPref(EmailPref ep)
     {
         return super.includeEmailPref(ep) && ((ep.getEmailOptionId() & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST) == 0);
     }

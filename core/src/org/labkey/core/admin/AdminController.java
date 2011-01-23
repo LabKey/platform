@@ -192,7 +192,8 @@ public class AdminController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
             AdminController.class,
             FilesSiteSettingsAction.class,
-            ProjectSettingsAction.class);
+            ProjectSettingsAction.class,
+            FolderSettingsAction.class);
     private static final NumberFormat _formatInteger = DecimalFormat.getIntegerInstance();
 
     private static final Logger LOG = Logger.getLogger(AdminController.class);
@@ -246,13 +247,17 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
+    {
+        return appendAdminNavTrail(root, childTitle, action, getContainer());
+    }
+
+    public static NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
     {
         if (null == action)
             root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle);
         else
-            root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle, new ActionURL(action, getContainer()));
+            root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle, new ActionURL(action, container));
 
         return root;
     }
@@ -738,56 +743,6 @@ public class AdminController extends SpringActionController
             else if (form.getNetworkDrivePath() == null || form.getNetworkDrivePath().trim().length() == 0)
             {
                 errors.reject(ERROR_MSG, "If you specify a network drive letter, you must also specify a path");
-            }
-        }
-    }
-
-
-    private static class FolderSettingsTabStrip extends TabStripView
-    {
-        private final Container _container;
-        private FolderSettingsForm _form;
-        private BindException _errors;
-
-        private FolderSettingsTabStrip(Container c, FolderSettingsForm form, BindException errors)
-        {
-            _container = c;
-            _form = form;
-            _errors = errors;
-        }
-
-        public List<NavTree> getTabList()
-        {
-            ActionURL url = new AdminUrlsImpl().getFolderSettingsURL(getViewContext().getContainer());
-            List<NavTree> tabs = new ArrayList<NavTree>(2);
-
-            if (!_container.isRoot())
-                tabs.add(new TabInfo("Folder Type", "folderType", url));
-            tabs.add(new TabInfo("Missing Value Indicators", "mvIndicators", url));
-            if (!_container.isRoot())
-                tabs.add(new TabInfo("Full-Text Search", "fullTextSearch", url));
-
-            return tabs;
-        }
-
-        public HttpView getTabView(String tabId) throws Exception
-        {
-            if ("folderType".equals(tabId))
-            {
-                assert !_container.isRoot() : "No folder type settings for the root folder";
-                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
-            }
-            else if ("mvIndicators".equals(tabId))
-            {
-                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
-            }
-            else if ("fullTextSearch".equals(tabId))
-            {
-                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/fullTextSearch.jsp", _form, _errors);
-            }
-            else
-            {
-                throw new NotFoundException("Unknown tab id");
             }
         }
     }
@@ -3738,259 +3693,6 @@ public class AdminController extends SpringActionController
             throw new NotFoundException();
         }
     }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    @ActionNames("folderSettings, customize")
-    public class FolderSettingsAction extends FormViewAction<FolderSettingsForm>
-    {
-        private ActionURL _successURL;
-
-        public void validateCommand(FolderSettingsForm form, Errors errors)
-        {
-            boolean fEmpty = true;
-            for (String module : form.activeModules)
-            {
-                if (module != null)
-                {
-                    fEmpty = false;
-                    break;
-                }
-            }
-            if (fEmpty && "None".equals(form.getFolderType()))
-            {
-                errors.reject(ERROR_MSG, "Error: Please select at least one module to display.");
-            }
-        }
-
-        public ModelAndView getView(FolderSettingsForm form, boolean reshow, BindException errors) throws Exception
-        {
-            return new FolderSettingsTabStrip(getContainer(), form, errors);
-        }
-
-        public boolean handlePost(FolderSettingsForm form, BindException errors) throws Exception
-        {
-            if (form.isMvIndicatorsTab())
-                return handleMvIndicatorsPost(form, errors);
-            else if (form.isFolderTypeTab())
-                return handleFolderTypePost(form, errors);
-            else
-                return handleFullTextSearchPost(form, errors);
-        }
-
-        private boolean handleMvIndicatorsPost(FolderSettingsForm form, BindException errors) throws SQLException
-        {
-            if (form.isInheritMvIndicators())
-            {
-                MvUtil.inheritMvIndicators(getContainer());
-                return true;
-            }
-            else
-            {
-                // Javascript should have enforced any constraints
-                MvUtil.assignMvIndicators(getContainer(), form.getMvIndicators(), form.getMvLabels());
-                return true;
-            }
-        }
-
-        private boolean handleFolderTypePost(FolderSettingsForm form, BindException errors) throws SQLException
-        {
-            Container c = getContainer();
-            if (c.isRoot())
-                HttpView.throwNotFound();
-
-            String[] modules = form.getActiveModules();
-
-            if (modules.length == 0)
-            {
-                errors.reject(null, "At least one module must be selected");
-                return false;
-            }
-
-            Set<Module> activeModules = new HashSet<Module>();
-            for (String moduleName : modules)
-            {
-                Module module = ModuleLoader.getInstance().getModule(moduleName);
-                if (module != null)
-                    activeModules.add(module);
-            }
-
-            if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
-            {
-                c.setFolderType(FolderType.NONE, activeModules);
-                Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
-                c.setDefaultModule(defaultModule);
-            }
-            else
-            {
-                FolderType folderType = ModuleLoader.getInstance().getFolderType(form.getFolderType());
-                c.setFolderType(folderType, activeModules);
-            }
-
-            if (form.isWizard())
-            {
-                _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(c);
-                _successURL.addParameter("wizard", Boolean.TRUE.toString());
-            }
-            else
-                _successURL = c.getFolderType().getStartURL(c, getUser());
-
-            return true;
-        }
-
-        private boolean handleFullTextSearchPost(FolderSettingsForm form, BindException errors) throws SQLException
-        {
-            Container c = getContainer();
-            if (c.isRoot())
-                HttpView.throwNotFound();
-
-            ContainerManager.updateSearchable(c, form.getSearchable(), getUser());
-            _successURL = getViewContext().getActionURL();  // Redirect to ourselves -- this forces a reload of the Container object to get the property update
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(FolderSettingsForm form)
-        {
-            return _successURL;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            Container c = getViewContext().getContainer();
-
-            if (c.isRoot())
-                return appendAdminNavTrail(root, "Admin Console", ShowAdminAction.class);
-
-            root.addChild("Folder Settings: " + getContainer().getPath());
-            return root;
-        }
-    }
-
-
-    public static class FolderSettingsForm
-    {
-        // folder type settings
-        private String[] activeModules = new String[ModuleLoader.getInstance().getModules().size()];
-        private String defaultModule;
-        private String folderType;
-        private boolean wizard;
-        private String tabId;
-
-        // missing value settings
-        private boolean inheritMvIndicators;
-        private String[] mvIndicators;
-        private String[] mvLabels;
-
-        // full-text search settings
-        private boolean searchable;
-
-        public String[] getActiveModules()
-        {
-            return activeModules;
-        }
-
-        public void setActiveModules(String[] activeModules)
-        {
-            this.activeModules = activeModules;
-        }
-
-        public String getDefaultModule()
-        {
-            return defaultModule;
-        }
-
-        public void setDefaultModule(String defaultModule)
-        {
-            this.defaultModule = defaultModule;
-        }
-
-        public String getFolderType()
-        {
-            return folderType;
-        }
-
-        public void setFolderType(String folderType)
-        {
-            this.folderType = folderType;
-        }
-
-        public boolean isWizard()
-        {
-            return wizard;
-        }
-
-        public void setWizard(boolean wizard)
-        {
-            this.wizard = wizard;
-        }
-
-        public void setTabId(String tabId)
-        {
-            this.tabId = tabId;
-        }
-
-        public String getTabId()
-        {
-            return tabId;
-        }
-
-        public boolean isFolderTypeTab()
-        {
-            return "folderType".equals(getTabId());
-        }
-
-        public boolean isMvIndicatorsTab()
-        {
-            return "mvIndicators".equals(getTabId());
-        }
-
-        public boolean isFullTextSearchTab()
-        {
-            return "fullTextSearch".equals(getTabId());
-        }
-
-        public boolean isInheritMvIndicators()
-        {
-            return inheritMvIndicators;
-        }
-
-        public void setInheritMvIndicators(boolean inheritMvIndicators)
-        {
-            this.inheritMvIndicators = inheritMvIndicators;
-        }
-
-        public String[] getMvIndicators()
-        {
-            return mvIndicators;
-        }
-
-        public void setMvIndicators(String[] mvIndicators)
-        {
-            this.mvIndicators = mvIndicators;
-        }
-
-        public String[] getMvLabels()
-        {
-            return mvLabels;
-        }
-
-        public void setMvLabels(String[] mvLabels)
-        {
-            this.mvLabels = mvLabels;
-        }
-
-        public boolean getSearchable()
-        {
-            return searchable;
-        }
-
-        public void setSearchable(boolean searchable)
-        {
-            this.searchable = searchable;
-        }
-    }
-
 
     @RequiresPermissionClass(AdminPermission.class)
     public class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
