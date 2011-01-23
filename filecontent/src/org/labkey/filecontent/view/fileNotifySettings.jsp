@@ -39,7 +39,7 @@
             reader: new Ext.data.JsonReader({root:'options',id:'id'},
                 [{name:'id'},{name:'label'}]
             ),
-            baseParams:{isDefault:true},
+            baseParams:{isDefault:true, type:'files'},
             proxy: new Ext.data.HttpProxy({
                 method: 'GET',
                 url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions')})
@@ -50,6 +50,7 @@
             reader: new Ext.data.JsonReader({root:'options',id:'id'},
                 [{name:'id'},{name:'label'}]
             ),
+            baseParams:{type:'files'},
             proxy: new Ext.data.HttpProxy({
                 method: 'GET',
                 url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions')})
@@ -86,10 +87,10 @@
             tooltip: 'Sets the default notification option for this folder',
             handler: function(b,e){
                 Ext.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('announcements', 'setEmailDefault'),
+                    url: LABKEY.ActionURL.buildURL('filecontent', 'setDefaultEmailPref'),
                     method: 'POST',
                     timeout: 30000,
-                    params: {defaultEmailOption: emailDefaultCombo.getValue()},
+                    params: {emailPref: emailDefaultCombo.getValue()},
                     success: function(response, opts){
                         var o = eval('var $=' + response.responseText + ';$;');
                         if (o && o.success)
@@ -126,6 +127,7 @@
                             method: 'POST',
                             timeout: 30000,
                             params: {
+                                type: 'files',
                                 individualEmailOption: emailCombo.getValue(),
                                 dataRegionSelectionKey: '<%=bean.getDataRegionSelectionKey()%>',
                                 returnUrl: '<%=bean.getReturnUrl()%>'

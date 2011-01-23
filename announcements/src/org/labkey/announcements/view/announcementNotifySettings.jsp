@@ -52,7 +52,7 @@
             reader: new Ext.data.JsonReader({root:'options',id:'id'},
                 [{name:'id'},{name:'label'}]
             ),
-            baseParams:{isDefault:true},
+            baseParams:{isDefault:true, type:'messages'},
             proxy: new Ext.data.HttpProxy({
                 method: 'GET',
                 url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions')})
@@ -63,6 +63,7 @@
             reader: new Ext.data.JsonReader({root:'options',id:'id'},
                 [{name:'id'},{name:'label'}]
             ),
+            baseParams:{type:'messages'},
             proxy: new Ext.data.HttpProxy({
                 method: 'GET',
                 url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions')})
@@ -139,6 +140,7 @@
                             method: 'POST',
                             timeout: 30000,
                             params: {
+                                type: 'messages',
                                 individualEmailOption: emailCombo.getValue(),
                                 dataRegionSelectionKey: '<%=bean.getDataRegionSelectionKey()%>',
                                 returnUrl: '<%=bean.getReturnUrl()%>'

@@ -1848,21 +1848,24 @@ public class AnnouncementsController extends SpringActionController
         {
             Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, true);
             ApiSimpleResponse resp = new ApiSimpleResponse();
+            MessageConfigService.ConfigTypeProvider provider = form.getProvider();
 
-            if (!selections.isEmpty())
+            if (!selections.isEmpty() && provider != null)
             {
                 int newOption = form.getIndividualEmailOption();
                 for (String user : selections)
                 {
 
                     User projectUser = UserManager.getUser(Integer.parseInt(user));
-                    int currentEmailOption = AnnouncementManager.getUserEmailOption(getContainer(), projectUser);
+                    MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), projectUser);
+
+                    int currentEmailOption = pref != null ? pref.getEmailOptionId() : -1;
 
                     //has this projectUser's option changed? if so, update
                     //creating new record in EmailPrefs table if there isn't one, or deleting if set back to folder default
                     if (currentEmailOption != newOption)
                     {
-                        AnnouncementManager.saveEmailPreference(getUser(), getContainer(), projectUser, newOption);
+                        provider.savePreference(getUser(), getContainer(), projectUser, newOption);
                     }
                 }
                 resp.put("success", true);
@@ -1876,31 +1879,56 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
+    public static class NotifyOptionsForm
+    {
+        String _type;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+
+        public MessageConfigService.ConfigTypeProvider getProvider()
+        {
+            return MessageConfigService.getInstance().getConfigType(_type);
+        }
+    }
+
     /**
      * Action to populate an Ext store with email notification options for admin settings
      */
     @RequiresPermissionClass(AdminPermission.class)
-    public class GetEmailOptions extends ApiAction
+    public class GetEmailOptions extends ApiAction<NotifyOptionsForm>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(NotifyOptionsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(AnnouncementEmailConfig.TYPE);
-            List<Map> options = new ArrayList<Map>();
-
-            // if the list of options is not for the folder default, add an option to use the folder default
-            if (getViewContext().get("isDefault") == null)
-                options.add(PageFlowUtil.map("id", -1, "label", "Folder default"));
-
-            for (MessageConfigService.NotificationOption option : provider.getOptions())
+            MessageConfigService.ConfigTypeProvider provider = form.getProvider();
+            if (provider != null)
             {
-                options.add(PageFlowUtil.map("id", option.getEmailOptionId(), "label", option.getEmailOption()));
+                List<Map> options = new ArrayList<Map>();
+
+                // if the list of options is not for the folder default, add an option to use the folder default
+                if (getViewContext().get("isDefault") == null)
+                    options.add(PageFlowUtil.map("id", -1, "label", "Folder default"));
+
+                for (MessageConfigService.NotificationOption option : provider.getOptions())
+                {
+                    options.add(PageFlowUtil.map("id", option.getEmailOptionId(), "label", option.getEmailOption()));
+                }
+                resp.put("success", true);
+                if (!options.isEmpty())
+                    resp.put("options", options);
             }
-            resp.put("success", true);
-            if (!options.isEmpty())
-                resp.put("options", options);
+            else
+                resp.put("success", false);
 
             return resp;
         }

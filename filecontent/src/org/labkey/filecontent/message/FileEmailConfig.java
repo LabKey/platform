@@ -15,11 +15,14 @@
  */
 package org.labkey.filecontent.message;
 
+import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.notification.EmailService;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -57,8 +60,11 @@ public class FileEmailConfig extends AbstractConfigTypeProvider implements Messa
     {
         EmailConfigForm form = new EmailConfigForm();
 
+        String pref = EmailService.get().getDefaultEmailPref(context.getContainer(), new FileContentDefaultEmailPref());
+
         form.setDataRegionSelectionKey(info.getDataRegionSelectionKey());
         form.setReturnUrl(new ReturnURLString(info.getReturnUrl().getLocalURIString()));
+        form.setDefaultEmailOption(NumberUtils.toInt(pref));
 
         return new JspView<EmailConfigForm>("/org/labkey/filecontent/view/fileNotifySettings.jsp", form);
     }

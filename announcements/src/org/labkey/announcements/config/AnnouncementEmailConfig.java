@@ -88,6 +88,7 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider implemen
         int _individualEmailOption;
         MessageConfigService.NotificationOption[] _emailOptions;
         String _dataRegionSelectionKey;
+        String _type;
 
         public int getDefaultEmailOption()
         {
@@ -127,6 +128,21 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider implemen
         public void setDataRegionSelectionKey(String dataRegionSelectionKey)
         {
             _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+
+        public MessageConfigService.ConfigTypeProvider getProvider()
+        {
+            return MessageConfigService.getInstance().getConfigType(_type);
         }
     }
 }

@@ -1219,6 +1219,33 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
+    public class SetDefaultEmailPrefAction extends MutatingApiAction<EmailPrefForm>
+    {
+        @Override
+        public ApiResponse execute(EmailPrefForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response =  new ApiSimpleResponse();
+            StringBuilder message = new StringBuilder("The current default has been updated to: ");
+
+            //save the default settings
+            EmailService.get().setDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref(), String.valueOf(form.getEmailPref()));
+
+            for (MessageConfigService.NotificationOption option : MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE).getOptions())
+            {
+                if (option.getEmailOptionId() == form.getEmailPref())
+                {
+                    message.append(option.getEmailOption());
+                    break;
+                }
+            }
+            response.put("success", true);
+            response.put("message", message.toString());          
+
+            return response;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
     public class ShowFilesHistoryAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
