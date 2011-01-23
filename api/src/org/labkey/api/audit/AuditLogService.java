@@ -19,6 +19,7 @@ package org.labkey.api.audit;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
@@ -89,6 +90,7 @@ public class AuditLogService
         public List<AuditLogEvent> getEvents(String eventType, String key);
         public List<AuditLogEvent> getEvents(String eventType, int key);
         public List<AuditLogEvent> getEvents(SimpleFilter filter);
+        public List<AuditLogEvent> getEvents(SimpleFilter filter, Sort sort);
         public AuditLogEvent getEvent(int rowId);
 
         public AuditLogQueryView createQueryView(ViewContext context, SimpleFilter filter);

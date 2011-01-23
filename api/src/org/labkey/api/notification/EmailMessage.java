@@ -20,6 +20,7 @@ import org.labkey.api.view.ViewContext;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Created by IntelliJ IDEA.
@@ -55,6 +56,7 @@ public interface EmailMessage
     void addContent(String content);
     void addContent(contentType type, String content);
     void addContent(contentType type, ViewContext context, HttpView view) throws Exception;
+    void addContent(contentType type, HttpServletRequest request, HttpView view) throws Exception;
 
     MimeMessage createMessage() throws MessagingException;
 }

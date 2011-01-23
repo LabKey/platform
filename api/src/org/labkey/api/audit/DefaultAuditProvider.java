@@ -21,6 +21,7 @@ import org.labkey.api.audit.query.DefaultAuditQueryView;
 import org.labkey.api.audit.query.DefaultAuditSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
@@ -67,6 +68,11 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
     }
 
     public List<AuditLogEvent> getEvents(SimpleFilter filter)
+    {
+        return Collections.emptyList();
+    }
+
+    public List<AuditLogEvent> getEvents(SimpleFilter filter, Sort sort)
     {
         return Collections.emptyList();
     }

@@ -681,7 +681,20 @@ public class FileSystemResource extends AbstractWebdavResource
 
         String subject = "File Management Tool notification: " + message;
 
-        AuditLogService.get().addEvent(context.getUser(), getContainer(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
+        AuditLogEvent event = new AuditLogEvent();
+
+        event.setCreatedBy(context.getUser());
+        event.setContainerId(getContainer().getId());
+        event.setEventType(FileSystemAuditViewFactory.EVENT_TYPE);
+        event.setKey1(dir);
+        event.setKey2(name);
+        event.setKey3(getPath().toString());
+        event.setComment(message);
+
+        AuditLogService.get().addEvent(event);
+
+        //AuditLogService.get().addEvent(context.getUser(), getContainer(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
+/*
         if (context instanceof ViewContext)
             sendNotificationEmail((ViewContext)context, message, subject);
         else
@@ -690,6 +703,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (viewContext != null)
                 sendNotificationEmail(viewContext, message, subject);
         }
+*/
     }
 
     private void sendNotificationEmail(ViewContext context, String message, String subject)
