@@ -73,8 +73,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException, ValidationException;
 
-    List<PropertyDescriptor> getRunTableColumns(ExpProtocol protocol);
-
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
     String getName();
@@ -99,7 +97,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /** @return may return null if no results/data are tracked by this assay type */
     @Nullable
-    ContainerFilterable createDataTable(AssaySchema schema, ExpProtocol protocol);
+    ContainerFilterable createDataTable(AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns);
 
     ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol);
 

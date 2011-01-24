@@ -138,7 +138,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 transaction = true;
             }
 
-            insertRowData(data, user, container, dataDomain, fileData, provider.createDataTable(AssayService.get().createSchema(user, container), protocol));
+            insertRowData(data, user, container, dataDomain, fileData, provider.createDataTable(AssayService.get().createSchema(user, container), protocol, true));
 
             if (shouldAddInputMaterials())
             {

@@ -55,7 +55,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     private final AssayProvider _provider;
     private final Domain _resultsDomain;
 
-    public AssayResultTable(AssaySchema schema, ExpProtocol protocol, AssayProvider assayProvider)
+    public AssayResultTable(AssaySchema schema, ExpProtocol protocol, AssayProvider assayProvider, boolean includeCopiedToStudyColumns)
     {
         super(StorageProvisioner.createTableInfo(assayProvider.getResultsDomain(protocol), schema.getDbSchema()));
         _schema = schema;
@@ -169,8 +169,8 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         });
         addColumn(runColumn);
 
-        List<PropertyDescriptor> runProperties = _provider.getRunTableColumns(protocol);
-        for (PropertyDescriptor prop : runProperties)
+        Domain runDomain = _provider.getRunDomain(protocol);
+        for (DomainProperty prop : runDomain.getProperties())
         {
             if (!prop.isHidden())
                 visibleColumns.add(FieldKey.fromParts("Run", prop.getName()));
@@ -182,10 +182,13 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
         }
 
-        Set<String> studyColumnNames = ((AbstractAssayProvider)_provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), false);
-        for (String columnName : studyColumnNames)
+        if (includeCopiedToStudyColumns)
         {
-            visibleColumns.add(new FieldKey(null, columnName));
+            Set<String> studyColumnNames = ((AbstractAssayProvider)_provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), false);
+            for (String columnName : studyColumnNames)
+            {
+                visibleColumns.add(new FieldKey(null, columnName));
+            }
         }
 
         setDefaultVisibleColumns(visibleColumns);
@@ -237,7 +240,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    return new AssayResultTable(_schema, _protocol, _provider);
+                    return new AssayResultTable(_schema, _protocol, _provider, false);
                 }
             };
             fk.setPrefixColumnCaption(false);

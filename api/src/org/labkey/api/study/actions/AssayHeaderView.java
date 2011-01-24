@@ -133,7 +133,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
             links.add(new NavTree("view batches", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getViewContext().getContainer(), _protocol, _containerFilter))));
             links.add(new NavTree("view runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, _containerFilter))));
 
-            if (getProvider().createDataTable(AssayService.get().createSchema(getViewContext().getUser(), getViewContext().getContainer()), _protocol) != null)
+            if (getProvider().createDataTable(AssayService.get().createSchema(getViewContext().getUser(), getViewContext().getContainer()), _protocol, true) != null)
             {
                 // Not all assay types have results/data
                 links.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, _containerFilter))));

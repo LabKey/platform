@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilterable;
@@ -62,7 +63,7 @@ abstract public interface ExpTable<C extends Enum> extends ContainerFilterable, 
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
      * @return if a legacyName is specified, the ColumnInfo for the hidden node. Otherwise, null 
      */
-    ColumnInfo addColumns(Domain domain, String legacyName);
+    ColumnInfo addColumns(Domain domain, @Nullable String legacyName);
 
     public void setDescription(String description);
 }

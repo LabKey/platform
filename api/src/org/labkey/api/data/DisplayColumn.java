@@ -435,10 +435,29 @@ public abstract class DisplayColumn extends RenderColumn
         out.write(getDefaultHeaderStyle());
         out.write("'");
 
+        StringBuilder tooltip = new StringBuilder();
         if (null != getDescription())
         {
+            tooltip.append(getDescription());
+        }
+        if (null != getColumnInfo() && getColumnInfo().getFieldKey().getParts().size() > 1)
+        {
+            boolean suffix = tooltip.length() > 0;
+            if (suffix)
+            {
+                tooltip.append(" (");
+            }
+            tooltip.append(getColumnInfo().getFieldKey().toString());
+            if (suffix)
+            {
+                tooltip.append(" )");
+            }
+        }
+
+        if (tooltip.length() > 0)
+        {
             out.write(" title=\"");
-            out.write(PageFlowUtil.filter(getDescription()));
+            out.write(PageFlowUtil.filter(tooltip.toString()));
             out.write("\"");
         }
 

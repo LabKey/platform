@@ -187,7 +187,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     protected abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException;
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException;
     
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException

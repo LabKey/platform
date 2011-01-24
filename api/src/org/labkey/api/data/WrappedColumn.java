@@ -27,7 +27,7 @@ public class WrappedColumn extends ExprColumn
 
     public WrappedColumn(ColumnInfo col, String name)
     {
-        super(col.getParentTable(), name, col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getSqlTypeInt());
+        super(col.getParentTable(), name, col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getJdbcType());
         _col = col;
     }
 

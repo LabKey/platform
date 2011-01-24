@@ -97,8 +97,8 @@ public class RunDataTable extends FilteredTable
             addColumn(runColumn);
         }
 
-        List<PropertyDescriptor> runProperties = provider.getRunTableColumns(protocol);
-        for (PropertyDescriptor prop : runProperties)
+        Domain runDomain = provider.getRunDomain(protocol);
+        for (DomainProperty prop : runDomain.getProperties())
         {
             if (!prop.isHidden())
                 visibleColumns.add(FieldKey.fromParts("Run", prop.getName()));

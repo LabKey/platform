@@ -55,7 +55,8 @@ public abstract class AssaySchema extends UserSchema
     {
         return _protocol;
     }
-
+    
+    /** Make it public - protected in superclass */
     public abstract TableInfo createTable(String name);
 
     public static String getBatchesTableName(ExpProtocol protocol)

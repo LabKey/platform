@@ -96,6 +96,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
                                 {
                                     ((PropertyForeignKey)propertyCol.getFk()).addDecorator(new SpecimenPropertyColumnDecorator(provider, protocol, schema));
                                 }
+                                propertyCol.setHidden(false);
                                 materials.addColumn(ExpMaterialTable.Column.LSID).setHidden(true);
                                 return materials;
                             }

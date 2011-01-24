@@ -462,15 +462,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
     }
 
-    public List<PropertyDescriptor> getRunTableColumns(ExpProtocol protocol)
-    {
-        List<PropertyDescriptor> cols = new ArrayList<PropertyDescriptor>();
-        Domain runDomain = getRunDomain(protocol);
-        if (runDomain != null)
-            Collections.addAll(cols, getPropertyDescriptors(runDomain));
-        return cols;
-    }
-
     public Domain getBatchDomain(ExpProtocol protocol)
     {
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_BATCH);

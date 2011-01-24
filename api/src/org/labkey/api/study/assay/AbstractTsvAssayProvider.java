@@ -101,7 +101,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     }
 
     @Override
-    public abstract FilteredTable createDataTable(AssaySchema schema, ExpProtocol protocol);
+    public abstract FilteredTable createDataTable(AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns);
 
     public ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
@@ -116,7 +116,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             filter.addInClause(provider.getTableMetadata().getResultRowIdFieldKey().toString(), dataKeys.keySet());
 
             AssaySchema schema = AssayService.get().createSchema(viewContext.getUser(), viewContext.getContainer());
-            ContainerFilterable dataTable = provider.createDataTable(schema, protocol);
+            ContainerFilterable dataTable = provider.createDataTable(schema, protocol, true);
             dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(viewContext.getUser()));
             List<ColumnInfo> columns = dataTable.getColumns();
             SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns, filter,
