@@ -2137,7 +2137,7 @@ LABKEY.DataRegion._filterUI =
         if (!mappedType) mappedType = _mappedType;
         if (!fieldName) fieldName = this._fieldCaption || this._fieldName;
 
-        if (undefined === allValues || null === allValues)
+        if (Ext.isEmpty(allValues))
         {
             alert("filter value for field '" + fieldName + "' cannot be empty.");
             return undefined;
@@ -2162,7 +2162,7 @@ LABKEY.DataRegion._filterUI =
         if (!mappedType) mappedType = this._mappedType;
         if (!fieldName) fieldName = this._fieldCaption || this._fieldName;
 
-        if (undefined === value || null === value)
+        if (Ext.isEmpty(value))
         {
             alert("filter value for field '" + fieldName + "' cannot be empty.");
             return undefined
