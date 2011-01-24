@@ -177,6 +177,10 @@ LABKEY.Query = new function()
          * you should either include an ORDER BY clause in your SQL, or specific a sort specification in this config property,
          * but not both. The value of this property should be a comma-delimited list of column names you want to sort by. Use
          * a - prefix to sort a column in descending order (e.g., 'LastName,-Age' to sort first by LastName, then by Age descending).
+         * @param {Boolean} [config.persist] Whether or not the definition of this query should be stored for reuse during the current session.
+         * If true, all information required to recreate the query will be stored on the server and a unique query name will be passed to the
+         * success callback.  This temporary query name can be used by all other API methods, including Query Web Part creation, for as long
+         * as the current user's session remains active.
          * @param {Double} [config.requiredVersion] Set this field to "9.1" to receive the {@link LABKEY.Query.ExtendedSelectRowsResults} format
                    instead of the SelectRowsResults format. The main difference is that in the
                    ExtendedSelectRowsResults format each column in each row
@@ -209,7 +213,8 @@ LABKEY.Query = new function()
 
             var dataObject = {
                 schemaName: config.schemaName,
-                sql: config.sql
+                sql: config.sql,
+                persist: config.persist
             };
 
             //set optional parameters
@@ -1555,6 +1560,19 @@ LABKEY.Query = new function()
 /**#@+
 * @memberOf LABKEY.Query.SelectRowsResults#
 * @field
+*/
+
+/**
+* @name    schemaName
+* @description the name of the resultset's source schema.
+* @type    String
+*/
+
+/**
+* @name    queryName
+* @description the name of the resultset's source query.  In some cases, such as a persisted 'executeSql' call, the
+ * query name may refer to temporary query that can be used to re-retrieve data for the duration of the user's session. 
+* @type    String
 */
 
 /**

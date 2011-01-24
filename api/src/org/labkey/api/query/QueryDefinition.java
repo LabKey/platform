@@ -40,6 +40,8 @@ public interface QueryDefinition
     boolean isHidden();
     void setIsHidden(boolean f);
     boolean isSnapshot();
+    void setIsTemporary(boolean temporary);
+    boolean isTemporary();
 
     CustomView getCustomView(User user, HttpServletRequest request, String name);
     Map<String, CustomView> getCustomViews(User user, HttpServletRequest request);

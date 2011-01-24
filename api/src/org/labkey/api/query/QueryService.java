@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 
 import java.io.File;
@@ -57,6 +58,8 @@ abstract public class QueryService
     abstract public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name);
     abstract public boolean isQuerySnapshot(Container container, String schema, String name);
     abstract public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema);
+    abstract public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql);
+    abstract public QueryDefinition getSessionQuery(ViewContext context, Container container, String schema, String queryName);
 
     abstract public ActionURL urlQueryDesigner(User user, Container container, String schema);
     abstract public ActionURL urlFor(User user, Container container, QueryAction action, String schema, String queryName);

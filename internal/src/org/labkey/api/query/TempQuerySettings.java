@@ -17,6 +17,13 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.util.GUID;
+import org.labkey.api.view.ViewContext;
+
+import javax.servlet.http.HttpSession;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,19 +39,41 @@ import org.labkey.api.data.ContainerFilter;
 public class TempQuerySettings extends QuerySettings
 {
     private String _sql;
+    private ViewContext _context;
+    private boolean _persist;
     private Container _container;
 
-    public TempQuerySettings(String sql, Container container)
+    public TempQuerySettings(ViewContext context, String schemaName, String sql, boolean persistInSession)
     {
-        super("query");
+        this(context, schemaName, sql, "query", persistInSession);
+    }
+
+    public TempQuerySettings(ViewContext context, String schemaName, String sql, String dataRegionName, boolean persistInSession)
+    {
+        super(dataRegionName);
+        _context = context;
+        _persist = persistInSession;
         _sql = sql;
-        _container = container;
+        _container = context.getContainer();
+        if (persistInSession)
+        {
+            QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), schemaName, sql);
+            setQueryName(def.getName());
+        }
+        else
+            setQueryName("sql");
     }
 
     public QueryDefinition getQueryDef(UserSchema schema)
     {
-        QueryDefinition qdef = QueryService.get().createQueryDef(schema.getUser(), _container, schema, "temp");
-        qdef.setSql(_sql);
+        QueryDefinition qdef;
+        if (_persist)
+            qdef = QueryService.get().getSessionQuery(_context, _container, schema.getName(), getQueryName());
+        else
+        {
+            qdef = QueryService.get().createQueryDef(schema.getUser(), _container, schema, getQueryName());
+            qdef.setSql(_sql);
+        }
         if (getContainerFilterName() != null)
             qdef.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
         return qdef;

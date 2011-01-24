@@ -827,13 +827,15 @@ public class QueryView extends WebPartView<Object>
         menu.setId(getDataRegionName() + ".Menu.Views");
 
         // existing views
-        addGridViews(button, target, current);
-        addReportViews(button, target);
-
-        button.addSeparator();
+        if (!getQueryDef().isTemporary())
+        {
+            addGridViews(button, target, current);
+            addReportViews(button, target);
+            button.addSeparator();
+        }
         StringBuilder baseFilterItems = new StringBuilder();
 
-        if (_report == null)
+        if (!getQueryDef().isTemporary() && _report == null)
         {
             List<ReportService.DesignerInfo> reportDesigners = new ArrayList<ReportService.DesignerInfo>();
             getSettings().setSchemaName(getSchema().getSchemaName());
@@ -875,11 +877,13 @@ public class QueryView extends WebPartView<Object>
         }
 
         addCustomizeViewItems(button);
-        addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),
-                "schemaName", getSchema().getSchemaName(),
-                "queryName", getSettings().getQueryName()));
-        addFilterItems(button);
-
+        if (!getQueryDef().isTemporary())
+        {
+            addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),
+                    "schemaName", getSchema().getSchemaName(),
+                    "queryName", getSettings().getQueryName()));
+            addFilterItems(button);
+        }
         return button;
     }
 
