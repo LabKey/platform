@@ -86,6 +86,8 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.data.SimpleUserSchema;
@@ -98,8 +100,10 @@ import org.labkey.query.sql.Query;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -260,6 +264,16 @@ public class QueryServiceImpl extends QueryService
                                 new ModuleCustomQueryDefinition(moduleQueryDef, user, container));
                     }
                 }
+            }
+        }
+
+        HttpServletRequest request = HttpView.currentRequest();
+        if (request != null && schemaName != null)
+        {
+            for (QueryDefinition qdef : getAllSessionQueries(request, user, container, schemaName))
+            {
+                Map.Entry<String, String> key = new Pair<String,String>(schemaName, qdef.getName());
+                ret.put(key, qdef);
             }
         }
 
@@ -581,6 +595,107 @@ public class QueryServiceImpl extends QueryService
             ret.add(new QuerySnapshotDefImpl(queryDef));
 
         return ret;
+    }
+
+    private class ContainerSchemaKey implements Serializable
+    {
+        private Container _container;
+        private String _schema;
+
+        public ContainerSchemaKey(Container container, String schema)
+        {
+            _container = container;
+            _schema = schema;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ContainerSchemaKey that = (ContainerSchemaKey) o;
+
+            if (!_container.equals(that._container)) return false;
+            if (!_schema.equals(that._schema)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = _container.hashCode();
+            result = 31 * result + _schema.hashCode();
+            return result;
+        }
+    }
+
+    @Override
+    public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql)
+    {
+        Map<String, String> queries = getSessionQueryMap(context.getRequest(), container, schemaName, true);
+        String queryName = null;
+        for (Map.Entry<String, String> query : queries.entrySet())
+        {
+            if (query.getValue().equals(sql))
+            {
+                queryName = query.getKey();
+                break;
+            }
+        }
+        if (queryName == null)
+        {
+            queryName = GUID.makeGUID();
+            queries.put(queryName, sql);
+        }
+        return getSessionQuery(context, container, schemaName, queryName);
+    }
+
+    private static final String PERSISTED_TEMP_QUERIES_KEY = "LABKEY.PERSISTED_TEMP_QUERIES";
+    private Map<String, String> getSessionQueryMap(HttpServletRequest request, Container container, String schemaName, boolean create)
+    {
+        HttpSession session = request.getSession(create);
+        if (session == null)
+            return Collections.emptyMap();
+        Map<ContainerSchemaKey, Map<String, String>> containerQueries = (Map<ContainerSchemaKey, Map<String, String>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
+        if (containerQueries == null)
+        {
+            containerQueries = new HashMap<ContainerSchemaKey, Map<String, String>>();
+            session.setAttribute(PERSISTED_TEMP_QUERIES_KEY, containerQueries);
+        }
+        ContainerSchemaKey key = new ContainerSchemaKey(container, schemaName);
+        Map<String, String> queries = containerQueries.get(key);
+        if (queries == null)
+        {
+            queries = new HashMap<String, String>();
+            containerQueries.put(key, queries);
+        }
+        return queries;
+    }
+
+    private List<QueryDefinition> getAllSessionQueries(HttpServletRequest request, User user, Container container, String schemaName)
+    {
+        Map<String, String> sessionQueries = getSessionQueryMap(request, container, schemaName, false);
+        List<QueryDefinition> ret = new ArrayList<QueryDefinition>();
+        for (Map.Entry<String, String> entry : sessionQueries.entrySet())
+            ret.add(createTempQueryDefinition(user, container, schemaName, entry.getKey(), entry.getValue()));
+        return ret;
+    }
+
+    public QueryDefinition getSessionQuery(ViewContext context, Container container, String schemaName, String queryName)
+    {
+        String sql = getSessionQueryMap(context.getRequest(), container, schemaName, false).get(queryName);
+        return createTempQueryDefinition(context.getUser(), container, schemaName, queryName, sql);
+    }
+
+    private QueryDefinition createTempQueryDefinition(User user, Container container, String schemaName, String queryName, String sql)
+    {
+        QueryDefinition qdef = QueryService.get().createQueryDef(user, container, schemaName, queryName);
+        qdef.setSql(sql);
+        qdef.setIsTemporary(true);
+        qdef.setIsHidden(true);
+        return qdef;
     }
 
     public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name)

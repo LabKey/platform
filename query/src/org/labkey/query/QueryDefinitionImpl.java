@@ -91,6 +91,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected QueryDef _queryDef;
     private boolean _dirty;
     private ContainerFilter _containerFilter;
+    private boolean _temporary = false;
 
     public QueryDefinitionImpl(User user, QueryDef queryDef)
     {
@@ -417,6 +418,18 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public boolean isSnapshot()
     {
         return mgr.isSnapshot(_queryDef.getFlags());
+    }
+
+    @Override
+    public void setIsTemporary(boolean temporary)
+    {
+        _temporary = temporary;
+    }
+
+    @Override
+    public boolean isTemporary()
+    {
+        return _temporary;
     }
 
     public void setIsSnapshot(boolean f)

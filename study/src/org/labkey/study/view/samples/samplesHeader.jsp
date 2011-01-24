@@ -53,8 +53,7 @@
 %>
 <%= this.textLink(vialLinkText, bean.getOtherViewURL())%>&nbsp;
 <%= this.textLink("Search", "showSearch.view?showVials=" + (bean.isShowingVials() ? "true" : "false"))%>&nbsp;
-<%= this.textLink("Reports", "autoReportList.view") %>&nbsp;
-<%= this.textLink("Customize View", bean.getCustomizeURL())%>
+<%= this.textLink("Reports", "autoReportList.view") %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())
     {

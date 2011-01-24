@@ -1460,7 +1460,7 @@ public class VisualizationController extends SpringActionController
             String schemaName = schema.getName();
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            TempQuerySettings settings = new TempQuerySettings(sql, getViewContext().getContainer());
+            TempQuerySettings settings = new TempQuerySettings(getViewContext(), schemaName, sql, false);
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
@@ -1481,7 +1481,7 @@ public class VisualizationController extends SpringActionController
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             return new ExtendedApiQueryResponse(view, getViewContext(), false,
-                    false, schemaName, "sql", 0, null, metaDataOnly);
+                    false, schemaName, settings.getQueryName(), 0, null, metaDataOnly);
         }
     }
 

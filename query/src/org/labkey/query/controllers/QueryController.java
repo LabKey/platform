@@ -2420,6 +2420,7 @@ public class QueryController extends SpringActionController
         private Integer _maxRows;
         private Integer _offset;
         private String _containerFilter;
+        private boolean _persist;
 
         public String getSchemaName()
         {
@@ -2480,6 +2481,16 @@ public class QueryController extends SpringActionController
         {
             _offset = start;
         }
+
+        public boolean isPersist()
+        {
+            return _persist;
+        }
+
+        public void setPersist(boolean persist)
+        {
+            _persist = persist;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -2501,7 +2512,7 @@ public class QueryController extends SpringActionController
 
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            TempQuerySettings settings = new TempQuerySettings(sql, getViewContext().getContainer());
+            TempQuerySettings settings = new TempQuerySettings(getViewContext(), schemaName, sql, form.isPersist());
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
@@ -2542,10 +2553,10 @@ public class QueryController extends SpringActionController
 
             if (getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isEditable,
-                        false, schemaName, "sql", 0, null, metaDataOnly);
+                        false, schemaName, form.isPersist() ? settings.getQueryName() : "sql", 0, null, metaDataOnly);
             else
                 return new ApiQueryResponse(view, getViewContext(), isEditable,
-                        false, schemaName, "sql", 0, null, metaDataOnly);
+                        false, schemaName, form.isPersist() ? settings.getQueryName() : "sql", 0, null, metaDataOnly);
         }
     }
 
@@ -2614,7 +2625,7 @@ public class QueryController extends SpringActionController
 
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            TempQuerySettings settings = new TempQuerySettings(sql, getViewContext().getContainer());
+            TempQuerySettings settings = new TempQuerySettings(getViewContext(), schemaName, sql, false);
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
@@ -4098,7 +4109,7 @@ public class QueryController extends SpringActionController
                 for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
                 {
                     QueryDefinition qdef = entry.getValue();
-                    if (!qdef.isHidden())
+                    if (!qdef.isTemporary())
                     {
                         ActionURL viewDataUrl = qdef.urlFor(QueryAction.executeQuery);
                         qinfos.add(getQueryProps(qdef.getName(), qdef.getDescription(), viewDataUrl, true, uschema, form.isIncludeColumns()));
