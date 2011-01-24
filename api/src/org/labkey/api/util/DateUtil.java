@@ -728,9 +728,18 @@ validNum:       {
     }
 
 
-    // NOT ISO8601, we do not support year and month
-    // PnYnMnDTnH nMnS,
-    public static long parseDuration(String s)
+    private static class _duration
+    {
+        int year = -1;
+        int month = -1;
+        int day = -1;
+        int hour = -1;
+        int min = -1;
+        double sec = -1;
+    }
+
+
+    public static _duration _parseDuration(String s)
     {
         boolean period = false;
         boolean monthInPeriod = false;
@@ -826,129 +835,52 @@ Parse:
             month = -1;
         }
 
-        if (year != -1 || month != -1)
+        _duration d = new _duration();
+        d.year = Math.max(0,year);
+        d.month = Math.max(0,month);
+        d.day = Math.max(0,day);
+        d.hour = Math.max(0,hour);
+        d.min = Math.max(0,min);
+        d.sec = Math.max(0,sec);
+        return d;
+    }
+
+
+    public static long parseDuration(String s)
+    {
+        _duration d = _parseDuration(s);
+
+        if (d.year != 0 || d.month != 0)
             throw new ConversionException("Year and month not supported: " + s);
 
-        assert day >= 0 || day == -1;
-        assert hour >= 0 || hour == -1;
-        assert min >= 0 || min == -1;
-        assert sec >= 0 || sec == -1;
-        return  makeDuration(Math.max(0,day), Math.max(0,hour), Math.max(0,min), Math.max(0,sec));
+        assert d.day >= 0 || d.day == -1;
+        assert d.hour >= 0 || d.hour == -1;
+        assert d.min >= 0 || d.min == -1;
+        assert d.sec >= 0 || d.sec == -1;
+        return  makeDuration(d.day, d.hour, d.min, d.sec);
     }
 
 
     /** handles year, and month **/
-    private static long _addDuration(long d, String s, int sign)
+    private static long _addDuration(long start, String s, int sign)
     {
+        _duration d = _parseDuration(s);
+        
         Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(d);
+        calendar.setTimeInMillis(start);
 
-        boolean period = false;
-        boolean monthInPeriod = false;
-        int year = -1;
-        int month = -1;
-        int day = -1;
-        boolean time = false;
-        int hour = -1;
-        int min = -1;
-        double sec = -1;
-
-        int startField = 0;
-        int i;
-Parse:
-        for (i=0 ; i<s.length() ; i++)
-        {
-            char c = s.charAt(i);
-            switch (c)
-            {
-            case 'P':
-                if (i != 0)
-                    break Parse;
-                period = true;
-                startField = i+1;
-                break;
-            case 'Y': case 'y':
-                if (year != -1 || month != -1 || day != -1)
-                    break Parse;
-                period = true;
-                year = Integer.parseInt(s.substring(startField,i));
-                startField = i+1;
-                break;
-            case 'M': case 'm':
-                if (!time && month == -1)
-                {
-                    month = Integer.parseInt(s.substring(startField,i));
-                    monthInPeriod = period;
-                }
-                else
-                {
-                    if (min != -1 || sec != -1)
-                        break Parse;
-                    min = Integer.parseInt(s.substring(startField,i));
-                }
-                startField = i+1;
-                break;
-            case 'D': case 'd':
-                if (day != -1 || hour != -1)
-                    break Parse;
-                time = true;
-                day = Integer.parseInt(s.substring(startField,i));
-                startField = i+1;
-                break;
-            case 'T': case 't':
-                if (hour != -1 || min != -1 || sec != -1)
-                    break Parse;
-                time = true;
-                startField = i+1;
-                break;
-            case 'H': case 'h':
-                if (hour != -1 || min != -1)
-                    break Parse;
-                time = true;
-                hour = Integer.parseInt(s.substring(startField,i));
-                startField = i+1;
-                break;
-            case 'S': case 's':
-                if (sec != -1 || i != s.length()-1)
-                    break Parse;
-                sec = Double.parseDouble(s.substring(startField,i));
-                startField = i+1;
-                break;
-            case '0': case '1': case '2': case '3': case '4' : case '5': case '6': case '7': case'8': case '9':
-                break;
-            case '.':
-                if (i == startField)
-                    break Parse;
-                break;
-            default:
-                break Parse;
-            }
-        }
-
-        if (i < s.length())
-            throw new ConversionException("Illegal duration: " + s);
-
-        // check if month should have been minute
-        // can only happen if there is no day or hour specified
-        if ((month != -1 && min == -1) && !monthInPeriod && !time)
-        {
-            assert -1 == day && -1 == hour;
-            min = month;
-            month = -1;
-        }
-
-        if (year > 0)
-            calendar.add(Calendar.YEAR, sign*year);
-        if (month > 0)
-            calendar.add(Calendar.MONTH, month*sign);
-        if (day > 0)
-            calendar.add(Calendar.DAY_OF_MONTH, day*sign);
-        if (hour > 0)
-            calendar.add(Calendar.HOUR_OF_DAY, hour*sign);
-        if (min > 0)
-            calendar.add(Calendar.MINUTE, min*sign);
-        if (sec > 0)
-            calendar.add(Calendar.MILLISECOND, (int)(1000*sec*sign));
+        if (d.year > 0)
+            calendar.add(Calendar.YEAR, d.year*sign);
+        if (d.month > 0)
+            calendar.add(Calendar.MONTH, d.month*sign);
+        if (d.day > 0)
+            calendar.add(Calendar.DAY_OF_MONTH, d.day*sign);
+        if (d.hour > 0)
+            calendar.add(Calendar.HOUR_OF_DAY, d.hour*sign);
+        if (d.min > 0)
+            calendar.add(Calendar.MINUTE, d.min*sign);
+        if (d.sec > 0)
+            calendar.add(Calendar.MILLISECOND, (int)(1000*d.sec*sign));
 
         return calendar.getTimeInMillis();
     }

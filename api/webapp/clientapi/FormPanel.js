@@ -812,21 +812,8 @@ LABKEY.ext.Checkbox = Ext.extend(Ext.form.Checkbox,
 });
 
 
-LABKEY.ext.DatePicker = Ext.extend(Ext.DatePicker,
-{
-// Ext.DatePicker does not render properly on WebKit (safari,chrome)
-// fixed in Ext 3
-//    update : function(date, forceRefresh)
-//    {
-//        Ext.DatePicker.prototype.update.call(this, date, forceRefresh);
-//        if (Ext.isSafari || ('isWebKit' in Ext && Ext.isWebKit))
-//        {
-//            var w = 180;
-//            this.el.setWidth(w + this.el.getBorderWidth("lr"));
-//            Ext.fly(this.el.dom.firstChild).setWidth(w);
-//        }
-//    }
-});
+LABKEY.ext.DatePicker = Ext.extend(Ext.DatePicker, { });
+
 
 LABKEY.ext.DateField = Ext.extend(Ext.form.DateField,
 {
