@@ -22,6 +22,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -29,6 +31,9 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssaySchema;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -186,6 +191,11 @@ public class DataSetTable extends FilteredTable
                             }
                         });
                     }
+
+                    if (pd != null && _dsd.getProtocolId() != null)
+                    {
+                        removeColumn(col);
+                    }
                 }
                 if (isVisibleByDefault(col))
                     defaultVisibleCols.add(FieldKey.fromParts(col.getName()));
@@ -223,6 +233,88 @@ public class DataSetTable extends FilteredTable
         visitRowId.setUserEditable(false);
         visitRowId.setMeasure(false);
         addColumn(visitRowId);
+
+        if (_dsd.getProtocolId() != null)
+        {
+            TableInfo assayResultTable = createAssayResultTable();
+            for (ColumnInfo columnInfo : assayResultTable.getColumns())
+            {
+                if (getColumn(columnInfo.getName()) == null)
+                {
+                    ExprColumn wrappedColumn = new ExprColumn(this, columnInfo.getName(), columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType());
+                    wrappedColumn.copyAttributesFrom(columnInfo);
+                    addColumn(wrappedColumn);
+                }
+            }
+            for (FieldKey fieldKey : assayResultTable.getDefaultVisibleColumns())
+            {
+                if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
+                {
+                    defaultVisibleCols.add(fieldKey);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo result = super.resolveColumn(name);
+        if (result != null)
+        {
+            return result;
+        }
+
+        FieldKey fieldKey = null;
+
+        if (_dsd.getProtocolId() != null)
+        {
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId());
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            FieldKey runFieldKey = provider.getTableMetadata().getRunFieldKeyFromResults();
+            if (name.toLowerCase().startsWith("run"))
+            {
+                String runProperty = name.substring("run".length()).trim();
+                if (runProperty.length() > 0)
+                {
+                    fieldKey = new FieldKey(runFieldKey, runProperty);
+                }
+            }
+            else if (name.toLowerCase().startsWith("batch"))
+            {
+                String batchPropertyName = name.substring("batch".length()).trim();
+                if (batchPropertyName.length() > 0)
+                {
+                    fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
+                }
+            }
+            else if (name.toLowerCase().startsWith("analyte"))
+            {
+                String analytePropertyName = name.substring("analyte".length()).trim();
+                if (analytePropertyName.length() > 0)
+                {
+                    fieldKey = FieldKey.fromParts("Analyte", analytePropertyName);
+                    Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
+                    result = columns.get(fieldKey);
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                    fieldKey = FieldKey.fromParts("Analyte", "Properties", analytePropertyName);
+                }
+            }
+        }
+        if (fieldKey == null && !name.equalsIgnoreCase("Properties"))
+        {
+            fieldKey = FieldKey.fromParts("Properties", name);
+        }
+
+        if (fieldKey != null)
+        {
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
+            result = columns.get(fieldKey);
+        }
+        return result;
     }
 
     @Override
@@ -231,6 +323,11 @@ public class DataSetTable extends FilteredTable
         if (_dsd != null)
             return _dsd.getDomain();
         return null;
+    }
+
+    private String getAssayResultAlias(String mainAlias)
+    {
+        return mainAlias + "_AR";
     }
 
     @NotNull
@@ -245,9 +342,31 @@ public class DataSetTable extends FilteredTable
             from.append(", PV.Day");
         from.append("\nFROM ").append(super.getFromSQL("DS")).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
                 " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = '" + _schema.getContainer().getId() + "') AS ").append(alias);
-        return from;
-    }   
 
+        if (_dsd.getProtocolId() != null)
+        {
+            String assayResultAlias = getAssayResultAlias(alias);
+            TableInfo assayResultTable = createAssayResultTable();
+            from.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
+            from.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
+            from.append("CAST(").append(alias).append("._key AS INT)");
+        }
+
+        return from;
+    }
+
+    private TableInfo createAssayResultTable()
+    {
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId().intValue());
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        AssaySchema schema = AssayService.get().createSchema(_schema.getUser(), protocol.getContainer());
+        ContainerFilterable result = provider.createDataTable(schema, protocol, false);
+        if (result != null)
+        {
+            result.setContainerFilter(ContainerFilter.EVERYTHING);
+        }
+        return result;
+    }
 
     @Override
     public boolean hasContainerContext()

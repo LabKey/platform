@@ -138,7 +138,7 @@ public class AssaySchemaImpl extends AssaySchema
                     }
                     else if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
                     {
-                        table = provider.createDataTable(this, protocol);
+                        table = provider.createDataTable(this, protocol, true);
                         if (table != null && null != table.getColumn("Properties"))
                             fixupPropertyURLs(table.getColumn("Properties"));
                     }
@@ -259,7 +259,7 @@ public class AssaySchemaImpl extends AssaySchema
         batchSQL.append(".RowId AND e.BatchProtocolId = ");
         batchSQL.append(protocol.getRowId());
         batchSQL.append(")");
-        ExprColumn batchColumn = new ExprColumn(runTable, AssayService.BATCH_COLUMN_NAME, batchSQL, Types.INTEGER, runTable.getColumn(ExpRunTable.Column.RowId));
+        ExprColumn batchColumn = new ExprColumn(runTable, AssayService.BATCH_COLUMN_NAME, batchSQL, JdbcType.INTEGER, runTable.getColumn(ExpRunTable.Column.RowId));
         batchColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
@@ -348,7 +348,7 @@ public class AssaySchemaImpl extends AssaySchema
                 {
                     FilteredTable table = new FilteredTable(StudyManager.getSchema().getTable("Study"));
                     table.setContainerFilter(new StudyContainerFilter(AssaySchemaImpl.this));
-                    ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), Types.VARCHAR);
+                    ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
                     col.setFk(new ContainerForeignKey());
                     table.addColumn(col);
                     table.addWrapColumn(table.getRealTable().getColumn("Label"));

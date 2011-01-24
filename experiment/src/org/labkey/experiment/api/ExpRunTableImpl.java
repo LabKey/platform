@@ -591,7 +591,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             VirtualTable result = new VirtualTable(ExperimentServiceImpl.get().getSchema());
             for (ExpExperiment experiment : getExperiments())
             {
-                result.safeAddColumn(new ColumnInfo(experiment.getName()));
+                ColumnInfo column = new ColumnInfo(experiment.getName());
+                column.setSqlTypeName(JdbcType.BOOLEAN.toString());
+                result.safeAddColumn(column);
             }
             return result;
         }

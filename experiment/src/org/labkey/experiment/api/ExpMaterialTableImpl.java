@@ -163,6 +163,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 ret.setFk(new PropertyForeignKey(domain, _schema));
             }
         }
+        ret.setIsUnselectable(true);
         ret.setDescription("A holder for any custom fields associated with this sample");
         ret.setHidden(true);
         return ret;

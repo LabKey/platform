@@ -1233,7 +1233,7 @@ public class QueryServiceImpl extends QueryService
 
         public QAliasedColumn(String name, String alias, ColumnInfo column)
         {
-            super(column.getParentTable(), name, column);
+            super(column.getParentTable(), new FieldKey(null, name), column, true);
             setAlias(alias);
         }
     }

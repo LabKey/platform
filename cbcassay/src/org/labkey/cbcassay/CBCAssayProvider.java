@@ -157,9 +157,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         return result;
     }
 
-    public FilteredTable createDataTable(final AssaySchema schema, ExpProtocol protocol)
+    public FilteredTable createDataTable(final AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns)
     {
-        AssayResultTable table = new AssayResultTable(schema, protocol, this) {
+        AssayResultTable table = new AssayResultTable(schema, protocol, this, includeCopiedToStudyColumns) {
             @Override
             public boolean hasPermission(User user, Class<? extends Permission> perm)
             {

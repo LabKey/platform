@@ -88,7 +88,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return row;
     }
 
-    private @NotNull String getParticipant(Map<String, Object> row)
+    private @NotNull String getParticipant(Map<String, Object> row) throws ValidationException
     {
         String columnName = _dataset.getStudy().getSubjectColumnName();
         Object participant = row.get(columnName);
@@ -96,7 +96,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         {
             participant = row.get("ParticipantId");
         }
-        assert participant != null : "All dataset rows should be associated with a participant/" + columnName;
+        if (participant == null)
+        {
+            throw new ValidationException("All dataset rows must include a value for " + columnName);
+        }
         return participant.toString();
     }
 
@@ -159,7 +162,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException
     {
         StudyService.get().deleteDatasetRow(user, container, _dataset.getDataSetId(), keyFromMap(oldRow));
         _potentiallyDeletedParticipants.add(getParticipant(oldRow));
@@ -205,7 +208,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
 
         if (lsids.length == 0) {

@@ -54,7 +54,6 @@ import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -771,7 +770,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     public boolean hasMismatchedInfo(AssayProvider provider, ExpProtocol protocol, List<Integer> allObjects, AssaySchema schema)
     {
-        TableInfo tableInfo = provider.createDataTable(schema, protocol);
+        TableInfo tableInfo = provider.createDataTable(schema, protocol, true);
 
         AssayTableMetadata tableMetadata = provider.getTableMetadata();
 

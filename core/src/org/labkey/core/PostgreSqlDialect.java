@@ -905,7 +905,7 @@ class PostgreSqlDialect extends SqlDialect
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getSqlTypeInt() == Types.NUMERIC)
             colSpec.add("(15,4)");
-        if (!prop.isNullable() || prop.isPrimaryKey())
+        if (prop.isPrimaryKey())
             colSpec.add("NOT NULL");
         return StringUtils.join(colSpec, ' ');
     }

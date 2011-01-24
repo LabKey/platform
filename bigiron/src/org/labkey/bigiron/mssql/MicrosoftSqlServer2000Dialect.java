@@ -679,7 +679,8 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
         else if (prop.getSqlTypeInt() == Types.NUMERIC)
             colSpec.add("(15,4)");
 
-        if (!prop.isNullable() || prop.isPrimaryKey()) colSpec.add("NOT NULL");
+        if (prop.isPrimaryKey())
+            colSpec.add("NOT NULL");
 
         return StringUtils.join(colSpec, ' ');
     }

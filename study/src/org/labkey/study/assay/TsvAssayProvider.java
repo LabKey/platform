@@ -105,10 +105,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return Arrays.asList(new StudyParticipantVisitResolverType(), new ThawListResolverType());
     }
 
-    public AssayResultTable createDataTable(AssaySchema schema, ExpProtocol protocol)
+    public AssayResultTable createDataTable(AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns)
     {
-        return new AssayResultTable(schema, protocol, this);
-//        return new RunDataTable(schema, protocol);
+        return new AssayResultTable(schema, protocol, this, includeCopiedToStudyColumns);
     }
 
     protected Map<String, Set<String>> getRequiredDomainProperties()
