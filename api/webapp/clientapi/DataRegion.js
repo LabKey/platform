@@ -739,7 +739,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         var headerWidth = this.table.getWidth(true);
         if (this.table.getRight(false) > viewportWidth)
             headerWidth = viewportWidth - this.table.getLeft(false);
-        
+
         if (this.header)
         {
             var frameWidth = this.header.getFrameWidth("lr") + this.header.parent().getFrameWidth("lr");
@@ -2137,7 +2137,7 @@ LABKEY.DataRegion._filterUI =
         if (!mappedType) mappedType = _mappedType;
         if (!fieldName) fieldName = this._fieldCaption || this._fieldName;
 
-        if (!allValues)
+        if (undefined === allValues || null === allValues)
         {
             alert("filter value for field '" + fieldName + "' cannot be empty.");
             return undefined;
@@ -2162,7 +2162,7 @@ LABKEY.DataRegion._filterUI =
         if (!mappedType) mappedType = this._mappedType;
         if (!fieldName) fieldName = this._fieldCaption || this._fieldName;
 
-        if (!value)
+        if (undefined === value || null === value)
         {
             alert("filter value for field '" + fieldName + "' cannot be empty.");
             return undefined
