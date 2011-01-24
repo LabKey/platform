@@ -854,8 +854,7 @@ public class QueryServiceImpl extends QueryService
 
     public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors)
     {
-        Path dir = new Path(QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(schema.getName()));
-        return findMetadataOverride(schema, tableName, customQuery, errors, dir);
+        return findMetadataOverride(schema, tableName, customQuery, errors, null);
     }
 
     public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors, Path dir)
@@ -901,6 +900,9 @@ public class QueryServiceImpl extends QueryService
      */
     public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, Path dir)
     {
+        if (dir == null)
+            dir = new Path(QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(schema.getName()));
+
         String schemaName = schema.getName();
         Container container = schema.getContainer();
         QueryDef queryDef;
