@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController.*" %>
 <%@ page import="org.labkey.study.controllers.samples.ShowUploadSpecimensAction" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext currentContext = HttpView.currentContext();
@@ -81,8 +82,8 @@
     }
 
     WebPartView.startTitleFrame(out, "View All Specimens", null, "100%", null); %>
-<a href="<%=h(new ActionURL(SamplesAction.class, c).addParameter("showVials", "false"))%>">By Specimen</a><br>
-<a href="<%=h(new ActionURL(SamplesAction.class, c).addParameter("showVials", "true"))%>">By Vial</a><br>
+<a href="<%=h(SpecimenController.getSamplesURL(c).addParameter("showVials", "false"))%>">By Specimen</a><br>
+<a href="<%=h(SpecimenController.getSamplesURL(c).addParameter("showVials", "true"))%>">By Vial</a><br>
 <%
     WebPartView.endTitleFrame(out);
 

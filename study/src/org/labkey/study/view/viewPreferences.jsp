@@ -27,7 +27,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
-
 <%
     JspView<StudyController.ViewPrefsBean> me = (JspView<StudyController.ViewPrefsBean>) HttpView.currentView();
     StudyController.ViewPrefsBean bean = me.getModelBean();
@@ -41,33 +40,39 @@
     <tr class="labkey-wp-header">
         <th colspan="3" align="left">Default View<%=PageFlowUtil.helpPopup("Default View", "Select the default View that will display from the Study Datasets Web Part")%></th>
     </tr>
-    <%
-        if (bean.getViews().size() > 1) {
-            for (Pair<String, String> view : bean.getViews()) {
-    %>
+<%
+    if (bean.getViews().size() > 1)
+    {
+        for (Pair<String, String> view : bean.getViews())
+        {
+%>
             <tr><td><%=getLabel(view, defaultView)%></td>
                 <td>&nbsp;</td>
                 <td><%=textLink("select", url.relativeUrl("viewPreferences", Collections.singletonMap("defaultView", view.getValue()), "Study", false))%></td>
             </tr>
-    <%
+<%
         }
-        } else {
-    %>
+    }
+    else
+    {
+%>
         <tr><td>There is only a single view for this dataset.</td></tr>
-    <%
-        }
-        ActionURL doneUrl = HttpView.currentContext().cloneActionURL();
-        doneUrl.setAction(StudyController.DatasetReportAction.class);
-        doneUrl.deleteParameter("defaultView");
-        doneUrl.deleteParameter("Dataset.reportId");
-        doneUrl.deleteParameter("Dataset.viewName");
+<%
+    }
 
-        ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
-        if (reportId != null)
-            doneUrl.addParameter("Dataset.reportId", defaultView);
-        else
-            doneUrl.addParameter("Dataset.viewName", defaultView);
-    %>
+    ActionURL doneUrl = HttpView.currentContext().cloneActionURL();
+    doneUrl.setAction(StudyController.DatasetReportAction.class);
+    doneUrl.deleteParameter("defaultView");
+    doneUrl.deleteParameter("Dataset.reportId");
+    doneUrl.deleteParameter("Dataset.viewName");
+
+    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+
+    if (reportId != null)
+        doneUrl.addParameter("Dataset.reportId", defaultView);
+    else
+        doneUrl.addParameter("Dataset.viewName", defaultView);
+%>
         <tr><td>&nbsp;</td></tr>
         <tr><td><%=generateButton("Done", doneUrl)%></td></tr>
 </table>

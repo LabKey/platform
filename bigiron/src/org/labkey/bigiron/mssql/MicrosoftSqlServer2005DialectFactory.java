@@ -18,6 +18,7 @@ package org.labkey.bigiron.mssql;
 
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
+import org.labkey.api.util.VersionNumber;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -37,9 +38,9 @@ public class MicrosoftSqlServer2005DialectFactory extends SqlDialectFactory
     }
 
     @Override
-    public boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings)
+    public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings)
     {
-        return dataBaseProductName.equals("Microsoft SQL Server") && (databaseMajorVersion >= 9);
+        return dataBaseProductName.equals("Microsoft SQL Server") && (databaseProductVersion.getVersionInt() >= 90);
     }
 
     @Override

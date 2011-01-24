@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.experiment.api.ExperimentServiceImpl" %>
 <%@ page import="org.labkey.experiment.api.MaterialSource" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.api.study.SamplesUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView me = (JspView) HttpView.currentView();
@@ -52,7 +53,7 @@
             ActionURL url;
             boolean isStudySample = "Study Specimens".equals(sampleSet.getName());
             if (isStudySample)
-                url = new ActionURL("study-samples", "samples.view", sampleSet.getContainer());
+                url = urlProvider(SamplesUrls.class).getSamplesURL(sampleSet.getContainer());
             else
                 url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, sampleSet.getContainer()).replaceParameter("rowId", "" + sampleSet.getRowId());
             %>

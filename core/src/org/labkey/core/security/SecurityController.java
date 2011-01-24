@@ -1088,7 +1088,7 @@ public class SecurityController extends SpringActionController
                 SecurityPolicy oldPolicy = SecurityManager.getPolicy(c);
 
                 //if resource id is not the same as the current container
-                //set chagne type to indicate we're moving from inhereted
+                //set change type to indicate we're moving from inherited
                 if(!oldPolicy.getResourceId().equals(c.getResourceId()))
                     changeType = AuditChangeType.fromInherited;
 

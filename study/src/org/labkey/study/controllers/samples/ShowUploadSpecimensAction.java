@@ -22,6 +22,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -59,7 +60,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
     {
         RepositorySettings settings =  SampleManager.getInstance().getRepositorySettings(getViewContext().getContainer());
         if (!settings.isSimple())
-            return HttpView.redirect(new ActionURL("Pipeline", "browse", getViewContext().getContainer()));
+            return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer()));
 
         return new JspView<UploadSpecimensForm>("/org/labkey/study/view/samples/uploadSimpleSpecimens.jsp", form, errors);
      }

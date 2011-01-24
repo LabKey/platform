@@ -35,8 +35,10 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -266,7 +268,8 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         {
             throw UnexpectedException.wrap(e);
         }
-        ActionURL url = new ActionURL("reports", "plotChart", _context.getContainer());
+
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlPlotChart(_context.getContainer());
 
         for (Pair<String, String> param : bean.getParameters())
         {

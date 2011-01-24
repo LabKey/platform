@@ -121,7 +121,7 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
 
         private String getTypeListHtml(List<? extends SpecimenTypeSummary.TypeCount> types)
         {
-            ActionURL baseURL = new ActionURL(SpecimenController.SamplesAction.class, _viewContext.getContainer());
+            ActionURL baseURL = SpecimenController.getSamplesURL(_viewContext.getContainer());
             baseURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
             return getTypeListInnerHtml(types, baseURL);
 

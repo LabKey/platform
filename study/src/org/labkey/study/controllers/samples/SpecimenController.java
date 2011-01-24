@@ -114,6 +114,15 @@ public class SpecimenController extends BaseStudyController
         setActionResolver(_actionResolver);
     }
 
+    public static class SamplesUrlsImpl implements SamplesUrls
+    {
+        @Override
+        public ActionURL getSamplesURL(Container c)
+        {
+            return SpecimenController.getSamplesURL(c);
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class OverviewAction extends SimpleViewAction
     {
@@ -137,7 +146,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ActionURL getRedirectURL(Object o)
         {
-            return new ActionURL(SamplesAction.class, getContainer());
+            return getSamplesURL();
         }
     }
 
@@ -191,7 +200,7 @@ public class SpecimenController extends BaseStudyController
         boolean cachedFilter = selectionCache != null && getContainer().equals(selectionCache.getKey());
         if (!newFilter && !cachedFilter)
         {
-            HttpView.throwRedirect(new ActionURL(SamplesAction.class, getContainer()));
+            HttpView.throwRedirect(getSamplesURL());
             return null; // return null to remove intellij warning
         }
 
@@ -273,6 +282,19 @@ public class SpecimenController extends BaseStudyController
             return root;
         }
     }
+
+
+    private ActionURL getSamplesURL()
+    {
+        return getSamplesURL(getContainer());
+    }
+
+
+    public static ActionURL getSamplesURL(Container c)
+    {
+        return new ActionURL(SamplesAction.class, c);
+    }
+
 
     @RequiresPermissionClass(ReadPermission.class)
     public class SamplesAction extends QueryViewAction<SampleViewTypeForm, SpecimenQueryView>

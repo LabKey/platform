@@ -24,6 +24,7 @@ import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.util.VersionNumber;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -46,9 +47,10 @@ public class MicrosoftSqlServer2000DialectFactory extends SqlDialectFactory
     }
 
     @Override
-    public boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings)
+    public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings)
     {
-        boolean ret = dataBaseProductName.equals("Microsoft SQL Server") && (databaseMajorVersion < 9);
+        int version = databaseProductVersion.getVersionInt();
+        boolean ret = dataBaseProductName.equals("Microsoft SQL Server") && (version < 90);
 
         if (ret && logWarnings)
             _log.warn("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");

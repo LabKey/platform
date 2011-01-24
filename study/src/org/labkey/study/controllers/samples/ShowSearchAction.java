@@ -16,13 +16,15 @@
 package org.labkey.study.controllers.samples;
 
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.samples.SampleSearchBean;
 import org.springframework.validation.BindException;
@@ -59,7 +61,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
     public ActionURL getSuccessURL(SearchForm form)
     {
-        ActionURL url = new ActionURL(SpecimenController.SamplesAction.class, getViewContext().getContainer());
+        ActionURL url = SpecimenController.getSamplesURL(getViewContext().getContainer());
         url.addParameter("showVials", Boolean.toString(form.isShowVials()));
         for (ShowSearchAction.SearchForm.SearchParam param : form.getSearchParams())
         {

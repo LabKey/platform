@@ -25,6 +25,7 @@ import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.util.VersionNumber;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -52,24 +53,34 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     }
 
     @Override
-    public boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
         if (!getProductName().equals(dataBaseProductName))
             return false;
 
-        int version = databaseMajorVersion * 10 + databaseMinorVersion;   // 8.2 => 82, 8.3 => 83, 8.4 => 84, 9.0 => 90, etc.
+        int version = databaseProductVersion.getVersionInt();
 
-        // Version 8.2 or greater is allowed...
-        if (version >= 82)
+        // Version 8.3 or greater is allowed...
+        if (version >= 83)
         {
-            // ...but warn for anything greater than 9.0
-            if (logWarnings && version > 90)
-                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + ".  PostgreSQL 9.0 is the recommended version.");
+            if (logWarnings)
+            {
+                // ...but warn for anything less than 8.3.7
+                if (83 == version && databaseProductVersion.getRevisionAsInt() < 7)
+                {
+                    _log.warn("LabKey Server has known issues with " + getProductName() + " version " + databaseProductVersion + ".  PostgreSQL 9.0 is the recommended version.");
+                }
+                // ...or greater than 9.0
+                else if (version > 90)
+                {
+                    _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ".  PostgreSQL 9.0 is the recommended version.");
+                }
+            }
 
             return true;
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 8.2 or greater.");
+        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 8.2 or greater.");
     }
 
     @Override
@@ -93,11 +104,11 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             badProductName("Postgres", 8.0, 8.5, "");
             badProductName("postgresql", 8.0, 8.5, "");
 
-            // 8.1 or lower should result in bad version number
-            badVersion("PostgreSQL", -5.0, 8.1, null);
+            // 8.2 or lower should result in bad version number
+            badVersion("PostgreSQL", 0.0, 8.2, null);
 
-            //  > 8.1 should be good
-            good("PostgreSQL", 8.2, 11.0, "", PostgreSqlDialect.class);
+            //  >= 8.3 should be good
+            good("PostgreSQL", 8.3, 11.0, "", PostgreSqlDialect.class);
         }
     }
 

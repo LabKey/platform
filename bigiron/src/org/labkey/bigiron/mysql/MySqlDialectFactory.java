@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
+import org.labkey.api.util.VersionNumber;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -45,24 +46,24 @@ public class MySqlDialectFactory extends SqlDialectFactory
     }
 
     @Override
-    public boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
         if (!getProductName().equals(dataBaseProductName))
             return false;
 
-        int version = databaseMajorVersion * 10 + databaseMinorVersion;   // 5.1 => 51, 5.5 => 55, etc.
+        int version = databaseProductVersion.getVersionInt();
 
         // Version 5.1 or greater is allowed...
         if (version >= 51)
         {
             // ...but warn for anything greater than 5.1
             if (logWarnings && version > 51)
-                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + ".  " +  getProductName() + " 5.1 is the recommended version.");
+                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ".  " +  getProductName() + " 5.1 is the recommended version.");
 
             return true;
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 5.1 or greater.");
+        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 5.1 or greater.");
     }
 
     @Override

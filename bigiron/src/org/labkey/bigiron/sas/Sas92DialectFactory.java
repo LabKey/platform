@@ -18,6 +18,7 @@ package org.labkey.bigiron.sas;
 
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
+import org.labkey.api.util.VersionNumber;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -42,7 +43,7 @@ public class Sas92DialectFactory extends SqlDialectFactory
 
     @Override
     // SAS/SHARE driver throws when invoking DatabaseMetaData database version methods, so use the jdbcDriverVersion to determine dialect version
-    public boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings)
+    public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings)
     {
         return dataBaseProductName.equals(getProductName()) && jdbcDriverVersion.startsWith("9.2");
     }

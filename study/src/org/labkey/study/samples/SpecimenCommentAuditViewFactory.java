@@ -112,7 +112,7 @@ public class SpecimenCommentAuditViewFactory extends SimpleAuditViewFactory
                             return;
                         }
 
-                        ActionURL url = new ActionURL(SpecimenController.SamplesAction.class, container);
+                        ActionURL url = SpecimenController.getSamplesURL(container);
                         url.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
                         url.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
                         url.addParameter("SpecimenDetail.GlobalUniqueId~eq", globalUniqueId);

@@ -186,7 +186,7 @@ public class RequestabilityManager
                     @Override
                     public ActionURL getDefaultTestURL(Container container)
                     {
-                        ActionURL testURL = new ActionURL(SpecimenController.SamplesAction.class, container);
+                        ActionURL testURL = SpecimenController.getSamplesURL(container);
                         testURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
                         testURL.addFilter("SpecimenDetail", FieldKey.fromParts("Requestable"), CompareType.NONBLANK, null);
                         return testURL;
@@ -220,7 +220,7 @@ public class RequestabilityManager
                     @Override
                     public ActionURL getDefaultTestURL(Container container)
                     {
-                        ActionURL testURL = new ActionURL(SpecimenController.SamplesAction.class, container);
+                        ActionURL testURL = SpecimenController.getSamplesURL(container);
                         testURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
                         testURL.addFilter("SpecimenDetail", FieldKey.fromParts("AtRepository"), CompareType.EQUAL, Boolean.FALSE);
                         return testURL;
@@ -255,7 +255,7 @@ public class RequestabilityManager
                     @Override
                     public ActionURL getDefaultTestURL(Container container)
                     {
-                        ActionURL testURL = new ActionURL(SpecimenController.SamplesAction.class, container);
+                        ActionURL testURL = SpecimenController.getSamplesURL(container);
                         testURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
                         testURL.addFilter("SpecimenDetail", FieldKey.fromParts("LockedInRequest"), CompareType.EQUAL, Boolean.TRUE);
                         return testURL;

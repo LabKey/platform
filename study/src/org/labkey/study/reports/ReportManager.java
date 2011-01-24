@@ -380,13 +380,13 @@ public class ReportManager implements StudyManager.DataSetListener
             // any specimen views
             if ("SpecimenDetail".equals(view.getQueryName()))
             {
-                return new ActionURL(SpecimenController.SamplesAction.class, c).
+                return SpecimenController.getSamplesURL(c).
                         addParameter("showVials", "true").
                         addParameter("SpecimenDetail." + QueryParam.viewName, view.getName());
             }
             else if ("SpecimenSummary".equals(view.getQueryName()))
             {
-                return new ActionURL(SpecimenController.SamplesAction.class, c).
+                return SpecimenController.getSamplesURL(c).
                         addParameter("SpecimenSummary." + QueryParam.viewName, view.getName());
             }
 

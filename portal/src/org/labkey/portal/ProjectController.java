@@ -34,6 +34,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
@@ -304,7 +305,7 @@ public class ProjectController extends SpringActionController
             if (path.startsWith(pipeline))
             {
                 path = pipeline.relativize(path);
-                _redirect = new ActionURL("pipeline", "browse", c).addParameter("path", path.encode());
+                _redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c).addParameter("path", path.encode());
             }
             else if (path.startsWith(files))
             {

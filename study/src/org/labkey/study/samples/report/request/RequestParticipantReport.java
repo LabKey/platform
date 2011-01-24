@@ -95,7 +95,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
-        ActionURL link = new ActionURL(SpecimenController.SamplesAction.class, _container);
+        ActionURL link = SpecimenController.getSamplesURL(_container);
         link.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
 

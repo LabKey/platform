@@ -1206,19 +1206,26 @@ public class PipelineController extends SpringActionController
 
     public static class PipelineUrlsImp implements PipelineUrls
     {
+        public ActionURL urlBrowse(Container container)
+        {
+            return urlBrowse(container, null, null);
+        }
+
         public ActionURL urlBrowse(Container container, String referer)
         {
             return urlBrowse(container, referer, null);
         }
 
-        public ActionURL urlBrowse(Container container, String referer, @Nullable String path)
+        public ActionURL urlBrowse(Container container, @Nullable String referer, @Nullable String path)
         {
             ActionURL url = new ActionURL(BrowseAction.class, container);
-            url.addParameter(Params.referer, referer);
+
+            if (null != referer)
+                url.addParameter(Params.referer, referer);
+
             if (path != null)
-            {
                 url.addParameter(Params.path, path);
-            }
+
             return url;
         }
 
