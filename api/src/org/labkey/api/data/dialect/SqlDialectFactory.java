@@ -16,6 +16,8 @@
 
 package org.labkey.api.data.dialect;
 
+import org.labkey.api.util.VersionNumber;
+
 import java.util.Collection;
 
 /*
@@ -28,7 +30,7 @@ public abstract class SqlDialectFactory
     public abstract boolean claimsDriverClassName(String driverClassName);
 
     // Implementation should throw only if it's responsible for the specified database server but doesn't support the specified version
-    public abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException;
+    public abstract boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException;
 
     public abstract SqlDialect create();
 

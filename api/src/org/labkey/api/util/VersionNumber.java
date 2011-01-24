@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.util;
 
 /*
@@ -34,14 +35,17 @@ public class VersionNumber
 
     public VersionNumber(String version)
     {
-        if(null == version || version.length() == 0)
+        if (null == version || version.length() == 0)
             throw new RuntimeException("Null or empty version number string!");
+
         String versionParts[] = version.split("\\.");
-        if(versionParts.length == 0)
+
+        if (versionParts.length == 0)
             throw new RuntimeException("Invalid version number string ('" + version + "')");
 
         _major = Integer.parseInt(versionParts[0]);
-        if(versionParts.length > 1)
+
+        if (versionParts.length > 1)
         {
             // Lenient int parser that allows non-digit characters after the number portion.  This fixes PostgreSQL 8.4 Beta 1
             //  which returns "4beta1" for minor version. 
@@ -54,7 +58,8 @@ public class VersionNumber
 
             _minor = Integer.parseInt(versionParts[1].substring(0, i));
         }
-        if(versionParts.length > 2)
+
+        if (versionParts.length > 2)
         {
             //try to parse as int, otherwise set as string
             try
@@ -102,12 +107,41 @@ public class VersionNumber
         return _revision;
     }
 
+    public int getRevisionAsInt()
+    {
+        if (null != _revision && _revision instanceof Integer)
+            return (Integer)_revision;
+        else
+            return 0;
+    }
+
     @Override
     public String toString()
     {
-        if(null != _revision)
+        if (null != _revision)
             return _major + "." + _minor + "." + _revision.toString();
         else
             return _major + "." + _minor;
+    }
+
+    //
+    // Returns major & minor version numbers (but not revision) in an int form that's easier for range checking:
+    //
+    //      major * 10 + minor
+    //
+    // Examples:
+    //
+    //      8.3 --> 83
+    //      8.4 --> 84
+    //      9.0 --> 90
+    //
+    // Requires (and validates that) minor version is a single-digit (0 <= minor <= 9)
+    //
+    public int getVersionInt()
+    {
+        if (_minor > 9 || _minor < 0)
+            throw new IllegalStateException("Bad minor version: " + _minor);
+
+        return _major * 10 + _minor;
     }
 }

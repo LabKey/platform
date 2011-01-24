@@ -16,6 +16,8 @@
 
 package org.labkey.api.data.dialect;
 
+import org.labkey.api.util.VersionNumber;
+
 import javax.servlet.ServletException;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -81,17 +83,17 @@ public class SqlDialectManager
             databaseMinorVersion = 0;
         }
 
-        return getFromProductName(md.getDatabaseProductName(), databaseMajorVersion, databaseMinorVersion, md.getDriverVersion(), true);
+        return getFromProductName(md.getDatabaseProductName(), new VersionNumber(md.getDatabaseProductVersion()), md.getDriverVersion(), true);
     }
 
 
-    public static SqlDialect getFromProductName(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
+    public static SqlDialect getFromProductName(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         for (SqlDialectFactory factory : _factories)
-            if (factory.claimsProductNameAndVersion(dataBaseProductName, databaseMajorVersion, databaseMinorVersion, jdbcDriverVersion, logWarnings))
+            if (factory.claimsProductNameAndVersion(dataBaseProductName, databaseProductVersion, jdbcDriverVersion, logWarnings))
                 return factory.create();
 
-        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + databaseMajorVersion + "." + databaseMinorVersion + " -- is not supported by your LabKey installation.");
+        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + databaseProductVersion.toString() + " -- is not supported by your LabKey installation.");
     }
 
 

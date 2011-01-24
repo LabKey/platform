@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package org.labkey.api.study.assay;
+package org.labkey.api.study;
 
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
 
 /*
 * User: adam
-* Date: Aug 30, 2009
-* Time: 9:10:07 PM
+* Date: Jan 21, 2011
+* Time: 10:38:59 PM
 */
-public interface PlateUrls extends UrlProvider
+public interface SamplesUrls extends UrlProvider
 {
-    public ActionURL getPlateTemplateListURL(Container c);
-    public ActionURL getPlateDetailsURL(Container c);
+    ActionURL getSamplesURL(Container c);
 }

@@ -534,7 +534,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
     
 
-
     public static String renderToString(ModelAndView mv, HttpServletRequest request) throws Exception
     {
         MockHttpServletResponse response = new MockHttpServletResponse(){
@@ -548,7 +547,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         include(mv, request, response);
         return response.getContentAsString();
     }
-
 
 
     /**

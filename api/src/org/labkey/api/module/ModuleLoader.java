@@ -203,6 +203,7 @@ public class ModuleLoader implements Filter
         _webappDir = new File(servletCtx.getRealPath(".")).getCanonicalFile();
 
         List<File> explodedModuleDirs;
+
         try
         {
             ClassLoader webappClassLoader = getClass().getClassLoader();

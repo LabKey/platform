@@ -90,7 +90,7 @@
 
         if (newScript != previousScript)
         {
-            previewExtElement<%=uid%>.update("Loading...");  // TODO: Add an Ext spinny thing instead?
+            Ext.get('tabsDiv<%=uid%>').mask("Loading report results...", "x-mask-loading");
             previousScript = newScript;
 
             var config = {
@@ -114,11 +114,13 @@
     {
         // Update the preview div with the returned HTML, and make sure scripts are run
         previewExtElement<%=uid%>.update(response.responseText, true);
+        Ext.get('tabsDiv<%=uid%>').unmask();
     }
 
     function previewFailure()
     {
         previewExtElement<%=uid%>.update("Failed to retrieve report results");
+        Ext.get('tabsDiv<%=uid%>').unmask();
         previousScript = null;
     }
 
@@ -161,7 +163,6 @@
         </table>
     </div>
     <div id="previewDiv<%=uid%>" class="x-hide-display">
-        <b>This text should not be seen!</b>
     </div><%
     if (null != helpHtml)
     {
