@@ -53,12 +53,6 @@ public class JavaScriptReport extends ScriptReport
     }
 
     @Override
-    public String getExecutionLocation()
-    {
-        return "by the client browser";
-    }
-
-    @Override
     public String getEditAreaSyntax()
     {
         return "js";

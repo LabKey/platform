@@ -24,12 +24,15 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
+<%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
     ViewContext ctx = getViewContext();
     ScriptReportBean bean = me.getModelBean();
     ScriptReport report = (ScriptReport)bean.getReport();
+    ReportDescriptor descriptor = report.getDescriptor();
     String helpHtml = report.getDesignerHelpHtml();
     String uid = "_" + UniqueID.getServerSessionScopedUID();
     boolean readOnly = bean.isReadOnly();
@@ -41,10 +44,11 @@
 <script type="text/javascript">
     var previousScript = null;
     var scriptDiv<%=uid%>;
-    var previewExtElement<%=uid%>;
+    var previewDivExtElement<%=uid%>;
+    var dataDivExtElement<%=uid%> = null;
+    var tabsDivExtElement<%=uid%>;
 
     Ext.onReady(function(){
-        // basic tabs 1, built from existing content
         var tabs = new Ext.TabPanel({
             renderTo: 'tabsDiv<%=uid%>',
             width: 1000,
@@ -56,13 +60,14 @@
             items:[{
                     title: 'Preview',
                     contentEl: 'previewDiv<%=uid%>',
-                    listeners: {activate: handleActivate}
+                    listeners: {activate: activatePreviewTab}
                 },{
                     title: 'Source',
                     contentEl: 'scriptDiv<%=uid%>'
                 },{
                     title: 'Data',
-                    html: "Here's your data!"
+                    contentEl: 'dataDiv<%=uid%>',
+                    listeners: {activate: activateDataTab}
                 }<%
 
                 if (null != helpHtml)
@@ -80,17 +85,18 @@
         tabs.strip.applyStyles({'background':'#ffffff'});
 
         scriptDiv<%=uid%> = document.getElementById("script<%=uid%>");
-        previewExtElement<%=uid%> = Ext.get("previewDiv<%=uid%>");
+        previewDivExtElement<%=uid%> = Ext.get("previewDiv<%=uid%>");
+        tabsDivExtElement<%=uid%> = Ext.get('tabsDiv<%=uid%>');
     });
 
-    function handleActivate(tab)
+    function activatePreviewTab(tab)
     {
         updateScript();
         var newScript = scriptDiv<%=uid%>.value;
 
         if (newScript != previousScript)
         {
-            Ext.get('tabsDiv<%=uid%>').mask("Loading report results...", "x-mask-loading");
+            tabsDivExtElement<%=uid%>.mask("Loading report results...", "x-mask-loading");
             previousScript = newScript;
 
             var config = {
@@ -113,15 +119,50 @@
     function previewSuccess(response)
     {
         // Update the preview div with the returned HTML, and make sure scripts are run
-        previewExtElement<%=uid%>.update(response.responseText, true);
-        Ext.get('tabsDiv<%=uid%>').unmask();
+        previewDivExtElement<%=uid%>.update(response.responseText, true);
+        tabsDivExtElement<%=uid%>.unmask();
     }
 
     function previewFailure()
     {
-        previewExtElement<%=uid%>.update("Failed to retrieve report results");
-        Ext.get('tabsDiv<%=uid%>').unmask();
+        previewDivExtElement<%=uid%>.update("Failed to retrieve report results");
+        tabsDivExtElement<%=uid%>.unmask();
         previousScript = null;
+    }
+
+    function activateDataTab(tab)
+    {
+        // Load the data grid on demand, since it's not usually needed.
+        if (null == dataDivExtElement<%=uid%>)
+        {
+            dataDivExtElement<%=uid%> = Ext.get('dataDiv<%=uid%>');
+            tabsDivExtElement<%=uid%>.mask("Loading data grid...", "x-mask-loading");
+
+            new LABKEY.QueryWebPart({
+                schemaName: <%=q(bean.getSchemaName())%>,
+                queryName: <%=q(bean.getQueryName())%>,
+                viewName: <%=q(bean.getViewName())%>,
+                dataRegionName: <%=q(bean.getDataRegionName())%>,
+                buttonBarPosition: 'none',
+                frame: 'none',
+                showDetailsColumn: false,
+                showUpdateColumn: false,
+                renderTo: dataDivExtElement<%=uid%>,
+                successCallback: dataSuccess,
+                failure: dataFailure});
+        }
+    }
+
+    function dataSuccess()
+    {
+        tabsDivExtElement<%=uid%>.unmask();
+    }
+
+    function dataFailure()
+    {
+        dataDivExtElement<%=uid%>.update("Failed to retrieve data grid.");
+        tabsDivExtElement<%=uid%>.unmask();
+        dataDivExtElement<%=uid%> = null;  // Request the data grid again next time
     }
 
     function updateScript()
@@ -134,6 +175,8 @@
 </script>
 
 <div id="tabsDiv<%=uid%>" class="extContainer">
+    <div id="previewDiv<%=uid%>" class="x-hide-display">
+    </div>
     <div id="scriptDiv<%=uid%>" class="x-hide-display">
         <table width="100%">
             <tr><td width="100%">
@@ -162,7 +205,7 @@
             <tr><td><input type="checkbox">Here's another checkbox.</td></tr>
         </table>
     </div>
-    <div id="previewDiv<%=uid%>" class="x-hide-display">
+    <div id="dataDiv<%=uid%>" class="x-hide-display">
     </div><%
     if (null != helpHtml)
     {

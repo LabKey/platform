@@ -68,8 +68,6 @@ public abstract class ScriptReport extends AbstractReport
         return null;
     }
 
-    // TODO: Delete this
-    public abstract String getExecutionLocation();
     public abstract boolean supportsPipeline();
 
     public String getDownloadDataHelpMessage()

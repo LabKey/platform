@@ -141,12 +141,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     }
 
     @Override
-    public String getExecutionLocation()
-    {
-        return "on the server";
-    }
-
-    @Override
     public boolean supportsPipeline()
     {
         return true;
