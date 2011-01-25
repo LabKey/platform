@@ -667,21 +667,11 @@ public enum CompareType
             return ((Calendar)v).getTime();
         String s = v.toString();
 
-        try
-        {
-            if (!s.startsWith("-") && !s.startsWith("+"))
-                return new Date(DateUtil.parseDateTime(s));
-        }
-        catch (ConversionException x)
-        {
-        }
+        if (!s.startsWith("-") && !s.startsWith("+"))
+            return new Date(DateUtil.parseDateTime(s));
 
-        boolean add = true;
-        if (s.startsWith("-") || s.startsWith("+"))
-        {
-            add = s.startsWith("+");
-            s = s.substring(1);
-        }
+        boolean add = s.startsWith("+");
+        s = s.substring(1);
         if (NumberUtils.isDigits(s))
             s = s + "d";
         if (add)
