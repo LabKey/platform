@@ -73,6 +73,41 @@ LABKEY.Utils = new function()
     }
 
 
+
+    function isObject(v)
+    {
+        return typeof v == "object" && Object.prototype.toString.call(v) === '[object Object]';
+    }
+
+
+    function _copy(o, depth)
+    {
+        if (depth==0 || !isObject(o))
+            return o;
+        var copy = {};
+        for (var key in o)
+            copy[key] = _copy(o[key], depth-1);
+        return copy;
+    }
+
+
+    // like a general version of Ext.apply() or mootools.merge()
+    function _merge(to, from, overwrite, depth)
+    {
+        for (var key in from)
+        {
+            if (isObject(to[key]) && isObject(from[key]))
+            {
+               _merge(to[key], from[key], overwrite, depth-1);
+            }
+            else if (undefined === to[key] || overwrite)
+            {
+                to[key] = _copy(from[key], depth-1);
+            }
+        }
+    }
+
+
     /** @scope LABKEY.Utils */
     return {
         // public functions
@@ -651,6 +686,38 @@ LABKEY.Utils.convertToExcel(
         {
             return config.success || config.successCallback
         },
+
+
+        /**
+         * Apply properties from b, c, ...  to a.  Properties of each subsequent
+         * object overwrites the previous.
+         *
+         * The first object is modified.
+         *
+         * Use merge({}, o) to create a deep copy of o.
+         */
+        merge : function(a, b, c)
+        {
+            var o = a;
+            for (var i=1 ; i<arguments.length ; i++)
+                _merge(o, arguments[i], true, 50);
+            return o;
+        },
+
+
+        /**
+         * Apply properites from b, c, ... to a.  Properties are not overwritten.
+         *
+         * The first object is modified.
+         */
+        mergeIf : function(a, b, c)
+        {
+            var o = arguments[0];
+            for (var i=1 ; i<arguments.length ; i++)
+                _merge(o, arguments[i], false, 50);
+            return o;
+        },
+
 
         // private
         enableButton : function (elem)
