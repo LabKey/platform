@@ -148,7 +148,7 @@
                 showDetailsColumn: false,
                 showUpdateColumn: false,
                 renderTo: dataDivExtElement<%=uid%>,
-                successCallback: dataSuccess,
+                successCallback: dataSuccess,    // TODO: Change this to "success" once #11425 is fixed
                 failure: dataFailure});
         }
     }

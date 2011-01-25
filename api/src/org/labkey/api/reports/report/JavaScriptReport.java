@@ -49,7 +49,7 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public String getTypeDescription()
     {
-        return "JavaScript Report";
+        return "JavaScript View";
     }
 
     @Override
@@ -64,6 +64,19 @@ public class JavaScriptReport extends ScriptReport
         try
         {
             return (new JspTemplate("/org/labkey/api/reports/report/view/javaScriptReportExample.jsp")).render();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public String getDesignerHelpHtml()
+    {
+        try
+        {
+            return new JspTemplate("/org/labkey/api/reports/report/view/javaScriptReportHelp.jsp").render();
         }
         catch (Exception e)
         {
