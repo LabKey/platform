@@ -57,7 +57,7 @@
         });
 
         emailDefaultCombo = new Ext.form.ComboBox({
-            hiddenName:'defaultEmailOption',
+            hiddenName:'defaultFileEmailOption',
             fieldLabel:'Folder Default Setting',
             store: defaultOptionsStore,
             forceSelection:true,

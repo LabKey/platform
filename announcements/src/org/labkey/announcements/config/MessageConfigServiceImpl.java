@@ -57,9 +57,15 @@ public class MessageConfigServiceImpl implements MessageConfigService.I
     }
 
     @Override
-    public MessageConfigService.NotificationOption getOption(int optionId)
+    public MessageConfigService.UserPreference[] getPreferences(Container c, MessageConfigService.ConfigTypeProvider provider) throws Exception
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return MessageConfigManager.getUserEmailPrefs(c, provider.getType());
+    }
+
+    @Override
+    public MessageConfigService.NotificationOption getOption(int optionId) throws Exception
+    {
+        return MessageConfigManager.getEmailOption(optionId);
     }
 
     @Override

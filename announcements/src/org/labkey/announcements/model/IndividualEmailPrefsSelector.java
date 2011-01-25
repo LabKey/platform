@@ -18,6 +18,7 @@ package org.labkey.announcements.model;
 
 import org.labkey.announcements.model.MessageConfigManager.EmailPref;
 import org.labkey.api.data.Container;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 
 import javax.servlet.ServletException;
@@ -39,7 +40,7 @@ public class IndividualEmailPrefsSelector extends EmailPrefsSelector
 
 
     @Override
-    protected boolean includeEmailPref(EmailPref ep)
+    protected boolean includeEmailPref(MessageConfigService.UserPreference ep)
     {
         return super.includeEmailPref(ep) && ((ep.getEmailOptionId() & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST) == 0);
     }
@@ -49,7 +50,7 @@ public class IndividualEmailPrefsSelector extends EmailPrefsSelector
     {
         List<User> authorized = new ArrayList<User>(_emailPrefs.size());
 
-        for (EmailPref ep : _emailPrefs)
+        for (MessageConfigService.UserPreference ep : _emailPrefs)
             if (shouldSend(ann, ep))
                 authorized.add(ep.getUser());
 

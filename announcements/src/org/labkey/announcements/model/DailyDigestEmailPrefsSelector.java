@@ -18,6 +18,7 @@ package org.labkey.announcements.model;
 
 import org.labkey.announcements.model.MessageConfigManager.EmailPref;
 import org.labkey.api.data.Container;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 
 import javax.servlet.ServletException;
@@ -32,22 +33,22 @@ import java.util.Map;
  */
 public class DailyDigestEmailPrefsSelector extends EmailPrefsSelector
 {
-    Map<User, EmailPref> _epMap;
+    Map<User, MessageConfigService.UserPreference> _epMap;
 
     protected DailyDigestEmailPrefsSelector(Container c) throws SQLException
     {
         super(c);
 
         // Create a map for shouldSend()
-        _epMap = new HashMap<User, MessageConfigManager.EmailPref>(_emailPrefs.size());
+        _epMap = new HashMap<User, MessageConfigService.UserPreference>(_emailPrefs.size());
 
-        for (EmailPref ep : _emailPrefs)
+        for (MessageConfigService.UserPreference ep : _emailPrefs)
             _epMap.put(ep.getUser(), ep);
     }
 
 
     @Override
-    protected boolean includeEmailPref(EmailPref ep)
+    protected boolean includeEmailPref(MessageConfigService.UserPreference ep)
     {
         return super.includeEmailPref(ep) && ((ep.getEmailOptionId() & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST) != 0);
     }

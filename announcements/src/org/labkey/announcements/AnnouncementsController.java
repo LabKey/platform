@@ -18,13 +18,11 @@ package org.labkey.announcements;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.labkey.announcements.EmailNotificationPage.Reason;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
-import org.labkey.announcements.model.DailyDigest;
 import org.labkey.announcements.model.DiscussionServiceImpl;
 import org.labkey.announcements.model.IndividualEmailPrefsSelector;
 import org.labkey.announcements.model.NormalMessageBoardPermissions;
@@ -35,7 +33,6 @@ import org.labkey.api.action.AjaxCompletionAction;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.RedirectAction;
@@ -68,6 +65,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.jsp.JspLoader;
+import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserIdRenderer;
@@ -136,7 +134,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -270,267 +267,6 @@ public class AnnouncementsController extends SpringActionController
         url.addReturnURL(returnURL);
         return url;
     }
-
-/*
-    @RequiresPermissionClass(AdminPermission.class)
-    public class AdminEmailAction extends SimpleViewAction<ReturnUrlForm>
-    {
-        private int realRowIndex = 0;
-
-        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-
-            QuerySettings settings = new QuerySettings(getViewContext(), "EmailPreferences");
-
-            // Render users only if they have read permissions in this folder.  This helps with admin usability,
-            // especially in folders that are part of very large projects.  See #5499. 
-            DataRegion rgn = new DataRegion() {
-                @Override
-                protected void renderTableRow(RenderContext ctx, Writer out, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
-                {
-                    User user = UserManager.getUser(((Integer)ctx.get("userId")).intValue());
-
-                    if (ctx.getContainer().hasPermission(user, ReadPermission.class))
-                        super.renderTableRow(ctx, out, renderers, realRowIndex++);  // rowIndex doesn't know anything about filtering  TODO: Change DataRegion to handle this better in 8.2
-                }
-            };
-            rgn.setSettings(settings);
-            rgn.setTable(_comm.getTableInfoEmailPrefs());
-            rgn.setShowFilters(false);
-            rgn.setSortable(false);
-            rgn.setShowBorders(true);
-            rgn.setShadeAlternatingRows(true);
-
-            ButtonBar bb = new ButtonBar();
-
-            ActionButton bulkEdit = new ActionButton(getBulkEditURL(form.getReturnURLHelper()), "Bulk Edit");
-            bulkEdit.setActionType(ActionButton.Action.LINK);
-            bb.add(bulkEdit);
-            rgn.setButtonBar(bb);
-
-            GridView gridView = new GridView(rgn, errors);
-            ResultSet rs = null;
-
-            try
-            {
-                rs = AnnouncementManager.getEmailPrefsResultset(c);
-                gridView.setResultSet(rs);
-                rgn.setColumns(DataRegion.colInfosFromMetaData(rs.getMetaData()));
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
-
-            DisplayColumn colGroupMembership = new GroupMembershipDisplayColumn(c);
-            colGroupMembership.setCaption("Project&nbsp;User?");
-            rgn.addDisplayColumn(colGroupMembership);
-
-            DisplayColumn colFirstName = rgn.getDisplayColumn("FirstName");
-            if (colFirstName != null)
-                colFirstName.setCaption("First Name");
-
-            DisplayColumn colLastName = rgn.getDisplayColumn("LastName");
-            if (colLastName != null)
-                colLastName.setCaption("Last Name");
-
-            DisplayColumn colDisplayName = rgn.getDisplayColumn("DisplayName");
-            if (colDisplayName != null)
-                colDisplayName.setCaption("Display Name");
-
-            DisplayColumn colEmailOption = rgn.getDisplayColumn("EmailOption");
-            if (colEmailOption != null)
-                colEmailOption.setCaption("Email Option");
-
-            DisplayColumn colLastModifiedByName = rgn.getDisplayColumn("LastModifiedByName");
-            if (colLastModifiedByName != null)
-                colLastModifiedByName.setCaption("Last Modified By");
-
-            DisplayColumn colUserId = rgn.getDisplayColumn("UserId");
-            if (colUserId != null)
-                colUserId.setVisible(false);
-
-            DisplayColumn colEmailOptionId = rgn.getDisplayColumn("EmailOptionId");
-            if (colEmailOptionId != null)
-                colEmailOptionId.setVisible(false);
-
-            DisplayColumn colLastModifiedBy = rgn.getDisplayColumn("LastModifiedBy");
-            if (colLastModifiedBy != null)
-                colLastModifiedBy.setVisible(false);
-
-            setHelpTopic("adminMessages");
-            VBox vbox = new VBox();
-            vbox.addView(new AnnouncementEmailDefaults(c, form.getReturnURLHelper()));
-            vbox.addView(gridView);
-            vbox.addView(new HtmlView("<br>" + PageFlowUtil.generateButton("Done", form.getReturnURLHelper())));
-
-            return vbox;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return new BeginAction().appendNavTrail(root).addChild("Admin Email Preferences");
-        }
-    }
-
-
-    public ActionURL getBulkEditURL(URLHelper returnURL)
-    {
-        ActionURL url = new ActionURL(BulkEditAction.class, getContainer());
-        url.addReturnURL(returnURL);
-        return url;
-    }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class BulkEditAction extends FormViewAction<BulkEditEmailPrefsForm>
-    {
-        private URLHelper _returnUrl;
-
-        public ActionURL getSuccessURL(BulkEditEmailPrefsForm form)
-        {
-            return getAdminEmailURL(getContainer(), form.getReturnURLHelper(null));
-        }
-
-        public ModelAndView getView(BulkEditEmailPrefsForm form, boolean reshow, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-
-            ResultSet rs = null;
-            List<EmailPref> emailPrefList = new ArrayList<EmailPref>();
-            try
-            {
-                rs = AnnouncementManager.getEmailPrefsResultset(c);
-                List<User> memberList = SecurityManager.getProjectUsers(c.getProject(), false);
-
-                //get resultset data
-                while(rs.next())
-                {
-                    int userId = rs.getInt("UserId");
-                    User user = UserManager.getUser(userId);
-
-                    if (!c.hasPermission(user, ReadPermission.class))
-                        continue;
-
-                    AnnouncementManager.EmailPref emailPref = new AnnouncementManager.EmailPref();
-
-                    emailPref.setUserId(userId);
-                    emailPref.setEmail(rs.getString("Email"));
-                    emailPref.setFirstName(StringUtils.trimToEmpty(rs.getString("FirstName")));
-                    emailPref.setLastName(StringUtils.trimToEmpty(rs.getString("LastName")));
-                    emailPref.setDisplayName(StringUtils.trimToEmpty(rs.getString("DisplayName")));
-                    emailPref.setEmailOptionId((Integer) rs.getObject("EmailOptionId"));
-
-                    //specify whether user is member of a project group
-                    if (memberList.contains(user))
-                        emailPref.setProjectMember(true);
-
-                    emailPrefList.add(emailPref);
-                }
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
-
-            _returnUrl = form.getReturnURLHelper();  // NavTrail needs this
-
-            return new BulkEditView(c, emailPrefList, _returnUrl);
-        }
-
-        public boolean handlePost(BulkEditEmailPrefsForm form, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-
-            int[] userId = form.getUserId();
-            int[] emailOptionId = form.getEmailOptionId();
-
-            if (null == userId || null == emailOptionId)
-                return true;
-
-            for (int i = 0; i < userId.length; i++)
-            {
-                User projectUser = UserManager.getUser(userId[i]);
-                int currentEmailOption = AnnouncementManager.getUserEmailOption(c, projectUser);
-
-                //has this projectUser's option changed? if so, update
-                //creating new record in EmailPrefs table if there isn't one, or deleting if set back to folder default
-                if (currentEmailOption != emailOptionId[i])
-                {
-                    AnnouncementManager.saveEmailPreference(getUser(), c, projectUser, emailOptionId[i]);
-                }
-            }
-
-            return true;
-        }
-
-        public void validateCommand(BulkEditEmailPrefsForm target, Errors errors)
-        {
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            new BeginAction().appendNavTrail(root)
-                             .addChild("Admin Email Preferences", getAdminEmailURL(getContainer(), _returnUrl))
-                             .addChild("Bulk Edit");
-            return root;
-        }
-    }
-
-
-    public static class BulkEditView extends JspView<BulkEditView.BulkEditBean>
-    {
-        private BulkEditView(Container c, List<EmailPref> emailPrefList, URLHelper returnUrl) throws SQLException
-        {
-            super("/org/labkey/announcements/bulkEdit.jsp", new BulkEditBean(c, emailPrefList, returnUrl));
-            setTitle("Admin Email Preferences");
-        }
-
-        public static class BulkEditBean
-        {
-            public List<EmailPref> emailPrefList;
-            public String folderEmailOption;
-            public URLHelper returnURL;
-
-            private BulkEditBean(Container c, List<EmailPref> emailPrefList, URLHelper returnURL) throws SQLException
-            {
-                EmailOption[] emailOptions = AnnouncementManager.getEmailOptions();
-                int defaultEmailOptionId = AnnouncementManager.getDefaultEmailOption(c);
-
-                for (EmailOption emailOption : emailOptions)
-                {
-                    if (defaultEmailOptionId == emailOption.getEmailOptionId())
-                    {
-                        folderEmailOption = emailOption.getEmailOption();
-                        break;
-                    }
-                }
-
-                this.emailPrefList = emailPrefList;
-                this.returnURL = returnURL;
-            }
-        }
-    }
-
-*/
-
-    @RequiresSiteAdmin
-    public class SendDailyDigestAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            DailyDigest.sendDailyDigest();
-
-            return new HtmlView("Daily digest sent");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return new BeginAction().appendNavTrail(root).addChild("Send daily digest");
-        }
-    }
-
 
     @RequiresPermissionClass(DeletePermission.class)
     public class DeleteThreadsAction extends RedirectAction
@@ -2092,35 +1828,6 @@ public class AnnouncementsController extends SpringActionController
         HttpView.throwNotFound("Could not find response");
         return false;
     }
-
-
-/*
-    public static class BulkEditEmailPrefsForm extends ReturnUrlForm
-    {
-        private int[] _userId;
-        private int[] _emailOptionId;
-
-        public int[] getEmailOptionId()
-        {
-            return _emailOptionId;
-        }
-
-        public void setEmailOptionId(int[] emailOptionId)
-        {
-            _emailOptionId = emailOptionId;
-        }
-
-        public int[] getUserId()
-        {
-            return _userId;
-        }
-
-        public void setUserId(int[] userId)
-        {
-            _userId = userId;
-        }
-    }
-*/
 
     public static class AnnouncementDeleteForm extends ReturnUrlForm
     {

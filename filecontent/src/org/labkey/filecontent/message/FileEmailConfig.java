@@ -41,6 +41,9 @@ import java.util.Set;
 public class FileEmailConfig extends AbstractConfigTypeProvider implements MessageConfigService.ConfigTypeProvider
 {
     public static final String TYPE = "files";
+    public static int NO_EMAIL = 512;
+    public static int SHORT_DIGEST = 513;
+    public static int DAILY_DIGEST = 514;
 
     @Override
     public String getType()

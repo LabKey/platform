@@ -20,7 +20,19 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.ExtFormAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentForm;
@@ -32,37 +44,65 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.property.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.files.*;
+import org.labkey.api.files.FileContentDefaultEmailPref;
+import org.labkey.api.files.FileContentEmailPref;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileUrls;
+import org.labkey.api.files.FilesAdminOptions;
+import org.labkey.api.files.FilesTbarBtnOption;
+import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.message.settings.MessageConfigService;
-import org.labkey.api.notification.EmailPrefFilter;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.query.*;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GWTView;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.filecontent.message.FileEmailConfig;
+import org.labkey.filecontent.message.ShortMessageDigest;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -70,9 +110,21 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 public class FileContentController extends SpringActionController
@@ -1270,6 +1322,22 @@ public class FileContentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Email Notification Preferences");
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class SendShortDigestAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            ShortMessageDigest.getInstance().sendMessageDigest();
+
+            return new HtmlView("15 Minute digest sent");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return new BeginAction().appendNavTrail(root).addChild("Send daily digest");
         }
     }
 

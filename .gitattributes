@@ -101,7 +101,6 @@ announcements/src/org/labkey/announcements/insert.jsp -text
 announcements/src/org/labkey/announcements/model/AnnouncementDigestProvider.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementManager.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementModel.java -text
-announcements/src/org/labkey/announcements/model/DailyDigest.java -text
 announcements/src/org/labkey/announcements/model/DailyDigestEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -text
 announcements/src/org/labkey/announcements/model/DiscussionWebPartFactory.java -text

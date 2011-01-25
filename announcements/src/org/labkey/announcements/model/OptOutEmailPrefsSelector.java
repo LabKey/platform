@@ -17,6 +17,7 @@
 package org.labkey.announcements.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.message.settings.MessageConfigService;
 
 import java.sql.SQLException;
 
@@ -34,7 +35,7 @@ public class OptOutEmailPrefsSelector extends EmailPrefsSelector
     }
 
     @Override
-    protected boolean includeEmailPref(MessageConfigManager.EmailPref ep)
+    protected boolean includeEmailPref(MessageConfigService.UserPreference ep)
     {
         return ep.getEmailOptionId().intValue() == AnnouncementManager.EMAIL_PREFERENCE_NONE;
     }

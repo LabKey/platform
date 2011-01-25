@@ -17,14 +17,18 @@ package org.labkey.announcements.model;
 
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -78,6 +82,28 @@ public class MessageConfigManager
             return null;
         else
             return emailPrefs;
+    }
+
+    public static EmailPref[] getUserEmailPrefs(Container c, String type) throws SQLException
+    {
+        SQLFragment sql = new SQLFragment();
+        List<EmailPref> prefs = new ArrayList<EmailPref>();
+
+        sql.append("SELECT u.userId, email, firstName, lastName, displayName, emailOptionId, emailFormatId, type, lastModifiedBy FROM ");
+        sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" LEFT JOIN ");
+        sql.append(_comm.getTableInfoEmailPrefs(), "prefs").append(" ON u.userId = prefs.userId ");
+        sql.append("AND type = ?");
+
+        EmailPref[] p = Table.executeQuery(_comm.getSchema(), sql.getSQL(), new Object[]{type}, EmailPref.class);
+
+        for (EmailPref ep : p)
+        {
+            User user = ep.getUser();
+            if (c.hasPermission(user, ReadPermission.class))
+                prefs.add(ep);
+        }
+
+        return prefs.toArray(new EmailPref[prefs.size()]);
     }
 
     public static void saveEmailPreference(User currentUser, Container c, User projectUser, String type, int emailPreference) throws SQLException
@@ -156,6 +182,18 @@ public class MessageConfigManager
             filter = new SimpleFilter("Type", type);
 
         return Table.select(_comm.getTableInfoEmailOptions(), Table.ALL_COLUMNS, filter, new Sort("EmailOptionId"), EmailOption.class);
+    }
+
+    public static EmailOption getEmailOption(int optionId) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter("EmailOptionId", optionId);
+        EmailOption[] options = Table.select(_comm.getTableInfoEmailOptions(), Table.ALL_COLUMNS, filter, null, EmailOption.class);
+
+        assert (options.length <= 1);
+        if (options.length == 0)
+            return null;
+        else
+            return options[0];
     }
 
     public static class EmailPref implements MessageConfigService.UserPreference

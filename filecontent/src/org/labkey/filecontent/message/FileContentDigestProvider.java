@@ -15,6 +15,7 @@
  */
 package org.labkey.filecontent.message;
 
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -23,9 +24,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.files.FileContentEmailPref;
-import org.labkey.api.files.FileContentEmailPrefFilter;
+import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.digest.MessageDigest;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.security.User;
@@ -41,7 +42,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -57,6 +57,12 @@ import java.util.Set;
 public class FileContentDigestProvider implements MessageDigest.Provider
 {
     private static final Logger _log = Logger.getLogger(FileContentDigestProvider.class);
+    private int _notificationOption;    // the notification option to match : (short digest, daily digest)
+
+    public FileContentDigestProvider(int notificationOption)
+    {
+        _notificationOption = notificationOption;
+    }
 
     @Override
     public List<Container> getContainersWithNewMessages(Date start, Date end) throws Exception
@@ -117,7 +123,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         try
         {
             EmailService.I svc = EmailService.get();
-            User[] users = svc.getUsersWithEmailPref(c, new FileContentEmailPrefFilter(FileContentEmailPref.INDIVIDUAL));
+            User[] users = getUsersToEmail(c);
             HttpServletRequest request = AppProps.getInstance().createMockRequest();
             String subject = "File Management Notification";
 
@@ -147,6 +153,27 @@ public class FileContentDigestProvider implements MessageDigest.Provider
             // Don't fail the request because of this error
             _log.warn("Unable to send email for the file notification: " + e.getMessage());
         }
+    }
+
+    private User[] getUsersToEmail(Container c) throws Exception
+    {
+        List<User> users = new ArrayList<User>();
+        String pref = EmailService.get().getDefaultEmailPref(c, new FileContentDefaultEmailPref());
+        int folderDefault = NumberUtils.toInt(pref);
+
+        MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE);
+
+        // get all users who have read access to this container
+        for (MessageConfigService.UserPreference ep : provider.getPreferences(c))
+        {
+            int emailOption = ep.getEmailOptionId() != null ? ep.getEmailOptionId() : -1;
+            if ((emailOption == _notificationOption) ||
+                (folderDefault == _notificationOption && emailOption == -1))
+            {
+                users.add(ep.getUser());
+            }
+        }
+        return users.toArray(new User[users.size()]);
     }
 
     public static class FileDigestForm

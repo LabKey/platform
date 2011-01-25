@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -37,6 +38,7 @@
 %>
 <html>
     <head>
+        <base href="<%=h(org.labkey.api.settings.AppProps.getInstance().getBaseServerUrl() + org.labkey.api.settings.AppProps.getInstance().getContextPath())%>"/>
         <%=PageFlowUtil.getStylesheetIncludes(form.getContainer())%>
     </head>
     <body>
@@ -55,25 +57,24 @@
                 WebdavResource resource = org.labkey.api.webdav.WebdavService.get().getResolver().lookup(path);
 
         %>
-                <tr><td class="labkey-announcement-title" colspan="4"><%=h(resource.getName())%></td></tr>
-                <tr><td class="labkey-title-area-line" colspan="4"></td></tr>
+                <tr><td class="labkey-alternate-row" colspan="3"><span class="labkey-strong"><%=h(resource.getName())%></span></td></tr>
             <%
                 int i=0;
                 for (AuditLogEvent event : record.getValue())
                 {
-                    String rowCls = (i % 2 == 0) ? "labkey-alternate-row" : "labkey-row";
+                    String rowCls = (i % 2 == 0) ? "labkey-row" : "labkey-row";
                     User user = event.getCreatedBy();
             %>
-                    <tr class="<%=rowCls%>"><td>&nbsp;</td><td><%=event.getCreated()%></td><td><%=user.getDisplayName(user)%></td><td><%=event.getComment()%></td></tr>
+                    <tr class="<%=rowCls%>"><td><%=event.getCreated()%></td><td><%=user.getDisplayName(user)%></td><td><%=event.getComment()%></td></tr>
             <%
                 }
             %>
+                <tr><td colspan="3"><hr size="1"/></td></tr>
         <%
             }
         %>
         </table>
         <br>
-        <hr size="1"/>
 
         <table width="100%">
             <tr><td>You have received this email because <%

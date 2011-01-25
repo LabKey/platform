@@ -23,6 +23,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
+import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.message.digest.PeriodicMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -85,7 +86,8 @@ public class FileContentModule extends DefaultModule
 
         // initialize message digests
         ShortMessageDigest.getInstance().initializeTimer();
-        ShortMessageDigest.getInstance().addProvider(new FileContentDigestProvider());
+        ShortMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.SHORT_DIGEST));
+        DailyMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.DAILY_DIGEST));
 
         // initialize message config provider
         MessageConfigService.getInstance().registerConfigType(new FileEmailConfig());
