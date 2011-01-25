@@ -15,6 +15,7 @@
  */
 package org.labkey.api.message.digest;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.labkey.api.message.digest.MessageDigest;
 
 import java.util.Timer;
@@ -47,7 +48,7 @@ public class PeriodicMessageDigest extends MessageDigest
     protected Timer createTimer(TimerTask task)
     {
         Timer timer = new Timer(getName(), true);
-        timer.scheduleAtFixedRate(task, _interval, _interval);
+        timer.scheduleAtFixedRate(task, DateUtils.MILLIS_PER_MINUTE, _interval);
 
         return timer;
     }

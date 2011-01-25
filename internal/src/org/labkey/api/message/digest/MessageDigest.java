@@ -40,9 +40,9 @@ import java.util.TimerTask;
 public abstract class MessageDigest
 {
     private static final String LAST_KEY = "LastSuccessfulSend";
-    private static Timer _timer = null;
-    private static MessageDigestTask _timerTask = null;
-    private static Map<String, Provider> _providers = new LinkedHashMap<String, Provider>();
+    Timer _timer = null;
+    MessageDigestTask _timerTask = null;
+    private Map<String, Provider> _providers = new LinkedHashMap<String, Provider>();
 
     private static final Logger _log = Logger.getLogger(MessageDigest.class);
 
@@ -163,8 +163,8 @@ public abstract class MessageDigest
 
         public void shutdownPre(ServletContextEvent servletContextEvent)
         {
-            ContextListener.removeShutdownListener(_timerTask);
-            _timer.cancel();
+            ContextListener.removeShutdownListener(_digest._timerTask);
+            _digest._timer.cancel();
         }
 
         public void shutdownStarted(ServletContextEvent servletContextEvent)

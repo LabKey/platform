@@ -27,9 +27,9 @@ import org.labkey.api.notification.EmailPref;
 public class FileContentEmailPref extends EmailPref
 {
     public static final int FOLDER_DEFAULT = -1;
-    public static final int NONE = 0;
-    public static final int INDIVIDUAL = 1;
-    public static final int DAILY_DIGEST = 2;
+    public static final int NONE = 512;
+    public static final int INDIVIDUAL = 513;
+    public static final int DAILY_DIGEST = 514;
 
     @Override
     public String getId()

@@ -52,6 +52,12 @@ public class MessageConfigService
         public UserPreference getPreference(Container c, User user, ConfigTypeProvider provider) throws Exception;
         public UserPreference[] getPreference(Container c, User user) throws Exception;
 
+        /**
+         * Returns preference settings for all users who have read access to the specified container
+         * for the config type requested.
+         */
+        public UserPreference[] getPreferences(Container c, ConfigTypeProvider provider) throws Exception;
+
         public NotificationOption getOption(int optionId) throws Exception;
         public NotificationOption[] getOptions(ConfigTypeProvider provider) throws Exception;
         public NotificationOption[] getOptions() throws Exception;
@@ -73,6 +79,11 @@ public class MessageConfigService
     {
         public void savePreference(User currentUser, Container c, User projectUser, int preference) throws Exception;
         public UserPreference getPreference(Container c, User user) throws Exception;
+
+        /**
+         * Returns preference settings for all users who have read access to the specified container.
+         */
+        public UserPreference[] getPreferences(Container c) throws Exception;
 
         public NotificationOption getOption(int optionId) throws Exception;
         public NotificationOption[] getOptions() throws Exception;
@@ -116,6 +127,7 @@ public class MessageConfigService
         public String getDisplayName();
         public Integer getEmailFormatId();
         public Integer getEmailOptionId();
+        public void setEmailOptionId(Integer id);
         public int getUserId();
         public int getPageTypeId();
         public boolean isProjectMember();
