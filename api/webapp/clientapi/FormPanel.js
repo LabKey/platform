@@ -145,17 +145,6 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             {
             }
         }
-        // check for helpPopup
-        if (c.fieldLabel && c.helpPopup)
-        {
-            var help;
-            var id = "helpPopup-" + (++Ext.Component.AUTO_ID);
-            if (typeof c.helpPopup.show != "function")
-                c.helpPopup = new Ext.ToolTip(Ext.applyIf(c.helpPopup,{autoHide:true, closable:false, minWidth:200}));
-            c.helpPopup.target = id;
-            c.labelSeparator = "<a id=" + id + " tabindex=\"-1\" href=\"javascript:void(0);\"><span class=\"labkey-help-pop-up\" style=\"font-size:10pt;\"><sup>?</sup></span></a>";
-        }
-
         var applied = LABKEY.ext.FormPanel.superclass.applyDefaults.call(this, c);
         this.fireEvent('applydefaults', this, applied);
         return applied;
@@ -169,7 +158,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     },
 
 
-    /* labels are rendered as part of layout */
+    /* labels are rendered as part of layout
     doLayout : function()
     {
         LABKEY.ext.FormPanel.superclass.doLayout.call(this);
@@ -185,7 +174,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
                 c.items.each(fn);
         };
         this.items.each(fn);
-    },
+    },  */
 
 
     // private
@@ -499,7 +488,7 @@ LABKEY.ext.FormHelper =
         };
 
         if (config.tooltip && !config.helpPopup)
-            field.helpPopup = { html: config.tooltip };
+            field.helpPopup = config.tooltip;
 
         if (config.lookup && false !== config.lookups)
         {
@@ -951,11 +940,51 @@ LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox, {
 });
 
 
+Ext.override(Ext.layout.FormLayout,
+{
+    fieldTpl: (function()
+    {
+        var t = new Ext.Template(
+                '<div class="x-form-item {itemCls}" tabIndex="-1">',
+                '<label for="{id}" style="{labelStyle}" class="x-form-item-label" {labelAttrs}>{label}{labelSeparator}{helpPopup}</label>',
+                '<div class="x-form-element" id="x-form-el-{id}" style="{elementStyle}" {fieldAttrs}>',
+                '</div><div class="{clearCls}"></div>',
+                '</div>'
+                );
+        t.disableFormats = true;
+        return t.compile();
+    })(),
+
+    _origGetTemplateArgs : Ext.layout.FormLayout.prototype.getTemplateArgs,
+
+    _toQtip : function(o)
+    {
+        if (!o || !'html' in o || !o.html) return false;
+        var qtip = 'ext:qtip="' + o.html + '"';
+        if ('title' in o && o.title)
+            qtip += ' ext:qtitle="' + Ext.util.Format.htmlEncode(o.title) + '"';
+        return qtip;
+    },
+    
+    getTemplateArgs: function(field)
+    {
+        var args = this._origGetTemplateArgs(field);
+        var noLabelSep = !field.fieldLabel || field.hideLabel;
+        var qtipPopup = this._toQtip(field.helpPopup);
+        var qtipField = this._toQtip(field.qtip || field.helpPopup);
+        
+        return Ext.apply(args, {
+            labelAttrs    : '',
+            helpPopup     : (noLabelSep || !qtipPopup) ? '' : '<a href="#"><span class="labkey-help-pop-up" ' + qtipPopup + '>?</span></a>',
+            fieldAttrs    : '' // !qtipField ? '' : qtipField // doesn't work right (tip works over <div>, but not over <input>
+        });
+    }
+});
+
+
 //Ext.reg('datepicker', LABKEY.ext.DatePicker);
 Ext.reg('checkbox', LABKEY.ext.Checkbox);
 Ext.reg('combo', LABKEY.ext.ComboBox);
 Ext.reg('datefield',  LABKEY.ext.DateField);
 Ext.reg('labkey-form', LABKEY.ext.FormPanel);
-
-
 
