@@ -1122,6 +1122,7 @@ api/webapp/WEB-INF/labkey.tld -text
 api/webapp/WEB-INF/spring-form.tld -text
 api/webapp/WEB-INF/spring.tld -text
 api/webapp/clientapi/ActionURL.js -text
+api/webapp/clientapi/Ajax.js -text
 api/webapp/clientapi/Assay.js -text
 api/webapp/clientapi/Chart.js -text
 api/webapp/clientapi/DataRegion.js -text
@@ -2559,6 +2560,7 @@ internal/src/org/labkey/api/script/RhinoService.java -text
 internal/src/org/labkey/api/script/ScriptUtils.java -text
 internal/src/org/labkey/api/script/ScriptableList.java -text
 internal/src/org/labkey/api/script/ScriptableMap.java -text
+internal/src/org/labkey/api/script/TopLevel.java -text
 internal/src/org/labkey/api/security/UserDisplayNameComparator.java -text
 internal/src/org/labkey/api/security/UserEmailComparator.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text

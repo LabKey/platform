@@ -326,11 +326,16 @@ LABKEY.Utils.convertToExcel(
         getCallbackWrapper : function(fn, scope, isErrorCallback) {
             return function(response, options)
             {
-                //ensure response is JSON before trying to decode
-                var json = null;
-                if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
-                        && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
-                    json = Ext.util.JSON.decode(response.responseText);
+                var json = response.responseJSON;
+                if (!json)
+                {
+                    //ensure response is JSON before trying to decode
+                    if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                            && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
+                        json = Ext.util.JSON.decode(response.responseText);
+
+                    response.responseJSON = json;
+                }
 
                 if(!json && isErrorCallback)
                 {

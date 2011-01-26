@@ -251,6 +251,7 @@ LABKEY.requiresClientAPI = function(immediate)
         //load individual scripts so that they get loaded from source tree
         LABKEY.requiresScript("clientapi/ExtJsConfig.js", immediate);
         LABKEY.requiresScript("clientapi/ActionURL.js", immediate);
+        LABKEY.requiresScript("clientapi/Ajax.js", immediate);
         LABKEY.requiresScript("clientapi/Assay.js", immediate);
         LABKEY.requiresScript("clientapi/Chart.js", immediate);
         LABKEY.requiresScript("clientapi/DataRegion.js", immediate);

@@ -48,7 +48,7 @@ LABKEY.Query = new function()
             transacted : config.transacted
         };
 
-        Ext.Ajax.request({
+        return LABKEY.Ajax.request({
             url : LABKEY.ActionURL.buildURL("query", config.action, config.containerPath),
             method : 'POST',
             success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -239,7 +239,7 @@ LABKEY.Query = new function()
                     qsParams["query.param." + n] = config.parameters[n];
             }
 
-            return Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams),
                 method : 'POST',
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope),
@@ -467,7 +467,7 @@ LABKEY.Query = new function()
             if (config.includeTotalCount)
                 dataObject.includeTotalCount = config.includeTotalCount;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope),
@@ -548,7 +548,7 @@ LABKEY.Query = new function()
             if (config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "saveRows", config.containerPath),
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -707,7 +707,7 @@ LABKEY.Query = new function()
             if (config.apiVersion)
                 params.apiVersion = config.apiVersion;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getSchemas', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -767,7 +767,8 @@ LABKEY.Query = new function()
                 includeColumns: 'includeColumns',
                 includeUserQueries: 'includeUserQueries'
             }, false, false);
-            Ext.Ajax.request({
+
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueries', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -832,7 +833,8 @@ LABKEY.Query = new function()
                 params.viewName = config.viewName;
             if (config.metadata)
                 params.metadata = config.metadata;
-            Ext.Ajax.request({
+
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryViews', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -868,7 +870,8 @@ LABKEY.Query = new function()
                 params.queryName = config.queryName;
             if (config.views)
                 params.views = config.views;
-            Ext.Ajax.request({
+
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'saveQueryViews', config.containerPath),
                 method: 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -934,7 +937,7 @@ LABKEY.Query = new function()
             if (config.fk)
                 params.fk = config.fk;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -971,7 +974,7 @@ LABKEY.Query = new function()
                 scope: false
             });
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'validateQuery', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -993,7 +996,7 @@ LABKEY.Query = new function()
          */
         getServerDate : function(config)
         {
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getServerDate'),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope),
                 success: LABKEY.Utils.getCallbackWrapper(function(json){
@@ -1750,3 +1753,4 @@ LABKEY.Query = new function()
 */
 
 /**#@-*/
+

@@ -37,7 +37,6 @@ public class ScriptableMap extends NativeJavaObject {
         BaseFunction ctor = new BaseFunction(scope, ScriptableObject.getFunctionPrototype(scope)) {
             @Override
             public Scriptable construct(Context cx, Scriptable scope, Object[] args) {
-                Object arg;
                 boolean reflect = false;
                 if (args.length > 2) {
                     throw new EvaluatorException("ScriptableMap() called with too many arguments");

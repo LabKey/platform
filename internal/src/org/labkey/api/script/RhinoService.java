@@ -15,6 +15,8 @@
  */
 package org.labkey.api.script;
 
+import com.google.common.io.CharStreams;
+import com.google.common.io.InputSupplier;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.Cache;
@@ -22,13 +24,21 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.mozilla.javascript.*;
+import org.mozilla.javascript.commonjs.module.ModuleScript;
+import org.mozilla.javascript.commonjs.module.Require;
+import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
+import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProvider;
+import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProviderBase;
+import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -42,6 +52,8 @@ import java.util.*;
 
 public final class RhinoService
 {
+    public static final Logger LOG = Logger.getLogger(ScriptService.Console.class);
+
     public static void register()
     {
         SandboxContextFactory.initGlobal();
@@ -54,6 +66,7 @@ class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
     @Override
     public RhinoEngine getScriptEngine()
     {
+        // XXX: consider using a ThreadLocal reference to the RhinoEngine
         RhinoEngine engine = new RhinoEngine(this);
         return engine;
     }
@@ -66,6 +79,7 @@ class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
 }
 
 // Caches the compiled script but not the execution context.
+// CompiledScript has a reference to the RhinoEngine used to compile it and the compiled Script object.
 class ScriptResourceRef extends ResourceRef
 {
     private CompiledScript script;
@@ -74,6 +88,7 @@ class ScriptResourceRef extends ResourceRef
     {
         super(resource);
         this.script = script;
+        assert MemTracker.put(this);
     }
 
     public CompiledScript getScript()
@@ -117,7 +132,7 @@ class ScriptReferenceImpl implements ScriptReference
         int opt = ctx.getOptimizationLevel();
         if (ref == null && opt > -1)
         {
-            ref = (ScriptResourceRef) SCRIPT_CACHE.get(cacheKey);
+            ref = SCRIPT_CACHE.get(cacheKey);
         }
 
         if (ref == null || ref.isStale())
@@ -249,10 +264,141 @@ class ScriptReferenceImpl implements ScriptReference
 
 }
 
+class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
+{
+    @Override
+    protected boolean entityNeedsRevalidation(Object validator)
+    {
+        return !(validator instanceof ResourceRef) || ((ResourceRef)validator).isStale();
+        /*
+        if (validator instanceof ResourceRef)
+        {
+            ResourceRef ref = (ResourceRef)validator;
+            RhinoService.LOG.debug("revalidate: " + ref.toString() + ", isStale" + ref.isStale());
+        }
+        */
+    }
+
+    @Override
+    protected ModuleSource loadModuleSourceFromUri(URI uri, Object validator) throws IOException
+    {
+        return load(uri.getPath(), validator);
+    }
+
+    @Override
+    protected ModuleSource loadModuleSourceFromPrivilegedLocations(String moduleId, Object validator) throws IOException
+    {
+        return load(moduleId + ".js", validator);
+    }
+
+    protected ModuleSource load(String moduleScript, Object validator)
+    {
+        //if (validator instanceof ResourceRef && !((ResourceRef)validator).isStale())
+        //    return NOT_MODIFIED;
+
+        // load non-relative modules from the root "/scripts" directory
+        if (!moduleScript.startsWith("./") || !moduleScript.startsWith("../"))
+            moduleScript = "/scripts/" + moduleScript;
+
+        Path path = Path.parse(moduleScript);
+        Resource res = ModuleLoader.getInstance().getResource(path);
+        if (res == null || !res.isFile())
+            return null;
+
+        ResourceRef ref = new ResourceRef(res);
+        return new LabKeyModuleSource(ref);
+    }
+
+    /**
+     * Bridge between Rhino commonjs ModuleSource/validator and LabKey Resource/ResourceRef.
+     *
+     * Combines foo.header.js, foo.js, and foo.footer.js into a single script.
+     */
+    private static class LabKeyModuleSource extends ModuleSource
+    {
+        private ResourceRef _ref;
+        private ResourceRef _headerRef;
+        private ResourceRef _footerRef;
+
+        /**
+         * Creates a new module source.
+         */
+        public LabKeyModuleSource(ResourceRef ref)
+        {
+            super(null, null, ref.getResource().getPath().toString(), ref);
+            _ref = ref;
+
+            //_headerRef = findAssociated(".header.js");
+            //_footerRef = findAssociated(".footer.js");
+        }
+
+        // assumes path ends with ".js"
+        private String associatedName(String name, String append)
+        {
+            return name.substring(0, name.length() - ".js".length()) + append;
+        }
+
+        private ResourceRef findAssociated(String append)
+        {
+            Path path = _ref.getResource().getPath();
+            Path parent = path.getParent();
+            String name = associatedName(path.getName(), append);
+
+            Resource r = _ref.getResource().getResolver().lookup(parent.append(name));
+            if (r != null)
+            {
+                ResourceRef associatedRef = new ResourceRef(r);
+                _ref.addDependency(associatedRef);
+                return associatedRef;
+            }
+
+            return null;
+        }
+
+        private InputSupplier<Reader> reader(final ResourceRef ref)
+        {
+            return new InputSupplier<Reader>()
+            {
+                public Reader getInput() throws IOException { return new InputStreamReader(ref.getResource().getInputStream()); }
+            };
+        }
+
+        @Override
+        public Reader getReader()
+        {
+            try
+            {
+                List<InputSupplier<Reader>> readers = new ArrayList<InputSupplier<Reader>>(3);
+                if (_headerRef != null)
+                    readers.add(reader(_headerRef));
+
+                readers.add(reader(_ref));
+
+                if (_footerRef != null)
+                    readers.add(reader(_footerRef));
+
+                return CharStreams.join(readers).getInput();
+            }
+            catch (IOException e)
+            {
+                // XXX: log to mothership
+                return null;
+            }
+        }
+
+        @Override
+        public Object getValidator()
+        {
+            return super.getValidator();
+        }
+    }
+}
+
 class RhinoEngine extends RhinoScriptEngine
 {
     private static final Object sharedTopLevelLock = new Object();
     private static WeakReference<ScriptableObject> sharedTopLevel = null;
+    private static SoftCachingModuleScriptProvider _moduleScriptProvider = null;
 
     protected RhinoEngine()
     {
@@ -271,7 +417,7 @@ class RhinoEngine extends RhinoScriptEngine
     // or adding any additional objects to the scope.  In addition, the
     // topLevel is cached in a WeakReference so can be shared with other
     // instances of RhinoService and across threads.  The topLevel won't
-    // be gc'd until all of the ScriptResourceRef in the _scriptCache are gone.
+    // be gc'd until all of the ScriptResourceRef in the SCRIPT_CACHE are gone.
     protected ScriptableObject createTopLevel()
     {
         synchronized (sharedTopLevelLock)
@@ -282,24 +428,34 @@ class RhinoEngine extends RhinoScriptEngine
 
             if (topLevel == null)
             {
+                // Create the shared module script cache.
+                // This cache is managed by Rhino's module provider implementation.
+                ModuleSourceProvider moduleSourceProvider = new LabKeyModuleSourceProvider();
+                _moduleScriptProvider = new SoftCachingModuleScriptProvider(moduleSourceProvider);
+                
                 Context cx = Context.enter();
+                cx.setLanguageVersion(Context.VERSION_1_8);
                 try {
                     /*
                      * RRC - modified this code to register JSAdapter and some functions
                      * directly, without using a separate RhinoTopLevel class
                      */
-                    topLevel = new ImporterTopLevel(cx, /*false*/ true);
+                    topLevel = new ImporterTopLevel(cx, false /*true*/);
+                    //topLevel = new TopLevel(cx, this, true);
                     assert MemTracker.put(topLevel);
                     new LazilyLoadedCtor(topLevel, "JSAdapter",
                         "com.sun.phobos.script.javascript.JSAdapter",
                         false);
+                    /*
                     // add top level functions
                     String names[] = { "bindings", "scope", "sync"  };
                     topLevel.defineFunctionProperties(names, RhinoScriptEngine.class, ScriptableObject.DONTENUM);
+                    */
 
                     initHostObjects(topLevel);
-                    processAllTopLevelScripts(cx);
+                    processAllTopLevelScripts(cx, topLevel);
 
+                    //sealStandardObjects(cx, topLevel);
                     topLevel.sealObject();
                 } finally {
                     cx.exit();
@@ -326,6 +482,42 @@ class RhinoEngine extends RhinoScriptEngine
         }
     }
 
+    protected void processAllTopLevelScripts(Context cx, Scriptable scope)
+    {
+        try
+        {
+            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null);
+            global.getScript().exec(cx, scope);
+        }
+        catch (IOException e)
+        {
+            UnexpectedException.rethrow(e);
+        }
+    }
+
+    /*
+    protected void sealStandardObjects(Context cx, Scriptable scope)
+    {
+        String[] classes = new String[] {
+                "Function", "Object", "Array", "Date", "Error"
+        }
+        ScriptableObject so = (ScriptableObject)ScriptableObject.getFunctionPrototype(scope);
+        so.sealObject();
+
+        so = (ScriptableObject)ScriptableObject.getObjectPrototype(scope);
+        so.sealObject();
+
+        so = (ScriptableObject)ScriptableObject.getClassPrototype(scope, "Error");
+        so.sealObject();
+
+        so = (ScriptableObject)ScriptableObject.getArrayPrototype(scope);
+        so.sealObject();
+
+        so = (ScriptableObject)ScriptableObject.getProperty(scope, "With");
+        so.sealObject();
+    }
+    */
+
     @Override
     protected Scriptable getRuntimeScope(ScriptContext ctxt)
     {
@@ -335,6 +527,20 @@ class RhinoEngine extends RhinoScriptEngine
         // not be necessary since the values shouldn't end up in the parent scope.
         Scriptable scriptable = super.getRuntimeScope(ctxt);
         scriptable.setParentScope(null);
+
+        // Install the "require()" function to enable CommonJS module loading
+        // from the shared SoftCachingModuleScriptProvider.
+        Context cx = enterContext();
+        try
+        {
+            Require require = new Require(cx, getTopLevel(), _moduleScriptProvider, null, null, true);
+            require.install(scriptable);
+        }
+        finally
+        {
+            cx.exit();
+        }
+
         return scriptable;
     }
 
@@ -519,6 +725,8 @@ class SandboxContextFactory extends ContextFactory
         @Override
         public boolean visibleToScripts(String fullClassName)
         {
+            return true;
+            /*
             if (ALLOWED_CLASSES.contains(fullClassName))
                 return true;
 
@@ -532,6 +740,7 @@ class SandboxContextFactory extends ContextFactory
             
             log.warn("Rhino sandbox disallowed class: " + fullClassName);
             return false;
+            */
         }
     }
 
@@ -542,12 +751,20 @@ class SandboxContextFactory extends ContextFactory
         SandboxContext(SandboxContextFactory factory)
         {
             super(factory);
+            setLanguageVersion(Context.VERSION_1_8);
             startTime = HeartBeat.currentTimeMillis();
         }
     }
 
     private static class SandboxWrapFactory extends WrapFactory
     {
+        public SandboxWrapFactory()
+        {
+            super();
+            // ???
+            setJavaPrimitiveWrap(false);
+        }
+
         @Override
         public Object wrap(Context cx, Scriptable scope, Object obj, Class<?> staticType)
         {
@@ -557,6 +774,8 @@ class SandboxContextFactory extends ContextFactory
                 return new ScriptableList(scope, (List)obj);
 //            else if (obj instanceof ValidationException)
 //                return cx.newObject(scope, ScriptableValidationException.CLASSNAME, new Object[] { obj });
+            else if (obj instanceof char[])
+                return new String((char[])obj);
             else if (obj instanceof Object[])
             {
                 Object[] arr = (Object[])obj;

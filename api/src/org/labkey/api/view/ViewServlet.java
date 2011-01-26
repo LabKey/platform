@@ -378,6 +378,8 @@ public class ViewServlet extends HttpServlet
             {
                 if (null != expectedContentType && !s.startsWith(expectedContentType))
                     throw new IllegalStateException(s);
+                super.setContentType(s);
+                setHeader("Content-Type", s);
             }
         };
 

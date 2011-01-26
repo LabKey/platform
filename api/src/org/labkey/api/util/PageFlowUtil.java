@@ -1693,6 +1693,7 @@ public class PageFlowUtil
     {
         "clientapi/ExtJsConfig.js",
         "clientapi/ActionURL.js",
+        "clientapi/Ajax.js",
         "clientapi/Assay.js",
         "clientapi/Chart.js",
         "clientapi/DataRegion.js",
@@ -1912,94 +1913,73 @@ public class PageFlowUtil
 
     static Integer serverHash = null;
 
-    public static String jsInitObject()
+    public static JSONObject jsInitObject()
     {
         AppProps props = AppProps.getInstance();
         String contextPath = props.getContextPath();
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        sb.append("contextPath:'").append(contextPath).append("'");
-        sb.append(",");
-        sb.append("imagePath:'").append(contextPath).append("/_images'");
-        sb.append(",");
-        sb.append("extJsRoot:'").append(extJsRoot).append("'");
-        sb.append(",");
-        sb.append("devMode:").append(props.isDevMode()?"true":"false");
-        sb.append(",");
-        sb.append("hash:'").append(getServerSessionHash()).append("'");
-        sb.append(",");
+        JSONObject json = new JSONObject();
+        json.put("contextPath", contextPath);
+        json.put("imagePath", contextPath + "/_images");
+        json.put("extJsRoot", extJsRoot);
+        json.put("devMode", props.isDevMode());
+        json.put("hash", getServerSessionHash());
 
         //TODO: these should be passed in by callers
         ViewContext context = HttpView.currentView().getViewContext();
         Container container = context.getContainer();
         User user = HttpView.currentView().getViewContext().getUser();
-        sb.append("user:{id:").append(user.getUserId());
-        sb.append(",displayName:").append(jsString(user.getDisplayName(user)));
-        sb.append(",email:").append(PageFlowUtil.jsString(user.getEmail()));
-        sb.append(",phone:").append(PageFlowUtil.jsString(user.getPhone()));
-        sb.append(",sessionid:").append(jsString(getSessionId(context.getRequest())));
 
-        sb.append(",canInsert:").append(null != container && container.hasPermission(user, InsertPermission.class) ? "true" : "false");
-        sb.append(",canUpdate:").append(null != container && container.hasPermission(user, UpdatePermission.class) ? "true" : "false");
-        sb.append(",canUpdateOwn:").append(null != container && container.hasPermission(user, ACL.PERM_UPDATEOWN) ? "true" : "false");
-        sb.append(",canDelete:").append(null != container && container.hasPermission(user, DeletePermission.class) ? "true" : "false");
-        sb.append(",canDeleteOwn:").append(null != container && container.hasPermission(user, ACL.PERM_DELETEOWN) ? "true" : "false");
-        sb.append(",isAdmin:").append(null != container && container.hasPermission(user, AdminPermission.class) ? "true" : "false");
-        sb.append(",isSystemAdmin:").append(user.isAdministrator() ? "true" : "false");
-        sb.append(",isGuest:").append(user.isGuest() ? "true" : "false");
-        sb.append("}"); //end user object
+        JSONObject userProps = new JSONObject();
+
+        userProps.put("id", user.getUserId());
+        userProps.put("displayName", user.getDisplayName(user));
+        userProps.put("email", user.getEmail());
+        userProps.put("phone", user.getPhone());
+        userProps.put("sessionid", getSessionId(context.getRequest()));
+
+        userProps.put("canInsert", null != container && container.hasPermission(user, InsertPermission.class));
+        userProps.put("canUpdate", null != container && container.hasPermission(user, UpdatePermission.class));
+        userProps.put("canUpdateOwn", null != container && container.hasPermission(user, ACL.PERM_UPDATEOWN));
+        userProps.put("canDelete", null != container && container.hasPermission(user, DeletePermission.class));
+        userProps.put("canDeleteOwn", null != container && container.hasPermission(user, ACL.PERM_DELETEOWN));
+        userProps.put("isAdmin", null != container && container.hasPermission(user, AdminPermission.class));
+        userProps.put("isSystemAdmin", user.isAdministrator());
+        userProps.put("isGuest", user.isGuest());
+        json.put("user", userProps);
+
         if (null != container)
         {
-            sb.append(",container:{id:'").append(container.getId()).append("'");
-            sb.append(",path:").append(jsString(container.getPath()));
-            sb.append(",name:").append(jsString(container.getName()));
-            sb.append("}"); //end container object
+            JSONObject containerProps = new JSONObject();
+
+            containerProps.put("id", container.getId());
+            containerProps.put("path", container.getPath());
+            containerProps.put("name", container.getName());
+            json.put("container", containerProps);
         }
 
         Container project = (null == container || container.isRoot()) ? null : container.getProject();
         if (null != project)
         {
-            sb.append(",project:{id:'").append(project.getId()).append("'");
-            sb.append(",path:").append(jsString(project.getPath()));
-            sb.append(",name:").append(jsString(project.getName()));
-            sb.append("}"); //end project object
+            JSONObject projectProps = new JSONObject();
+
+            projectProps.put("id", container.getId());
+            projectProps.put("path", container.getPath());
+            projectProps.put("name", container.getName());
+            json.put("project", projectProps);
         }
 
-        sb.append(",serverName:(").append(PageFlowUtil.jsString(props.getServerName())).append(" || 'LabKey Server')");
-        sb.append(",versionString:").append(PageFlowUtil.jsString(props.getLabkeyVersionString()));
+        json.put("serverName", StringUtils.isNotEmpty(props.getServerName()) ? props.getServerName() : "Labkey Server");
+        json.put("versionString", props.getLabkeyVersionString());
         if ("post".equalsIgnoreCase(context.getRequest().getMethod()))
         {
-            sb.append(",postParameters: {");
-            String separator = "";
-            for (Map.Entry<String, String[]> entry : ((Map<String, String[]>) context.getRequest().getParameterMap()).entrySet())
-            {
-                sb.append(separator);
-                separator = ",";
-                sb.append(PageFlowUtil.jsString(entry.getKey()));
-                sb.append(":");
-                sb.append("[");
-                String valueSeparator = "";
-                for (String value : entry.getValue())
-                {
-                    sb.append(valueSeparator);
-                    valueSeparator = ",";
-                    sb.append(PageFlowUtil.jsString(value));
-                }
-                sb.append("]");
-            }
-            sb.append("}");
+            json.put("postParameters", context.getRequest().getParameterMap());
         }
-        sb.append(",CSRF:").append(jsString(CSRFUtil.getExpectedToken(context.getRequest())));
+        json.put("CSRF", CSRFUtil.getExpectedToken(context.getRequest()));
+
         // Include a few server-generated GUIDs/UUIDs
-        sb.append(", uuids: ['");
-        sb.append(GUID.makeGUID());
-        sb.append("','");
-        sb.append(GUID.makeGUID());
-        sb.append("','");
-        sb.append(GUID.makeGUID());
-        sb.append("']");
-        sb.append("}"); //end config
-        return sb.toString();
+        json.put("uuids", Arrays.asList(GUID.makeGUID(), GUID.makeGUID(), GUID.makeGUID()));
+
+        return json;
     }
 
     public static String getServerSessionHash()
