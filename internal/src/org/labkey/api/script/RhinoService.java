@@ -15,8 +15,6 @@
  */
 package org.labkey.api.script;
 
-import com.google.common.io.CharStreams;
-import com.google.common.io.InputSupplier;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.Cache;
@@ -137,6 +135,7 @@ class ScriptReferenceImpl implements ScriptReference
 
         if (ref == null || ref.isStale())
         {
+            RhinoService.LOG.info((ref == null ? "Compiling new" : "Recompiling stale") + " script '" + r.getPath().toString() + "'");
             InputStreamReader reader = null;
             try
             {
@@ -221,6 +220,7 @@ class ScriptReferenceImpl implements ScriptReference
         }
         ctxt.getBindings(ScriptContext.ENGINE_SCOPE).put(ScriptEngine.FILENAME, r.getPath().toString());
 
+        RhinoService.LOG.debug("Evaluating script '" + r.getPath().toString() + "'");
         Object result = script.eval(ctxt);
         evaluated = true;
         return result;
@@ -257,6 +257,8 @@ class ScriptReferenceImpl implements ScriptReference
         // compile and evaluate if necessary
         if (!evaluated)
             eval();
+
+        RhinoService.LOG.debug("Invoking method '" + name + "' in script '" + r.getPath().toString() + "'");
         ScriptContext ctxt = getContext();
         Scriptable scope = engine.getRuntimeScope(ctxt);
         return engine.invokeMethod(scope, name, args);
@@ -270,13 +272,6 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     protected boolean entityNeedsRevalidation(Object validator)
     {
         return !(validator instanceof ResourceRef) || ((ResourceRef)validator).isStale();
-        /*
-        if (validator instanceof ResourceRef)
-        {
-            ResourceRef ref = (ResourceRef)validator;
-            RhinoService.LOG.debug("revalidate: " + ref.toString() + ", isStale" + ref.isStale());
-        }
-        */
     }
 
     @Override
@@ -293,6 +288,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
 
     protected ModuleSource load(String moduleScript, Object validator)
     {
+        // NOTE: Don't recheck for stale-ness: callins .isStale() resets the staleness of the ResourceRef.
         //if (validator instanceof ResourceRef && !((ResourceRef)validator).isStale())
         //    return NOT_MODIFIED;
 
@@ -305,20 +301,18 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         if (res == null || !res.isFile())
             return null;
 
+        RhinoService.LOG.debug("Loading require()'ed resource '" + path.toString() + "'");
+
         ResourceRef ref = new ResourceRef(res);
         return new LabKeyModuleSource(ref);
     }
 
     /**
      * Bridge between Rhino commonjs ModuleSource/validator and LabKey Resource/ResourceRef.
-     *
-     * Combines foo.header.js, foo.js, and foo.footer.js into a single script.
      */
     private static class LabKeyModuleSource extends ModuleSource
     {
         private ResourceRef _ref;
-        private ResourceRef _headerRef;
-        private ResourceRef _footerRef;
 
         /**
          * Creates a new module source.
@@ -327,40 +321,6 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         {
             super(null, null, ref.getResource().getPath().toString(), ref);
             _ref = ref;
-
-            //_headerRef = findAssociated(".header.js");
-            //_footerRef = findAssociated(".footer.js");
-        }
-
-        // assumes path ends with ".js"
-        private String associatedName(String name, String append)
-        {
-            return name.substring(0, name.length() - ".js".length()) + append;
-        }
-
-        private ResourceRef findAssociated(String append)
-        {
-            Path path = _ref.getResource().getPath();
-            Path parent = path.getParent();
-            String name = associatedName(path.getName(), append);
-
-            Resource r = _ref.getResource().getResolver().lookup(parent.append(name));
-            if (r != null)
-            {
-                ResourceRef associatedRef = new ResourceRef(r);
-                _ref.addDependency(associatedRef);
-                return associatedRef;
-            }
-
-            return null;
-        }
-
-        private InputSupplier<Reader> reader(final ResourceRef ref)
-        {
-            return new InputSupplier<Reader>()
-            {
-                public Reader getInput() throws IOException { return new InputStreamReader(ref.getResource().getInputStream()); }
-            };
         }
 
         @Override
@@ -368,16 +328,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         {
             try
             {
-                List<InputSupplier<Reader>> readers = new ArrayList<InputSupplier<Reader>>(3);
-                if (_headerRef != null)
-                    readers.add(reader(_headerRef));
-
-                readers.add(reader(_ref));
-
-                if (_footerRef != null)
-                    readers.add(reader(_footerRef));
-
-                return CharStreams.join(readers).getInput();
+                return new InputStreamReader(_ref.getResource().getInputStream());
             }
             catch (IOException e)
             {

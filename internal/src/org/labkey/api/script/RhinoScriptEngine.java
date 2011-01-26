@@ -329,13 +329,14 @@ public class RhinoScriptEngine extends AbstractScriptEngine
         // define "context" variable in the new scope
         newScope.put("context", newScope, ctxt);
 
-        // define "print" function in the new scope
-        Context cx = enterContext();
-        try {
-            cx.evaluateString(newScope, printSource, "print", 1, null);
-        } finally {
-            cx.exit();
-        }
+// kevink: we now use 'var console = require("console")' instead
+//        // define "print" function in the new scope
+//        Context cx = enterContext();
+//        try {
+//            cx.evaluateString(newScope, printSource, "print", 1, null);
+//        } finally {
+//            cx.exit();
+//        }
         return newScope;
     }
 
