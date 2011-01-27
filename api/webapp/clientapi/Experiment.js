@@ -329,7 +329,7 @@ LABKEY.Exp.ExpObject = function (config) {
  *     var batch = // ... the LABKEY.Exp.RunGroup object
  *     batch.runs.push(run);
  *   },
- *   failureCallback: function (error, format) {
+ *   failure: function (error, format) {
  *     alert("error: " + error);
  *   }
  * });
@@ -509,7 +509,7 @@ LABKEY.Exp.SampleSet = function (config) {
      * @param {Function} config.success Required. Function called if the
      *	"getDomain" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
      *    which describes the fields of a domain.
-     * @param {Function} [config.failureCallback] Function called if execution of the "getDomain" function fails.
+     * @param {Function} [config.failure] Function called if execution of the "getDomain" function fails.
      * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
      *       If not supplied, the current container path will be used.
      *

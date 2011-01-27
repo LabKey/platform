@@ -228,7 +228,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         Ext.apply(this, config, {
             dataRegionName: Ext.id(undefined, "aqwp"),
             returnURL: window.location.href,
-            _success : LABKEY.Utils.getOnSuccess(config)
+            _success : LABKEY.Utils.getOnSuccess(config),
+            _failure : LABKEY.Utils.getOnFailure(config)
         });
 
         LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
@@ -426,7 +427,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 else
                     Ext.Msg.alert("Rendering Error", "The element '" + this.renderTo + "' does not exist in the document!");
             },
-            failure: LABKEY.Utils.getCallbackWrapper(this.errorCallback, this.scope, true),
+            failure: LABKEY.Utils.getCallbackWrapper(this._failure, this.scope, true),
             method: 'POST',
             params: params,
             jsonData: json,

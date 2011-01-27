@@ -141,7 +141,7 @@ LABKEY.Assay = new function()
 	  * Gets an assay by name.
 	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.success Function called when the "getByName" function executes successfully.
       * @param {Object} config An object which contains the following configuration properties.
-	  * @param {Function} [config.failureCallback] Function called when execution of the "getByName" function fails.
+	  * @param {Function} [config.failure] Function called when execution of the "getByName" function fails.
 	  * @param {String} config.name String name of the assay.
 	  * @param {String} [config.containerPath] The container path in which the requested Assay is defined.
 	  *       If not supplied, the current container path will be used.
@@ -168,7 +168,7 @@ LABKEY.Assay = new function()
 	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.success Function called
 				when the "getByType" function executes successfully.
       * @param {Object} config An object which contains the following configuration properties.
-	  * @param {Function} [config.failureCallback] Function called when execution of the "getByType" function fails.
+	  * @param {Function} [config.failure] Function called when execution of the "getByType" function fails.
 	  * @param {String} config.type String name of the assay type.  "ELISpot", for example.
 	  * @param {String} [config.containerPath] The container path in which the requested Assays are defined.
 	  *       If not supplied, the current container path will be used.
@@ -195,7 +195,7 @@ LABKEY.Assay = new function()
 	 * @param {Function(LABKEY.Assay.AssayDesign[])} config.success Function called
 				when the "getById" function executes successfully.
      * @param {Object} config An object which contains the following configuration properties.
-	 * @param {Function} [config.failureCallback] Function called when execution of the "getById" function fails.
+	 * @param {Function} [config.failure] Function called when execution of the "getById" function fails.
 	 * @param {Integer} config.id Unique integer ID for the assay.
 	  * @param {String} [config.containerPath] The container path in which the requested Assay is defined.
 	  *       If not supplied, the current container path will be used.
@@ -398,7 +398,7 @@ LABKEY.Assay = new function()
     {
         LABKEY.Assay.getStudyNabGraphURL({
             objectIds: ids,
-            successCallback: showGraph,
+            success: showGraph,
             captionColumn: 'VirusName',
             chartTitle: 'My NAb Chart',
             height: 500,

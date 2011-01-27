@@ -1134,7 +1134,7 @@ public class DataRegion extends DisplayElement
                 // before invoking it.
                 out.write("\t var tester = function() { return undefined != " + buttonBarConfig.getOnRenderScript() + "; };\n");
                 out.write("\t var onTrue = function() { " + buttonBarConfig.getOnRenderScript() + "(dr); };\n");
-                out.write("\t LABKEY.Utils.onTrue( { testCallback: tester, successCallback: onTrue });\n");
+                out.write("\t LABKEY.Utils.onTrue( { testCallback: tester, success: onTrue });\n");
             }
         }
 

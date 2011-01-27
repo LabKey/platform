@@ -115,8 +115,8 @@ Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
             renderTo: this.extPopup.id,
             frame: 'none',
             partConfig: this.partConfig,
-            errorCallback:function(err) {if (window.console && window.console.log) { window.console.log(err);}},
-            successCallback:function() {
+            failure:function(err) {if (window.console && window.console.log) { window.console.log(err);}},
+            success:function() {
                         var x = function() {this.extPopup.enableShadow(true);};
                         x.defer(100, this);},
             scope:this

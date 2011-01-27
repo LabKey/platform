@@ -218,7 +218,7 @@ LABKEY.DataRegion = function (config)
      * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
      * <li><b>response:</b> The XMLHttpResponse object</li>
      * </ul>
-     * @param {Function} [config.failureCallback] The function to call upon error of the request.
+     * @param {Function} [config.failure] The function to call upon error of the request.
      * The callback will be passed the following parameters:
      * <ul>
      * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -331,7 +331,7 @@ LABKEY.DataRegion = function (config)
      * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
      * <li><b>response:</b> The XMLHttpResponse object</li>
      * </ul>
-     * @param {Function} [config.failureCallback] The function to call upon error of the request.
+     * @param {Function} [config.failure] The function to call upon error of the request.
      * The callback will be passed the following parameters:
      * <ul>
      * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -1406,7 +1406,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
  * <li><b>data:</b> an object with the property 'count' to indicate the updated selection count.
  * <li><b>response:</b> The XMLHttpResponse object</li>
  * </ul>
- * @param {Function} [config.failureCallback] The function to call upon error of the request.
+ * @param {Function} [config.failure] The function to call upon error of the request.
  * The callback will be passed the following parameters:
  * <ul>
  * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -1442,7 +1442,7 @@ LABKEY.DataRegion.setSelected = function (config)
  * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
  * <li><b>response:</b> The XMLHttpResponse object</li>
  * </ul>
- * @param {Function} [config.failureCallback] The function to call upon error of the request.
+ * @param {Function} [config.failure] The function to call upon error of the request.
  * The callback will be passed the following parameters:
  * <ul>
  * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -1470,7 +1470,7 @@ LABKEY.DataRegion.clearSelected = function (config)
  * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
  * <li><b>response:</b> The XMLHttpResponse object</li>
  * </ul>
- * @param {Function} [config.failureCallback] The function to call upon error of the request.
+ * @param {Function} [config.failure] The function to call upon error of the request.
  * The callback will be passed the following parameters:
  * <ul>
  * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>

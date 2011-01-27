@@ -35,13 +35,13 @@
 LABKEY.Domain = new function()
 {
 
-    function createDomain(successCallback, failureCallback, parameters, containerPath)
+    function createDomain(success, failure, parameters, containerPath)
     {
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("property", "createDomain", containerPath),
             method : 'POST',
-            success: LABKEY.Utils.getCallbackWrapper(successCallback),
-            failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
+            success: LABKEY.Utils.getCallbackWrapper(success),
+            failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
             jsonData : parameters,
             headers : {
                 'Content-Type' : 'application/json'
@@ -49,24 +49,24 @@ LABKEY.Domain = new function()
         });
     }
 
-    function getDomain(successCallback, failureCallback, parameters, containerPath)
+    function getDomain(success, failure, parameters, containerPath)
     {
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("property", "getDomain", containerPath),
             method : 'GET',
-            success: LABKEY.Utils.getCallbackWrapper(successCallback),
-            failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
+            success: LABKEY.Utils.getCallbackWrapper(success),
+            failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
             params : parameters
         });
     }
 
-    function saveDomain(successCallback, failureCallback, parameters, containerPath)
+    function saveDomain(success, failure, parameters, containerPath)
     {
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("property", "saveDomain", containerPath),
             method : 'POST',
-            success: LABKEY.Utils.getCallbackWrapper(successCallback),
-            failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
+            success: LABKEY.Utils.getCallbackWrapper(success),
+            failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
             jsonData : parameters,
             headers : {
                 'Content-Type' : 'application/json'
@@ -100,10 +100,10 @@ LABKEY.Domain = new function()
 
 	/**
 	* Gets a domain design.
-	* @param {Function} successCallback Required. Function called if the
+	* @param {Function} success Required. Function called if the
 	*	"get" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
     *    which describes the fields of a domain.
-	* @param {Function} [failureCallback] Function called if execution of the "get" function fails.
+	* @param {Function} [failure] Function called if execution of the "get" function fails.
 	* @param {String} schemaName Name of the schema
 	* @param {String} queryName Name of the query
 	* @param {String} [containerPath] The container path in which the requested Domain is defined.
@@ -134,11 +134,11 @@ LABKEY.Domain = new function()
 </pre>
 	  * @see LABKEY.Assay.AssayDesign
 	  */
-        get : function(successCallback, failureCallback, schemaName, queryName, containerPath)
+        get : function(success, failure, schemaName, queryName, containerPath)
         {
             getDomain(
-                successCallback,
-                failureCallback,
+                success,
+                failure,
                 {schemaName:schemaName, queryName:queryName}, 
                 containerPath);
         },

@@ -21,8 +21,8 @@
  * Make multiple ajax requests and fires an event when all are complete.
  * Requests are added as [function, config] array pairs where the config object
  * is passed as the argument to the request function.  The request function's config
- * object argument must accept a success callback named 'success' or 'successCallback'
- * and a failure callback named 'failure', 'failureCallback', or 'errorCallback'.
+ * object argument must accept a success callback named 'success' and a failure
+ * callback named 'failure'.
  * @class Make multiple ajax requests and fires an event when all are complete.
  * @memberOf LABKEY
  *
