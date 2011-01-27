@@ -28,11 +28,9 @@
     {
         if (typeof render == 'function')
         {
-            var query = {
+            render({
 <%=bean.model.getStandardJavaScriptParameters(16, false)%>
-            };
-
-            render(query, document.getElementById("<%=uniqueDivName%>"));
+            }, document.getElementById("<%=uniqueDivName%>"));
         }
         else
         {

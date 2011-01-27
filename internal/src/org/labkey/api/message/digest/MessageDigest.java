@@ -32,7 +32,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 13, 2011
  * Time: 1:55:26 PM

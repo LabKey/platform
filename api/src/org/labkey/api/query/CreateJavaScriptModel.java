@@ -84,31 +84,33 @@ public class CreateJavaScriptModel extends ExportScriptModel
     }
 
     // Produce javascript code block containing all the standard query parameters.  Callers need to wrap this block in
-    // curly braces (at a minimum) and modify any parameters they need to change.
+    // curly braces (at a minimum) and modify/add parameters as appropriate.
     public String getStandardJavaScriptParameters(int indentSpaces, boolean includeStandardCallbacks)
     {
         String indent = StringUtils.repeat(" ", indentSpaces);
         StringBuilder params = new StringBuilder();
         params.append(indent).append("requiredVersion: 9.1,\n");
         params.append(indent).append("schemaName: ").append(PageFlowUtil.jsString(getSchemaName())).append(",\n");
+
+        if (null != getViewName())
+            params.append(indent).append("viewName: ").append(PageFlowUtil.jsString(getViewName())).append(",\n");
+
         params.append(indent).append("queryName: ").append(PageFlowUtil.jsString(getQueryName())).append(",\n");
-        params.append(indent).append("columns: ").append(PageFlowUtil.jsString(getColumns())).append(",\n");
+        params.append(indent).append("columns: ").append(PageFlowUtil.jsString(getColumns())).append(",\n");  // TODO: Inconsistent with R and SAS, which don't include view columns
         params.append(indent).append("filterArray: ").append(getFilters()).append(",\n");
 
         ContainerFilter containerFilter = getContainerFilter();
 
         if (null != containerFilter)
-        {
             params.append(indent).append("containerFilter: '").append(containerFilter.getType().name()).append("',\n");
-        }
 
         params.append(indent).append("sort: ").append(getSort());
 
         if (includeStandardCallbacks)
         {
             params.append(",\n");
-            params.append(indent).append("successCallback: onSuccess,\n");
-            params.append(indent).append("errorCallback: onError");
+            params.append(indent).append("success: onSuccess,\n");
+            params.append(indent).append("error: onError");
         }
 
         return params.toString();
