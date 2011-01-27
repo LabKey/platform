@@ -85,8 +85,8 @@ LABKEY.Timeline = {
             throw "Unexpected callback in queryConfig";
 
         var queryConfig = Ext.apply({}, ec.query, {
-            successCallback:function(data) {LABKEY.Timeline.populateEvents(data, ec)},
-            failureCallback:function() {alert("Error occurred in timeline query. schemaName: " + config.query.schemaName + ", queryName: " + config.query.queryName)}
+            success:function(data) {LABKEY.Timeline.populateEvents(data, ec)},
+            failure:function() {alert("Error occurred in timeline query. schemaName: " + config.query.schemaName + ", queryName: " + config.query.queryName)}
         });
 
         LABKEY.Query.selectRows(queryConfig);

@@ -122,7 +122,7 @@ function updateFields(schemaName, queryName, viewName)
     if (!schemaName || !queryName)
         clearFieldPickers();
     else
-        LABKEY.Query.selectRows({schemaName:schemaName, queryName:queryName, viewName:viewName, maxRows:1, successCallback:populateFieldPickers});
+        LABKEY.Query.selectRows({schemaName:schemaName, queryName:queryName, viewName:viewName, maxRows:1, success:populateFieldPickers});
 }
 
 var fieldPickers = [

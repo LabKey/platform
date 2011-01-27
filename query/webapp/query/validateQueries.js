@@ -18,8 +18,8 @@ function onReady()
 
     setStatus("Loading schemas...");
     LABKEY.Query.getSchemas({
-        successCallback: onSchemas,
-        errorCallback: onError
+        success: onSchemas,
+        failure: onError
     });
 }
 

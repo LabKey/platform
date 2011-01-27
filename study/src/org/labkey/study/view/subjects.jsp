@@ -155,8 +155,8 @@ ul.subjectlist {
                 queryName: _singularNoun,
                 columns: _subjectColName,
                 sort: _subjectColName,
-                successCallback: onSuccess,
-                errorCallback: onFailure
+                success: onSuccess,
+                failure: onFailure
             });
     }
 
