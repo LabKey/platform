@@ -310,7 +310,7 @@ LABKEY.Exp.ExpObject = function (config) {
  *
  * data.getContent({
  *   format: 'jsonTSV',
- *   successCallback: function (content, format) {
+ *   success: function (content, format) {
  *     data.content = content;
  *     var sheet = content.sheets[0];
  *     var filedata = sheet.data;
@@ -520,7 +520,7 @@ LABKEY.Exp.SampleSet = function (config) {
      *   Ext.onReady(function() {
      *     var ss = new LABKEY.Exp.SampleSet({name: 'MySampleSet'});
      *     ss.getDomain({
-     *       successCallback : function (domain) {
+     *       success : function (domain) {
      *         console.log(domain);
      *       }
      *     });
@@ -538,7 +538,7 @@ Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
 /**
  * Create a new Sample Set definition.
  * @param {Function} config.success Required callback function.
- * @param {Function} [config.failureCallback] Optional error callback function.
+ * @param {Function} [config.failure] Optional error callback function.
  * @param {LABKEY.Domain.DomainDesign} config.domainDesign The domain design to save.
  * @param {Object} [config.options] Set of extra options used when creating the SampleSet:
  * <ul>
@@ -568,8 +568,8 @@ Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
  * };
  *
  * LABKEY.Exp.SampleSet.create({
- *   successCallback: function () { alert("success!"); },
- *   failureCallback: function () { alert("failure!"); },
+ *   success: function () { alert("success!"); },
+ *   failure: function () { alert("failure!"); },
  *   domainDesign: domainDesign,
  *   options: { idCols: [0, 1], parentCol: 2 }
  * });

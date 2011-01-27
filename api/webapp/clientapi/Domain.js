@@ -81,19 +81,19 @@ LABKEY.Domain = new function()
          * Create a new domain with the given design.
          * <b>Note: this is an experimental API and may change unexpectedly.</b>
          *
-         * @param {Function} successCallback Required success callback.
-         * @param {Function} [failureCallback] Optional failure callback.
+         * @param {Function} success Required success callback.
+         * @param {Function} [failure] Optional failure callback.
          * @param {String} kind The domain kind name to create.
          * @param {LABKEY.Domain.DomainDesign} domainDesign The domain design to save.
          * @param {Object} [options] Optional arguments used to create the specific domain type.
          * @param {String} [containerPath] The container path in which to create the domain.
          * @ignore hide from JsDoc for now
          */
-        create : function (successCallback, failureCallback, kind, domainDesign, options, containerPath)
+        create : function (success, failure, kind, domainDesign, options, containerPath)
         {
             createDomain(
-                successCallback,
-                failureCallback,
+                success,
+                failure,
                 { kind: kind, domainDesign: domainDesign, options: options },
                 containerPath);
         },
@@ -145,20 +145,20 @@ LABKEY.Domain = new function()
 
         /**
          * Saves the provided domain design
-         * @param {Function} successCallback Required. Function called if this
+         * @param {Function} success Required. Function called if this
                   function executes successfully. No parameters will be passed to the success callback.
-         * @param {Function} [failureCallback] Function called if execution of this function fails.
+         * @param {Function} [failure] Function called if execution of this function fails.
          * @param {LABKEY.Domain.DomainDesign} domainDesign The domain design to save.
          * @param {String} schemaName Name of the schema
          * @param {String} queryName Name of the query
          * @param {String} [containerPath] The container path in which the requested Domain is defined.
          *       If not supplied, the current container path will be used.
          */
-        save : function(successCallback, failureCallback, domainDesign, schemaName, queryName, containerPath)
+        save : function(success, failure, domainDesign, schemaName, queryName, containerPath)
         {
             saveDomain(
-                successCallback,
-                failureCallback,
+                success,
+                failure,
                 {domainDesign:domainDesign, schemaName:schemaName, queryName:queryName},
                 containerPath);
         }

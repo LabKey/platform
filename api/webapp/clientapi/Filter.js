@@ -206,8 +206,8 @@ LABKEY.Filter = new function()
 	LABKEY.Query.selectRows({
 		schemaName: 'lists',
 		queryName: 'People',
-		successCallback: onSuccess,
-		failureCallback: onFailure,
+		success: onSuccess,
+		failure: onFailure,
 		filterArray: [
 			LABKEY.Filter.create('FirstName', 'Johnny'),
 			LABKEY.Filter.create('Age', 15, LABKEY.Filter.Types.LESS_THAN_OR_EQUAL)

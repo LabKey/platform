@@ -125,8 +125,8 @@ LABKEY.Message = new function()
                  LABKEY.Message.createMsgContent(LABKEY.Message.msgType.html, '&lt;h2&gt;This is a test message&lt;/h2&gt;'),
                  LABKEY.Message.createMsgContent(LABKEY.Message.msgType.plain, 'This is a test message')
              ],
-             successCallback: onSuccess,
-             errorCallback: errorHandler,
+             success: onSuccess,
+             failure: errorHandler,
          });
          &lt;/script&gt;
          </pre>

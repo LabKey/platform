@@ -816,8 +816,8 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             ids: ids,
             checked: checked,
             scope: this,
-            successCallback: success,
-            failureCallback: function (response, options) { this.showMessage("Error sending selection."); }
+            success: success,
+            failure: function (response, options) { this.showMessage("Error sending selection."); }
         });
     },
 
@@ -1026,7 +1026,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                         queryName: this.queryName,
                         viewName: viewName,
                         fields: fields,
-                        successCallback: function (json, response, options) {
+                        success: function (json, response, options) {
                             if (timerId > 0)
                                 clearTimeout(timerId);
                             else

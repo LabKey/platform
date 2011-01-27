@@ -143,7 +143,7 @@ var qwp1 = new LABKEY.QueryWebPart({
 });
 
  //note that you may also register for the 'render' event
- //instead of using the successCallback config property.
+ //instead of using the success config property.
  //registering for events is done using Ext event registration.
  //Example:
  qwp1.on("render", onRender);
@@ -227,7 +227,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
 
         Ext.apply(this, config, {
             dataRegionName: Ext.id(undefined, "aqwp"),
-            returnURL: window.location.href
+            returnURL: window.location.href,
+            _success : LABKEY.Utils.getOnSuccess(config)
         });
 
         LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
@@ -416,8 +417,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                         if (customizeViewVisible)
                             dr.showCustomizeView(null, false, false);
 
-                        if(this.successCallback)
-                            Ext.onReady(function(){this.successCallback.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()
+                        if(this._success) //11425 : Make callback consistent with documentation
+                            Ext.onReady(function(){this._success.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()
                     }, this, {delay: 100});
 
                     this.fireEvent("render");

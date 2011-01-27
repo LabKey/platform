@@ -37,10 +37,10 @@
    schemaName : "assay",
    queryName : protocolName + " Data",
    containerPath : "/Test",
-   successCallback: function (data, options, response) {
+   success: function (data, options, response) {
        console.log("selectRows success: " + data.rowCount);
    },
-   failureCallback: function (response, options) {
+   failure: function (response, options) {
        console.log("selectRows failure");
    }
  };

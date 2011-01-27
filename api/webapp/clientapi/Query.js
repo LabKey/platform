@@ -71,7 +71,7 @@ LABKEY.Query = new function()
     function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope)
     {
         if (!callbackFn)
-            Ext.Msg.alert("Coding Error!", "You must supply a successCallback function in your configuration object!");
+            Ext.Msg.alert("Coding Error!", "You must supply a success function in your configuration object!");
 
         return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
             if (data && data.rows && stripHiddenCols)
@@ -387,8 +387,8 @@ LABKEY.Query = new function()
             schemaName: 'lists',
             queryName: 'People',
             columns: ['Name', 'Age'],
-            successCallback: onSuccess,
-            errorCallback: onFailure,
+            success: onSuccess,
+            failure: onFailure,
         });
 &lt;/script&gt; </pre>
 		* @see LABKEY.Query.SelectRowsOptions
