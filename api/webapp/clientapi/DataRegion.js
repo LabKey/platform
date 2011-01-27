@@ -1604,7 +1604,7 @@ LABKEY.DataRegion._filterUI =
         else
         {
             // Invoked from GWT, which will handle the commit itself
-            this.changeFilterCallback = this.confirmCallback;
+            this.changeFilterCallback = confirmCallback;
             document.getElementById("filterPanelClearAllFiltersButton").style.display="none";
             document.getElementById("filterPanelClearFilterButton").style.display="none";
         }
