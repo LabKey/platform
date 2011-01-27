@@ -206,8 +206,7 @@ public abstract class QueryRelation
 
         public RelationColumnInfo(TableInfo parent, RelationColumn column)
         {
-            super(column.getFieldKey().getName(), parent);
-            assert null == column.getFieldKey().getParent() : "relation column can't wrap multipart name";
+            super(column.getFieldKey(), parent);
             setAlias(column.getAlias());
             column.copyColumnAttributesTo(this);
             _column = column;

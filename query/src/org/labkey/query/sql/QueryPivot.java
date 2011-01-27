@@ -23,12 +23,12 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
@@ -406,10 +406,85 @@ public class QueryPivot extends QueryRelation
     }
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
+    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull final String name)
     {
-        return null;
+        if (!(parent instanceof PivotColumn))
+            return null;
+        RelationColumn agg = ((PivotColumn)parent)._s;
+        return _getLookupColumn(agg, parent.getFieldKey(), name);
     }
+
+
+    private RelationColumn _getLookupColumn(@NotNull final RelationColumn agg, FieldKey parentFieldKey, @NotNull final String name)
+    {
+        if (!_aggregates.containsKey(agg.getFieldKey().getName()))
+            return null;
+
+        Map<String, IConstant> pivotValues;
+        try
+        {
+            pivotValues = getPivotValues();
+        }
+        catch (SQLException x)
+        {
+            return null;
+        }
+
+        if (null == pivotValues)
+        {
+            assert(!getParseErrors().isEmpty());
+            return null;
+        }
+
+        final IConstant c = pivotValues.get(name);
+        final FieldKey key = new FieldKey(agg.getFieldKey(), name.toLowerCase());
+        final String alias = makePivotColumnAlias(agg.getAlias(), name);
+
+        return new RelationColumn()
+        {
+            @Override
+            public FieldKey getFieldKey()
+            {
+                return key;
+            }
+
+            @Override
+            String getAlias()
+            {
+                return alias;
+            }
+
+            @Override
+            QueryRelation getTable()
+            {
+                return QueryPivot.this;
+            }
+
+            @NotNull
+            @Override
+            public JdbcType getJdbcType()
+            {
+                return agg.getJdbcType();
+            }
+
+            @Override
+            void copyColumnAttributesTo(ColumnInfo to)
+            {
+                agg.copyColumnAttributesTo(to);
+            }
+
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                if (null == c)
+                    return new SQLFragment(NullColumnInfo.nullValue(getSqlDialect().sqlTypeNameFromSqlType(getJdbcType().sqlType)));
+                else
+                    return new SQLFragment(tableAlias + "." + alias);
+            }
+        };
+    }
+
+
 
     @Override
     RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
@@ -417,6 +492,7 @@ public class QueryPivot extends QueryRelation
         return null;
     }
 
+    
     @Override
     public SQLFragment getSql()
     {
@@ -538,7 +614,6 @@ public class QueryPivot extends QueryRelation
             }
         }
 
-        @NotNull
         @Override
         public SQLFragment getFromSQL(String pivotTableAlias)
         {
@@ -605,9 +680,14 @@ public class QueryPivot extends QueryRelation
         String alias =  AliasManager.makeLegalName(key.toString().toLowerCase(), getSqlDialect());
         return alias;
     }
-    
 
-    class PivotForeignKey implements ForeignKey
+
+    // marker interface
+    // ForeignKey whose lookup columns are carried along with the fk
+    interface ExpandoForeignKey {}
+
+
+    class PivotForeignKey implements ForeignKey, ExpandoForeignKey
     {
         RelationColumn _agg;
 
@@ -619,30 +699,12 @@ public class QueryPivot extends QueryRelation
         @Override
         public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
         {
-            Map<String, IConstant> pivotValues;
-            try
-            {
-                pivotValues = getPivotValues();
-            }
-            catch (SQLException x)
-            {
+            if (null == displayField)
                 return null;
-            }
-            
-            if (null == pivotValues)
-            {
-                assert(!getParseErrors().isEmpty());
-                return null;
-            }
-            IConstant c = pivotValues.get(displayField);
-            if (null == c)
-            {
-                // if dynamic columns return new NullColumnInfo
-                return null;
-            }
-            FieldKey key = new FieldKey(_agg.getFieldKey(), displayField.toLowerCase());
-            String alias = makePivotColumnAlias(parent.getAlias(), displayField);
-            return new ExprColumn(parent.getParentTable(), key, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + alias), parent.getJdbcType());
+            RelationColumn lk = _getLookupColumn(_agg, parent.getFieldKey(), displayField);
+            ColumnInfo col = new RelationColumnInfo(parent.getParentTable(), lk);
+            col.setLabel(null);
+            return col;
         }
 
         @Override

@@ -244,11 +244,12 @@ public class Query
 
         QueryPivot pivot = new QueryPivot(query, select, (QQuery)root);
         pivot.setAlias("_pivot");
+        QueryLookupWrapper wrapper = new QueryLookupWrapper(query, pivot, null);
 
         if (null == ((QQuery) root).getLimit() && null == ((QQuery) root).getOrderBy())
-            return pivot;
+            return wrapper;
 
-        QuerySelect qob = new QuerySelect(pivot, ((QQuery)root).getOrderBy(), ((QQuery)root).getLimit());        
+        QuerySelect qob = new QuerySelect(wrapper, ((QQuery)root).getOrderBy(), ((QQuery)root).getLimit());
         return qob;
     }
 
@@ -652,7 +653,7 @@ public class Query
                 row[c++] = "" + (i%12);
                 row[c++] = days[i%7];
                 row[c++] = months[i%12];
-                row[c++] = DateUtil.toISO(DateUtil.parseDateTime("2000-01-01") + ((long)i)*12*60*60*1000L);
+                row[c++] = DateUtil.toISO(DateUtil.parseDateTime("2010-01-01") + ((long)i)*12*60*60*1000L);
                 row[c++] = DateUtil.formatDuration(i*1000);
                 row[c++] = GUID.makeGUID();
                 row[c++] = "" + TestContext.get().getUser().getUserId();

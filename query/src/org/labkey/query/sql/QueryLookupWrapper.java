@@ -43,12 +43,9 @@ import java.util.*;
 public class QueryLookupWrapper extends QueryRelation
 {
     final AliasManager _aliasManager;
-    Query _query;
     QueryRelation _source;
-    TableType _tableType;
     boolean _hasLookups = false;
     
-    LinkedHashMap<FieldKey, String> _joins = new LinkedHashMap<FieldKey, String>();
     Map<String, ColumnType.Fk> _fkMap = new HashMap<String, ColumnType.Fk>();
     Map<FieldKey, RelationColumn> _selectedColumns = new HashMap<FieldKey, RelationColumn>();
 
@@ -59,11 +56,11 @@ public class QueryLookupWrapper extends QueryRelation
         _aliasManager = new AliasManager(query.getSchema().getDbSchema());
         _alias = relation.getAlias();
         _source = relation;
-        _tableType = md;
 
 
-        org.labkey.data.xml.TableType.Columns cols = _tableType.getColumns();
+        org.labkey.data.xml.TableType.Columns cols = null==md ? null : md.getColumns();
         if (null != cols)
+        {
             for (ColumnType col : cols.getColumnArray())
             {
                 ColumnType.Fk colFK = col.getFk();
@@ -71,6 +68,7 @@ public class QueryLookupWrapper extends QueryRelation
                     continue;
                 _fkMap.put(col.getColumnName(), colFK);
             }
+        }
     }
 
 
@@ -102,6 +100,7 @@ public class QueryLookupWrapper extends QueryRelation
     
     void declareFields()
     {
+        _source.declareFields();
     }
 
 

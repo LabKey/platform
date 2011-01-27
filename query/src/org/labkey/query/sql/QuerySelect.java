@@ -311,6 +311,7 @@ groupByLoop:
                 columnList.add(new SelectColumn(node));
             }
         }
+
         if (_parent != null && !_inFromClause && columnList.size() != 1)
         {
             parseError("Subquery can have only one column.", _root);
@@ -1448,27 +1449,28 @@ groupByLoop:
             return JdbcType.NULL;
         }
 
-        ColumnInfo getColumnInfo()
-        {
-            if (_colinfo == null)
-            {
-                QExpr expr = getResolvedField();
-                _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()));
-                if (_aliasId != null)
-                    _colinfo.setLabel(ColumnInfo.labelFromName(getName()));
-            }
-            return _colinfo;
-        }
 
         void copyColumnAttributesTo(ColumnInfo to)
         {
-            ColumnInfo col = getColumnInfo();
-            to.copyAttributesFrom(col);
-
+            QExpr expr = getResolvedField();
+            if (expr instanceof QField)
+            {
+                ((QField)expr).getRelationColumn().copyColumnAttributesTo(to);
+            }
+            else
+            {
+                if (_colinfo == null)
+                {
+                    _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()));
+                    if (_aliasId != null)
+                        _colinfo.setLabel(ColumnInfo.labelFromName(getName()));
+                }
+                to.copyAttributesFrom(_colinfo);
+            }
             // copy URL if possible
             FieldKey fk = null != _resolved ? _resolved.getFieldKey() : null;
             if (null != fk)
-                to.copyURLFromStrict(col, Collections.singletonMap(fk,to.getFieldKey()));
+                to.copyURLFromStrict(_colinfo, Collections.singletonMap(fk,to.getFieldKey()));
 
             if (_parsedTables.size() != 1)
                 to.setKeyField(false);
