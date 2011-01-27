@@ -53,7 +53,9 @@ import java.util.Map;
  */
 public class QueryPivot extends QueryRelation
 {
-    QuerySelect _from;
+    final QuerySelect _from;
+    final AliasManager _manager;
+    final Map<FieldKey,String> pivotColumnAliases = new HashMap<FieldKey,String>();
 
     // all columns in the select except the pivot column, in original order
     LinkedHashMap<String,RelationColumn> _select = new LinkedHashMap<String,RelationColumn>();
@@ -79,6 +81,7 @@ public class QueryPivot extends QueryRelation
         // make sure all group by columns are selected
         // grab orderby and limit
         _from = from;
+        _manager = new AliasManager(query.getSchema().getDbSchema());
 
         QPivot pivotClause = root.getChildOfType(QPivot.class);
         QNode aggsList = pivotClause.childList().get(0);
@@ -94,8 +97,11 @@ public class QueryPivot extends QueryRelation
         }
         
         // get all the columns, but delete the pivot column
+        Map<String,RelationColumn> allFromColumns = _from.getAllColumns();
+        for (RelationColumn r : allFromColumns.values())
+            _manager.claimAlias(r.getAlias(), null);
         _select = new LinkedHashMap<String,RelationColumn>();
-        _select.putAll(_from.getAllColumns());
+        _select.putAll(allFromColumns);
         _select.remove(_pivotColumn.getFieldKey().getName());
 
         // modify QuerySelect _from (after we copy the original select list)
@@ -471,6 +477,7 @@ public class QueryPivot extends QueryRelation
             void copyColumnAttributesTo(ColumnInfo to)
             {
                 agg.copyColumnAttributesTo(to);
+                to.setLabel(null);
             }
 
             @Override
@@ -676,8 +683,12 @@ public class QueryPivot extends QueryRelation
     // but its easier if we can generate names we expect to be unique
     String makePivotColumnAlias(String aggAlias, String pivotValueName)
     {
-        FieldKey key = FieldKey.fromParts(aggAlias, "_p_", pivotValueName);
-        String alias =  AliasManager.makeLegalName(key.toString().toLowerCase(), getSqlDialect());
+        FieldKey key = FieldKey.fromParts(aggAlias, pivotValueName.toLowerCase());
+        String alias =  pivotColumnAliases.get(key);
+        if (null != alias)
+            return alias;
+        alias =  _manager.decideAlias("__pvt_" + _query.incrementAliasCounter() + "_" + key.toString());
+        pivotColumnAliases.put(key,alias);
         return alias;
     }
 
@@ -703,7 +714,6 @@ public class QueryPivot extends QueryRelation
                 return null;
             RelationColumn lk = _getLookupColumn(_agg, parent.getFieldKey(), displayField);
             ColumnInfo col = new RelationColumnInfo(parent.getParentTable(), lk);
-            col.setLabel(null);
             return col;
         }
 
