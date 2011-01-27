@@ -53,6 +53,7 @@ import java.util.Map;
  */
 public class QueryPivot extends QueryRelation
 {
+    final boolean usePivotForeignKey = false;
     final QuerySelect _from;
     final AliasManager _manager;
     final Map<FieldKey,String> pivotColumnAliases = new HashMap<FieldKey,String>();
@@ -374,7 +375,12 @@ public class QueryPivot extends QueryRelation
         {
             _s.copyColumnAttributesTo(to);
             if (_aggregates.containsKey(_s.getFieldKey().getName()))
-                to.setFk(new PivotForeignKey(_s));
+            {
+                if (usePivotForeignKey)
+                    to.setFk(new PivotForeignKey(_s));
+                else
+                    to.setHidden(true);
+            }
         }
     }
 
@@ -386,6 +392,17 @@ public class QueryPivot extends QueryRelation
     {
         if (null == _columns)
         {
+            Map<String, IConstant> pivotValues;
+            try
+            {
+                pivotValues = getPivotValues();
+            }
+            catch (SQLException x)
+            {
+                assert(!getParseErrors().isEmpty());
+                pivotValues = Collections.EMPTY_MAP;
+            }
+
             _columns = new CaseInsensitiveMapWrapper<RelationColumn>(new LinkedHashMap<String, RelationColumn>(_select.size()*2));
             for (Map.Entry<String,RelationColumn> entry : _select.entrySet())
             {
@@ -393,11 +410,29 @@ public class QueryPivot extends QueryRelation
                 RelationColumn s = entry.getValue();
                 RelationColumn p = new PivotColumn(s);
                 _columns.put(name, p);
+
+                if (!usePivotForeignKey && _aggregates.containsKey(name))
+                {
+                    for (String pivotValue : pivotValues.keySet())
+                    {
+                        String pivotName = makePivotAggName(name, pivotValue);
+                        RelationColumn pvt = _makePivotedAggColumn(s, new FieldKey(null, pivotName), pivotValue);
+                        _columns.put(pivotName, pvt);
+                    }
+                }
             }
         }
-
         return _columns;
     }
+
+
+    final static String PIVOT_SEPARATOR = "::";
+    
+    String makePivotAggName(String aggName, String pivotValue)
+    {
+        return pivotValue + PIVOT_SEPARATOR + aggName;
+    }
+    
 
     @Override
     RelationColumn getColumn(@NotNull String name)
@@ -417,11 +452,11 @@ public class QueryPivot extends QueryRelation
         if (!(parent instanceof PivotColumn))
             return null;
         RelationColumn agg = ((PivotColumn)parent)._s;
-        return _getLookupColumn(agg, parent.getFieldKey(), name);
+        return _makePivotedAggColumn(agg, new FieldKey(parent.getFieldKey(), name), name);
     }
 
 
-    private RelationColumn _getLookupColumn(@NotNull final RelationColumn agg, FieldKey parentFieldKey, @NotNull final String name)
+    private RelationColumn _makePivotedAggColumn(@NotNull final RelationColumn agg, final FieldKey key, @NotNull final String name)
     {
         if (!_aggregates.containsKey(agg.getFieldKey().getName()))
             return null;
@@ -443,7 +478,6 @@ public class QueryPivot extends QueryRelation
         }
 
         final IConstant c = pivotValues.get(name);
-        final FieldKey key = new FieldKey(agg.getFieldKey(), name.toLowerCase());
         final String alias = makePivotColumnAlias(agg.getAlias(), name);
 
         return new RelationColumn()
@@ -477,7 +511,15 @@ public class QueryPivot extends QueryRelation
             void copyColumnAttributesTo(ColumnInfo to)
             {
                 agg.copyColumnAttributesTo(to);
-                to.setLabel(null);
+                if (usePivotForeignKey)
+                    to.setLabel(null);
+                else if (_aggregates.size() == 1)
+                    to.setLabel(name);
+                else
+                {
+                    String aggLabel = to.getLabel();
+                    to.setLabel(name + " " + aggLabel);
+                }
             }
 
             @Override
@@ -602,24 +644,18 @@ public class QueryPivot extends QueryRelation
 
     class PivotTableInfo extends QueryTableInfo
     {
-
         PivotTableInfo()
         {
             super(QueryPivot.this, "_pivot");
 
-            for (RelationColumn col : _select.values())
+            for (RelationColumn col : getAllColumns().values())
             {
                 String name = col.getFieldKey().getName();
                 ColumnInfo columnInfo = new RelationColumnInfo(this, col);
-                if (_aggregates.containsKey(name))
-                {
-                    if (null == _aggregates.get(name))
-                        columnInfo.setIsUnselectable(true);
-                    columnInfo.setFk(new PivotForeignKey(col));
-                }
                 addColumn(columnInfo);
             }
         }
+
 
         @Override
         public SQLFragment getFromSQL(String pivotTableAlias)
@@ -645,20 +681,32 @@ public class QueryPivot extends QueryRelation
             {
                 pivotValues = Collections.EMPTY_MAP;
             }
-            
 
             ArrayList<FieldKey> list = new ArrayList<FieldKey>();
-            for (RelationColumn col : _select.values())
+
+            if (usePivotForeignKey)
             {
-                if (_aggregates.containsKey(col.getFieldKey().getName()))
+                for (RelationColumn col : _select.values())
                 {
-                    for (String displayField : pivotValues.keySet())
+                    if (_aggregates.containsKey(col.getFieldKey().getName()))
                     {
-                        list.add(new FieldKey(col.getFieldKey(), displayField));
+                        for (String displayField : pivotValues.keySet())
+                        {
+                            list.add(new FieldKey(col.getFieldKey(), displayField));
+                        }
+                    }
+                    else
+                    {
+                        list.add(col.getFieldKey());
                     }
                 }
-                else
+            }
+            else
+            {
+                for (RelationColumn col : getAllColumns().values())
                 {
+                    if (_aggregates.containsKey(col.getFieldKey().getName()))
+                        continue;
                     list.add(col.getFieldKey());
                 }
             }
@@ -712,7 +760,7 @@ public class QueryPivot extends QueryRelation
         {
             if (null == displayField)
                 return null;
-            RelationColumn lk = _getLookupColumn(_agg, parent.getFieldKey(), displayField);
+            RelationColumn lk = _makePivotedAggColumn(_agg, new FieldKey(parent.getFieldKey(), displayField), displayField);
             ColumnInfo col = new RelationColumnInfo(parent.getParentTable(), lk);
             return col;
         }
