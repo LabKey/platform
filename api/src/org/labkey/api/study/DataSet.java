@@ -66,6 +66,25 @@ public interface DataSet extends StudyEntity
 
     public boolean canWrite(User user);
 
+    KeyType getKeyType();
+
+    enum KeyType
+    {
+        SUBJECT(1),
+        SUBJECT_VISIT(2),
+        SUBJECT_VISIT_OTHER(3);
+        
+        private int _cardinality;
+        KeyType(int cardinality)
+        {
+            _cardinality = cardinality;
+        }
+        public int getCardinality()
+        {
+            return _cardinality;
+        }
+    }
+
     enum KeyManagementType
     {
         // Don't rename enums without updating the values in the database too

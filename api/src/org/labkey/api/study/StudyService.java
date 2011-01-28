@@ -168,6 +168,8 @@ public class StudyService
         boolean isValidSubjectColumnName(Container container, String subjectColumnName);
 
         boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
+
+        DataSet.KeyType getDatasetKeyType(Container container, String datasetName);
     }
 
     public static void register(Service serviceImpl)

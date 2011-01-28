@@ -39,44 +39,28 @@ import java.util.Map;
 public class TempQuerySettings extends QuerySettings
 {
     private String _sql;
-    private ViewContext _context;
-    private boolean _persist;
     private Container _container;
 
-    public TempQuerySettings(ViewContext context, String schemaName, String sql, boolean persistInSession)
+    public TempQuerySettings(ViewContext context, String sql)
     {
-        this(context, schemaName, sql, "query", persistInSession);
+        this(context, sql, "query");
     }
 
-    public TempQuerySettings(ViewContext context, String schemaName, String sql, String dataRegionName, boolean persistInSession)
+    public TempQuerySettings(ViewContext context, String sql, String dataRegionName)
     {
         super(dataRegionName);
-        _context = context;
-        _persist = persistInSession;
         _sql = sql;
         _container = context.getContainer();
-        if (persistInSession)
-        {
-            QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), schemaName, sql);
-            setQueryName(def.getName());
-        }
-        else
-            setQueryName("sql");
+        setQueryName("sql");
     }
 
     public QueryDefinition getQueryDef(UserSchema schema)
     {
         QueryDefinition qdef;
-        if (_persist)
-            qdef = QueryService.get().getSessionQuery(_context, _container, schema.getName(), getQueryName());
-        else
-        {
-            qdef = QueryService.get().createQueryDef(schema.getUser(), _container, schema, getQueryName());
-            qdef.setSql(_sql);
-        }
+        qdef = QueryService.get().createQueryDef(schema.getUser(), _container, schema, getQueryName());
+        qdef.setSql(_sql);
         if (getContainerFilterName() != null)
             qdef.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
         return qdef;
     }
-
 }
