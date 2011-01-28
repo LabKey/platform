@@ -108,6 +108,16 @@ public class QueryUnion extends QueryRelation
         {
             term.declareFields();
         }
+
+        initColumns();
+        
+        if (null != _qorderBy)
+        {
+            for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+            {
+                resolveFields(entry.getKey());
+            }
+        }
     }
 
 
@@ -260,15 +270,22 @@ public class QueryUnion extends QueryRelation
             _query.getParseErrors().add(new QueryParseException("Subquery not allowed in UNION's ORDER BY", null, expr.getLine(), expr.getColumn()));
 			return expr;
 		}
+
 		FieldKey key = expr.getFieldKey();
 		if (key != null)
 		{
+            final UnionColumn uc = null==key ? null : _unionColumns.get(key.getName());
+            if (null == uc)
+            {
+                _query.getParseErrors().add(new QueryParseException("Can't find column: " + key.getName(), null, expr.getLine(), expr.getColumn()));
+                return null;
+            }
 			return new QField(null, key.getName(), expr)
 			{
 				@Override
 				public void appendSql(SqlBuilder builder)
 				{
-					builder.append(_name);
+                    builder.append(uc.getAlias());
 				}
 			};
 		}
