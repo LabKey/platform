@@ -1117,7 +1117,7 @@ public class Query
         @Test
         public void testSQL() throws Exception
         {
-            // note getSchema() will return NULL if there are no lists yet
+            // note getPrimarySchema() will return NULL if there are no lists yet
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
 

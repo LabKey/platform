@@ -551,6 +551,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             SecurityManager.getPolicy(this).hasPermission(user, UpdatePermission.class);
     }
 
+    @Override
+    public KeyType getKeyType()
+    {
+        if (isDemographicData())
+            return KeyType.SUBJECT;
+        if (getKeyPropertyName() != null)
+            return KeyType.SUBJECT_VISIT_OTHER;
+        return KeyType.SUBJECT_VISIT;
+    }
+
 
     /** most external users should use this */
     public String getVisitDateColumnName()

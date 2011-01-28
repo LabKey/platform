@@ -22,7 +22,6 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -35,7 +34,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.FormHandlerAction;
@@ -2420,7 +2418,7 @@ public class QueryController extends SpringActionController
         private Integer _maxRows;
         private Integer _offset;
         private String _containerFilter;
-        private boolean _persist;
+        private boolean _saveInSession;
 
         public String getSchemaName()
         {
@@ -2482,14 +2480,14 @@ public class QueryController extends SpringActionController
             _offset = start;
         }
 
-        public boolean isPersist()
+        public boolean isSaveInSession()
         {
-            return _persist;
+            return _saveInSession;
         }
 
-        public void setPersist(boolean persist)
+        public void setSaveInSession(boolean saveInSession)
         {
-            _persist = persist;
+            _saveInSession = saveInSession;
         }
     }
 
@@ -2512,7 +2510,14 @@ public class QueryController extends SpringActionController
 
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            TempQuerySettings settings = new TempQuerySettings(getViewContext(), schemaName, sql, form.isPersist());
+            QuerySettings settings;
+            if (form.isSaveInSession())
+            {
+                QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), schemaName, sql);
+                settings = new QuerySettings(getViewContext(), "executeSql", def.getName());
+            }
+            else
+                settings = new TempQuerySettings(getViewContext(), sql);
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
@@ -2553,10 +2558,10 @@ public class QueryController extends SpringActionController
 
             if (getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isEditable,
-                        false, schemaName, form.isPersist() ? settings.getQueryName() : "sql", 0, null, metaDataOnly);
+                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", 0, null, metaDataOnly);
             else
                 return new ApiQueryResponse(view, getViewContext(), isEditable,
-                        false, schemaName, form.isPersist() ? settings.getQueryName() : "sql", 0, null, metaDataOnly);
+                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", 0, null, metaDataOnly);
         }
     }
 
@@ -2625,7 +2630,7 @@ public class QueryController extends SpringActionController
 
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            TempQuerySettings settings = new TempQuerySettings(getViewContext(), schemaName, sql, false);
+            TempQuerySettings settings = new TempQuerySettings(getViewContext(), sql);
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string

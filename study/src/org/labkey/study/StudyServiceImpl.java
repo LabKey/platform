@@ -700,4 +700,17 @@ public class StudyServiceImpl implements StudyService.Service
         }
         return true;
     }
+
+    @Override
+    public DataSet.KeyType getDatasetKeyType(Container container, String datasetName)
+    {
+        Study study = StudyManager.getInstance().getStudy(container);
+        if (study != null)
+        {
+            DataSet dataset = StudyManager.getInstance().getDataSetDefinitionByName(study, datasetName);
+            if (dataset != null)
+                return dataset.getKeyType();
+        }
+        return null;
+    }
 }

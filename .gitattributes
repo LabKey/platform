@@ -1910,7 +1910,13 @@ query/src/org/labkey/query/reports/ReportWriter.java -text
 query/src/org/labkey/query/reports/ReportsController.java -text
 query/src/org/labkey/query/reports/ReportsPipelineProvider.java -text
 query/src/org/labkey/query/reports/ReportsWebPartFactory.java -text
+query/src/org/labkey/query/reports/StudyVisualizationProvider.java -text
+query/src/org/labkey/query/reports/VisualizationAggregateColumn.java -text
 query/src/org/labkey/query/reports/VisualizationController.java -text
+query/src/org/labkey/query/reports/VisualizationProvider.java -text
+query/src/org/labkey/query/reports/VisualizationSQLGenerator.java -text
+query/src/org/labkey/query/reports/VisualizationSourceColumn.java -text
+query/src/org/labkey/query/reports/VisualizationSourceQuery.java -text
 query/src/org/labkey/query/reports/chart/AbstractChartRenderer.java -text
 query/src/org/labkey/query/reports/chart/ChartServiceImpl.java -text
 query/src/org/labkey/query/reports/chart/TimeSeriesRenderer.java -text

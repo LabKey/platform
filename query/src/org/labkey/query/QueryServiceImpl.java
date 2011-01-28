@@ -77,14 +77,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -646,7 +639,7 @@ public class QueryServiceImpl extends QueryService
         }
         if (queryName == null)
         {
-            queryName = GUID.makeGUID();
+            queryName = schemaName + "-temp-" + UniqueID.getServerSessionScopedUID();
             queries.put(queryName, sql);
         }
         return getSessionQuery(context, container, schemaName, queryName);
