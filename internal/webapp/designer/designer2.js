@@ -242,6 +242,40 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             SortTab: 2
         };
 
+        var footerBar = [{
+                text: "Delete",
+                tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved view",
+                tooltipType: "title",
+                disabled: !deleteEnabled,
+                handler: this.onDeleteClick,
+                scope: this
+            },{
+                text: "Revert",
+                tooltip: "Revert " + (this.customView.shared ? "shared" : "your") + " edited view",
+                tooltipType: "title",
+                // disabled for hidden, saved (non-session), customized (not new) default view, or uneditable views
+                disabled: !revertEnabled,
+                handler: this.onRevertClick,
+                scope: this
+            },"->",{
+                text: "View Grid",
+                tooltip: "Apply changes to the view and reshow grid",
+                tooltipType: "title",
+                handler: this.onApplyClick,
+                scope: this
+            }];
+
+        if (!this.query.isTemporary)
+        {
+            footerBar[footerBar.length] = {
+                text: "Save",
+                tooltip: "Save changes",
+                tooltipType: "title",
+                handler: this.onSaveClick,
+                scope: this
+            };
+        }
+
         config = Ext.applyIf(config, {
             tabWidth: 80,
             activeGroup: 0,
@@ -280,34 +314,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 html: "<span class='labkey-tool labkey-tool-close' style='float:right;vertical-align:top;'></span><span>message</span>",
                 hidden: true
             },
-            fbar: [{
-                text: "Delete",
-                tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved view",
-                tooltipType: "title",
-                disabled: !deleteEnabled,
-                handler: this.onDeleteClick,
-                scope: this
-            },{
-                text: "Revert",
-                tooltip: "Revert " + (this.customView.shared ? "shared" : "your") + " edited view",
-                tooltipType: "title",
-                // disabled for hidden, saved (non-session), customized (not new) default view, or uneditable views
-                disabled: !revertEnabled,
-                handler: this.onRevertClick,
-                scope: this
-            },"->",{
-                text: "View Grid",
-                tooltip: "Apply changes to the view and reshow grid",
-                tooltipType: "title",
-                handler: this.onApplyClick,
-                scope: this
-            },{
-                text: "Save",
-                tooltip: "Save changes",
-                tooltipType: "title",
-                handler: this.onSaveClick,
-                scope: this
-            }]
+            fbar: footerBar
         });
 
         this.addEvents({

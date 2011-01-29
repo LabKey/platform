@@ -643,13 +643,25 @@ LABKEY.DataRegion = function (config)
 
     if (this.view && this.view.session)
     {
-        var msg = (this.viewName ? "The current view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
-        msg += " &nbsp;";
-        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].revertCustomView();'>Revert</span>";
-        msg += ", &nbsp;";
-        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showCustomizeView(undefined, true);'>Edit</span>";
-        msg += ", &nbsp;";
-        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].saveSessionCustomView();'>Save</span>";
+        var msg;
+        if (this.view.savable)
+        {
+            msg = (this.viewName ? "The current view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
+            msg += " &nbsp;";
+            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].revertCustomView();'>Revert</span>";
+            msg += ", &nbsp;";
+            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showCustomizeView(undefined, true);'>Edit</span>";
+            msg += ", &nbsp;";
+            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].saveSessionCustomView();'>Save</span>";
+        }
+        else
+        {
+            msg = ("The current view has been customized.");
+            msg += " &nbsp;";
+            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].revertCustomView();'>Revert</span>";
+            msg += ", &nbsp;";
+            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showCustomizeView(undefined, true);'>Edit</span>";
+        }
         this.showMessage(msg);
     }
 
