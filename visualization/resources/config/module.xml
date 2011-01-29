@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+    <bean id="moduleBean" class="org.labkey.api.module.SimpleModule">
+        <constructor-arg index="0"><value type="java.lang.String">Visualization</value></constructor-arg>
+        <property name="name" value="Visualization"/>
+        <property name="version" value="1.0"/>
+        <property name="requiredServerVersion" value="10.3"/>
+        <property name="moduleDependencies" value=""/>
+        <property name="svnRevision" value="14500"/>
+        <property name="svnUrl" value="https://hedgehog.fhcrc.org/tor/stedi/trunk/server"/>
+        <property name="buildUser" value="brittp"/>
+        <property name="buildTime" value="September 13 2010, 9:53 AM"/>
+        <property name="buildOS" value="Windows 7"/>
+        <property name="buildPath" value="../../../build/deploy/modules/visualization"/>
+        <property name="sourcePath" value="c:\labkey\server\customModules\visualization"/>
+    </bean>
+</beans>

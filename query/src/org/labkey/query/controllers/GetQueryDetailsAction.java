@@ -74,6 +74,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (isInherited)
             resp.put("containerPath", querydef.getContainer().getPath());
 
+        resp.put("isTemporary", null != querydef && querydef.isTemporary());
+
         TableInfo tinfo;
         try
         {

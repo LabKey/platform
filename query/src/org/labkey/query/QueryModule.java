@@ -76,7 +76,6 @@ public class QueryModule extends DefaultModule
     {
         addController("query", QueryController.class);
         addController("reports", ReportsController.class);
-        addController("viz", VisualizationController.class);
 
         QueryServiceImpl i = new QueryServiceImpl();
         QueryService.set(i);

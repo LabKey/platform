@@ -1,4 +1,4 @@
-package org.labkey.query.reports;
+package org.labkey.visualization.sql;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;

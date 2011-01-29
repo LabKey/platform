@@ -1,4 +1,4 @@
-package org.labkey.query.reports;
+package org.labkey.visualization.sql;
 
 import org.json.JSONArray;
 import org.labkey.api.data.ColumnInfo;
@@ -7,7 +7,6 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;

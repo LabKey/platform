@@ -1,4 +1,4 @@
-package org.labkey.query.reports;
+package org.labkey.visualization.sql;
 
 import org.json.JSONArray;
 import org.labkey.api.action.CustomApiForm;
@@ -7,6 +7,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.visualization.VisualizationController;
 
 import java.util.*;
 

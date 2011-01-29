@@ -1,4 +1,4 @@
-package org.labkey.query.reports;
+package org.labkey.visualization.sql;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -10,6 +10,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.visualization.VisualizationController;
 
 import java.util.*;
 

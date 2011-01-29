@@ -1,4 +1,4 @@
-package org.labkey.query.reports;
+package org.labkey.visualization.sql;
 
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.view.ViewContext;

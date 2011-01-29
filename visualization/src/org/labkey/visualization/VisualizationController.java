@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.query.reports;
+package org.labkey.visualization;
 
 import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.apache.batik.transcoder.TranscoderInput;
@@ -31,6 +31,9 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ViewContext;
+import org.labkey.visualization.sql.StudyVisualizationProvider;
+import org.labkey.visualization.sql.VisualizationProvider;
+import org.labkey.visualization.sql.VisualizationSQLGenerator;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -46,6 +49,7 @@ import java.util.*;
  */
 public class VisualizationController extends SpringActionController
 {
+    public static final String NAME = "visualization";
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(VisualizationController.class);
 
     public VisualizationController() throws Exception
