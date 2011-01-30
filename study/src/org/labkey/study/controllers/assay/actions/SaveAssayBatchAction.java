@@ -34,6 +34,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.NotFoundException;
@@ -194,6 +195,8 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             }
 
             rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs, runJsonObject, pipeRoot, dataOutputs, materialOutputs);
+
+            AssayPublishService.get().autoCopyResults(protocol, run, getViewContext());
         }
 
         return run;

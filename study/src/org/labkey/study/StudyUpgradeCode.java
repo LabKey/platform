@@ -25,10 +25,15 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.StartupListener;
@@ -152,6 +157,7 @@ public class StudyUpgradeCode implements UpgradeCode
 
 
     /* called at 10.20->10.21 */
+    @SuppressWarnings({"UnusedDeclaration"})
     public void materializeDatasets(ModuleContext moduleContext)
     {
         try
@@ -165,6 +171,7 @@ public class StudyUpgradeCode implements UpgradeCode
     }
 
     /** called at 10.30->10.31 */
+    @SuppressWarnings({"UnusedDeclaration"})
     public void materializeAssayResults(final ModuleContext moduleContext)
     {
         // This needs to happen later, after all of the AssayProviders have been registered
@@ -204,4 +211,52 @@ public class StudyUpgradeCode implements UpgradeCode
             throw new RuntimeSQLException(e);
         }
     }
+
+    /**
+     * Called at 10.31->10.32
+     * Get rid of the duplicate assay data in datasets and rely on a join to the original data on the assay side
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void deleteDuplicateAssayDatasetFields(ModuleContext context)
+    {
+        deleteDuplicateAssayDatasetFields(context.getUpgradeUser(), ContainerManager.getRoot());
+    }
+
+    public void deleteDuplicateAssayDatasetFields(User user, Container c)
+    {
+        try
+        {
+            Study study = StudyService.get().getStudy(c);
+            if (study != null)
+            {
+                for (DataSet dataSet : study.getDataSets())
+                {
+                    if (dataSet.getProtocolId() != null)
+                    {
+                        Domain domain = dataSet.getDomain();
+                        for (org.labkey.api.exp.property.DomainProperty prop : domain.getProperties())
+                        {
+                            String keyName = dataSet.getKeyPropertyName();
+                            if (keyName == null || !keyName.equalsIgnoreCase(prop.getName()))
+                            {
+                                prop.delete();
+                            }
+                        }
+                        domain.save(user);
+                    }
+                }
+            }
+
+            // Recurse through the children
+            for (Container child : c.getChildren())
+            {
+                deleteDuplicateAssayDatasetFields(user, child);
+            }
+        }
+        catch (ChangePropertyDescriptorException e)
+        {
+            throw new UnexpectedException(e);
+        }
+    }
+
 }

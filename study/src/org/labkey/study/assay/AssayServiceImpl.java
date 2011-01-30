@@ -37,15 +37,19 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -216,12 +220,36 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         if (transformScripts.size() == 1)
             result.setProtocolTransformScript(transformScripts.get(0).getAbsolutePath());
 
+        ObjectProperty autoCopyValue = protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
+        if (autoCopyValue != null)
+        {
+            Container autoCopyTarget = ContainerManager.getForId(autoCopyValue.getStringValue());
+            if (autoCopyTarget != null)
+            {
+                result.setAutoCopyTargetContainer(convertToGWTContainer(autoCopyTarget));
+            }
+        }
+
         ExpData data = ExperimentService.get().createData(getContainer(), provider.getDataType());
         ExperimentDataHandler handler = data.findDataHandler();
         result.setAllowValidationScript(provider.getDataExchangeHandler() != null);
         result.setAllowTransformationScript(handler instanceof TransformDataHandler);
 
         return result;
+    }
+
+    private GWTContainer convertToGWTContainer(Container c)
+    {
+        GWTContainer parent;
+        if (c.isRoot())
+        {
+            parent = null;
+        }
+        else
+        {
+            parent = convertToGWTContainer(c.getParent());
+        }
+        return new GWTContainer(c.getId(), c.getRowId(), parent, c.getName());
     }
 
     private GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop, boolean copy)
@@ -365,6 +393,28 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     transformScripts = Collections.singletonList(new File(assay.getProtocolTransformScript()));
 
                 provider.setValidationAndAnalysisScripts(protocol, transformScripts, AssayProvider.ScriptType.TRANSFORM);
+
+                Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+                String autoCopyTargetContainerId = null;
+                if (assay.getAutoCopyTargetContainer() != null)
+                {
+                    Container container = ContainerManager.getForId(assay.getAutoCopyTargetContainer().getEntityId());
+                    if (container == null)
+                    {
+                        throw new AssayException("No such auto-copy target container: " + assay.getAutoCopyTargetContainer().getPath());
+                    }
+                    autoCopyTargetContainerId = container.getId();
+                }
+                if (autoCopyTargetContainerId != null)
+                {
+                    props.put(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
+                }
+                else
+                {
+                    props.remove(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
+                }
+                protocol.setObjectProperties(props);
+
                 protocol.save(getUser());
 
                 StringBuilder errors = new StringBuilder();
@@ -421,6 +471,24 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
         }
         return updateDomainDescriptor(previous, domain);
+    }
+
+    @Override
+    public List<GWTContainer> getStudyContainers()
+    {
+        Set<Study> publishTargets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
+        // Use a tree set so they're sorted nicely
+        Set<Container> containers = new TreeSet<Container>();
+        for (Study study : publishTargets)
+        {
+            containers.add(study.getContainer());
+        }
+        List<GWTContainer> result = new ArrayList<GWTContainer>();
+        for (Container container : containers)
+        {
+            result.add(convertToGWTContainer(container));
+        }
+        return result;
     }
 
     public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)

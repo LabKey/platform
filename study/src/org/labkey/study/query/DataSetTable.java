@@ -25,6 +25,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
@@ -191,11 +192,6 @@ public class DataSetTable extends FilteredTable
                             }
                         });
                     }
-
-                    if (pd != null && _dsd.getProtocolId() != null)
-                    {
-                        removeColumn(col);
-                    }
                 }
                 if (isVisibleByDefault(col))
                     defaultVisibleCols.add(FieldKey.fromParts(col.getName()));
@@ -246,6 +242,7 @@ public class DataSetTable extends FilteredTable
                     addColumn(wrappedColumn);
                 }
             }
+
             for (FieldKey fieldKey : assayResultTable.getDefaultVisibleColumns())
             {
                 if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
@@ -253,6 +250,10 @@ public class DataSetTable extends FilteredTable
                     defaultVisibleCols.add(fieldKey);
                 }
             }
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId().intValue());
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
+            defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
         }
     }
 
@@ -269,6 +270,9 @@ public class DataSetTable extends FilteredTable
 
         if (_dsd.getProtocolId() != null)
         {
+            // Be backwards compatible with the old field keys for these properties.
+            // We used to flatten all of the different domains/tables on the assay side into a row in the dataset,
+            // so transform to do a lookup instead 
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId());
             AssayProvider provider = AssayService.get().getProvider(protocol);
             FieldKey runFieldKey = provider.getTableMetadata().getRunFieldKeyFromResults();
@@ -345,11 +349,12 @@ public class DataSetTable extends FilteredTable
 
         if (_dsd.getProtocolId() != null)
         {
+            // Join in Assay-side data to make it appear as if it's in the dataset table itself 
             String assayResultAlias = getAssayResultAlias(alias);
             TableInfo assayResultTable = createAssayResultTable();
             from.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
             from.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
-            from.append("CAST(").append(alias).append("._key AS INT)");
+            from.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
         }
 
         return from;

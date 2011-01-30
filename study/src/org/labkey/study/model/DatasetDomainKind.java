@@ -125,7 +125,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             return new SQLFragment("NULL");
         TableInfo ti = def.getStorageTableInfo();
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT ObjectId FROM ").append(ti.getSelectName()).append(" SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=?");
+        sql.append("SELECT O.ObjectId FROM ").append(ti.getSelectName()).append(" SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=?");
         sql.add(def.getContainer());
         return sql;
     }

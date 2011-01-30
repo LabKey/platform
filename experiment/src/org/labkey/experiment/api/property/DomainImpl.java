@@ -337,7 +337,7 @@ public class DomainImpl implements Domain
                     SQLFragment sqlCount = new SQLFragment("SELECT COUNT(exp.object.objectId) AS value FROM exp.object WHERE exp.object.objectid IN (");
                     sqlCount.append(sqlObjectIds);
                     sqlCount.append(")");
-                    Map[] maps = Table.executeQuery(ExperimentService.get().getSchema(), sqlCount.getSQL(), sqlCount.getParams().toArray(), Map.class);
+                    Map[] maps = Table.executeQuery(ExperimentService.get().getSchema(), sqlCount, Map.class);
                     if (((Number) maps[0].get("value")).intValue() != 0)
                     {
                         throw new IllegalStateException("The required property cannot be changed when rows already exist.");

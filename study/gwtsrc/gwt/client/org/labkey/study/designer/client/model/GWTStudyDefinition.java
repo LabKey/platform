@@ -33,7 +33,6 @@ import java.util.List;
  */
 public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
 {
-    public static List availableAssays;
     private transient ChangeListenerCollection listeners = new ChangeListenerCollection();
 
     private String grant;

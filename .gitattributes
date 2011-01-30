@@ -2282,6 +2282,7 @@ study/resources/schemas/dbscripts/postgresql/study-10.20-10.21.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.20-10.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.21-10.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.30-10.31.sql -text
+study/resources/schemas/dbscripts/postgresql/study-10.31-10.32.sql -text
 study/resources/schemas/dbscripts/postgresql/study-8.30-9.10.sql -text
 study/resources/schemas/dbscripts/postgresql/study-8.301-9.10.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.10-9.20.sql -text
@@ -2423,6 +2424,7 @@ study/resources/schemas/dbscripts/sqlserver/study-10.20-10.21.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-10.20-10.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-10.21-10.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-10.30-10.31.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-10.31-10.32.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-8.30-9.10.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-8.301-9.10.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.10-9.20.sql -text

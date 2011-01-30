@@ -309,12 +309,6 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 //                new ThawListResolverType());
     }
 
-    @Override
-    public boolean canCopyToStudy()
-    {
-        return true;
-    }
-
     QuerySettings getResultsQuerySettings(ViewContext context, ExpProtocol protocol)
     {
         AssaySchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer());

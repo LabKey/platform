@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -32,6 +33,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -43,6 +45,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.BaseStudyController;
@@ -54,6 +57,7 @@ import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -91,7 +95,15 @@ public class AssayPublishManager implements AssayPublishService.Service
         {
             Study[] studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
 
-            Set<Study> result = new HashSet<Study>();
+            // Sort based on full container path
+            Set<Study> result = new TreeSet<Study>(new Comparator<Study>()
+            {
+                @Override
+                public int compare(Study s1, Study s2)
+                {
+                    return s1.getContainer().compareTo(s2.getContainer());
+                }
+            });
             result.addAll(Arrays.asList(studies));
             return result;
         }
@@ -160,6 +172,12 @@ public class AssayPublishManager implements AssayPublishService.Service
             targetPds.add(targetPd);
         }
         return targetPds;
+    }
+
+    public ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
+                                          List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
+    {
+        return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, Collections.<PropertyDescriptor>emptyList(), keyPropertyName, errors);
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
@@ -265,7 +283,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             }
             if (!errors.isEmpty())
                 return null;
-            Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types);
+            Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types, keyPropertyName);
             List<Map<String, Object>> convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
             // in 'ensurePropertyDescriptors'.
@@ -384,14 +402,14 @@ public class AssayPublishManager implements AssayPublishService.Service
                 String uri = propertyNamesToUris.get(entry.getKey());
                 if (null == uri)
                 {
-                    if ("Date".equalsIgnoreCase(entry.getKey()))
+                    if (AssayPublishService.DATE_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                         uri = DataSetDefinition.getVisitDateURI();
 
                     // Skip "TargetStudy"
                     if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                         continue;
                 }
-                assert uri != null : "Expected all properties to already be present in assay type";
+                assert uri != null : "Expected all properties to already be present in assay type. Couldn't find one for " + entry.getKey();
                 newMap.put(uri, entry.getValue());
             }
             ret.add(newMap);
@@ -402,7 +420,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     private Map<String, String> ensurePropertyDescriptors(
             User user, DataSetDefinition dataset,
-            List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException, ChangePropertyDescriptorException
+            List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types, String keyPropertyName) throws SQLException, UnauthorizedException, ChangePropertyDescriptorException
     {
         Domain domain = dataset.getDomain();
         if (domain == null)
@@ -489,17 +507,37 @@ public class AssayPublishManager implements AssayPublishService.Service
                 if (!renameRunPropertyToBatch(domain, propertyNamesToUris, newPdNames, newPdName, user))
                 {
                     PropertyDescriptor pd = typeMap.get(newPdName);
-                    DomainProperty newProperty = domain.addProperty();
-                    pd.copyTo(newProperty.getPropertyDescriptor());
-                    domain.setPropertyIndex(newProperty, sortOrder++);
-                    changed = true;
-                    propertyNamesToUris.put(newPdName, pd.getPropertyURI());
+                    if (pd != null)
+                    {
+                        DomainProperty newProperty = domain.addProperty();
+                        pd.copyTo(newProperty.getPropertyDescriptor());
+                        domain.setPropertyIndex(newProperty, sortOrder++);
+                        changed = true;
+                        propertyNamesToUris.put(newPdName, pd.getPropertyURI());
+                    }
                 }
             }
+        }
+        if (keyPropertyName != null && !propertyNamesToUris.containsKey(keyPropertyName))
+        {
+            // Make sure we have a property for the key field
+            DomainProperty newProperty = domain.addProperty();
+            newProperty.setName(keyPropertyName);
+            newProperty.setPropertyURI(domain.getTypeURI() + "#" + keyPropertyName);
+            newProperty.setMeasure(false);
+            newProperty.setDimension(false);
+            newProperty.setRequired(true);
+            newProperty.setRangeURI(PropertyType.INTEGER.getTypeUri());
+            domain.setPropertyIndex(newProperty, sortOrder++);
+            changed = true;
         }
         if (changed)
         {
             domain.save(user);
+        }
+        if (keyPropertyName != null)
+        {
+            propertyNamesToUris.put(keyPropertyName, domain.getPropertyByName(keyPropertyName).getPropertyURI());
         }
         return propertyNamesToUris;
     }
@@ -759,15 +797,6 @@ public class AssayPublishManager implements AssayPublishService.Service
         return study.getTimepointType();
     }
 
-    public String getStudyName(Container container)
-    {
-        Study study = StudyManager.getInstance().getStudy(container);
-        if (null == study)
-            throw new IllegalArgumentException("No study in container: " + container.getPath());
-
-        return study.getLabel();
-    }
-
     public boolean hasMismatchedInfo(AssayProvider provider, ExpProtocol protocol, List<Integer> allObjects, AssaySchema schema)
     {
         TableInfo tableInfo = provider.createDataTable(schema, protocol, true);
@@ -803,5 +832,101 @@ public class AssayPublishManager implements AssayPublishService.Service
             throw new RuntimeSQLException(e);
         }
         return false;
+    }
+
+    /** Automatically copy assay data to a study if the design is set up to do so */
+    public List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, ViewContext viewContext)
+    {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider.canCopyToStudy() && protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI) != null)
+        {
+            // First, track down the target study
+            String targetStudyContainerId = protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI).getStringValue();
+            if (targetStudyContainerId != null)
+            {
+                Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
+                if (targetStudyContainer != null)
+                {
+                    Study study = StudyService.get().getStudy(targetStudyContainer);
+                    if (study != null)
+                    {
+                        boolean foundDataset = false;
+                        // Check if we have permissions
+                        for (DataSet dataSet : study.getDataSets())
+                        {
+                            if (dataSet.getProtocolId() != null && dataSet.getProtocolId().intValue() == protocol.getRowId())
+                            {
+                                foundDataset = true;
+                                if (!dataSet.canWrite(viewContext.getUser()))
+                                {
+                                    // Just bail out
+                                    return Collections.emptyList();
+                                }
+                            }
+                        }
+                        if (!foundDataset && !targetStudyContainer.hasPermission(viewContext.getUser(), InsertPermission.class))
+                        {
+                            // Dataset doesn't exist yet and we don't have permission to create it
+                            return Collections.emptyList();
+                        }
+
+                        FieldKey ptidFK = provider.getTableMetadata().getParticipantIDFieldKey();
+                        FieldKey visitFK = provider.getTableMetadata().getVisitIDFieldKey(study.getTimepointType());
+                        FieldKey objectIdFK = provider.getTableMetadata().getResultRowIdFieldKey();
+                        FieldKey runFK = provider.getTableMetadata().getRunRowIdFieldKeyFromResults();
+
+                        AssaySchema schema = AssayService.get().createSchema(viewContext.getUser(), viewContext.getContainer());
+
+                        // Do a query to get all the info we need to do the copy
+                        TableInfo resultTable = provider.createDataTable(schema, protocol, false);
+                        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(resultTable, Arrays.asList(ptidFK, visitFK, objectIdFK, runFK));
+                        ColumnInfo ptidColumn = cols.get(ptidFK);
+                        ColumnInfo visitColumn = cols.get(visitFK);
+                        ColumnInfo objectIdColumn = cols.get(objectIdFK);
+                        assert cols.get(runFK) != null : "Could not find object id column: " + objectIdFK;
+
+                        SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK.encode(), run.getRowId()), null, Table.ALL_ROWS, 0);
+                        ResultSet rs = null;
+                        try
+                        {
+                            rs = Table.executeQuery(resultTable.getSchema(), sql);
+                            Map<Integer, AssayPublishKey> keys = new HashMap<Integer, AssayPublishKey>();
+                            while (rs.next())
+                            {
+                                String ptid = (String)ptidColumn.getValue(rs);
+                                int objectId = ((Number)objectIdColumn.getValue(rs)).intValue();
+                                Object visit = visitColumn.getValue(rs);
+                                // Only copy rows that have a participant and a visit/date
+                                if (ptid != null && visit != null)
+                                {
+                                    AssayPublishKey key;
+                                    if (study.getTimepointType().isVisitBased())
+                                    {
+                                        key = new AssayPublishKey(targetStudyContainer, ptid, ((Number)visit).floatValue(), objectId);
+                                    }
+                                    else
+                                    {
+                                        key = new AssayPublishKey(targetStudyContainer, ptid, (Date)visit, objectId);
+                                    }
+                                    keys.put(objectId, key);
+                                }
+                            }
+                            List<String> copyErrors = new ArrayList<String>();
+                            provider.copyToStudy(viewContext, protocol, targetStudyContainer, keys, copyErrors);
+                            return copyErrors;
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new RuntimeSQLException(e);
+                        }
+                        finally
+                        {
+                            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
+                        }
+                    }
+                }
+            }
+        }
+        return Collections.emptyList();
     }
 }
