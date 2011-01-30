@@ -569,17 +569,27 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             this.view.refresh();
     },
 
-    onLookupStoreError : function(proxy, options, response, error)
+    onLookupStoreError : function(proxy, type, action, options, response)
     {
-        var message = error;
-        var ctype = response.getResponseHeader("Content-Type");
-        if(ctype.indexOf("application/json") >= 0)
+        var message = "";
+        if (type == 'response')
         {
-            var errorJson = Ext.util.JSON.decode(response.responseText);
-            if(errorJson && errorJson.exception)
-                message = errorJson.exception;
+            var ctype = response.getResponseHeader("Content-Type");
+            if(ctype.indexOf("application/json") >= 0)
+            {
+                var errorJson = Ext.util.JSON.decode(response.responseText);
+                if(errorJson && errorJson.exception)
+                    message = errorJson.exception;
+            }
         }
-        Ext.Msg.alert("Load Error", "Error loading lookup data: " + message);
+        else
+        {
+            if (response && response.exception)
+            {
+                message = response.exception;
+            }
+        }
+        Ext.Msg.alert("Load Error", "Error loading lookup data");
 
         if(this.view)
             this.view.refresh();
