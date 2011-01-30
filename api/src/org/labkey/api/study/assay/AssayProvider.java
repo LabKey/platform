@@ -19,10 +19,8 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilterable;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -177,9 +175,22 @@ public interface AssayProvider extends Handler<ExpProtocol>
         ASSAY_DEF,
     }
 
-    public enum ScriptType {
-        VALIDATION,
-        TRANSFORM,
+    public enum ScriptType
+    {
+        VALIDATION("ValidationScript"),
+        TRANSFORM("TransformScript");
+
+        private final String _uriSuffix;
+
+        ScriptType(String uriSuffix)
+        {
+            _uriSuffix = uriSuffix;
+        }
+
+        public String getPropertyURI(ExpProtocol protocol)
+        {
+            return protocol.getLSID() + "#" + _uriSuffix;
+        }
     }
 
     /**

@@ -18,6 +18,7 @@ package org.labkey.api.gwt.client.assay;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 
@@ -37,4 +38,6 @@ public interface AssayServiceAsync extends LookupServiceAsync
     void updateDomainDescriptor(GWTDomain orig, GWTDomain update, AsyncCallback<List<String>> async);
 
     void getAssayTemplate(String providerName, AsyncCallback<GWTProtocol> asyncCallback);
+
+    void getStudyContainers(AsyncCallback<List<GWTContainer>> asyncCallback);
 }

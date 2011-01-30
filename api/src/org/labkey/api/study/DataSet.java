@@ -60,6 +60,9 @@ public interface DataSet extends StudyEntity
     @Nullable
     Cohort getCohort();
 
+    @Nullable
+    String getKeyPropertyName();
+
     Integer getProtocolId();
 
     public boolean canRead(User user);

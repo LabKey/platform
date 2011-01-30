@@ -19,6 +19,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.*;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
 
@@ -60,6 +61,11 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     public TableInfo getLookupTableInfo()
     {
+        if (!_schema.getContainer().hasPermission(_schema.getUser(), ReadPermission.class))
+        {
+            return null;
+        }
+        
         UserSchema studySchema = QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), "study");
         FilteredTable tableInfo = (FilteredTable)studySchema.getTable("Vial");
         tableInfo.setContainerFilter(_studyContainerFilter);

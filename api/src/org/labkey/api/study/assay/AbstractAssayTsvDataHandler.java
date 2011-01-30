@@ -390,8 +390,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Map<String, DomainProperty> aliasMap = dataDomain.createImportMap(true);
 
-        int i = 0;
-        for (ListIterator<Map<String, Object>> iter = rawData.listIterator(); iter.hasNext(); i++)
+        for (ListIterator<Map<String, Object>> iter = rawData.listIterator(); iter.hasNext();)
         {
             Map<String, Object> originalMap = iter.next();
             Map<String, Object> map = new CaseInsensitiveHashMap<Object>();

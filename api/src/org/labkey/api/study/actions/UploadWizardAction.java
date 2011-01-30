@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.actions;
 
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
@@ -134,14 +135,19 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return handler.handleStep(form, errors);
     }
 
+    /** After a run has been successfully created, either send the user to upload another, or complete the wizard */
     protected ModelAndView afterRunCreation(FormType form, ExpRun run, BindException errors) throws ServletException, ExperimentException
     {
-        return runUploadComplete(form, errors);
-    }
+        List<String> copyErrors = AssayPublishService.get().autoCopyResults(_protocol, run, getViewContext());
+        if (!copyErrors.isEmpty())
+        {
+            for (String copyError : copyErrors)
+            {
+                errors.addError(new LabkeyError(copyError));
+            }
+        }
 
-    protected ModelAndView runUploadComplete(FormType form, BindException errors)
-            throws ServletException, ExperimentException
-    {
+
         if (form.isMultiRunUpload())
         {
             form.setSuccessfulUploadComplete(true);
@@ -149,9 +155,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
         else
         {
-            HttpView.throwRedirect(getSummaryLink(_protocol));
-            return null;
+            throw new RedirectException(getUploadWizardCompleteURL(form, run));
         }
+    }
+
+    /** @return the URL to send the user to after they've exited with wizard by successfully uploading their final run in the batch */
+    protected ActionURL getUploadWizardCompleteURL(FormType form, ExpRun run)
+    {
+        return getSummaryLink(_protocol);
     }
 
     protected InsertView createInsertView(TableInfo baseTable, String lsidCol, DomainProperty[] properties, boolean errorReshow, String uploadStepName, FormType form, BindException errors)
@@ -340,21 +351,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return new VBox(headerView, insertView);
     }
 
-    protected void addHiddenBatchProperties(AssayRunUploadForm newRunForm, InsertView insertView)
+    protected void addHiddenBatchProperties(FormType newRunForm, InsertView insertView)
     {
         addHiddenProperties(newRunForm.getBatchProperties(), insertView);
     }
 
-    protected void addHiddenRunProperties(AssayRunUploadForm newRunForm, InsertView insertView)
+    protected void addHiddenRunProperties(FormType newRunForm, InsertView insertView) throws ExperimentException
     {
-        try
-        {
-            addHiddenProperties(newRunForm.getRunProperties(), insertView);
-        }
-        catch (ExperimentException e)
-        {
-            throw new RuntimeException(e);
-        }
+        addHiddenProperties(newRunForm.getRunProperties(), insertView);
     }
 
     public static String getInputName(DomainProperty property, String disambiguationId)

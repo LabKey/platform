@@ -28,15 +28,23 @@ import org.labkey.api.util.Pair;
  */
 public class AssayTableMetadata
 {
-    private FieldKey _runFieldKey;
-    private FieldKey _resultRowIdFieldKey;
-    private FieldKey _specimenDetailParentFieldKey;
+    private final FieldKey _runFieldKey;
+    private final FieldKey _resultRowIdFieldKey;
+    private final FieldKey _specimenDetailParentFieldKey;
+    /** The name of the property in the dataset that points back to the RowId-type column in the assay's data table */
+    private final String _datasetRowIdPropertyName;
 
     public AssayTableMetadata(FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
+    {
+        this(specimenDetailParentFieldKey, runFieldKey, resultRowIdFieldKey, resultRowIdFieldKey.getName());
+    }
+
+    public AssayTableMetadata(FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey, String datasetRowIdPropertyName)
     {
         _runFieldKey = runFieldKey;
         _resultRowIdFieldKey = resultRowIdFieldKey;
         _specimenDetailParentFieldKey = specimenDetailParentFieldKey;
+        _datasetRowIdPropertyName = datasetRowIdPropertyName;
     }
 
     public FieldKey getSpecimenDetailParentFieldKey()
@@ -52,6 +60,12 @@ public class AssayTableMetadata
     public FieldKey getSpecimenIDFieldKey()
     {
         return new FieldKey(_specimenDetailParentFieldKey, AbstractAssayProvider.SPECIMENID_PROPERTY_NAME);
+    }
+
+    /** @return the name of the property in the dataset that points back to the RowId-type column in the assay's data table */
+    public String getDatasetRowIdPropertyName()
+    {
+        return _datasetRowIdPropertyName;
     }
 
     public FieldKey getVisitIDFieldKey(TimepointType timepointType)

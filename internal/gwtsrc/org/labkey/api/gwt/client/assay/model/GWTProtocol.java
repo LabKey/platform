@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 
+import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
@@ -49,6 +50,7 @@ public class GWTProtocol implements IsSerializable
     private String _protocolTransformScript;
     private boolean _allowValidationScript;
     private boolean _allowTransformationScript;
+    private GWTContainer _autoCopyTargetContainer;
 
     public GWTProtocol()
     {
@@ -183,5 +185,15 @@ public class GWTProtocol implements IsSerializable
     public void setProtocolTransformScript(String protocolTransformScript)
     {
         _protocolTransformScript = protocolTransformScript.trim();
+    }
+
+    public GWTContainer getAutoCopyTargetContainer()
+    {
+        return _autoCopyTargetContainer;
+    }
+
+    public void setAutoCopyTargetContainer(GWTContainer autoCopyTargetContainer)
+    {
+        _autoCopyTargetContainer = autoCopyTargetContainer;
     }
 }

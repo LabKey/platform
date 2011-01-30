@@ -16,13 +16,12 @@
 
 package org.labkey.api.gwt.client.assay;
 
-import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.SerializableException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.LookupService;
 
-import java.util.Map;
 import java.util.List;
 
 /**
@@ -39,10 +38,12 @@ public interface AssayService extends LookupService
     GWTProtocol saveChanges(GWTProtocol plate, boolean replaceIfExisting) throws AssayException;
 
     /**
-     *
      * @param orig Unchanged domain
      * @param update Edited domain
      * @return list of errors
      */
     List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update) throws AssayException;
+
+    /** Get the list of containers with studies that are readable by the current user */
+    List<GWTContainer> getStudyContainers();
 }

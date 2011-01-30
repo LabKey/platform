@@ -18,6 +18,8 @@ package org.labkey.api.gwt.client.assay;
 
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -25,6 +27,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.URL;
+import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -53,11 +56,14 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private HTML _statusLabel = new HTML("<br/>");
     private static final String STATUS_SUCCESSFUL = "Save successful.<br/>";
     private BoundTextBox _nameBox;
+    private CheckBox _autoCopyCheckBox;
+    private ListBox _autoCopyTargetListBox;
     private boolean _copy;
     private final String _returnURL;
     private SaveButtonBar saveBarTop;
     private SaveButtonBar saveBarBottom;
     private HandlerRegistration _closeHandlerManager;
+    private List<GWTContainer> _autoCopyTargets;
 
     public AssayDesignerMainPanel(RootPanel rootPanel)
     {
@@ -69,6 +75,12 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         _returnURL = PropertyUtil.getServerProperty("returnURL");
         String copyStr = PropertyUtil.getServerProperty("copy");
         _copy = copyStr != null && Boolean.TRUE.toString().equals(copyStr);
+
+        _autoCopyTargetListBox = new ListBox();
+        _autoCopyTargetListBox.setEnabled(false);
+
+        _autoCopyCheckBox = new CheckBox(" Automatically copy uploaded data to study: ");
+        _autoCopyCheckBox.setEnabled(false);
     }
 
     public void showAsync()
@@ -104,6 +116,55 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     show(assay);
                 }
             });
+        }
+
+        getService().getStudyContainers(new AsyncCallback<List<GWTContainer>>()
+        {
+            public void onFailure(Throwable throwable)
+            {
+                addErrorMessage("Unable to fetch list of studies for auto-copy : " + throwable.getMessage());
+            }
+
+            public void onSuccess(List<GWTContainer> result)
+            {
+                _autoCopyTargetListBox.clear();
+                _autoCopyTargets = result;
+                _autoCopyTargetListBox.addItem("", "");
+                for (GWTContainer gwtContainer : result)
+                {
+                    _autoCopyTargetListBox.addItem(gwtContainer.getPath(), gwtContainer.getEntityId());
+                }
+                _autoCopyCheckBox.setEnabled(true);
+                syncAutoCopy();
+            }
+        });
+    }
+
+    private void syncAutoCopy()
+    {
+        // Ensure that we've received all the async data we need to show the full UI
+        if (_autoCopyCheckBox.isEnabled() && _assay != null)
+        {
+            if (_assay.getAutoCopyTargetContainer() != null)
+            {
+                _autoCopyCheckBox.setValue(true);
+                _autoCopyTargetListBox.setEnabled(true);
+                _autoCopyTargetListBox.setSelectedIndex(0);
+                for (int i = 0; i < _autoCopyTargetListBox.getItemCount(); i++)
+                {
+                    if (_assay.getAutoCopyTargetContainer().getEntityId().equals(_autoCopyTargetListBox.getValue(i)))
+                    {
+                        _autoCopyTargetListBox.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                _autoCopyCheckBox.setValue(false);
+                _autoCopyTargetListBox.setSelectedIndex(0);
+                _autoCopyTargetListBox.setEnabled(false);
+            }
         }
     }
 
@@ -175,6 +236,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             setDirty(_copy);
 
         _closeHandlerManager = Window.addWindowClosingHandler(new AssayCloseListener());
+
+        syncAutoCopy();
     }
 
     protected void addErrorMessage(String message)
@@ -290,6 +353,27 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         }, this);
         table.setHTML(row, 0, "Description");
         table.setWidget(row++, 1, descriptionBox);
+
+        HorizontalPanel autoCopyPanel = new HorizontalPanel();
+        _autoCopyCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>()
+        {
+            public void onValueChange(ValueChangeEvent<Boolean> event)
+            {
+                setDirty(true);
+                _autoCopyTargetListBox.setEnabled(event.getValue().booleanValue() && hasAutoCopyTargets());
+            }
+        });
+        _autoCopyTargetListBox.addChangeHandler(new ChangeHandler()
+        {
+            public void onChange(ChangeEvent event)
+            {
+                setDirty(true);
+            }
+        });
+        autoCopyPanel.add(_autoCopyCheckBox);
+        autoCopyPanel.add(_autoCopyTargetListBox);
+
+        table.setWidget(row++, 1, autoCopyPanel);
 
         if (assay.getAvailablePlateTemplates() != null)
         {
@@ -407,6 +491,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         return table;
     }
 
+    private boolean hasAutoCopyTargets()
+    {
+        return _autoCopyTargets != null && !_autoCopyTargets.isEmpty();
+    }
+
     public void setDirty(boolean dirty)
     {
         if (dirty && _statusLabel.getText().equalsIgnoreCase(STATUS_SUCCESSFUL))
@@ -513,6 +602,16 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 domains.add(domainEditor.getUpdates());
             }
             _assay.setDomains(domains);
+            if (_autoCopyCheckBox.getValue().booleanValue() && _autoCopyTargetListBox.getSelectedIndex() > 0)
+            {
+                // One extra for the blank row
+                assert _autoCopyTargetListBox.getItemCount() == _autoCopyTargets.size() + 1;
+                _assay.setAutoCopyTargetContainer(_autoCopyTargets.get(_autoCopyTargetListBox.getSelectedIndex() - 1));
+            }
+            else
+            {
+                _assay.setAutoCopyTargetContainer(null);
+            }
 
             _assay.setProviderName(_providerName);
             getService().saveChanges(_assay, true, callback);
@@ -558,7 +657,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 }
             });
         }
-
     }
 
     class AssayCloseListener implements Window.ClosingHandler

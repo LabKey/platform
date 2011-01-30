@@ -307,7 +307,7 @@ public class OntologyManager
 		List<String> resultingLsids = new ArrayList<String>(rows.size());
 
         Domain d = tableInsert.getDomain();
-        DomainProperty[] properties = null == d  ? null : d.getProperties();
+        DomainProperty[] properties = null == d ? new DomainProperty[0] : d.getProperties();
         
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 
@@ -326,18 +326,15 @@ public class OntologyManager
             Map<String, DomainProperty> propertiesMap = new HashMap<String, DomainProperty>();
 
             // cache all the property validators for this upload
-            if (null != properties)
+            for (DomainProperty dp : properties)
             {
-                for (DomainProperty dp : properties)
-                {
-                    propertiesMap.put(dp.getPropertyURI(), dp);
-                    IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(dp.getPropertyDescriptor());
-                    if (validators.length > 0)
-                        validatorMap.put(dp.getPropertyURI(), validators);
-                }
+                propertiesMap.put(dp.getPropertyURI(), dp);
+                IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(dp.getPropertyDescriptor());
+                if (validators.length > 0)
+                    validatorMap.put(dp.getPropertyURI(), validators);
             }
 
-            ColumnInfo[] columns = tableInsert.getColumns().toArray(new ColumnInfo[0]);
+            ColumnInfo[] columns = tableInsert.getColumns().toArray(new ColumnInfo[tableInsert.getColumns().size()]);
             PropertyType[] propertyTypes = new PropertyType[columns.length];
             for (int i = 0; i < columns.length; i++)
             {

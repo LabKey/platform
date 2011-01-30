@@ -69,10 +69,7 @@ public class AssayDataLinkDisplayColumn extends DataColumn
         }
         else
         {
-            out.write("<font class='labkey-error'>");
             out.write(PageFlowUtil.filter(getDisplayColumn().getValue(ctx)));
-            out.write(": Error: no protocol or run found in result set");
-            out.write("</font>");
         }
     }
 

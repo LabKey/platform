@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
@@ -41,6 +42,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
@@ -58,6 +60,7 @@ import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileFilter;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.*;
@@ -119,183 +122,78 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getName();
     }
 
-    protected void setStandardPropertyAttributes(ColumnInfo colInfo, PropertyDescriptor studyPd)
+    public ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
-        studyPd.setLabel(colInfo.getLabel());
-        studyPd.setDescription(colInfo.getDescription());
-    }
-
-    protected void addStandardRunPublishProperties(Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run,
-                                                   CopyToStudyContext context) throws SQLException
-    {
-        TableInfo runTable = context.getRunTable(run);
-        PropertyDescriptor pd = addProperty(study, "RunName", run.getName(), dataMap, types);
-        setStandardPropertyAttributes(runTable.getColumn("Name"), pd);
-        pd = addProperty(study, "RunComments", run.getComments(), dataMap, types);
-        setStandardPropertyAttributes(runTable.getColumn("Comments"), pd);
-        pd = addProperty(study, "RunCreatedOn", run.getCreated(), dataMap, types);
-        setStandardPropertyAttributes(runTable.getColumn("Created"), pd);
-        User createdBy = run.getCreatedBy();
-        pd = addProperty(study, "RunCreatedBy", createdBy == null ? null : createdBy.getUserId(), dataMap, types);
-        pd.setLookupQuery("users");
-        pd.setLookupSchema("core");
-        setStandardPropertyAttributes(runTable.getColumn("CreatedBy"), pd);
-
-        Map<String, Object> runProperties = context.getProperties(run);
-        for (PropertyDescriptor runPD : context.getRunPDs())
+        try
         {
-            if (!TARGET_STUDY_PROPERTY_NAME.equals(runPD.getName()) &&
-                    !PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(runPD.getName()))
+            SimpleFilter filter = new SimpleFilter();
+            filter.addInClause(getTableMetadata().getResultRowIdFieldKey().toString(), dataKeys.keySet());
+
+            AssaySchema schema = AssayService.get().createSchema(viewContext.getUser(), viewContext.getContainer());
+            ContainerFilterable dataTable = createDataTable(schema, protocol, true);
+            dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(viewContext.getUser()));
+
+            FieldKey objectIdFK = getTableMetadata().getResultRowIdFieldKey();
+            FieldKey runLSIDFK = new FieldKey(getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.LSID.toString());
+
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(dataTable, Arrays.asList(objectIdFK, runLSIDFK));
+            ColumnInfo rowIdColumn = columns.get(objectIdFK);
+            ColumnInfo runLSIDColumn = columns.get(runLSIDFK);
+
+            SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns.values(), filter, null, Table.ALL_ROWS, 0);
+
+            List<Map<String, Object>> dataMaps = new ArrayList<Map<String, Object>>();
+
+            Container sourceContainer = null;
+
+            ResultSet rs = null;
+
+            try
             {
-                PropertyDescriptor publishPd = runPD.clone();
-                publishPd.setName("Run" + runPD.getName());
-                addProperty(publishPd, runProperties.get(runPD.getPropertyURI()), dataMap, types);
+                rs = Table.executeQuery(dataTable.getSchema(), sql);
+                while (rs.next())
+                {
+                    AssayPublishKey publishKey = dataKeys.get(((Number)rowIdColumn.getValue(rs)).intValue());
+
+                    Container targetStudyContainer = study;
+                    if (publishKey.getTargetStudy() != null)
+                        targetStudyContainer = publishKey.getTargetStudy();
+                    assert targetStudyContainer != null;
+
+                    TimepointType studyType = AssayPublishService.get().getTimepointType(targetStudyContainer);
+
+                    Map<String, Object> dataMap = new HashMap<String, Object>();
+
+                    String runLSID = (String)runLSIDColumn.getValue(rs);
+                    if (sourceContainer == null)
+                    {
+                        sourceContainer = ExperimentService.get().getExpRun(runLSID).getContainer();
+                    }
+
+                    dataMap.put(AssayPublishService.PARTICIPANTID_PROPERTY_NAME, publishKey.getParticipantId());
+                    dataMap.put(AssayPublishService.SEQUENCENUM_PROPERTY_NAME, publishKey.getVisitId());
+                    if (TimepointType.DATE == studyType)
+                    {
+                        dataMap.put(AssayPublishService.DATE_PROPERTY_NAME, publishKey.getDate());
+                    }
+                    dataMap.put(AssayPublishService.SOURCE_LSID_PROPERTY_NAME, runLSID);
+                    dataMap.put(getTableMetadata().getDatasetRowIdPropertyName(), publishKey.getDataId());
+                    dataMap.put(AssayPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
+
+                    dataMaps.add(dataMap);
+                }
+
+                return AssayPublishService.get().publishAssayData(viewContext.getUser(), sourceContainer, study, protocol.getName(), protocol,
+                        dataMaps, getTableMetadata().getDatasetRowIdPropertyName(), errors);
+            }
+            finally
+            {
+                if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
             }
         }
-
-        Map<String, Object> batchProperties = context.getProperties(context.getBatch(run));
-        for (PropertyDescriptor batchPD : context.getBatchPDs())
+        catch (SQLException e)
         {
-            if (!TARGET_STUDY_PROPERTY_NAME.equals(batchPD.getName()) &&
-                    !PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(batchPD.getName()))
-            {
-                PropertyDescriptor publishPd = batchPD.clone();
-                publishPd.setName("Batch" + batchPD.getName());
-                addProperty(publishPd, batchProperties.get(batchPD.getPropertyURI()), dataMap, types);
-            }
-        }
-    }
-
-    /** Helper for caching objects during a copy to study */
-    protected class CopyToStudyContext
-    {
-        private Map<ExpRun, ExpExperiment> _batches = new HashMap<ExpRun, ExpExperiment>();
-        private Map<ExpRun, Map<String, Object>> _runPropertyCache = new HashMap<ExpRun, Map<String, Object>>();
-        private Map<ExpExperiment, Map<String, Object>> _batchPropertyCache = new HashMap<ExpExperiment, Map<String, Object>>();
-        private List<PropertyDescriptor> _runPDs;
-        private List<PropertyDescriptor> _batchPDs;
-        /** Up to the caller to decide what the keys mean */
-        private Map<Integer, ExpRun> _runsByOntologyObjectId = new HashMap<Integer, ExpRun>();
-        private Map<Integer, ExpRun> _runsByRunId = new HashMap<Integer, ExpRun>();
-        private Map<Integer, ExpRun> _runsByDataId = new HashMap<Integer, ExpRun>();
-        private Map<Integer, ExpData> _data = new HashMap<Integer, ExpData>();
-        private Map<Container, TableInfo> _runTables = new HashMap<Container, TableInfo>();
-        private User _user;
-
-        public CopyToStudyContext(ExpProtocol protocol, User user, PropertyDescriptor... extraRunPDs)
-        {
-            _runPDs = new ArrayList<PropertyDescriptor>(Arrays.asList(getPropertyDescriptors(getRunDomain(protocol))));
-            _runPDs.addAll(Arrays.asList(extraRunPDs));
-            _batchPDs = new ArrayList<PropertyDescriptor>(Arrays.asList(getPropertyDescriptors(getBatchDomain(protocol))));
-            _user = user;
-        }
-
-        public List<PropertyDescriptor> getRunPDs()
-        {
-            return _runPDs;
-        }
-
-        public List<PropertyDescriptor> getBatchPDs()
-        {
-            return _batchPDs;
-        }
-
-        public ExpExperiment getBatch(ExpRun run)
-        {
-            ExpExperiment result;
-            if (!_batches.containsKey(run))
-            {
-                result = AssayService.get().findBatch(run);
-                _batches.put(run, result);
-            }
-            else
-            {
-                result = _batches.get(run);
-            }
-            return result;
-        }
-
-        private <Type extends ExpObject> Map<String, Object> getProperties(Type object, Map<Type, Map<String, Object>> cache) throws SQLException
-        {
-            if (object == null)
-            {
-                return Collections.emptyMap();
-            }
-            Map<String, Object> result = cache.get(object);
-            if (result == null)
-            {
-                result = OntologyManager.getProperties(object.getContainer(), object.getLSID());
-                cache.put(object, result);
-            }
-            return result;
-        }
-
-        public Map<String, Object> getProperties(ExpExperiment batch) throws SQLException
-        {
-            return getProperties(batch, _batchPropertyCache);
-        }
-
-        public Map<String, Object> getProperties(ExpRun run) throws SQLException
-        {
-            return getProperties(run, _runPropertyCache);
-        }
-
-        public ExpData getData(int dataId)
-        {
-            ExpData result = _data.get(dataId);
-            if (result == null)
-            {
-                result = ExperimentService.get().getExpData(dataId);
-                _data.put(dataId, result);
-            }
-            return result;
-        }
-
-        public ExpRun getRun(ExpData data)
-        {
-            ExpRun result = _runsByDataId.get(data.getRowId());
-            if (result == null)
-            {
-                result = data.getRun();
-                _runsByDataId.put(data.getRowId(), result);
-            }
-            return result;
-        }
-
-        public ExpRun getRun(OntologyObject o)
-        {
-            ExpRun result = _runsByOntologyObjectId.get(o.getOwnerObjectId());
-            if (result == null)
-            {
-                OntologyObject dataRowParent = OntologyManager.getOntologyObject(o.getOwnerObjectId().intValue());
-                ExpData data = ExperimentService.get().getExpData(dataRowParent.getObjectURI());
-                result = data.getRun();
-                _runsByOntologyObjectId.put(o.getOwnerObjectId(), result);
-            }
-            return result;
-        }
-
-        public ExpRun getRun(int runId)
-        {
-            ExpRun result = _runsByRunId.get(runId);
-            if (result == null)
-            {
-                result = ExperimentService.get().getExpRun(runId);
-                _runsByRunId.put(runId, result);
-            }
-            return result;
-        }
-
-        public TableInfo getRunTable(ExpRun run)
-        {
-            TableInfo runTable = _runTables.get(run.getContainer());
-            if (runTable == null)
-            {
-                AssaySchema schema = AssayService.get().createSchema(_user, run.getContainer());
-                runTable = schema.getTable(AssayService.get().getRunsTableName(run.getProtocol()));
-                _runTables.put(run.getContainer(), runTable);
-            }
-            return runTable;
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -1642,10 +1540,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
         String propertyURI;
 
-        if (type == ScriptType.VALIDATION)
-            propertyURI = protocol.getLSID() + "#ValidationScript";
-        else
-            propertyURI = protocol.getLSID() + "#TransformScript";
+        propertyURI = type.getPropertyURI(protocol);
 
         if (scripts.isEmpty())
             props.remove(propertyURI);
@@ -1676,21 +1571,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         if (scope == Scope.ASSAY_DEF || scope == Scope.ALL)
         {
-            if (type == ScriptType.VALIDATION)
+            String propertyURI = type.getPropertyURI(protocol);
+            ObjectProperty prop = protocol.getObjectProperties().get(propertyURI);
+            if (prop != null)
             {
-                ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#ValidationScript");
-                if (prop != null)
-                {
-                    return Collections.singletonList(new File(prop.getStringValue()));
-                }
-            }
-            else if (type == ScriptType.TRANSFORM)
-            {
-                ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#TransformScript");
-                if (prop != null)
-                {
-                    return Collections.singletonList(new File(prop.getStringValue()));
-                }
+                return Collections.singletonList(new File(prop.getStringValue()));
             }
         }
         return Collections.emptyList();

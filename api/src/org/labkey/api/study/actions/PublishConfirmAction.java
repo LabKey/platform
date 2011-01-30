@@ -215,8 +215,13 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         TimepointType timepointType = null;
         if (targetStudy != null)
         {
+            Study study = StudyService.get().getStudy(targetStudy);
+            if (study == null)
+            {
+                throw new IllegalArgumentException("No study configured for " + targetStudy);
+            }
             timepointType = AssayPublishService.get().getTimepointType(targetStudy);
-            _targetStudyName = AssayPublishService.get().getStudyName(targetStudy);
+            _targetStudyName = study.getLabel();
         }
 
         // todo: this isn't a great way to determine if this is our final post, but it'll do for now:
