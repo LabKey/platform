@@ -1,0 +1,3 @@
+<webpart xmlns="http://labkey.org/data/xml/webpart">
+   <view name="timeChartWizard"/>
+</webpart>

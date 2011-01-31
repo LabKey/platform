@@ -1,0 +1,18 @@
+<script type="text/javascript">
+    LABKEY.requiresClientAPI(true);
+    LABKEY.requiresScript("vis/timeChartWizard.js");
+    Ext.QuickTips.init();
+</script>
+
+<script type="text/javascript">
+    Ext.onReady(function(){
+        var panel = new LABKEY.vis.TimeChartWizard({
+            renderTo: 'vis-wizard-panel',
+            height: 650,
+            resizable: true
+        });
+
+    });
+</script>
+
+<div id="vis-wizard-panel" class="extContainer" style="width:100%"/>

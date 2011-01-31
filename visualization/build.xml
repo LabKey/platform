@@ -3,7 +3,7 @@
 <project name="Standalone Build" default="build_module" basedir=".">
 
     <!-- -->
-    <property name="module.name" value="Viability" />
+    <property name="module.name" value="Visualization" />
 
     <property environment="env"/>
     <target name="init">
