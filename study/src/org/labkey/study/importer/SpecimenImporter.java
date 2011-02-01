@@ -19,6 +19,10 @@ package org.labkey.study.importer;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.Lsid;
@@ -369,17 +373,25 @@ public class SpecimenImporter
     {
         private final String _tempTableName;
         private final List<SpecimenColumn> _availableColumns;
+        private final int _rowCount;
         private final Container _container;
         private final User _user;
         private final DbSchema _schema;
 
-        public SpecimenLoadInfo(User user, Container container, DbSchema schema, List<SpecimenColumn> availableColumns, String tempTableName)
+        public SpecimenLoadInfo(User user, Container container, DbSchema schema, List<SpecimenColumn> availableColumns, int rowCount, String tempTableName)
         {
             _user = user;
             _schema = schema;
             _container = container;
             _availableColumns = availableColumns;
+            _rowCount = rowCount;
             _tempTableName = tempTableName;
+        }
+
+        /** Number of rows inserted into the temp table. */
+        public int getRowCount()
+        {
+            return _rowCount;
         }
 
         public List<SpecimenColumn> getAvailableColumns()
@@ -417,11 +429,16 @@ public class SpecimenImporter
     private static final String SPEC_NUMBER_TSV_COL = "specimen_number";
     private static final String EVENT_ID_COL = "record_id";
 
-    public static final SpecimenColumn[] SPECIMEN_COLUMNS = {
+    // SpecimenEvent columns that form a psuedo-unqiue constraint
+    private static final SpecimenColumn LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE;
+
+    public static final Collection<SpecimenColumn> SPECIMEN_COLUMNS = Arrays.asList(
             new SpecimenColumn(EVENT_ID_COL, "ExternalId", "INT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(10)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(20)", TargetTable.VIALS),
-            new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
+            LAB_ID = new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER") {
+                public boolean isUnique() { return true; }
+            },
             new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("unique_specimen_id", "UniqueSpecimenId", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
@@ -438,12 +455,12 @@ public class SpecimenImporter
             new SpecimenColumn("volume_units", "VolumeUnits", "VARCHAR(3)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("stored", "Stored", "INT", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("storage_flag", "storageFlag", "INT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("storage_date", "StorageDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
+            STORAGE_DATE = new SpecimenColumn("storage_date", "StorageDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("ship_flag", "ShipFlag", "INT", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("ship_batch_number", "ShipBatchNumber", "INT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("ship_date", "ShipDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
+            SHIP_DATE = new SpecimenColumn("ship_date", "ShipDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("imported_batch_number", "ImportedBatchNumber", "INT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("lab_receipt_date", "LabReceiptDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
+            LAB_RECEIPT_DATE = new SpecimenColumn("lab_receipt_date", "LabReceiptDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("expected_time_value", "ExpectedTimeValue", "FLOAT", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("expected_time_unit", "ExpectedTimeUnit", "VARCHAR(15)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("group_protocol", "GroupProtocol", "INT", TargetTable.SPECIMEN_EVENTS),
@@ -472,26 +489,23 @@ public class SpecimenImporter
             new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS)
-        };
+    );
 
-    public static final ImportableColumn[] ADDITIVE_COLUMNS = new ImportableColumn[]
-        {
+    public static final Collection<ImportableColumn> ADDITIVE_COLUMNS = Arrays.asList(
             new ImportableColumn("additive_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_additive_code", "LdmsAdditiveCode", "VARCHAR(3)"),
             new ImportableColumn("labware_additive_code", "LabwareAdditiveCode", "VARCHAR(20)"),
             new ImportableColumn("additive", "Additive", "VARCHAR(100)")
-        };
+    );
 
-    public static final ImportableColumn[] DERIVATIVE_COLUMNS = new ImportableColumn[]
-        {
+    public static final Collection<ImportableColumn> DERIVATIVE_COLUMNS = Arrays.asList(
             new ImportableColumn("derivative_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_derivative_code", "LdmsDerivativeCode", "VARCHAR(3)"),
             new ImportableColumn("labware_derivative_code", "LabwareDerivativeCode", "VARCHAR(20)"),
             new ImportableColumn("derivative", "Derivative", "VARCHAR(100)")
-        };
+    );
 
-    public static final ImportableColumn[] SITE_COLUMNS = new ImportableColumn[]
-        {
+    public static final Collection<ImportableColumn> SITE_COLUMNS = Arrays.asList(
             new ImportableColumn("lab_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_lab_code", "LdmsLabCode", "INT"),
             new ImportableColumn("labware_lab_code", "LabwareLabCode", "VARCHAR(20)"),
@@ -501,82 +515,42 @@ public class SpecimenImporter
             new ImportableColumn("is_repository", "Repository", BOOLEAN_TYPE),
             new ImportableColumn("is_clinic", "Clinic", BOOLEAN_TYPE),
             new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE)
-        };
+    );
 
-    public static final ImportableColumn[] PRIMARYTYPE_COLUMNS = new ImportableColumn[]
-        {
+    public static final Collection<ImportableColumn> PRIMARYTYPE_COLUMNS = Arrays.asList(
             new ImportableColumn("primary_type_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("primary_type_ldms_code", "PrimaryTypeLdmsCode", "VARCHAR(5)"),
             new ImportableColumn("primary_type_labware_code", "PrimaryTypeLabwareCode", "VARCHAR(5)"),
             new ImportableColumn("primary_type", "PrimaryType", "VARCHAR(100)")
-        };
+    );
 
-    private String _specimenCols;
-    private String _vialCols;
-    private String _vialEventCols;
+    private List<SpecimenColumn> _specimenCols;
+    private List<SpecimenColumn> _vialCols;
+    private List<SpecimenColumn> _vialEventCols;
+    private String _specimenColsSql;
+    private String _vialColsSql;
+    private String _vialEventColsSql;
+
     private Logger _logger;
 
     private static final int SQL_BATCH_SIZE = 100;
 
-    public void process(User user, Container container, List<File> files, Logger logger) throws SQLException, IOException
+    public void process(User user, Container container, List<File> files, boolean merge, Logger logger) throws SQLException, IOException
     {
-        DbSchema schema = StudySchema.getInstance().getSchema();
         Map<String, File> fileMap = createFilemap(files);
-        _logger = logger;
 
-        try
-        {
-            DbScope scope = schema.getScope();
-            if (!DEBUG)
-                scope.beginTransaction();
+        // Create a map of Tables->TabLoaders
+        Map<String, Iterable<Map<String, Object>>> iterMap = new HashMap<String, Iterable<Map<String, Object>>>();
+        iterMap.put("labs", loadTsv(SITE_COLUMNS, fileMap.get("labs"), "study.Site"));
+        iterMap.put("additives", loadTsv(ADDITIVE_COLUMNS, fileMap.get("additives"), "study.SpecimenAdditive"));
+        iterMap.put("derivatives", loadTsv(DERIVATIVE_COLUMNS, fileMap.get("derivatives"), "study.SpecimenDerivative"));
+        iterMap.put("primary_types", loadTsv(PRIMARYTYPE_COLUMNS, fileMap.get("primary_types"), "study.SpecimenPrimaryType"));
+        iterMap.put("specimens", loadTsv(SPECIMEN_COLUMNS, fileMap.get("specimens"), "study.Specimen"));
 
-            mergeTable(schema, container, "Site", SITE_COLUMNS, fileMap.get("labs"), true);
-
-            replaceTable(schema, container, "SpecimenAdditive", ADDITIVE_COLUMNS, fileMap.get("additives"), false);
-            replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS, fileMap.get("derivatives"), false);
-            replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS, fileMap.get("primary_types"), false);
-
-            // Specimen temp table must be populated AFTER the types tables have been reloaded, since the SpecimenHash
-            // calculated in the temp table relies on the new RowIds for the types:
-            SpecimenLoadInfo loadInfo = populateTempSpecimensTable(user, schema, container, fileMap.get("specimens"));
-
-            // Columns will be empty in specimens.tsv has no data
-            if (!loadInfo.getAvailableColumns().isEmpty())
-                populateSpecimenTables(loadInfo);
-            else
-                info("Specimens: 0 rows found in input file.");
-
-            cpuCurrentLocations.start();
-            updateCalculatedSpecimenData(container, user, _logger);
-            cpuCurrentLocations.stop();
-            info("Time to determine locations: " + cpuCurrentLocations.toString());
-
-            resyncStudy(user, container);
-
-            // Drop the temp table within the transaction; otherwise, we may get a different connection object,
-            // where the table is no longer available.  Note that this means that the temp table will stick around
-            // if an exception is throw during loading, but this is probably okay- the DB will clean it up eventually.
-            Table.execute(schema, "DROP TABLE " + loadInfo.getTempTableName(), null);
-
-            if (!DEBUG)
-                scope.commitTransaction();
-
-            updateStatistics(ExperimentService.get().getTinfoMaterial());
-            updateStatistics(StudySchema.getInstance().getTableInfoSpecimen());
-            updateStatistics(StudySchema.getInstance().getTableInfoVial());
-            updateStatistics(StudySchema.getInstance().getTableInfoSpecimenEvent());
-        }
-        finally
-        {
-            if (schema.getScope().isTransactionActive())
-                schema.getScope().rollbackTransaction();
-            StudyManager.getInstance().clearCaches(container, false);
-            SampleManager.getInstance().clearCaches(container);
-        }
-        dumpTimers();
+        process(user, container, iterMap, merge, logger);
     }
 
-    private void resyncStudy(User user, Container container) throws SQLException
+    private static void resyncStudy(User user, Container container) throws SQLException
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
@@ -593,6 +567,14 @@ public class SpecimenImporter
         StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptyList());
     }
 
+    private void updateAllStatistics() throws SQLException
+    {
+        updateStatistics(ExperimentService.get().getTinfoMaterial());
+        updateStatistics(StudySchema.getInstance().getTableInfoSpecimen());
+        updateStatistics(StudySchema.getInstance().getTableInfoVial());
+        updateStatistics(StudySchema.getInstance().getTableInfoSpecimenEvent());
+    }
+
     private boolean updateStatistics(TableInfo tinfo) throws SQLException
     {
         info("Updating statistics for " + tinfo + "...");
@@ -604,7 +586,7 @@ public class SpecimenImporter
         return updated;
     }
 
-    protected void process(User user, Container container, Map<String, CloseableIterator<Map<String, Object>>> iterMap, Logger logger) throws SQLException, IOException
+    protected void process(User user, Container container, Map<String, Iterable<Map<String, Object>>> iterMap, boolean merge, Logger logger) throws SQLException, IOException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         _logger = logger;
@@ -615,16 +597,29 @@ public class SpecimenImporter
             if (!DEBUG)
                 scope.beginTransaction();
 
-            mergeTable(schema, container, "Site", SITE_COLUMNS, iterMap.get("labs"), true);
-            replaceTable(schema, container, "SpecimenAdditive", ADDITIVE_COLUMNS, iterMap.get("additives"), false);
-            replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS, iterMap.get("derivatives"), false);
-            replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS, iterMap.get("primary_types"), false);
+            mergeTable(schema, container, "study.Site", SITE_COLUMNS, iterMap.get("labs"), true);
+            if (merge)
+            {
+                mergeTable(schema, container, "study.SpecimenAdditive", ADDITIVE_COLUMNS, iterMap.get("additives"), false);
+                mergeTable(schema, container, "study.SpecimenDerivative", DERIVATIVE_COLUMNS, iterMap.get("derivatives"), false);
+                mergeTable(schema, container, "study.SpecimenPrimaryType", PRIMARYTYPE_COLUMNS, iterMap.get("primary_types"), false);
+            }
+            else
+            {
+                replaceTable(schema, container, "study.SpecimenAdditive", ADDITIVE_COLUMNS, iterMap.get("additives"), false);
+                replaceTable(schema, container, "study.SpecimenDerivative", DERIVATIVE_COLUMNS, iterMap.get("derivatives"), false);
+                replaceTable(schema, container, "study.SpecimenPrimaryType", PRIMARYTYPE_COLUMNS, iterMap.get("primary_types"), false);
+            }
             
             // Specimen temp table must be populated AFTER the types tables have been reloaded, since the SpecimenHash
             // calculated in the temp table relies on the new RowIds for the types:
             SpecimenLoadInfo loadInfo = populateTempSpecimensTable(user, schema, container, iterMap.get("specimens"));
 
-            populateSpecimenTables(loadInfo);
+            // NOTE: if no rows were loaded in the temp table, don't remove existing materials/specimens/vials/events.
+            if (loadInfo.getRowCount() > 0)
+                populateSpecimenTables(loadInfo, merge);
+            else
+                info("Specimens: 0 rows found in input");
 
             cpuCurrentLocations.start();
             updateCalculatedSpecimenData(container, user, _logger);
@@ -640,6 +635,8 @@ public class SpecimenImporter
 
             if (!DEBUG)
                 scope.commitTransaction();
+
+            updateAllStatistics();
         }
         finally
         {
@@ -649,7 +646,6 @@ public class SpecimenImporter
             SampleManager.getInstance().clearCaches(container);
         }
         dumpTimers();
-
     }
 
     private void dumpTimers()
@@ -666,39 +662,34 @@ public class SpecimenImporter
         logDebug.debug(cpuPopulateTempTable);
     }
 
-    private SpecimenLoadInfo populateTempSpecimensTable(User user, DbSchema schema, Container container, File tsvFile) throws SQLException, IOException
+    private SpecimenLoadInfo populateTempSpecimensTable(User user, DbSchema schema, Container container, Iterable<Map<String, Object>> iter) throws SQLException, IOException
     {
-        String tempTable = createTempTable(schema);
-        info("Created temporary table " + tempTable);
-        List<SpecimenColumn> availableColumns = populateTempTable(schema, container, tempTable, tsvFile);
-        return new SpecimenLoadInfo(user, container, schema, availableColumns, tempTable);
-    }
-
-    private SpecimenLoadInfo populateTempSpecimensTable(User user, DbSchema schema, Container container, CloseableIterator<Map<String, Object>> iter) throws SQLException, IOException
-    {
-        String tempTable = createTempTable(schema);
-        List<SpecimenColumn> availableColumns = populateTempTable(schema, container, tempTable, iter);
-        return new SpecimenLoadInfo(user, container, schema, availableColumns, tempTable);
+        String tableName = createTempTable(schema);
+        Pair<List<SpecimenColumn>, Integer> pair = populateTempTable(schema, container, tableName, iter);
+        return new SpecimenLoadInfo(user, container, schema, pair.first, pair.second, tableName);
     }
 
 
-    private void populateSpecimenTables(SpecimenLoadInfo info) throws SQLException, IOException
+    private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws SQLException, IOException
     {
-        SimpleFilter containerFilter = new SimpleFilter("Container", info.getContainer().getId());
-        info("Deleting old data from Specimen Event table...");
-        Table.delete(StudySchema.getInstance().getTableInfoSpecimenEvent(), containerFilter);
-        info("Complete.");
-        info("Deleting old data from Vial table...");
-        Table.delete(StudySchema.getInstance().getTableInfoVial(), containerFilter);
-        info("Complete.");
-        info("Deleting old data from Specimen table...");
-        Table.delete(StudySchema.getInstance().getTableInfoSpecimen(), containerFilter);
-        info("Complete.");
+        if (!merge)
+        {
+            SimpleFilter containerFilter = new SimpleFilter("Container", info.getContainer().getId());
+            info("Deleting old data from Specimen Event table...");
+            Table.delete(StudySchema.getInstance().getTableInfoSpecimenEvent(), containerFilter);
+            info("Complete.");
+            info("Deleting old data from Vial table...");
+            Table.delete(StudySchema.getInstance().getTableInfoVial(), containerFilter);
+            info("Complete.");
+            info("Deleting old data from Specimen table...");
+            Table.delete(StudySchema.getInstance().getTableInfoSpecimen(), containerFilter);
+            info("Complete.");
+        }
 
-        populateMaterials(info);
-        populateSpecimens(info);
-        populateVials(info);
-        populateVialEvents(info);
+        populateMaterials(info, merge);
+        populateSpecimens(info, merge);
+        populateVials(info, merge);
+        populateVialEvents(info, merge);
     }
 
     private static final int CURRENT_SITE_UPDATE_SIZE = 1000;
@@ -912,6 +903,7 @@ public class SpecimenImporter
 
     }
 
+    // UNDONE: add vials in-clause to only update data for rows that changed
     private static void updateCalculatedSpecimenData(Container container, User user, Logger logger) throws SQLException
     {
         // delete unnecessary comments and create placeholders for newly discovered errors:
@@ -1063,56 +1055,100 @@ public class SpecimenImporter
             _logger.info(message);
     }
 
-    private String getSpecimenCols(List<SpecimenColumn> availableColumns)
+    private List<SpecimenColumn> getSpecimenCols(List<SpecimenColumn> availableColumns)
     {
         if (_specimenCols == null)
         {
-            String suffix = ",\n    ";
-            StringBuilder cols = new StringBuilder();
+            List<SpecimenColumn> cols = new ArrayList<SpecimenColumn>(availableColumns.size());
             for (SpecimenColumn col : availableColumns)
             {
                 if (col.getTargetTable().isSpecimens())
-                    cols.append(col.getDbColumnName()).append(suffix);
+                    cols.add(col);
             }
-            _specimenCols = cols.toString().substring(0, cols.length() - suffix.length());
+            _specimenCols = cols;
         }
         return _specimenCols;
     }
 
-    private String getVialCols(List<SpecimenColumn> availableColumns)
+    private String getSpecimenColsSql(List<SpecimenColumn> availableColumns)
+    {
+        if (_specimenColsSql == null)
+        {
+            String sep = "";
+            StringBuilder cols = new StringBuilder();
+            for (SpecimenColumn col : getSpecimenCols(availableColumns))
+            {
+                cols.append(sep).append(col.getDbColumnName());
+                sep = ",\n   ";
+            }
+            _specimenColsSql = cols.toString();
+        }
+        return _specimenColsSql;
+    }
+
+    private List<SpecimenColumn> getVialCols(List<SpecimenColumn> availableColumns)
     {
         if (_vialCols == null)
         {
-            String suffix = ",\n    ";
-            StringBuilder cols = new StringBuilder();
+            List<SpecimenColumn> cols = new ArrayList<SpecimenColumn>(availableColumns.size());
             for (SpecimenColumn col : availableColumns)
             {
                 if (col.getTargetTable().isVials())
-                    cols.append(col.getDbColumnName()).append(suffix);
+                    cols.add(col);
             }
-            _vialCols = cols.toString().substring(0, cols.length() - suffix.length());
+            _vialCols = cols;
         }
         return _vialCols;
     }
 
-    private String getSpecimenEventCols(List<SpecimenColumn> availableColumns)
+    private String getVialColsSql(List<SpecimenColumn> availableColumns)
+    {
+        if (_vialColsSql == null)
+        {
+            String sep = "";
+            StringBuilder cols = new StringBuilder();
+            for (SpecimenColumn col : getVialCols(availableColumns))
+            {
+                cols.append(sep).append(col.getDbColumnName());
+                sep = ",\n   ";
+            }
+            _vialColsSql = cols.toString();
+        }
+        return _vialColsSql;
+    }
+
+    private List<SpecimenColumn> getSpecimenEventCols(List<SpecimenColumn> availableColumns)
     {
         if (_vialEventCols == null)
         {
-            String suffix = ",\n    ";
-            StringBuilder cols = new StringBuilder();
+            List<SpecimenColumn> cols = new ArrayList<SpecimenColumn>(availableColumns.size());
             for (SpecimenColumn col : availableColumns)
             {
                 if (col.getTargetTable().isEvents())
-                    cols.append(col.getDbColumnName()).append(suffix);
+                    cols.add(col);
             }
-            _vialEventCols = cols.toString().substring(0, cols.length() - suffix.length());
+            _vialEventCols = cols;
         }
         return _vialEventCols;
     }
 
+    private String getSpecimenEventColsSql(List<SpecimenColumn> availableColumns)
+    {
+        if (_vialEventColsSql == null)
+        {
+            String sep = "";
+            StringBuilder cols = new StringBuilder();
+            for (SpecimenColumn col : getSpecimenEventCols(availableColumns))
+            {
+                cols.append(sep).append(col.getDbColumnName());
+                sep = ",\n    ";
+            }
+            _vialEventColsSql = cols.toString();
+        }
+        return _vialEventColsSql;
+    }
 
-    private void populateMaterials(SpecimenLoadInfo info) throws SQLException
+    private void populateMaterials(SpecimenLoadInfo info, boolean merge) throws SQLException
     {
         assert cpuPopulateMaterials.start();
 
@@ -1184,13 +1220,19 @@ public class SpecimenImporter
 
         try
         {
-            info("exp.Material: Deleting entries for removed specimens...");
-            SQLFragment deleteFragment = new SQLFragment(deleteSQL, cpasType, info.getContainer().getId());
-            if (DEBUG)
-                logSQLFragment(deleteFragment);
-            int affected = Table.execute(info.getSchema(), deleteFragment);
-            if (affected >= 0)
-                info("exp.Material: " + affected + " rows removed.");
+            int affected;
+            if (!merge)
+            {
+                info("exp.Material: Deleting entries for removed specimens...");
+                SQLFragment deleteFragment = new SQLFragment(deleteSQL, cpasType, info.getContainer().getId());
+                if (DEBUG)
+                    logSQLFragment(deleteFragment);
+                affected = Table.execute(info.getSchema(), deleteFragment);
+                if (affected >= 0)
+                    info("exp.Material: " + affected + " rows removed.");
+            }
+
+            // NOTE: No need to update existing Materials when merging -- just insert any new materials not found.
             info("exp.Material: Inserting new entries from temp table...");
             SQLFragment insertFragment = new SQLFragment(insertSQL, info.getContainer().getId(), cpasType, createdTimestamp);
             if (DEBUG)
@@ -1210,14 +1252,11 @@ public class SpecimenImporter
     {
         StringBuilder columnList = new StringBuilder();
         String prefix = "";
-        for (SpecimenColumn col : info.getAvailableColumns())
+        for (SpecimenColumn col : getSpecimenEventCols(info.getAvailableColumns()))
         {
-            if (col.getTargetTable().isEvents())
-            {
-                columnList.append(prefix);
-                prefix = ", ";
-                columnList.append("\n    ").append(info.getTempTableName()).append(".").append(col.getDbColumnName());
-            }
+            columnList.append(prefix);
+            prefix = ", ";
+            columnList.append("\n    ").append(info.getTempTableName()).append(".").append(col.getDbColumnName());
         }
         return columnList.toString();
     }
@@ -1250,26 +1289,56 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimens(SpecimenLoadInfo info) throws SQLException
+    private void populateSpecimens(SpecimenLoadInfo info, boolean merge) throws IOException, SQLException
     {
-        SQLFragment insertSql = new SQLFragment();
-        insertSql.append("INSERT INTO study.Specimen \n(").append("ParticipantSequenceKey, Container, SpecimenHash, ");
-        insertSql.append(getSpecimenCols(info.getAvailableColumns())).append(")\n");
-        insertSql.append("SELECT ");
-        insertSql.append(VisitManager.getParticipantSequenceKeyExpr(info._schema, "PTID", "VisitValue"));
-        insertSql.append(", Container, SpecimenHash, ");
-        insertSql.append(getSpecimenCols(info.getAvailableColumns())).append(" FROM (\n");
-        insertSql.append(getVialListFromTempTableSql(info)).append(") VialList\n");
-        insertSql.append("GROUP BY ").append("Container, SpecimenHash, ");
-        insertSql.append(getSpecimenCols(info.getAvailableColumns()));
+        String participantSequenceKeyExpr = VisitManager.getParticipantSequenceKeyExpr(info._schema, "PTID", "VisitValue");
 
-        if (DEBUG)
-            logSQLFragment(insertSql);
-        assert cpuInsertSpecimens.start();
-        info("Specimens: Inserting new rows...");
-        Table.execute(info.getSchema(), insertSql);
-        info("Specimens: Insert complete.");
-        assert cpuInsertSpecimens.stop();
+        SQLFragment insertSelectSql = new SQLFragment();
+        insertSelectSql.append("SELECT ");
+        insertSelectSql.append(participantSequenceKeyExpr).append(" AS ParticipantSequenceKey");
+        insertSelectSql.append(", Container, SpecimenHash, ");
+        insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(" FROM (\n");
+        insertSelectSql.append(getVialListFromTempTableSql(info)).append(") VialList\n");
+        insertSelectSql.append("GROUP BY ").append("Container, SpecimenHash, ");
+        insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns()));
+
+        if (merge)
+        {
+            Table.TableResultSet rs = null;
+            try
+            {
+                // Create list of specimen columns, including unique columns not found in SPECIMEN_COLUMNS.
+                List<SpecimenColumn> cols = new ArrayList<SpecimenColumn>();
+                cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.SPECIMENS, true));
+                cols.add(new SpecimenColumn("ParticipantSequenceKey", "ParticipantSequenceKey", "VARCHAR(200)", TargetTable.SPECIMENS, true));
+                cols.addAll(getSpecimenCols(info.getAvailableColumns()));
+
+                // Insert or update the specimens from in the temp table.
+                rs = Table.executeQuery(info.getSchema(), insertSelectSql);
+                mergeTable(info.getSchema(), info.getContainer(), "study.Specimen", cols, rs, false);
+            }
+            finally
+            {
+                if (rs != null) { try { rs.close(); } catch (SQLException _) { } }
+            }
+        }
+        else
+        {
+            // Insert all specimens from in the temp table.
+            SQLFragment insertSql = new SQLFragment();
+            insertSql.append("INSERT INTO study.Specimen \n(").append("ParticipantSequenceKey, Container, SpecimenHash, ");
+            insertSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(")\n");
+            insertSql.append(insertSelectSql);
+
+            if (DEBUG)
+                logSQLFragment(insertSql);
+
+            assert cpuInsertSpecimens.start();
+            info("Specimens: Inserting new rows...");
+            Table.execute(info.getSchema(), insertSql);
+            info("Specimens: Insert complete.");
+            assert cpuInsertSpecimens.stop();
+        }
     }
 
     private SQLFragment getVialListFromTempTableSql(SpecimenLoadInfo info)
@@ -1297,47 +1366,76 @@ public class SpecimenImporter
         return vialListSql;
     }
 
-    private void populateVials(SpecimenLoadInfo info) throws SQLException
+    private void populateVials(SpecimenLoadInfo info, boolean merge) throws SQLException
     {
         String prefix = ",\n    ";
         SQLFragment insertSelectSql = new SQLFragment();
         insertSelectSql.append("SELECT exp.Material.RowId");
-        insertSelectSql.append(prefix).append("study.Specimen.RowId");
+        insertSelectSql.append(prefix).append("study.Specimen.RowId AS SpecimenId");
         insertSelectSql.append(prefix).append("study.Specimen.SpecimenHash");
         insertSelectSql.append(prefix).append("VialList.Container");
         insertSelectSql.append(prefix).append("?");
         // Set a default value of true for the 'Available' column:
         insertSelectSql.add(Boolean.TRUE);
 
-        for (SpecimenColumn col : info.getAvailableColumns())
-        {
-            if (col.getTargetTable().isVials())
-                insertSelectSql.append(prefix).append("VialList.").append(col.getDbColumnName());
-        }
+        for (SpecimenColumn col : getVialCols(info.getAvailableColumns()))
+            insertSelectSql.append(prefix).append("VialList.").append(col.getDbColumnName());
 
-        SQLFragment insertSql = new SQLFragment();
-        insertSql.append("INSERT INTO study.Vial \n(RowId, SpecimenId, SpecimenHash, Container, Available, ");
-        insertSql.append(getVialCols(info.getAvailableColumns())).append(")\n");
-        insertSql.append(insertSelectSql).append(" FROM (").append(getVialListFromTempTableSql(info)).append(") VialList");
+        insertSelectSql.append(" FROM (").append(getVialListFromTempTableSql(info)).append(") VialList");
 
         // join to material:
-        insertSql.append("\n    JOIN exp.Material ON (");
-        insertSql.append("VialList.LSID = exp.Material.LSID");
-        insertSql.append(" AND exp.Material.Container = ?)");
-        insertSql.add(info.getContainer().getId());
+        insertSelectSql.append("\n    JOIN exp.Material ON (");
+        insertSelectSql.append("VialList.LSID = exp.Material.LSID");
+        insertSelectSql.append(" AND exp.Material.Container = ?)");
+        insertSelectSql.add(info.getContainer().getId());
 
         // join to specimen:
-        insertSql.append("\n    JOIN study.Specimen ON study.Specimen.Container = ? ");
-        insertSql.add(info.getContainer().getId());
-        insertSql.append("AND study.Specimen.SpecimenHash = VialList.SpecimenHash");
+        insertSelectSql.append("\n    JOIN study.Specimen ON study.Specimen.Container = ? ");
+        insertSelectSql.add(info.getContainer().getId());
+        insertSelectSql.append("AND study.Specimen.SpecimenHash = VialList.SpecimenHash");
 
-        if (DEBUG)
-            logSQLFragment(insertSql);
-        assert cpuInsertSpecimens.start();
-        info("Vials: Inserting new rows...");
-        Table.execute(info.getSchema(), insertSql);
-        info("Vials: Insert complete.");
-        assert cpuInsertSpecimens.stop();
+
+        if (merge)
+        {
+            Table.TableResultSet rs = null;
+            try
+            {
+                // Create list of vial columns, including unique columns not found in SPECIMEN_COLUMNS.
+                List<SpecimenColumn> cols = new ArrayList<SpecimenColumn>();
+                // NOTE: study.Vial.RowId is actually an FK to exp.Material.RowId
+                // We can use RowId as a part of the unique key since the Material was created based on LSID and GlobalUniqueId
+                cols.add(new SpecimenColumn("RowId", "RowId", "INT NOT NULL", TargetTable.VIALS, true));
+                cols.add(new SpecimenColumn("SpecimenId", "SpecimenId", "INT NOT NULL", TargetTable.VIALS, true));
+                cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.VIALS, true));
+                cols.add(new SpecimenColumn("Available", "Available", "BOOLEAN", TargetTable.VIALS, false));
+                cols.addAll(getVialCols(info.getAvailableColumns()));
+
+                // Insert or update the vials from in the temp table.
+                rs = Table.executeQuery(info.getSchema(), insertSelectSql);
+                mergeTable(info.getSchema(), info.getContainer(), "study.Vial", cols, rs, false);
+            }
+            finally
+            {
+                if (rs != null) { try { rs.close(); } catch (SQLException _) { } }
+            }
+        }
+        else
+        {
+            // Insert all vials from in the temp table.
+            SQLFragment insertSql = new SQLFragment();
+            insertSql.append("INSERT INTO study.Vial \n(RowId, SpecimenId, SpecimenHash, Container, Available, ");
+            insertSql.append(getVialColsSql(info.getAvailableColumns())).append(")\n");
+            insertSql.append(insertSelectSql);
+
+            if (DEBUG)
+                logSQLFragment(insertSql);
+
+            assert cpuInsertSpecimens.start();
+            info("Vials: Inserting new rows...");
+            Table.execute(info.getSchema(), insertSql);
+            info("Vials: Insert complete.");
+            assert cpuInsertSpecimens.stop();
+        }
     }
 
     private void logSQLFragment(SQLFragment sql)
@@ -1348,61 +1446,123 @@ public class SpecimenImporter
             info(param.toString());
     }
 
-    private void populateVialEvents(SpecimenLoadInfo info) throws SQLException
+    private void populateVialEvents(SpecimenLoadInfo info, boolean merge) throws SQLException
     {
-        SQLFragment insertSql = new SQLFragment();
-        insertSql.append("INSERT INTO study.SpecimenEvent\n" +
-                "(Container, VialId, " + getSpecimenEventCols(info.getAvailableColumns()) + ")\n" +
-                "SELECT ? AS Container, study.Vial.RowId AS VialId, \n" +
-                getSpecimenEventTempTableColumns(info) + " FROM " +
-                info.getTempTableName() + "\nJOIN study.Vial ON " +
-                info.getTempTableName() + ".GlobalUniqueId = study.Vial.GlobalUniqueId AND study.Vial.Container = ?");
-        insertSql.add(info.getContainer().getId());
-        insertSql.add(info.getContainer().getId());
+        SQLFragment insertSelectSql = new SQLFragment();
+        insertSelectSql.append("SELECT study.Vial.Container, study.Vial.RowId AS VialId, \n");
+        insertSelectSql.append(getSpecimenEventTempTableColumns(info));
+        insertSelectSql.append(" FROM ");
+        insertSelectSql.append(info.getTempTableName()).append("\nJOIN study.Vial ON ");
+        insertSelectSql.append(info.getTempTableName()).append(".GlobalUniqueId = study.Vial.GlobalUniqueId AND study.Vial.Container = ?");
+        insertSelectSql.add(info.getContainer().getId());
 
-        if (DEBUG)
+        if (merge)
         {
-            info(insertSql.getSQL());
-            info("Params: ");
-            for (Object param : insertSql.getParams())
-                info(param.toString());
+            Table.TableResultSet rs = null;
+            try
+            {
+                // Create list of vial columns, including unique columns not found in SPECIMEN_COLUMNS.
+                // Events are special in that we want to merge based on a pseudo-unique set of columns:
+                //    Container, VialId (vial.GlobalUniqueId), LabId, StorageDate, ShipDate, LabReceiptDate
+                // We need to always add these extra columns, even if they aren't in the list of available columns.
+                List<SpecimenColumn> cols = new ArrayList<SpecimenColumn>();
+                cols.add(new SpecimenColumn("VialId", "VialId", "INT NOT NULL", TargetTable.VIALS, true));
+                cols.add(LAB_ID);
+                cols.add(SHIP_DATE);
+                cols.add(STORAGE_DATE);
+                cols.add(LAB_RECEIPT_DATE);
+                for (SpecimenColumn col : getSpecimenEventCols(info.getAvailableColumns()))
+                {
+                    if (col != LAB_ID || col != SHIP_DATE || col != STORAGE_DATE || col != LAB_RECEIPT_DATE)
+                        cols.add(col);
+                }
+
+                // Insert or update the vials from in the temp table.
+                rs = Table.executeQuery(info.getSchema(), insertSelectSql);
+                mergeTable(info.getSchema(), info.getContainer(), "study.SpecimenEvent", cols, rs, false);
+            }
+            finally
+            {
+                if (rs != null) { try { rs.close(); } catch (SQLException _) { } }
+            }
         }
-        assert cpuInsertSpecimenEvents.start();
-        info("Specimen Events: Inserting new rows.");
-        Table.execute(info.getSchema(), insertSql);
-        info("Specimen Events: Insert complete.");
-        assert cpuInsertSpecimenEvents.stop();
+        else
+        {
+            // Insert all events from the temp table
+            SQLFragment insertSql = new SQLFragment();
+            insertSql.append("INSERT INTO study.SpecimenEvent\n");
+            insertSql.append("(Container, VialId, " + getSpecimenEventColsSql(info.getAvailableColumns()) + ")\n");
+            insertSql.append(insertSelectSql);
+
+            if (DEBUG)
+                logSQLFragment(insertSql);
+            assert cpuInsertSpecimenEvents.start();
+            info("Specimen Events: Inserting new rows.");
+            Table.execute(info.getSchema(), insertSql);
+            info("Specimen Events: Insert complete.");
+            assert cpuInsertSpecimenEvents.stop();
+        }
     }
 
-    private void mergeTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, File tsvFile, boolean addEntityId) throws IOException, SQLException
+    private interface ComputedColumn
     {
-        if (tsvFile == null || !NetworkDrive.exists(tsvFile))
-        {
-            info(tableName + ": no data to merge.");
-            return;
-        }
-
-        CloseableIterator<Map<String, Object>> iter = null;
-
-        try
-        {
-            iter = loadTsv(potentialColumns, tsvFile, tableName);
-            mergeTable(schema, container, tableName, potentialColumns, iter, addEntityId);
-        }
-        finally
-        {
-            if (null != iter)
-                iter.close();
-        }
+        String getName();
+        Object getValue(Map<String, Object> row);
     }
 
-    private void mergeTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, Iterator<Map<String, Object>> iter, boolean addEntityId) throws IOException, SQLException
+    private class EntityIdComputedColumn implements ComputedColumn
     {
+        public String getName() { return "EntityId"; }
+        public Object getValue(Map<String, Object> row) { return GUID.makeGUID(); }
+    }
+
+    private <T extends ImportableColumn> Pair<List<T>, Integer> mergeTable(
+            DbSchema schema, Container container, String tableName,
+            Collection<T> potentialColumns, Iterable<Map<String, Object>> values, boolean addEntityId)
+        throws SQLException
+    {
+        ComputedColumn entityIdCol = null;
+        if (addEntityId)
+        {
+            entityIdCol = new EntityIdComputedColumn();
+        }
+
+        return mergeTable(schema, container, tableName, potentialColumns, values, entityIdCol);
+    }
+
+    /**
+     * Insert or update rows on the target table using the unique columns of <code>potentialColumns</code>
+     * to identify the existing row.
+     *
+     * NOTE: The idCol is used only during insert -- the value won't be updated if the row already exists.
+     *
+     * @param schema The dbschema.
+     * @param container The container.
+     * @param tableName Fully qualified table name, e.g., "study.Vials"
+     * @param potentialColumns List of columns to be inserted/updated on the table.
+     * @param values The data values to be inserted or updated.
+     * @param idCol The computed column.
+     * @return A pair of the columns actually found in the data values and a total row count.
+     * @throws SQLException
+     */
+    private <T extends ImportableColumn> Pair<List<T>, Integer> mergeTable(
+            DbSchema schema, Container container, String tableName,
+            Collection<T> potentialColumns, Iterable<Map<String, Object>> values,
+            ComputedColumn idCol)
+        throws SQLException
+    {
+        if (values == null)
+        {
+            info(tableName + ": No rows to merge");
+            return new Pair<List<T>, Integer>(Collections.<T>emptyList(), 0);
+        }
+        Iterator<Map<String, Object>> iter = values.iterator();
+
         assert cpuMergeTable.start();
         info(tableName + ": Starting merge of data...");
 
-        List<ImportableColumn> availableColumns = new ArrayList<ImportableColumn>();
-        List<ImportableColumn> uniqueCols = new ArrayList<ImportableColumn>();
+        List<T> availableColumns = new ArrayList<T>();
+        List<T> uniqueCols = new ArrayList<T>();
 
         StringBuilder selectSql = new StringBuilder();
         StringBuilder insertSql = new StringBuilder();
@@ -1415,45 +1575,56 @@ public class SpecimenImporter
         Parameter.ParameterMap parameterMapUpdate = null;
         PreparedStatement stmtUpdate = null;
 
+        int rowCount = 0;
         Connection conn = null;
 
         try
         {
             conn = schema.getScope().getConnection();
-            int rowCount = 0;
             int rowsAdded = 0;
             int rowsUpdated = 0;
 
             while (iter.hasNext())
             {
-                Map row = iter.next();
+                Map<String, Object> row = iter.next();
                 rowCount++;
 
                 if (1 == rowCount)
                 {
-                    for (ImportableColumn column : potentialColumns)
+                    for (T column : potentialColumns)
                     {
                         if (row.containsKey(column.getTsvColumnName()))
                             availableColumns.add(column);
                     }
 
-                    for (ImportableColumn col : availableColumns)
+                    for (T col : availableColumns)
                     {
                         if (col.isUnique())
                             uniqueCols.add(col);
                     }
 
-                    selectSql.append("SELECT * FROM study.").append(tableName).append(" WHERE Container = ? ");
+                    selectSql.append("SELECT * FROM ").append(tableName).append(" WHERE Container = ? ");
                     for (ImportableColumn col : uniqueCols)
-                        selectSql.append(" AND ").append(col.getDbColumnName()).append(" = ? ");
+                    {
+                        // Check for equality and null values.
+                        selectSql.append(" AND (");
+                        selectSql.append("(").append(col.getDbColumnName()).append(" IS NULL AND ? IS NULL)");
+                        selectSql.append(" OR ").append(col.getDbColumnName()).append(" = ? ");
+                        selectSql.append(")");
+                    }
+                    if (DEBUG)
+                    {
+                        info(tableName + ": select sql:");
+                        info(selectSql.toString());
+                    }
 
                     int p = 1;
-                    insertSql.append("INSERT INTO study.").append(tableName).append(" (Container");
+                    insertSql.append("INSERT INTO ").append(tableName).append(" (Container");
                     parametersInsert.add(new Parameter("Container", p++, JdbcType.VARCHAR));
-                    if (addEntityId)
+                    if (idCol != null)
                     {
-                        insertSql.append(", EntityId");
-                        parametersInsert.add(new Parameter("EntityId", p++, JdbcType.VARCHAR));
+                        insertSql.append(", ").append(idCol.getName());
+                        parametersInsert.add(new Parameter(idCol.getName(), p++, JdbcType.VARCHAR));
                     }
                     for (ImportableColumn col : availableColumns)
                     {
@@ -1461,15 +1632,20 @@ public class SpecimenImporter
                         parametersInsert.add(new Parameter(col.getDbColumnName(), p++, col.getSQLType()));
                     }
                     insertSql.append(") VALUES (?");
-                    if (addEntityId)
+                    if (idCol != null)
                         insertSql.append(", ?");
                     insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
                     insertSql.append(")");
                     stmtInsert = conn.prepareStatement(insertSql.toString());
                     parameterMapInsert = new Parameter.ParameterMap(stmtInsert, parametersInsert);
+                    if (DEBUG)
+                    {
+                        info(tableName + ": insert sql:");
+                        info(insertSql.toString());
+                    }
 
                     p = 1;
-                    updateSql.append("UPDATE study.").append(tableName).append(" SET ");
+                    updateSql.append("UPDATE ").append(tableName).append(" SET ");
                     String separator = "";
                     for (ImportableColumn col : availableColumns)
                     {
@@ -1482,17 +1658,24 @@ public class SpecimenImporter
                     }
                     updateSql.append(" WHERE Container = ?");
                     parametersUpdate.add(new Parameter("Container", p++, JdbcType.VARCHAR));
-                    separator = " AND ";
                     for (ImportableColumn col : availableColumns)
                     {
                         if (col.isUnique())
                         {
-                            updateSql.append(separator).append(col.getDbColumnName()).append(" = ?");
-                            parametersUpdate.add(new Parameter(col.getDbColumnName(), p++, col.getSQLType()));
+                            updateSql.append(" AND (");
+                            updateSql.append("(").append(col.getDbColumnName()).append(" IS NULL AND ? IS NULL)");
+                            updateSql.append(" OR ").append(col.getDbColumnName()).append(" = ? ");
+                            updateSql.append(")");
+                            parametersUpdate.add(new Parameter(col.getDbColumnName(), new int[] { p++, p++ }, col.getSQLType()));
                         }
                     }
                     stmtUpdate = conn.prepareStatement(updateSql.toString());
                     parameterMapUpdate = new Parameter.ParameterMap(stmtUpdate, parametersUpdate);
+                    if (DEBUG)
+                    {
+                        info(tableName + ": update sql:");
+                        info(updateSql.toString());
+                    }
                 }
 
                 boolean rowExists = false;
@@ -1501,11 +1684,16 @@ public class SpecimenImporter
                     ResultSet rs = null;
                     try
                     {
-                        Object[] params = new Object[uniqueCols.size() + 1];
+                        Object[] params = new Object[(2*uniqueCols.size()) + 1];
                         int colIndex = 0;
                         params[colIndex++] = container.getId();
                         for (ImportableColumn col : uniqueCols)
-                            params[colIndex++] = getValueParameter(col, row);
+                        {
+                            // Each unique col has two parameters in the null-equals check.
+                            Object value = getValueParameter(col, row);
+                            params[colIndex++] = value;
+                            params[colIndex++] = value;
+                        }
 
                         rs = Table.executeQuery(schema, selectSql.toString(), params);
                         if (rs.next())
@@ -1522,8 +1710,8 @@ public class SpecimenImporter
                     parameterMapInsert.clearParameters();
                     int colIndex = 0;
                     parametersInsert.get(colIndex++).setValue(container.getId());
-                    if (addEntityId)
-                        parametersInsert.get(colIndex++).setValue(GUID.makeGUID());
+                    if (idCol != null)
+                        parametersInsert.get(colIndex++).setValue(idCol.getValue(row));
                     for (ImportableColumn col : availableColumns)
                         parametersInsert.get(colIndex++).setValue(getValueParameter(col, row));
                     stmtInsert.execute();
@@ -1538,10 +1726,15 @@ public class SpecimenImporter
                         if (!col.isUnique())
                             parametersUpdate.get(colIndex++).setValue(getValueParameter(col, row));
                     }
-                    parametersInsert.get(colIndex++).setValue(container.getId());
+                    parametersUpdate.get(colIndex++).setValue(container.getId());
 
                     for (ImportableColumn col : uniqueCols)
-                        parametersUpdate.get(colIndex++).setValue(getValueParameter(col, row));
+                    {
+                        // Each unique col has two parameters in the null-equals check.
+                        Object value = getValueParameter(col, row);
+                        parametersUpdate.get(colIndex++).setValue(value);
+                        colIndex++;
+                    }
                     stmtUpdate.execute();
                     rowsUpdated++;
                 }
@@ -1551,93 +1744,143 @@ public class SpecimenImporter
         }
         finally
         {
+            if (iter instanceof CloseableIterator) try { ((CloseableIterator)iter).close(); } catch (IOException ioe) { }
             if (null != conn)
                 schema.getScope().releaseConnection(conn);    
         }
         assert cpuMergeTable.stop();
+
+        return new Pair<List<T>, Integer>(availableColumns, rowCount);
     }
 
 
-    private void replaceTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, File tsvFile, boolean addEntityId) throws IOException, SQLException
+    private <T extends ImportableColumn> Pair<List<T>, Integer> replaceTable(
+            DbSchema schema, Container container, String tableName,
+            Collection<T> potentialColumns, Iterable<Map<String, Object>> values, boolean addEntityId)
+        throws IOException, SQLException
     {
-        if (tsvFile == null || !NetworkDrive.exists(tsvFile))
+        ComputedColumn entityIdCol = null;
+        if (addEntityId)
         {
-            info(tableName + ": no data to merge.");
-            return;
+            entityIdCol = new EntityIdComputedColumn();
         }
 
-        CloseableIterator<Map<String, Object>> iter = null;
-
-        try
-        {
-            iter = loadTsv(potentialColumns, tsvFile, tableName);
-            replaceTable(schema, container, tableName, potentialColumns, iter, addEntityId);
-        }
-        finally
-        {
-            if (null != iter)
-                iter.close();
-        }
+        return replaceTable(schema, container, tableName, potentialColumns, values, entityIdCol);
     }
 
-    private void replaceTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, Iterator<Map<String, Object>> iter, boolean addEntityId) throws IOException, SQLException
+    /**
+     * Deletes the target table and inserts new rows.
+     *
+     * @param schema The dbschema.
+     * @param container The container.
+     * @param tableName Fully qualified table name, e.g., "study.Vials"
+     * @param potentialColumns List of columns to be inserted/updated on the table.
+     * @param values The data values to be inserted or updated.
+     * @param idCol The computed column.
+     * @return A pair of the columns actually found in the data values and a total row count.
+     * @throws SQLException
+     */
+    private <T extends ImportableColumn> Pair<List<T>, Integer> replaceTable(
+            DbSchema schema, Container container, String tableName,
+            Collection<T> potentialColumns, Iterable<Map<String, Object>> values,
+            ComputedColumn idCol)
+        throws IOException, SQLException
     {
+        if (values == null)
+        {
+            info(tableName + ": No rows to replace");
+            return new Pair<List<T>, Integer>(Collections.<T>emptyList(), 0);
+        }
+        Iterator<Map<String, Object>> iter = values.iterator();
+
         assert cpuMergeTable.start();
         info(tableName + ": Starting replacement of all data...");
 
-        Table.execute(schema, "DELETE FROM study." + tableName + " WHERE Container = ?", new Object[] { container.getId() });
-        List<ImportableColumn> availableColumns = new ArrayList<ImportableColumn>();
+        Table.execute(schema, "DELETE FROM " + tableName + " WHERE Container = ?", new Object[] { container.getId() });
+        List<T> availableColumns = new ArrayList<T>();
         StringBuilder insertSql = new StringBuilder();
 
         List<List<Object>> rows = new ArrayList<List<Object>>();
         int rowCount = 0;
 
-        while (iter.hasNext())
+        try
         {
-            Map<String, Object> row = iter.next();
-            rowCount++;
-
-            if (1 == rowCount)
+            while (iter.hasNext())
             {
-                for (ImportableColumn column : potentialColumns)
+                Map<String, Object> row = iter.next();
+                rowCount++;
+
+                if (1 == rowCount)
                 {
-                    if (row.containsKey(column.getTsvColumnName()))
-                        availableColumns.add(column);
+                    for (T column : potentialColumns)
+                    {
+                        if (row.containsKey(column.getTsvColumnName()))
+                            availableColumns.add(column);
+                    }
+
+                    insertSql.append("INSERT INTO ").append(tableName).append(" (Container");
+                    if (idCol != null)
+                        insertSql.append(", ").append(idCol.getName());
+                    for (ImportableColumn col : availableColumns)
+                        insertSql.append(", ").append(col.getDbColumnName());
+                    insertSql.append(") VALUES (?");
+                    if (idCol != null)
+                        insertSql.append(", ?");
+                    insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
+                    insertSql.append(")");
+
+                    if (DEBUG)
+                        info(insertSql.toString());
                 }
 
-                insertSql.append("INSERT INTO study.").append(tableName).append(" (Container");
-                if (addEntityId)
-                    insertSql.append(", EntityId");
+                List<Object> params = new ArrayList<Object>(availableColumns.size() + 1 + (idCol != null ? 1 : 0));
+                params.add(container.getId());
+                if (idCol != null)
+                    params.add(idCol.getValue(row));
+
                 for (ImportableColumn col : availableColumns)
-                    insertSql.append(", ").append(col.getDbColumnName());
-                insertSql.append(") VALUES (?");
-                if (addEntityId)
-                    insertSql.append(", ?");
-                insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
-                insertSql.append(")");
+                {
+                    Object value = getValueParameter(col, row);
+                    params.add(value);
+                }
+
+                rows.add(params);
+
+                if (rows.size() == SQL_BATCH_SIZE)
+                {
+                    Table.batchExecute(schema, insertSql.toString(), rows);
+                    rows = new ArrayList<List<Object>>(SQL_BATCH_SIZE);
+                    // output a message every 100 batches (every 10,000 events, by default)
+                    if (rowCount % (SQL_BATCH_SIZE*100) == 0)
+                        info(rowCount + " rows loaded...");
+                }
             }
 
-            List<Object> params = new ArrayList<Object>(availableColumns.size() + 1 + (addEntityId ? 1 : 0));
-            params.add(container.getId());
-            if (addEntityId)
-                params.add(GUID.makeGUID());
-            for (ImportableColumn col : availableColumns)
-                params.add(getValueParameter(col, row));
-            rows.add(params);
+            // No point in trying to insert zero rows.  Also, insertSql won't be set if no rows exist.
+            if (!rows.isEmpty())
+                Table.batchExecute(schema, insertSql.toString(), rows);
+
+            info(tableName + ": Replaced all data with " + rowCount + " new rows.");
         }
-
-        // No point in trying to insert zero rows.  Also, insertSql won't be set if no rows exist.
-        if (!rows.isEmpty())
-            Table.batchExecute(schema, insertSql.toString(), rows);
-
-        info(tableName + ": Replaced all data with " + rows.size() + " new rows.  (" + rowCount + " rows found in input file.)");
+        finally
+        {
+            if (iter instanceof CloseableIterator) try { ((CloseableIterator)iter).close(); } catch (IOException ioe) { }
+        }
         assert cpuMergeTable.stop();
+
+        return new Pair<List<T>, Integer>(availableColumns, rowCount);
     }
 
-    private CloseableIterator<Map<String, Object>> loadTsv(ImportableColumn[] columns, File tsvFile, String tableName) throws IOException
+    private Iterable<Map<String, Object>> loadTsv(Collection<? extends ImportableColumn> columns, File tsvFile, String tableName) throws IOException
     {
+        if (tsvFile == null || !NetworkDrive.exists(tsvFile))
+        {
+            info(tableName + ": no data to merge.");
+            return null;
+        }
+
         info(tableName + ": Parsing data file for table...");
-        Map<String, ColumnDescriptor> expectedColumns = new HashMap<String, ColumnDescriptor>(columns.length);
+        Map<String, ColumnDescriptor> expectedColumns = new HashMap<String, ColumnDescriptor>(columns.size());
         for (ImportableColumn col : columns)
             expectedColumns.put(col.getTsvColumnName().toLowerCase(), col.getColumnDescriptor());
 
@@ -1651,117 +1894,58 @@ public class SpecimenImporter
                 column.load = false;
         }
         info(tableName + ": Parsing complete.");
-        return loader.iterator();
+        return loader;
     }
 
-    private List<SpecimenColumn> populateTempTable(DbSchema schema, Container container, String tempTable, File tsvFile) throws SQLException, IOException
+    private Pair<List<SpecimenColumn>, Integer> populateTempTable(
+            DbSchema schema, final Container container, String tempTable,
+            Iterable<Map<String, Object>> iter)
+        throws SQLException, IOException
     {
         assert cpuPopulateTempTable.start();
-        CloseableIterator<Map<String, Object>> iter = loadTsv(SPECIMEN_COLUMNS, tsvFile, "Specimen");
-        return populateTempTable(schema, container, tempTable, iter);
-    }
 
-    private List<SpecimenColumn> populateTempTable(DbSchema schema, Container container, String tempTable, CloseableIterator<Map<String, Object>> iter) throws SQLException, IOException
-    {
-        assert cpuPopulateTempTable.start();
-        int rowCount = 0;
-        Map<String, Object> firstRow = null;
+        info("Populating specimen temp table...");
+        int rowCount;
+        List<SpecimenColumn> loadedColumns;
 
-        try
+        ComputedColumn lsidCol = new ComputedColumn()
         {
-            info("Populating temp table...");
-            StringBuilder sqlBuilder = new StringBuilder();
-            sqlBuilder.append("INSERT INTO ").append(tempTable).append("\n(\n    Container,\n    LSID");
-            for (ImportableColumn col : SPECIMEN_COLUMNS)
-                sqlBuilder.append(",\n     ").append(col.getDbColumnName());
-            sqlBuilder.append("\n) values (?, ?");
-            sqlBuilder.append(StringUtils.repeat(", ?", SPECIMEN_COLUMNS.length));
-            sqlBuilder.append(")");
-
-            List<List<Object>> rows = new ArrayList<List<Object>>(SQL_BATCH_SIZE);
-            String sql = sqlBuilder.toString();
-
-            if (DEBUG)
+            public String getName() { return "LSID"; }
+            public Object getValue(Map<String, Object> row)
             {
-                info(sql);
-            }
-
-            while (iter.hasNext())
-            {
-                Map<String, Object> properties = iter.next();
-                rowCount++;
-
-                if (1 == rowCount)
-                    firstRow = properties;
-
-                String id = (String) properties.get(GLOBAL_UNIQUE_ID_TSV_COL);
-
+                String id = (String) row.get(GLOBAL_UNIQUE_ID_TSV_COL);
                 if (id == null)
-                    id = (String) properties.get(SPEC_NUMBER_TSV_COL);
+                    id = (String) row.get(SPEC_NUMBER_TSV_COL);
 
                 Lsid lsid = SpecimenService.get().getSpecimenMaterialLsid(container, id);
-                List<Object> params = new ArrayList<Object>(SPECIMEN_COLUMNS.length + 2);
-                params.add(container.getId());
-                params.add(lsid.toString());
-
-                for (ImportableColumn col : SPECIMEN_COLUMNS)
-                {
-                    Object value = getValueParameter(col, properties);
-                    if (col.getMaxSize() >= 0)
-                    {
-                        Object valueToBind = Parameter.getValueToBind(value);
-                        if (valueToBind != null)
-                        {
-                            if (valueToBind.toString().length() > col.getMaxSize())
-                            {
-                                throw new SQLException("Value \"" + valueToBind.toString() + "\" is too long for column " +
-                                        col.getDbColumnName() + ".  The maximum allowable length is " + col.getMaxSize() + ".");
-                            }
-                        }
-                    }
-                    params.add(value);
-                }
-
-                rows.add(params);
-
-                if (rows.size() == SQL_BATCH_SIZE)
-                {
-                    Table.batchExecute(schema, sql, rows);
-                    rows = new ArrayList<List<Object>>(SQL_BATCH_SIZE);
-                    // output a message every 100 batches (every 10,000 events, by default)
-                    if (rowCount % (SQL_BATCH_SIZE*100) == 0)
-                        info(rowCount + " temp rows loaded...");
-                }
+                return lsid.toString();
             }
+        };
 
-            if (!rows.isEmpty())
-                Table.batchExecute(schema, sql, rows);
+        Pair<List<SpecimenColumn>, Integer> pair = replaceTable(schema, container, tempTable, SPECIMEN_COLUMNS, iter, lsidCol);
 
-            info("Complete. " + rowCount + " rows loaded.");
-        }
-        finally
-        {
-            assert cpuPopulateTempTable.stop();
-            iter.close();
-        }
+        loadedColumns = pair.first;
+        rowCount = pair.second;
 
-        List<SpecimenColumn> loadedColumns = new ArrayList<SpecimenColumn>();
-
-        if (rowCount > 0)
-        {
-            for (SpecimenColumn column : SPECIMEN_COLUMNS)
-            {
-                if (firstRow.containsKey(column.getTsvColumnName()))
-                    loadedColumns.add(column);
-            }
-        }
-
-        if (loadedColumns.isEmpty())
+        if (rowCount == 0)
         {
             info("Found no specimen columns to import. Temp table will not be loaded.");
-            return loadedColumns;
+            return pair;
         }
 
+        remapTempTableLookupIndexes(schema, container, tempTable, loadedColumns);
+
+        updateTempTableVisits(schema, container, tempTable);
+
+        updateTempTableSpecimenHash(schema, container, tempTable, loadedColumns);
+
+        info("Specimen temp table populated.");
+        return pair;
+    }
+
+    private void remapTempTableLookupIndexes(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+            throws SQLException
+    {
         String sep = "";
         SQLFragment innerTableSelectSql = new SQLFragment("SELECT " + tempTable + ".RowId AS RowId");
         SQLFragment innerTableJoinSql = new SQLFragment();
@@ -1791,7 +1975,11 @@ public class SpecimenImporter
             info(remapExternalIdsSql.toString());
         Table.execute(schema, remapExternalIdsSql);
         info("Update complete.");
+    }
 
+    private void updateTempTableVisits(DbSchema schema, Container container, String tempTable)
+            throws SQLException
+    {
         Study study = StudyManager.getInstance().getStudy(container);
         if (study.getTimepointType() != TimepointType.VISIT)
         {
@@ -1805,7 +1993,11 @@ public class SpecimenImporter
             Table.execute(schema, visitValueSql);
             info("Update complete.");
         }
+    }
 
+    private void updateTempTableSpecimenHash(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+            throws SQLException
+    {
         SQLFragment conflictResolvingSubselect = new SQLFragment("SELECT GlobalUniqueId");
         for (SpecimenColumn col : loadedColumns)
         {
@@ -1865,17 +2057,31 @@ public class SpecimenImporter
             info(updateHashSql.toString());
         Table.execute(schema, updateHashSql);
         info("Update complete.");
-
         info("Temp table populated.");
-        return loadedColumns;
     }
 
     private Parameter.TypedValue getValueParameter(ImportableColumn col, Map tsvRow)
+            throws SQLException
     {
         Object value = tsvRow.get(col.getTsvColumnName());
         if (value == null)
             return Parameter.nullParameter(col.getSQLType());
-        return new Parameter.TypedValue(value, col.getSQLType());
+        Parameter.TypedValue typed = new Parameter.TypedValue(value, col.getSQLType());
+
+        if (col.getMaxSize() >= 0)
+        {
+            Object valueToBind = Parameter.getValueToBind(typed);
+            if (valueToBind != null)
+            {
+                if (valueToBind.toString().length() > col.getMaxSize())
+                {
+                    throw new SQLException("Value \"" + valueToBind.toString() + "\" is too long for column " +
+                            col.getDbColumnName() + ".  The maximum allowable length is " + col.getMaxSize() + ".");
+                }
+            }
+        }
+
+        return typed;
     }
 
     private static final boolean DEBUG = false;
@@ -1927,6 +2133,8 @@ public class SpecimenImporter
             Table.execute(schema, rowIdIndexSql, null);
             Table.execute(schema, lsidIndexSql, null);
             Table.execute(schema, hashIndexSql, null);
+            info("Created temporary table " + tableName);
+
             return tableName;
         }
         finally
@@ -1934,4 +2142,137 @@ public class SpecimenImporter
             assert cpuCreateTempTable.stop();
         }
     }
+
+    public static class TestCase extends Assert
+    {
+        private DbSchema _schema;
+        private String _tableName;
+
+        @Before
+        public void createTable() throws SQLException
+        {
+            _schema = TestSchema.getInstance().getSchema();
+
+            _tableName = _schema.getSqlDialect().getGlobalTempTablePrefix() + "SpecimenImporterTest";
+            dropTable();
+
+            Table.execute(_schema,
+                "CREATE TABLE " + _tableName +
+                "(Container ENTITYID NOT NULL, id VARCHAR(10), s VARCHAR(32), i INTEGER)", null);
+        }
+
+        @After
+        public void dropTable() throws SQLException
+        {
+            try
+            {
+                Table.execute(_schema, "DROP TABLE " + _tableName, null);
+            }
+            catch (SQLException _) { }
+        }
+
+        private Table.TableResultSet selectValues()
+                throws SQLException
+        {
+            return Table.executeQuery(_schema, "SELECT Container,id,s,i FROM " + _tableName + " ORDER BY id", null);
+        }
+
+        private Map<String, Object> row(String s, Integer i)
+        {
+            Map<String, Object> map = new HashMap<String, Object>();
+            map.put("s", s);
+            map.put("i", i);
+            return map;
+        }
+
+        @Test
+        public void mergeTest() throws SQLException
+        {
+            Container c = JunitUtil.getTestContainer();
+            TestContext context = TestContext.get();
+
+            Collection<ImportableColumn> cols = Arrays.asList(
+                    new ImportableColumn("s", "s", "VARCHAR(32)", true),
+                    new ImportableColumn("i", "i", "INTEGER", false)
+            );
+
+            Iterable<Map<String, Object>> values = Arrays.asList(
+                    row("Bob", 100),
+                    row("Sally", 200),
+                    row(null, 300)
+            );
+
+            SpecimenImporter importer = new SpecimenImporter();
+            final Integer[] counter = new Integer[] { 0 };
+            ComputedColumn idCol = new ComputedColumn()
+            {
+                public String getName() { return "id"; }
+                public Object getValue(Map<String, Object> row)
+                {
+                    return String.valueOf(++counter[0]);
+                }
+            };
+
+            // Insert rows
+            Pair<List<ImportableColumn>, Integer> pair = importer.mergeTable(_schema, c, _tableName, cols, values, idCol);
+            assertNotNull(pair);
+            assertEquals(pair.first.size(), cols.size());
+            assertEquals(3, pair.second.intValue());
+            assertEquals(3, counter[0]);
+
+            Iterable<Map<String, Object>> inserted = selectValues();
+            Iterator<Map<String, Object>> iter = inserted.iterator();
+            Map<String, Object> row0 = iter.next();
+            assertEquals("Bob", row0.get("s"));
+            assertEquals(100, row0.get("i"));
+            assertEquals("1", row0.get("id"));
+
+            Map<String, Object> row1 = iter.next();
+            assertEquals("Sally", row1.get("s"));
+            assertEquals(200, row1.get("i"));
+            assertEquals("2", row1.get("id"));
+
+            Map<String, Object> row2 = iter.next();
+            assertEquals(null, row2.get("s"));
+            assertEquals(300, row2.get("i"));
+            assertEquals("3", row2.get("id"));
+            assertFalse(iter.hasNext());
+
+            // Add one new row, update one existing row.
+            values = Arrays.asList(
+                    row("Bob", 105),
+                    row(null, 305),
+                    row("Jimmy", 405)
+            );
+            pair = importer.mergeTable(_schema, c, _tableName, cols, values, idCol);
+            assertEquals(pair.first.size(), cols.size());
+            assertEquals(3, pair.second.intValue());
+            assertEquals(4, counter[0]);
+
+            inserted = selectValues();
+            iter = inserted.iterator();
+            row0 = iter.next();
+            assertEquals("Bob", row0.get("s"));
+            assertEquals(105, row0.get("i"));
+            assertEquals("1", row0.get("id"));
+
+            row1 = iter.next();
+            assertEquals("Sally", row1.get("s"));
+            assertEquals(200, row1.get("i"));
+            assertEquals("2", row1.get("id"));
+
+            row2 = iter.next();
+            assertEquals(null, row2.get("s"));
+            assertEquals(305, row2.get("i"));
+            assertEquals("3", row2.get("id"));
+
+            Map<String, Object> row3 = iter.next();
+            assertEquals("Jimmy", row3.get("s"));
+            assertEquals(405, row3.get("i"));
+            assertEquals("4", row3.get("id"));
+            assertFalse(iter.hasNext());
+
+        }
+    }
+    
 }

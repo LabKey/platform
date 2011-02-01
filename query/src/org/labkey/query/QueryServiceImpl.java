@@ -1550,7 +1550,7 @@ public class QueryServiceImpl extends QueryService
                 Parameter u = new Parameter(parameterName, parameters.size()+1, JdbcType.VARCHAR);
                 parameters.add(u);
                 sqlfObject.append("INSERT INTO exp.Object (container, objecturi) ");
-                sqlfObject.append("VALUES(" + p(d,useVariables,c.getIndex()) + "," + p(d,useVariables,u.getIndex()) + ");\n");
+                sqlfObject.append("VALUES(" + p(d,useVariables,c.getIndexes()[0]) + "," + p(d,useVariables,u.getIndexes()[0]) + ");\n");
                 sqlfObject.append(setKeyword + objectIdVar + " = (");
                 appendSelectAutoIncrement(d, sqlfObject,DbSchema.get("exp").getTable("object"),"objectid");
                 sqlfObject.append(");\n");
@@ -1632,7 +1632,7 @@ public class QueryServiceImpl extends QueryService
             {
                 Parameter p = new Parameter(column, parameters.size()+1);
                 parameters.add(p);
-                values.append(comma).append(p(d,useVariables,p.getIndex()));
+                values.append(comma).append(p(d,useVariables,p.getIndexes()[0]));
             }
             comma = ", ";
         }
@@ -1675,10 +1675,10 @@ public class QueryServiceImpl extends QueryService
                 sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
                 Parameter mv = new Parameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, parameters.size()+1, JdbcType.VARCHAR);
                 parameters.add(mv);
-                sqlfObjectProperty.append(",").append(p(d,useVariables,mv.getIndex()));
+                sqlfObjectProperty.append(",").append(p(d,useVariables,mv.getIndexes()[0]));
                 Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), parameters.size()+1, propertyType.getJdbcType());
                 parameters.add(v);
-                sqlfObjectProperty.append(",").append(p(d,useVariables,v.getIndex()));
+                sqlfObjectProperty.append(",").append(p(d,useVariables,v.getIndexes()[0]));
                 sqlfObjectProperty.append(");\n");
             }
         }
@@ -1712,7 +1712,7 @@ public class QueryServiceImpl extends QueryService
             {
                 String type = d.sqlTypeNameFromSqlType(p.getType().sqlType);
                 fn.append("\n").append(comma);
-                fn.append(p(d,useVariables,p.getIndex()));
+                fn.append(p(d,useVariables,p.getIndexes()[0]));
                 fn.append(" ");
                 fn.append(type);
                 fn.append(" -- " + p.getName());

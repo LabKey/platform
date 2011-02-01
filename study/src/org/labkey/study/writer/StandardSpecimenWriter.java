@@ -25,6 +25,7 @@ import org.labkey.study.importer.SpecimenImporter.ImportableColumn;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -42,7 +43,7 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
     public void write(QueryInfo queryInfo, StudyContext ctx, VirtualFile vf) throws Exception
     {
         TableInfo tinfo = queryInfo.getTableInfo();
-        ImportableColumn[] columns = queryInfo.getColumns();
+        Collection<ImportableColumn> columns = queryInfo.getColumns();
 
         PrintWriter pw = vf.getPrintWriter(queryInfo.getFilename() + ".tsv");
 
@@ -50,7 +51,7 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
         pw.println(queryInfo.getFilename());
 
         SQLFragment sql = new SQLFragment().append("SELECT ");
-        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columns.length);
+        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columns.size());
         String comma = "";
 
         for (ImportableColumn column : columns)
@@ -86,9 +87,9 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
     {
         private final TableInfo _tinfo;
         private final String _filename;
-        private final ImportableColumn[] _columns;
+        private final Collection<ImportableColumn> _columns;
 
-        public QueryInfo(TableInfo tinfo, String filename, ImportableColumn[] columns)
+        public QueryInfo(TableInfo tinfo, String filename, Collection<ImportableColumn> columns)
         {
             _tinfo = tinfo;
             _filename = filename;
@@ -105,7 +106,7 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
             return _filename;
         }
 
-        public ImportableColumn[] getColumns()
+        public Collection<ImportableColumn> getColumns()
         {
             return _columns;
         }

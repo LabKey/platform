@@ -75,7 +75,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     job.setStatus("PROCESSING SPECIMENS");
 
                     SpecimenImporter importer = new SpecimenImporter();
-                    importer.process(job.getUser(), job.getContainer(), files, job.getLogger());
+                    importer.process(job.getUser(), job.getContainer(), files, false, job.getLogger());
                 }
                 catch (Exception e)
                 {

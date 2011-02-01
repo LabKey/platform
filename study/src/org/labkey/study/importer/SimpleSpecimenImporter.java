@@ -97,13 +97,13 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return _columnLabels;
     }
 
-    public void process(User user, Container container, File tsvFile, Logger logger) throws SQLException, IOException, ConversionException
+    public void process(User user, Container container, File tsvFile, boolean merge, Logger logger) throws SQLException, IOException, ConversionException
     {
         TabLoader tl = new TabLoader(tsvFile);
         tl.setThrowOnErrors(true);
         fixupSpecimenColumns(tl);
 
-        _process(user, container, tl.load(), logger);
+        _process(user, container, tl.load(), merge, logger);
     }
 
     public void fixupSpecimenColumns(TabLoader tl)
@@ -154,13 +154,13 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return cols;
     }
 
-    public void process(User user, Container container, List<Map<String, Object>> rows) throws SQLException, IOException
+    public void process(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException
     {
-        _process(user, container, rows, Logger.getLogger(getClass()));
+        _process(user, container, rows, merge, Logger.getLogger(getClass()));
     }
 
     // Avoid conflict with SpecimenImporter.process() (has similar signature)
-    private void _process(User user, Container container, List<Map<String, Object>> rows, Logger logger) throws SQLException, IOException
+    private void _process(User user, Container container, List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException
     {
         //Map from column name to
         Study study = StudyManager.getInstance().getStudy(container);
@@ -198,43 +198,12 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             specimenRows.add(specimenRow);
         }
 
-        Map<String, CloseableIterator<Map<String, Object>>> inputs = new HashMap<String, CloseableIterator<Map<String, Object>>>();
-        inputs.put("specimens", new CloseableListIterator<Map<String, Object>>(specimenRows));
+        Map<String, Iterable<Map<String, Object>>> inputs = new HashMap<String, Iterable<Map<String, Object>>>();
+        inputs.put("specimens", specimenRows);
         for (LookupTable lookupTable : lookupTables.values())
-            inputs.put(lookupTable.getName(), new CloseableListIterator<Map<String, Object>>(lookupTable.toMaps()));
+            inputs.put(lookupTable.getName(), lookupTable.toMaps());
 
-        super.process(user, container, inputs, logger);
-    }
-
-
-    @Deprecated // Should convert SimpleSpecimenImporter to iterators only, not half list / half iterator
-    private static class CloseableListIterator<K> implements CloseableIterator<K>
-    {
-        private final Iterator<K> _iter;
-
-        private CloseableListIterator(List<K> list)
-        {
-            _iter = list.iterator();
-        }
-
-        public void close() throws IOException
-        {
-        }
-
-        public boolean hasNext()
-        {
-            return _iter.hasNext();
-        }
-
-        public K next()
-        {
-            return _iter.next();
-        }
-
-        public void remove()
-        {
-            _iter.remove();
-        }
+        super.process(user, container, inputs, merge, logger);
     }
 
 

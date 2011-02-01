@@ -27,6 +27,7 @@ import org.labkey.study.model.StudyImpl;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -43,7 +44,7 @@ class SpecimenWriter implements Writer<StudyImpl, StudyContext>
 
     public void write(StudyImpl study, StudyContext ctx, VirtualFile vf) throws Exception
     {
-        SpecimenColumn[] columns = SpecimenImporter.SPECIMEN_COLUMNS;
+        Collection<SpecimenColumn> columns = SpecimenImporter.SPECIMEN_COLUMNS;
         StudySchema schema = StudySchema.getInstance();
         Container c = ctx.getContainer();
 
@@ -52,7 +53,7 @@ class SpecimenWriter implements Writer<StudyImpl, StudyContext>
         pw.println("# specimens");
 
         SQLFragment sql = new SQLFragment().append("\nSELECT ");
-        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columns.length);
+        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columns.size());
         String comma = "";
 
         for (SpecimenColumn column : columns)

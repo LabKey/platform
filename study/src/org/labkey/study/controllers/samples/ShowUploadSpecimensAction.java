@@ -94,7 +94,6 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         columnAliases.put("additive Type", SimpleSpecimenImporter.ADDITIVE_TYPE);
         columnAliases.put("derivativeType", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
         columnAliases.put("derivative Type", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
-        columnAliases.put("Visit", SimpleSpecimenImporter.VISIT);
         columnAliases.put("drawTimestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("draw Timestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("globalUniqueId", SimpleSpecimenImporter.VIAL_ID);
@@ -200,7 +199,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         try
         {
             if (!errors.hasErrors())
-                importer.process(getViewContext().getUser(), study.getContainer(), specimenRows);
+                importer.process(getViewContext().getUser(), study.getContainer(), specimenRows, form.getMerge());
         }
         catch (SQLException e)
         {
@@ -260,6 +259,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
     {
         private String tsv;
         private String redir;
+        private boolean merge;
 
         public String getTsv()
         {
@@ -279,6 +279,16 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         public void setRedir(String redir)
         {
             this.redir = redir;
+        }
+
+        public boolean getMerge()
+        {
+            return merge;
+        }
+
+        public void setMerge(boolean merge)
+        {
+            this.merge = merge;
         }
     }
 }

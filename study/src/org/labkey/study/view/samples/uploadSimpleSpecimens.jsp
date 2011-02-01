@@ -31,6 +31,13 @@ Paste data in the area below
 <form action="showUploadSpecimens.post" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
     <%=generateSubmitButton("Submit")%> <%=buttonImg("Cancel", "window.history.back();return false;")%>
+
+    <p>
+    <labkey:checkbox name="merge" id="merge" value="true" checked="<%=bean.getMerge()%>"/>
+    <label for="merge">Merge with existing specimens in the repository.</label>
+    <br>
+    By default, all specimens, vials, and events in the repository will be replaced with new records.
+    Check the checkbox to merge with existing records.
+
 </form>
 
-<b>This will REPLACE all specimens in the repository</b>

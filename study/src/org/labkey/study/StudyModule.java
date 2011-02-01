@@ -90,6 +90,7 @@ import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.model.CohortDomainKind;
@@ -515,7 +516,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public Set<Class> getJUnitTests()
     {
         Set<Class> set = new HashSet<Class>();
-        set.add(StudyManager.StudyTestCase.class);
+        set.add(SpecimenImporter.TestCase.class);
         return set;
     }
 

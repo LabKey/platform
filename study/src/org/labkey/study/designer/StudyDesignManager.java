@@ -379,7 +379,7 @@ public class StudyDesignManager
 //            StudyManager.getInstance().updateVisitDataSetMapping(user, study.getContainer(), 1, dsd.getDataSetId(), VisitDataSetType.OPTIONAL);
 
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
-        importer.process(user, study.getContainer(), specimens);
+        importer.process(user, study.getContainer(), specimens, false);
 
         //Move study design into study folder...
         moveStudyDesign(user, info, study.getContainer());
