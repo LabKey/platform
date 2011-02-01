@@ -29,6 +29,7 @@ import org.labkey.api.util.StringExpression;
 import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.Map;
@@ -95,42 +96,60 @@ public class Parameter
     private boolean _constant = false;
     
     private PreparedStatement _stmt;
-    private final int _index;
+    private final int[] _indexes;
 
 
     public Parameter(PreparedStatement stmt, int index)
     {
-        this(stmt, index, null);
+        this(stmt, new int[] { index }, null);
     }
 
     public Parameter(PreparedStatement stmt, int index, JdbcType type)
     {
+        this(stmt, new int[] { index }, type);
+    }
+
+    public Parameter(PreparedStatement stmt, int[] indexes, JdbcType type)
+    {
         _stmt = stmt;
-        _index = index;
+        _indexes = indexes;
         _type = type;
     }
-    
+
     public Parameter(String name, int index, JdbcType type)
     {
-        _name = name;
-        _index = index;
-        _type = type;
+        this(name, null, new int[] { index }, type);
     }
-    
-    public Parameter(String name, String uri, int index, JdbcType jdbcType)
+
+    public Parameter(String name, int[] indexes, JdbcType type)
+    {
+        this(name, null, indexes, type);
+    }
+
+    public Parameter(String name, String uri, int index, JdbcType type)
+    {
+        this(name, uri, new int[] { index }, type);
+    }
+
+    public Parameter(String name, String uri, int[] indexes, JdbcType type)
     {
         _name = name;
         _uri = uri;
-        _index = index;
-        _type = jdbcType;
+        _indexes = indexes;
+        _type = type;
     }
 
     public Parameter(ColumnInfo c, int index)
     {
+        this(c, new int[] { index });
+    }
+
+    public Parameter(ColumnInfo c, int[] indexes)
+    {
         _name = c.getName();
         _uri = c.getPropertyURI();
         _type = c.getJdbcType();
-        _index = index;
+        _indexes = indexes;
     }
 
     public void setName(String name)
@@ -143,9 +162,9 @@ public class Parameter
         return _name;
     }
 
-    public int getIndex()
+    public int[] getIndexes()
     {
-        return _index;
+        return _indexes;
     }
 
     public JdbcType getType()
@@ -179,12 +198,15 @@ public class Parameter
 
             if (null == value)
             {
-                _stmt.setNull(_index, null==type ? JdbcType.VARCHAR.sqlType : type.sqlType);
+                setNull(type);
                 return;
             }
 
             if (value instanceof AttachmentFile)
             {
+                if (_indexes.length > 1)
+                    throw new IllegalArgumentException("AttachmentFile can only be bound to a single parameter");
+
                 try
                 {
                     InputStream is = ((AttachmentFile) value).openInputStream();
@@ -192,7 +214,7 @@ public class Parameter
 
                     if (len > Integer.MAX_VALUE)
                         throw new IllegalArgumentException("File length exceeds " + Integer.MAX_VALUE);
-                    _stmt.setBinaryStream(_index, is, (int)len);
+                    _stmt.setBinaryStream(_indexes[0], is, (int)len);
                     return;
                 }
                 catch (Exception x)
@@ -203,16 +225,29 @@ public class Parameter
                 }
             }
 
-            if (null == type)
-                _stmt.setObject(_index, value);
-            else
-                _stmt.setObject(_index, value, type.sqlType);
+            setObject(type, value);
         }
         catch (SQLException e)
         {
             LOG.error("Exception converting \"" + value + "\" to type " + _type);
             throw e;
         }
+    }
+
+    private void setNull(JdbcType type) throws SQLException
+    {
+        for (int index : _indexes)
+            _stmt.setNull(index, null==type ? JdbcType.VARCHAR.sqlType : type.sqlType);
+    }
+
+    private void setObject(JdbcType type, Object value) throws SQLException
+    {
+        if (null == type)
+            for (int index : _indexes)
+                _stmt.setObject(index, value);
+        else
+            for (int index : _indexes)
+                _stmt.setObject(index, value, type.sqlType);
     }
 
     
@@ -282,7 +317,7 @@ public class Parameter
 
     public String toString()
     {
-        return "[" + _index + (null==_name?"":":"+_name) + "]";
+        return "[" + _indexes + (null==_name?"":":"+_name) + "]";
     }
 
 

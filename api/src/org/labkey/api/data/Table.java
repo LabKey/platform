@@ -1582,7 +1582,7 @@ public class Table
     }
 
 
-    public interface TableResultSet extends ResultSet
+    public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
     {
         public boolean isComplete();
 

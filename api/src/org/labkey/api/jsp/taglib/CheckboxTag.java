@@ -28,6 +28,7 @@ public class CheckboxTag extends SimpleTagBase
     protected String _id;
     protected String _name;
     protected Object _value;
+    protected Boolean _checked;
     protected Set _checkedSet;
 
     public void doTag() throws JspException, IOException
@@ -40,12 +41,14 @@ public class CheckboxTag extends SimpleTagBase
         out.write("\" value=\"");
         out.write(h(_value));
         out.write("\"");
-        if (_checkedSet != null)
+
+        if (_checked != null && _checked)
         {
-            if (_checkedSet.contains(_value))
-            {
-                out.write(" checked");
-            }
+            out.write(" checked");
+        }
+        else if (_checkedSet != null && _checkedSet.contains(_value))
+        {
+            out.write(" checked");
         }
         out.write(">");
         out.write("<input type=\"hidden\" name=\"");
@@ -67,6 +70,11 @@ public class CheckboxTag extends SimpleTagBase
     public void setValue(Object value)
     {
         _value = value;
+    }
+
+    public void setChecked(Boolean checked)
+    {
+        _checked = checked;
     }
 
     public void setCheckedSet(Set set)

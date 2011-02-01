@@ -97,6 +97,10 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
+            <name>checked</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
             <name>checkedSet</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
