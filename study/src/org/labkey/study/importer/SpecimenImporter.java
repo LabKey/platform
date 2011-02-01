@@ -2158,7 +2158,7 @@ public class SpecimenImporter
 
             Table.execute(_schema,
                 "CREATE TABLE " + _tableName +
-                "(Container ENTITYID NOT NULL, id VARCHAR(10), s VARCHAR(32), i INTEGER)", null);
+                "(Container VARCHAR(255) NOT NULL, id VARCHAR(10), s VARCHAR(32), i INTEGER)", null);
         }
 
         @After
@@ -2189,7 +2189,6 @@ public class SpecimenImporter
         public void mergeTest() throws SQLException
         {
             Container c = JunitUtil.getTestContainer();
-            TestContext context = TestContext.get();
 
             Collection<ImportableColumn> cols = Arrays.asList(
                     new ImportableColumn("s", "s", "VARCHAR(32)", true),
@@ -2220,23 +2219,30 @@ public class SpecimenImporter
             assertEquals(3, pair.second.intValue());
             assertEquals(3, counter[0]);
 
-            Iterable<Map<String, Object>> inserted = selectValues();
-            Iterator<Map<String, Object>> iter = inserted.iterator();
-            Map<String, Object> row0 = iter.next();
-            assertEquals("Bob", row0.get("s"));
-            assertEquals(100, row0.get("i"));
-            assertEquals("1", row0.get("id"));
+            Table.TableResultSet rs = selectValues();
+            try
+            {
+                Iterator<Map<String, Object>> iter = rs.iterator();
+                Map<String, Object> row0 = iter.next();
+                assertEquals("Bob", row0.get("s"));
+                assertEquals(100, row0.get("i"));
+                assertEquals("1", row0.get("id"));
 
-            Map<String, Object> row1 = iter.next();
-            assertEquals("Sally", row1.get("s"));
-            assertEquals(200, row1.get("i"));
-            assertEquals("2", row1.get("id"));
+                Map<String, Object> row1 = iter.next();
+                assertEquals("Sally", row1.get("s"));
+                assertEquals(200, row1.get("i"));
+                assertEquals("2", row1.get("id"));
 
-            Map<String, Object> row2 = iter.next();
-            assertEquals(null, row2.get("s"));
-            assertEquals(300, row2.get("i"));
-            assertEquals("3", row2.get("id"));
-            assertFalse(iter.hasNext());
+                Map<String, Object> row2 = iter.next();
+                assertEquals(null, row2.get("s"));
+                assertEquals(300, row2.get("i"));
+                assertEquals("3", row2.get("id"));
+                assertFalse(iter.hasNext());
+            }
+            finally
+            {
+                if (rs != null) try { rs.close(); } catch (SQLException e) { }
+            }
 
             // Add one new row, update one existing row.
             values = Arrays.asList(
@@ -2249,29 +2255,35 @@ public class SpecimenImporter
             assertEquals(3, pair.second.intValue());
             assertEquals(4, counter[0]);
 
-            inserted = selectValues();
-            iter = inserted.iterator();
-            row0 = iter.next();
-            assertEquals("Bob", row0.get("s"));
-            assertEquals(105, row0.get("i"));
-            assertEquals("1", row0.get("id"));
+            rs = selectValues();
+            try
+            {
+                Iterator<Map<String, Object>> iter = rs.iterator();
+                Map<String, Object> row0 = iter.next();
+                assertEquals("Bob", row0.get("s"));
+                assertEquals(105, row0.get("i"));
+                assertEquals("1", row0.get("id"));
 
-            row1 = iter.next();
-            assertEquals("Sally", row1.get("s"));
-            assertEquals(200, row1.get("i"));
-            assertEquals("2", row1.get("id"));
+                Map<String, Object> row1 = iter.next();
+                assertEquals("Sally", row1.get("s"));
+                assertEquals(200, row1.get("i"));
+                assertEquals("2", row1.get("id"));
 
-            row2 = iter.next();
-            assertEquals(null, row2.get("s"));
-            assertEquals(305, row2.get("i"));
-            assertEquals("3", row2.get("id"));
+                Map<String, Object> row2 = iter.next();
+                assertEquals(null, row2.get("s"));
+                assertEquals(305, row2.get("i"));
+                assertEquals("3", row2.get("id"));
 
-            Map<String, Object> row3 = iter.next();
-            assertEquals("Jimmy", row3.get("s"));
-            assertEquals(405, row3.get("i"));
-            assertEquals("4", row3.get("id"));
-            assertFalse(iter.hasNext());
-
+                Map<String, Object> row3 = iter.next();
+                assertEquals("Jimmy", row3.get("s"));
+                assertEquals(405, row3.get("i"));
+                assertEquals("4", row3.get("id"));
+                assertFalse(iter.hasNext());
+            }
+            finally
+            {
+                if (rs != null) try { rs.close(); } catch (SQLException e) { }
+            }
         }
     }
     
