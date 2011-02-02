@@ -17,6 +17,7 @@ package org.labkey.announcements;
 
 import org.apache.log4j.Logger;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
+import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.config.MessageConfigServiceImpl;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
@@ -24,7 +25,6 @@ import org.labkey.announcements.model.DiscussionServiceImpl;
 import org.labkey.announcements.model.DiscussionWebPartFactory;
 import org.labkey.announcements.model.SecureMessageBoardReadPermission;
 import org.labkey.announcements.model.SecureMessageBoardRespondPermission;
-import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.AnnouncementService;
@@ -34,7 +34,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
-import org.labkey.api.message.MessageSchema;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
@@ -96,7 +95,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         addController("announcements", AnnouncementsController.class);
         AnnouncementService.setInstance(new AnnouncementServiceImpl());
         AnnouncementSchema.register();
-        MessageSchema.register();
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()

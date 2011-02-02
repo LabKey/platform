@@ -27,7 +27,6 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.message.MessageSchema;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
@@ -52,6 +51,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
+import org.labkey.core.query.CoreQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -430,12 +430,12 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
 
         private HttpView getMessageTabView() throws Exception
         {
-            QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, MessageSchema.MESSAGE_PREFS_TABLE);
+            QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME);
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(true);
             settings.getBaseSort().insertSortColumn("DisplayName");
 
-            QueryView queryView = new QueryView(new MessageSchema(getViewContext().getUser(), getViewContext().getContainer()), settings, _errors)
+            QueryView queryView = new QueryView(new CoreQuerySchema(getViewContext().getUser(), getViewContext().getContainer()), settings, _errors)
             {
                 @Override
                 protected DataRegion createDataRegion()
@@ -462,7 +462,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
                         // add the provider configuration views to the admin panel button
                         PanelButton adminButton = new PanelButton("Settings", getDataRegionName());
                         PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(),
-                                DataRegionSelection.getSelectionKey(MessageSchema.SCHEMA_NAME, MessageSchema.MESSAGE_PREFS_TABLE, null, DATA_REGION_NAME));
+                                DataRegionSelection.getSelectionKey("core", CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME, null, DATA_REGION_NAME));
                         for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
                         {
                             VBox view = new VBox();

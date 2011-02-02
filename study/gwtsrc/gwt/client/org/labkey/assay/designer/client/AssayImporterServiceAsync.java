@@ -32,6 +32,7 @@ import java.util.List;
 public interface AssayImporterServiceAsync extends DomainImporterServiceAsync
 {
     void getInferenceColumns(String path, String file, AsyncCallback<List<InferencedColumn>> async);
+    void validateColumns(List<InferencedColumn> columns, String path, String file, AsyncCallback<Boolean> async);
 
     void createProtocol(String providerName, String assayName, AsyncCallback<GWTProtocol> async);
     void getDomainImportURI(GWTProtocol protocol, AsyncCallback<String> async);

@@ -47,6 +47,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String MEMBERS_TABLE_NAME = "Members";
     public static final String CONTAINERS_TABLE_NAME = "Containers";
     public static final String WORKBOOKS_TABLE_NAME = "Workbooks";
+    public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
 
     public CoreQuerySchema(User user, Container c)
@@ -77,6 +78,8 @@ public class CoreQuerySchema extends UserSchema
             return getWorkbooks();
         if (CONTAINERS_TABLE_NAME.equalsIgnoreCase(name))
             return getContainers();
+        if (USERS_MSG_SETTINGS_TABLE_NAME.equalsIgnoreCase(name))
+            return new UsersMsgPrefTable(getUsers(), getContainer());
         return null;
     }
 

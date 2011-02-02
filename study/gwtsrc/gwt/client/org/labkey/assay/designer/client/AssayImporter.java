@@ -30,6 +30,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 import gwt.client.org.labkey.study.StudyApplication;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.BoundCheckBox;
 import org.labkey.api.gwt.client.ui.BoundTextBox;
 import org.labkey.api.gwt.client.ui.HelpPopup;
@@ -37,6 +38,7 @@ import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.WebPartPanel;
 import org.labkey.api.gwt.client.ui.domain.DomainImporter;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterServiceAsync;
+import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
@@ -47,8 +49,10 @@ import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -106,28 +110,7 @@ public class AssayImporter implements EntryPoint
                     Window.alert("Please enter a valid assay name.");
                     return;
                 }
-
-                // on import create the protocol using the assay name specified
-                getService().createProtocol(PropertyUtil.getServerProperty("providerName"), _assayName.getString(), new ErrorDialogAsyncCallback<GWTProtocol>()
-                {
-                    public void handleFailure(String message, Throwable caught)
-                    {
-                    }
-
-                    public void onSuccess(GWTProtocol protocol)
-                    {
-                        _protocol = protocol;
-
-                        if (_domainImporter != null)
-                        {
-                            // create the columns on the server then redirect to the assay import
-                            _domainImporter.handleImport();
-                        }
-                        else
-                            // just redirect to the assay import
-                            gotoProtocolImport();
-                    }
-                });
+                onNext(false);
             }
         }));
         btnBar.add(new ImageButton("Show Assay Designer", new ClickHandler(){
@@ -141,28 +124,7 @@ public class AssayImporter implements EntryPoint
                     return;
                 }
 
-                // on import create the protocol using the assay name specified
-                getService().createProtocol(PropertyUtil.getServerProperty("providerName"), _assayName.getString(), new ErrorDialogAsyncCallback<GWTProtocol>()
-                {
-                    public void handleFailure(String message, Throwable caught)
-                    {
-                    }
-
-                    public void onSuccess(GWTProtocol protocol)
-                    {
-                        _protocol = protocol;
-                        _showEditor.setBool(true);
-
-                        if (_domainImporter != null)
-                        {
-                            // create the columns on the server then redirect to the assay import
-                            _domainImporter.handleImport();
-                        }
-                        else
-                            // just redirect to the assay import
-                            gotoProtocolImport();
-                    }
-                });
+                onNext(true);
             }
         }));
         btnBar.add(new ImageButton("Cancel", new ClickHandler(){
@@ -252,6 +214,59 @@ public class AssayImporter implements EntryPoint
             ServiceUtil.configureEndpoint(service, "assayImportService");
         }
         return service;
+    }
+
+    /**
+     * Handler for starting the import or moving to the assay designer. Column settings are validated
+     * against the entire document before creating the protocol and setting up the data domain.
+     * @param showAssayDesigner - true to show the advanced assay designer, else start importing the data.
+     */
+    private void onNext(final boolean showAssayDesigner)
+    {
+        // validate the selected column descriptor
+        List<InferencedColumn> inferencedColumns = new ArrayList<InferencedColumn>();
+        for (GWTPropertyDescriptor prop : _domainImporter.getColumns(true))
+        {
+            InferencedColumn col = new InferencedColumn();
+
+            col.setPropertyDescriptor(prop);
+            inferencedColumns.add(col);
+        }
+
+        service.validateColumns(inferencedColumns, _path, _file, new ErrorDialogAsyncCallback<Boolean>()
+        {
+            public void onSuccess(Boolean result)
+            {
+                // on import create the protocol using the assay name specified
+                getService().createProtocol(PropertyUtil.getServerProperty("providerName"), _assayName.getString(), new ErrorDialogAsyncCallback<GWTProtocol>()
+                {
+                    public void handleFailure(String message, Throwable caught)
+                    {
+                    }
+
+                    public void onSuccess(GWTProtocol protocol)
+                    {
+                        _protocol = protocol;
+                        _showEditor.setBool(showAssayDesigner);
+
+
+                        if (_domainImporter != null)
+                        {
+                            // create the columns on the server then redirect to the assay import
+                            _domainImporter.handleImport();
+                        }
+                        else
+                            // just redirect to the assay import
+                            gotoProtocolImport();
+                    }
+                });
+            }
+
+            public void handleFailure(String message, Throwable caught)
+            {
+                // do nothing, we will already show the error in a popup
+            }
+        });
     }
 
     private void gotoProtocolImport()

@@ -27,6 +27,7 @@ import org.springframework.validation.Errors;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -36,7 +37,7 @@ import java.util.Map;
  */
 public class MessageConfigServiceImpl implements MessageConfigService.I
 {
-    private final Map<String, MessageConfigService.ConfigTypeProvider> _providers = new LinkedHashMap<String, MessageConfigService.ConfigTypeProvider>();
+    private final Map<String, MessageConfigService.ConfigTypeProvider> _providers = new TreeMap<String, MessageConfigService.ConfigTypeProvider>();
 
     @Override
     public void savePreference(User currentUser, Container c, User projectUser, MessageConfigService.ConfigTypeProvider provider, int preference) throws Exception

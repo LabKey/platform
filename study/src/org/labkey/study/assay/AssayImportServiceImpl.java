@@ -16,20 +16,27 @@
 package org.labkey.study.assay;
 
 import gwt.client.org.labkey.assay.designer.client.AssayImporterService;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
+import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.study.actions.ImportAction;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -40,8 +47,11 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +103,64 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             return inferenceColumns();
         }
         throw new ImportException("Failed trying to infer columns for the file: " + file);
+    }
+
+    @Override
+    public Boolean validateColumns(List<InferencedColumn> columns, String path, String file) throws ImportException
+    {
+        List<File> files = ImportAction.getFiles(getContainer(), path, new String[]{file});
+
+        if (!files.isEmpty())
+        {
+            _importFile = files.get(0);
+        }
+
+        List<ColumnDescriptor> descriptors = new ArrayList<ColumnDescriptor>();
+        for (InferencedColumn col : columns)
+        {
+            GWTPropertyDescriptor prop = col.getPropertyDescriptor();
+            Class javaType = null;
+            Type type = Type.getTypeByXsdType(prop.getRangeURI());
+
+            if (type != null)
+                javaType = type.getJavaClass();
+
+            if (javaType == null)
+            {
+                PropertyType propType = PropertyType.getFromURI(prop.getConceptURI(), prop.getRangeURI());
+                if (propType != null)
+                    javaType = propType.getJavaType();
+            }
+
+            if (javaType != null)
+            {
+                ColumnDescriptor cd = new ColumnDescriptor(prop.getName(), javaType);
+                descriptors.add(cd);
+            }
+        }
+
+        DataLoader loader = getDataLoader();
+        loader.setColumns(descriptors.toArray(new ColumnDescriptor[descriptors.size()]));
+
+        loader.setThrowOnErrors(true);
+
+        // validate the entire document by scanning all rows using the dataloader
+        CloseableIterator it = loader.iterator();
+        try {
+            while (it.hasNext())
+            {
+                it.next();
+            }
+        }
+        catch (Exception e)
+        {
+            throw new ImportException(e.getMessage());
+        }
+        finally
+        {
+            try {it.close();} catch(IOException ioe){}
+        }
+        return true;
     }
 
     @Override
@@ -206,7 +274,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
 
         if (protocol != null && !files.isEmpty())
         {
-            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(getContainer(), protocol, directoryPath, new File[]{files.get(0)});
+            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(getContainer(), protocol, StringUtils.trimToEmpty(directoryPath), new File[]{files.get(0)});
             return url.getLocalURIString();
         }
         return null;

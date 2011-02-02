@@ -32,6 +32,12 @@ public interface AssayImporterService extends DomainImporterService
 {
     // get the inferred column list of the server side file specified
     public List<InferencedColumn> getInferenceColumns(String path, String file) throws ImportException;
+
+    /**
+     * Optional action to perform server side validation on the file, using the specified column
+     * descriptors. The entire or part of the file can be checked.
+     */
+    public Boolean validateColumns(List<InferencedColumn> columns, String path, String file) throws ImportException;
     
     /**
      * Create a new assay instance for the specified provider and assay name
