@@ -179,14 +179,14 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
-    public List<FieldType> getColumns()
+    public List<FieldType> getColumns(boolean includeIgnored)
     {
         // don't include columns that are unselected for import
         List<FieldType> columns = new ArrayList<FieldType>();
 
         for (FieldType prop : _columns)
         {
-            if (isImportEnabled(prop))
+            if (includeIgnored || isImportEnabled(prop))
                 columns.add(prop);
         }
         return columns;

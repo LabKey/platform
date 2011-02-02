@@ -2544,11 +2544,9 @@ internal/src/org/labkey/api/exp/property/ExperimentProperty.java -text
 internal/src/org/labkey/api/exp/property/SystemProperty.java -text
 internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
 internal/src/org/labkey/api/issues/IssuesSchema.java -text
-internal/src/org/labkey/api/message/MessageSchema.java -text
 internal/src/org/labkey/api/message/digest/DailyMessageDigest.java -text
 internal/src/org/labkey/api/message/digest/MessageDigest.java -text
 internal/src/org/labkey/api/message/digest/PeriodicMessageDigest.java -text
-internal/src/org/labkey/api/message/query/MessagePrefsTable.java -text
 internal/src/org/labkey/api/message/settings/AbstractConfigTypeProvider.java -text
 internal/src/org/labkey/api/message/settings/MessageConfigService.java -text
 internal/src/org/labkey/api/pipeline/PipelineRootContainerTree.java -text

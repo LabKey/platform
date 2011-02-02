@@ -86,8 +86,8 @@ public class DomainImporter
     private ProgressBarText progressBarText;
     private ProgressBar progressBar = null;
     private List<InferencedColumn> columns;
-    private DomainImportGrid<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> grid;
-    private ColumnMapper columnMapper;
+    protected DomainImportGrid<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> grid;
+    protected ColumnMapper columnMapper;
 
     private boolean cancelRequested = false;
     private boolean _hideFileUpload;
@@ -205,7 +205,7 @@ public class DomainImporter
         else
             ignoredColumns = new HashSet<String>(); // emptySet is not serializable
         List<GWTPropertyDescriptor> newProps = newDomain.getFields();
-        for (GWTPropertyDescriptor prop : grid.getColumns())
+        for (GWTPropertyDescriptor prop : grid.getColumns(false))
         {
             // Don't create properties for columns we're mapping, or that are already in the base table
             String propName = prop.getName();
@@ -399,6 +399,16 @@ public class DomainImporter
         importData();
     }
 
+    public List<GWTPropertyDescriptor> getColumns(boolean includeIgnored)
+    {
+        return grid.getColumns(includeIgnored);
+    }
+
+    public boolean isImportEnabled(GWTPropertyDescriptor prop)
+    {
+        return grid.isImportEnabled(prop);
+    }
+
     private void updateStatus(ImportStatus status)
     {
         if (status.getTotalRows() > 0)
@@ -536,7 +546,7 @@ public class DomainImporter
         }
     }
 
-    private class ColumnMapper extends VerticalPanel
+    public class ColumnMapper extends VerticalPanel
     {
         List<ListBox> columnSelectors;
 

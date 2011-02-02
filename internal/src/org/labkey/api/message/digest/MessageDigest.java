@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: klum
@@ -41,7 +42,7 @@ public abstract class MessageDigest
     private static final String LAST_KEY = "LastSuccessfulSend";
     Timer _timer = null;
     MessageDigestTask _timerTask = null;
-    private Map<String, Provider> _providers = new LinkedHashMap<String, Provider>();
+    final private List<Provider> _providers = new CopyOnWriteArrayList<Provider>();
 
     private static final Logger _log = Logger.getLogger(MessageDigest.class);
 
@@ -60,14 +61,7 @@ public abstract class MessageDigest
 
     public void addProvider(Provider provider)
     {
-        synchronized(_providers){
-
-            String key = provider.getClass().getName();
-            if (_providers.containsKey(key))
-                throw new IllegalArgumentException("MessageDigest provider " + key + " has already been registered");
-
-            _providers.put(key, provider);
-        }
+        _providers.add(provider);
     }
 
     public void sendMessageDigest() throws Exception
@@ -79,7 +73,7 @@ public abstract class MessageDigest
         Date start = getStartRange(current, prev);
         Date end = getEndRange(current, prev);
 
-        for (Provider provider : _providers.values())
+        for (Provider provider : _providers)
         {
             List<Container> containers = provider.getContainersWithNewMessages(start, end);
 
