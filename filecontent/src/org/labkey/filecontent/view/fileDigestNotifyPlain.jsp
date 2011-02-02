@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -45,13 +46,13 @@ Summary of notifications of files at <%=form.getContainer().getPath()%>.
             WebdavResource resource = org.labkey.api.webdav.WebdavService.get().getResolver().lookup(path);
 
     %>
-        <%=h(resource.getName())%>
+        <%=resource.isCollection() ? "Folder: " : " File: "%><%=h(resource.getName())%>
         <%
             for (AuditLogEvent event : record.getValue())
             {
                 User user = event.getCreatedBy();
         %>
-                <%=event.getCreated()%>, <%=user.getDisplayName(user)%>, <%=event.getComment()%>
+                <%=org.labkey.api.util.DateUtil.formatDateTime(event.getCreated())%>, <%=user.getDisplayName(user)%>, <%=event.getComment()%>
         <%
             }
         %>

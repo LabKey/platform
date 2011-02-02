@@ -26,6 +26,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -43,29 +44,33 @@
     </head>
     <body>
         <table width="100%">
-            <tr><td>Summary of notifications of files at <a href="<%=fileBrowser.getURIString()%>"><%=form.getContainer().getPath()%></a>.
-            </td></tr>
+            <tr><td>Summary of notifications of files at <a href="<%=fileBrowser.getURIString()%>"><%=form.getContainer().getPath()%></a>.</td></tr>
         </table>
         <hr size="1"/>
         <br>
 
         <table width="100%">
+            <tr><th>Time</th><th>User</th><th>Comment</th></tr>
         <%
             for (Map.Entry<org.labkey.api.util.Path, List<AuditLogEvent>> record : form.getRecords().entrySet())
             {
                 org.labkey.api.util.Path path = record.getKey();
                 WebdavResource resource = org.labkey.api.webdav.WebdavService.get().getResolver().lookup(path);
-
+                
         %>
-                <tr><td class="labkey-alternate-row" colspan="3"><span class="labkey-strong"><%=h(resource.getName())%></span></td></tr>
-            <%
+            <%  if (resource.exists()) { %>
+                <tr><td class="labkey-alternate-row" colspan="3"><%=resource.isCollection() ? "Folder: " : " File: "%><a href="<%=resource.getLocalHref(getViewContext())%>"><%=h(resource.getName())%></a></td></tr>
+            <%  } else { %>
+                <tr><td class="labkey-alternate-row" colspan="3"><%=resource.isCollection() ? "Folder: " : " File: "%><span class="labkey-strong"><%=h(resource.getName())%></span></td></tr>
+            <%  }
+
                 int i=0;
                 for (AuditLogEvent event : record.getValue())
                 {
                     String rowCls = (i % 2 == 0) ? "labkey-row" : "labkey-row";
                     User user = event.getCreatedBy();
             %>
-                    <tr class="<%=rowCls%>"><td><%=event.getCreated()%></td><td><%=user.getDisplayName(user)%></td><td><%=event.getComment()%></td></tr>
+                    <tr class="<%=rowCls%>"><td><%=org.labkey.api.util.DateUtil.formatDateTime(event.getCreated())%></td><td><%=user.getDisplayName(user)%></td><td><%=event.getComment()%></td></tr>
             <%
                 }
             %>

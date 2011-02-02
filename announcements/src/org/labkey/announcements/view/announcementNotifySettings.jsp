@@ -161,7 +161,7 @@
         };
 
         var bulkEditBtn = new Ext.Button({
-            text:'Update Selected Users Settings',
+            text:'Update Settings',
             tooltip: 'Sets the notification option for all selected users',
             handler: bulkEditHandler
         });
