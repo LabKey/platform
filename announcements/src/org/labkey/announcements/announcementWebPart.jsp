@@ -38,33 +38,10 @@
             <div style="text-align: left"><%
             if (null != bean.insertURL)
             {
-        %><%=textLink("new " + bean.settings.getConversationName().toLowerCase(), bean.insertURL)%>&nbsp;<%
+        %><%= generateButton("New", bean.insertURL)%><%
             }
-            if (null != bean.listURL)
-            {
-        %><%=textLink("view list", bean.listURL)%><%
-    }
 %></div>
-        </td>
-        <td style="text-align:center">
-            <div style="text-align: center;"><%=bean.filterText.replace(" ", "&nbsp;")%></div>
-        </td>
-        <td>
-            <div style="text-align: right"><%
-                if (null != bean.emailPrefsURL)
-                {
-            %><%=textLink("email preferences", bean.emailPrefsURL)%><%
-                }
-                if (null != bean.emailManageURL)
-                {
-            %>&nbsp;<%=textLink("email admin", bean.emailManageURL)%><%
-                }
-                if (null != bean.customizeURL)
-                {
-            %>&nbsp;<%=textLink("customize", bean.customizeURL)%><%
-                }
-            %>
-            </div>
+            <div style="padding-top: 5px;">Showing: <%=bean.filterText.replace(" ", "&nbsp;")%></div>
         </td>
     </tr><%
     if (0 == bean.announcementModels.length)

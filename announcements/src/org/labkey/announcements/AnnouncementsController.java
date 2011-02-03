@@ -223,7 +223,8 @@ public class AnnouncementsController extends SpringActionController
             Settings settings = getSettings();
             boolean displayAll = getActionURL().getPageFlow().equalsIgnoreCase("announcements");
             WebPartView v = new AnnouncementWebPart(getContainer(), getActionURL(), getUser(), settings, displayAll);
-            v.setFrame(WebPartView.FrameType.DIV);
+            v.setFrame(WebPartView.FrameType.PORTAL);
+            v.setShowTitle(false);
             getPageConfig().setRssProperties(new RssAction().getURL(), settings.getBoardName());
 
             return v;
@@ -248,7 +249,8 @@ public class AnnouncementsController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             AnnouncementListView view = new AnnouncementListView(getViewContext());
-            view.setFrame(WebPartView.FrameType.DIV);
+            view.setFrame(WebPartView.FrameType.PORTAL);
+            view.setShowTitle(false);
             getPageConfig().setRssProperties(new RssAction().getURL(), getSettings().getBoardName());
 
             return view;
@@ -906,6 +908,7 @@ public class AnnouncementsController extends SpringActionController
                 HttpView.throwUnauthorized();
 
             InsertMessageView insertView = new InsertMessageView(form, "New " + settings.getConversationName(), errors, reshow, form.getReturnUrl(), false, true);
+            insertView.setShowTitle(false);
 
             getPageConfig().setFocusId("title");
 
@@ -1351,7 +1354,7 @@ public class AnnouncementsController extends SpringActionController
         public ModelAndView getView(AnnouncementForm form, BindException errors) throws Exception
         {
             ThreadView threadView = new ThreadView(form, getContainer(), getActionURL(), getPermissions(), isPrint());
-            threadView.setFrame(WebPartView.FrameType.DIV);
+            threadView.setFrame(WebPartView.FrameType.PORTAL);
 
             AnnouncementModel ann = threadView.getAnnouncement();
             _title = ann != null ? ann.getTitle() : "Error";
@@ -1488,9 +1491,10 @@ public class AnnouncementsController extends SpringActionController
 
             setHelpTopic("createMessage");
             JspView view = new JspView("/org/labkey/announcements/emailPreferences.jsp");
-            view.setFrame(WebPartView.FrameType.DIV);
+            view.setFrame(WebPartView.FrameType.PORTAL);
             EmailPreferencesPage page = (EmailPreferencesPage)view.getPage();
             view.setTitle("Email Preferences");
+            view.setShowTitle(false);
 
             Settings settings = getSettings();
             page.emailPreference = form.getEmailPreference();
@@ -2177,6 +2181,23 @@ public class AnnouncementsController extends SpringActionController
         private ListLinkBar(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll)
         {
             super("/org/labkey/announcements/announcementListLinkBar.jsp", new ListBean(c, url, user, settings, perm, displayAll));
+
+            ListBean bean = new ListBean(c, url, user, settings, perm, displayAll);
+            NavTree menu = new NavTree("");
+            
+            if (bean.emailPrefsURL != null || bean.emailManageURL != null)
+            {
+                NavTree email = new NavTree("Email", "", getViewContext().getContextPath() + "/_images/email.png");
+                if (bean.emailPrefsURL != null)
+                    email.addChild("Preferences", bean.emailPrefsURL);
+                if (bean.emailManageURL != null)
+                    email.addChild("Administration", bean.emailManageURL);
+                if (bean.customizeURL != null)
+                    menu.addChild("Customize", bean.customizeURL);
+                menu.addChild(email);
+            }
+            
+            setNavMenu(menu);
         }
 
         public static class ListBean extends LinkBarBean
@@ -2217,9 +2238,8 @@ public class AnnouncementsController extends SpringActionController
             // TODO: Move this into a method
             MessagesBean bean = new MessagesBean(c, url, user, settings, displayAll); // I'd prefer not to replicate like this, but super() call
             NavTree menu = new NavTree("");
-            menu.addChild("Go to " + bean.settings.getConversationName().toLowerCase(), getBeginURL(c)); // Should be plural
             if (bean.insertURL != null)
-                menu.addChild("New " + bean.settings.getConversationName().toLowerCase(), bean.insertURL);
+                menu.addChild("New", bean.insertURL);
             if (bean.listURL != null)
                 menu.addChild("View List", bean.listURL);
 
@@ -2234,7 +2254,7 @@ public class AnnouncementsController extends SpringActionController
             }
 
             if (bean.customizeURL != null)
-                menu.addChild("Customize", bean.customizeURL);
+                setCustomizeLink(bean.customizeURL.toString());
             
             setNavMenu(menu);
         }
@@ -2406,15 +2426,16 @@ public class AnnouncementsController extends SpringActionController
             rgn.addColumn(tinfo.getColumn("ResponseCreated"));
 
             GridView gridView = new GridView(rgn, (BindException)null);
-            gridView.setFrame(FrameType.DIV);  // Prevent double title
+            gridView.setFrame(FrameType.PORTAL);  // Prevent double title
             gridView.setContainer(c);
             gridView.setSort(settings.getSort());
 
             SimpleFilter filter = getFilter(settings, perm, displayAll);
             gridView.setFilter(filter);
 
-            setNavMenu(new NavTree("Welcome to List View of Announcements!"));
-            _vbox = new VBox(new ListLinkBar(c, url, user, settings, perm, displayAll), gridView);
+            ListLinkBar bar = new ListLinkBar(c, url, user, settings, perm, displayAll);
+            setNavMenu(bar.getNavMenu());
+            _vbox = new VBox(bar, gridView);
         }
 
         protected DataRegion getDataRegion(Permissions perm, DiscussionService.Settings settings)

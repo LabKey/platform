@@ -238,6 +238,11 @@ a.labkey-button:active
     background-color: #<%= second %>;
 }
 
+span.css-arrow-right
+{
+    border-left: 6px solid #<%= link %>;
+}
+
 /* This is used in simple cases to give an area the same background as the
  side panel */
 .labkey-frame
@@ -619,6 +624,11 @@ body .x-grid3 .x-grid3-row-selected
 {
     border: 1px solid #<%= link %>;
     background: #<%= grid %> !important;
+}
+
+.labkey-error-body
+{
+    background-color: #<%= webpart %>;
 }
 
 /* This tab has a bottom border so it looks like it is back */

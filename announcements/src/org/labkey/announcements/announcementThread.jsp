@@ -276,14 +276,14 @@ if (!bean.isResponse && !bean.print)
             url.replaceParameter("discussion.id",""+ announcementModel.getRowId());
             url.replaceParameter("discussion.reply","1");
             %>
-        <%=generateButton("Post Response", url)%>&nbsp;<%
+        <%=generateButton("Respond", url)%>&nbsp;<%
         }
         else
         {
             ActionURL respond = announcementURL(c, RespondAction.class, "parentId", announcementModel.getEntityId());
             respond.addReturnURL(bean.currentURL);
             %>
-        <%=generateButton("Post Response", respond)%>&nbsp;<%
+        <%=generateButton("Respond", respond)%>&nbsp;<%
         }
     }
     if (bean.perm.allowDeleteMessage(announcementModel))

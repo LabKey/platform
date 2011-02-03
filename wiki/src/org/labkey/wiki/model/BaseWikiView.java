@@ -174,7 +174,7 @@ public abstract class BaseWikiView extends JspView<Object>
             updateContentURL.addParameter("redirect", url.getLocalURIString());
         }
 
-        if (isWebPart())
+        if (isWebPart() && perms.allowUpdate(wiki))
         {
             customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c);
             customizeURL.addParameter("pageId", _pageId);
@@ -192,6 +192,13 @@ public abstract class BaseWikiView extends JspView<Object>
             }
         }
 
+        // Initialize Custom Menus
+        if (perms.allowUpdate(wiki) && folderHasWikis && hasContent)
+        {
+            NavTree edit = new NavTree("Edit", updateContentURL.toString(), getViewContext().getContextPath() + "/_images/partedit.png");
+            addCustomMenu(edit);
+        }
+
         setTitle(title.getSource());
     }
 
@@ -200,14 +207,15 @@ public abstract class BaseWikiView extends JspView<Object>
     @Override
     public NavTree getNavMenu()
     {
+        NavTree menu = new NavTree("");
+        String href = (String) getViewContext().get("href");
+        String path = getViewContext().getContextPath();
         if (hasContent && !(isEmbedded() && getFrame() == WebPartView.FrameType.NONE))
         {
-            NavTree menu = new NavTree("");
-            String href = (String) getViewContext().get("href");
-            if (null != href)
-                menu.addChild("Go To Wiki", href);
             if (null != updateContentURL)
-                menu.addChild("Edit", updateContentURL);
+                menu.addChild("Edit", updateContentURL.toString(), path + "/_images/partedit.png");
+            if (null != customizeURL)
+                setCustomizeLink(customizeURL.toString());
             if (null != manageURL)
                 menu.addChild("Manage", manageURL);
             if (null != versionsURL)
@@ -219,8 +227,13 @@ public abstract class BaseWikiView extends JspView<Object>
                     menu.addChild("Print Branch", new ActionURL(WikiController.PrintBranchAction.class,
                             getContextContainer()).addParameter("name", wiki.getName()));
             }
-            return menu;
         }
-        return null;
+        else if(!(isEmbedded() && getFrame() == WebPartView.FrameType.NONE))
+        {
+            // The wiki might not have been set yet -- so there is no content
+            if (null != customizeURL)
+                setCustomizeLink(customizeURL.toString());
+        }
+        return menu;
     }
 }

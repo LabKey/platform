@@ -83,7 +83,7 @@ public class SearchModule extends DefaultModule
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new SearchWebPartFactory("Search", null),
-            new SearchWebPartFactory("Search", "right")));
+            new SearchWebPartFactory("Search", WebPartFactory.LOCATION_RIGHT)));
     }
 
     

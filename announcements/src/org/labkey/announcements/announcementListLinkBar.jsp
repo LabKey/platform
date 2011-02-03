@@ -24,31 +24,19 @@
 %>
 <!--ANNOUNCEMENTS-->
 <table width="100%">
-<tr>
-<td align="left" width="33%"><%
-if (null != bean.insertURL)
+    <tr>
+        <td>
+            <div style="text-align: left"><%
+            if (null != bean.insertURL)
+            {
+            %><%=generateButton("New", bean.insertURL)%><%
+            }%>
+            <div style="padding-top: 5px;">Showing: <%=h(bean.filterText)%></div>
+            </div>
+        </td>
+    </tr><%
+    if (null != bean.urlFilterText)
     {
-    %><%=textLink("new " + h(bean.settings.getConversationName().toLowerCase()), bean.insertURL)%>&nbsp;<%
-    }
-%></td>
-<td align="center" width="33%"><%=h(bean.filterText)%></td>
-<td align="right"  width="33%"><%
-if (null != bean.emailPrefsURL)
-    {
-    %><%=textLink("email preferences", bean.emailPrefsURL)%><%
-    }
-if (null != bean.emailManageURL)
-    {
-    %>&nbsp;<%=textLink("email admin", bean.emailManageURL)%><%
-    }
-if (null != bean.customizeURL)
-    {
-    %>&nbsp;<%=textLink("customize",bean.customizeURL)%><%
-    }
-%></td>
-</tr><%
-if (null != bean.urlFilterText)
-{
-    %><tr><td colspan=3><br>Filter: <%=h(bean.urlFilterText)%></td></tr><%
-}
-%></table>
+        %><tr><td colspan=3><br>Filter: <%=h(bean.urlFilterText)%></td></tr>
+    <%}%>
+</table>

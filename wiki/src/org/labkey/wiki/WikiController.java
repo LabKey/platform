@@ -1173,6 +1173,7 @@ public class WikiController extends SpringActionController
                     String discussionTitle = "discuss page - " +  _wikiversion.getTitle();
                     HttpView discussionView = getDiscussionView(_wiki.getEntityId(), pageUrl, discussionTitle);
                     v.setView("discussion", discussionView);
+                    v.setShowTitle(false);
                 }
 
                 return v;

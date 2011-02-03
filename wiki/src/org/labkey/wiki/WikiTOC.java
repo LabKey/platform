@@ -18,6 +18,7 @@ package org.labkey.wiki;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -32,14 +33,13 @@ import org.labkey.api.view.menu.NavTreeMenu;
 import org.labkey.wiki.model.Wiki;
 
 import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 
 public class WikiTOC extends NavTreeMenu
 {
     private String _selectedLink;
+    private boolean _init = false;
 
     static private Container getTocContainer(ViewContext context)
     {
@@ -59,6 +59,53 @@ public class WikiTOC extends NavTreeMenu
         return cToc;
     }
 
+    @Override
+    public NavTree getNavMenu()
+    {
+        ViewContext context = getViewContext();
+        User user = context.getUser();
+        ensureInit(context);
+        Container cToc = getTocContainer(context);
+
+        //output only this one if wiki contains no pages
+        boolean bHasInsert = cToc.hasPermission(user, InsertPermission.class);
+        boolean bHasCopy = cToc.hasPermission(user, AdminPermission.class) && getElements().length > 0;
+        boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && getElements().length > 0;
+
+        NavTree menu = new NavTree("");
+        if (bHasInsert)
+        {
+            ActionURL newPageUrl = new ActionURL(WikiController.EditWikiAction.class, cToc);
+            newPageUrl.addParameter("cancel", context.getActionURL().getLocalURIString());
+            menu.addChild("New", newPageUrl.getLocalURIString());
+        }
+        if (bHasCopy)
+        {
+            URLHelper copyUrl = new ActionURL(WikiController.CopyWikiLocationAction.class, cToc);
+            //pass in source container as a param.
+            copyUrl.addParameter("sourceContainer", cToc.getPath());
+            menu.addChild("Copy", copyUrl.toString());
+        }
+        if (bHasPrint)
+        {
+            menu.addChild("Print all", new ActionURL(WikiController.PrintAllAction.class, cToc).toString());
+        }
+        return menu;
+    }
+
+    @Override
+    public void enableExpandCollapse(String rootId, boolean collapsed)
+    {
+        addObject("collapsed", Boolean.valueOf(false));
+        addObject("rootId", rootId);
+    }
+
+    @Override
+    public boolean isCollapsible()
+    {
+        return false;
+    }
+    
     static public String getNavTreeId(ViewContext context)
     {
         Container cToc = getTocContainer(context);
@@ -75,7 +122,7 @@ public class WikiTOC extends NavTreeMenu
     {
         super(context, "");
         setFrame(FrameType.PORTAL);
-        setHighlightSelection(true);
+        setHighlightSelection(false);
 
         //set specified web part title
         Object title = context.get("title");
@@ -115,18 +162,12 @@ public class WikiTOC extends NavTreeMenu
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
         ViewContext context = getViewContext();
-        User user = context.getUser();
-        setId(getNavTreeId(context));
-        setElements(context, getNavTree(context));
+        ensureInit(context);
 
-        boolean isInWebPart = false;
-        //is page being rendered in web part or in module?
-        String pageUrl = context.getActionURL().getPageFlow();
-        if (pageUrl.equalsIgnoreCase("Project"))
-            isInWebPart = true;
+        boolean isInWebPart = isInWebPart(context);
 
         Container cToc = getTocContainer(context);
-
+        
         //Should we show the option to expand all nodes?
         boolean showExpandOption = false;
 
@@ -215,47 +256,6 @@ public class WikiTOC extends NavTreeMenu
             }
         }
 
-        //output only this one if wiki contains no pages
-        boolean bHasInsert = cToc.hasPermission(user, InsertPermission.class);
-        boolean bHasCopy = cToc.hasPermission(user, AdminPermission.class) && getElements().length > 0;
-        boolean bHasPrint = (!isInWebPart || bHasInsert) && getElements().length > 0;
-
-        if (bHasInsert || bHasCopy || bHasPrint)
-        {
-            out.println("<table class=\"labkey-wp-link-panel\">");
-            out.println("<tr>");
-            out.println("<td  style=\"height:16;\">");
-
-            if (bHasInsert)
-            {
-                ActionURL newPageUrl = new ActionURL(WikiController.EditWikiAction.class, cToc);
-                newPageUrl.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
-                out.print("&nbsp;" + PageFlowUtil.textLink("new page", newPageUrl.getLocalURIString()));
-            }
-
-            if (bHasCopy)
-            {
-                URLHelper copyUrl = new ActionURL(WikiController.CopyWikiLocationAction.class, cToc);
-                //pass in source container as a param.
-                copyUrl.addParameter("sourceContainer", cToc.getPath());
-
-                out.print("&nbsp;" + PageFlowUtil.textLink("copy pages", copyUrl.toString()));
-            }
-
-            if (bHasPrint)
-            {
-                Map<String, String> map = new HashMap<String, String>();
-                map.put("target", "_blank");
-
-                out.print("&nbsp;" + PageFlowUtil.textLink("print all",
-                        PageFlowUtil.filter(new ActionURL(WikiController.PrintAllAction.class, cToc).toString()), null, null, map));
-            }
-
-            out.println("");
-            out.println("</td></tr>");
-            out.println("</table>");
-        }
-
         out.println("<div id=\"NavTree-"+ getId() +"\">");
         super.renderView(model, out);
         out.println("</div>");
@@ -268,24 +268,12 @@ public class WikiTOC extends NavTreeMenu
 
             if (prevURL != null)
             {
-                out.print("<a href=\"");
-                out.print(PageFlowUtil.filter(prevURL));
-                out.println("\">[previous]</a>");
-            }
-            else
-            {
-                out.println("[previous]");
+                out.print(PageFlowUtil.textLink("previous", prevURL));
             }
 
             if (nextURL != null)
             {
-                out.print("<a href=\"");
-                out.print(PageFlowUtil.filter(nextURL));
-                out.println("\">[next]</a>");
-            }
-            else
-            {
-                out.println("[next]");
+                out.print(PageFlowUtil.textLink("next", nextURL));
             }
 
             if (showExpandOption)
@@ -297,5 +285,21 @@ public class WikiTOC extends NavTreeMenu
 
             out.println("</td>\n</tr>\n</table>");
         }
+    }
+
+    private void ensureInit(ViewContext context)
+    {
+        if (!_init)
+        {
+            setId(getNavTreeId(context));
+            setElements(context, getNavTree(context));
+            _init = true;
+        }
+    }
+    
+    private boolean isInWebPart(ViewContext context)
+    {
+        //is page being rendered in web part or in module?
+        return context.getActionURL().getPageFlow().equalsIgnoreCase("Project");
     }
 }

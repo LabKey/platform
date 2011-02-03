@@ -256,7 +256,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return new ContactWebPart();
                 }
             },
-                new AlwaysAvailableWebPartFactory("Folders", "menubar", false, false) {
+                new AlwaysAvailableWebPartFactory("Folders", WebPartFactory.LOCATION_MENUBAR, false, false) {
                     public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
                         final ProjectsMenu projectsMenu = new ProjectsMenu(portalCtx);

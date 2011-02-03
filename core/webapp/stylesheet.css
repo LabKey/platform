@@ -41,7 +41,7 @@ body, div, td, th, table, img, form
 body, div, td, th, table, img, form,
 .x-form-item, .x-panel-header, .x-btn button
 {
-    font-size: 13px;
+    font-size: 60px;
 }
 
 img
@@ -113,7 +113,7 @@ table#header
     text-decoration: none;
     vertical-align: top;
     padding: 1px;
-    padding-right:4px;
+   /*  padding-right:4px; */
 }
 
 .labkey-header:hover
@@ -228,6 +228,13 @@ table.labkey-no-spacing
 {
     border-spacing: 0;
     *border-collapse: collapse;
+}
+
+/* Used as error border */
+.labkey-error-body
+{
+    margin: 40px;
+    background-color: #e0e6ea;
 }
 
 /* Used for the error messages across the site */
@@ -1693,8 +1700,8 @@ tr.labkey-wp-header
 .labkey-wp-header th, .labkey-wp-header td, .labkey-wp-title
 {
     font-weight: bold;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-left: 0;
+    padding-right: 0;
     padding-top: 0;
     padding-bottom: 5px;
     text-align: left;
@@ -1719,11 +1726,12 @@ tr.labkey-wp-header
 
 .labkey-wp-header img
 {
-    opacity: 0.6;
+    /*opacity: 0.6;
     filter: alpha(opacity=60);
-    -moz-opacity: 0.6;
-    padding-top: 2px;
+    -moz-opacity: 0.6;*/
+    padding-top: 0;
     vertical-align: top;
+	margin-left: 2px;
 }
 
 .labkey-warning-messages
@@ -1750,6 +1758,7 @@ th.labkey-wp-title-left {
     border-right: 0 none;
     font-family: Arial, Helvetica, sans serif;
     color: #000000;
+	padding-left: 5px;
 }
 
 th.labkey-wp-title-left a:link, th.labkey-wp-title-left a:visited {
@@ -1767,55 +1776,96 @@ th.labkey-wp-title-left img {
 }
 
 /* This is used for the right side of the wp header and often contains buttons */
-th.labkey-wp-title-right, td.labkey-wp-title-right
-{
+th.labkey-wp-title-right, td.labkey-wp-title-right {
     text-align:  right;
     border-left:  0 none;
-	padding-top: 5px;
+}
+
+th.labkey-wp-title-right a:hover, td.labkey-wp-title-right a:hover {
+	background: url(./_images/partover.png) top right no-repeat;
+	*background: url(./_images/partover-ie.png) top left no-repeat;
 }
 
 /* This is the panel of links right below the web part that is on the right side and has "edit",
 "manage", "history", and "print" links */
-table.labkey-wp-link-panel
-{
+table.labkey-wp-link-panel {
     width: 100%;
 }
 
-a.labkey-text-link, a.labkey-text-link:visited {
-    color: #126495;
-    font-family: Verdana,Arial,Helvetica,sans-serif;
-    font-size: 10px;
-    font-weight: bold;
-    padding: 2px 10px 2px 0;
-    text-transform: uppercase;
-    background-color: #FFFFFF;
-	background: url(./_images/arrow_link_button.png) top right no-repeat;
-	border: none;
-    position: relative;
-    vertical-align: middle;
-    white-space: nowrap;
-    margin: 0.1em 0.8em 0.5em 0;
-}
-
-a.labkey-text-link:hover {
-    background-color: #FFFFFF;
-    text-transform: uppercase;
-    font-size: 10px;
-    font-family: Verdana, Arial, Helvetica, sans serif;
-    font-weight: bold;
-    padding: 2px 10px 2px 0;
-	background: url(./_images/arrow_link_button_over.png) top right no-repeat;
-	border: none;
-	color: #000000;
-}
-
-a.no-arrow
-{
+a.no-arrow {
     background: none !important;
     padding-right: 2px !important;
     padding-top: 0px !important;
     margin: 0;
 }
+
+
+
+
+a.labkey-text-link, a.labkey-text-link:visited {
+    color: #126495;
+    font-family: Verdana,Arial,Helvetica,sans-serif;
+    font-size: 10px !important;
+    font-weight: bold;
+    padding: 2px 12px 2px 0;
+    text-transform: uppercase;
+	border: none;
+    position: relative;
+    vertical-align: middle;
+    white-space: nowrap;
+    margin: 0.1em 0.8em 0.5em 0;
+    background : none;
+}
+
+a.labkey-text-link:hover {
+    text-transform: uppercase;
+    font-size: 10px !important;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+    padding: 2px 12px 2px 0;
+	border: none;
+	color: #000000;
+    background : none;
+}
+
+
+.css-arrow-right {
+	position: absolute;
+	top: 5px;
+	right: 3px;
+	font-size: 0px; line-height: 0%; width: 0px;
+	border-top: 4px solid #fff;
+	border-left: 6px solid #126495;
+	border-bottom: 4px solid #fff;
+	opacity: 0.4;
+    filter: alpha(opacity=40);
+    -moz-opacity: 0.4;
+}
+
+a.labkey-text-link:hover .css-arrow-right {
+	position: absolute;
+	top: 5px;
+	right: 3px;
+	font-size: 0px; line-height: 0%; width: 0px;
+	border-top: 4px solid #fff;
+	border-left: 6px solid #000;
+	border-bottom: 4px solid #fff;
+	opacity: 0.4;
+    filter: alpha(opacity=40);
+    -moz-opacity: 0.4;
+    background : none;  
+}
+
+.css-arrow-down {
+	display: inline;
+	font-size: 0px; line-height: 0%; width: 0px;
+	border-top: 5px solid #5d9ac3;
+	border-left: 5px solid #fff;
+	border-right: 5px solid #fff;
+}
+
+
+
 
 div.x-tree-node-leaf IMG.x-tree-node-icon.labkey-tree-error-icon
 {
