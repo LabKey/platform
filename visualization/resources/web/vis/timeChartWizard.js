@@ -5,9 +5,9 @@
  */
 Ext.namespace("LABKEY.vis");
 
+LABKEY.requiresVisualization();
 LABKEY.requiresCss("_images/icons.css");
 LABKEY.requiresScript("vis/measuresPanel.js");
-LABKEY.requiresScript("protovis/protovis-d3.2.js");
 LABKEY.requiresScript("vis/ChartComponent.js");
 LABKEY.requiresScript("vis/timeChartPanel.js");
 

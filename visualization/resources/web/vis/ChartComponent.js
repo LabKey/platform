@@ -34,9 +34,9 @@ LABKEY.vis.SVGConverter = {
         var action;
         var convertTo = format ? format.toLowerCase() : this.FORMAT_PNG;
         if (this.FORMAT_PDF == convertTo)
-            action = "exportImage";
-        else if (this.FORMAT_PNG == convertTo)
             action = "exportPDF";
+        else if (this.FORMAT_PNG == convertTo)
+            action = "exportImage";
         else
             throw "Unknown format: " + format;
 
@@ -90,19 +90,19 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                .height(this.height)
                .canvas(this.id);
 
-       //Chart width is outer width - left margin - legendWidth - 2 * (margin around legend) 
+       //Chart width is outer width - left margin - legendWidth - 2 * (margin around legend)
        this.chartWidth = this.width - this.style.outerMargin - this.style.legendWidth - 2 * this.style.smallMargin;
        this.chartHeight = this.height - 2 * this.style.outerMargin;
     },
 
     /**
-     * Export the current rendered chart as a pdf or png 
+     * Export the current rendered chart as a pdf or png
      * @param format Either LABKEY.vis.SVGConverter.FORMAT_PDF ("pdf") or LABKEY.vis.SVGConverter.FORMAT_PNG ("png") Defaults to png
      */
     exportImage: function(format) {
         LABKEY.vis.SVGConverter.convert(this.rootVisPanel.canvas().innerHTML, format)
     },
-    
+
     /**
      *
      * Draws a rule on the chart with tick marks, values, grid strokes, and a caption
@@ -115,7 +115,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
     {
         var style = this.style;
         var start = scale.domain()[0];
-        
+
         var rule = this.chartPanel.add(pv.Rule)
                 .data(scale.ticks())
                 .strokeStyle(function (d) { return d > start ? style.strokeColor : style.firstStrokeColor });
@@ -125,7 +125,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                 return this.index % 9 == 0}); //Don't like this rule, but works with ticks that protovis generates
 
         var angle;
-        
+
         switch (edge)
         {
             case "left":
@@ -186,7 +186,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                 .strokeStyle(function (d) {return style.seriesColors(d.caption).alpha(style.markAlpha)})
                 .top(function() {return this.index * 25;})
                 .left(5)
-                .size(50)
+                .shapeSize(50)
                 .shape("square")
                 .anchor("right")
                 .add(pv.Label)
@@ -272,10 +272,10 @@ LABKEY.vis.ScatterChart = Ext.extend(LABKEY.vis.XYChartComponent, {
             .bottom(function (d) {return y(s.getY(d))})
             .strokeStyle(color)
             .fillStyle(color)
-            .size(style.markSize);
+            .shapeSize(style.markSize);
        });
 
-       this.drawLegend(style, this.series);       
+       this.drawLegend(style, this.series);
        this.rootVisPanel.render();
 
    },
@@ -319,7 +319,7 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
             .strokeStyle(color)
             .lineWidth(style.markSize)
             .add(pv.Dot)
-                .size(style.markSize)
+                .shapeSize(style.markSize)
                 .title(s.getTitle)
        }, this);
 
@@ -337,7 +337,7 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
 
             if (!series.getTitle)
                 series.getTitle = function (d) {return series.caption + ": " + series.getX(d) + ",  " + series.getY(d)};
-            
+
             //The graphing doesn't work with missing values, so we strip them out of the series in the first place.
             //Consider, replace series data with static x/y values so don't have to call the getter so often
             var cleanData = [];
@@ -372,7 +372,7 @@ LABKEY.vis.BarChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        var style = this.style;
        var dataPanel = this.addChartPanel();
        var series = this.series;
-       
+
        var bar = dataPanel
                .data(series)
                 .top(function() { return y(this.index)})

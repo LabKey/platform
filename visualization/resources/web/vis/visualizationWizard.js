@@ -6,9 +6,8 @@
 Ext.namespace("LABKEY.vis");
 
 LABKEY.requiresCss("_images/icons.css");
+LABKEY.requiresVisualization();
 LABKEY.requiresScript("vis/measuresPanel.js");
-LABKEY.requiresScript("protovis/protovis-d3.2.js");
-LABKEY.requiresScript("vis/ChartComponent.js");
 LABKEY.requiresScript("vis/ChartPanel.js");
 
 Ext.QuickTips.init();
