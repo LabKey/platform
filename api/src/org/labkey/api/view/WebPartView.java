@@ -29,6 +29,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -39,10 +42,14 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     private Throwable _prepareException = null;
     private boolean _isPrepared = false;
     private boolean _isEmbedded = false;
+    private boolean _showTitle  = true;
     private String _helpPopup;
     private FrameType _frame = FrameType.PORTAL;
     private int _webPartRowId = -1;
     private NavTree _navMenu = null;
+    private List<NavTree> _customMenus = null;
+    private String _defaultLocation;
+    private String _customize;
 
     public static enum FrameType
     {
@@ -83,7 +90,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         setBody(contents);
     }
 
-    
+
     public void setFrame(FrameType type)
     {
         _frame = type;
@@ -166,7 +173,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         _webPartRowId = webPartRowId;
     }
 
-    public NavTree getCustomizeLinks()
+    public NavTree getPortalLinks()
     {
         NavTree navTree = (NavTree) getViewContext().get("customizeLinks");
         if (null == navTree)
@@ -178,11 +185,21 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         return navTree;
     }
 
-    public void setCustomizeLinks(NavTree navTree)
+    public void setPortalLinks(NavTree navTree)
     {
         addObject("customizeLinks", navTree);
     }
 
+    public void setCustomizeLink(String link)
+    {
+        _customize = link;
+    }
+
+    public String getCustomizeLink()
+    {
+        return _customize;
+    }
+    
     public void enableExpandCollapse(String rootId, boolean collapsed)
     {
         addObject("collapsed", Boolean.valueOf(collapsed));
@@ -197,14 +214,51 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     /**
      * Override to declare your own NavTree menu implementation that will be used by the
      * WebPartView upon rendering your webpart. NOTE: The top level key of your tree
-     * will be overridden with the name/title of the Webpart.
+     * may be overridden.
      * @return
      */
     public NavTree getNavMenu()
     {
         return _navMenu;
     }
-    
+
+    public void addCustomMenu(NavTree tree)
+    {
+        if (_customMenus == null)
+            _customMenus = new ArrayList<NavTree>();
+        _customMenus.add(tree);
+    }
+
+    public List<NavTree> getCustomMenus()
+    {
+        return _customMenus;
+    }
+
+    public void setShowTitle(boolean showTitle)
+    {
+        _showTitle = showTitle;
+    }
+
+    public boolean showTitle()
+    {
+        return _showTitle;
+    }
+
+    public boolean isCollapsible()
+    {
+        return true;
+    }
+
+    public void setLocation(String location)
+    {
+        _defaultLocation = location;
+    }
+
+    public String getLocation()
+    {
+        return _defaultLocation;
+    }
+
     @Override
     protected final void renderInternal(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
@@ -290,7 +344,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     {
         if (_isPrepared)
             return;
-        
+
         try
         {
             // HttpView.render() sets ActionURL(), but render may not have been called yet
@@ -333,7 +387,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
         String className = getBodyClass();
         String frameClassName = getFrameClass();
-        
+
         switch (frameType)
         {
             case NONE:
@@ -381,12 +435,13 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                 {
                     out.println("<tr class=\"labkey-wp-header\">");
                     out.print("<th class=\"labkey-wp-title-left\" title=\"");
-                    out.print(PageFlowUtil.filter(title));
+                    if (showTitle())
+                        out.print(PageFlowUtil.filter(title));
                     out.print("\">");
 
                     collapsed = (Boolean) context.get("collapsed");
 
-                    if (collapsed != null)
+                    if (collapsed != null && isCollapsible())
                     {
                         String rootId = (String) context.get("rootId");
                         ActionURL expandCollapseUrl = null;
@@ -405,33 +460,18 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
                         out.printf(" <a href=\"%s\" onclick=\"return toggleLink(document.getElementById(%s), %s);\">",
                                 filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
-                        out.print(PageFlowUtil.filter(title));
+                        if (showTitle())
+                            out.print(PageFlowUtil.filter(title));
                         out.print("</a>");
                     }
                     else
                     {
-                        try
-                        {
-                            NavTree menu = getNavMenu();                            
-                            if (menu != null && menu.hasChildren())
-                            {
-                                menu.setKey(title);
-                                include(new PopupWebpartView(context, menu), out);
-                            }
-                            else
-                            {
-                                if (null != href)
-                                    out.print("<a href=\"" + PageFlowUtil.filter(href) + "\">");
-                                out.print(PageFlowUtil.filter(title));
-                                if (null != href)
-                                    out.print("</a>");
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            throw new RuntimeException(e);
-                        }
-
+                        if (null != href)
+                            out.print("<a href=\"" + PageFlowUtil.filter(href) + "\">");
+                        if (showTitle())
+                            out.print(PageFlowUtil.filter(title));
+                        if (null != href)
+                            out.print("</a>");
                     }
                     if (_helpPopup != null)
                     {
@@ -439,12 +479,86 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                     }
 
                     out.print("</th>\n<th class=\"labkey-wp-title-right\">");
-                    NavTree[] links = getCustomizeLinks().getChildren();
-                    if (links == null || links.length == 0)
-                        out.print("&nbsp;");
+                    NavTree[] links = getPortalLinks().getChildren();
+                    String sep = "";
+                    if(getLocation() != null && getLocation().equals(WebPartFactory.LOCATION_RIGHT))
+                    {
+                        // Collapse all items into one drop-down
+                        // Render the navigation menu
+                        NavTree nMenu = getNavMenu();
+                        if (nMenu != null)
+                        {
+                            // Portal
+                            if (links.length > 0)
+                            {
+                                NavTree portal = new NavTree("Layout");
+                                for (NavTree link : links)
+                                    portal.addChild(link);
+                                nMenu.addChild(portal);
+                            }                            
+
+                            if (getCustomizeLink() != null)
+                                nMenu.addChild("Customize", getCustomizeLink());
+                            
+                            if (nMenu.hasChildren())
+                            {
+                                out.print("&nbsp;");
+                                renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
+                            }
+                        }
+                    }
                     else
                     {
-                        String sep = "";
+                        // Render specific parts first (e.g. wiki edit)
+                        if (_customMenus != null)
+                        {
+                            Iterator itr = _customMenus.iterator();
+                            NavTree current;
+                            while (itr.hasNext())
+                            {
+                                current = (NavTree) itr.next();
+                                out.print(sep);
+                                if (current.hasChildren())
+                                {                                    
+                                    renderMenu(current, out, current.getImageSrc());
+                                }
+                                else
+                                {
+                                    String linkHref = current.second;
+                                    String linkText = current.first;
+
+                                    if (null != linkHref && 0 < linkHref.length())
+                                        out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
+                                    if (null != current.getImageSrc())
+                                    {
+                                        if (current.getImageWidth() != 0 && current.getImageHeight() != 0)
+                                            out.print("<img height=" + current.getImageHeight() + " width=" + current.getImageWidth() + " src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+                                        else
+                                            out.print("<img src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+                                    }
+                                    else
+                                        out.print(PageFlowUtil.filter(linkText));
+                                    if (null != linkHref && 0 < linkHref.length())
+                                        out.print("</a>");
+                                }
+                                sep = "&nbsp;";
+                            }
+                        }
+
+                        // Render the navigation menu
+                        NavTree nMenu = getNavMenu();
+                        if (nMenu != null && getCustomizeLink() != null)
+                        {
+                            nMenu.addChild("Customize", getCustomizeLink());
+                        }
+                        
+                        if (nMenu != null && nMenu.hasChildren())
+                        {
+                            out.print(sep);
+                            renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
+                            sep = "&nbsp;";
+                        }
+
                         for (NavTree link : links)
                         {
                             out.print(sep);
@@ -466,10 +580,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                                 out.print("</a>");
                             sep = "&nbsp;";
                         }
+                        out.println("</th>");
+                        out.println("</tr>");
                     }
-                    out.println("</th>");
-                    out.println("</tr>");
                 }
+
 
                 out.print("<tr id=\"" + getContentId() + "\" ");
                 if (collapsed != null && collapsed.booleanValue())
@@ -498,7 +613,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                             throw new IllegalArgumentException("pathToHere or rootId not provided");
                         expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), "", rootId);
                     }
-                    
+
                     out.print("<td class=\"labkey-expand-collapse-area\"><div>");
 
                     if (collapsed != null)
@@ -507,7 +622,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                                 filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
                         String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
                         out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
-                    }                    
+                    }
                     if (null != href)
                     {
                         // print title with user-specified link:
@@ -528,7 +643,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                         // print the title alone:
                         out.print(PageFlowUtil.filter(title));
                     }
-                    
+
                     out.print("</div></td></tr>\n"); // end of second <th>
                 }
                 out.print("<tr" + (collapsed != null && collapsed.booleanValue() ? " style=\"display:none\"" : "") + " class=\"" + className + "\">" +
@@ -542,7 +657,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     {
         return "WebPartView" + System.identityHashCode(this);
     }
-    
+
     public static void startTitleFrame(Writer out, String title, String href, String width, String className)
     {
         try
@@ -591,24 +706,24 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
         switch (frameType)
         {
-        case NONE:
-            break;
+            case NONE:
+                break;
 
-        case DIV:
-            out.print("</div>");
-            break;
+            case DIV:
+                out.print("</div>");
+                break;
 
-        case TITLE:
-            endTitleFrame(out);
-            break;
+            case TITLE:
+                endTitleFrame(out);
+                break;
 
-        case LEFT_NAVIGATION:
-        case PORTAL:
-            out.print("</td></tr></table><!--/webpart-->");
-            break;
+            case LEFT_NAVIGATION:
+            case PORTAL:
+                out.print("</td></tr></table><!--/webpart-->");
+                break;
 
-        case DIALOG:
-            out.print("</td></tr></table>");
+            case DIALOG:
+                out.print("</td></tr></table>");
         }
     }
 
@@ -666,6 +781,22 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         public String getId()
         {
             return _id;
+        }
+    }
+
+    private void renderMenu(NavTree menu, PrintWriter out, String imageSrc)
+    {
+        try
+        {
+            menu.setKey("More");
+            PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
+            more.setImageSrc(imageSrc);
+            more.setImageId("more-" + getTitle().toLowerCase());
+            more.render(out);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
         }
     }
 }

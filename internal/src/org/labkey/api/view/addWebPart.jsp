@@ -44,7 +44,7 @@
             } %>
         </select>
         </td><td>
-        <%=generateSubmitButton("Add Web Part")%>
+        <%=generateSubmitButton("Add")%>
         </td></tr></table>
        </form>
     </td>
@@ -64,7 +64,7 @@
             } %>
         </select>
         </td><td>
-            <%=generateSubmitButton("Add Web Part")%>
+            <%=generateSubmitButton("Add")%>
         </td></tr></table>
         </form>
     </td>

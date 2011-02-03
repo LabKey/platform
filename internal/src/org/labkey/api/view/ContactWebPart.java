@@ -44,7 +44,7 @@ public class ContactWebPart extends WebPartView
         GridView gridView = new GridView(getGridRegionWebPart(), (BindException)null);
         gridView.setFrame(FrameType.DIV);
         
-        gridView.setCustomizeLinks(getCustomizeLinks());
+        gridView.setPortalLinks(getPortalLinks());
         gridView.setSort(new Sort("Email"));
         gridView.setContainer(c.getProject());
 

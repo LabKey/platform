@@ -135,10 +135,10 @@ LABKEY.Portal = new function()
 
     function updateButtons(webparts)
     {
-        var moveUpImage = LABKEY.ActionURL.getContextPath() + '/_images/partup.gif';
-        var moveUpDisabledImage = LABKEY.ActionURL.getContextPath() + '/_images/partupg.gif';
-        var moveDownImage = LABKEY.ActionURL.getContextPath() + '/_images/partdown.gif';
-        var moveDownDisabledImage = LABKEY.ActionURL.getContextPath() + '/_images/partdowng.gif';
+        var moveUpImage = LABKEY.ActionURL.getContextPath() + '/_images/partup.png';
+        var moveUpDisabledImage = LABKEY.ActionURL.getContextPath() + '/_images/partupg.png';
+        var moveDownImage = LABKEY.ActionURL.getContextPath() + '/_images/partdown.png';
+        var moveDownDisabledImage = LABKEY.ActionURL.getContextPath() + '/_images/partdowng.png';
 
         for (var region in webparts)
         {

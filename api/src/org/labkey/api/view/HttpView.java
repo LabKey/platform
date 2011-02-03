@@ -72,7 +72,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
     }
 
-    public static String BODY = "!content";
+    public static String BODY = WebPartFactory.LOCATION_BODY; // specify in one place
 
 
     //

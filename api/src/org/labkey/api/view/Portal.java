@@ -37,7 +37,6 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
@@ -534,14 +533,6 @@ public class Portal
         ((VBox) region).addView(view);
     }
 
-    /*
-               PageId ENTITYID NOT NULL,
-               [Index] INT NOT NULL,
-               Name VARCHAR(64),
-               Location VARCHAR(16),	-- 'body', 'left', 'right'
-
-               Properties VARCHAR(4000),	-- url encoded properties	*/
-
     public static void populatePortalView(ViewContext context, String id, HttpView template)
             throws Exception
     {
@@ -574,31 +565,26 @@ public class Portal
                     continue;
                 view.prepare(view.getModelBean());
 
-                NavTree navTree = view.getCustomizeLinks();
+                NavTree navTree = view.getPortalLinks();
+                NavTree menu = view.getNavMenu();
                 if (canCustomize)
                 {
+
                     if (desc.isEditable())
-                        navTree.addChild("Customize Web Part", getCustomizeURL(context, part), contextPath + "/_images/partedit.gif");
-                }
-                if (view.getTitleHref() != null)
-                {
-                    navTree.addChild("Maximize", view.getTitleHref(), contextPath + "/_images/partmaximize.gif");
-                }
-                if (canCustomize)
-                {
+                        view.setCustomizeLink(getCustomizeURL(context, part));                    
+                    
                     if (i > 0)
-                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), contextPath + "/_images/partup.gif");
+                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), contextPath + "/_images/partup.png");
                     else
-                        navTree.addChild("", "", contextPath + "/_images/partupg.gif");
+                        navTree.addChild("", "", contextPath + "/_images/partupg.png");
+
                     if (i < partsForLocation.size() - 1)
-                        navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), contextPath + "/_images/partdown.gif");
+                        navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), contextPath + "/_images/partdown.png");
                     else
-                        navTree.addChild("", "", contextPath + "/_images/partdowng.gif");
-                }
-                if (canCustomize)
-                {
+                        navTree.addChild("", "", contextPath + "/_images/partdowng.png");
+                    
                     if (!part.isPermanent())
-                        navTree.addChild("Remove From Page", getDeleteURL(context, part), contextPath + "/_images/partdelete.gif");
+                        navTree.addChild("Remove From Page", getDeleteURL(context, part), contextPath + "/_images/partdelete.png");
                 }
 
                 addViewToRegion(template, location, view);
@@ -762,7 +748,10 @@ public class Portal
         {
             view = factory.getWebPartView(portalCtx, webPart);
             if (view != null)
+            {
                 view.setWebPartRowId(webPart.getRowId());
+                view.setLocation(webPart.getLocation());
+            }
         }
         catch(Throwable t)
         {

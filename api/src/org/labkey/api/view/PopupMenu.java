@@ -32,7 +32,9 @@ public class PopupMenu extends DisplayElement
     private NavTree _navTree;
     private Align _align = Align.LEFT;
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
-
+    private String _imageSrc = "";
+    private String _imageId = "";
+    
     public PopupMenu()
     {
         this(new NavTree());
@@ -58,6 +60,26 @@ public class PopupMenu extends DisplayElement
     public void setNavTree(NavTree navTree)
     {
         _navTree = navTree;
+    }
+
+    public String getImageSrc()
+    {
+        return _imageSrc;
+    }
+
+    public void setImageSrc(String imageSrc)
+    {
+        _imageSrc = imageSrc;
+    }
+
+    public void setImageId(String imageId)
+    {
+        _imageId = imageId;
+    }
+
+    public String getImageId()
+    {
+        return _imageId;
     }
 
     public void render(RenderContext ctx, Writer out) throws IOException
@@ -101,6 +123,13 @@ public class PopupMenu extends DisplayElement
             assert !requiresSelection : "Only button-style popups can require selection.";
             out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getKey(), "javascript:void(0)",
                     "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT));
+        }
+        else if (_buttonStyle == ButtonStyle.IMAGE)
+        {
+            assert !requiresSelection : "Only button-style popups can require selection.";
+            assert _imageSrc.length() > 0 : "Must provide an image source for image based popups.";
+            out.append(PageFlowUtil.generateDropDownImage(_navTree.getKey(),  "javascript:void(0)",
+                    "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", _imageSrc, _imageId));
         }
     }
 
@@ -239,6 +268,7 @@ public class PopupMenu extends DisplayElement
         MENUBUTTON,
         BOLDTEXT,
         TEXT,
-        TEXTBUTTON
+        TEXTBUTTON,
+        IMAGE
     }
 }

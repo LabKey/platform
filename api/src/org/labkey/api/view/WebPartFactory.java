@@ -29,6 +29,7 @@ public interface WebPartFactory
 {
     String LOCATION_RIGHT = "right";
     String LOCATION_MENUBAR = "menubar";
+    String LOCATION_BODY = "!content";
 
     String getName();
 

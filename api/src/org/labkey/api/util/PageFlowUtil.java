@@ -1188,6 +1188,17 @@ public class PageFlowUtil
                 "/_images/text_link_arrow.gif\" style=\"position:relative; background-color:transparent; width:10px; height:auto; top:-1px; right:0;\"></a>";
     }
 
+    /* Renders image and a drop down wrapped in an unstyled link */
+    public static String generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId)
+    {
+        char quote = getUsedQuoteSymbol(onClick);
+
+        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
+        String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
+
+        return "<a href=\"" + filter(href) +"\" onClick=" + script +"><img id=\"" + imageId + "\" title=\"" + text + "\"src=\"" + imageSrc + "\"/></a>";
+    }
+
     /* Renders a lightly colored inactive button, or in other words, a disabled span wrapped in a link of type labkey-disabled-button */
     public static String generateDisabledButton(String text)
     {
@@ -1247,7 +1258,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "</a>";
+                ">" + text + "<span class='css-arrow-right'></span></a>";
     }
 
     public static String textLink(String text, String href, String onClickScript, String id)
@@ -1255,7 +1266,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "</a>";
+                ">" + text + "<span class='css-arrow-right'></span></a>";
     }
 
     public static String textLink(String text, String href, String onClickScript, String id, Map<String, String> properties)
@@ -1269,7 +1280,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' " + additions + "href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "</a>";
+                ">" + text + "<span class='css-arrow-right'></span></a>";
     }
 
     public static String textLink(String text, ActionURL url, String onClickScript, String id)
@@ -1277,7 +1288,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "</a>";
+                ">" + text + "<span class='css-arrow-right'></span></a>";
     }
 
     public static String textLink(String text, ActionURL url)

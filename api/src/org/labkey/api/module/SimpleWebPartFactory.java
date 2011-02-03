@@ -16,6 +16,7 @@
 package org.labkey.api.module;
 
 import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.Portal;
@@ -63,9 +64,9 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     private static final Map<String,String> _locationsTranslationMap = new HashMap<String,String>();
     static
     {
-        _locationsTranslationMap.put("!content", "body");
-        _locationsTranslationMap.put("right", "right");
-        _locationsTranslationMap.put("menubar", "menu");
+        _locationsTranslationMap.put(LOCATION_BODY, "body");
+        _locationsTranslationMap.put(LOCATION_RIGHT, LOCATION_RIGHT);
+        _locationsTranslationMap.put(LOCATION_MENUBAR, "menu");
     }
 
     public static String getFriendlyLocationName(String internalName)
