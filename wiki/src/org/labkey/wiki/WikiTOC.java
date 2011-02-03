@@ -278,9 +278,10 @@ public class WikiTOC extends NavTreeMenu
 
             if (showExpandOption)
             {
+                /* Should these be buttons? */
                 out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
-                out.println(PageFlowUtil.textLink("expand all", "javascript:;", "adjustAllTocEntries('" + getId() + "', true, true)", ""));
-                out.println(PageFlowUtil.textLink("collapse all", "javascript:;", "adjustAllTocEntries('" + getId() + "', true, false)", ""));
+                out.println(PageFlowUtil.textLink("expand all", "javascript:void(0);", "adjustAllTocEntries('NavTree-" + getId() + "', true, true)", ""));
+                out.println(PageFlowUtil.textLink("collapse all", "javascript:void(0);", "adjustAllTocEntries('NavTree-" + getId() + "', true, false)", ""));
             }
 
             out.println("</td>\n</tr>\n</table>");
