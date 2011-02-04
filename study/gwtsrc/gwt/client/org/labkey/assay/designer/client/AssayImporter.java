@@ -225,15 +225,18 @@ public class AssayImporter implements EntryPoint
     {
         // validate the selected column descriptor
         List<InferencedColumn> inferencedColumns = new ArrayList<InferencedColumn>();
-        for (GWTPropertyDescriptor prop : _domainImporter.getColumns(true))
+        if (_domainImporter != null)
         {
-            InferencedColumn col = new InferencedColumn();
+            for (GWTPropertyDescriptor prop : _domainImporter.getColumns(true))
+            {
+                InferencedColumn col = new InferencedColumn();
 
-            col.setPropertyDescriptor(prop);
-            inferencedColumns.add(col);
+                col.setPropertyDescriptor(prop);
+                inferencedColumns.add(col);
+            }
         }
 
-        service.validateColumns(inferencedColumns, _path, _file, new ErrorDialogAsyncCallback<Boolean>()
+        getService().validateColumns(inferencedColumns, _path, _file, new ErrorDialogAsyncCallback<Boolean>()
         {
             public void onSuccess(Boolean result)
             {
