@@ -336,6 +336,28 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         edit().setFlags(_mgr.setCanInherit(_cstmView.getFlags(), f));
     }
 
+    @Override
+    public boolean canEdit(Container c, org.springframework.validation.Errors errors)
+    {
+        if (canInherit())
+        {
+            if (!c.getId().equals(getContainer().getId()))
+            {
+                if (errors != null)
+                    errors.reject(null, "Inherited view '" + (getName() == null ? "<default>" : getName()) + "' can only be edited from the folder in which it is defined, " + c.getPath());
+                return false;
+            }
+        }
+
+        if (!isEditable())
+        {
+            if (errors != null)
+                errors.reject(null, "The view '" + (getName() == null ? "<default>" : getName()) + "' is read-only and cannot be edited");
+            return false;
+        }
+        return true;
+    }
+
     public void setIsHidden(boolean b)
     {
         edit().setFlags(_mgr.setIsHidden(_cstmView.getFlags(), b));

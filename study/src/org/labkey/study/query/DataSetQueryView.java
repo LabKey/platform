@@ -260,11 +260,6 @@ public class DataSetQueryView extends QueryView
         _buttons = buttons;
     }
 
-    public ActionURL getCustomizeURL()
-    {
-        return urlFor(QueryAction.chooseColumns);
-    }
-
     public void setShowSourceLinks(boolean showSourceLinks)
     {
         _showSourceLinks = showSourceLinks;

@@ -339,7 +339,6 @@ public class SpecimenController extends BaseStudyController
         private String _otherViewURL;
         private ViewContext _viewContext;
         private boolean _showingVials;
-        private ActionURL _customizeURL;
         private Set<Pair<String, String>> _filteredPtidVisits;
 
         public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view)
@@ -406,7 +405,6 @@ public class SpecimenController extends BaseStudyController
             _otherViewURL = otherView.getLocalURIString();
             _viewContext = context;
             _showingVials = view.isShowingVials();
-            _customizeURL = view.getCustomizeURL();
             _filteredPtidVisits = filteredPtidVisits;
         }
 
@@ -423,11 +421,6 @@ public class SpecimenController extends BaseStudyController
         public boolean isShowingVials()
         {
             return _showingVials;
-        }
-
-        public ActionURL getCustomizeURL()
-        {
-            return _customizeURL;
         }
 
         public Set<Pair<String, String>> getFilteredPtidVisits()

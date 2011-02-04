@@ -41,7 +41,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
@@ -100,7 +99,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.query.ViewFilterItemImpl;
-import org.labkey.query.controllers.ChooseColumnsForm;
 import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -214,11 +212,6 @@ public class ReportsController extends SpringActionController
         public ActionURL urlExportCrosstab(Container c)
         {
             return new ActionURL(CrosstabExportAction.class, c);
-        }
-
-        public ActionURL urlCustomizeView(Container c)
-        {
-            return new ActionURL(CustomizeQueryAction.class, c);
         }
 
         @Override
@@ -1188,7 +1181,7 @@ public class ReportsController extends SpringActionController
                 _view = queryForm.getCustomView();
                 if (_view != null)
                 {
-                    ChooseColumnsForm.canEdit(_view, getContainer(), errors);
+                    _view.canEdit(getContainer(), errors);
 
                     if (_view.getOwner() == null && !getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
                         errors.reject(null, "You don't have permission to edit shared views");
@@ -1651,25 +1644,6 @@ public class ReportsController extends SpringActionController
         public void setSrcURL(String srcURL)
         {
             _srcURL = srcURL;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class CustomizeQueryAction extends SimpleViewAction<CustomizeQueryForm>
-    {
-        public ModelAndView getView(CustomizeQueryForm form, BindException errors) throws Exception
-        {
-            ActionURL url = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.chooseColumns, form.getSchemaName().toString(), form.getQueryName()).
-                    addParameter(QueryParam.queryName.name(), form.getQueryName()).
-                    addParameter(QueryParam.viewName.name(), form.getViewName()).
-                    addParameter(QueryParam.srcURL, form.getSrcURL());
-
-            return HttpView.redirect(url);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 }

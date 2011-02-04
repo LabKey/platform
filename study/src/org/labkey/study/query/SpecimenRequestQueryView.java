@@ -220,12 +220,6 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         _allowSortAndFilter = allowSortAndFilter;
     }
 
-    @Override
-    protected boolean showCustomizeLinks()
-    {
-        return getSettings().isAllowCustomizeView();
-    }
-    
     public void setShowCustomizeLink(boolean showCustomizeLink)
     {
         getSettings().setAllowCustomizeView(showCustomizeLink);

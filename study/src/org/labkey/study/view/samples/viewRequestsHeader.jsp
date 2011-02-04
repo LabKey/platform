@@ -28,12 +28,6 @@
     ViewContext context = me.getViewContext();
     SpecimenController.ViewRequestsHeaderBean bean = me.getModelBean();
     ActionURL userLink = context.cloneActionURL();
-    if (context.getContainer().hasPermission(context.getUser(), AdminPermission.class) || context.getUser().isAdministrator())
-    {
-%>
-<%= textLink("Customize View", bean.getView().getCustomizeURL()) %>
-<%
-    }
 %>
 <%= textLink("All User Requests", userLink.deleteParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
 <%= textLink("My Requests", userLink.replaceParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY,

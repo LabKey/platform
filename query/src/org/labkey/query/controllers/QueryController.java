@@ -1456,212 +1456,6 @@ public class QueryController extends SpringActionController
 //    }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public abstract class BaseChooseColumnsAction extends FormViewAction<ChooseColumnsForm>
-    {
-        public void validateCommand(ChooseColumnsForm form, Errors errors)
-        {
-            form.canEdit(errors);
-        }
-
-        public boolean handlePost(ChooseColumnsForm form, BindException errors) throws Exception
-        {
-            throw new UnsupportedOperationException("POST not supported");
-        }
-
-        public URLHelper getSuccessURL(ChooseColumnsForm chooseColumnsForm)
-        {
-            return null;
-        }
-
-        protected ViewDocument init(ChooseColumnsForm form, boolean reshow, BindException errors)
-        {
-            if (form.getQuerySettings() == null)
-            {
-                HttpView.throwNotFound();
-                return null;
-            }
-
-            if (!reshow)
-                form.initForView();
-
-            ViewDocument designDoc = null;
-            if (form.ff_designXML == null)
-            {
-                if (queryExists(form))
-                {
-                    CustomView view = form.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.getQuerySettings().getViewName());
-                    if (view == null)
-                    {
-                        view = form.getQueryDef().createCustomView(getUser(), form.getQuerySettings().getViewName());
-                    }
-                    else
-                    {
-                        // Make a copy in case it's a read-only version from an XML file
-                        CustomView viewCopy = new CustomViewImpl(form.getQueryDef(), getUser(), form.getQuerySettings().getViewName());
-                        viewCopy.setColumns(view.getColumns());
-                        viewCopy.setCanInherit(view.canInherit());
-                        viewCopy.setFilterAndSort(view.getFilterAndSort());
-                        viewCopy.setColumnProperties(view.getColumnProperties());
-                        viewCopy.setIsHidden(view.isHidden());
-                        view = viewCopy;
-                    }
-
-                    ActionURL url = new ActionURL();
-                    form.applyFilterAndSortToURL(url, "query");
-                    view.setFilterAndSortFromURL(url, "query");
-                    designDoc = ((CustomViewImpl) view).getDesignDocument(form.getSchema());
-                    if (designDoc == null)
-                    {
-                        errors.reject(ERROR_MSG, "The query '" + form.getQueryName() + "' has errors.");
-                        form.ff_designXML = null;
-                    }
-                    else
-                    {
-                        form.ff_designXML = designDoc.toString();
-                    }
-                }
-                else
-                {
-                    errors.reject(ERROR_MSG, "The query '" + form.getQueryName() + "' doesn't exist.");
-                }
-            }
-            else
-            {
-                String xml = StringUtils.trimToEmpty(form.ff_designXML);
-                if (xml.length() > 0)
-                {
-                    try
-                    {
-                        designDoc = ViewDocument.Factory.parse(xml, XmlBeansUtil.getDefaultParseOptions());
-                    }
-                    catch (XmlException e)
-                    {
-                        errors.reject(ERROR_MSG, e.getMessage());
-                    }
-                }
-            }
-
-            return designDoc;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ChooseColumnsAction extends BaseChooseColumnsAction
-    {
-        ActionURL _returnURL = null;
-
-        public ModelAndView getView(ChooseColumnsForm form, boolean reshow, BindException errors) throws Exception
-        {
-            init(form, reshow, errors);
-            return new JspView<ChooseColumnsForm>(QueryController.class, "chooseColumns.jsp", form, errors);
-        }
-        
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Customize Grid View");
-            return root;
-        }
-    }
-
-    /*
-    @RequiresPermissionClass(ReadPermission.class)
-    public class CustomViewDesignAction extends BaseChooseColumnsAction
-    {
-        @Override
-        public ModelAndView getView(ChooseColumnsForm form, boolean reshow, BindException errors) throws Exception
-        {
-            XmlObject doc = init(form, false, errors);
-            if (doc == null || errors.hasErrors())
-            {
-                if (!errors.hasErrors())
-                    errors.reject(ERROR_MSG, "Error getting custom view design");
-
-                doc = XmlObject.Factory.newInstance();
-                XmlCursor cur = null;
-                try
-                {
-                    cur = doc.newCursor();
-                    cur.toNextToken();
-                    cur.beginElement("errors");
-                    for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
-                        cur.insertElementWithText("error", error.getDefaultMessage());
-                }
-                finally
-                {
-                    if (cur != null) cur.dispose();
-                }
-            }
-
-            getViewContext().getResponse().setContentType("text/xml");
-            getViewContext().getResponse().getWriter().write(doc.toString());
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
-    }
-    */
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SaveColumnsAction extends ApiAction<ChooseColumnsForm>
-    {
-        ViewDocument doc;
-
-        @Override
-        public void validateForm(ChooseColumnsForm form, Errors errors)
-        {
-            if (form.canEdit(errors))
-            {
-                String xml = StringUtils.trimToEmpty(form.ff_designXML);
-
-                try
-                {
-                    if (xml.length() > 0)
-                    {
-                        doc = ViewDocument.Factory.parse(xml, XmlBeansUtil.getDefaultParseOptions());
-                    }
-                    if (doc == null)
-                        errors.reject(ERROR_MSG, "Failed to parse design XML");
-                }
-                catch (XmlException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                }
-            }
-
-            if (form.isSaveInSession())
-            {
-                if (form.ff_saveForAllUsers)
-                    errors.reject(ERROR_MSG, "Session views can't be saved for all users");
-                if (form.ff_inheritable)
-                    errors.reject(ERROR_MSG, "Session views can't be inherited");
-            }
-        }
-
-        @Override
-        public ApiResponse execute(ChooseColumnsForm form, BindException errors) throws Exception
-        {
-            Map<String, Object> response = saveCustomView(
-                    form.getSchema(), form.getQueryDef(),
-                    form.getDataRegionName(), form.ff_columnListName,
-                    form.ff_saveForAllUsers, form.ff_inheritable, form.isSaveInSession(),
-                    form.ff_saveFilter,
-                    new UpdateViewCallback() {
-                        public void update(CustomView view, boolean saveFilter)
-                        {
-                            ((CustomViewImpl)view).update(doc, saveFilter);
-                        }
-                    },
-                    form.getSourceURL(),
-                    errors);
-
-            return new ApiSimpleResponse(response);
-        }
-    }
-
     public interface UpdateViewCallback
     {
         void update(CustomView view, boolean saveFilter);
@@ -1689,7 +1483,7 @@ public class QueryController extends SpringActionController
 
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
-        boolean canEdit = session || ChooseColumnsForm.canEdit(view, getContainer(), errors);
+        boolean canEdit = view == null || session || view.canEdit(getContainer(), errors);
         if (canEdit)
         {
             // Create a new view if none exists or the current view is a shared view
@@ -1762,7 +1556,7 @@ public class QueryController extends SpringActionController
             {
                 for (String key : returnURL.getKeysByPrefix(regionName + "."))
                 {
-                    if (ChooseColumnsForm.isFilterOrSort(regionName, key))
+                    if (isFilterOrSort(regionName, key))
                         returnURL.deleteFilterParameters(key);
                 }
             }
@@ -1773,6 +1567,19 @@ public class QueryController extends SpringActionController
         if (view != null)
             ret.put("view", CustomViewUtil.toMap(view, true));
         return new ApiSimpleResponse(ret);
+    }
+
+    private boolean isFilterOrSort(String dataRegionName, String param)
+    {
+        assert param.startsWith(dataRegionName + ".");
+        String check = param.substring(dataRegionName.length() + 1);
+        if (check.indexOf("~") >= 0)
+            return true;
+        if ("sort".equals(check))
+            return true;
+        if (check.equals("containerFilterName"))
+            return true;
+        return false;
     }
 
     @RequiresPermissionClass(ReadPermission.class)

@@ -106,7 +106,7 @@ class SpecimenWriter implements Writer<StudyImpl, StudyContext>
         sql.add(c);
 
         // Note: must be uncached result set -- this query can be very large
-        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), 0, false);
+        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Table.ALL_ROWS, false);
 
         TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs), displayColumns);
         gridWriter.write(pw);

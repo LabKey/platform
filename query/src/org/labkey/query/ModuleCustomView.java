@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -23,6 +24,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.view.ActionURL;
+import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -72,6 +74,12 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
     public void setColumnProperties(List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> list)
     {
         throw new UnsupportedOperationException("Can't set column properties on a module-based custom view!");
+    }
+
+    @Override
+    public boolean canEdit(Container c, Errors errors)
+    {
+        return false;
     }
 
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)

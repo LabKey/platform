@@ -122,7 +122,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
 
         try
         {
-            _rs = Table.executeQuery(core.getSchema(), _sqlDocument, new Object[]{_attachment.getParent(), _attachment.getName()}, 0, false);
+            _rs = Table.executeQuery(core.getSchema(), _sqlDocument, new Object[]{_attachment.getParent(), _attachment.getName()}, Table.ALL_ROWS, false);
 
             if (!_rs.next())
                 throw new IllegalStateException("Attachment could not be retrieved from database");

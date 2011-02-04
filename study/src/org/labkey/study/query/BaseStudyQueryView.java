@@ -94,19 +94,9 @@ public abstract class BaseStudyQueryView extends QueryView
         return DataRegion.ButtonBarPosition.BOTH;
     }
 
-    protected boolean showCustomizeLinks()
-    {
-        return false;
-    }
-
     public void setButtons(List<DisplayElement> buttons)
     {
         _buttons = buttons;
-    }
-
-    public ActionURL getCustomizeURL()
-    {
-        return urlFor(QueryAction.chooseColumns);
     }
 
     public ActionURL getBaseViewURL()
