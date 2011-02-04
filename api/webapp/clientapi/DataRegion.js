@@ -1171,11 +1171,11 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         {
             var config = Ext.applyIf({
                 canEditSharedViews: self.canEditSharedViews,
-                canEdit: this._getCustomViewEditableErrors(config).length == 0,
+                canEdit: self._getCustomViewEditableErrors(config).length == 0,
                 success: function (win, o) {
                     var timerId = function () {
                         timerId = 0;
-                        this.showLoadingMessage("Saving custom view...");
+                        self.showLoadingMessage("Saving custom view...");
                     }.defer(500, self);
 
                     var jsonData = {
