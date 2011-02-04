@@ -582,11 +582,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     	return new Ext.Panel({
             layout: 'fit',
+            tbar:[{text:"Export PDF", handler:function(btn) {this.chartComponent.exportImage("pdf");},scope:this}],
             listeners: {
             	render: {
                     scope: this,
                     fn: function(cmp){
-                        new LABKEY.vis.LineChart({renderTo: cmp.getId(),
+                        this.chartComponent = new LABKEY.vis.LineChart({renderTo: cmp.getId(),
                             width: size.width,
                             height: size.height,
                             axes: {

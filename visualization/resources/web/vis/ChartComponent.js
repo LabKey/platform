@@ -24,13 +24,21 @@ LABKEY.vis.SVGConverter = {
 
     /**
      * Converts the passed in svg string to a static image that the user will be prompted to save
-     * @param svg SVG as String. Can be retrieved using innerHTML
+     * @param svg SVG as String or Dom Node. 
      * @param format Either LABKEY.vis.SVGConverter.FORMAT_PDF ("pdf") or LABKEY.vis.SVGConverter.FORMAT_PNG ("png")
      */
     convert: function(svg, format) {
-            // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
-            // will make the browser pop up a dialog
+        if (null != svg && typeof svg != "string")
+            svg = this.svgToStr(svg);
 
+        if (null == svg)
+        {
+            alert("Export not supported on this browser");
+            return;
+        }
+        
+        // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
+        // will make the browser pop up a dialog
         var action;
         var convertTo = format ? format.toLowerCase() : this.FORMAT_PNG;
         if (this.FORMAT_PDF == convertTo)
@@ -45,7 +53,73 @@ LABKEY.vis.SVGConverter = {
             children:[{tag:"input", type:"hidden", name:"svg"}]});
         newForm.svg.value = svg;
         newForm.submit();
+    },
+
+    /** Transforms the given svg root node and all of its children into an XML string,
+     *
+     * @param node Either a real DOM node to turn into a string or an svgweb created flash node
+     * @returns legal SVG string.
+     */
+    svgToStr: function(node)
+    {
+        //ENORMOUS HACK. When using svgweb on IE (but not on FF), the actual XML DOM is hidden in an svgweb implementation
+        //dependent place. Walking the top-level DOM tree as exposed by svgweb does not yield correct svg
+        //So we grab what appears to be the privately maintained copy of the tree and use that
+        //On ff+svgweb the actual XML root may be in node._nodeXML
+        var nodeXML = (node._nodeXML || node);
+        if (pv.renderer() == "svgweb" && Ext.isIE && !nodeXML.xml)
+        {
+            if (!node._handler || !node._handler._xml)
+                return null; //Something wrong, perhaps different implementation of SVGWeb
+            else
+                nodeXML = node._handler._xml;
+        }
+
+        //The following code is copied & slightly modified from the Apache Licensed svgweb xmlToStr code. It should work
+        //correctly either for a native svg impl or the svgweb flash-based one..
+        var xml;
+        var svgns = 'http://www.w3.org/2000/svg';
+
+        if (typeof XMLSerializer != 'undefined')
+        { // non-IE browsers
+            xml = (new XMLSerializer().serializeToString(nodeXML));
+        }
+        else
+        {
+            xml = nodeXML.xml;
+        }
+        if (pv.renderer() != "svgweb")
+            return xml;
+
+        // Firefox and Safari will incorrectly turn our internal parsed XML
+        // for the Flash Handler into actual SVG nodes, causing issues. We added
+        // a fake SVG namespace earlier to prevent this from happening; remove that
+        // now
+        xml = xml.replace(/urn\:__fake__internal__namespace/g, svgns);
+
+        // add our namespace declarations
+        var nsString = '';
+        if (xml.indexOf('xmlns=') == -1)
+        {
+            nsString = 'xmlns="' + svgns + '" ';
+        }
+
+        xml = xml.replace(/<([^ ]+)/, '<$1 ' + nsString + ' ');
+
+        // remove svg web artifacts (taken from svgweb impl)
+        xml = xml.replace(/<svg:([^ ]+) /g, '<$1 ');
+        xml = xml.replace(/<\/svg:([^>]+)>/g, '<\/$1>');
+        xml = xml.replace(/\n\s*<__text[^\/]*\/>/gm, '');
+        xml = xml.replace(/<__text[^>]*>([^<]*)<\/__text>/gm, '$1');
+        xml = xml.replace(/<__text[^>]*>/g, '');
+        xml = xml.replace(/<\/__text>/g, '');
+        xml = xml.replace(/\s*__guid="[^"]*"/g, '');
+        xml = xml.replace(/ id="__svg__random__[^"]*"/g, '');
+        xml = xml.replace(/>\n\n/g, '>\n');
+
+        return xml;
     }
+
 };
 
 LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
@@ -100,7 +174,12 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
      * @param format Either LABKEY.vis.SVGConverter.FORMAT_PDF ("pdf") or LABKEY.vis.SVGConverter.FORMAT_PNG ("png") Defaults to png
      */
     exportImage: function(format) {
-        LABKEY.vis.SVGConverter.convert(this.rootVisPanel.canvas().innerHTML, format)
+        LABKEY.vis.SVGConverter.convert(this.rootVisPanel.scene.$g, format)
+    },
+
+    //private -- for testing purposes
+    getSerializedXML: function () {
+        return LABKEY.vis.SVGConverter.svgToStr(this.rootVisPanel.scene.$g);
     },
 
     /**
