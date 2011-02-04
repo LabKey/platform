@@ -51,7 +51,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         LABKEY.FilesWebPartPanel.superclass.initComponent.call(this);
 
         this.grid.store.on(STORE_EVENTS.datachanged, this.onGridDataChange, this);
-        this.grid.store.on(BROWSER_EVENTS.directorychange, function(record){this.enableImportData(false);}, this);
         this.on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
 
         // message templates
@@ -194,6 +193,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
      */
     onGridDataChange : function()
     {
+        this.onGridDataChanged(false);
+        this.enableImportData(false);
         this.path = this.currentDirectory.data.path;
         if (startsWith(this.path,"/"))
             this.path = this.path.substring(1);
@@ -202,8 +203,15 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             url:this.actionsURL + encodeURIComponent(this.path),
             method:'GET',
             disableCaching:false,
-            success : this.updatePipelineActions,
-            failure: this.isPipelineRoot ? LABKEY.Utils.displayAjaxErrorResponse : undefined,
+            success : function(resp, opt){
+                this.updatePipelineActions(resp, opt); 
+                this.onGridDataChanged(true)
+            },
+            failure: function(resp, opt){
+                this.onGridDataChanged(true);
+                if (this.isPipelineRoot)
+                    LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
+            },
             updateSelection: true,
             scope: this
         });
@@ -283,6 +291,21 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             el.removeClass('labkey-import-enabled');
             this.actions.importData.disable();
         }
+    },
+
+    /**
+     * Adds a marker class to determine when a directory change
+     * event is complete with respect to the file content tool.
+     * This is used to help with the selenium tests.
+     */
+    onGridDataChanged : function(complete) {
+
+        var el = this.getTopToolbar().getEl();
+
+        if (complete)
+            el.addClass('labkey-file-grid-initialized');
+        else
+            el.removeClass('labkey-file-grid-initialized');
     },
 
     updatePipelineActions : function(response, e)
