@@ -459,62 +459,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         }
     },
 
-    customizeViewClick : function (menuItem, e) {
-        e.preventDefault();
-
-        var params = this.createParams();
-        if (this.userFilters)
-            LABKEY.Filter.appendFilterParams(params, this.userFilters, this.dataRegionName);
-
-        if (this.sort)
-            params.sort = this.sort;
-
-        var encodedParams = Ext.urlEncode(params);
-        var o = {
-            _template: 'None',
-            saveInSession: true,
-            queryName: this.queryName,
-            schemaName: this.schemaName,
-            dataRegionName: this.dataRegionName,
-            srcURL: "fake/action.view?" + encodedParams
-        };
-
-        if (this._designerWin && this._designerWin.encodedParams != encodedParams)
-        {
-            this.cleanupDesignerWin();
-        }
-
-        if (!this._designerWin)
-        {
-            console.log("creating new designer window");
-            this._designerWin = new Ext.Window({
-                title: "Customize View",
-                shadow: false,
-                closeAction: 'hide',
-                autoLoad: {
-                    url: LABKEY.ActionURL.buildURL('query', 'chooseColumns', null, o),
-                    scripts: true
-                }
-            });
-            this._designerWin.encodedParams = encodedParams;
-
-            var qwp = this;
-            window.designerInitCallback = function ()
-            {
-                console.log("designerInitCallback");
-                qwp._designerWin.center();
-                window.designerSaveSuccessful = function (json) {
-                    console.log("designerSaveSuccessful");
-                    qwp._designerWin.close();
-                    var dr = LABKEY.DataRegions[qwp.dataRegionName];
-                    dr.changeView(json.name);
-                };
-            };
-
-        }
-        this._designerWin.show();
-    },
-
     onButtonClick : function(buttonId, dataRegion) {
         var item = this.findButtonById(this.buttonBar.items, buttonId);
         if (item && item.handler && Ext.isFunction(item.handler))
@@ -604,7 +548,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     },
 
     beforeChangeView : function(dataRegion, viewName) {
-        this.cleanupDesignerWin();
         delete this.offset;
         delete this.userFilters;
         delete this.userSort;
@@ -618,17 +561,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         this.qsParamsToIgnore[this.getQualifiedParamName("viewName")] = true;
         this.render();
         return false;
-    },
-
-    cleanupDesignerWin : function () {
-        if (this._designerWin) {
-            this._designerWin.close();
-            delete this._designerWin;
-        }
-        if (window.designer) {
-            window.designer.uninit();
-            delete window.designer;
-        }
     },
 
     getQualifiedParamName : function(paramName) {

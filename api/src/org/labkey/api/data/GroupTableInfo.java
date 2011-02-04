@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.QueryService;
 
 import java.util.*;
 
@@ -91,7 +92,7 @@ public class GroupTableInfo extends VirtualTable
         sql.append("\nFROM (\n");
         TableInfo source = getSourceTable();
 
-        sql.append(Table.getFullSelectSQL(source, getDistinctColumns(), _sourceFilter, null));
+        sql.append(QueryService.get().getSelectSQL(source, getDistinctColumns(), _sourceFilter, null, Table.ALL_ROWS, 0));
         sql.append("\n) AS ");
         sql.append(ALIAS_SOURCE);
 

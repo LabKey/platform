@@ -16,9 +16,11 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
+import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -30,6 +32,7 @@ public interface CustomView extends CustomViewInfo
     QueryDefinition getQueryDefinition();
     void setName(String name);
     void setCanInherit(boolean f);
+    boolean canEdit(Container c, Errors errors);
     void setIsHidden(boolean f);
     void setColumns(List<FieldKey> columns);
     void setColumnProperties(List<Map.Entry<FieldKey, Map<ColumnProperty,String>>> list);

@@ -1000,73 +1000,60 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
         if (!this.customizeView)
         {
-            var dependencies = [
-                "query/queryDesigner.js",
-                "groupTabPanel/GroupTabPanel.js",
-                "groupTabPanel/GroupTab.js",
-                "ComponentDataView.js",
-                "Ext.ux.dd.GridDragDropRowOrder.js"
-            ];
-
             var timerId = function () {
                 timerId = 0;
                 this.showLoadingMessage("Opening custom view designer...");
             }.defer(500, this);
 
-            LABKEY.requiresCss("groupTabPanel/GroupTab.css", true);
-            LABKEY.requiresCss("groupTabPanel/UngroupedTab.css", true);
-            LABKEY.requiresScript(dependencies, true, function () {
-                LABKEY.requiresScript("designer/designer2.js", true, function () {
+            LABKEY.initializeViewDesigner(function () {
+                var additionalFields = {};
+                var userFilter = this.getUserFilter();
+                var userSort = this.getUserSort();
 
-                    var additionalFields = {};
-                    var userFilter = this.getUserFilter();
-                    var userSort = this.getUserSort();
+                for (var i = 0; i < userFilter.length; i++)
+                    additionalFields[userFilter[i].fieldKey] = true;
 
-                    for (var i = 0; i < userFilter.length; i++)
-                        additionalFields[userFilter[i].fieldKey] = true;
+                for (i = 0; i < userSort.length; i++)
+                    additionalFields[userSort[i].fieldKey] = true;
 
-                    for (i = 0; i < userSort.length; i++)
-                        additionalFields[userSort[i].fieldKey] = true;
+                var fields = [];
+                for (var fieldKey in additionalFields)
+                    fields.push(fieldKey);
 
-                    var fields = [];
-                    for (var fieldKey in additionalFields)
-                        fields.push(fieldKey);
+                var viewName = (this.view && this.view.name) || this.viewName || "";
+                LABKEY.Query.getQueryDetails({
+                    schemaName: this.schemaName,
+                    queryName: this.queryName,
+                    viewName: viewName,
+                    fields: fields,
+                    success: function (json, response, options) {
+                        if (timerId > 0)
+                            clearTimeout(timerId);
+                        else
+                            this.hideMessage();
 
-                    var viewName = (this.view && this.view.name) || this.viewName || "";
-                    LABKEY.Query.getQueryDetails({
-                        schemaName: this.schemaName,
-                        queryName: this.queryName,
-                        viewName: viewName,
-                        fields: fields,
-                        success: function (json, response, options) {
-                            if (timerId > 0)
-                                clearTimeout(timerId);
-                            else
-                                this.hideMessage();
+                        var minWidth = Math.max(700, headerOrFooter.getWidth(true));
+                        var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
 
-                            var minWidth = Math.max(700, headerOrFooter.getWidth(true));
-                            var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
+                        this.customizeView = new LABKEY.DataRegion.ViewDesigner({
+                            renderTo: renderTo,
+                            width: minWidth,
+                            activeGroup: activeTab,
+                            dataRegion: this,
+                            schemaName: this.schemaName,
+                            queryName: this.queryName,
+                            viewName: viewName,
+                            query: json,
+                            allowableContainerFilters: this.allowableContainerFilters
+                        });
 
-                            this.customizeView = new LABKEY.DataRegion.ViewDesigner({
-                                renderTo: renderTo,
-                                width: minWidth,
-                                activeGroup: activeTab,
-                                dataRegion: this,
-                                schemaName: this.schemaName,
-                                queryName: this.queryName,
-                                viewName: viewName,
-                                query: json,
-                                allowableContainerFilters: this.allowableContainerFilters
-                            });
+                        this.customizeView.on("viewsave", this.onViewSave, this);
 
-                            this.customizeView.on("viewsave", this.onViewSave, this);
-
-                            this.panelButtonContents["~~customizeView~~"] = this.customizeView;
-                            this._showButtonPanel(headerOrFooter, "~~customizeView~~", animate, null);
-                        },
-                        scope: this
-                    });
-                }, this);
+                        this.panelButtonContents["~~customizeView~~"] = this.customizeView;
+                        this._showButtonPanel(headerOrFooter, "~~customizeView~~", animate, null);
+                    },
+                    scope: this
+                });
             }, this);
         }
         else
@@ -1172,151 +1159,6 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         return errors;
     },
 
-    saveCustomizeViewPrompt : function (config)
-    {
-        var success = config.success;
-        var scope = config.scope;
-
-        var viewName = config.name;
-        var hidden = config.hidden;
-        var session = config.session;
-        var inherit = config.inherit;
-        var shared = config.shared;
-        var containerPath = config.containerPath;
-        var canEdit = this._getCustomViewEditableErrors(config).length == 0;
-        var canEditSharedViews = config.canEditSharedViews;
-
-        var disableSharedAndInherit = LABKEY.user.isGuest || hidden /*|| session*/ || (containerPath && containerPath != LABKEY.ActionURL.getContainer());
-        var newViewName = viewName || "New View";
-        if (!canEdit && viewName)
-            newViewName = viewName + " Copy";
-
-        var win = new Ext.Window({
-            title: "Save Custom View" + (viewName ? ": " + Ext.util.Format.htmlEncode(viewName) : ""),
-            cls: "extContainer",
-            bodyStyle: "padding: 6px",
-            modal: true,
-            width: 460,
-            height: 220,
-            layout: "form",
-            defaults: {
-                tooltipType: "title"
-            },
-            items: [{
-                ref: "defaultNameField",
-                xtype: "radio",
-                fieldLabel: "View Name",
-                boxLabel: "Default view for this page",
-                inputValue: "default",
-                name: "saveCustomView_namedView",
-                checked: canEdit && !viewName,
-                disabled: hidden || !canEdit
-            },{
-                xtype: "compositefield",
-                ref: "nameCompositeField",
-                items: [{
-                    xtype: "radio",
-                    fieldLabel: "",
-                    boxLabel: "Named",
-                    inputValue: "named",
-                    name: "saveCustomView_namedView",
-                    checked: !canEdit || viewName,
-                    handler: function (radio, value) {
-                        // items will be populated after initComponent
-                        if (win.nameCompositeField.items.get)
-                        {
-                            var nameField = win.nameCompositeField.items.get(1);
-                            if (value)
-                                nameField.enable();
-                            else
-                                nameField.disable();
-                        }
-                    },
-                    scope: this
-                },{
-                    fieldLabel: "",
-                    xtype: "textfield",
-                    name: "saveCustomView_name",
-                    tooltip: "Name of the custom view",
-                    tooltipType: "title",
-                    allowBlank: false,
-                    emptyText: "Name is required",
-                    maxLength: 50,
-                    autoCreate: {tag: 'input', type: 'text', size: '50'},
-                    selectOnFocus: true,
-                    value: newViewName,
-                    disabled: hidden || (canEdit && !viewName)
-                }]
-            },{
-                xtype: "box",
-                style: "padding-left: 122px; padding-bottom: 8px",
-                html: "<em>The current view can't be saved over.<br>Please enter an alternate view name.</em>",
-                hidden: canEdit
-            },{
-                xtype: "spacer",
-                height: "8"
-            },{
-                ref: "sharedField",
-                xtype: "checkbox",
-                name: "saveCustomView_shared",
-                fieldLabel: "Shared",
-                boxLabel: "Make this grid view available to all users",
-                checked: shared,
-                disabled: disableSharedAndInherit || !canEditSharedViews
-            },{
-                ref: "inheritField",
-                xtype: "checkbox",
-                name: "saveCustomView_inherit",
-                fieldLabel: "Inherit",
-                boxLabel: "Make this grid view available in child folders",
-                checked: inherit,
-                disabled: disableSharedAndInherit
-            }],
-            buttons: [{
-                text: "Save",
-                handler: function () {
-                    var nameField = win.nameCompositeField.items.get(1);
-                    if (!canEdit && viewName == nameField.getValue())
-                    {
-                        Ext.Msg.alert("Error saving", "You must save this view with an alternate name.");
-                        return;
-                    }
-
-                    var o = {};
-                    if (hidden)
-                    {
-                        o = {
-                            name: viewName,
-                            shared: shared,
-                            hidden: true,
-                            session: session // set session=false for hidden views?
-                        };
-                    }
-                    else
-                    {
-                        o.name = "";
-                        if (!win.defaultNameField.getValue())
-                            o.name = nameField.getValue();
-                        o.session = false;
-                        if (!o.session && canEditSharedViews)
-                        {
-                            o.shared = win.sharedField.getValue();
-                            o.inherit = win.inheritField.getValue();
-                        }
-                    }
-
-                    success.call(scope, win, o);
-                    win.close();
-                },
-                scope: this
-            },{
-                text: "Cancel",
-                handler: function () { win.close(); }
-            }]
-        });
-        win.show();
-    },
-
     // private
     saveSessionCustomView : function ()
     {
@@ -1329,6 +1171,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         {
             var config = Ext.applyIf({
                 canEditSharedViews: self.canEditSharedViews,
+                canEdit: this._getCustomViewEditableErrors(config).length == 0,
                 success: function (win, o) {
                     var timerId = function () {
                         timerId = 0;
@@ -1368,7 +1211,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 scope: self
             }, self.view);
 
-            self.saveCustomizeViewPrompt(config);
+            LABKEY.DataRegion.saveCustomizeViewPrompt(config);
         }
 
         // CONSIDER: moving into LABKEY.DataRegion constructor
@@ -1503,6 +1346,150 @@ LABKEY.DataRegion.getSelected = function (config)
     });
 };
 
+LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
+    {
+        var success = config.success;
+        var scope = config.scope;
+
+        var viewName = config.name;
+        var hidden = config.hidden;
+        var session = config.session;
+        var inherit = config.inherit;
+        var shared = config.shared;
+        var containerPath = config.containerPath;
+        var canEdit = config.canEdit;
+        var canEditSharedViews = config.canEditSharedViews;
+
+        var disableSharedAndInherit = LABKEY.user.isGuest || hidden /*|| session*/ || (containerPath && containerPath != LABKEY.ActionURL.getContainer());
+        var newViewName = viewName || "New View";
+        if (!canEdit && viewName)
+            newViewName = viewName + " Copy";
+
+        var win = new Ext.Window({
+            title: "Save Custom View" + (viewName ? ": " + Ext.util.Format.htmlEncode(viewName) : ""),
+            cls: "extContainer",
+            bodyStyle: "padding: 6px",
+            modal: true,
+            width: 460,
+            height: 220,
+            layout: "form",
+            defaults: {
+                tooltipType: "title"
+            },
+            items: [{
+                ref: "defaultNameField",
+                xtype: "radio",
+                fieldLabel: "View Name",
+                boxLabel: "Default view for this page",
+                inputValue: "default",
+                name: "saveCustomView_namedView",
+                checked: canEdit && !viewName,
+                disabled: hidden || !canEdit
+            },{
+                xtype: "compositefield",
+                ref: "nameCompositeField",
+                items: [{
+                    xtype: "radio",
+                    fieldLabel: "",
+                    boxLabel: "Named",
+                    inputValue: "named",
+                    name: "saveCustomView_namedView",
+                    checked: !canEdit || viewName,
+                    handler: function (radio, value) {
+                        // items will be populated after initComponent
+                        if (win.nameCompositeField.items.get)
+                        {
+                            var nameField = win.nameCompositeField.items.get(1);
+                            if (value)
+                                nameField.enable();
+                            else
+                                nameField.disable();
+                        }
+                    },
+                    scope: this
+                },{
+                    fieldLabel: "",
+                    xtype: "textfield",
+                    name: "saveCustomView_name",
+                    tooltip: "Name of the custom view",
+                    tooltipType: "title",
+                    allowBlank: false,
+                    emptyText: "Name is required",
+                    maxLength: 50,
+                    autoCreate: {tag: 'input', type: 'text', size: '50'},
+                    selectOnFocus: true,
+                    value: newViewName,
+                    disabled: hidden || (canEdit && !viewName)
+                }]
+            },{
+                xtype: "box",
+                style: "padding-left: 122px; padding-bottom: 8px",
+                html: "<em>The current view can't be saved over.<br>Please enter an alternate view name.</em>",
+                hidden: canEdit
+            },{
+                xtype: "spacer",
+                height: "8"
+            },{
+                ref: "sharedField",
+                xtype: "checkbox",
+                name: "saveCustomView_shared",
+                fieldLabel: "Shared",
+                boxLabel: "Make this grid view available to all users",
+                checked: shared,
+                disabled: disableSharedAndInherit || !canEditSharedViews
+            },{
+                ref: "inheritField",
+                xtype: "checkbox",
+                name: "saveCustomView_inherit",
+                fieldLabel: "Inherit",
+                boxLabel: "Make this grid view available in child folders",
+                checked: inherit,
+                disabled: disableSharedAndInherit
+            }],
+            buttons: [{
+                text: "Save",
+                handler: function () {
+                    var nameField = win.nameCompositeField.items.get(1);
+                    if (!canEdit && viewName == nameField.getValue())
+                    {
+                        Ext.Msg.alert("Error saving", "You must save this view with an alternate name.");
+                        return;
+                    }
+
+                    var o = {};
+                    if (hidden)
+                    {
+                        o = {
+                            name: viewName,
+                            shared: shared,
+                            hidden: true,
+                            session: session // set session=false for hidden views?
+                        };
+                    }
+                    else
+                    {
+                        o.name = "";
+                        if (!win.defaultNameField.getValue())
+                            o.name = nameField.getValue();
+                        o.session = false;
+                        if (!o.session && canEditSharedViews)
+                        {
+                            o.shared = win.sharedField.getValue();
+                            o.inherit = win.inheritField.getValue();
+                        }
+                    }
+
+                    success.call(scope, win, o);
+                    win.close();
+                },
+                scope: this
+            },{
+                text: "Cancel",
+                handler: function () { win.close(); }
+            }]
+        });
+        win.show();
+    };
 
 // FILTER UI
 

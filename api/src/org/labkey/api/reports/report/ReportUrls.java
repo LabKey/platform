@@ -43,7 +43,6 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlPlotChart(Container c);
     ActionURL urlDeleteReport(Container c);
     ActionURL urlExportCrosstab(Container c);
-    ActionURL urlCustomizeView(Container c);
 
     Class<? extends Controller> getDownloadClass();
 }

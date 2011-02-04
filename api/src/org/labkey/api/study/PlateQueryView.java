@@ -47,9 +47,4 @@ public abstract class PlateQueryView extends QueryView
     public abstract boolean hasRecords() throws SQLException, IOException;
 
     public abstract void addHiddenFormField(String key, String value);
-
-    public ActionURL getCustomizeURL()
-    {
-        return urlFor(QueryAction.chooseColumns);
-    }
 }

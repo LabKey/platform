@@ -16,11 +16,12 @@
 
 package org.labkey.api.gwt.client.util;
 
+import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.RootPanel;
 
+import java.util.Collections;
 import java.util.Map;
-import java.util.Iterator;
 
 /**
  * User: brittp
@@ -36,10 +37,10 @@ public class ServiceUtil
 
     public static Object configureEndpoint(Object remoteService, String action, String pageflow)
     {
-        return configureEndpoint(remoteService, action, pageflow, null);
+        return configureEndpoint(remoteService, action, pageflow, Collections.<String, String>emptyMap());
     }
 
-    public static Object configureEndpoint(Object remoteService, String action, String pageflow, Map urlParams)
+    public static Object configureEndpoint(Object remoteService, String action, String pageflow, Map<String, String> urlParams)
     {
         ServiceDefTarget endpoint = (ServiceDefTarget) remoteService;
         String url;
@@ -51,17 +52,12 @@ public class ServiceUtil
         {
             url = PropertyUtil.getRelativeURL(action, pageflow);
         }
-        if (urlParams != null)
+        String separator = "?";
+        for (String key : urlParams.keySet())
         {
-            Iterator it = urlParams.keySet().iterator();
-            url += "?";
-            while (it.hasNext())
-            {
-                String key = (String) it.next();
-                url += key + "=" + urlParams.get(key).toString();
-                if (it.hasNext())
-                    url += "&";
-            }
+            url += separator;
+            separator = "&";
+            url += URL.encodeComponent(key) + "=" + URL.encodeComponent(urlParams.get(key));
         }
         endpoint.setServiceEntryPoint(url);
         return remoteService;

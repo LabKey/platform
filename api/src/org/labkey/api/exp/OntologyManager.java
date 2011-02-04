@@ -1054,7 +1054,7 @@ public class OntologyManager
         ResultSet rsMyProps=null;
 
         try {
-            rsObjsUsingMyProps = Table.executeQuery(getExpSchema(), sql, new Object[]{c.getId()}, 0, true);
+            rsObjsUsingMyProps = Table.executeQuery(getExpSchema(), sql, new Object[]{c.getId()});
             Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<String, ObjectProperty>();
             String sqlIn="";
             String sep="";
@@ -1098,7 +1098,7 @@ public class OntologyManager
                         " WHERE PDM.PropertyId IN (" + sqlIn + " ) " +
                         " OR PD.PropertyId IN (" + sqlIn + " ) ";
 
-                rsMyProps = Table.executeQuery(getExpSchema(), sql, new Object[]{}, 0, true);
+                rsMyProps = Table.executeQuery(getExpSchema(), sql, new Object[0]);
             }
             String propUri;
             String domUri;
@@ -1212,7 +1212,7 @@ public class OntologyManager
                     " WHERE O.Container = ? " +
                     " AND O.Container <> PD.Container " +
                     " AND PD.Project <> ? ";
-            rsMyObjsThatRefProjProps = Table.executeQuery(getExpSchema(), sql, new Object[]{c.getId(), _sharedContainer.getId()}, 0, true);
+            rsMyObjsThatRefProjProps = Table.executeQuery(getExpSchema(), sql, new Object[]{c.getId(), _sharedContainer.getId()});
 
             Map<String, ObjectProperty> mMyObjsThatRefProjProps  = new HashMap<String, ObjectProperty>();
             String sqlIn="";
@@ -1251,7 +1251,7 @@ public class OntologyManager
                         " ON (PD.PropertyId = PDM2.PropertyId) " +
                         " WHERE PDM.PropertyId IN (" + sqlIn + " ) ";
 
-                rsPropsRefdByMe = Table.executeQuery(getExpSchema(), sql, new Object[]{}, 0, true);
+                rsPropsRefdByMe = Table.executeQuery(getExpSchema(), sql, new Object[0]);
             }
 
             String propUri;

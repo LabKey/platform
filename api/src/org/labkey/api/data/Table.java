@@ -1375,7 +1375,7 @@ public class Table
         Table.TableResultSet rs = null;
         try
         {
-            rs = (Table.TableResultSet) executeQuery(table.getSchema(), sql.toString(), innerSql.getParams().toArray(), 0, 0, cache, false, asyncRequest, null, null);
+            rs = (Table.TableResultSet) executeQuery(table.getSchema(), sql.toString(), innerSql.getParams().toArray(), ALL_ROWS, 0, cache, false, asyncRequest, null, null);
             boolean next = rs.next();
             if (!next)
                 throw new IllegalStateException("Expected a non-empty resultset from aggregate query.");

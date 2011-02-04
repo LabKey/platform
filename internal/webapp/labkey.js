@@ -298,6 +298,24 @@ LABKEY.requiresMenu = function()
     LABKEY.requiresYahoo('menu', true);
 };
 
+/** Pull in the required JS files and invoke the callback when they're loaded */
+LABKEY.initializeViewDesigner = function(dependenciesCallback, scope)
+{
+    var dependencies = [
+        "query/queryDesigner.js",
+        "groupTabPanel/GroupTabPanel.js",
+        "groupTabPanel/GroupTab.js",
+        "ComponentDataView.js",
+        "Ext.ux.dd.GridDragDropRowOrder.js"
+    ];
+
+    LABKEY.requiresCss("groupTabPanel/GroupTab.css", true);
+    LABKEY.requiresCss("groupTabPanel/UngroupedTab.css", true);
+    LABKEY.requiresScript(dependencies, true, function () {
+        LABKEY.requiresScript("designer/designer2.js", true, dependenciesCallback, scope)
+    });
+};
+
 LABKEY.setSubmit = function (submit)
 {
     this.submit = submit;

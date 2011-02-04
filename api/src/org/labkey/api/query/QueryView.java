@@ -375,13 +375,6 @@ public class QueryView extends WebPartView<Object>
             case designQuery:
             case sourceQuery:
                 break;
-            case chooseColumns:
-                ret.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
-                ret.addParameter(QueryParam.dataRegionName.toString(), getDataRegionName());
-                ret.addParameter(QueryParam.queryName.toString(), getSettings().getQueryName());
-                if (getSettings().getViewName() != null)
-                    ret.addParameter(QueryParam.viewName.toString(), getSettings().getViewName());
-                break;
             case detailsQueryRow:
             case insertQueryRow:
             case updateQueryRow:

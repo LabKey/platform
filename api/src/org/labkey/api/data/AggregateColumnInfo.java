@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.util.StringExpressionFactory;
 
 /**
@@ -52,6 +53,14 @@ public class AggregateColumnInfo extends ColumnInfo
         if(!_measure.getAggregateFunction().retainsForeignKey())
         {
             setFk(null);
+        }
+        else
+        {
+            // Skip the prefixing if we can
+            if (getFk() instanceof LookupForeignKey)
+            {
+                ((LookupForeignKey)getFk()).setPrefixColumnCaption(false);
+            }
         }
     }
 

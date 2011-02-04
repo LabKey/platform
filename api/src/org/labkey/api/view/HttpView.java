@@ -429,52 +429,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         return null;
     }
 
-
-    /**
-     * Avoid problem that response.printWriter() and
-     * pageContext.getOut() are not compatible in Tomcat,
-     * they use different buffers, so output gets scambled.
-     * <p/>
-     * Force output to use the outer jspWriter
-     */
-
-    static class ViewResponseWrapper extends HttpServletResponseWrapper
-    {
-        PrintWriter _printWriter;
-
-
-        ViewResponseWrapper(PageContext pageContext)
-        {
-            super((HttpServletResponse) pageContext.getResponse());
-            _printWriter = new PrintWriter(pageContext.getOut());
-        }
-
-
-        ViewResponseWrapper(HttpServletResponse response, Writer out)
-        {
-            super(response);
-            _printWriter = new PrintWriter(out);
-        }
-
-
-        /**
-         * don't do this, presumably we're already outputting a text stream
-         */
-        public ServletOutputStream getOutputStream() throws IOException
-        {
-            //throw new IllegalStateException("view can't call getOutputStream() in this context");
-            _printWriter.flush();
-            return this.getResponse().getOutputStream();
-        }
-
-
-        public PrintWriter getWriter() throws IOException
-        {
-            return _printWriter;
-        }
-    }
-
-
     public ModelAndView getView(String name, String defaultView)
     {
         ModelAndView v = getView(name);
@@ -625,40 +579,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
 
-    public static class ViewInfo
-    {
-        String[] _propertyNames;
-
-
-        String[] getPropertyNames()
-        {
-            return _propertyNames;
-        }
-
-        // UNDONE: PropertyInfo
-
-        protected ViewInfo(String[] propertyNames)
-        {
-            _propertyNames = propertyNames;
-        }
-    }
-
-
-    public interface ViewWrapper
-    {
-        /**
-         * implement a simple template, simply by implementing doStartTag() and doEndTag();
-         */
-        public void doStartTag(Map model, PrintWriter out);
-
-
-        /**
-         * implement a simple template, simply by implementing doStartTag() and doEndTag();
-         */
-        public void doEndTag(Map model, PrintWriter out);
-    }
-
-    
     public static ModelAndView throwRedirect(URLHelper url) throws RedirectException
     {
         throw new RedirectException(url.getLocalURIString());

@@ -325,10 +325,7 @@ public class ReportUtil
 
         public ActionURL getViewEditURL(Container c, CustomViewInfo view, User user)
         {
-            return PageFlowUtil.urlProvider(ReportUrls.class).urlCustomizeView(c).
-                    addParameter(QueryParam.queryName.name(), view.getQueryName()).
-                    addParameter(QueryParam.schemaName.name(), view.getSchemaName()).
-                    addParameter(QueryParam.viewName.name(), view.getName());
+            return null;
         }
     }
 
@@ -460,9 +457,11 @@ public class ReportUtil
                 if (!inherited)
                 {
                     ActionURL url = filter.getViewEditURL(c, view, user);
-                    url.addParameter(QueryParam.srcURL, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c).getLocalURIString());
-
-                    record.put("editUrl", url.getLocalURIString());
+                    if (url != null)
+                    {
+                        url.addParameter(QueryParam.srcURL, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c).getLocalURIString());
+                        record.put("editUrl", url.getLocalURIString());
+                    }
                 }
 
                 record.put("runUrl", filter.getViewRunURL(user, c, view).getLocalURIString());

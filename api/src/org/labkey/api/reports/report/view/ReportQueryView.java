@@ -56,11 +56,6 @@ public class ReportQueryView extends QueryView
         return region;
     }
 
-    public ActionURL getCustomizeURL()
-    {
-        return urlFor(QueryAction.chooseColumns);
-    }
-
     public ResultSet getResultSet(int maxRows) throws Exception
     {
         getSettings().setMaxRows(maxRows);

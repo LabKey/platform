@@ -37,7 +37,7 @@ import java.util.Map;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 
-public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> implements HttpView.ViewWrapper
+public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 {
     private Throwable _prepareException = null;
     private boolean _isPrepared = false;

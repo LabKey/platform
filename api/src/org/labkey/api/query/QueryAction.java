@@ -35,8 +35,6 @@ public enum QueryAction
     detailsQueryRow,
     insertQueryRow,
     updateQueryRow,
-    chooseColumns,
-    saveColumns,
     createRReport,
     tableInfo,
     excelWebQueryDefinition,
