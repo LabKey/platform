@@ -1424,7 +1424,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public Class<? extends Controller> getDataImportAction()
     {
-        return ImportAction.class;
+        // default to assay designer, except in the case of tsv where the assay can support inferring the data domain
+        return DesignerAction.class;
+        //return ImportAction.class;
     }
 
     /**
