@@ -145,6 +145,11 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
             HttpView.throwNotFound("Unable to find file: " + path);
         }
 
+        if (files == null)
+        {
+            HttpView.throwNotFound("Could not find any matching files");
+        }
+
         for (String fileName : files)
         {
             if (fileName.indexOf("/") != -1 || fileName.indexOf("\\") != -1)
