@@ -37,7 +37,7 @@
 		<input type="hidden" name="location" value="<%=bean.location%>"/>
         <%=generateReturnUrlFormField(currentURL)%>
         <select name="name">
-            <option value="">&lt;Select Part&gt;</option>
+            <option value="">&lt;Select Web Part&gt;</option>
 <%          for ( String name : bean.webPartNames)
             {
                 %><option value="<%=h(name)%>"><%=h(name)%></option> <%
@@ -57,7 +57,7 @@
         <input type="hidden" name="location" value="right"/>
         <%=generateReturnUrlFormField(currentURL)%>
         <select name="name">
-            <option value="">&lt;Select Part&gt;</option>
+            <option value="">&lt;Select Web Part&gt;</option>
 <%          for (String name : bean.rightWebPartNames)
             {
                 %><option value="<%=h(name)%>"><%=h(name)%></option> <%
