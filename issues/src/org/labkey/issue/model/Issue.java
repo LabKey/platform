@@ -17,7 +17,9 @@ package org.labkey.issue.model;
 
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
+import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.HString;
@@ -28,6 +30,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -452,9 +455,17 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public Collection<Issue.Comment> getComments()
     {
-//        if (null == comments)
-//            comments = new ArrayList();
-        return _comments;
+        List<Issue.Comment> result = new ArrayList<Issue.Comment>(_comments);
+        final Sort.SortDirection sort = IssueManager.getCommentSortDirection(ContainerManager.getForId(getContainerId()));
+        Collections.sort(result, new Comparator<Comment>()
+        {
+            @Override
+            public int compare(Comment o1, Comment o2)
+            {
+                return o1.getCreated().compareTo(o2.getCreated()) * (sort == Sort.SortDirection.ASC ? 1 : -1);
+            }
+        });
+        return result;
     }
 
     public Issue.Comment getLastComment()

@@ -115,6 +115,7 @@ public class IssueManager
     private static final String CAT_ASSIGNED_TO_LIST = "issueAssignedToList";
     private static final String PROP_ASSIGNED_TO_GROUP = "issueAssignedToGroup";
 
+    private static final String CAT_COMMENT_SORT = "issueCommentSort";
 
     private IssueManager()
     {
@@ -125,7 +126,7 @@ public class IssueManager
     {
         try
         {
-            SimpleFilter f = new SimpleFilter("issueId", new Integer(issueId));
+            SimpleFilter f = new SimpleFilter("issueId", issueId);
             if (null != c)
                 f.addCondition("container", c.getId());
 
@@ -139,14 +140,14 @@ public class IssueManager
             Issue.Comment[] comments = Table.select(
                     _issuesSchema.getTableInfoComments(),
                     Table.ALL_COLUMNS,
-                    new SimpleFilter("issueId", new Integer(issue.getIssueId())),
+                    new SimpleFilter("issueId", issue.getIssueId()),
                     new Sort("CommentId"), Issue.Comment.class);
             issue.setComments(new ArrayList<Issue.Comment>(Arrays.asList(comments)));
 
             Integer[] dups = Table.executeArray(
                     _issuesSchema.getTableInfoIssues(),
                     "IssueId",
-                    new SimpleFilter("Duplicate", new Integer(issueId)),
+                    new SimpleFilter("Duplicate", issueId),
                     new Sort("IssueId"), Integer.class);
             issue.setDuplicates(new ArrayList<Integer>(Arrays.asList(dups)));
             return issue;
@@ -161,7 +162,7 @@ public class IssueManager
     public static void saveIssue(User user, Container c, Issue issue) throws SQLException
     {
         if (issue.assignedTo == null)
-            issue.assignedTo = new Integer(0);
+            issue.assignedTo = 0;
 
         if (issue.issueId == 0)
         {
@@ -171,7 +172,7 @@ public class IssueManager
         else
         {
             issue.beforeUpdate(user);
-            Table.update(user, _issuesSchema.getTableInfoIssues(), issue, new Integer(issue.getIssueId()));
+            Table.update(user, _issuesSchema.getTableInfoIssues(), issue, issue.getIssueId());
         }
         saveComments(user, issue);
 
@@ -191,7 +192,7 @@ public class IssueManager
                 throw new ConversionException("comment has invalid characters");
 
             Map<String, Object> m = new HashMap<String, Object>();
-            m.put("issueId", new Integer(issue.getIssueId()));
+            m.put("issueId", issue.getIssueId());
             m.put("comment", comment.getComment());
             m.put("entityId", comment.getEntityId());
             Table.insert(user, _issuesSchema.getTableInfoComments(), m);
@@ -204,7 +205,7 @@ public class IssueManager
     {
         Table.execute(_issuesSchema.getSchema(),
                 "INSERT INTO " + _issuesSchema.getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
-                new Object[]{c.getId(), new Integer(type), keyword});
+                new Object[]{c.getId(), type, keyword});
         DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
     }
 
@@ -322,7 +323,7 @@ public class IssueManager
         {
             Table.execute(_issuesSchema.getSchema(),
                     "DELETE FROM " + _issuesSchema.getTableInfoIssueKeywords() + " WHERE Container=? AND Type=? AND Keyword=?",
-                    new Object[]{c.getId(), new Integer(type), keyword});
+                    new Object[]{c.getId(), type, keyword});
             DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
         }
         catch (SQLException x)
@@ -357,9 +358,9 @@ public class IssueManager
     public static class CustomColumnConfiguration
     {
         public static final String PICK_LIST_NAME = "pickListColumns";
-        private static String[] _tableColumns = new String[]{"int1", "int2", "string1", "string2", "string3", "string4", "string5"};
-        private Map<String, String> _columnCaptions = new CaseInsensitiveHashMap<String>(5);
-        private Set<String> _pickListColumns = new HashSet<String>(5);
+        private static String[] _tableColumns = {"type", "area", "priority", "milestone", "resolution", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
+        private Map<String, String> _columnCaptions = new CaseInsensitiveHashMap<String>();
+        private Set<String> _pickListColumns = new HashSet<String>();
 
         public CustomColumnConfiguration(@NotNull Map<String, ?> map)
         {
@@ -578,11 +579,33 @@ public class IssueManager
         return SecurityManager.getGroup(Integer.valueOf(groupId).intValue());
     }
 
-
     public static void saveAssignedToGroup(Container c, @Nullable Group group)
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c.getId(), CAT_ASSIGNED_TO_LIST, true);
         props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
+        PropertyManager.saveProperties(props);
+        uncache(c);  // uncache the assigned to list
+    }
+
+    public static Sort.SortDirection getCommentSortDirection(Container c)
+    {
+        Map<String, String> props = PropertyManager.getProperties(c.getId(), CAT_COMMENT_SORT);
+        String direction = props.get(CAT_COMMENT_SORT);
+        if (direction != null)
+        {
+            try
+            {
+                return Sort.SortDirection.valueOf(direction);
+            }
+            catch (IllegalArgumentException e) {}
+        }
+        return Sort.SortDirection.ASC; 
+    }
+
+    public static void saveCommentSortDirection(Container c, @NotNull Sort.SortDirection direction)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c.getId(), CAT_COMMENT_SORT, true);
+        props.put(CAT_COMMENT_SORT, direction.toString());
         PropertyManager.saveProperties(props);
         uncache(c);  // uncache the assigned to list
     }
@@ -607,7 +630,7 @@ public class IssueManager
         }
         catch (SQLException x)
         {
-            _log.error(x);
+            throw new RuntimeSQLException(x);
         }
     }
 
@@ -850,8 +873,6 @@ public class IssueManager
                 comments.add(new Issue.Comment(rs.getString("comment")));
             }
             queueIssue(task, currentIssueId, m, comments);
-            if (Thread.interrupted())
-                return;
         }
         catch (SQLException x)
         {
@@ -1050,7 +1071,7 @@ public class IssueManager
             {
                 Issue issue = new Issue();
                 issue.open(c, user);
-                issue.setAssignedTo(new Integer(user.getUserId()));
+                issue.setAssignedTo(user.getUserId());
                 issue.setTitle(new HString("This is a junit test bug",false));
                 issue.setTag(new HString("junit",false));
                 issue.addComment(user, new HString("new issue",false));

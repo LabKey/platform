@@ -45,7 +45,7 @@
 <%
     if (kwp.keywords.length == 0)
     {
-        out.println("    <i>no " + kwp.plural + "</i><br>");
+        out.println("    <i>none set</i><br>");
     }
     else
     {

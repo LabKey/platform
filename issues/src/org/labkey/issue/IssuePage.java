@@ -200,6 +200,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _dataRegionSelectionKey = dataRegionSelectionKey;
     }
 
+    public String getColumnName(String tableColumnName)
+    {
+        String caption = _ccc.getColumnCaptions().get(tableColumnName);
+        if (caption != null)
+        {
+            return caption;
+        }
+        return tableColumnName;
+    }
+
     public String writeCustomColumn(Container container, HString tableColumnName, HString value, int keywordType, int tabIndex) throws IOException
     {
         final String caption = _ccc.getColumnCaptions().get(tableColumnName.getSource());

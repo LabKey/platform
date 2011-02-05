@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<IssuesController.AdminBean> me = (HttpView<IssuesController.AdminBean>) HttpView.currentView();
@@ -42,19 +44,50 @@
 <tr><td>&nbsp;</td></tr>
 <%=formatMissedErrorsInTable("form", 1)%>
 </table>
-<% me.include(bean.keywordView, out); %>
-<br>
+<form name="entryTypeNames" action="configureIssues.post" method="POST">
 
 <table><tr>
     <td valign=top>
-        <% me.include(bean.requiredFieldsView, out); %>
+        <table>
+            <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields</b></div></td></tr>
+            <tr><td colspan=2>Select fields to be required when entering or updating <%=bean.getEntryTypeNames().getIndefiniteSingularArticle()%> <%=bean.getEntryTypeNames().singularName%>:</td></tr>
+            <tr><td colspan=2>&nbsp;</td></tr>
+            <tr><td><input type="checkbox" name="requiredFields" <%=isRequired("comment", bean.getRequiredFields()) ? "checked " : ""%> value="comment">Comments (new issues only)</td>
+        <%
+            java.util.List<org.labkey.api.data.ColumnInfo> columns = bean.getColumns();
+            for (int i = 0; i < columns.size(); i++)
+            {
+                org.labkey.api.data.ColumnInfo info = columns.get(i);
+                boolean startNewRow = i % 2 == 1;
+                if (startNewRow)
+                {
+        %>
+            <tr>
+        <%
+                }
+        %>
+                <td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%> value="<%=info.getName()%>"><%=getCaption(info)%></td>
+        <%
+                if (!startNewRow)
+                {
+        %>
+            </tr>
+        <%
+                }
+            }
+        %>
+        </table><br>
     </td>
     <td valign=top>
-        <form action="setCustomColumnConfiguration.post" method="post">
         <table>
         <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
         <tr><td colspan=2>Enter captions below to use custom fields in this <%=bean.entryTypeNames.pluralName%> list:</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
+        <tr><td>Type</td><td><input name="type" value="<%=h(captions.get("type"))%>" size=20></td></tr>
+        <tr><td>Area</td><td><input name="area" value="<%=h(captions.get("area"))%>" size=20></td></tr>
+        <tr><td>Priority</td><td><input name="priority" value="<%=h(captions.get("priority"))%>" size=20></td></tr>
+        <tr><td>Milestone</td><td><input name="milestone" value="<%=h(captions.get("milestone"))%>" size=20></td></tr>
+        <tr><td>Resolution</td><td><input name="resolution" value="<%=h(captions.get("resolution"))%>" size=20></td></tr>
         <tr><td>Integer1</td><td><input name="int1" value="<%=h(captions.get("int1"))%>" size=20></td></tr>
         <tr><td>Integer2</td><td><input name="int2" value="<%=h(captions.get("int2"))%>" size=20></td></tr>
         <tr><td>String1</td><td><input name="string1" value="<%=h(captions.get("string1"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string1" <%=pickListColumns.contains("string1") ? "checked" : ""%>>Use pick list for this field</td></tr>
@@ -63,47 +96,39 @@
         <tr><td>String4</td><td><input name="string4" value="<%=h(captions.get("string4"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string4" <%=pickListColumns.contains("string4") ? "checked" : ""%>>Use pick list for this field</td></tr>
         <tr><td>String5</td><td><input name="string5" value="<%=h(captions.get("string5"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string5" <%=pickListColumns.contains("string5") ? "checked" : ""%>>Use pick list for this field</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
-        <tr><td colspan=2 align="center"><%=generateSubmitButton("Update Custom Fields")%></td></tr>
         </table>
-        </form>
     </td>
 </tr>
 <tr>
-    <td valign="top">
-        <form name="entryTypeNames" action="setEntryTypeNames.post" method="POST">
+    <td valign="top" colspan="2">
         <table width="100%">
-            <tr><td align="center"><div class="labkey-form-label"><b>Entry Type Names</b></div></td></tr>
+            <tr><td align="center"><div class="labkey-form-label"><b>Additional Configuration</b></div></td></tr>
             <tr>
                 <td>
                     <table>
                         <tr>
-                            <td>Singular</td>
-                            <td><input type="text" name="<%=IssuesController.EntryTypeNamesForm.ParamNames.entrySingularName.name()%>"
+                            <td>Singular item name</td>
+                            <td><input type="text" name="<%=IssuesController.ConfigureIssuesForm.ParamNames.entrySingularName.name()%>"
                                        value="<%=h(bean.entryTypeNames.singularName)%>" size="20"/></td>
                         </tr>
                         <tr>
-                            <td>Plural</td>
-                            <td><input type="text" name="<%=IssuesController.EntryTypeNamesForm.ParamNames.entryPluralName.name()%>"
+                            <td>Plural items name</td>
+                            <td><input type="text" name="<%=IssuesController.ConfigureIssuesForm.ParamNames.entryPluralName.name()%>"
                                        value="<%=h(bean.entryTypeNames.pluralName)%>" size="20"/></td>
+                        </tr>
+                        <tr>
+                            <td>Comment sort direction</td>
+                            <td>
+                                <%= org.labkey.api.util.PageFlowUtil.strSelect(IssuesController.ConfigureIssuesForm.ParamNames.direction.name(), Arrays.asList(org.labkey.api.data.Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort) %>
+                            </td>
                         </tr>
                     </table>
                 </td>
             </tr>
             <tr>
-                <td align="center"><%=generateSubmitButton("Update Entry Type Names")%></td>
-            </tr>
-        </table>
-        </form>
-    </td>
-    <td valign="top">
-        <form name="assignedToList" action="setAssignedToGroup.post" method="POST">
-        <table width="100%">
-            <tr><td align="center"><div class="labkey-form-label"><b>Assigned To List</b></div></td></tr>
-            <tr>
                 <td>
                     <table>
                         <tr><td colspan="2">Populate the assigned to list from:</td></tr>
-                        <tr><td colspan="2">&nbsp;</td></tr>
                         <tr>
                             <td>
                                 <input onchange="assignedToGroup.disabled=true;" type="radio" name="assignedToMethod" value="ProjectUsers"<%=null == bean.assignedToGroup ? " checked" : ""%> />
@@ -132,10 +157,31 @@
                 </td>
             </tr>
             <tr>
-                <td align="center"><%=generateSubmitButton("Update Assigned To List")%></td>
+                <td><%=generateSubmitButton("Update")%></td>
             </tr>
         </table>
-        </form>
     </td>
 </tr>
 </table>
+</form>
+
+<%!
+    public boolean isRequired(String name, org.labkey.api.util.HString requiredFields) {
+        if (requiredFields != null) {
+            return requiredFields.indexOf(name.toLowerCase()) != -1;
+        }
+        return false;
+    }
+
+    public String getCaption(ColumnInfo col) throws java.sql.SQLException
+    {
+        final IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(HttpView.getRootContext().getContainer());
+        if (ccc.getColumnCaptions().containsKey(col.getName()))
+        {
+            return ccc.getColumnCaptions().get(col.getName());
+        }
+        return col.getLabel();
+    }
+%>
+<br>
+<% me.include(bean.keywordView, out); %>

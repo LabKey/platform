@@ -35,7 +35,16 @@ public class IssuesQuerySchema extends UserSchema
 
     public enum TableType
     {
-        Issues,
+        Issues
+        {
+            @Override
+            public TableInfo createTable(IssuesQuerySchema schema)
+            {
+                return new IssuesTable(schema);
+            }
+        };
+
+        public abstract TableInfo createTable(IssuesQuerySchema schema);
     }
     static private Set<String> tableNames = new LinkedHashSet<String>();
     static
@@ -71,33 +80,20 @@ public class IssuesQuerySchema extends UserSchema
     {
         if (name != null)
         {
-            try
+            TableType tableType = null;
+            for (TableType t : TableType.values())
             {
-                TableType tableType = null;
-                for (TableType t : TableType.values())
+                // Make the enum name lookup case insensitive
+                if (t.name().toLowerCase().equals(name.toLowerCase()))
                 {
-                    // Make the enum name lookup case insensitive
-                    if (t.name().toLowerCase().equals(name.toLowerCase()))
-                    {
-                        tableType = t;
-                    }
-                }
-                if (tableType != null)
-                {
-                    switch(tableType)
-                    {
-                        case Issues:
-                            return createIssuesTable();
-                    }
+                    tableType = t;
                 }
             }
-            catch (IllegalArgumentException e){}
+            if (tableType != null)
+            {
+                return tableType.createTable(this);
+            }
         }
         return null;
-    }
-
-    public TableInfo createIssuesTable()
-    {
-        return new IssuesTable(this);
     }
 }

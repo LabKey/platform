@@ -39,6 +39,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
@@ -95,7 +96,6 @@ import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.query.IssuesQueryView;
-import org.labkey.issue.query.IssuesTable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -226,58 +226,6 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
-    public class SetCustomColumnConfigurationAction extends FormHandlerAction
-    {
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext());
-            IssueManager.saveCustomColumnConfiguration(getContainer(), ccc);
-            return true;
-        }
-
-        public void validateCommand(Object o, Errors errors)
-        {
-        }
-
-        public ActionURL getSuccessURL(Object o)
-        {
-            return (new AdminAction()).getUrl();
-        }
-    }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class UpdateRequiredFieldsAction extends FormHandlerAction<IssuePreferenceForm>
-    {
-        public boolean handlePost(IssuePreferenceForm form, BindException errors) throws Exception
-        {
-            final StringBuilder sb = new StringBuilder();
-            if (form.getRequiredFields().length > 0)
-            {
-                String sep = "";
-                for (HString field : form.getRequiredFields())
-                {
-                    sb.append(sep);
-                    sb.append(field);
-                    sep = ";";
-                }
-            }
-            IssueManager.setRequiredIssueFields(getContainer(), sb.toString());
-            return true;
-        }
-
-        public void validateCommand(IssuePreferenceForm issuePreferenceForm, Errors errors)
-        {
-        }
-
-        public ActionURL getSuccessURL(IssuePreferenceForm issuePreferenceForm)
-        {
-            return (new AdminAction()).getUrl();
-        }
-    }
-
-
     public static ActionURL getListURL(Container c)
     {
         ActionURL url = new ActionURL(ListAction.class, c);
@@ -404,7 +352,7 @@ public class IssuesController extends SpringActionController
 
             getPageConfig().setTitle(getSingularEntityName() + " " + _issue.getIssueId() + ": " + _issue.getTitle().getSource());
 
-            return new JspView<IssuePage>(IssuesController.class, "detailView.jsp", page);
+            return new JspView<IssuePage>("/org/labkey/issue/detailView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -872,7 +820,7 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, _issue);
 
             IssuePage page = new IssuePage();
-            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
+            JspView v = new JspView<IssuePage>("/org/labkey/issue/updateView.jsp", page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -1471,16 +1419,53 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class EntryTypeNamesForm
+    public static class ConfigureIssuesForm
     {
         public static enum ParamNames
         {
             entrySingularName,
-            entryPluralName
+            entryPluralName,
+            direction
         }
+
+        private String _direction;
+        private String _assignedToMethod = null;
+        private int _assignedToGroup = 0;
+
+        private HString[] _requiredFields = new HString[0];
 
         private HString _entrySingularName;
         private HString _entryPluralName;
+
+        public String getDirection()
+        {
+            return _direction;
+        }
+
+        public void setDirection(String direction)
+        {
+            _direction = direction;
+        }
+
+        public String getAssignedToMethod()
+        {
+            return _assignedToMethod;
+        }
+
+        public void setAssignedToMethod(String assignedToMethod)
+        {
+            _assignedToMethod = assignedToMethod;
+        }
+
+        public int getAssignedToGroup()
+        {
+            return _assignedToGroup;
+        }
+
+        public void setAssignedToGroup(int assignedToGroup)
+        {
+            _assignedToGroup = assignedToGroup;
+        }
 
         public HString getEntrySingularName()
         {
@@ -1501,43 +1486,18 @@ public class IssuesController extends SpringActionController
         {
             _entryPluralName = entryPluralName;
         }
+
+        public void setRequiredFields(HString[] requiredFields){_requiredFields = requiredFields;}
+        public HString[] getRequiredFields(){return _requiredFields;}
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class SetEntryTypeNames extends FormHandlerAction<EntryTypeNamesForm>
-    {
-        public void validateCommand(EntryTypeNamesForm form, Errors errors)
-        {
-            if (form.getEntrySingularName().trimToEmpty().length() == 0)
-                errors.reject(EntryTypeNamesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
-            if (form.getEntryPluralName().trimToEmpty().length() == 0)
-                errors.reject(EntryTypeNamesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
-        }
-
-        public boolean handlePost(EntryTypeNamesForm form, BindException errors) throws Exception
-        {
-            IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
-            
-            names.singularName = form.getEntrySingularName();
-            names.pluralName = form.getEntryPluralName();
-
-            IssueManager.saveEntryTypeNames(getViewContext().getContainer(), names);
-            return true;
-        }
-
-        public ActionURL getSuccessURL(EntryTypeNamesForm form)
-        {
-            return issueURL(AdminAction.class);
-        }
-    }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class SetAssignedToGroupAction extends FormHandlerAction<AssignedToGroupForm>
+    public class ConfigureIssuesAction extends FormHandlerAction<ConfigureIssuesForm>
     {
         private Group _group = null;
+        private Sort.SortDirection _direction = Sort.SortDirection.ASC;
 
-        public void validateCommand(AssignedToGroupForm form, Errors errors)
+        public void validateCommand(ConfigureIssuesForm form, Errors errors)
         {
             if (form.getAssignedToMethod().equals("ProjectUsers"))
             {
@@ -1556,44 +1516,59 @@ public class IssuesController extends SpringActionController
             {
                 errors.reject("assignedToGroup", "Invalid assigned to setting!");
             }
+
+            if (form.getEntrySingularName().trimToEmpty().length() == 0)
+                errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
+            if (form.getEntryPluralName().trimToEmpty().length() == 0)
+                errors.reject(ConfigureIssuesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
+
+            try
+            {
+                if (form.getDirection() == null)
+                {
+                    errors.reject(ConfigureIssuesForm.ParamNames.direction.name(), "You must specify a comment sort direction!");
+                }
+                _direction = Sort.SortDirection.valueOf(form.getDirection()); 
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ConfigureIssuesForm.ParamNames.direction.name(), "You must specify a valid comment sort direction!");
+            }
         }
 
-        public boolean handlePost(AssignedToGroupForm form, BindException errors) throws Exception
+        public boolean handlePost(ConfigureIssuesForm form, BindException errors) throws Exception
         {
+            IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
+            
+            names.singularName = form.getEntrySingularName();
+            names.pluralName = form.getEntryPluralName();
+
+            IssueManager.saveEntryTypeNames(getContainer(), names);
             IssueManager.saveAssignedToGroup(getContainer(), _group);
+            IssueManager.saveCommentSortDirection(getContainer(), _direction);
+
+            IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext());
+            IssueManager.saveCustomColumnConfiguration(getContainer(), ccc);
+
+            final StringBuilder sb = new StringBuilder();
+            if (form.getRequiredFields().length > 0)
+            {
+                String sep = "";
+                for (HString field : form.getRequiredFields())
+                {
+                    sb.append(sep);
+                    sb.append(field);
+                    sep = ";";
+                }
+            }
+            IssueManager.setRequiredIssueFields(getContainer(), sb.toString());
+
             return true;
         }
 
-        public ActionURL getSuccessURL(AssignedToGroupForm form)
+        public ActionURL getSuccessURL(ConfigureIssuesForm form)
         {
             return issueURL(AdminAction.class);
-        }
-    }
-
-
-    public static class AssignedToGroupForm
-    {
-        private String _assignedToMethod = null;
-        private int _assignedToGroup = 0;
-
-        public String getAssignedToMethod()
-        {
-            return _assignedToMethod;
-        }
-
-        public void setAssignedToMethod(String assignedToMethod)
-        {
-            _assignedToMethod = assignedToMethod;
-        }
-
-        public int getAssignedToGroup()
-        {
-            return _assignedToGroup;
-        }
-
-        public void setAssignedToGroup(int assignedToGroup)
-        {
-            _assignedToGroup = assignedToGroup;
         }
     }
 
@@ -1914,7 +1889,7 @@ public class IssuesController extends SpringActionController
     {
         public AdminView(Container c, IssueManager.CustomColumnConfiguration ccc, BindException errors)
         {
-            super("/org/labkey/issue/admin.jsp", new AdminBean(), errors);
+            super("/org/labkey/issue/admin.jsp", null, errors);
 
             KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
             keywordView.addKeyword("Type", ISSUE_TYPE);
@@ -1930,18 +1905,16 @@ public class IssuesController extends SpringActionController
 
             List<String> columnNames = new ArrayList<String>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
-            columnNames.addAll(IssuesTable.getCustomColumnCaptions(c).keySet());
+            columnNames.addAll(IssueManager.getCustomColumnConfiguration(c).getColumnCaptions().keySet());
             List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[columnNames.size()]));
 
-            IssuesPreference ipb = new IssuesPreference(cols, IssueManager.getRequiredIssueFields(c), IssueManager.getEntryTypeNames(c));
-
-            AdminBean bean = getModelBean();
+            AdminBean bean = new AdminBean(cols, IssueManager.getRequiredIssueFields(c), IssueManager.getEntryTypeNames(c));
 
             bean.ccc = ccc;
             bean.keywordView = keywordView;
-            bean.requiredFieldsView = new JspView<IssuesPreference>("/org/labkey/issue/requiredFields.jsp", ipb);
             bean.entryTypeNames = IssueManager.getEntryTypeNames(c);
             bean.assignedToGroup = IssueManager.getAssignedToGroup(c);
+            bean.commentSort = IssueManager.getCommentSortDirection(c);
             setModelBean(bean);
         }
     }
@@ -1949,11 +1922,26 @@ public class IssuesController extends SpringActionController
 
     public static class AdminBean
     {
+        private List<ColumnInfo> _columns;
+        private HString _requiredFields;
+        private IssueManager.EntryTypeNames _entryTypeNames;
+
         public IssueManager.CustomColumnConfiguration ccc;
         public KeywordAdminView keywordView;
-        public JspView<IssuesPreference> requiredFieldsView;
         public IssueManager.EntryTypeNames entryTypeNames;
         public Group assignedToGroup;
+        public Sort.SortDirection commentSort;
+
+        public AdminBean(List<ColumnInfo> columns, HString requiredFields, IssueManager.EntryTypeNames typeNames)
+        {
+            _columns = columns;
+            _requiredFields = requiredFields;
+            _entryTypeNames = typeNames;
+        }
+
+        public List<ColumnInfo> getColumns(){return _columns;}
+        public HString getRequiredFields(){return _requiredFields;}
+        public IssueManager.EntryTypeNames getEntryTypeNames() {return _entryTypeNames;}
     }
 
 
@@ -1979,13 +1967,18 @@ public class IssuesController extends SpringActionController
             if (_ccc.getPickListColumns().contains(tableColumn))
             {
                 String caption = _ccc.getColumnCaptions().get(tableColumn);
-                addKeyword(caption, type);
+                _keywordPickers.add(new KeywordPicker(_c, caption, type));
             }
         }
 
         private void addKeyword(String name, int type)
         {
-            _keywordPickers.add(new KeywordPicker(_c, name, type));
+            String caption = _ccc.getColumnCaptions().get(name);
+            if (caption == null)
+            {
+                caption = name;
+            }
+            _keywordPickers.add(new KeywordPicker(_c, caption, type));
         }
     }
 
@@ -2328,34 +2321,6 @@ public class IssuesController extends SpringActionController
             _reports = reports;
         }
     }
-
-    public static class IssuesPreference
-    {
-        private List<ColumnInfo> _columns;
-        private HString _requiredFields;
-        private IssueManager.EntryTypeNames _entryTypeNames;
-
-        public IssuesPreference(List<ColumnInfo> columns, HString requiredFields, IssueManager.EntryTypeNames typeNames)
-        {
-            _columns = columns;
-            _requiredFields = requiredFields;
-            _entryTypeNames = typeNames;
-        }
-
-        public List<ColumnInfo> getColumns(){return _columns;}
-        public HString getRequiredFields(){return _requiredFields;}
-        public IssueManager.EntryTypeNames getEntryTypeNames() {return _entryTypeNames;}
-    }
-
-
-    public static class IssuePreferenceForm
-    {
-        private HString[] _requiredFields = new HString[0];
-
-        public void setRequiredFields(HString[] requiredFields){_requiredFields = requiredFields;}
-        public HString[] getRequiredFields(){return _requiredFields;}
-    }
-
 
     public static class IssueIdForm
     {

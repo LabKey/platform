@@ -30,10 +30,7 @@
 
     HString changeComment = new HString("(No change comment)",false);
     String modifiedBy = "(unknown)";
-    Iterator<Issue.Comment> it = bean.issue.getComments().iterator();
-    Issue.Comment lastComment = null;
-    while (it.hasNext())
-        lastComment = it.next();
+    Issue.Comment lastComment = bean.issue.getLastComment();
 
     if (lastComment != null)
     {
