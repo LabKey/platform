@@ -385,21 +385,34 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        var x = this.getScale(this.axes["x"], this.chartWidth, this.series, "getX");
        var y = this.getScale(this.axes["y"], this.chartHeight, this.series, "getY");
        var dataPanel = this.addChartPanel();
+        //svgweb does not support default "show title on hover" behavior so we do something quick & dirty to get it...
+       if (pv.renderer() == "svgweb")
+           this.rootVisPanel.event("mousemove", pv.Behavior.point());
+
        this.drawRule(x, "bottom", this.axes["x"]);
        this.drawRule(y, "left", this.axes["y"]);
 
        var style = this.style;
        this.series.forEach(function (s) {
            var color = style.seriesColors(s.caption).alpha(style.markAlpha);
-           dataPanel.add(pv.Line)
+           var lines = dataPanel.add(pv.Line)
              .data(s.data)
             .left(function (d) {return x(s.getX(d))})
             .bottom(function (d) {return y(s.getY(d))})
             .strokeStyle(color)
-            .lineWidth(style.markSize)
-            .add(pv.Dot)
+            .lineWidth(style.markSize);
+           var dots = lines.add(pv.Dot)
                 .shapeSize(style.markSize)
-                .title(s.getTitle)
+                .title(s.getTitle);
+           if (pv.renderer() == "svgweb") {
+               dots.def('active', -1);
+               dots.event("point", function() {return this.active(this.index).parent})
+                       .event("unpoint", function() {return this.active(-1).parent})
+                       .anchor("right").add(pv.Label)
+                       .visible(function() {return this.anchorTarget().active() == this.index})
+                       .font("bold 12px Arial, sans-serif")
+                       .text(s.getTitle)
+           }
        }, this);
 
        this.drawLegend(style, this.series);
