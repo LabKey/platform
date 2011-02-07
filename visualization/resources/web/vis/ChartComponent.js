@@ -14,6 +14,14 @@ LABKEY.vis.Colors = {
     "DARK2": ["#1B9E77", "#D95F2", "#7570B3", "#E7298A", "#66A61E", "#E6AB2", "#A6761D", "#666666"]
 };
 
+//By default we use a different shape for every series to help deal with colorblindness
+//Only 5 shapes. For non-colorblind people we get 40 different shape/color combinations
+LABKEY.vis.Shapes =[{name:"cross", markSize:20, lineWidth:4},
+    {name:"triangle", markSize:20, lineWidth:1},
+    {name:"diamond", markSize:20, lineWidth:1},
+    {name:"square", markSize:20, lineWidth:1},
+    {name:"circle", markSize:20, lineWidth:1}];
+
 /**
  * A singleton class to convert SVG text to downloadable images
  * Note that this cannot be used to generate an image to be loaded into an image tag as a POST is required
@@ -150,6 +158,14 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
       legendWidth: 120
     },
 
+    //Default style for series. Can be overridden
+    seriesStyle : {
+        lineWidth: 4,
+        markAlpha : .75,
+        shape: null, //If null will be assigned automatically using next available shape
+        markColor: null //If null will be assigned automatically using next available seriesColor
+    },
+
     rootVisPanel: null,
 
     initComponent: function () {
@@ -247,26 +263,21 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
 
     },
 
-    /**
-     *
-     * @param style style object as
-     * @param series
-     */
-    drawLegend: function (style, series) {
-
+    drawLegend: function () {
         var legend = this.rootVisPanel.add(pv.Panel)
                 .top(this.style.outerMargin)
                 .right(this.style.smallMargin)
                 .width(this.style.legendWidth);
 
-        legend.add(pv.Dot).
-                data(series)
-                .fillStyle(function (d) {return style.seriesColors(d.caption).alpha(style.markAlpha)})
-                .strokeStyle(function (d) {return style.seriesColors(d.caption).alpha(style.markAlpha)})
+        legend.add(pv.Dot)
+                .data(this.series) //One dot for each series
+                .fillStyle(function (d) {return d.style.markColor})
+                .strokeStyle(function (d) {return d.style.markColor})
                 .top(function() {return this.index * 25;})
                 .left(5)
-                .shapeSize(50)
-                .shape("square")
+                .shapeSize(function (d) {return d.style.shape.markSize})
+                .lineWidth(function (d) {return d.style.shape.lineWidth})
+                .shape(function (d) {return d.style.shape.name})
                 .anchor("right")
                 .add(pv.Label)
                 .text(function(d) {return d.caption});
@@ -354,7 +365,7 @@ LABKEY.vis.ScatterChart = Ext.extend(LABKEY.vis.XYChartComponent, {
             .shapeSize(style.markSize);
        });
 
-       this.drawLegend(style, this.series);
+       this.drawLegend();
        this.rootVisPanel.render();
 
    },
@@ -392,18 +403,24 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        this.drawRule(x, "bottom", this.axes["x"]);
        this.drawRule(y, "left", this.axes["y"]);
 
-       var style = this.style;
+       var seriesIndex;
        this.series.forEach(function (s) {
-           var color = style.seriesColors(s.caption).alpha(style.markAlpha);
+           var style = s.style;
+           var color = style.markColor;
            var lines = dataPanel.add(pv.Line)
              .data(s.data)
             .left(function (d) {return x(s.getX(d))})
             .bottom(function (d) {return y(s.getY(d))})
             .strokeStyle(color)
-            .lineWidth(style.markSize);
+            .lineWidth(style.lineWidth);
            var dots = lines.add(pv.Dot)
-                .shapeSize(style.markSize)
-                .title(s.getTitle);
+                .shapeSize(style.shape.markSize)
+                .fillStyle(color)
+                .title(s.getTitle)
+                .lineWidth(style.shape.lineWidth)
+                .shape(style.shape.name);
+           
+           //Add mouse-over behavior for svgweb
            if (pv.renderer() == "svgweb") {
                dots.def('active', -1);
                dots.event("point", function() {return this.active(this.index).parent})
@@ -413,15 +430,24 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                        .font("bold 12px Arial, sans-serif")
                        .text(s.getTitle)
            }
+           seriesIndex++;
        }, this);
 
-       this.drawLegend(style, this.series);
+       this.drawLegend();
        this.rootVisPanel.render();
    },
 
    initSeries: function() {
         var chartComponent = this;
+       var seriesIndex = 0;
         this.series.forEach(function (series) {
+            series.style = series.style || {};
+            var style = series.style;
+            Ext.applyIf(style, chartComponent.seriesStyle);
+            if (!style.markColor)
+                style.markColor = chartComponent.style.seriesColors(series.caption).alpha(style.markAlpha);
+            style.shape = style.shape || LABKEY.vis.Shapes[seriesIndex % LABKEY.vis.Shapes.length];
+
             if (series.xProperty && !series.getX)
                 series.getX = chartComponent.createGetter(series.xProperty, false);
             if (series.yProperty && !series.getY)
@@ -441,6 +467,7 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                     cleanData.push(d);
             });
             series.data = cleanData;
+            seriesIndex++;
     });
    }
 });
@@ -480,7 +507,7 @@ LABKEY.vis.BarChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                 //.fillStyle(style.seriesColors.by(parent.data().caption))
 
 
-       this.drawLegend(style, this.series);
+       this.drawLegend();
        this.rootVisPanel.render();
    }
 });
