@@ -122,10 +122,6 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
                     ActionURL assayURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(protocol.getContainer(), protocol);
                     ds.setSourceAssayURL(assayURL.getLocalURIString());
-
-                    ActionURL unlinkAssayURL = new ActionURL(DatasetController.UnlinkAssayAction.class, getContainer());
-                    unlinkAssayURL.addParameter("datasetId", dd.getDataSetId());
-                    ds.setUnlinkAssayURL(unlinkAssayURL.getLocalURIString());
                 }
             }
 

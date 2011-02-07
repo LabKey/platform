@@ -45,7 +45,6 @@ public class GWTDataset implements IsSerializable
     private StringProperty _description = new StringProperty();
     private StringProperty _sourceAssayName = new StringProperty();
     private StringProperty _sourceAssayURL = new StringProperty();
-    private StringProperty _unlinkAssayURL = new StringProperty();
 
     private Map<String, String> _cohortMap;
 
@@ -214,15 +213,5 @@ public class GWTDataset implements IsSerializable
     public void setSourceAssayURL(String assayURL)
     {
         _sourceAssayURL.set(assayURL);
-    }
-
-    public String getUnlinkAssayURL()
-    {
-        return _unlinkAssayURL.getString();
-    }
-
-    public void setUnlinkAssayURL(String assayURL)
-    {
-        _unlinkAssayURL.set(assayURL);
     }
 }

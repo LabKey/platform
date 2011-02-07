@@ -37,7 +37,9 @@
 <%=errorHTML%>
 
 <form action="customizeEmail.view" method="post">
-    <input type="hidden" name="returnUrl" value="<%= bean.getReturnUrl()%>" />
+    <% if (bean.getReturnUrl() != null) { %>
+        <input type="hidden" name="returnUrl" value="<%= bean.getReturnUrl()%>" />
+    <% } %>
     <table>
         <tr class="labkey-wp-header"><th colspan=2>Custom Emails</th></tr>
         <tr><td></td></tr>
@@ -53,8 +55,8 @@
 %>
         </select></td></tr>
         <tr><td class="labkey-form-label">Description:</td><td width="600"><div id="emailDescription"></div></td><td></td></tr>
-        <tr><td class="labkey-form-label">Subject:</td><td width="600"><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=bean.getEmailSubject()%>"></td><td></td></tr>
-        <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
+        <tr><td class="labkey-form-label">Subject:</td><td width="600"><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=h(bean.getEmailSubject())%>"></td><td></td></tr>
+        <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=h(bean.getEmailMessage())%></textarea></td></tr>
         <tr>
             <td></td><td>
             <%=generateSubmitButton("Save")%>

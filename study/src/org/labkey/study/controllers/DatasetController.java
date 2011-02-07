@@ -552,31 +552,6 @@ public class DatasetController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class UnlinkAssayAction extends SimpleViewAction<DatasetIdForm>
-    {
-        public ModelAndView getView(DatasetIdForm datasetIdForm, BindException errors) throws Exception
-        {
-            StudyImpl study = getStudy();
-            DataSetDefinition def = study.getDataSet(datasetIdForm.getDatasetId());
-            if (def == null)
-                throw new IllegalArgumentException("No dataset found with id of " + datasetIdForm.getDatasetId());
-            def.setProtocolId(null);
-            StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
-
-            ActionURL returnURL = new ActionURL(StudyController.EditTypeAction.class, getContainer()).
-                    addParameter("datasetId", datasetIdForm.getDatasetId());
-            HttpView.throwRedirect(returnURL);
-
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()

@@ -20,6 +20,8 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.logical.shared.CloseEvent;
+import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
@@ -145,18 +147,12 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         asyncGetDataset(datasetId);
         asyncGetDefinition(typeURI);
 
-        Window.addWindowCloseListener(new WindowCloseListener()
+        Window.addWindowClosingHandler(new Window.ClosingHandler()
         {
-            public void onWindowClosed()
-            {
-            }
-
-            public String onWindowClosing()
+            public void onWindowClosing(Window.ClosingEvent event)
             {
                 if (isDirty())
-                    return "Changes have not been saved and will be discarded.";
-                else
-                    return null;
+                    event.setMessage("Changes have not been saved and will be discarded.");
             }
         });
     }
@@ -627,19 +623,8 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 HTML assaySourceHTML = new HTML(assaySourceString);
                 hPanel.add(assaySourceHTML);
 
-                Label helpPopup = new HelpPopup("Assay Link", "This dataset was created by copying assay data. Data can only be imported via that assay." + "" +
-                        "<p>If you unlink it, it becomes a standard dataset with no connection to the original assay. This cannot be undone.");
+                Label helpPopup = new HelpPopup("Assay Link", "This dataset was created by copying assay data. Data can only be imported via that assay.");
                 hPanel.add(helpPopup);
-
-                ImageButton unlinkButton = new ImageButton("Unlink", new ClickListener()
-                {
-                    public void onClick(Widget sender)
-                    {
-                        navigate(_dataset.getUnlinkAssayURL());
-                    }
-                });
-                hPanel.add(unlinkButton);
-                add(hPanel);
             }
             add(_table);
 
