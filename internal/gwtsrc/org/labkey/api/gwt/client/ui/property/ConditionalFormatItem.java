@@ -261,6 +261,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             _formatTable.setWidget(row, 1, descriptionWidget);
 
             final CheckBox boldCheckBox = new CheckBox();
+            boldCheckBox.setName("Bold");
             boldCheckBox.setValue(cf.isBold());
             boldCheckBox.setEnabled(_addFormatButton.isEnabled());
             boldCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>()
@@ -274,6 +275,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             _formatTable.setWidget(row, 2, boldCheckBox);
 
             final CheckBox italicCheckBox = new CheckBox();
+            italicCheckBox.setName("Italic");
             italicCheckBox.setValue(cf.isItalic());
             italicCheckBox.setEnabled(_addFormatButton.isEnabled());
             italicCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>()
@@ -287,6 +289,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             _formatTable.setWidget(row, 3, italicCheckBox);
 
             final CheckBox strikethroughCheckBox = new CheckBox();
+            strikethroughCheckBox.setName("Strikethrough");
             strikethroughCheckBox.setValue(cf.isStrikethrough());
             strikethroughCheckBox.setEnabled(_addFormatButton.isEnabled());
             strikethroughCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>()
@@ -301,6 +304,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
 
             final HTML colorsWidget = new HTML(getColorsHTML(cf));
             colorsWidget.setSize("15px", "15px");
+            colorsWidget.setTitle("Color");
             Tooltip.addTooltip(colorsWidget, "Click to choose colors");
 
             if (_addFormatButton.isEnabled())
