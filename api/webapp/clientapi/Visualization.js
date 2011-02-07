@@ -36,6 +36,10 @@ function getSuccessCallbackWrapper(createMeasureFn, fn, scope)
     };
 }
 
+/**
+ * @namespace Visualization static class to programmatically retrieve visualization-ready data.  Also allows
+ * persistence of various visualization types.
+ */
 LABKEY.Visualization = new function() {
 
     function formatParams(config)
@@ -53,19 +57,23 @@ LABKEY.Visualization = new function() {
         return params;
     }
 
+    // Create a thin wrapper around the success callback capable of converting the persisted (string/JSON) visualization
+    // configuration into a native JavaScript object before handing it off to the caller:
+    function getVisualizatonConfigConverterCallback(successCallback)
+    {
+        return function(data, response, options)
+        {
+            if (data.visualizationConfig)
+                data.visualizationConfig = Ext.util.JSON.decode(data.visualizationConfig);
+            return successCallback(data, response, options);
+        }
+    }
+
     /*-- public methods --*/
     /** @scope LABKEY.Visualization */
     return {
-
-        Types : {
-            TABULAR : 'tabular',
-            EXCEL : 'excel',
-            SCATTER : 'scatter',
-            TIMEPLOT : 'timeplot'},
-
         getTypes : function(config) {
 
-            //return [LABKEY.Visualization.Types.TABULAR, LABKEY.Visualization.Types.EXCEL, LABKEY.Visualization.Types.SCATTER, LABKEY.Visualization.Types.TIMEPLOT];
             function createTypes(json)
             {
                 if (json.types && json.types.length)
@@ -86,6 +94,20 @@ LABKEY.Visualization = new function() {
             });
         },
 
+        /**
+         * Returns the set of plottable measures found in the current container.
+         * @param config An object which contains the following configuration properties.
+         * @param {Array} config.filters An array of {@link LABKEY.Visualization.Filter} objects.
+         * @param {Boolean} [config.dateMeasures] Optional, defaults to 'false'.  Indicates whether date measures should be returned instead of numeric measures.
+         * @param {Function} config.success
+				Function called when execution succeeds. Will be called with one argument:
+				<ul><li><b>measures</b>: an array of {@link LABKEY.Visualization.Measure} objects.</li>
+         * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         */
         getMeasures : function(config) {
 
             function createMeasures(json)
@@ -111,11 +133,70 @@ LABKEY.Visualization = new function() {
             });
         },
 
+        /**
+         * Returns a resultset suitable for visualization based on requested measures and dimensions.
+         * @param config An object which contains the following configuration properties.
+         * @param {Array} config.measures An array of objects with the following structure:
+         * <ul>
+         *      <li><b>measure</b>: Generally an augmented {@link LABKEY.Visualization.Measure}, but can be any object
+         *          with the following properties:
+         *          <ul>
+         *              <li><b>name</b>: The name of this measure.</li>
+         *              <li><b>schemaName</b>: The name of the schema containing the query that contains this measure.</li>
+         *              <li><b>queryName</b>: The name of the query containing this measure.</li>
+         *              <li><b>type</b>: The data type of this measure.</li>
+         *              <li><b>values</b>: Optional.  If provided, results will be filtered to .</li>
+         *              <li><b>aggregate</b>: See {@link LABKEY.Visualization.Aggregate}.  Required if a 'dimension' property is specified, ignored otherwise.  Indicates
+         *                                    what data should be returned if pivoting by dimension results in multiple underlying values
+         *                                    per series data point.</li>
+         *              <li><b>dateOptions</b>: Optional if this measure's axis.timeAxis property is true, ignored otherwise.  Has two valid child properties:
+         *                  <ul>
+         *                      <li><b>zeroDateCol</b>: A measure object (with properties for name, queryName, and
+         *                                              schemaName) of type date that will be used to align data points in terms of days, weeks, or months.</li>
+         *                      <li><b>interval</b>: See {@link LABKEY.Visualization.Interval}.  The type of interval that should be calculated between the measure date and the zero date.
+         *                  </ul>
+         *          </ul>
+         *      </li>
+         *      <li><b>axis</b>:
+         *          <ul><li><b>timeAxis</b>: Boolean.  Indicates whether this measure corresponds to a time axis.</li></ul>
+         *      </li>
+         *      <li><b>dimension</b>:  Used to pivot a resultset into multiple series.  Generally an augmented
+         *          {@link LABKEY.Visualization.Dimension}, but can be any object with the following properties:
+         *          <ul>
+         *              <li><b>name</b>: The name of this dimension.</li>
+         *              <li><b>schemaName</b>: The name of the schema containing the query that contains this dimension.</li>
+         *              <li><b>queryName</b>: The name of the query containing this dimension.</li>
+         *              <li><b>type</b>: The data type of this dimension.</li>
+         *              <li><b>values</b>: Optional.  If provided, results will be filtered to include only the named series.</li>
+         *          </ul>
+         *      </li>
+         * </ul>
+         * @param {Array} [config.sorts] Generally an array of augmented {@link LABKEY.Visualization.Dimension} or {@link LABKEY.Visualization.Measure}
+         * objects, but can be an array of any objects with the following properties:
+         *          <ul>
+         *              <li><b>name</b>: The name of this dimension.</li>
+         *              <li><b>schemaName</b>: The name of the schema containing the query that contains this dimension.</li>
+         *              <li><b>queryName</b>: The name of the query containing this dimension.</li>
+         *              <li><b>values</b>: Optional.  If provided, results will be filtered to include only the specified values.</li>
+         *          </ul>
+         *      </li>
+
+         * @param {Function} config.success Function called when execution succeeds. Will be called with three arguments:
+				<ul>
+                    <li><b>data</b>: the parsed response data ({@link LABKEY.Query.SelectRowsResults})</li>
+                    <li><b>request</b>: the XMLHttpRequest object</li>
+                    <li><b>options</b>: a request options object ({@link LABKEY.Query.SelectRowsOptions})</li>
+                </ul>
+         * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         */
         getData : function(config) {
 
             var params = {
                 measures : config.measures,
-                viewInfo : config.viewInfo,
                 sorts : config.sorts
             };
 
@@ -130,46 +211,247 @@ LABKEY.Visualization = new function() {
                     'Content-Type' : 'application/json'
                 }
             });
+        },
+
+        /**
+         * Saves a visualization for future use.  Saved visualizations appear in the study 'views' webpart.  If the
+         * visualization is scoped to a specific query, it will also appear in the views menu for that query.
+         * @param config An object which contains the following configuration properties.
+         * @param {String} config.name The name this visualization should be saved under.
+         * @param {String} config.type The type of visualization being saved.  Should be an instance of {@link LABKEY.Visualization.Type}.
+         * @param {Object} config.visualizationConfig An arbitrarily complex JavaScript object that contains all information required to
+         * recreate the report.
+         * @param {Boolean} [config.replace] Whether this 'save' call should replace an existing report with the same name.
+         * If false, the call to 'save' will fail if another report with the same name exists.
+         * @param {String} [config.description] A description of the saved report.
+         * @param {String} [config.schemaName] Optional, but required if config.queryName is provided.  Allows the visualization to
+         * be scoped to a particular query.  If scoped, this visualization will appear in the 'views' menu for that query.
+         * @param {String} [config.queryName] Optional, but required if config.schemaName is provided.  Allows the visualization to
+         * be scoped to a particular query.  If scoped, this visualization will appear in the 'views' menu for that query.
+         * @param {Function} config.success Function called when execution succeeds. Will be called with one arguments:
+				<ul>
+                    <li><b>result</b>: an object with two properties:
+                        <ul>
+                            <li><b>name</b>: the name of the saved visualization</li>
+                            <li><b>visualizationId</b>: a unique integer identifier for this saved visualization</li>
+                        </ul>
+                    <li><b>request</b>: the XMLHttpRequest object</li>
+                    <li><b>options</b>: a request options object</li>
+                </ul>
+         * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         */
+        save : function(config)
+        {
+            var params = {
+                name : config.name,
+                description : config.description,
+                json : Ext.util.JSON.encode(config.visualizationConfig),
+                replace: config.replace,
+                type : config.type,
+                schemaName: config.schemaName,
+                queryName: config.queryName
+            };
+
+            Ext.Ajax.request(
+            {
+                url : LABKEY.ActionURL.buildURL("visualization", "saveVisualization"),
+                method : 'POST',
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                jsonData : params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
+        /**
+         * Retrieves a saved visualization.  See {@link LABKEY.Visualization.save}.
+         * @param config An object which contains the following configuration properties.
+         * @param {String} config.name The name this visualization to be retrieved.
+         * @param {String} [config.schemaName] Optional, but required if config.queryName is provided.  Limits the search for
+         * the visualization to a specific schema and query.  Note that visualization names are unique within a container
+         * (regardless of schema and query), so these additional optional parameters are only useful in a small number of circumstances.
+         * @param {String} [config.queryName] Optional, but required if config.schemaName is provided.  Limits the search for
+         * the visualization to a specific schema and query.  Note that visualization names are unique within a container
+         * (regardless of schema and query), so these additional optional parameters are only useful in a small number of circumstances.
+         * @param {Function} config.success Function called when execution succeeds. Will be called with one arguments:
+				<ul>
+                    <li><b>result</b>: an object with two properties:
+                        <ul>
+                            <li><b>name</b>: The name of the saved visualization</li>
+                            <li><b>description</b>: The description of the saved visualization</li>
+                            <li><b>type</b>: The visualization type</li>
+                            <li><b>schemaName</b>: The schema to which this visualization has been scoped, if any</li>
+                            <li><b>queryName</b>: The query to which this visualization has been scoped, if any</li>
+                            <li><b>visualizationConfig</b>: The configuration object provided to {@link LABKEY.Visualization.save}</li>
+                        </ul>
+                    <li>
+                    <li><b>request</b>: the XMLHttpRequest object</li>
+                    <li><b>options</b>: a request options object</li>
+                </ul>
+         * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         */
+        get : function(config)
+        {
+            var params = {
+                reportId: config.reportId,
+                name : config.name,
+                schemaName: config.schemaName,
+                queryName: config.queryName
+            };
+
+            // Get the standard callback function (last in the success callback chain):
+            var successCallback = LABKEY.Utils.getOnSuccess(config);
+
+            // wrap the callback to convert the visualizationConfig property from a JSON string into a native javascript object:
+            successCallback = getVisualizatonConfigConverterCallback(successCallback);
+
+            // the outer-most callback (first-called) translates the raw JSON of the overall response into JavaScript objects.
+            // This callback will not translate the visualizationConfig parameter, since is sent from the server as a string.
+            successCallback = LABKEY.Utils.getCallbackWrapper(successCallback, config.scope, false);
+
+            Ext.Ajax.request(
+            {
+                url : LABKEY.ActionURL.buildURL("visualization", "getVisualization"),
+                method : 'POST',
+                success: successCallback,
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                jsonData : params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
+        /**
+         * Retrieves a saved visualization based on identifying parameters found on the current URL.  Method returns true or false,
+         * depending on whether the URL contains a saved visualization identifier.  If true, the success or failure callback
+         * function will be called just as with {@link LABKEY.Visualization.get}.  If false, no callbacks will be called.
+         * This method allows callers to use a single method to retrieve saved visualizations, regardless of how they are identified on the URL.
+         * @param config An object which contains the following configuration properties.
+         * @param {Function} config.success Function called when the saved visualization was successfully retrieved. See {@link LABKEY.Visualization.get} for details.
+         * @param {Function} [config.failure] Function called when the saved visualization could not be retrieved.  See {@link LABKEY.Visualization.get} for details.
+         * @return Boolean indicating whether the current URL includes parameters that identify a saved visualization.
+         */
+        getFromUrl : function(config)
+        {
+            var params = {
+                success: LABKEY.Utils.getOnSuccess(config),
+                failure: LABKEY.Utils.getOnFailure(config)
+            };
+
+            var urlParams = LABKEY.ActionURL.getParameters();
+            var reportId = urlParams['Dataset.reportId'];
+            var valid = false;
+            if (reportId)
+            {
+                params.reportId = reportId;
+                valid = true;
+            }
+            else
+            {
+                if (urlParams.name)
+                {
+                    params.name = urlParams.name;
+                    params.schemaName = urlParams.schemaName;
+                    params.queryName = urlParams.queryName;
+                    valid = true;
+                }
+            }
+
+            if (valid)
+                LABKEY.Visualization.get(params);
+            return valid;
         }
+
     };
 };
 
-LABKEY.Visualization.Measure = Ext.extend(Object, {
-
+/**
+ * @namespace Visualization Measures are plottable data elements (columns).  They may be of numeric or date types.
+ */
+LABKEY.Visualization.Measure = Ext.extend(Object,
+    /** @scope LABKEY.Visualization.Measure */
+{
     constructor : function(config)
     {
         LABKEY.Visualization.Measure.superclass.constructor.call(this, config);
         Ext.apply(this, config);
     },
 
+    /**
+     * Returns the name of the query associated with this dimension.
+     */
     getQueryName : function() {
         return this.queryName;
     },
 
+    /**
+     * Returns the name of the schema assocated with this dimension.
+     */
     getSchemaName : function() {
         return this.schemaName;
     },
-
+    /**
+     * Returns whether this dimension is part of a user-defined query (versus a built-in/system-provided query).
+     */
     isUserDefined : function() {
         return this.isUserDefined;
     },
 
+    /**
+     * Returns the column name of this dimension.
+     */
     getName : function() {
         return this.name;
     },
 
+    /**
+     * Returns the label of this dimension.
+     */
     getLabel : function() {
         return this.label;
     },
 
+    /**
+     * Returns the data types of this dimension.
+     */
     getType : function() {
         return this.type;
     },
 
+    /**
+     * Returns a description of this dimension.
+     */
     getDescription : function() {
         return this.description;
     },
 
+    /**
+     * Returns the set of available {@link LABKEY.Visualization.Dimension} objects for this measure.
+     * @param config An object which contains the following configuration properties.
+     * @param config.includeDemographics {Boolean} Applies only to measures from study datsets.
+     * Indicates whether dimensions from demographic datasets should be included
+     * in the returned set.  If false, only dimensions from the measure's query will be returned.
+     * @param {Function} config.success Function called when execution succeeds. Will be called with one argument:
+            <ul>
+                <li><b>values</b>: an array of unique dimension values</li>
+            </ul>
+     * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+     * <ul>
+     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     */
     getDimensions : function(config) {
 
         var params = {queryName: this.queryName, schemaName: this.schemaName};
@@ -199,42 +481,81 @@ LABKEY.Visualization.Measure = Ext.extend(Object, {
     }
 });
 
-LABKEY.Visualization.Dimension = Ext.extend(Object, {
-
+/**
+ * @namespace Visualization Dimensions are data elements (columns) on which {@link LABKEY.Visualization.Measure} objects
+ *  can be pivoted or transformed.  For example, the 'Analyte Name' dimension may be used to pivit a single 'Result' measure
+ * into one series per Analyte.
+ */
+LABKEY.Visualization.Dimension = Ext.extend(Object,
+    /** @scope LABKEY.Visualization.Dimension */
+    {
     constructor : function(config)
     {
         LABKEY.Visualization.Dimension.superclass.constructor.call(this, config);
         Ext.apply(this, config);
     },
-
+    /**
+     * Returns the name of the query associated with this dimension.
+     */
     getQueryName : function() {
         return this.queryName;
     },
 
+    /**
+     * Returns the name of the schema assocated with this dimension.
+     */
     getSchemaName : function() {
         return this.schemaName;
     },
 
+    /**
+     * Returns whether this dimension is part of a user-defined query (versus a built-in/system-provided query).
+     */
     isUserDefined : function() {
         return this.isUserDefined;
     },
 
+    /**
+     * Returns the column name of this dimension.
+     */
     getName : function() {
         return this.name;
     },
 
+    /**
+     * Returns the label of this dimension.
+     */
     getLabel : function() {
         return this.label;
     },
 
+    /**
+     * Returns the data types of this dimension.
+     */
     getType : function() {
         return this.type;
     },
 
+    /**
+     * Returns a description of this dimension.
+     */
     getDescription : function() {
         return this.description;
     },
 
+    /**
+     * Returns the set of available unique values for this dimension.
+     * @param config An object which contains the following configuration properties.
+     * @param {Function} config.success Function called when execution succeeds. Will be called with one argument:
+            <ul>
+                <li><b>values</b>: an array of unique dimension values</li>
+            </ul>
+     * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+     * <ul>
+     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     */
     getValues : function(config) {
 
         var params = {queryName: this.queryName, schemaName: this.schemaName, name: this.name};
@@ -256,6 +577,10 @@ LABKEY.Visualization.Dimension = Ext.extend(Object, {
     }
 });
 
+/**
+ * @namespace Visualization Helper class to allow filtering of the measures returned by the
+ * {@link LABKEY.Visualization.getMeasures} method.
+ */
 LABKEY.Visualization.Filter = new function()
 {
     function getURLParameterValue(config)
@@ -273,6 +598,7 @@ LABKEY.Visualization.Filter = new function()
         return params.join('|');
     }
 
+    /** @scope LABKEY.Visualization.Filter */
     return {
         QueryType : {
             BUILT_IN : 'builtIn',
@@ -280,6 +606,15 @@ LABKEY.Visualization.Filter = new function()
             ALL : 'all'
         },
 
+        /**
+         * Creates a new filter object for use in {@link LABKEY.Visualization.getMeasures}.
+         * @param config An object which contains the following configuration properties.
+         * @param {String} config.schemaName Required.  Only measures from the specified schema will be returned.
+         * @param {String} config.queryName Optional.  If specified, only measures from the specified query will be returned.
+         * @param {Object} config.queryType Optional.  If specified, only measures from the specified query types will be returned
+         * Valid values for queryType are:  LABKEY.Visualization.Filter.QueryType.BUILT_IN, LABKEY.Visualization.Filter.QueryType.CUSTOM,
+         * and LABKEY.Visualization.Filter.QueryType.ALL.  By default, all queries will be returned.
+         */
         create : function(config)
         {
             if (!config.schemaName)
@@ -288,4 +623,45 @@ LABKEY.Visualization.Filter = new function()
                 return getURLParameterValue(config);
         }
     };
+};
+
+/**
+ * @namespace Visualization Possible aggregates when pivoting a resultset by a dimension.  See  {@link LABKEY.Visualization.getData}.
+ */
+LABKEY.Visualization.Aggregate = {
+    /** Calculates a sum/total. */
+    SUM: "SUM",
+    /** Calculates an average. */
+    AVG: "AVG",
+    /** Returns the total number of data points. */
+    COUNT: "COUNT",
+    /** Returns the minimum value. */
+    MIN: "MIN",
+    /** Returns the maximum value. */
+    MAX: "MAX"
+};
+
+/**
+ * @namespace Visualization Possible intervals for aligning series in time plots.  See  {@link LABKEY.Visualization.getData}.
+ */
+LABKEY.Visualization.Interval = {
+    /** Align by the number of days since the zero date. */
+    DAY : "DAY",
+    /** Align by the number of weeks since the zero date. */
+    WEEK : "WEEK",
+    /** Align by the number of months since the zero date. */
+    MONTH : "MONTH",
+    /** Align by the number of years since the zero date. */
+    YEAR: "YEAR"
+};
+
+/**
+ * @namespace Visualization A predefined set of visualization types, for use in the config.type property in the
+ * {@link LABKEY.Visualization.save} method.
+ */
+LABKEY.Visualization.Type = {
+    /**
+     * Plots data over time, aligning different series based on configurable start dates.
+     */
+        TimeChart : 'ReportService.TimeChartReport'
 };
