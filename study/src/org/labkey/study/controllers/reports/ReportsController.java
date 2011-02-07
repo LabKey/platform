@@ -605,7 +605,7 @@ public class ReportsController extends BaseStudyController
         ActionURL url = getViewContext().cloneActionURL();
         url.setAction(StudyController.DatasetReportAction.class);
 
-        url.replaceParameter("Dataset.reportId", String.valueOf(reportId));
+        url.replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, String.valueOf(reportId));
         url.replaceParameter(DataSetDefinition.DATASETKEY,  String.valueOf(dataset));
         return HttpView.redirect(url);
     }
@@ -645,7 +645,7 @@ public class ReportsController extends BaseStudyController
                 if (StudyManager.getInstance().getStudy(getContainer()) != null)
                 {
                     return new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                            addParameter("Dataset.reportId", String.valueOf(_savedReportId)).
+                            addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, String.valueOf(_savedReportId)).
                             addParameter(DataSetDefinition.DATASETKEY, form.getRedirectToDataset());
                 }
             }
@@ -1944,7 +1944,7 @@ public class ReportsController extends BaseStudyController
 
         protected Report getReport(RReportBean form) throws Exception
         {
-            String reportIdParam = form.getViewContext().getActionURL().getParameter("Dataset.reportId");
+            String reportIdParam = form.getViewContext().getActionURL().getParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME);
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam);
             if (null != reportId)
             {
@@ -1964,7 +1964,7 @@ public class ReportsController extends BaseStudyController
             if (def != null && _report != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.reportId", _report.getDescriptor().getReportId().toString()).
+                                        replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, _report.getDescriptor().getReportId().toString()).
                                         replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
 
                 return HttpView.redirect(url);

@@ -36,6 +36,9 @@
 <%@ page import="org.labkey.study.reports.EnrollmentReport" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
+<%@ page import="org.labkey.api.visualization.TimeChartReport" %>
+<%@ page import="org.labkey.api.visualization.VisualizationUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -59,6 +62,7 @@
     reportBean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
     ActionURL newRView = ReportUtil.getRReportDesignerURL(context, reportBean);
+    ActionURL newTimeChart = PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(context.getContainer());
 
     boolean hasEnrollmentReport = EnrollmentReport.getEnrollmentReport(context.getUser(), StudyManager.getInstance().getStudy(context.getContainer()), false) != null;
 
@@ -240,6 +244,11 @@
                 text:'<%=hasEnrollmentReport ? "Configure Enrollment View" : "Enrollment View"%>',
                 disabled: <%=!context.hasPermission(AdminPermission.class)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer())%>';}}
+            },{
+                id: 'create_timeChart',
+                text:'Time Chart',
+                icon: '<%=ReportService.get().getReportIcon(getViewContext(), TimeChartReport.TYPE)%>',
+                listeners:{click:function(button, event) {window.location = '<%= newTimeChart %>';}}
             }],
 
             /**

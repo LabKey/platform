@@ -32,8 +32,8 @@ import java.util.*;
  */
 public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 {
-
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<String, VisualizationSourceQuery>();
+    private List<VisualizationIntervalColumn> _intervals = new ArrayList<VisualizationIntervalColumn>();
     private ViewContext _viewContext;
 
     @Override
@@ -62,18 +62,19 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 Map<String, Object> dimensionProperties = (Map<String, Object>) measureInfo.get("dimension");
 
                 VisualizationSourceQuery query;
+                VisualizationSourceColumn col;
                 if (dimensionProperties != null && !dimensionProperties.isEmpty())
                 {
                     // this column is the value column of a pivot, so we assume that it's an aggregate
-                    VisualizationAggregateColumn col = new VisualizationAggregateColumn(getViewContext(), measureProperties);
+                    col = new VisualizationAggregateColumn(getViewContext(), measureProperties);
                     query = ensureSourceQuery(_viewContext.getContainer(), col, previous);
-                    query.addAggregate(col);
+                    query.addAggregate((VisualizationAggregateColumn) col);
                     VisualizationSourceColumn pivot = new VisualizationSourceColumn(getViewContext(), dimensionProperties);
                     query.setPivot(pivot);
                 }
                 else
                 {
-                    VisualizationSourceColumn col = new VisualizationSourceColumn(getViewContext(), measureProperties);
+                    col = new VisualizationSourceColumn(getViewContext(), measureProperties);
                     query = ensureSourceQuery(_viewContext.getContainer(), col, previous);
                     query.addSelect(col);
                 }
@@ -87,6 +88,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     {
                         VisualizationSourceColumn zeroDateMeasure = new VisualizationSourceColumn(getViewContext(), zeroDateProperties);
                         ensureSourceQuery(_viewContext.getContainer(), zeroDateMeasure, query).addSelect(zeroDateMeasure);
+                        String interval = (String) dateOptions.get("interval");
+                        if (interval != null)
+                            _intervals.add(new VisualizationIntervalColumn(zeroDateMeasure, col, interval));
                     }
                 }
                 previous = query;
@@ -161,37 +165,22 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     public String getSQL()
     {
-        /*
-        Set<String> selectAliases = new LinkedHashSet<String>();
-        for (VisualizationSourceQuery query : _sourceQueries.values())
-        {
-            for (VisualizationSourceColumn column : query.getSelects())
-                selectAliases.add(column.getAlias());
-            for (VisualizationSourceColumn column : query.getSorts())
-                selectAliases.add(column.getAlias());
-            if (query.getPivot() != null && query.getAggregates() != null)
-            {
-                for (VisualizationSourceColumn aggregate : query.getAggregates())
-                {
-                    Set<Object> pivotValues = query.getPivot().getValues();
-                    if (pivotValues != null && !pivotValues.isEmpty())
-                    {
-                        for (Object pivotValue : pivotValues)
-                            selectAliases.add(aggregate.getAlias() + ".\"" + pivotValue + "\"");
-                    }
-                    else
-                        selectAliases.add(aggregate.getAlias() + ".*");
-                }
-            }
-        }
+        // Now that we have the full list of columns we want to select, we can
         StringBuilder masterSelectList = new StringBuilder();
         String sep = "";
-        for (String selectAlias : selectAliases)
+        for (String selectAlias : getColumnMapping().values())
         {
-            masterSelectList.append(sep).append(selectAlias);
+            masterSelectList.append(sep).append("\"").append(selectAlias).append("\"");
             sep = ",\n\t";
         }
-*/
+
+        for (int i = 0, intervalsSize = _intervals.size(); i < intervalsSize; i++)
+        {
+            VisualizationIntervalColumn interval = _intervals.get(i);
+            String alias = (intervalsSize > 1) ? interval.getFullAlias() : interval.getSimpleAlias();
+            masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(alias);
+        }
+
         Map<VisualizationSourceColumn, VisualizationSourceQuery> orderBys = new LinkedHashMap<VisualizationSourceColumn, VisualizationSourceQuery>();
         StringBuilder sql = new StringBuilder();
         for (VisualizationSourceQuery query : _sourceQueries.values())
@@ -199,7 +188,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             for (VisualizationSourceColumn orderBy : query.getSorts())
                 orderBys.put(orderBy, query);
             if (sql.length() == 0)
-                sql.append("SELECT ").append("*").append(" FROM\n");
+                sql.append("SELECT ").append(masterSelectList).append(" FROM\n");
             else
                 sql.append("\nINNER JOIN\n");
             String querySql = query.getSQL();
@@ -223,7 +212,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         if (!orderBys.isEmpty())
         {
-            String sep = "";
+            sep = "";
             sql.append("ORDER BY ");
             for (Map.Entry<VisualizationSourceColumn, VisualizationSourceQuery> orderBy : orderBys.entrySet())
             {
@@ -237,7 +226,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     public Map<String, String> getColumnMapping()
     {
-        Map<String, String> colMap = new HashMap<String, String>();
+        Map<String, String> colMap = new LinkedHashMap<String, String>();
         for (VisualizationSourceQuery query : _sourceQueries.values())
         {
             Set<VisualizationAggregateColumn> aggregates = query.getAggregates();
@@ -263,6 +252,28 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
             for (VisualizationSourceColumn select : query.getSelects())
                 colMap.put(select.getOriginalName(), select.getAlias());
+        }
+
+        // Now that we have the full set of columns, we can take a pass through to eliminate the columns on the right
+        // side of join clauses, since we know the columns contain duplicate data. We leave a key in the column map
+        // for the originally requested column name, but replace the value column, so the requestor can use whichever
+        // column name they like to find the results.
+        Map<String, String> selectAliasRemapping = new HashMap<String, String>();
+        for (VisualizationSourceQuery query : _sourceQueries.values())
+        {
+            if (query.getJoinConditions() != null)
+            {
+                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : query.getJoinConditions())
+                    selectAliasRemapping.put(join.getKey().getAlias(), join.getValue().getAlias());
+            }
+        }
+
+        for (Map.Entry<String, String> mapping : colMap.entrySet())
+        {
+            String originalAlias = mapping.getValue();
+            String remappedAlias = selectAliasRemapping.get(originalAlias);
+            if (remappedAlias != null)
+                mapping.setValue(remappedAlias);
         }
         return colMap;
     }

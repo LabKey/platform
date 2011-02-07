@@ -28,11 +28,14 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.study.reports.CrosstabReport;
+import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.apache.commons.lang.math.NumberUtils;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;/*
  * User: Karl Lum
@@ -52,6 +55,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 if (ExternalReport.TYPE.equals(reportType)) return true;
                 if (QuerySnapshotService.TYPE.equals(reportType)) return true;
                 if (StudyQueryReport.TYPE.equals(reportType)) return true;
+                if (TimeChartReport.TYPE.equals(reportType)) return true;
                 return false;
             }
         };

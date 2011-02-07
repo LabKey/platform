@@ -384,7 +384,7 @@ LABKEY.vis.VisualizationWizard = Ext.extend(Ext.Panel, {
         var info = this.panelMap[panels.MEASURES_ZERO_DATE];
 
         this.viewPanel.activate(info.panel);
-        this.view.dateOptions.increment = 'days';
+        this.view.dateOptions.interval = 'days';
 
         var viewInfo = this.viewTypes[this.view.type];
 
@@ -402,7 +402,7 @@ LABKEY.vis.VisualizationWizard = Ext.extend(Ext.Panel, {
             }, this);
 
             panel.on('timeOptionChanged', function(axisId, newVal) {
-                this.view.dateOptions.increment = newVal;
+                this.view.dateOptions.interval = newVal;
             }, this);
         }
 

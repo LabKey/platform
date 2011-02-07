@@ -590,7 +590,7 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    private class ContainerSchemaKey implements Serializable
+    private static class ContainerSchemaKey implements Serializable
     {
         private Container _container;
         private String _schema;

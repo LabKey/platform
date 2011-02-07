@@ -101,7 +101,7 @@ public class DataHeader extends HttpView
         ActionURL sortFilterURL = _currentUrl.clone();
         for (Pair<String, String> parameter : sortFilterURL.getParameters())
         {
-            if (!"Dataset.viewName".equalsIgnoreCase(parameter.getKey()) &&
+            if (!StudyController.DATASET_VIEW_NAME_PARAMETER_NAME.equalsIgnoreCase(parameter.getKey()) &&
                 !"prevView".equalsIgnoreCase(parameter.getKey()) &&
                 !CohortFilter.isCohortFilterParameterName(parameter.getKey()) &&
                 !"participantId".equalsIgnoreCase(parameter.getKey()) &&
@@ -114,7 +114,7 @@ public class DataHeader extends HttpView
             }
         }
 
-        String viewName = getViewContext().getRequest().getParameter("Dataset.viewName");
+        String viewName = getViewContext().getRequest().getParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME);
 
         // make sure dataset id is on the url
         if (getViewContext().getActionURL().getParameter(DataSetDefinition.DATASETKEY) == null)
@@ -127,7 +127,7 @@ public class DataHeader extends HttpView
         out.print("View&nbsp;");
 
         List<Pair<String, String>> reportLabels = ReportManager.get().getReportLabelsForDataset(getViewContext(), _datasetDef);
-        out.print("<select name=\"Dataset.viewName\" onchange=\"this.form.submit()\">");
+        out.print("<select name=\"" + StudyController.DATASET_VIEW_NAME_PARAMETER_NAME + "\" onchange=\"this.form.submit()\">");
         for (Pair<String, String> label : reportLabels)
         {
             if (label == null)
@@ -190,7 +190,7 @@ public class DataHeader extends HttpView
             {
                 ActionURL url = new ActionURL(StudyController.DeleteDatasetReportAction.class, getViewContext().getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, _datasetDef.getDataSetId()).
-                        addParameter("Dataset.viewName", viewName);
+                        addParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME, viewName);
                 out.printf("&nbsp;" + PageFlowUtil.textLink("Remove View", url));
             }
         }

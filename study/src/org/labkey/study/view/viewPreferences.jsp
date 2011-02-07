@@ -63,15 +63,15 @@
     ActionURL doneUrl = HttpView.currentContext().cloneActionURL();
     doneUrl.setAction(StudyController.DatasetReportAction.class);
     doneUrl.deleteParameter("defaultView");
-    doneUrl.deleteParameter("Dataset.reportId");
-    doneUrl.deleteParameter("Dataset.viewName");
+    doneUrl.deleteParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME);
+    doneUrl.deleteParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME);
 
     ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
 
     if (reportId != null)
-        doneUrl.addParameter("Dataset.reportId", defaultView);
+        doneUrl.addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
     else
-        doneUrl.addParameter("Dataset.viewName", defaultView);
+        doneUrl.addParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME, defaultView);
 %>
         <tr><td>&nbsp;</td></tr>
         <tr><td><%=generateButton("Done", doneUrl)%></td></tr>

@@ -134,6 +134,8 @@ public class StudyController extends BaseStudyController
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
 
     private static final String DATASET_DATAREGION_NAME = "Dataset";
+    public static final String DATASET_REPORT_ID_PARAMETER_NAME = "Dataset.reportId";
+    public static final String DATASET_VIEW_NAME_PARAMETER_NAME = "Dataset.viewName";
 
     public StudyController()
     {
@@ -530,7 +532,7 @@ public class StudyController extends BaseStudyController
         {
             if (_report == null)
             {
-                String reportId = (String)getViewContext().get("Dataset.reportId");
+                String reportId = (String)getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
 
                 ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId);
                 if (identifier != null)
@@ -556,7 +558,7 @@ public class StudyController extends BaseStudyController
             if (def != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.reportId", report.getDescriptor().getReportId().toString()).
+                                        replaceParameter(DATASET_REPORT_ID_PARAMETER_NAME, report.getDescriptor().getReportId().toString()).
                                         replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
 
                 return HttpView.redirect(url);
@@ -579,7 +581,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String viewName = (String) getViewContext().get("Dataset.reportId");
+            String viewName = (String) getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
             int datasetId = NumberUtils.toInt((String)getViewContext().get(DataSetDefinition.DATASETKEY));
 
             if (NumberUtils.isDigits(viewName))
@@ -664,7 +666,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetFilterForm form, BindException errors) throws Exception
         {
             ActionURL url = getViewContext().getActionURL();
-            String viewName = url.getParameter("Dataset.viewName");
+            String viewName = url.getParameter(DATASET_VIEW_NAME_PARAMETER_NAME);
 
 
             // if the view name refers to a report id (legacy style), redirect to use the newer report id parameter
@@ -679,8 +681,8 @@ public class StudyController extends BaseStudyController
                     ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
                     if (reportId != null && reportId.getReport() != null)
                     {
-                        ActionURL newURL = url.clone().deleteParameter("Dataset.viewName").
-                                addParameter("Dataset.reportId", reportId.toString());
+                        ActionURL newURL = url.clone().deleteParameter(DATASET_VIEW_NAME_PARAMETER_NAME).
+                                addParameter(DATASET_REPORT_ID_PARAMETER_NAME, reportId.toString());
                         return HttpView.redirect(newURL);
                     }
                 }
@@ -703,7 +705,7 @@ public class StudyController extends BaseStudyController
 
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
 
-            String viewName = (String)context.get("Dataset.viewName");
+            String viewName = (String)context.get(DATASET_VIEW_NAME_PARAMETER_NAME);
 //            final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
             DataSetDefinition def = getDataSetDefinition();
             if (null == def)
@@ -1051,7 +1053,7 @@ public class StudyController extends BaseStudyController
             ActionURL previousParticipantURL = null;
             ActionURL nextParticipantURL = null;
 
-            String viewName = (String) getViewContext().get("Dataset.viewName");
+            String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
 
             _cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
             // display the next and previous buttons only if we have a cached participant index
@@ -2541,7 +2543,7 @@ public class StudyController extends BaseStudyController
                                 (param.getKey().contains("~")) ||
                                 (CohortFilter.isCohortFilterParameterName(param.getKey())) ||
                                 (SharedFormParameters.QCState.name().equals(param.getKey())) ||
-                                ("Dataset.viewName".equals(param.getKey())))
+                                (DATASET_VIEW_NAME_PARAMETER_NAME.equals(param.getKey())))
                             {
                                 base.addParameter(param.getKey(), param.getValue());
                             }
@@ -3581,9 +3583,9 @@ public class StudyController extends BaseStudyController
             {
                 ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
                 if (reportId != null)
-                    url.addParameter("Dataset.reportId", defaultView);
+                    url.addParameter(DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
                 else
-                    url.addParameter("Dataset.viewName", defaultView);
+                    url.addParameter(DATASET_VIEW_NAME_PARAMETER_NAME, defaultView);
             }
             return url;
         }

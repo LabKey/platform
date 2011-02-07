@@ -77,9 +77,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         // remove all of the subjects from the series selector panel
                         Ext.getCmp('subject-list-view').getStore().removeAll();
 
-                        // reset the x-axis increment value to days
-                        Ext.getCmp('x-axis-increment-combo').setValue('Days');
-                        this.chartInfo.measures[this.xAxisMeasureIndex].dateOptions.increment = 'Days';
+                        // reset the x-axis interval value to days
+                        Ext.getCmp('x-axis-interval-combo').setValue('Days');
+                        this.chartInfo.measures[this.xAxisMeasureIndex].dateOptions.interval = 'Days';
                         // reset the store for the x-axis zero date combo
                         var newZStore = this.chartEditorXAxisPanel.newZeroDateStore(measure.schemaName);
                         Ext.getCmp('zero-date-combo').bindStore(newZStore);
@@ -239,10 +239,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 viewInfo: this.viewInfo,
                 listeners: {
                     scope: this,
-                    'xAxisIncrementChanged': function(increment, calculateIncrements) {
-                        this.chartInfo.measures[this.xAxisMeasureIndex].dateOptions.increment = increment;
-                        if(calculateIncrements) {
-                            this.calculateDataRowIncrements();
+                    'xAxisIntervalChanged': function(interval, calculateIntervals) {
+                        this.chartInfo.measures[this.xAxisMeasureIndex].dateOptions.interval = interval;
+                        if(calculateIntervals) {
+                            this.calculateDataRowIntervals();
                         }
                     },
                     'xAxisLabelChanged': function(label, readyForLineChart) {
@@ -444,7 +444,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         LABKEY.Visualization.getData({
             successCallback: function(data){
                 this.chartInfo.data = data;
-                this.calculateDataRowIncrements();
+                this.calculateDataRowIntervals();
             },//this.renderVisualization(data, measures, typeInfo);},
             failureCallback : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
             measures: this.chartInfo.measures,
@@ -454,9 +454,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         });
     },
 
-    calculateDataRowIncrements: function()
+    calculateDataRowIntervals: function()
     {
-        // calculate the x-axis time increment based on the increment selection (i.e. Days, Weeks)
+        // calculate the x-axis time interval based on the interval selection (i.e. Days, Weeks)
         var xMeasure = this.chartInfo.measures[this.xAxisMeasureIndex];
         var xColumn = this.chartInfo.data.measureToColumn[xMeasure.measure.name];
         var zeroDateColumn = this.chartInfo.data.measureToColumn[xMeasure.dateOptions.zeroDateCol.name];
@@ -469,21 +469,21 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             var zdate = (row[zeroDateColumn].value != undefined)
                 ? new Date(row[zeroDateColumn].value)
                 : new Date(row[zeroDateColumn]);
-            switch(xMeasure.dateOptions.increment) {
+            switch(xMeasure.dateOptions.interval) {
                 case 'Days':
-                    row.increment = (date - zdate) / ONE_DAY;
+                    row.interval = (date - zdate) / ONE_DAY;
                     break;
                 case 'Weeks':
-                    row.increment = (date - zdate) / ONE_WEEK;
+                    row.interval = (date - zdate) / ONE_WEEK;
                     break;
                 case 'Months':
-                    row.increment = (date - zdate) / ONE_MONTH;
+                    row.interval = (date - zdate) / ONE_MONTH;
                     break;
                 case 'Years':
-                    row.increment = (date - zdate) / ONE_YEAR;
+                    row.interval = (date - zdate) / ONE_YEAR;
                     break;
                 default:
-                    row.increment = null;
+                    row.interval = null;
             }
         }
 
@@ -527,7 +527,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         }
 
                         singleSeriesData.push({
-                            increment: row.increment,
+                            interval: row.interval,
                             dataValue: dataValue
                         });
                     }
@@ -538,7 +538,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     yAxisSeries: yAxisSeries,
                     caption: subject + " " + yAxisSeries,
                     data: singleSeriesData,
-                    xProperty:"increment",
+                    xProperty:"interval",
                     yProperty: "dataValue",
                     dotShape: 'circle'
                 });

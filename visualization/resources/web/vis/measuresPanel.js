@@ -263,7 +263,7 @@ LABKEY.vis.ZeroDatePanel = Ext.extend(LABKEY.vis.MeasuresPanel, {
 
         items.push(field);
 
-        var dateIncrements = new Ext.data.ArrayStore({
+        var dateIntervals = new Ext.data.ArrayStore({
             fields: ['id','value'],
             data: [
                 ['days', 'Days'],
@@ -275,7 +275,7 @@ LABKEY.vis.ZeroDatePanel = Ext.extend(LABKEY.vis.MeasuresPanel, {
         var dateCombo = new Ext.form.ComboBox({
             fieldLabel: 'Display time progression as:',
             labelSeparator: '',
-            store: dateIncrements,
+            store: dateIntervals,
             forceSelection:true,
             triggerAction:'all',
             value: 'days',
@@ -284,7 +284,7 @@ LABKEY.vis.ZeroDatePanel = Ext.extend(LABKEY.vis.MeasuresPanel, {
             displayField:'value',
             mode:'local',
             axisId: 'zeroDate',
-            emptyText:'Choose a increment value...'
+            emptyText:'Choose a interval value...'
         });
         dateCombo.on('change', function(cmp, newVal, oldVal){
             this.fireEvent('timeOptionChanged', cmp.initialConfig.axisId, newVal);

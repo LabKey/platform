@@ -20,7 +20,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         });
 
         this.addEvents(
-            'xAxisIncrementChanged',
+            'xAxisIntervalChanged',
             'xAxisLabelChanged',
             'measureDateChanged',
             'zeroDateChanged',
@@ -37,9 +37,9 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         var columnOneItems = [];
         var columnTwoItems = [];
 
-        // combobox for the selection of the date axis increment unit
-        this.incrementCombo = new Ext.form.ComboBox({
-            id: 'x-axis-increment-combo',
+        // combobox for the selection of the date axis interval unit
+        this.intervalCombo = new Ext.form.ComboBox({
+            id: 'x-axis-interval-combo',
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.ArrayStore({
@@ -48,7 +48,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 listeners: {
                     scope: this,
                     'load': function(cmp, records, options) {
-                        this.fireEvent('xAxisIncrementChanged', 'Days', false);
+                        this.fireEvent('xAxisIntervalChanged', 'Days', false);
 
                         // if the zeroDateCol value has loaded, then set the default axis label
                         if(this.zeroDateCombo && this.zeroDateCombo.getValue()) {
@@ -78,11 +78,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                        this.fireEvent('xAxisLabelChanged', newLabel, false);
                     }
 
-                    this.fireEvent('xAxisIncrementChanged', cmp.getValue(), true);
+                    this.fireEvent('xAxisIntervalChanged', cmp.getValue(), true);
                 }
             }
         });
-        columnOneItems.push(this.incrementCombo);
+        columnOneItems.push(this.intervalCombo);
 
         // combobox for the selection of the date to use for the given measure on the x-axis
         this.measureDateCombo = new Ext.form.ComboBox({
@@ -102,7 +102,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             }
         });
 
-        // combobox to select the "starting date" to be used for the x-axis increment calculation
+        // combobox to select the "starting date" to be used for the x-axis interval calculation
         this.zeroDateCombo = new Ext.form.ComboBox({
             id: 'zero-date-combo',
             triggerAction: 'all',
@@ -117,9 +117,9 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 'select': function(cmp, record, index) {
                     // change the axis label if it has not been customized by the user
                     // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
-                    var beginning = this.incrementCombo.getValue() + " Since ";
+                    var beginning = this.intervalCombo.getValue() + " Since ";
                     if(Ext.getCmp('x-axis-label-textfield').getValue().indexOf(beginning) == 0) {
-                       var newLabel = this.incrementCombo.getValue() + " Since " + record.data.label;
+                       var newLabel = this.intervalCombo.getValue() + " Since " + record.data.label;
                        Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
                        this.fireEvent('xAxisLabelChanged', newLabel, false);
                     }
@@ -292,10 +292,10 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     }
                     this.fireEvent('zeroDateChanged', store.getAt(store.find('name', this.zeroDateCombo.getValue())).data, false);
 
-                    // if the increment value has loaded, then set the default axis label
-                    if(this.incrementCombo && this.incrementCombo.getValue()) {
+                    // if the interval value has loaded, then set the default axis label
+                    if(this.intervalCombo && this.intervalCombo.getValue()) {
                         var zeroDateLabel = store.getAt(store.find('name', this.zeroDateCombo.getValue())).data.label;
-                        var newLabel = this.incrementCombo.getValue() + " Since " + zeroDateLabel;
+                        var newLabel = this.intervalCombo.getValue() + " Since " + zeroDateLabel;
                         Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
                         this.fireEvent('xAxisLabelChanged', newLabel, false);
                     }

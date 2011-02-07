@@ -61,7 +61,7 @@ LABKEY.vis.ChartPanel = Ext.extend(Ext.Panel, {
 		    {
 			axisInfo.xAxisDateCol = m.measure;
 			axisInfo.zeroDateCol = m.dateOptions.zeroDateCol;
-			axisInfo.increment = m.dateOptions.increment.substring(0,1).toUpperCase() + m.dateOptions.increment.substring(1); // capitalize the first letter for later
+			axisInfo.interval = m.dateOptions.interval.substring(0,1).toUpperCase() + m.dateOptions.interval.substring(1); // capitalize the first letter for later
 		    }
 		    else
 		    {
@@ -76,12 +76,12 @@ LABKEY.vis.ChartPanel = Ext.extend(Ext.Panel, {
 		// store the information to be accessed from the renderLineChart function
 		this.chartInfo = {data: this.data, axisInfo: axisInfo};
 
-		// calculate the x-axis time increment (i.e. Days, Weeks)
+		// calculate the x-axis time interval (i.e. Days, Weeks)
 		var rows = this.data.rows;
 		Ext.each(rows, function(row) {
 		    var date = new Date(row[this.data.measureToColumn[axisInfo.xAxisDateCol.name]].value);
 		    var zdate = new Date(row[this.data.measureToColumn[axisInfo.zeroDateCol.name]].value);
-		    row.increment = (date - zdate) / (axisInfo.increment == 'Days' ? ONE_DAY : (axisInfo.increment == 'Weeks' ? ONE_WEEK : (axisInfo.increment == 'Months' ? ONE_MONTH : ONE_YEAR)));
+		    row.interval = (date - zdate) / (axisInfo.interval == 'Days' ? ONE_DAY : (axisInfo.interval == 'Weeks' ? ONE_WEEK : (axisInfo.interval == 'Months' ? ONE_MONTH : ONE_YEAR)));
 		}, this);
 
 		// create a panel where the final chart will be rendered
@@ -311,7 +311,7 @@ LABKEY.vis.ChartPanel = Ext.extend(Ext.Panel, {
 		    	if(rowPtid == ptid)
 		    	{
 		    		singleSeriesData.push({
-		    			increment: row.increment,
+		    			interval: row.interval,
 		    			dataValue: row[this.chartInfo.data.measureToColumn[yAxisSeries]]
 		    		});
 		    	}
@@ -322,7 +322,7 @@ LABKEY.vis.ChartPanel = Ext.extend(Ext.Panel, {
 		    	yAxisSeries: yAxisSeries,
 			caption: ptid + " " + yAxisSeries,
 			data: singleSeriesData,
-			xProperty:"increment",
+			xProperty:"interval",
 			yProperty: "dataValue",
 			dotShape: this.chartPlotChar || 'circle'
 		    });
@@ -377,7 +377,7 @@ LABKEY.vis.ChartPanel = Ext.extend(Ext.Panel, {
 					height: size.height * 0.65, // 65% of parent panel height
 */
                     axes: {y: {/*min: 0, max: 100,*/caption: this.chartInfo.axisInfo.yAxisMeasure.label, scale: (this.chartAxisScale || 'linear')},
-                        x: {/*min: 0, max: 5000,*/ caption: this.chartInfo.axisInfo.increment + " Since " + this.chartInfo.axisInfo.zeroDateCol.label}},
+                        x: {/*min: 0, max: 5000,*/ caption: this.chartInfo.axisInfo.interval + " Since " + this.chartInfo.axisInfo.zeroDateCol.label}},
 					series: tempSeries.length > 0 ? tempSeries : series,
 					main: {title: title}
 				});

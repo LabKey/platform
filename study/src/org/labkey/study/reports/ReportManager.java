@@ -374,7 +374,7 @@ public class ReportManager implements StudyManager.DataSetListener
             {
                 return new ActionURL(StudyController.DatasetReportAction.class, c).
                         addParameter(DataSetDefinition.DATASETKEY, datasets.get(view.getQueryName()).getDataSetId()).
-                        addParameter("Dataset.viewName", view.getName());
+                        addParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME, view.getName());
             }
 
             // any specimen views

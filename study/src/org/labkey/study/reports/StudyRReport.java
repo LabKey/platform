@@ -27,6 +27,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 
 /**
@@ -65,7 +66,7 @@ public class StudyRReport extends RReport
     {
         if (getDescriptor().getReportId() != null)
             return new ActionURL(ReportsController.RunRReportAction.class, context.getContainer()).
-                            addParameter("Dataset.reportId", getDescriptor().getReportId().toString());
+                            addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         else
             return super.getRunReportURL(context);
     }

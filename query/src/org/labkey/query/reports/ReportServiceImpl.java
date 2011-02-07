@@ -266,15 +266,19 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     private ReportDB _saveReport(User user, Container c, String key, ReportDescriptor descriptor) throws SQLException
     {
+        ReportDB reportDB = new ReportDB(c, user.getUserId(), key, descriptor);
+
         //ensure that descriptor id is a DbReportIdentifier
         DbReportIdentifier reportId;
-
         if (null == descriptor.getReportId() || descriptor.getReportId() instanceof DbReportIdentifier)
+        {
             reportId = (DbReportIdentifier)(descriptor.getReportId());
+            if (reportId != null)
+                reportDB.setRowId(reportId.getRowId());
+        }
         else
             throw new RuntimeException("Can't save a report that is not stored in the database!");
 
-        ReportDB reportDB = new ReportDB(c, user.getUserId(), key, descriptor);
 
         if (null != reportId && reportExists(reportId.getRowId()))
             reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId());

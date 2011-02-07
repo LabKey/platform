@@ -25,12 +25,22 @@ import org.apache.fop.svg.PDFTranscoder;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.VisualizationReportDescriptor;
+import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.visualization.sql.StudyVisualizationProvider;
 import org.labkey.visualization.sql.VisualizationProvider;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
@@ -41,6 +51,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
+import java.sql.SQLException;
 import java.util.*;
 
 /*
@@ -51,6 +62,70 @@ public class VisualizationController extends SpringActionController
 {
     public static final String NAME = "visualization";
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(VisualizationController.class);
+
+    public static class VisualizationUrlsImpl implements VisualizationUrls
+    {
+        public static final String TIME_CHART_VIEW_NAME = "timeChartWizard";
+        private static final String VISUALIZATION_NAME_PARAM = "name";
+        private static final String VISUALIZATION_SCHEMA_PARAM = "schemaName";
+        private static final String VISUALIZATION_QUERY_PARAM = "queryName";
+        private static final String VISUALIZATION_EDIT_PARAM = "edit";
+        @Override
+        public ActionURL getTimeChartDesignerURL(Container container)
+        {
+            return getBaseTimeChartURL(container, true);
+        }
+
+        @Override
+        public ActionURL getTimeChartDesignerURL(Container container, String schemaName, String queryName)
+        {
+            ActionURL url = getBaseTimeChartURL(container, true);
+            if (queryName != null)
+                url.addParameter(VISUALIZATION_QUERY_PARAM, queryName);
+            if (schemaName != null)
+                url.addParameter(VISUALIZATION_SCHEMA_PARAM, schemaName);
+            return url;
+        }
+
+        @Override
+        public ActionURL getTimeChartDesignerURL(Container container, Report report)
+        {
+            ActionURL url = getBaseTimeChartURL(container, true);
+            String queryName = report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
+            if (queryName != null)
+                url.addParameter(VISUALIZATION_QUERY_PARAM, queryName);
+            String schemaName = report.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
+            if (schemaName != null)
+                url.addParameter(VISUALIZATION_SCHEMA_PARAM, schemaName);
+            url.addParameter(VISUALIZATION_NAME_PARAM, report.getDescriptor().getReportName());
+            return url;
+        }
+
+        @Override
+        public ActionURL getViewerURL(Container container, Report report)
+        {
+            ActionURL url = getBaseTimeChartURL(container, false);
+            String queryName = report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
+            if (queryName != null)
+                url.addParameter(VISUALIZATION_QUERY_PARAM, queryName);
+            String schemaName = report.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
+            if (schemaName != null)
+                url.addParameter(VISUALIZATION_SCHEMA_PARAM, schemaName);
+            url.addParameter(VISUALIZATION_NAME_PARAM, report.getDescriptor().getReportName());
+            return url;
+        }
+
+        private ActionURL getBaseTimeChartURL(Container container, boolean editMode)
+        {
+            // Using deprecated ActionURL class to enable reference to html-based view in the
+            // resources directory.  Not ideal, but better than circumventing the html view loading
+            // process just to wrap the file in an Action class.
+            ActionURL url = new ActionURL(NAME, TIME_CHART_VIEW_NAME, container);
+            url.addParameter(VISUALIZATION_EDIT_PARAM, editMode);
+            return url;
+        }
+    }
+
 
     public VisualizationController() throws Exception
     {
@@ -643,4 +718,223 @@ public class VisualizationController extends SpringActionController
         }
     }
 
+    public static class SaveVisualizationForm extends GetVisualizationForm
+    {
+        private String _description;
+        private String _json;
+        private String _type;
+        private boolean _replace;
+
+        public String getJson()
+        {
+            return _json;
+        }
+
+        public void setJson(String json)
+        {
+            _json = json;
+        }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+
+        public boolean isReplace()
+        {
+            return _replace;
+        }
+
+        public void setReplace(boolean replace)
+        {
+            _replace = replace;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+    }
+
+    public static class GetVisualizationForm
+    {
+        private String _schemaName;
+        private String _queryName;
+        private String _name;
+        private String _reportId;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+
+        public String getReportId()
+        {
+            return _reportId;
+        }
+
+        public void setReportId(String reportId)
+        {
+            _reportId = reportId;
+        }
+    }
+
+    private String getReportKey(GetVisualizationForm form)
+    {
+        String schema = form.getSchemaName();
+        if (schema == null)
+            schema = "none";
+        String query = form.getQueryName();
+        if (query == null)
+            query = "none";
+        return ReportUtil.getReportKey(schema, query);
+    }
+
+    private Report getReport(GetVisualizationForm form) throws SQLException
+    {
+        Report[] currentReports;
+        if (form.getSchemaName() != null && form.getQueryName() != null)
+            currentReports = ReportService.get().getReports(getUser(), getContainer(), getReportKey(form));
+        else
+            currentReports = ReportService.get().getReports(getUser(), getContainer());
+        for (Report report : currentReports)
+        {
+            if (form.getReportId() != null)
+            {
+                ReportIdentifier requestedId = new DbReportIdentifier(form.getReportId());
+                if (report.getDescriptor().getReportId().equals(requestedId))
+                    return report;
+            }
+            else if (report.getDescriptor().getReportName().equals(form.getName()))
+                return report;
+        }
+        return null;
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetVisualizationAction extends ApiAction<GetVisualizationForm>
+    {
+        @Override
+        public ApiResponse execute(GetVisualizationForm form, BindException errors) throws Exception
+        {
+            if (form.getName() == null && form.getReportId() == null)
+            {
+                errors.reject(ERROR_MSG, "The 'name' or 'reportId' property is required to get a saved visualization.");
+                return null;
+            }
+
+            Report report = getReport(form);
+            if (report == null || !report.getDescriptor().getContainerId().equals(getContainer().getId()))
+            {
+                errors.reject(ERROR_MSG, "Visualization " + form.getName() + " does not exist in " + getContainer().getPath() + ".");
+                return null;
+            }
+
+            ReportDescriptor descriptor = report.getDescriptor();
+            if (!(descriptor instanceof VisualizationReportDescriptor))
+            {
+                errors.reject(ERROR_MSG, "Report type \"" + descriptor.getReportType() + "\" is not an available visualization type.");
+                return null;
+            }
+            VisualizationReportDescriptor vizDescriptor = (VisualizationReportDescriptor) descriptor;
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("reportId", vizDescriptor.getReportId());
+            resp.put("name", vizDescriptor.getReportName());
+            resp.put("visualizationConfig", vizDescriptor.getJSON());
+            resp.put("description", vizDescriptor.getReportDescription());
+            resp.put("schemaName", vizDescriptor.getProperty(ReportDescriptor.Prop.schemaName));
+            resp.put("queryName", vizDescriptor.getProperty(ReportDescriptor.Prop.queryName));
+            resp.put("type", vizDescriptor.getReportType());
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class SaveVisualizationAction extends ApiAction<SaveVisualizationForm>
+    {
+        @Override
+        public ApiResponse execute(SaveVisualizationForm form, BindException errors) throws Exception
+        {
+            Report currentReport = getReport(form);
+            if (currentReport != null && !form.isReplace())
+            {
+                errors.reject(ERROR_MSG, "A report by the name \"" + form.getName() + "\" already exists.  " +
+                        "To update, set the 'replace' parameter to true.");
+                return null;
+            }
+            if (currentReport == null)
+            {
+                if (form.getType() == null)
+                {
+                    errors.reject(ERROR_MSG, "Report type must be specified.");
+                    return null;
+                }
+
+                currentReport = ReportService.get().createReportInstance(form.getType());
+                if (currentReport == null)
+                {
+                    errors.reject(ERROR_MSG, "Report type \"" + form.getType() + "\" is not recognized.");
+                    return null;
+                }
+            }
+            ReportDescriptor descriptor = currentReport.getDescriptor();
+            if (!(descriptor instanceof VisualizationReportDescriptor))
+            {
+                errors.reject(ERROR_MSG, "Report type \"" + form.getType() + "\" is not an available visualization type.");
+                return null;
+            }
+            VisualizationReportDescriptor vizDescriptor = (VisualizationReportDescriptor) descriptor;
+            vizDescriptor.setReportName(form.getName());
+            vizDescriptor.setReportKey(getReportKey(form));
+            vizDescriptor.setJSON(form.getJson());
+            vizDescriptor.setContainer(getContainer().getId());
+            vizDescriptor.setReportDescription(form.getDescription());
+            if (form.getSchemaName() != null)
+                vizDescriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
+            if (form.getQueryName() != null)
+                vizDescriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
+            if (currentReport.getDescriptor().getReportId() != null)
+                vizDescriptor.setReportId(currentReport.getDescriptor().getReportId());
+            int reportId = ReportService.get().saveReport(getViewContext(), vizDescriptor.getReportKey(), currentReport);
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("visualizationId", reportId);
+            resp.put("name", currentReport.getDescriptor().getReportName());
+            return resp;
+        }
+    }
 }

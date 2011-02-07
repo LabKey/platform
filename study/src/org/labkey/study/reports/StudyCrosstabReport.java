@@ -89,7 +89,7 @@ public class StudyCrosstabReport extends CrosstabReport
         {
             return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasetId).
-                        addParameter("Dataset.reportId", getDescriptor().getReportId().toString());
+                        addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         }
         return super.getRunReportURL(context);
     }

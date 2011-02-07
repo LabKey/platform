@@ -18,7 +18,12 @@ package org.labkey.visualization;
 
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.visualization.TimeChartReport;
+import org.labkey.api.visualization.TimeChartReportDescriptor;
+import org.labkey.visualization.report.TimeChartReportImpl;
+import org.labkey.visualization.report.VisualizationUIProvider;
 
 import java.util.*;
 
@@ -49,6 +54,9 @@ public class VisualizationModule extends DefaultModule
     protected void init()
     {
         addController(VisualizationController.NAME, VisualizationController.class);
+        ReportService.get().registerDescriptor(new TimeChartReportDescriptor());
+        ReportService.get().registerReport(new TimeChartReportImpl());
+        ReportService.get().addUIProvider(new VisualizationUIProvider());
     }
 
     public void startup(ModuleContext moduleContext)
