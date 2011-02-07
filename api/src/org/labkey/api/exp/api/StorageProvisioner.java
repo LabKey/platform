@@ -131,7 +131,7 @@ public class StorageProvisioner
 
             for (String sql : scope.getSqlDialect().getChangeStatements(change))
             {
-                log.info("Will issue: " + sql);
+                log.debug("Will issue: " + sql);
                 conn.prepareStatement(sql).execute();
             }
 
@@ -192,7 +192,7 @@ public class StorageProvisioner
             con = scope.getConnection();
             for (String sql : scope.getSqlDialect().getChangeStatements(change))
             {
-                log.info("Will issue: " + sql);
+                log.debug("Will issue: " + sql);
                 con.prepareStatement(sql).execute();
             }
         }
@@ -253,7 +253,7 @@ public class StorageProvisioner
             con = scope.getConnection();
             for (String sql : scope.getSqlDialect().getChangeStatements(change))
             {
-                log.info("Will issue: " + sql);
+                log.debug("Will issue: " + sql);
                 con.prepareStatement(sql).execute();
             }
         }
@@ -288,7 +288,7 @@ public class StorageProvisioner
             con = scope.getConnection();
             for (String sql : scope.getSqlDialect().getChangeStatements(change))
             {
-                log.info("Will issue: " + sql);
+                log.debug("Will issue: " + sql);
                 con.prepareStatement(sql).execute();
             }
         }
@@ -325,7 +325,7 @@ public class StorageProvisioner
             con = scope.getConnection();
             for (String sql : scope.getSqlDialect().getChangeStatements(change))
             {
-                log.info("Will issue: " + sql);
+                log.debug("Will issue: " + sql);
                 con.prepareStatement(sql).execute();
             }
         }
@@ -369,7 +369,7 @@ public class StorageProvisioner
             con = scope.getConnection();
             for (String sql : scope.getSqlDialect().getChangeStatements(change))
             {
-                log.info("Will issue: " + sql);
+                log.debug("Will issue: " + sql);
                 con.prepareStatement(sql).execute();
             }
         }
@@ -425,7 +425,7 @@ public class StorageProvisioner
 
             for (String sql : scope.getSqlDialect().getChangeStatements(renamePropChange))
             {
-                log.info("Will issue: " + sql);
+                log.debug("Will issue: " + sql);
                 con.prepareStatement(sql).execute();
             }
 
