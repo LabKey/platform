@@ -52,6 +52,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         this.grid.store.on(STORE_EVENTS.datachanged, this.onGridDataChange, this);
         this.on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
+        this.on(BROWSER_EVENTS.directorychange,function(record){this.onGridDataChanged(false);}, this);
 
         // message templates
         var typeTemplate = new Ext.XTemplate('<tpl if="icon == undefined">{type}</tpl><tpl if="icon != undefined"><img src="{icon}" alt="{type}"></tpl>').compile();
