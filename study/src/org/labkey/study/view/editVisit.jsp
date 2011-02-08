@@ -35,20 +35,7 @@
     VisitImpl visit = visitBean.getVisit();
     CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
 %>
-
-<table>
-<%
-    BindException errors = (BindException)request.getAttribute("errors");
-    if (errors != null)
-    {
-        for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
-        {
-            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
-        }
-    }
-%>
-</table>
-
+<labkey:errors/>
 <form action="visitSummary.post" method="POST">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">

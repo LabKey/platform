@@ -52,6 +52,8 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
         return "org.postgresql.Driver".equals(driverClassName);
     }
 
+    private final String _recommended = getProductName() + " 9.0 is the recommended version.";
+
     @Override
     public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
@@ -68,19 +70,19 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
                 // ...but warn for anything less than 8.3.7
                 if (83 == version && databaseProductVersion.getRevisionAsInt() < 7)
                 {
-                    _log.warn("LabKey Server has known issues with " + getProductName() + " version " + databaseProductVersion + ".  PostgreSQL 9.0 is the recommended version.");
+                    _log.warn("LabKey Server has known issues with " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
                 }
                 // ...or greater than 9.0
                 else if (version > 90)
                 {
-                    _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ".  PostgreSQL 9.0 is the recommended version.");
+                    _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
                 }
             }
 
             return true;
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 8.2 or greater.");
+        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.  You must upgrade your database server installation; " + _recommended);
     }
 
     @Override

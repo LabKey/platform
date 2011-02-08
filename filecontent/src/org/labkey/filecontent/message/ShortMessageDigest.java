@@ -41,5 +41,4 @@ public class ShortMessageDigest extends PeriodicMessageDigest
     {
         super("FifteenMinuteDigest", DateUtils.MILLIS_PER_MINUTE * 15);
     }
-
 }

@@ -1116,9 +1116,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(TSVForm tsvForm, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView<Object>(getStudy(), "uploadVisitMap.jsp", null, errors);
-            view.addObject("errors", errors);
-            return view;
+            return new StudyJspView<Object>(getStudy(), "uploadVisitMap.jsp", null, errors);
         }
 
         public void validateCommand(TSVForm target, Errors errors)
@@ -1448,9 +1446,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(ManageTypesForm manageTypesForm, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView<ManageTypesAction>(getStudy(), "manageTypes.jsp", this, errors);
-            view.addObject("errors", errors);
-            return view;
+            return new StudyJspView<ManageTypesAction>(getStudy(), "manageTypes.jsp", this, errors);
         }
 
         public boolean handlePost(ManageTypesForm form, BindException errors) throws Exception
@@ -1458,7 +1454,8 @@ public class StudyController extends BaseStudyController
             String dateFormat = form.getDateFormat();
             String numberFormat = form.getNumberFormat();
 
-            try {
+            try
+            {
                 if (!StringUtils.isEmpty(dateFormat))
                 {
                     FastDateFormat.getInstance(dateFormat);
@@ -1474,6 +1471,7 @@ public class StudyController extends BaseStudyController
                 }
                 else
                     StudyManager.getInstance().setDefaultNumberFormatString(getContainer(), null);
+
                 return true;
             }
             catch (IllegalArgumentException e)
@@ -1531,7 +1529,6 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(BulkEditForm bulkEditForm, boolean reshow, BindException errors) throws Exception
         {
             ModelAndView view = new StudyJspView<StudyImpl>(getStudy(), "manageSites.jsp", getStudy(), errors);
-            view.addObject("errors", errors);
             return view;
         }
 
@@ -1652,10 +1649,8 @@ public class StudyController extends BaseStudyController
             }
             VisitSummaryBean visitSummary = new VisitSummaryBean();
             visitSummary.setVisit(_v);
-            ModelAndView view = new StudyJspView<VisitSummaryBean>(study, getVisitJsp("edit"), visitSummary, errors);
-            view.addObject("errors", errors);
 
-            return view;
+            return new StudyJspView<VisitSummaryBean>(study, getVisitJsp("edit"), visitSummary, errors);
         }
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
@@ -1833,13 +1828,11 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(VisitForm form, boolean reshow, BindException errors) throws Exception
         {
             StudyImpl study = getStudy();
+
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 errors.reject(null, "Unsupported operation for continuous date study");
 
-            ModelAndView view = new StudyJspView<Object>(study, getVisitJsp("create"), null, errors);
-            view.addObject("form", form);
-
-            return view;
+            return new StudyJspView<VisitForm>(study, getVisitJsp("create"), form, errors);
         }
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
@@ -1877,14 +1870,14 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DataSetForm form, boolean reshow, BindException errors) throws Exception
         {
             _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+
             if (_def == null)
             {
                 BeginAction action = (BeginAction)initAction(this, new BeginAction());
                 return action.getView(form, errors);
             }
-            ModelAndView view = new JspView<DataSetDefinition>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def);
-            view.addObject("errors", errors);
-            return view;
+
+            return new JspView<DataSetDefinition>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def, errors);
         }
 
         public boolean handlePost(DataSetForm form, BindException errors) throws Exception
@@ -2047,9 +2040,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(BulkImportTypesForm form, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView<BulkImportTypesForm>(getStudy(), "bulkImportDataTypes.jsp", form, errors);
-            view.addObject("errors", errors);
-            return view;
+            return new StudyJspView<BulkImportTypesForm>(getStudy(), "bulkImportDataTypes.jsp", form, errors);
         }
 
         @SuppressWarnings("unchecked")
@@ -4943,23 +4934,26 @@ public class StudyController extends BaseStudyController
             study = StudyManager.getInstance().createStudy(getUser(), study);
 
             if (null != visits)
+            {
                 for (JSONObject obj : visits.toJSONObjectArray())
                 {
                     VisitImpl visit = new VisitImpl(studyFolder, obj.getDouble("minDays"), obj.getDouble("maxDays"), obj.getString("label"), Visit.Type.REQUIRED_BY_TERMINATION);
                     StudyManager.getInstance().createVisit(study, getUser(), visit);
                 }
-
+            }
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             boolean ownsTransaction = !scope.isTransactionActive();
 
             List<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>();
+
             if (null != jsonDatasets)
             {
                 try
                 {
                     if (ownsTransaction)
                         scope.beginTransaction();
+
                     for (JSONObject jdataset : jsonDatasets.toJSONObjectArray())
                     {
                         DataSetDefinition dataset = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, jdataset.getString("name"),

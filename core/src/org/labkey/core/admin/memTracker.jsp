@@ -27,8 +27,6 @@
 <%
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
     MemBean bean = me.getModelBean();
-
-
     String contextPath = AppProps.getInstance().getContextPath();
 %>
 <a href="<%=h(AdminController.getMemTrackerURL(true, true))%>">[Clear Caches, GC and Refresh]</a>
@@ -36,6 +34,7 @@
 <a href="<%=h(AdminController.getMemTrackerURL(false, false))%>">[Refresh]</a><br><hr size="1">
 <%
     int i = 0;
+
     for (String graphName : bean.graphNames)
     {
         // Hacky - assuming that the first one should be a different size
@@ -58,14 +57,14 @@
 <table name="systemProperties">
 <%
     for (Pair<String,Object> property : bean.systemProperties)
-        {
+    {
 %>
     <tr>
         <td><b><%= h(property.getKey()) %></b></td>
         <td><%= h(property.getValue().toString()) %></td>
     </tr>
 <%
-        }
+    }
 %>
 </table><p>
 <%
@@ -82,12 +81,12 @@
         <th align="left">Allocation Stack</th>
     </tr>
 <%
-int counter = 1;
-for (MemTracker.HeldReference reference : bean.references)
-    {
-        String htmlStack = reference.getHtmlStack();
-        String[] split = htmlStack.split("<br>");
-        String secondLine = split.length >= 2 ? split[2] : "";
+        int counter = 1;
+        for (MemTracker.HeldReference reference : bean.references)
+        {
+            String htmlStack = reference.getHtmlStack();
+            String[] split = htmlStack.split("<br>");
+            String secondLine = split.length >= 2 ? split[2] : "";
 
 %>
     <tr class="<%=(counter % 2 == 0) ? "labkey-row" : "labkey-alternate-row"%>">
@@ -95,8 +94,8 @@ for (MemTracker.HeldReference reference : bean.references)
         <td valign=top><%= reference.getClassName() %></td>
         <td valign=top>
 <%
-    if (reference.hasShortSummary())
-        {
+            if (reference.hasShortSummary())
+            {
 %>
             <div id='summaryTogglePanel<%= counter %>' style='cursor:pointer'>
                 <%= h(reference.getObjectSummary()) %>
@@ -105,11 +104,11 @@ for (MemTracker.HeldReference reference : bean.references)
                 <%= h(reference.getObjectDescription()) %>
             </div>
 <%
-        }
-        else
-        {
-            %><%= h(reference.getObjectDescription()) %><%
-        }
+            }
+            else
+            {
+                %><%= h(reference.getObjectDescription()) %><%
+            }
 %>
         </td>
         <td>
@@ -118,8 +117,8 @@ for (MemTracker.HeldReference reference : bean.references)
         </td>
     </tr>
 <%
-    counter++;
-    }
+        counter++;
+        }
 %>
 </table>
 <%

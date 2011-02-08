@@ -15,19 +15,24 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.study.model.*" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.*" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
-<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.VisitDataSetType" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.Map" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>)HttpView.currentView();
@@ -39,31 +44,20 @@
     CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, me.getViewContext().getUser());
     Map<Integer, String> cohortMap = new HashMap<Integer, String>();
     cohortMap.put(null, "All");
+
     if (cohorts != null)
     {
         for (CohortImpl cohort : cohorts)
             cohortMap.put(cohort.getRowId(), cohort.getLabel());
     }
 %>
-<table>
-<%
-    BindException errors = (BindException)request.getAttribute("errors");
-    if (errors != null)
-    {
-        for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
-        {
-            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
-        }
-    }
-%>
-</table>
-
+<labkey:errors/>
 <%
     ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, container);
 %>
 
 <form action="<%=updateDatasetURL.getLocalURIString()%>" method="POST">
-<%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
+<%=generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
 <% WebPartView.startTitleFrame(out, "Dataset Properties", null, "100%", null); %>
     <table>
         <tr>

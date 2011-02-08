@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.DataSet"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.StudyController"%>
-<%@ page import="org.labkey.study.model.*" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.VisitDataSet" %>
+<%@ page import="org.labkey.study.model.VisitDataSetType" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="java.util.HashMap" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();
@@ -34,20 +35,7 @@
     VisitImpl visit = visitBean.getVisit();
     CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
 %>
-
-<table>
-<%
-    BindException errors = (BindException)request.getAttribute("errors");
-    if (errors != null)
-    {
-        for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
-        {
-            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
-        }
-    }
-%>
-</table>
-
+<labkey:errors/>
 <form action="visitSummary.post" method="POST">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">

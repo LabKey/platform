@@ -56,7 +56,6 @@ import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.QueryProfiler;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.TableXmlUtils;
@@ -73,7 +72,6 @@ import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.LoginUrls;
@@ -547,7 +545,7 @@ public class AdminController extends SpringActionController
 
                     if (null != wikiSource)
                     {
-                        HttpView moduleJars = new CreditsView("jars.txt", getCreditsFile(module, "jars.txt"), module.getJarFilenames(), "JAR", "webapp", "the " + module.getName() + " Module", jarRegEx);
+                        HttpView moduleJars = new CreditsView("jars.txt", wikiSource, module.getJarFilenames(), "JAR", "webapp", "the " + module.getName() + " Module", jarRegEx);
                         views.addView(moduleJars);
                     }
                 }
@@ -2211,17 +2209,21 @@ public class AdminController extends SpringActionController
 
     public static class MemBean
     {
-        public List<Pair<String, Object>> systemProperties = new ArrayList<Pair<String,Object>>();
-        public List<MemTracker.HeldReference> all = MemTracker.getReferences();
-        public List<MemTracker.HeldReference> references = new ArrayList<MemTracker.HeldReference>(all.size());
-        public List<String> graphNames = new ArrayList<String>();
+        public final List<Pair<String, Object>> systemProperties = new ArrayList<Pair<String,Object>>();
+        public final List<MemTracker.HeldReference> references;
+        public final List<String> graphNames = new ArrayList<String>();
+
         public boolean assertsEnabled = false;
 
         private MemBean(HttpServletRequest request)
         {
+            List<MemTracker.HeldReference> all = MemTracker.getReferences();
+
             // ignore recently allocated
             long threadId = Thread.currentThread().getId();
             long start = ViewServlet.getRequestStartTime(request) - 2000;
+            references = new ArrayList<MemTracker.HeldReference>(all.size());
+
             for (MemTracker.HeldReference r : all)
             {
                 if (r.getThreadId() == threadId && r.getAllocationTime() >= start)
@@ -2302,7 +2304,7 @@ public class AdminController extends SpringActionController
         }
         catch (IllegalArgumentException x)
         {
-            // sometimes we get usage>committed exception with older verions of JRockit
+            // sometimes we get usage>committed exception with older versions of JRockit
             return "exception getting usage";
         }
     }

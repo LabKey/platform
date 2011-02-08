@@ -15,25 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-<table>
-<%
-    BindException errors = (BindException)request.getAttribute("errors");
-    if (errors != null)
-    {
-        for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
-        {
-            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
-        }
-    }
-%>
-</table>
-
+<labkey:errors/>
 VisitMap data can be imported to quickly define a study.  VisitMap data generally follows the form of this sample:
 <p><pre>
     0|B|Baseline|1|9 (mm/dd/yy)|0|0| 1 2 3 4 5 6 7 8||99

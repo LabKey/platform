@@ -1,3 +1,4 @@
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 /*
  * Copyright (c) 2006-2011 LabKey Corporation
@@ -17,28 +18,14 @@
 %>
 <%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.controllers.BaseStudyController"%>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView"%>
+<%@ page import="org.labkey.study.controllers.StudyController.BulkImportTypesForm"%>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    BaseStudyController.StudyJspView<StudyController.BulkImportTypesForm> me = (BaseStudyController.StudyJspView<StudyController.BulkImportTypesForm>) HttpView.currentView();
-    StudyController.BulkImportTypesForm bean = me.getModelBean();
+    StudyJspView<BulkImportTypesForm> me = (StudyJspView<BulkImportTypesForm>) HttpView.currentView();
+    BulkImportTypesForm bean = me.getModelBean();
 %>
-<table>
-<%
-    BindException errors = (BindException)request.getAttribute("errors");
-    if (errors != null)
-    {
-        for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
-        {
-            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
-        }
-    }
-%>
-</table>
+<labkey:errors/>
 <p>
 Use this page to import the schema for multiple datasets.  Paste in a tab-delimited file that includes the five required
 columns and any of the optional columns.
