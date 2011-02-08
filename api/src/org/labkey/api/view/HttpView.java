@@ -20,8 +20,8 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Debug;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.springframework.beans.PropertyValues;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -34,7 +34,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import javax.servlet.jsp.PageContext;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -55,7 +54,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 {
     private static final int _debug = Debug.getLevel(HttpView.class);
 
-    private static ThreadLocal<ViewStack> _viewContexts = new ThreadLocal<ViewStack>()
+    private static final ThreadLocal<ViewStack> _viewContexts = new ThreadLocal<ViewStack>()
     {
         protected ViewStack initialValue()
         {
@@ -362,17 +361,17 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     public static void initForRequest(final ViewContext context, HttpServletRequest request, HttpServletResponse response)
     {
-        Stack<ViewStackEntry> s = _viewContexts.get();
-        // place holder view
-        HttpView v = new ServletView(null, context);
-        s.push(new ViewStackEntry(v, request,response));
+        // placeholder view
+        pushView(new ServletView(null, context), request, response);
     }
 
 
     protected static void pushView(ModelAndView mv, HttpServletRequest request, HttpServletResponse response)
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
-        s.push(new ViewStackEntry(mv, request,response));
+        ViewStackEntry vse = new ViewStackEntry(mv, request,response);
+        assert MemTracker.put(vse);
+        s.push(vse);
     }
 
 

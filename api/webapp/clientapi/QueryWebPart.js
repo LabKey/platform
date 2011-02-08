@@ -261,7 +261,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
          */
         this.addEvents("render");
 
-        if(this.renderTo)
+        if (this.renderTo)
             this.render();
     },
 
@@ -302,7 +302,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         }
 
         // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
-        //if(this.userAggregates)
+        //if (this.userAggregates)
         //{
         //    for (var name in this.userAggregates)
         //        params[name] = this.userAggregates[name];
@@ -311,9 +311,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         //forward query string parameters for this data region
         //except those we should specifically ignore
         var qsParams = LABKEY.ActionURL.getParameters();
-        for(var qsParam in qsParams)
+
+        for (var qsParam in qsParams)
         {
-            if(-1 != qsParam.indexOf(this.dataRegionName + ".")
+            if (-1 != qsParam.indexOf(this.dataRegionName + ".")
                     && !this.qsParamsToIgnore[qsParam])
                 params[qsParam] = qsParams[qsParam];
         }
@@ -341,10 +342,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         var dr = LABKEY.DataRegions[this.dataRegionName];
 
         //allow renderTo param to override config property
-        if(renderTo)
+        if (renderTo)
             this.renderTo = renderTo;
 
-        if(!this.renderTo)
+        if (!this.renderTo)
             Ext.Msg.alert("Configuration Error", "You must supply a renderTo property either in the configuration object, or as a parameter to the render() method!");
 
         var params = this.createParams();
@@ -393,7 +394,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                     clearTimeout(timerId);
                 
                 var targetElem = Ext.get(this.renderTo);
-                if(targetElem)
+
+                if (targetElem)
                 {
                     targetElem.unmask();
                     targetElem.update(response.responseText, true); //execute scripts
@@ -418,7 +420,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                         if (customizeViewVisible)
                             dr.showCustomizeView(null, false, false);
 
-                        if(this._success) //11425 : Make callback consistent with documentation
+                        if (this._success) //11425 : Make callback consistent with documentation
                             Ext.onReady(function(){this._success.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()
                     }, this, {delay: 100});
 
