@@ -26,14 +26,16 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         // including some defauts for things like plot chart and axis scale
         this.chartInfo = {
-            measures: this.measures,
+            measures: [
+                {axis: {multiSelect: "false", name: "x-axis", label: "", timeAxis: "true"}, dateOptions: {}, measure: {}},
+                {axis: {multiSelect: "false", name: "y-axis", label: ""}, measure: {}}
+            ],
             yAxisScale: 'linear',
             plotChar: 'circle',
             layout: 'single',
             subject: {selection: []},
             title: '',
-            data: null,
-            items: []
+            data: null
         };
 
         LABKEY.vis.TimeChartPanel.superclass.constructor.call(this, config);
@@ -43,12 +45,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // properties for this panel
         this.layout = 'border';
 
+        // keep track of requests for measure metadata ajax calls to know when all are complete
+        this.measureMetadataRequestCounter = 0;
+
         var items = [];
 
         if(this.viewInfo.type == "line") {
-            this.on('afterrender', function(cmp) {
-                //this.getEl().mask("loading...", "x-mask-loading");
-            });
 
             // get the information from the y-axis measure
             for(var i = 0; i < this.chartInfo.measures.length; i++) {
@@ -61,176 +63,17 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             }
 
-            this.items = new Array();
-
             this.chartEditorMeasurePanel = new LABKEY.vis.ChartEditorMeasurePanel({
                 measure: this.chartInfo.measures[this.yAxisMeasureIndex].measure,
                 viewInfo: this.viewInfo,
                 listeners: {
                     scope: this,
-                    'measureSelected': function(measure) {
-                        this.chartInfo.measures[this.yAxisMeasureIndex].measure = measure;
-
-
-                        // todo: change these actions to not use getCmp by IDs
-
-                        // remove all of the subjects from the series selector panel
-                        Ext.getCmp('subject-list-view').getStore().removeAll();
-
-                        // reset the x-axis interval value to days
-                        Ext.getCmp('x-axis-interval-combo').setValue('Days');
-                        this.chartInfo.measures[this.xAxisMeasureIndex].dateOptions.interval = 'Days';
-                        // reset the store for the x-axis zero date combo
-                        var newZStore = this.chartEditorXAxisPanel.newZeroDateStore(measure.schemaName);
-                        Ext.getCmp('zero-date-combo').bindStore(newZStore);
-                        // reset the store for the x-axis measure date combo
-                        var newMStore = this.chartEditorXAxisPanel.newMeasureDateStore(measure.schemaName, measure.queryName);
-                        Ext.getCmp('measure-date-combo').bindStore(newMStore);
-                        // reset the x-axis range to automatic
-                        Ext.getCmp('x-axis-range-automatic-radio').setValue(true);
-
-                        // update the y-axis label
-                        Ext.getCmp('y-axis-label-textfield').setValue(measure.label);
-                        this.chartInfo.measures[this.yAxisMeasureIndex].axis.label = measure.label;
-                        // reset y-axis scale to linear
-                        Ext.getCmp('y-axis-scale-combo').setValue('linear');
-                        this.chartInfo.yAxisScale = 'linear';
-                        // reset the y-axis range to automatic
-                        Ext.getCmp('y-axis-range-automatic-radio').setValue(true);
-
-                        // reset the chart layout radio option to One Chart
-                        Ext.getCmp('chart-layout-radiogroup').reset();
-                    },
-                    'subjectDimensionIdentified': function(subjectDimension) {
-                        Ext.apply(this.chartInfo.subject, subjectDimension);
-
-                        // this is the query/column we need to get the subject IDs for the selected measure
-                        Ext.Ajax.request({
-                            url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues", null, subjectDimension),
-                            method:'GET',
-                            disableCaching:false,
-                            success : function(response, e){
-                                this.renderSubjects(response, e, subjectDimension);
-
-                                // this is one of the requests being tracked, see if the rest are done
-                                //this.requestCounter--;
-                                //if(this.requestCounter == 0) {
-                                    this.getEl().unmask();
-                                    this.getChartData();
-                                //}
-                            },
-                            failure: function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
-                            scope: this
-                        });
-                    },
-                    'measureDimensionSelected': function(measureDimension) {
-                        this.chartInfo.measures[this.yAxisMeasureIndex].dimension = measureDimension;
-
-                        // if there was a different dimension selection, remove that list view from the series selector
-                        Ext.getCmp('series-selector-tabpanel').remove('dimension-series-selector-panel', true);
-                        Ext.getCmp('series-selector-tabpanel').doLayout();
-
-                        // todo: review this section
-                        // get the dimension values for the selected dimension/grouping
-                        Ext.Ajax.request({
-                            url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues", null, measureDimension),
-                            method:'GET',
-                            disableCaching:false,
-                            success : function(response, e){
-                                var reader = new Ext.data.JsonReader({root:'values'}, [{name:'value'}]);
-                                var o = reader.read(response);
-
-                                // put the dimension values into the chartInfo object for the given measure
-                                // note: 2 version are needed. the values version is needed for the getData call for pivoting the data
-                                //          and the jsonValues version is needed for the Ext GridPanel
-                                this.chartInfo.measures[this.yAxisMeasureIndex].dimension.values = new Array();
-                                this.chartInfo.measures[this.yAxisMeasureIndex].dimension.jsonValues = new Array();
-                                for(var i = 0; i < o.records.length; i++) {
-                                    this.chartInfo.measures[this.yAxisMeasureIndex].dimension.values.push(o.records[i].data.value);
-                                    this.chartInfo.measures[this.yAxisMeasureIndex].dimension.jsonValues.push({value: o.records[i].data.value});
-                                }
-                                // initially selected = all values
-                                this.chartInfo.measures[this.yAxisMeasureIndex].dimension.selected = this.chartInfo.measures[this.yAxisMeasureIndex].dimension.values;
-
-                                // put the dimension values into a list view for the user to enable/disable series
-                                var sm = new  Ext.grid.CheckboxSelectionModel({
-                                    listeners: {
-                                        scope: this,
-                                        'selectionChange': function(selModel){
-                                            // add the selected dimension values to the chartInfo
-                                            this.chartInfo.measures[this.yAxisMeasureIndex].dimension.selected = new Array();
-                                            var selectedRecords = selModel.getSelections();
-                                            for(var i = 0; i < selectedRecords.length; i++) {
-                                                this.chartInfo.measures[this.yAxisMeasureIndex].dimension.selected.push(selectedRecords[i].get('value'));
-                                            }
-                                            // redraw the line chart with new selections
-                                            this.renderLineChart();                                        }
-                                    }
-                                });
-                                var newSeriesSelectorPanel = new Ext.Panel({
-                                    id: 'dimension-series-selector-panel',
-                                    title: this.chartInfo.measures[this.yAxisMeasureIndex].dimension.label,
-                                    autoScroll: true,
-                                    items: [
-                                        new Ext.grid.GridPanel({
-                                            id: 'dimension-list-view',
-                                            autoHeight: true,
-                                            store: new Ext.data.JsonStore({
-                                                root: 'jsonValues',
-                                                fields: ['value'],
-                                                data: this.chartInfo.measures[this.yAxisMeasureIndex].dimension
-                                            }),
-                                            viewConfig: {forceFit: true},
-                                            border: false,
-                                            frame: false,
-                                            hidden: true,
-                                            columns: [
-                                                sm,
-                                                {header: this.chartInfo.measures[this.yAxisMeasureIndex].dimension.label, dataIndex:'value'}
-                                            ],
-                                            selModel: sm,
-                                            header: false,
-                                            listeners: {
-                                                scope: this,
-                                                'viewready': function(grid) {
-                                                    // initially select all of the deimension values (but suspend events during selection)
-                                                    var dimSelModel = grid.getSelectionModel();
-                                                    dimSelModel.suspendEvents(false);
-                                                    dimSelModel.selectRange(0, grid.getStore().getTotalCount()-1, false);
-                                                    this.chartInfo.measures[this.yAxisMeasureIndex].dimension.selected = this.chartInfo.measures[this.yAxisMeasureIndex].dimension.values;
-                                                    dimSelModel.resumeEvents();
-                                                    grid.show();
-                                                }
-                                            }
-                                         })
-                                    ]
-                                });
-                                Ext.getCmp('series-selector-tabpanel').add(newSeriesSelectorPanel);
-                                Ext.getCmp('series-selector-tabpanel').activate('dimension-series-selector-panel');
-                                Ext.getCmp('series-selector-tabpanel').doLayout();
-
-                                // this change requires a call to getChartData
-                                this.getChartData();
-                            },
-                            failure: function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
-                            scope: this
-                        });
-                    },
-                    'seriesPerSubjectChecked': function() {
-                        // remove any dimension selection/values that were added to the yaxis measure
-                        delete this.chartInfo.measures[this.yAxisMeasureIndex].dimension;
-
-                        // if there was a different dimension selection, remove that list view from the series selector
-                        Ext.getCmp('series-selector-tabpanel').remove('dimension-series-selector-panel', true);
-                        Ext.getCmp('series-selector-tabpanel').doLayout();
-
-                        // hide the 3rd option for the layout radio group on the chart(s) tab
-                        //if(Ext.get('chart-layout-per-dimension').checked())
-                        //Ext.get('chart-layout-per-dimension').hide();
-
-                        // this change requires a call to getChartData]
-                        this.getChartData();
-                     }
+                    'measureSelected': this.measureSelected,
+                    'subjectDimensionIdentified': this.subjectDimensionIdentified,
+                    'measureDimensionSelected': this.measureDimensionSelected,
+                    'seriesPerSubjectChecked': this.seriesPerSubjectChecked,
+                    'measureMetadataRequestPending': this.measureMetadataRequestPending,
+                    'measureMetadataRequestComplete': this.measureMetadataRequestComplete
                 }
             });
 
@@ -239,10 +82,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 viewInfo: this.viewInfo,
                 listeners: {
                     scope: this,
-                    'xAxisIntervalChanged': function(interval, calculateIntervals) {
+                    'xAxisIntervalChanged': function(interval, readyForChartData) {
                         this.chartInfo.measures[this.xAxisMeasureIndex].dateOptions.interval = interval;
-                        if(calculateIntervals) {
-                            this.calculateDataRowIntervals();
+                        if(readyForChartData) {
+                            this.getChartData();
                         }
                     },
                     'xAxisLabelChanged': function(label, readyForLineChart) {
@@ -275,7 +118,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     'xAxisRangeManualMaxChanged': function(newValue) {
                         this.chartInfo.measures[this.xAxisMeasureIndex].axis.max = newValue;
                         this.renderLineChart();
-                    }
+                    },
+                    'measureMetadataRequestComplete': this.measureMetadataRequestComplete
                 }
             });
 
@@ -340,7 +184,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     this.chartEditorChartsPanel
                 ]
             });
-            this.items.push(this.chartEditor);
+            items.push(this.chartEditor);
 
             var sm = new  Ext.grid.CheckboxSelectionModel({
                 listeners: {
@@ -396,13 +240,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     }
                 ]
             });
-            this.items.push(this.seriesSelector);
+            items.push(this.seriesSelector);
 
             this.chart = new Ext.Panel({
                 id: 'chart-tabpanel',
                 region: 'center',
                 layout: 'fit',
                 frame: false,
+                autoScroll: true,
                 items: [],
                 listeners: {
                     scope: this,
@@ -411,14 +256,198 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     }
                 }
             });
-            this.items.push(this.chart);
+            items.push(this.chart);
         }
         else
         {
             // other chart types
         }
 
+        this.items = items;
+
         LABKEY.vis.TimeChartPanel.superclass.initComponent.call(this);
+    },
+
+    measureSelected: function(measure) {
+        this.chartInfo.measures[this.yAxisMeasureIndex].measure = measure;
+
+        // todo: change these actions to not use getCmp by IDs
+
+        // remove all of the subjects from the series selector panel
+        Ext.getCmp('subject-list-view').getStore().removeAll();
+
+        // reset the x-axis interval value to days
+        Ext.getCmp('x-axis-interval-combo').setValue('Days');
+        this.chartInfo.measures[this.xAxisMeasureIndex].dateOptions.interval = 'Days';
+        // reset the store for the x-axis zero date combo
+        this.measureMetadataRequestPending();
+        var newZStore = this.chartEditorXAxisPanel.newZeroDateStore(measure.schemaName);
+        Ext.getCmp('zero-date-combo').bindStore(newZStore);
+        // reset the store for the x-axis measure date combo
+        this.measureMetadataRequestPending();
+        var newMStore = this.chartEditorXAxisPanel.newMeasureDateStore(measure.schemaName, measure.queryName);
+        Ext.getCmp('measure-date-combo').bindStore(newMStore);
+        // reset the x-axis range to automatic
+        Ext.getCmp('x-axis-range-automatic-radio').setValue(true);
+
+        // update the y-axis label
+        Ext.getCmp('y-axis-label-textfield').setValue(measure.label);
+        this.chartInfo.measures[this.yAxisMeasureIndex].axis.label = measure.label;
+        // reset y-axis scale to linear
+        Ext.getCmp('y-axis-scale-combo').setValue('linear');
+        this.chartInfo.yAxisScale = 'linear';
+        // reset the y-axis range to automatic
+        Ext.getCmp('y-axis-range-automatic-radio').setValue(true);
+
+        // reset the chart layout radio option to One Chart
+        Ext.getCmp('chart-layout-radiogroup').reset();
+    },
+
+    subjectDimensionIdentified: function(subjectDimension) {
+        Ext.apply(this.chartInfo.subject, subjectDimension);
+
+        // this is the query/column we need to get the subject IDs for the selected measure
+        this.measureMetadataRequestPending();
+        Ext.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues", null, subjectDimension),
+            method:'GET',
+            disableCaching:false,
+            success : function(response, e){
+                this.renderSubjects(response, e, subjectDimension);
+
+                // this is one of the requests being tracked, see if the rest are done
+                this.measureMetadataRequestComplete();
+            },
+            failure: function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
+            scope: this
+        });
+    },
+
+    measureDimensionSelected: function(measureDimension) {
+        this.chartInfo.measures[this.yAxisMeasureIndex].dimension = measureDimension;
+
+        // if there was a different dimension selection, remove that list view from the series selector
+        Ext.getCmp('series-selector-tabpanel').remove('dimension-series-selector-panel', true);
+        Ext.getCmp('series-selector-tabpanel').doLayout();
+
+        // todo: review this section
+        // get the dimension values for the selected dimension/grouping
+        Ext.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues", null, measureDimension),
+            method:'GET',
+            disableCaching:false,
+            success : function(response, e){
+                var reader = new Ext.data.JsonReader({root:'values'}, [{name:'value'}]);
+                var o = reader.read(response);
+
+                // put the dimension values into the chartInfo object for the given measure
+                // note: 2 version are needed. the values version is needed for the getData call for pivoting the data
+                //          and the jsonValues version is needed for the Ext GridPanel
+                this.chartInfo.measures[this.yAxisMeasureIndex].dimension.values = new Array();
+                this.chartInfo.measures[this.yAxisMeasureIndex].dimension.jsonValues = new Array();
+                for(var i = 0; i < o.records.length; i++) {
+                    this.chartInfo.measures[this.yAxisMeasureIndex].dimension.values.push(o.records[i].data.value);
+                    this.chartInfo.measures[this.yAxisMeasureIndex].dimension.jsonValues.push({value: o.records[i].data.value});
+                }
+                // initially selected = all values
+                this.chartInfo.measures[this.yAxisMeasureIndex].dimension.selected = this.chartInfo.measures[this.yAxisMeasureIndex].dimension.values;
+
+                // put the dimension values into a list view for the user to enable/disable series
+                var sm = new  Ext.grid.CheckboxSelectionModel({
+                    listeners: {
+                        scope: this,
+                        'selectionChange': function(selModel){
+                            // add the selected dimension values to the chartInfo
+                            this.chartInfo.measures[this.yAxisMeasureIndex].dimension.selected = new Array();
+                            var selectedRecords = selModel.getSelections();
+                            for(var i = 0; i < selectedRecords.length; i++) {
+                                this.chartInfo.measures[this.yAxisMeasureIndex].dimension.selected.push(selectedRecords[i].get('value'));
+                            }
+                            // redraw the line chart with new selections
+                            this.renderLineChart();                                        }
+                    }
+                });
+                var newSeriesSelectorPanel = new Ext.Panel({
+                    id: 'dimension-series-selector-panel',
+                    title: this.chartInfo.measures[this.yAxisMeasureIndex].dimension.label,
+                    autoScroll: true,
+                    items: [
+                        new Ext.grid.GridPanel({
+                            id: 'dimension-list-view',
+                            autoHeight: true,
+                            store: new Ext.data.JsonStore({
+                                root: 'jsonValues',
+                                fields: ['value'],
+                                data: this.chartInfo.measures[this.yAxisMeasureIndex].dimension
+                            }),
+                            viewConfig: {forceFit: true},
+                            border: false,
+                            frame: false,
+                            hidden: true,
+                            columns: [
+                                sm,
+                                {header: this.chartInfo.measures[this.yAxisMeasureIndex].dimension.label, dataIndex:'value'}
+                            ],
+                            selModel: sm,
+                            header: false,
+                            listeners: {
+                                scope: this,
+                                'viewready': function(grid) {
+                                    // initially select all of the deimension values (but suspend events during selection)
+                                    var dimSelModel = grid.getSelectionModel();
+                                    dimSelModel.suspendEvents(false);
+                                    dimSelModel.selectRange(0, grid.getStore().getTotalCount()-1, false);
+                                    this.chartInfo.measures[this.yAxisMeasureIndex].dimension.selected = this.chartInfo.measures[this.yAxisMeasureIndex].dimension.values;
+                                    dimSelModel.resumeEvents();
+                                    grid.show();
+                                }
+                            }
+                         })
+                    ]
+                });
+                Ext.getCmp('series-selector-tabpanel').add(newSeriesSelectorPanel);
+                Ext.getCmp('series-selector-tabpanel').activate('dimension-series-selector-panel');
+                Ext.getCmp('series-selector-tabpanel').doLayout();
+
+                // this change requires a call to getChartData
+                this.getChartData();
+            },
+            failure: function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
+            scope: this
+        });
+    },
+
+    seriesPerSubjectChecked: function() {
+        // remove any dimension selection/values that were added to the yaxis measure
+        delete this.chartInfo.measures[this.yAxisMeasureIndex].dimension;
+
+        // if there was a different dimension selection, remove that list view from the series selector
+        Ext.getCmp('series-selector-tabpanel').remove('dimension-series-selector-panel', true);
+        Ext.getCmp('series-selector-tabpanel').doLayout();
+
+        // hide the 3rd option for the layout radio group on the chart(s) tab
+        //if(Ext.get('chart-layout-per-dimension').checked())
+        //Ext.get('chart-layout-per-dimension').hide();
+
+        // this change requires a call to getChartData]
+        this.getChartData();
+     },
+
+    measureMetadataRequestPending:  function() {
+        this.getEl().mask("Loading...", "x-mask-loading");
+        this.measureMetadataRequestCounter++;
+        console.log(this.measureMetadataRequestCounter);
+    },
+
+    measureMetadataRequestComplete: function() {
+        this.measureMetadataRequestCounter--;
+        console.log(this.measureMetadataRequestCounter);
+        if(this.measureMetadataRequestCounter == 0) {
+            if(this.getEl().isMasked()) {
+                this.getEl().unmask();
+            }
+            this.getChartData();
+        }
     },
 
     renderSubjects: function(response, e, subjectField) {
@@ -441,53 +470,18 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     },
 
     getChartData: function() {
+        this.chart.getEl().mask("Loading...", "x-mask-loading");
         LABKEY.Visualization.getData({
             successCallback: function(data){
                 this.chartInfo.data = data;
-                this.calculateDataRowIntervals();
-            },//this.renderVisualization(data, measures, typeInfo);},
+                this.renderLineChart();
+            },
             failureCallback : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
             measures: this.chartInfo.measures,
             viewInfo: this.viewInfo,
             sorts: [this.chartInfo.subject, this.chartInfo.measures[this.xAxisMeasureIndex].measure],
             scope: this
         });
-    },
-
-    calculateDataRowIntervals: function()
-    {
-        // calculate the x-axis time interval based on the interval selection (i.e. Days, Weeks)
-        var xMeasure = this.chartInfo.measures[this.xAxisMeasureIndex];
-        var xColumn = this.chartInfo.data.measureToColumn[xMeasure.measure.name];
-        var zeroDateColumn = this.chartInfo.data.measureToColumn[xMeasure.dateOptions.zeroDateCol.name];
-        for(var i = 0; i < this.chartInfo.data.rows.length; i++)
-        {
-            var row = this.chartInfo.data.rows[i];
-            var date = (row[xColumn].value != undefined)
-                ? new Date(row[xColumn].value)
-                : new Date(row[xColumn]);
-            var zdate = (row[zeroDateColumn].value != undefined)
-                ? new Date(row[zeroDateColumn].value)
-                : new Date(row[zeroDateColumn]);
-            switch(xMeasure.dateOptions.interval) {
-                case 'Days':
-                    row.interval = (date - zdate) / ONE_DAY;
-                    break;
-                case 'Weeks':
-                    row.interval = (date - zdate) / ONE_WEEK;
-                    break;
-                case 'Months':
-                    row.interval = (date - zdate) / ONE_MONTH;
-                    break;
-                case 'Years':
-                    row.interval = (date - zdate) / ONE_YEAR;
-                    break;
-                default:
-                    row.interval = null;
-            }
-        }
-
-        this.renderLineChart();
     },
 
     renderLineChart: function()
@@ -527,7 +521,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         }
 
                         singleSeriesData.push({
-                            interval: row.interval,
+                            interval: row[this.chartInfo.measures[this.xAxisMeasureIndex].dateOptions.interval],
                             dataValue: dataValue
                         });
                     }
@@ -565,6 +559,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         this.chart.add(charts);
         this.chart.doLayout();
+
+        if(this.chart.getEl().isMasked()) {
+            this.chart.getEl().unmask();
+        }
     },
 
     newLineChart: function(size, series, seriesFilter, title)

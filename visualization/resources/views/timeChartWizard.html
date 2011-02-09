@@ -1,18 +1,49 @@
 <script type="text/javascript">
     LABKEY.requiresClientAPI(true);
-    LABKEY.requiresScript("vis/timeChartWizard.js");
+    LABKEY.requiresScript("vis/measuresPanel.js");
+    LABKEY.requiresVisualization();
+    LABKEY.requiresScript("vis/timeChartPanel.js");
     Ext.QuickTips.init();
 </script>
 
 <script type="text/javascript">
     Ext.onReady(function(){
-        var panel = new LABKEY.vis.TimeChartWizard({
+        // get the type information from the server
+        LABKEY.Visualization.getTypes({
+            successCallback : storeVisualizationTypes,
+            failureCallback : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
+            scope: this
+        });
+    });
+
+    function storeVisualizationTypes(types) {
+        // store the type information
+        var viewTypes = {};
+        for (var i=0; i < types.length; i++)
+        {
+            var type = types[i];
+            viewTypes[type.type] = type;
+        }
+
+        // create a new chart panel and insert into the wizard
+        var panel = new Ext.Panel({
             renderTo: 'vis-wizard-panel',
             height: 650,
-            resizable: true
+            resizable: true,
+            layout: 'border',
+            frame: false,
+            border: false,
+            items: [
+                new LABKEY.vis.TimeChartPanel({
+                    region: 'center',
+                    layout: 'border',
+                    flex: 1,
+                    border: false,
+                    viewInfo: viewTypes['line']
+                })
+            ]
         });
-
-    });
+    }
 </script>
 
 <div id="vis-wizard-panel" class="extContainer" style="width:100%"/>

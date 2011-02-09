@@ -26,7 +26,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             'zeroDateChanged',
             'xAxisRangeAutomaticChecked',
             'xAxisRangeManualMinChanged',
-            'xAxisRangeManualMaxChanged'
+            'xAxisRangeManualMaxChanged',
+            'measureMetadataRequestComplete'
         );
 
         LABKEY.vis.ChartEditorXAxisPanel.superclass.constructor.call(this, config);
@@ -89,7 +90,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             id: 'measure-date-combo',
             triggerAction: 'all',
             mode: 'local',
-            store: this.newMeasureDateStore(this.yAxisMeasure.schemaName, this.yAxisMeasure.queryName),
+            store: new Ext.data.Store(),
             valueField: 'name',
             displayField: 'label',
             forceSelection: true,
@@ -107,7 +108,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             id: 'zero-date-combo',
             triggerAction: 'all',
             mode: 'local',
-            store: this.newZeroDateStore(this.yAxisMeasure.schemaName),
+            store: new Ext.data.Store(),
             valueField: 'name',
             displayField: 'label',
             forceSelection: true,
@@ -270,9 +271,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             proxy: new Ext.data.HttpProxy({
                 method: 'GET',
                 url : LABKEY.ActionURL.buildURL('visualization', 'getZeroDate', LABKEY.ActionURL.getContainer(), {
-                    filters: [LABKEY.Visualization.Filter.create({
-                        schemaName: schemaName
-                    })],
+                    filters: [LABKEY.Visualization.Filter.create({schemaName: schemaName})],
                     dateMeasures: false
                 })
             }),
@@ -300,12 +299,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.fireEvent('xAxisLabelChanged', newLabel, false);
                     }
 
-//                        // this is one of the requests being tracked, see if the rest are done
-//                        this.requestCounter--;
-//                        if(this.requestCounter == 0) {
-//                            this.getEl().unmask();
-//                            this.getChartData();
-//                        }
+                    // this is one of the requests being tracked, see if the rest are done
+                    this.fireEvent('measureMetadataRequestComplete');
                 }
             }
         })
@@ -323,10 +318,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             proxy: new Ext.data.HttpProxy({
                 method: 'GET',
                 url : LABKEY.ActionURL.buildURL('visualization', 'getMeasures', LABKEY.ActionURL.getContainer(), {
-                    filters: [LABKEY.Visualization.Filter.create({
-                        schemaName: schemaName,
-                        queryName: queryName
-                    })],
+                    filters: [LABKEY.Visualization.Filter.create({schemaName: schemaName, queryName: queryName})],
                     dateMeasures: true
                 })
             }),
@@ -346,12 +338,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     }
                     this.fireEvent('measureDateChanged', store.getAt(store.find('name', this.measureDateCombo.getValue())).data, false);
 
-//                        // this is one of the requests being tracked, see if the rest are done
-//                        this.requestCounter--;
-//                        if(this.requestCounter == 0) {
-//                            this.getEl().unmask();
-//                            this.getChartData();
-//                        }
+                    // this is one of the requests being tracked, see if the rest are done
+                    this.fireEvent('measureMetadataRequestComplete');
                 }
             }
         });

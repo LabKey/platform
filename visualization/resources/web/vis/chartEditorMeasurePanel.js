@@ -23,13 +23,39 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             'measureSelected',
             'subjectDimensionIdentified',
             'measureDimensionSelected',
-            'seriesPerSubjectChecked'
+            'seriesPerSubjectChecked',
+            'measureMetadataRequestPending',
+            'measureMetadataRequestComplete'
         );
 
         LABKEY.vis.ChartEditorMeasurePanel.superclass.constructor.call(this, config);
     },
 
     initComponent : function() {
+        if(!this.measure.name) {
+            this.items = [
+            {
+                xtype: 'label',
+                //html: '<br/><span style="font-size:115%;font-weight:bold">To get started, choose a Measure:</center>'
+                text: 'To get started, choose a Measure:'
+            },
+            {
+                xtype: 'button',
+                text: 'Choose a Measure',
+                handler: this.showMeasureSelectionWindow(this.initializeWithMeasureSelected),
+                scope: this
+            }];
+        }
+        else {
+           this.initializeWithMeasureSelected();
+        }
+
+        LABKEY.vis.ChartEditorMeasurePanel.superclass.initComponent.call(this);
+    },
+
+    initializeWithMeasureSelected: function() {
+        this.removeAll();
+
         // the measure editor panel will be laid out with 2 columns
         var columnOneItems = [];
         var columnTwoItems = [];
@@ -44,55 +70,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         columnOneItems.push({
             xtype: 'button',
             text: 'Change',
-            handler: function() {
-                delete this.changeMeasureSelection;
-                var win = new Ext.Window({
-                    layout:'fit',
-                    width:800,
-                    height:550,
-                    closeAction:'hide',
-                    items: new LABKEY.vis.MeasuresPanel({
-                        axis: [{
-                            multiSelect: false,
-                            name: "y-axis",
-                            label: "Select data type for y-axis"
-                        }],
-                        listeners: {
-                            scope: this,
-                            'measureChanged': function (axisId, data) {
-                                // store the selected measure for later use
-                                this.changeMeasureSelection = data;
-
-                                Ext.getCmp('measure-selection-button').setDisabled(false);
-                            }
-                        }
-                    }),
-                    buttons: [{
-                        id: 'measure-selection-button',
-                        text:'Select',
-                        disabled:true,
-                        handler: function(){
-                            if(this.changeMeasureSelection) {
-                                win.hide();
-                                // call the changeMeasure function for this panel
-                                this.changeMeasure();
-                                // fire the measureSelected event so other panels can update as well
-                                this.fireEvent('measureSelected', this.changeMeasureSelection);
-                            }
-                        },
-                        scope: this
-                    },{
-                        text: 'Cancel',
-                        handler: function(){
-                            delete this.changeMeasureSelection;
-                            win.hide();
-                        },
-                        scope: this
-                    }]
-                });
-                win.show(this);
-
-            },
+            handler: this.showMeasureSelectionWindow(this.changeMeasure),
             scope: this
         });
 
@@ -121,7 +99,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             //editable: false,
             triggerAction: 'all',
             mode: 'local',
-            store: this.newDimensionStore(),
+            store: new Ext.data.Store({}),
             valueField: 'name',
             displayField: 'label',
             disabled: true,
@@ -171,7 +149,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             ]
         });
 
-        this.items = [{
+        this.add({
             layout: 'column',
             items: [{
                 columnWidth: .5,
@@ -186,9 +164,61 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 bodyStyle: 'padding: 5px',
                 items: columnTwoItems
             }]
-        }];
+        });
 
-        LABKEY.vis.ChartEditorMeasurePanel.superclass.initComponent.call(this);
+        this.doLayout();
+
+        this.changeMeasure();
+    },
+
+    showMeasureSelectionWindow: function(callBackFunction) {
+        return function() {
+            delete this.changeMeasureSelection;
+            var win = new Ext.Window({
+                layout:'fit',
+                width:800,
+                height:550,
+                modal: true,
+                closeAction:'hide',
+                items: new LABKEY.vis.MeasuresPanel({
+                    axis: [{
+                        multiSelect: false,
+                        name: "y-axis",
+                        label: "Choose a data measure for the y-axis"
+                    }],
+                    listeners: {
+                        scope: this,
+                        'measureChanged': function (axisId, data) {
+                            // store the selected measure for later use
+                            this.changeMeasureSelection = data;
+
+                            Ext.getCmp('measure-selection-button').setDisabled(false);
+                        }
+                    }
+                }),
+                buttons: [{
+                    id: 'measure-selection-button',
+                    text:'Select',
+                    disabled:true,
+                    handler: function(){
+                        if(this.changeMeasureSelection) {
+                            this.measure = this.changeMeasureSelection;
+                            callBackFunction.call(this);
+                            win.hide();
+                        }
+                    },
+                    scope: this
+                },{
+                    text: 'Cancel',
+                    handler: function(){
+                        delete this.changeMeasureSelection;
+                        win.hide();
+                    },
+                    scope: this
+                }]
+            });
+            win.show(this);
+        }
     },
 
     newDimensionStore: function() {
@@ -222,6 +252,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                         }
                     }
 
+                    // this is one of the requests being tracked, see if the rest are done
+                    this.fireEvent('measureMetadataRequestComplete');
+
                     // if there are not any non-subject dimensions for this measure, then disable the option
                     // todo: disable option and combobox
                 }
@@ -230,16 +263,17 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
     },
 
     changeMeasure: function() {
-        this.measure = this.changeMeasureSelection;
+        // fire the measureSelected event so other panels can update as well
+        this.fireEvent('measureSelected', this.changeMeasureSelection);
 
         // update the measure label
-        Ext.getCmp('measure-label').setText(this.changeMeasureSelection.label + " from " + this.changeMeasureSelection.queryName);
+        Ext.getCmp('measure-label').setText(this.measure.label + " from " + this.measure.queryName);
 
         // set the series radio selection to one per participant
-
         Ext.getCmp('series-per-subject-radio').setValue(true);
 
         // update the measure dimension combo box
+        this.fireEvent('measureMetadataRequestPending');
         var newStore = this.newDimensionStore();
         Ext.getCmp('measure-dimension-combo').bindStore(newStore);
     }

@@ -168,5 +168,5 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         }];
 
         LABKEY.vis.ChartEditorYAxisPanel.superclass.initComponent.call(this);
-    },
+    }
 });

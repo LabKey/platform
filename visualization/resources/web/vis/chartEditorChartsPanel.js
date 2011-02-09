@@ -77,7 +77,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                             if(checked) {
                                 this.fireEvent('chartLayoutChanged', 'per_dimension');
                             }
-                        },
+                        }
 //                        'show': function(cmp) {
 //                            console.log(cmp.isVisible());
 //                            cmp.getContainer().doLayout();
