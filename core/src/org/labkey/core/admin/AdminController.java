@@ -174,6 +174,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2212,15 +2213,44 @@ public class AdminController extends SpringActionController
         public final List<Pair<String, Object>> systemProperties = new ArrayList<Pair<String,Object>>();
         public final List<MemTracker.HeldReference> references;
         public final List<String> graphNames = new ArrayList<String>();
+        public final List<String> activeThreads = new LinkedList<String>();
 
         public boolean assertsEnabled = false;
 
         private MemBean(HttpServletRequest request)
         {
             List<MemTracker.HeldReference> all = MemTracker.getReferences();
+            long threadId = Thread.currentThread().getId();
+
+            // Attempt to detect other threads running labkey code -- mem tracker page will warn if any are found
+            for (Thread thread : new ThreadsBean().threads)
+            {
+                if (thread.getId() == threadId)
+                    continue;
+
+                Thread.State state = thread.getState();
+
+                if (state == Thread.State.RUNNABLE || state == Thread.State.BLOCKED)
+                {
+                    boolean labkeyThread = false;
+
+                    for (StackTraceElement element : thread.getStackTrace())
+                    {
+                        String className = element.getClassName();
+
+                        if (className.startsWith("org.labkey") || className.startsWith("org.fhcrc"))
+                        {
+                            labkeyThread = true;
+                            break;
+                        }
+                    }
+
+                    if (labkeyThread)
+                        activeThreads.add(thread.getName());
+                }
+            }
 
             // ignore recently allocated
-            long threadId = Thread.currentThread().getId();
             long start = ViewServlet.getRequestStartTime(request) - 2000;
             references = new ArrayList<MemTracker.HeldReference>(all.size());
 

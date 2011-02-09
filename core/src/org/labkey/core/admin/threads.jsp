@@ -22,7 +22,6 @@
 <%
     HttpView<AdminController.ThreadsBean> me = (HttpView<AdminController.ThreadsBean>) HttpView.currentView();
     AdminController.ThreadsBean bean = me.getModelBean();
-
 %>
 <p><b>Currently Running Threads</b></p>
 <%

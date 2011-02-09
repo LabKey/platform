@@ -18,9 +18,9 @@
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.util.MemTracker" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.MemBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -28,10 +28,17 @@
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
     MemBean bean = me.getModelBean();
     String contextPath = AppProps.getInstance().getContextPath();
+
+    for (String active : bean.activeThreads)
+        out.print("<div class=\"labkey-error\">Warning: active thread \"" + active + "\" may have objects in use</div><br>\n");
+
+    if (!bean.activeThreads.isEmpty())
+        out.print("<br>\n");
 %>
-<a href="<%=h(AdminController.getMemTrackerURL(true, true))%>">[Clear Caches, GC and Refresh]</a>
-<a href="<%=h(AdminController.getMemTrackerURL(false, true))%>">[GC and Refresh]</a>
-<a href="<%=h(AdminController.getMemTrackerURL(false, false))%>">[Refresh]</a><br><hr size="1">
+<%=textLink("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
+<%=textLink("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>
+<%=textLink("Refresh", AdminController.getMemTrackerURL(false, false))%>
+<br><hr size="1">
 <%
     int i = 0;
 
@@ -56,7 +63,7 @@
 <hr size="1">
 <table name="systemProperties">
 <%
-    for (Pair<String,Object> property : bean.systemProperties)
+    for (Pair<String, Object> property : bean.systemProperties)
     {
 %>
     <tr>
@@ -87,7 +94,6 @@
             String htmlStack = reference.getHtmlStack();
             String[] split = htmlStack.split("<br>");
             String secondLine = split.length >= 2 ? split[2] : "";
-
 %>
     <tr class="<%=(counter % 2 == 0) ? "labkey-row" : "labkey-alternate-row"%>">
         <td valign=top><img id="toggleImg<%=counter%>" src="<%=contextPath%>/_images/plus.gif" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
@@ -117,7 +123,7 @@
         </td>
     </tr>
 <%
-        counter++;
+            counter++;
         }
 %>
 </table>

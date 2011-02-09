@@ -16,7 +16,6 @@
 
 package org.labkey.filecontent;
 
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -24,21 +23,22 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.message.digest.DailyMessageDigest;
-import org.labkey.api.message.digest.MessageDigest;
-import org.labkey.api.message.digest.PeriodicMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.filecontent.message.FileContentDigestProvider;
 import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 
 public class FileContentModule extends DefaultModule
@@ -101,11 +101,5 @@ public class FileContentModule extends DefaultModule
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(FileRootManager.FILECONTENT_SCHEMA_NAME);
-    }
-
-    @Override
-    public Set<String> getModuleDependenciesAsSet()
-    {
-        return super.getModuleDependenciesAsSet();    //To change body of overridden methods use File | Settings | File Templates.
     }
 }
