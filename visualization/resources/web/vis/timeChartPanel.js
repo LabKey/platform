@@ -242,17 +242,23 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             });
             items.push(this.seriesSelector);
 
+            this.viewGridBtn = new Ext.Button({text: "View Grid", handler: this.viewDataGrid, scope: this, disabled: true});
+            this.viewChartBtn = new Ext.Button({text: "View Chart(s)", handler: this.renderLineChart, scope: this, hidden: true});
             this.chart = new Ext.Panel({
                 id: 'chart-tabpanel',
                 region: 'center',
                 layout: 'fit',
                 frame: false,
                 autoScroll: true,
+                tbar: [this.viewGridBtn, this.viewChartBtn],
                 items: [],
                 listeners: {
                     scope: this,
                     'resize': function(cmp){
-                        this.renderLineChart();
+                        // only call renderLineChart if the data object is available
+                        if(this.chartInfo.data) {
+                            this.renderLineChart();
+                        }
                     }
                 }
             });
@@ -436,12 +442,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     measureMetadataRequestPending:  function() {
         this.getEl().mask("Loading...", "x-mask-loading");
         this.measureMetadataRequestCounter++;
-        console.log(this.measureMetadataRequestCounter);
     },
 
     measureMetadataRequestComplete: function() {
         this.measureMetadataRequestCounter--;
-        console.log(this.measureMetadataRequestCounter);
         if(this.measureMetadataRequestCounter == 0) {
             if(this.getEl().isMasked()) {
                 this.getEl().unmask();
@@ -473,7 +477,18 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.chart.getEl().mask("Loading...", "x-mask-loading");
         LABKEY.Visualization.getData({
             successCallback: function(data){
+                // store the data in the chartInfo object
                 this.chartInfo.data = data;
+
+                // store the temp schema and query name for the data grid
+                this.chartInfo.tempGrid = {schema: data.schemaName, query: data.queryName};
+
+                // now that we have the temp grid info, enable the View Grid button
+                // and make sure that the view charts button is hidden
+                this.viewGridBtn.setDisabled(false);
+                this.viewChartBtn.hide();
+
+                // ready to render the chart
                 this.renderLineChart();
             },
             failureCallback : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
@@ -486,9 +501,20 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     renderLineChart: function()
     {
+        //console.log("renderLineChart");
+
+        // if the call to this function is coming from the getChartData success callback, then the panel is already masked
+        // but if not, mask the panel
+        if(!this.chart.getEl().isMasked()) {
+            this.chart.getEl().mask("Loading...", "x-mask-loading");
+        }
+
         // clear the components from the chart panel
-        //Ext.get(this.chart.getId()).update("");
         this.chart.removeAll();
+
+        // show the viewGrid button and hide the viewCharts button
+        this.viewChartBtn.hide();
+        this.viewGridBtn.show();
 
 	    // one series per subject/measure/dimensionvalue combination
 	    var seriesList = [];
@@ -570,43 +596,81 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     	// if seriesFilter is not null, then create a sub-array for that filter
     	var tempSeries = [];
     	if(seriesFilter) {
-		for(var i = 0; i < series.length; i++) {
-			if(series[i][seriesFilter.parameter] == seriesFilter.value) {
-				series[i].caption = series[i].caption.replace(seriesFilter.value, "");
-				tempSeries.push(series[i]);
-			}
-		}
-    	}
-
-    	return new Ext.Panel({
-            layout: 'fit',
-            tbar:[{text:"Export PDF", handler:function(btn) {this.chartComponent.exportImage("pdf");},scope:this}],
-            listeners: {
-            	render: {
-                    scope: this,
-                    fn: function(cmp){
-                        this.chartComponent = new LABKEY.vis.LineChart({renderTo: cmp.getId(),
-                            width: size.width,
-                            height: size.height,
-                            axes: {
-                                y: {
-                                    min: (this.chartInfo.measures[this.yAxisMeasureIndex].axis.min ? this.chartInfo.measures[this.yAxisMeasureIndex].axis.min : undefined),
-                                    max: (this.chartInfo.measures[this.yAxisMeasureIndex].axis.max ? this.chartInfo.measures[this.yAxisMeasureIndex].axis.max : undefined),
-                                    caption: this.chartInfo.measures[this.yAxisMeasureIndex].axis.label,
-                                    scale: this.chartInfo.yAxisScale
-                                },
-                                x: {
-                                    min: (this.chartInfo.measures[this.xAxisMeasureIndex].axis.min ? this.chartInfo.measures[this.xAxisMeasureIndex].axis.min : undefined),
-                                    max: (this.chartInfo.measures[this.xAxisMeasureIndex].axis.max ? this.chartInfo.measures[this.xAxisMeasureIndex].axis.max : undefined),
-                                    caption: this.chartInfo.measures[this.xAxisMeasureIndex].axis.label
-                                }
-                            },
-                            series: tempSeries.length > 0 ? tempSeries : series,
-                            main: {title: this.chartInfo.title + (title != null ? ": " + title : "")}
-                        });
-                    }
+            for(var i = 0; i < series.length; i++) {
+                if(series[i][seriesFilter.parameter] == seriesFilter.value) {
+                    series[i].caption = series[i].caption.replace(seriesFilter.value, "");
+                    tempSeries.push(series[i]);
                 }
             }
+    	}
+
+        var chartComponent = new LABKEY.vis.LineChart(
+        {
+            width: size.width,
+            height: size.height - 25, // todo: find a better way to size the chart (leaving room for export button)
+            axes: {
+                y: {
+                    min: (this.chartInfo.measures[this.yAxisMeasureIndex].axis.min ? this.chartInfo.measures[this.yAxisMeasureIndex].axis.min : undefined),
+                    max: (this.chartInfo.measures[this.yAxisMeasureIndex].axis.max ? this.chartInfo.measures[this.yAxisMeasureIndex].axis.max : undefined),
+                    caption: this.chartInfo.measures[this.yAxisMeasureIndex].axis.label,
+                    scale: this.chartInfo.yAxisScale
+                },
+                x: {
+                    min: (this.chartInfo.measures[this.xAxisMeasureIndex].axis.min ? this.chartInfo.measures[this.xAxisMeasureIndex].axis.min : undefined),
+                    max: (this.chartInfo.measures[this.xAxisMeasureIndex].axis.max ? this.chartInfo.measures[this.xAxisMeasureIndex].axis.max : undefined),
+                    caption: this.chartInfo.measures[this.xAxisMeasureIndex].axis.label
+                }
+            },
+            series: tempSeries.length > 0 ? tempSeries : series,
+            main: {title: this.chartInfo.title + (title != null ? ": " + title : "")}
         });
+
+    	var chartPanel = new Ext.Panel({
+            items: [
+                chartComponent,
+                new Ext.Button({
+                    text:"Export PDF",
+                    handler:function(btn) {chartComponent.exportImage("pdf");},
+                    scope:this
+                })
+            ]
+        });
+
+        return chartPanel;
+    },
+
+    viewDataGrid: function() {
+        if(typeof this.chartInfo.tempGrid == "object") {
+            // mask panel and remove the chart(s)
+            this.chart.getEl().mask("Loading...", "x-mask-loading");
+            this.chart.removeAll();
+
+            // hide the viewGrid button and show the viewCharts button
+            this.viewChartBtn.show();
+            this.viewGridBtn.hide();
+
+            // add a panel to put the queryWebpart in
+            var gridPanelId = Ext.id();
+            this.chart.add(new Ext.Panel({
+                id: gridPanelId,
+                padding: 20, //todo: why isn't this padding working for the panel?
+                items: []
+            }));
+            this.chart.doLayout();
+
+            // create the queryWebpart using the temp grid schema and query name
+            var chartQueryWebPart = new LABKEY.QueryWebPart({
+                renderTo: gridPanelId,
+                schemaName: this.chartInfo.tempGrid.schema,
+                queryName: this.chartInfo.tempGrid.query,
+                allowChooseQuery: false,
+                allowChooseView: false,
+                title: "",
+                frame: "none"
+            });
+
+            // unmask the panel
+            this.chart.getEl().unmask();
+        }
     }
 });
