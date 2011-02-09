@@ -20,11 +20,9 @@ import org.apache.log4j.spi.LoggingEvent;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.LinkedList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Aug 18, 2009
  * Time: 2:18:21 PM
@@ -41,11 +39,11 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
 
         final String key;
         boolean on;
-        final List list = new LinkedList();
+        final List<LoggingEvent> list = new LinkedList<LoggingEvent>();
         int eventId=0;
     }
 
-    static ThreadLocal<AppenderInfo> localInfo = new ThreadLocal();
+    private static final ThreadLocal<AppenderInfo> localInfo = new ThreadLocal<AppenderInfo>();
 
 
     protected void append(LoggingEvent event)
@@ -81,7 +79,7 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
             return new LoggingEvent[0];
         synchronized (info.list)
         {
-            return (LoggingEvent[])info.list.toArray(new LoggingEvent[info.list.size()]);
+            return info.list.toArray(new LoggingEvent[info.list.size()]);
         }
     }
 

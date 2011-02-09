@@ -16,7 +16,6 @@
 package org.labkey.api.message.digest;
 
 import org.apache.commons.lang.time.DateUtils;
-import org.labkey.api.message.digest.MessageDigest;
 
 import java.util.Timer;
 import java.util.TimerTask;
