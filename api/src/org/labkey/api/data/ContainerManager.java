@@ -458,7 +458,7 @@ public class ContainerManager
                 return Collections.emptyMap();
             // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily
             // alphabetical
-            Map<String,Container> ret = new LinkedHashMap<String,Container>();
+            Map<String, Container> ret = new LinkedHashMap<String, Container>();
             for (String id : childIds)
             {
                 Container c = ContainerManager.getForId(id);
@@ -494,7 +494,7 @@ public class ContainerManager
                     Container c = children[i];
                     childIds[i] = c.getId();
                     _addToCache(c);
-                    ret.put(c.getName(),c);
+                    ret.put(c.getName(), c);
                 }
                 CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), childIds);
                 // No need to commit, SELECT only
@@ -594,7 +594,7 @@ public class ContainerManager
         if (null != d)
             return d;
 
-        Map<String,Container> map = ContainerManager.getChildrenMap(c);
+        Map<String, Container> map = ContainerManager.getChildrenMap(c);
         return map.get(name);
     }
 
@@ -661,7 +661,7 @@ public class ContainerManager
                 if (null == dirParent)
                     return null;
 
-                Map<String,Container> map = ContainerManager.getChildrenMap(dirParent);
+                Map<String, Container> map = ContainerManager.getChildrenMap(dirParent);
                 return map.get(name);
             }
         }
@@ -1454,7 +1454,7 @@ public class ContainerManager
         }
 
         //now find the root and build a MultiMap of it and its descendants
-        MultiMap<Container,Container> mm = new MultiHashMap<Container,Container>();
+        MultiMap<Container, Container> mm = new MultiHashMap<Container, Container>();
         mm.put(null, root);
         addChildren(root, mmIds, mm);
         for (Object key : mm.keySet())
@@ -1465,7 +1465,7 @@ public class ContainerManager
         return mm;
     }
 
-    private static void addChildren(Container c, MultiMap<String,String> mmIds, MultiMap<Container,Container> mm)
+    private static void addChildren(Container c, MultiMap<String, String> mmIds, MultiMap<Container, Container> mm)
     {
         Collection<String> childIds = mmIds.get(c.getId());
         if (null != childIds)
@@ -1770,7 +1770,7 @@ public class ContainerManager
 
     public static class TestCase extends Assert implements ContainerListener
     {
-        Map<Path,Container> _containers = new HashMap<Path,Container>();
+        Map<Path, Container> _containers = new HashMap<Path, Container>();
         Container _testRoot = null;        
 
         @Before
