@@ -12,7 +12,7 @@ import org.labkey.visualization.VisualizationController;
 import java.util.*;
 
 /**
- * Copyright (c) 2008-2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
