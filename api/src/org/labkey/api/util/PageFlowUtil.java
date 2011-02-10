@@ -1175,17 +1175,17 @@ public class PageFlowUtil
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
-    public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold)
+    public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset)
     {
         char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
 
         String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
         String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
 
-        return "<a class=\"labkey-header\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
+        return "<a  style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
                 " onClick=" + script +
                 "><span>" + text + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
-                "/_images/text_link_arrow.gif\" style=\"position:relative; background-color:transparent; width:10px; height:auto; top:-1px; right:0;\"></a>";
+                "/_images/text_link_arrow.gif\" style=\"position:relative; background-color:transparent; width:10px; height:auto; top:" + offset +"px; right:0;\"></a>";
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */

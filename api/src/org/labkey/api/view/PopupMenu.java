@@ -34,6 +34,7 @@ public class PopupMenu extends DisplayElement
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
     private String _imageSrc = "";
     private String _imageId = "";
+    private String _offset = "-1";
     
     public PopupMenu()
     {
@@ -52,6 +53,11 @@ public class PopupMenu extends DisplayElement
         _buttonStyle = buttonStyle;
     }
 
+    public void setOffset(String offset)
+    {
+        _offset = offset;
+    }
+    
     public NavTree getNavTree()
     {
         return _navTree;
@@ -122,7 +128,7 @@ public class PopupMenu extends DisplayElement
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
             out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getKey(), "javascript:void(0)",
-                    "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT));
+                    "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT, _offset));
         }
         else if (_buttonStyle == ButtonStyle.IMAGE)
         {

@@ -43,6 +43,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     private boolean _isPrepared = false;
     private boolean _isEmbedded = false;
     private boolean _showTitle  = true;
+    private boolean _isWebpart  = true;
     private String _helpPopup;
     private FrameType _frame = FrameType.PORTAL;
     private int _webPartRowId = -1;
@@ -211,12 +212,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         _navMenu = navMenu;
     }
 
-    /**
-     * Override to declare your own NavTree menu implementation that will be used by the
+    /** Override to declare your own NavTree menu implementation that will be used by the
      * WebPartView upon rendering your webpart. NOTE: The top level key of your tree
      * may be overridden.
      * @return
-     */
+     * */
     public NavTree getNavMenu()
     {
         return _navMenu;
@@ -259,6 +259,17 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         return _defaultLocation;
     }
 
+    /** @return Override to declare if a view is or is not a Web Part. Defaults to true. */
+    public boolean isWebPart()
+    {
+        return _isWebpart;
+    }
+
+    public void setIsWebPart(boolean isWebPart)
+    {
+        _isWebpart = isWebPart;
+    }
+    
     @Override
     protected final void renderInternal(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
@@ -481,11 +492,18 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     out.print("</th>\n<th class=\"labkey-wp-title-right\">");
                     NavTree[] links = getPortalLinks().getChildren();
                     String sep = "";
+
+                    // Add Custom link
+                    NavTree nMenu = getNavMenu();
+                    if (nMenu != null && getCustomizeLink() != null)
+                    {
+                        nMenu.addChild("Customize", getCustomizeLink());
+                    }
+                    
                     if(getLocation() != null && getLocation().equals(WebPartFactory.LOCATION_RIGHT))
                     {
                         // Collapse all items into one drop-down
                         // Render the navigation menu
-                        NavTree nMenu = getNavMenu();
                         if (nMenu != null)
                         {
                             // Portal
@@ -496,15 +514,38 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                     portal.addChild(link);
                                 nMenu.addChild(portal);
                             }                            
-
-                            if (getCustomizeLink() != null)
-                                nMenu.addChild("Customize", getCustomizeLink());
                             
                             if (nMenu.hasChildren())
                             {
                                 out.print("&nbsp;");
                                 renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
                             }
+                        }
+                    }
+                    else if (!isWebPart())
+                    {
+                        // Purposely don't render custom links to avoid duplicates
+
+                        // Render Navigation Links
+                        if (nMenu.hasChildren())
+                        {
+                            out.print("<div class=\"labkey-wp-text-buttons\">");
+                            for (NavTree link : nMenu.getChildren())
+                            {
+                                if (link.hasChildren())
+                                {
+                                    renderMenu(link, out);
+                                }
+                                out.print(sep);
+                                String linkHref = link.second;
+                                String linkText = link.first;
+
+                                if (null != linkHref && 0 < linkHref.length())
+                                {
+                                    out.print("<a href=\"" + linkHref + "\">" + linkText + "</a>");                                
+                                }
+                            }
+                            out.print("</div>");
                         }
                     }
                     else
@@ -527,6 +568,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                     String linkHref = current.second;
                                     String linkText = current.first;
 
+                                    out.print("<span class=\"labkey-wp-icon-button-active\">");
                                     if (null != linkHref && 0 < linkHref.length())
                                         out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
                                     if (null != current.getImageSrc())
@@ -540,23 +582,15 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                         out.print(PageFlowUtil.filter(linkText));
                                     if (null != linkHref && 0 < linkHref.length())
                                         out.print("</a>");
+                                    out.print("</span>");
                                 }
-                                sep = "&nbsp;";
                             }
-                        }
-
-                        // Render the navigation menu
-                        NavTree nMenu = getNavMenu();
-                        if (nMenu != null && getCustomizeLink() != null)
-                        {
-                            nMenu.addChild("Customize", getCustomizeLink());
                         }
                         
                         if (nMenu != null && nMenu.hasChildren())
                         {
                             out.print(sep);
                             renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
-                            sep = "&nbsp;";
                         }
 
                         for (NavTree link : links)
@@ -565,6 +599,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                             String linkHref = link.second;
                             String linkText = link.first;
 
+                            out.print("<span class=\"labkey-wp-icon-button-active\">");
                             if (null != linkHref && 0 < linkHref.length())
                                 out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
                             if (null != link.getImageSrc())
@@ -578,7 +613,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                 out.print(PageFlowUtil.filter(linkText));
                             if (null != linkHref && 0 < linkHref.length())
                                 out.print("</a>");
-                            sep = "&nbsp;";
+                            out.print("</span>");
                         }
                         out.println("</th>");
                         out.println("</tr>");
@@ -784,6 +819,21 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         }
     }
 
+    private void renderMenu(NavTree menu, PrintWriter out)
+    {
+        try
+        {
+            menu.setKey(menu.getKey());
+            PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
+            more.setOffset("-7");
+            more.render(out);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void renderMenu(NavTree menu, PrintWriter out, String imageSrc)
     {
         try
@@ -792,7 +842,9 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
             more.setImageSrc(imageSrc);
             more.setImageId("more-" + getTitle().toLowerCase());
+            out.print("<span class=\"labkey-wp-icon-button-active\">");
             more.render(out);
+            out.print("</span>");
         }
         catch (Exception e)
         {
