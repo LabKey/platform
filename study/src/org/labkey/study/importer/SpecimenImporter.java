@@ -488,7 +488,8 @@ public class SpecimenImporter
             new SpecimenColumn("primary_volume_units", "PrimaryVolumeUnits", "VARCHAR(20)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS)
+            new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("total_cell_count", "TotalCellCount", "INT", TargetTable.VIALS_AND_SPECIMEN_EVENTS)
     );
 
     public static final Collection<ImportableColumn> ADDITIVE_COLUMNS = Arrays.asList(

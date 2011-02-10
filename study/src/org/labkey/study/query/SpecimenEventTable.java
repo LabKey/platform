@@ -72,5 +72,6 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ExpectedTimeValue"));
         addWrapColumn(_rootTable.getColumn("ExpectedTimeUnit"));
         addWrapColumn(_rootTable.getColumn("UpdateTimestamp"));
+        addWrapColumn(_rootTable.getColumn("TotalCellCount"));
     }
 }

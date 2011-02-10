@@ -587,9 +587,12 @@
         <ns:column columnName="FirstProcessedByInitials">
           <ns:description>The value of the ProcessedByInitials from the first recorded event for this vial.</ns:description>
         </ns:column>
-      <ns:column columnName="AvailabilityReason">
-          <ns:description>Text explanation for why each vial is or is not available for request.  May be null if the vial is available and no special circumstances apply.</ns:description>
-      </ns:column>
+        <ns:column columnName="AvailabilityReason">
+            <ns:description>Text explanation for why each vial is or is not available for request.  May be null if the vial is available and no special circumstances apply.</ns:description>
+        </ns:column>
+        <ns:column columnName="TotalCellCount">
+          <ns:description>The total cell count for each vial.</ns:description>
+        </ns:column>
       </ns:columns>
     </ns:table>
   <ns:table tableName="Specimen" tableDbType="TABLE">
@@ -841,6 +844,9 @@
       </ns:column>
       <ns:column columnName="AvailabilityReason">
           <ns:description>Text explanation for why each vial is or is not available for request.  May be null if the vial is available and no special circumstances apply.</ns:description>
+      </ns:column>
+      <ns:column columnName="TotalCellCount">
+        <ns:description>The total cell count for each vial.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -1191,6 +1197,9 @@
       </ns:column>
       <ns:column columnName="ProcessingDate">
         <ns:description>The date/time of vial processing.</ns:description>
+      </ns:column>
+      <ns:column columnName="TotalCellCount">
+        <ns:description>The total cell count for each vial.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>

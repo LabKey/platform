@@ -52,6 +52,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addSpecimenTypeColumns();
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
         addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
+        addWrapColumn(_rootTable.getColumn("TotalCellCount"));
 
         ColumnInfo specimenComment = createSpecimenCommentColumn(_schema, true);
         specimenComment.setName("Comments");
