@@ -892,7 +892,7 @@ public class PageFlowUtil
     }
 
 
-    // Marker class for caching absense of content -- can't use a single marker object because of dependency handling.
+    // Marker class for caching absence of content -- can't use a single marker object because of dependency handling.
     public static class NoContent extends Content
     {
         public NoContent(Object dependsOn)

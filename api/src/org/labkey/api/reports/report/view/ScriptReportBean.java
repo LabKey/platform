@@ -45,12 +45,22 @@ public class ScriptReportBean extends ReportDesignBean
     private ActionURL _renderURL;
     private boolean _inherited;
     private List<String> _includedReports = Collections.emptyList();
+    private final boolean _designer;
 
-    public ScriptReportBean(){}
+    public ScriptReportBean()
+    {
+        _designer = true;
+    }
 
     public ScriptReportBean(QuerySettings settings)
     {
+        this(settings, true);
+    }
+
+    public ScriptReportBean(QuerySettings settings, boolean designer)
+    {
         super(settings);
+        _designer = designer;
     }
 
     // Bean has been populated and is about to be used in a view... initialize unset values and properties.
@@ -188,7 +198,7 @@ public class ScriptReportBean extends ReportDesignBean
 
     public boolean isReadOnly()
     {
-        return _isReadOnly;
+        return _isReadOnly || !_designer;
     }
 
     public void setReadOnly(boolean readOnly)
@@ -224,5 +234,10 @@ public class ScriptReportBean extends ReportDesignBean
     public List<String> getIncludedReports()
     {
         return _includedReports;
+    }
+
+    public boolean isDesigner()
+    {
+        return _designer;
     }
 }
