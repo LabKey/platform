@@ -222,7 +222,7 @@ public class AnnouncementsController extends SpringActionController
         {
             Settings settings = getSettings();
             boolean displayAll = getActionURL().getPageFlow().equalsIgnoreCase("announcements");
-            WebPartView v = new AnnouncementWebPart(getContainer(), getActionURL(), getUser(), settings, displayAll);
+            WebPartView v = new AnnouncementWebPart(getContainer(), getActionURL(), getUser(), settings, displayAll, false);
             v.setFrame(WebPartView.FrameType.PORTAL);
             v.setShowTitle(false);
             getPageConfig().setRssProperties(new RssAction().getURL(), settings.getBoardName());
@@ -2229,7 +2229,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class AnnouncementWebPart extends JspView<AnnouncementWebPart.MessagesBean>
     {
-        public AnnouncementWebPart(Container c, ActionURL url, User user, Settings settings, boolean displayAll) throws SQLException, ServletException
+        public AnnouncementWebPart(Container c, ActionURL url, User user, Settings settings, boolean displayAll, boolean asWebPart) throws SQLException, ServletException
         {
             super("/org/labkey/announcements/announcementWebPart.jsp", new MessagesBean(c, url, user, settings, displayAll));
             setTitle(settings.getBoardName());
@@ -2255,13 +2255,14 @@ public class AnnouncementsController extends SpringActionController
 
             if (bean.customizeURL != null)
                 setCustomizeLink(bean.customizeURL.toString());
-            
+
+            setIsWebPart(asWebPart);
             setNavMenu(menu);
         }
 
         public AnnouncementWebPart(ViewContext ctx) throws SQLException, ServletException
         {
-            this(ctx.getContainer(), getPageURL(ctx), ctx.getUser(), getSettings(ctx.getContainer()), false);
+            this(ctx.getContainer(), getPageURL(ctx), ctx.getUser(), getSettings(ctx.getContainer()), false, true);
         }
 
         private static ActionURL getPageURL(ViewContext ctx)
@@ -2367,10 +2368,10 @@ public class AnnouncementsController extends SpringActionController
 
         public AnnouncementListWebPart(ViewContext ctx) throws ServletException
         {
-            this(ctx, false);
+            this(ctx, false, true);
         }
 
-        private AnnouncementListWebPart(ViewContext ctx, boolean displayAll) throws ServletException
+        private AnnouncementListWebPart(ViewContext ctx, boolean displayAll, boolean asWebPart) throws ServletException
         {
             Container c = ctx.getContainer();
             User user = ctx.getUser();
@@ -2435,6 +2436,7 @@ public class AnnouncementsController extends SpringActionController
 
             ListLinkBar bar = new ListLinkBar(c, url, user, settings, perm, displayAll);
             setNavMenu(bar.getNavMenu());
+            setIsWebPart(asWebPart);
             _vbox = new VBox(bar, gridView);
         }
 
@@ -2485,7 +2487,7 @@ public class AnnouncementsController extends SpringActionController
     {
         public AnnouncementListView(ViewContext ctx) throws ServletException
         {
-            super(ctx, true);
+            super(ctx, true, false);
         }
 
         @Override

@@ -202,7 +202,7 @@ public abstract class BaseWikiView extends JspView<Object>
         setTitle(title.getSource());
     }
 
-    public abstract boolean isWebPart();
+    //public abstract boolean isWebPart();
 
     @Override
     public NavTree getNavMenu()
