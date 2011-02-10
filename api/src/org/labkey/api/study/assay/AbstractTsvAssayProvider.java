@@ -116,7 +116,8 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         Container container = protocol.getContainer();
         AssaySchema schema = AssayService.get().createSchema(user, container);
 
-        TableInfo fromTable = new RunDataTable(schema, protocol, true);
+        RunDataTable fromTable = new RunDataTable(schema, protocol, true);
+        fromTable.setContainerFilter(ContainerFilter.EVERYTHING);
 
         // Build up a list of all the columns we need from the source table
         List<FieldKey> selectFKs = new ArrayList<FieldKey>();
