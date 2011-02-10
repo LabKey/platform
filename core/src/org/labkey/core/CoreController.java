@@ -84,7 +84,7 @@ public class CoreController extends SpringActionController
     private static Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<Container, Content>();
-    private static Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<Content,Content>();
+    private static final Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<Content,Content>();
     
 
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
@@ -787,7 +787,7 @@ public class CoreController extends SpringActionController
     {
         public ApiResponse execute(UpdateDescriptionForm form, BindException errors) throws Exception
         {
-            String description =  StringUtils.trimToNull(form.getDescription());
+            String description = StringUtils.trimToNull(form.getDescription());
             ContainerManager.updateDescription(getContainer(), description, getUser());
             return new ApiSimpleResponse("description", description);
         }
@@ -813,7 +813,7 @@ public class CoreController extends SpringActionController
     {
         public ApiResponse execute(UpdateTitleForm form, BindException errors) throws Exception
         {
-            String title =  StringUtils.trimToNull(form.getTitle());
+            String title = StringUtils.trimToNull(form.getTitle());
             ContainerManager.updateTitle(getContainer(), title, getUser());
             return new ApiSimpleResponse("title", title);
         }
@@ -1075,5 +1075,4 @@ public class CoreController extends SpringActionController
             return result;
         }
     }
-
 }
