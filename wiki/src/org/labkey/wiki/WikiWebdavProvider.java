@@ -331,7 +331,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         WikiPageResource(WikiFolder folder, Wiki wiki, String docName)
         {
             super(folder.getPath(), docName);
-            init(_folder._c, wiki.getName().getSource(), wiki.getEntityId(), folder, folder._c.getPolicy(), new HashMap<String, Object>());
+            init(folder._c, wiki.getName().getSource(), wiki.getEntityId(), folder, folder._c.getPolicy(), new HashMap<String, Object>());
 
             _wiki = wiki;
             WikiVersion v = getWikiVersion();
