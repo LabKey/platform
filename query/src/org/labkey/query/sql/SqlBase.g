@@ -290,7 +290,7 @@ fromClause
 	;
 
 joinExpression
-	: ((fromRange) -> fromRange) (((((LEFT|RIGHT|FULL) (OUTER)?) | INNER)? JOIN fromRange onClause) -> ^(JOIN $joinExpression LEFT? RIGHT? FULL? INNER? fromRange onClause))*
+	: ((fromRange) -> fromRange) (((((jt=LEFT|jt=RIGHT|jt=FULL) (OUTER)?) | jt=INNER)? JOIN fromRange onClause) -> ^(JOIN $joinExpression $jt? fromRange onClause) {$jt=null})*
     ;
 
 fromRange

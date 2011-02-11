@@ -531,24 +531,18 @@ groupByLoop:
         private QJoin parseJoin(QNode join)
         {
             List<QNode> children = join.childList();
-            if (children.size() != 4)
+            if (children.size() < 3 || children.size() >  4)
             {
                 parseError("Error in JOIN clause", join);
                 return null;
             }
 
-            QJoinOrTable left = parseNode(children.get(0));
-            QJoinOrTable right = parseNode(children.get(2));
-            QNode on = children.get(3);
-            if (on.childList().size() != 1 || !(on.childList().get(0) instanceof QExpr))
-            {
-                parseError("Error in ON expression", on);
-                return null;
-            }
-            _ons.add((QExpr)on.childList().get(0));
+            int childIndex = 0;
+            
+            QJoinOrTable left = parseNode(children.get(childIndex++));
 
             JoinType joinType = JoinType.inner;
-            switch (children.get(1).getTokenType())
+            switch (children.get(childIndex++).getTokenType())
             {
                 case SqlBaseParser.LEFT:
                     joinType = JoinType.left;
@@ -565,8 +559,20 @@ groupByLoop:
                 case SqlBaseParser.FULL:
                     joinType = JoinType.full;
                     break;
+                default:
+                    childIndex--;
+                    break;
             }
 
+            QJoinOrTable right = parseNode(children.get(childIndex++));
+            QNode on = children.get(childIndex++);
+            if (on.childList().size() != 1 || !(on.childList().get(0) instanceof QExpr))
+            {
+                parseError("Error in ON expression", on);
+                return null;
+            }
+            _ons.add((QExpr)on.childList().get(0));
+            
             QJoin qjoin = new QJoin(left, right, joinType, (QExpr)on.childList().get(0));
             return qjoin;
         }

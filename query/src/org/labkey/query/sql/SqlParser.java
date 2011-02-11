@@ -1153,7 +1153,7 @@ public class SqlParser
     
     public static class SqlParserTestCase extends Assert
     {
-        Pair<String,String>[] exprs = new Pair[]
+        Pair<String,String>[] parseExprs = new Pair[]
         {
             // IDENT
             new Pair("a", "a"),
@@ -1216,6 +1216,16 @@ public class SqlParser
             new Pair("SUM(a+b)","(SUM (+ a b))"),
             new Pair("CAST(a AS VARCHAR)", "(METHOD_CALL CAST (EXPR_LIST a 'VARCHAR'))")
         };
+        Pair<String,String>[] parseStmts = new Pair[]
+        {
+            // joinExpression
+            new Pair("SELECT * FROM R JOIN S ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) (RANGE S) (ON (= x y))))))"),
+            new Pair("SELECT * FROM R LEFT JOIN S ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))))))"),
+            new Pair("SELECT * FROM R LEFT OUTER JOIN S ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))))))"),
+            new Pair("SELECT * FROM R LEFT OUTER JOIN S ON x=y JOIN T ON y=z", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))) (RANGE T) (ON (= y z))))))"),
+            new Pair("SELECT * FROM (R LEFT OUTER JOIN S ON x=y) JOIN T ON y=z", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))) (RANGE T) (ON (= y z))))))"),
+            new Pair("SELECT * FROM R LEFT OUTER JOIN (S JOIN T on y=z) ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (JOIN (RANGE S) (RANGE T) (on (= y z))) (ON (= x y))))))"),
+        };
 
         private void good(String sql)
         {
@@ -1240,10 +1250,20 @@ public class SqlParser
         @Test
         public void test()
         {
-            for (Pair<String,String> test : exprs)
+            for (Pair<String,String> test : parseExprs)
             {
                 List<QueryParseException> errors = new ArrayList<QueryParseException>();
                 QExpr e = new SqlParser().parseExpr(test.first,errors);
+                assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
+                assertTrue(test.first + " has parse errors", errors.isEmpty());
+                assertNotNull(test.first + " did not parse", e);
+                String prefix = toPrefixString(e);
+                assertEquals(test.second,prefix);
+            }
+            for (Pair<String,String> test : parseStmts)
+            {
+                List<QueryParseException> errors = new ArrayList<QueryParseException>();
+                QNode e = new SqlParser().parseQuery(test.first,errors);
                 assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
                 assertTrue(test.first + " has parse errors", errors.isEmpty());
                 assertNotNull(test.first + " did not parse", e);
