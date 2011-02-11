@@ -233,27 +233,30 @@ public class DataSetTable extends FilteredTable
         if (_dsd.getProtocolId() != null)
         {
             TableInfo assayResultTable = createAssayResultTable();
-            for (ColumnInfo columnInfo : assayResultTable.getColumns())
+            if (assayResultTable != null)
             {
-                if (getColumn(columnInfo.getName()) == null)
+                for (ColumnInfo columnInfo : assayResultTable.getColumns())
                 {
-                    ExprColumn wrappedColumn = new ExprColumn(this, columnInfo.getName(), columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType());
-                    wrappedColumn.copyAttributesFrom(columnInfo);
-                    addColumn(wrappedColumn);
+                    if (getColumn(columnInfo.getName()) == null)
+                    {
+                        ExprColumn wrappedColumn = new ExprColumn(this, columnInfo.getName(), columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType());
+                        wrappedColumn.copyAttributesFrom(columnInfo);
+                        addColumn(wrappedColumn);
+                    }
                 }
-            }
 
-            for (FieldKey fieldKey : assayResultTable.getDefaultVisibleColumns())
-            {
-                if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
+                for (FieldKey fieldKey : assayResultTable.getDefaultVisibleColumns())
                 {
-                    defaultVisibleCols.add(fieldKey);
+                    if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
+                    {
+                        defaultVisibleCols.add(fieldKey);
+                    }
                 }
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId().intValue());
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
+                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
             }
-            ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId().intValue());
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-            defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
-            defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
         }
     }
 
@@ -363,6 +366,10 @@ public class DataSetTable extends FilteredTable
     private TableInfo createAssayResultTable()
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId().intValue());
+        if (protocol == null)
+        {
+            return null;
+        }
         AssayProvider provider = AssayService.get().getProvider(protocol);
         AssaySchema schema = AssayService.get().createSchema(_schema.getUser(), protocol.getContainer());
         ContainerFilterable result = provider.createDataTable(schema, protocol, false);
