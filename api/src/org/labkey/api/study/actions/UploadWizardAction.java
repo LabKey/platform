@@ -615,7 +615,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             form.saveDefaultBatchValues();
             form.saveDefaultRunValues();
             getCompletedUploadAttemptIDs().add(form.getUploadAttemptID());
-            AssayDataCollector collector = form.getSelectedDataCollector();
+            AssayDataCollector<FormType> collector = form.getSelectedDataCollector();
             if (collector != null)
             {
                 collector.uploadComplete(form);

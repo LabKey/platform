@@ -654,6 +654,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return _context.getActionURL();
         }
 
+        @NotNull
         public Map<String, File> getUploadedData() throws IOException, ExperimentException
         {
             return Collections.emptyMap();

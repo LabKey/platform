@@ -15,14 +15,16 @@
  */
 package org.labkey.api.study.assay;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -39,8 +41,8 @@ import org.labkey.api.security.User;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -57,7 +59,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
 
     public AssayResultTable(AssaySchema schema, ExpProtocol protocol, AssayProvider assayProvider, boolean includeCopiedToStudyColumns)
     {
-        super(StorageProvisioner.createTableInfo(assayProvider.getResultsDomain(protocol), schema.getDbSchema()));
+        super(StorageProvisioner.createTableInfo(assayProvider.getResultsDomain(protocol), schema.getDbSchema()), schema.getContainer());
         _schema = schema;
         _protocol = protocol;
         _provider = assayProvider;
@@ -157,7 +159,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 specimenIdCol.setFk(new SpecimenForeignKey(_schema, _provider, _protocol));
         }
 
-        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment("(SELECT RunId FROM exp.Data WHERE RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)"), Types.INTEGER);
+        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment("(SELECT RunId FROM exp.Data WHERE RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)"), JdbcType.INTEGER);
         runColumn.setFk(new LookupForeignKey("RowID")
         {
             public TableInfo getLookupTableInfo()
@@ -192,6 +194,26 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         }
 
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        // There isn't a container column directly on this table so do a special filter
+        if (getContainer() != null)
+        {
+            String containerColumn = "Run/Folder";
+            clearConditions(containerColumn);
+            Collection<String> ids = filter.getIds(getContainer());
+            if (ids != null)
+            {
+                SQLFragment sql = new SQLFragment("(SELECT Container FROM exp.Data WHERE RowId = DataId) IN (");
+                sql.append(StringUtils.repeat("?", ", ", ids.size()));
+                sql.append(")");
+                sql.addAll(ids);
+                addCondition(sql, "Run/Folder");
+            }
+        }
     }
 
     @Override

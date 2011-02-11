@@ -79,9 +79,6 @@ class ErrorView extends HttpView
         {
             c = getViewContext().getContainer();
 
-            if (null == c)
-                c = ContainerManager.getRoot();
-
             out.println(PageFlowUtil.getStandardIncludes(c));
         }
         else
@@ -92,6 +89,9 @@ class ErrorView extends HttpView
                     "-->\n" +
                     "</style>");
         }
+
+        if (null == c)
+            c = ContainerManager.getRoot();
 
         //NOTE: BaseSeleniumWebTest requires errors to start with error number and include word "Error" in title
         WebTheme theme = WebThemeManager.getTheme(c); // need the theme to apply style to ext-based body element

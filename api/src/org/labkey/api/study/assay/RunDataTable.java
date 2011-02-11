@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -27,7 +28,6 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
 import org.labkey.api.study.query.ProtocolFilteredObjectTable;
 
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -79,12 +79,12 @@ public class RunDataTable extends FilteredTable
         SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%.DataRow-%'");
         addCondition(dataRowClause, "ObjectURI");
 
-        ExprColumn dataColumn = new ExprColumn(this, "DataId", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataId"), Types.INTEGER);
+        ExprColumn dataColumn = new ExprColumn(this, "DataId", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataId"), JdbcType.INTEGER);
         addColumn(dataColumn);
 
         if (!forUpgrade)
         {
-            ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), Types.INTEGER);
+            ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), JdbcType.INTEGER);
             runColumn.setFk(new LookupForeignKey("RowID")
             {
                 public TableInfo getLookupTableInfo()

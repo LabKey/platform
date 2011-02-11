@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -60,11 +61,11 @@ public class FileLinkDisplayColumn extends DataColumn
         FieldKey thisFieldKey = FieldKey.fromString(getColumnInfo().getName());
         List<FieldKey> keys = new ArrayList<FieldKey>();
 
-        FieldKey objectIdKey = thisFieldKey.getParent();
-        keys.add(objectIdKey);
+        FieldKey lsidFieldKey = new FieldKey(thisFieldKey.getParent(), ExpRunTable.Column.LSID.name());
+        keys.add(lsidFieldKey);
         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getColumnInfo().getParentTable(), keys);
 
-         _objectIdColumn = cols.get(objectIdKey);
+         _objectIdColumn = cols.get(lsidFieldKey);
         columns.add(_objectIdColumn);
     }
 
