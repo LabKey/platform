@@ -573,11 +573,12 @@ public class Query
 
             if (tableErrors.size() > 0 || query.getParseErrors().size() > 0)
             {
-                //noinspection ThrowableInstanceNeverThrown
                 QueryParseException qpe;
                 if (node == null)
-                    qpe = new QueryParseException("Query '" + key.getName() + "' has errors", null);
+                    //noinspection ThrowableInstanceNeverThrown
+                    qpe = new QueryParseException("Query '" + key.getName() + "' has errors", null, 0, 0);
                 else
+                    //noinspection ThrowableInstanceNeverThrown
                     qpe = new QueryParseException("Query '" + key.getName() + "' has errors", null, node.getLine(), node.getColumn());
                 ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveURL, def.urlFor(QueryAction.sourceQuery).getLocalURIString(false), true);
                 ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveText, "edit " + def.getName(), true);

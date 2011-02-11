@@ -237,15 +237,21 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
         // Recreate the run
         Map<ExpData, String> outputData = new HashMap<ExpData, String>();
-        ExpData newData = AbstractAssayProvider.createData(run.getContainer(), null, "Analysis Results", provider.getDataType());
-        newData.save(getViewContext().getUser());
-        outputData.put(newData, "Data");
 
         //other data outputs
         for (int i=0; i < outputDataArray.length(); i++)
         {
             JSONObject dataObject = outputDataArray.getJSONObject(i);
             outputData.put(handleData(dataObject, pipelineRoot), dataObject.optString(ExperimentJSONConverter.ROLE, "Data"));
+        }
+
+        ExpData newData = null;
+        if (dataArray.length() > 0 || outputData.isEmpty())
+        {
+            // Don't create an empty result data file if there are other outputs from this run
+            newData = AbstractAssayProvider.createData(run.getContainer(), null, "Analysis Results", provider.getDataType());
+            newData.save(getViewContext().getUser());
+            outputData.put(newData, "Data");
         }
 
         Map<ExpMaterial, String> outputMaterial = new HashMap<ExpMaterial, String>();
@@ -268,14 +274,17 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             new ViewBackgroundInfo(context.getContainer(),
                     context.getUser(), context.getActionURL()), LOG, false);
 
-        // programmatic qc validation
-        DataValidator dataValidator = provider.getDataValidator();
-        if (dataValidator != null)
-            dataValidator.validate(new ModuleRunUploadContext(getViewContext(), protocol.getRowId(), runJsonObject, rawData), run);
+        if (newData != null)
+        {
+            // programmatic qc validation
+            DataValidator dataValidator = provider.getDataValidator();
+            if (dataValidator != null)
+                dataValidator.validate(new ModuleRunUploadContext(getViewContext(), protocol.getRowId(), runJsonObject, rawData), run);
 
-        TsvDataHandler dataHandler = new TsvDataHandler();
-        dataHandler.setAllowEmptyData(true);
-        dataHandler.importRows(newData, getViewContext().getUser(), run, protocol, provider, rawData);
+            TsvDataHandler dataHandler = new TsvDataHandler();
+            dataHandler.setAllowEmptyData(true);
+            dataHandler.importRows(newData, getViewContext().getUser(), run, protocol, provider, rawData);
+        }
     }
 
     private ExpData handleData(JSONObject dataObject, PipeRoot pipelineRoot) throws ValidationException
