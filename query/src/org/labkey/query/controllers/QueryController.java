@@ -258,6 +258,14 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @Override
+    public PageConfig defaultPageConfig()
+    {
+        // set default help topic for query controler
+        PageConfig config = super.defaultPageConfig();
+        config.setHelpTopic(new HelpTopic("querySchemaBrowser"));
+        return config;
+    }
 
     /**
      * assertQueryExists throws NotFound if the query/table does not exist.
@@ -3719,7 +3727,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public class SelectAllForm extends QueryForm
+    public static class SelectAllForm extends QueryForm
     {
         protected String key;
 
