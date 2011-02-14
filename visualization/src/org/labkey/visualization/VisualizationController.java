@@ -840,8 +840,11 @@ public class VisualizationController extends SpringActionController
                 if (report.getDescriptor().getReportId().equals(requestedId))
                     return report;
             }
-            else if (report.getDescriptor().getReportName().equals(form.getName()))
+            else if (report.getDescriptor().getReportName() != null &&
+                     report.getDescriptor().getReportName().equals(form.getName()))
+            {
                 return report;
+            }
         }
         return null;
     }
@@ -890,6 +893,12 @@ public class VisualizationController extends SpringActionController
         @Override
         public ApiResponse execute(SaveVisualizationForm form, BindException errors) throws Exception
         {
+            if (form.getName() == null)
+            {
+                errors.reject(ERROR_MSG, "Name must be specified when saving a report.");
+                return null;
+            }
+
             Report currentReport = getReport(form);
             if (currentReport != null && !form.isReplace())
             {
