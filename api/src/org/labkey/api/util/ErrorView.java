@@ -79,6 +79,9 @@ class ErrorView extends HttpView
         {
             c = getViewContext().getContainer();
 
+            if (null == c)
+                c = ContainerManager.getRoot();
+
             out.println(PageFlowUtil.getStandardIncludes(c));
         }
         else
