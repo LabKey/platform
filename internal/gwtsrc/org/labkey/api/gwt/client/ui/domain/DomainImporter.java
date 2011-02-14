@@ -87,7 +87,6 @@ public class DomainImporter
     private ProgressBar progressBar = null;
     private List<InferencedColumn> columns;
     protected DomainImportGrid<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> grid;
-    protected ColumnMapper columnMapper;
 
     private boolean cancelRequested = false;
     private boolean _hideFileUpload;
@@ -199,11 +198,14 @@ public class DomainImporter
     protected void createColumnsOnServer(GWTDomain domain)
     {
         final GWTDomain newDomain = new GWTDomain(domain);
+        DomainImportGrid.ColumnMapper columnMapper = grid.getColumnMapper();
         Set<String> ignoredColumns;
+
         if (columnMapper != null)
             ignoredColumns = columnMapper.getMappedColumnNames();
         else
             ignoredColumns = new HashSet<String>(); // emptySet is not serializable
+
         List<GWTPropertyDescriptor> newProps = newDomain.getFields();
         for (GWTPropertyDescriptor prop : grid.getColumns(false))
         {
@@ -272,6 +274,7 @@ public class DomainImporter
      */
     protected void importData(final GWTDomain domain)
     {
+        DomainImportGrid.ColumnMapper columnMapper = grid.getColumnMapper();
         Map<String, String> columnMap;
 
         if (columnMapper != null)
@@ -351,12 +354,11 @@ public class DomainImporter
         if (!needGridAndButtons && needToMapColumns)
         {
             // We've already been through here once, remove our old mapper
-            mainPanel.remove(columnMapper);
+            grid.removeColumnMapper();
         }
         if (needToMapColumns)
         {
-            columnMapper = new ColumnMapper();
-            mainPanel.insert(columnMapper, 2);
+            grid.addColumnMapper(columnsToMap);
         }
 
         if (needGridAndButtons && !_hideButtons)
@@ -544,100 +546,5 @@ public class DomainImporter
             else
                 return "Importing data (" + (int) (100 * bar.getPercent()) + "%)";
         }
-    }
-
-    public class ColumnMapper extends VerticalPanel
-    {
-        List<ListBox> columnSelectors;
-
-        public ColumnMapper()
-        {
-            super();
-            columnSelectors = new ArrayList<ListBox>();
-
-            add(new HTML("<br/>"));
-            add(new HTML("<b>Column Mapping:</b>"));
-            add(new InlineHTML("The list below are columns that already exist in the Domain and can be mapped with the " +
-                    "inferred columns from the uploaded file.<br>Establish a mapping by selecting a column from the dropdown list to match " +
-                    "the exising Domain column.<br>When the data is imported, the data from the inferred column will be added to the " +
-                    "mapped Domain column.<br>To ignore a mapping, select '&lt;none&gt;' from the dropdown list.<br/><br/>"));
-
-            Grid mappingGrid = new Grid(columnsToMap.size(), 3);
-            add(mappingGrid);
-
-            for (int row=0; row < columnsToMap.size(); row++)
-            {
-                String destinationColumn = columnsToMap.get(row);
-                ListBox selector = new ListBox();
-                selector.setName(destinationColumn);
-                int rowToSelect = 0;
-
-                selector.addItem("<none>", null);
-                for (int inferencedIndex = 0; inferencedIndex < columns.size(); inferencedIndex++)
-                {
-                    InferencedColumn column = columns.get(inferencedIndex);
-                    String name = column.getPropertyDescriptor().getName();
-                    selector.addItem(name);
-                    if (areColumnNamesEquivalent(name,destinationColumn))
-                        rowToSelect = inferencedIndex + 1;
-                }
-                selector.setItemSelected(rowToSelect, true); // Cascade down the columns
-                columnSelectors.add(selector);
-
-                Label label = new Label(destinationColumn + ":");
-                mappingGrid.setWidget(row, 1, label);
-                mappingGrid.setWidget(row, 2, selector);
-            }
-        }
-
-        public Set<String> getMappedColumnNames()
-        {
-            Set<String> columnNames = new HashSet<String>();
-            for (ListBox listBox : columnSelectors)
-            {
-                String value = StringUtils.trimToNull(listBox.getValue(listBox.getSelectedIndex()));
-                if (value != null)
-                    columnNames.add(value);
-            }
-            return columnNames;
-        }
-
-        /**
-         * Map of column in the file -> column in the database
-         */
-        public Map<String,String> getColumnMap()
-        {
-            Map<String, String> result = new HashMap<String, String>();
-
-            for (int i = 0; i < columnsToMap.size(); i++)
-            {
-                String dataColumn = columnsToMap.get(i);
-                ListBox selector = columnSelectors.get(i);
-                String fileColumn = StringUtils.trimToNull(selector.getValue(selector.getSelectedIndex()));
-                if (fileColumn != null)
-                    result.put(fileColumn, dataColumn);
-            }
-
-            return result;
-        }
-    }
-
-    /**
-     * Try to find a reasonable match in column names, like "Visit Date" and "Date",
-     * or "ParticipantID" and "participant id".
-     */
-    private static boolean areColumnNamesEquivalent(String col1, String col2)
-    {
-        col1 = col1.toLowerCase();
-        col2 = col2.toLowerCase();
-        col1 = col1.replaceAll(" ","");
-        col2 = col2.replaceAll(" ","");
-        if (col1.equals(col2))
-            return true;
-        if (col1.indexOf(col2) >= 0)
-            return true;
-        if (col2.indexOf(col1) >= 0)
-            return true;
-        return false;
     }
 }

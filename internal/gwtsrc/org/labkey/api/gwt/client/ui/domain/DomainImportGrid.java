@@ -15,20 +15,35 @@
  */
 package org.labkey.api.gwt.client.ui.domain;
 
-import com.extjs.gxt.ui.client.event.ComponentEvent;
+import com.extjs.gxt.ui.client.event.Events;
+import com.extjs.gxt.ui.client.event.FieldEvent;
 import com.extjs.gxt.ui.client.event.IconButtonEvent;
+import com.extjs.gxt.ui.client.event.Listener;
 import com.extjs.gxt.ui.client.event.SelectionListener;
 import com.extjs.gxt.ui.client.util.Point;
+import com.extjs.gxt.ui.client.widget.ContentPanel;
 import com.extjs.gxt.ui.client.widget.Dialog;
 import com.extjs.gxt.ui.client.widget.HorizontalPanel;
 import com.extjs.gxt.ui.client.widget.TabItem;
 import com.extjs.gxt.ui.client.widget.TabPanel;
+import com.extjs.gxt.ui.client.widget.VerticalPanel;
+import com.extjs.gxt.ui.client.widget.button.ToggleButton;
 import com.extjs.gxt.ui.client.widget.button.ToolButton;
+import com.extjs.gxt.ui.client.widget.form.ComboBox;
+import com.extjs.gxt.ui.client.widget.form.FormPanel;
+import com.extjs.gxt.ui.client.widget.form.LabelField;
+import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
+import com.extjs.gxt.ui.client.widget.form.SimpleComboValue;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
+import com.extjs.gxt.ui.client.widget.layout.FormLayout;
+import com.extjs.gxt.ui.client.widget.layout.TableLayout;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.DockPanel;
 import com.google.gwt.user.client.ui.Grid;
+import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.InlineHTML;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.ListBox;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.BoundCheckBox;
@@ -48,80 +63,153 @@ import org.labkey.api.gwt.client.ui.property.URLItem;
 import org.labkey.api.gwt.client.ui.property.ValidatorItem;
 import org.labkey.api.gwt.client.ui.property.VisibilityItem;
 import org.labkey.api.gwt.client.util.BooleanProperty;
+import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jgarms
  * Date: Nov 5, 2008
  */
-public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends Grid implements DomainProvider
+public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends VerticalPanel implements DomainProvider, Listener<FieldEvent>
 {
     List<FieldType> _columns = new ArrayList<FieldType>();
     Map<GWTPropertyDescriptor, BooleanProperty> _importColumnMap = new HashMap<GWTPropertyDescriptor, BooleanProperty>();
+    Map<String, BoundCheckBox> _includeWidgetMap = new HashMap<String, BoundCheckBox>();
     CachingLookupService _lookupService;
     DomainType _domain;
     boolean _showPropertiesPanel;
     Dialog _propertiesPanel;
     List<PropertyPane<DomainType, FieldType>> _properties;
 
+    private Grid _grid;
+    private ColumnMapper _mapper;
+    private List<InferencedColumn> _inferredColumns;
+    private Map<String, FieldType> _columnMap = new HashMap<String, FieldType>();
 
     public DomainImportGrid(LookupServiceAsync service, DomainType domain)
     {
-        super(1,0);
-
         _lookupService = new CachingLookupService(service);
         _domain = domain;
-        _showPropertiesPanel = false;
+        _showPropertiesPanel = true;
 
-        setStyleName("labkey-data-region labkey-show-borders");
+        _grid = new Grid(1, 0);
+        _grid.setStyleName("labkey-data-region labkey-show-borders");
+        _grid.getRowFormatter().setStyleName(0, "labkey-row-header");
 
-        RowFormatter rowFormatter = new RowFormatter();
-        rowFormatter.setStyleName(0, "labkey-row-header");
+        add(_grid);
+    }
 
-        setRowFormatter(rowFormatter);
+    public void removeColumnMapper()
+    {
+        if (_mapper != null)
+        {
+            remove(_mapper);
+            _mapper = null;
+        }
+    }
+
+    public void addColumnMapper(List<String> columnsToMap)
+    {
+        _mapper = new ColumnMapper(_inferredColumns, columnsToMap, this);
+
+        // initialized auto mapped columns in the grid
+        for (String mappedColumn : _mapper.getMappedColumnNames())
+            selectMappedColumn(mappedColumn, true);
+
+        add(_mapper);
+        layout();
+    }
+
+    public ColumnMapper getColumnMapper()
+    {
+        return _mapper;
+    }
+
+    private void selectMappedColumn(String columnName, boolean mapped)
+    {
+        if (_includeWidgetMap.containsKey(columnName))
+        {
+            BoundCheckBox check = _includeWidgetMap.get(columnName);
+
+            if (mapped)
+                check.setValue(true);
+            check.setEnabled(!mapped);
+        }
+    }
+
+    public void handleEvent(FieldEvent fieldEvent)
+    {
+        if (fieldEvent != null)
+        {
+            SimpleComboValue value = (SimpleComboValue)fieldEvent.getValue();
+
+            if (value != null)
+                selectMappedColumn((String)value.getValue(), true);
+
+            // reset the previous value
+            value = (SimpleComboValue)fieldEvent.getOldValue();
+
+            if (value != null)
+                selectMappedColumn((String)value.getValue(), false);
+        }
     }
 
     public void setColumns(List<InferencedColumn> columns)
     {
-        resizeColumns(columns.size());
+        _inferredColumns = columns;
+        _grid.resizeColumns(columns.size());
         int numDataRows = columns.get(0).getData().size();
-        resizeRows(numDataRows + 2); // Need a row for the name and a row for the type
+        _grid.resizeRows(numDataRows + 2); // Need a row for the name and a row for the type
 
         for(int columnIndex=0; columnIndex<columns.size(); columnIndex++)
         {
             InferencedColumn column = columns.get(columnIndex);
             GWTPropertyDescriptor prop = column.getPropertyDescriptor();
 
+            _columnMap.put(prop.getName(), (FieldType)prop);
+
             // name panel with checkbox to enable/disable import
             HorizontalPanel namePanel = new HorizontalPanel();
             BooleanProperty include = new BooleanProperty(true);
             BoundCheckBox includeInImport = new BoundCheckBox("id_import_" + prop.getName(), include, null);
+            _includeWidgetMap.put(prop.getName(), includeInImport);
+            
             namePanel.add(includeInImport);
             namePanel.add(new InlineHTML("&nbsp;<b>" + prop.getName() + "</b>&nbsp;"));
-
+            
             if (_showPropertiesPanel)
             {
                 ToolButton btn = new ToolButton("x-tool-right", new SelectionListener<IconButtonEvent>()
                 {
                     public void componentSelected(IconButtonEvent event)
                     {
-                        for (PropertyPane<DomainType, FieldType> prop : _properties)
-                            prop.showPropertyDescriptor(_columns.get(0), true);
+                        String id = event.getComponent().getItemId();
+                        if (_columnMap.containsKey(id))
+                        {
+                            FieldType field = _columnMap.get(id);
+                            for (PropertyPane<DomainType, FieldType> prop : _properties)
+                                prop.showPropertyDescriptor(field, true);
 
-                        Point pt = event.getXY();
+                            //Point pt = event.getXY();
 
-                        _propertiesPanel.setPagePosition(pt.x + Window.getScrollLeft(), pt.y + Window.getScrollTop());
-                        _propertiesPanel.show();
+                            //_propertiesPanel.setPagePosition(pt.x + Window.getScrollLeft(), pt.y + Window.getScrollTop());
+                            _propertiesPanel.show();
+                            _propertiesPanel.setHeading(field.getName() + " Column Properties");
+                            _propertiesPanel.center();
+                        }
                     }
                 });
                 btn.setToolTip("Click to edit additional properties for this column");
+                btn.setItemId(prop.getName());
                 namePanel.add(btn);
             }
-            setWidget(0, columnIndex, namePanel);
+            _grid.setWidget(0, columnIndex, namePanel);
 
             // save in the import map
             _importColumnMap.put(prop, include);
@@ -129,7 +217,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
 
             // type picker
             ConceptPicker picker = new ConceptPicker.Bound(_lookupService, "ff_type" + columnIndex, prop);
-            setWidget(1, columnIndex, picker);
+            _grid.setWidget(1, columnIndex, picker);
 
             // don't allow file and attachment properties for import (they don't really make sense here)
             picker.setAllowAttachmentProperties(false);
@@ -148,20 +236,21 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                 else if (numDataRows > 3 && row == numDataRows - 1)
                     cellData = "<font color=\"666666\">" + cellData + "</font>";
 
-                setHTML(row+2, columnIndex, cellData);
+                _grid.setHTML(row+2, columnIndex, cellData);
             }
         }
 
         if (_showPropertiesPanel)
         {
             TabPanel tabPanel = new TabPanel();
+            tabPanel.addStyleName("extContainer");
             _properties = createPropertyPanes(null);
 
             for (PropertyPane<DomainType, FieldType> propertiesPane : _properties)
             {
                 TabItem item = new TabItem(propertiesPane.getName());
 
-                item.setSize(300, 400);
+                //item.setSize(300, 400);
                 item.setLayout(new FitLayout());
                 item.add(propertiesPane);
 
@@ -169,11 +258,13 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             }
             _propertiesPanel = new Dialog();
             _propertiesPanel.setModal(true);
-            _propertiesPanel.setPlain(true);
-            _propertiesPanel.setHeading("Column Properties");
-            _propertiesPanel.setSize(300, 400);
+
+            _propertiesPanel.setBorders(false);
+            //_propertiesPanel.setHeading("Column Properties");
+            _propertiesPanel.setSize(500, 300);
             _propertiesPanel.setHideOnButtonClick(true);
-            _propertiesPanel.setButtons(Dialog.OKCANCEL);
+            _propertiesPanel.setButtons(Dialog.OK);
+            _propertiesPanel.setLayout(new FitLayout());
 
             _propertiesPanel.add(tabPanel);
         }
@@ -209,7 +300,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
 
         PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
         validatorPane.addItem(new RequiredItem<DomainType, FieldType>(validatorPane));
-        validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(validatorPane));
+        //validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(validatorPane));
 
         PropertyPane<DomainType, FieldType> advancedPane = new PropertyPane<DomainType, FieldType>(this, "Advanced");
         advancedPane.addItem(new MvEnabledItem<DomainType, FieldType>(advancedPane));
@@ -229,5 +320,112 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
     public DomainType getCurrentDomain()
     {
         return _domain;
+    }
+
+    public static class ColumnMapper extends FormPanel
+    {
+        List<SimpleComboBox<String>> _columnSelectors = new ArrayList<SimpleComboBox<String>>();
+        private List<String> _columnsToMap;
+
+        public ColumnMapper(List<InferencedColumn> inferredColumns, List<String> columnsToMap, Listener<FieldEvent> changeListener)
+        {
+            //setFieldWidth(350);
+            setLabelWidth(150);
+            setBorders(false);
+            setHeaderVisible(false);
+
+            _columnsToMap = columnsToMap;
+
+            add(new HTML("<br/>"));
+            add(new HTML("<b>Column Mapping:</b>"));
+            add(new InlineHTML("The list below are columns that already exist in the Domain and can be mapped with the " +
+                    "inferred columns from the uploaded file.<br>Establish a mapping by selecting a column from the dropdown list to match " +
+                    "the exising Domain column.<br>When the data is imported, the data from the inferred column will be added to the " +
+                    "mapped Domain column.<br/><br/>"));
+
+            LabelField title = new LabelField("Column from File");
+            title.addStyleName("labkey-strong");
+            title.setFieldLabel("<span class='labkey-strong'>Server&nbsp;Column</span>");
+            add(title);
+            
+            for (String destinationColumn : columnsToMap)
+            {
+                SimpleComboBox selector = new SimpleComboBox<String>();
+
+                selector.setEmptyText("No mapping");
+                selector.setWidth(250);
+                selector.setTriggerAction(ComboBox.TriggerAction.ALL);
+
+                if (changeListener != null)
+                    selector.addListener(Events.Change, changeListener);
+
+                selector.addListener(Events.Change, changeListener);
+                selector.setName(destinationColumn);
+
+                for (InferencedColumn column : inferredColumns)
+                {
+                    String name = column.getPropertyDescriptor().getName();
+                    selector.add(name);
+                    if (areColumnNamesEquivalent(name, destinationColumn))
+                    {
+                        selector.setSimpleValue(name);
+                    }
+                }
+                _columnSelectors.add(selector);
+
+                selector.setFieldLabel(destinationColumn);
+                add(selector);
+            }
+        }
+
+        public Set<String> getMappedColumnNames()
+        {
+            Set<String> columnNames = new HashSet<String>();
+            for (SimpleComboBox<String> listBox : _columnSelectors)
+            {
+                String value = listBox.getSimpleValue();
+                if (value != null)
+                    columnNames.add(value);
+            }
+            return columnNames;
+        }
+
+        /**
+         * Map of column in the file -> column in the database
+         */
+        public Map<String,String> getColumnMap()
+        {
+            Map<String, String> result = new HashMap<String, String>();
+
+            for (int i = 0; i < _columnsToMap.size(); i++)
+            {
+                String dataColumn = _columnsToMap.get(i);
+                SimpleComboBox<String> selector = _columnSelectors.get(i);
+                String fileColumn = selector.getSimpleValue();
+                if (fileColumn != null)
+                    result.put(fileColumn, dataColumn);
+            }
+
+            return result;
+        }
+
+        /**
+         * Try to find a reasonable match in column names, like "Visit Date" and "Date",
+         * or "ParticipantID" and "participant id".
+         */
+        private boolean areColumnNamesEquivalent(String col1, String col2)
+        {
+            col1 = col1.toLowerCase();
+            col2 = col2.toLowerCase();
+            col1 = col1.replaceAll(" ","");
+            col2 = col2.replaceAll(" ","");
+            if (col1.equals(col2))
+                return true;
+            if (col1.indexOf(col2) >= 0)
+                return true;
+            if (col2.indexOf(col1) >= 0)
+                return true;
+            return false;
+        }
     }
 }
