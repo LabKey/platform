@@ -36,7 +36,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jun 21, 2007
  * Time: 10:48:42 AM
@@ -72,6 +71,7 @@ public class PopupAdminView extends PopupMenuView
         if (laf.getFolderDisplayMode() != FolderDisplayMode.ALWAYS && !"post".equals(getViewContext().getRequest().getMethod().toLowerCase()))
         {
             ActionURL adminURL = MenuService.get().getSwitchAdminModeURL(context);
+
             if (context.isAdminMode())
                 navTree.addChild("Hide Navigation Bar", adminURL);
             else //
@@ -108,6 +108,7 @@ public class PopupAdminView extends PopupMenuView
                     return o1.getTabName(context).compareToIgnoreCase(o2.getTabName(context));
                 }
             };
+
             SortedSet<Module> activeModules = new TreeSet<Module>(moduleComparator);
             activeModules.addAll(c.getActiveModules());
             SortedSet<Module> disabledModules = new TreeSet<Module>(moduleComparator);
@@ -116,6 +117,7 @@ public class PopupAdminView extends PopupMenuView
 
             NavTree goToModuleMenu = new NavTree("Go To Module");
             Module defaultModule = null;
+
             if (c.getFolderType() != FolderType.NONE)
             {
                 defaultModule = c.getFolderType().getDefaultModule();
@@ -160,7 +162,8 @@ public class PopupAdminView extends PopupMenuView
                 continue;
 
             ActionURL tabUrl = module.getTabURL(context.getContainer(), context.getUser());
-            if(null != tabUrl)
+
+            if (null != tabUrl)
                 menu.addChild(module.getTabName(context), tabUrl);
         }
     }

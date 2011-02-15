@@ -51,7 +51,7 @@ public class PopupDeveloperView extends PopupMenuView
         if (!container.isRoot())
             items.add(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(container)));
         String console = PageFlowUtil.urlProvider(AdminUrls.class).getSessionLoggingURL().getLocalURIString(false);
-        NavTree nt = new NavTree("Server Javascript Console");
+        NavTree nt = new NavTree("Server JavaScript Console");
         nt.setScript("window.open('" + console + "','javascriptconsole','width=400,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
         items.add(nt);
         items.add(new NavTree("JavaScript API Reference", "https://www.labkey.org/download/clientapi_docs/javascript-api/"));

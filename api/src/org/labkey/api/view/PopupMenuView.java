@@ -19,7 +19,6 @@ package org.labkey.api.view;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jun 20, 2007
  * Time: 9:25:42 PM
