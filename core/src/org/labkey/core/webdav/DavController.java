@@ -132,6 +132,7 @@ import java.util.TimeZone;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -2829,13 +2830,21 @@ public class DavController extends SpringActionController
 
 
         boolean isStatic = isStaticContent(resource.getPath());
-        boolean isDevMode = AppProps.getInstance().isDevMode();
-
         if (isStatic)
         {
-            boolean allowCaching = AppProps.getInstance().isCachingAllowed();
-            if (allowCaching || alwaysCacheFile(resource.getPath()))
-                getResponse().setExpires(HeartBeat.currentTimeMillis() + 35*24*60*60*1000L, "public");
+            assert resource.canRead(User.guest);
+
+            if (-1 == resource.getName().indexOf(".nocache."))
+            {
+                boolean isPerfectCache = -1 != resource.getName().indexOf(".cache.");
+                boolean allowCaching = AppProps.getInstance().isCachingAllowed();
+
+                if (allowCaching || isPerfectCache || alwaysCacheFile(resource.getPath()))
+                {
+                    int expireInDays = isPerfectCache ? 365 : 35;
+                    getResponse().setExpires(HeartBeat.currentTimeMillis() + TimeUnit.DAYS.toMillis(expireInDays), "public");
+                }
+            }
         }
 
         // Get content length
@@ -2882,7 +2891,7 @@ public class DavController extends SpringActionController
             InputStream is = null;
 
             // if static content look for gzip version
-            if (isStatic && !isDevMode)
+            if (isStatic && !AppProps.getInstance().isDevMode())
             {
                 String accept = getRequest().getHeader("accept-encoding");
                 if (null != accept && -1 != accept.indexOf("gzip"))
@@ -2897,8 +2906,10 @@ public class DavController extends SpringActionController
                 is = resource.getInputStream(getUser());
             if (ostream != null)
                 copy(is, ostream);
-            else
+            else if (writer != null)
                 copy(is, writer);
+            else
+                assert !content;
         }
         else
         {
@@ -3283,20 +3294,17 @@ public class DavController extends SpringActionController
     {
         WebdavResource resource = resourceCache.get(path);
 
-        if (resource != null)
-        {
-            if (resource == nullDavFileInfo)
-                resource = null;
-        }
-        else
+        if (resource == null)
         {
             resource = getResolver().lookup(path);
             resourceCache.put(path, resource == null ? nullDavFileInfo : resource);
-            return resource;
         }
 
+        if (null == resource || nullDavFileInfo == resource)
+            return null;
+
         boolean isRoot = path.size() == 0;
-        if ( !isRoot && path.isDirectory() && resource.isFile())
+        if (!isRoot && path.isDirectory() && resource.isFile())
             return null;
         return resource;
     }
