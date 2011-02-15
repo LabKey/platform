@@ -16,17 +16,21 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.reports.Report" %>
+<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
+<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.ScriptReport" %>
+<%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
@@ -34,6 +38,8 @@
     Container c = ctx.getContainer();
     ScriptReportBean bean = me.getModelBean();
     ScriptReport report = (ScriptReport)bean.getReport();
+    List<Report> sharedReports = report.getAvailableSharedScripts(ctx, bean);
+    List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
     String uid = "_" + UniqueID.getServerSessionScopedUID();
     boolean readOnly = bean.isReadOnly();
@@ -132,35 +138,6 @@
         }
     }
 
-    function addFilterAndSort2(url, dr)
-    {
-        var i;
-        var userFilter = dr.getUserFilter();
-
-        for (i = 0; i < userFilter.length; i++)
-        {
-            var filter = userFilter[i];
-            url = url + '&' + dr.name + '.' + filter.fieldKey + '~' + filter.op + '=' + filter.value;
-        }
-
-        var userSort = dr.getUserSort();
-
-        if (userSort.length > 0)
-        {
-            var sortParam = "&";
-
-            for (i = 0; i < userSort.length; i++)
-            {
-                var sort = userSort[i];
-
-            }
-
-            url = url + sortParam;
-        }
-
-        return url;
-    }
-
     // TODO: Move this (or something like it) into DataRegion.js
     function addFilterAndSort(url, dr)
     {
@@ -233,6 +210,13 @@
     }
 </script>
 
+<%!
+    public boolean isScriptIncluded(ReportIdentifier id, List<String> includedScripts)
+    {
+        return includedScripts.contains(String.valueOf(id));
+    }
+%>
+
 <div id="tabsDiv<%=uid%>" class="extContainer">
     <div id="previewDiv<%=uid%>" class="x-hide-display">
     </div>
@@ -249,9 +233,9 @@
                     wrap="on"
                     rows="25"><%=h(StringUtils.trimToEmpty(bean.getScript()))%></textarea><%
 
-                if (!readOnly)
-                {
-                %>
+            if (!readOnly)
+            {
+            %>
                 <script type="text/javascript">
                     Ext.EventManager.on('script<%=uid%>', 'keydown', handleTabsInTextArea);
                     editAreaLoader.init({
@@ -263,8 +247,8 @@
                         start_highlight: true
                     });
                 </script><%
-                }
-                %>
+            }
+            %>
             </td></tr><%
 
             if (!readOnly)
@@ -286,11 +270,29 @@
                 {
             %>
             <tr><td>
-                <input type="checkbox" id="runInBackground" name="<%=ScriptReportDescriptor.Prop.runInBackground.name()%>"<%=bean.isInheritable() ? " checked" : ""%>>Run this view in the background as a pipeline job.
+                <input type="checkbox" id="runInBackground" name="<%=ScriptReportDescriptor.Prop.runInBackground.name()%>"<%=bean.isInheritable() ? " checked" : ""%>>Run this view in the background as a pipeline job
             </td></tr><%
                 }
+
+                if (!sharedReports.isEmpty())
+                {
+    %>
+            <tr><td>&nbsp;</td></tr>
+            <tr class="labkey-wp-header"><th align="left" colspan="2">Shared Scripts</th></tr>
+            <tr><td colspan="2"><i>You can execute any of the following scripts as part of your current script by calling: source('&lt;Script Name&gt;.r') after checking the box next to the &lt;Script Name&gt; you plan to use.</i></td></tr>
+    <%
+                    for (Report sharedReport : sharedReports)
+                    {%>
+                <tr><td><input type="checkbox" name="<%=ScriptReportDescriptor.Prop.includedReports%>"
+                                        onchange="LABKEY.setDirty(true);return true;"
+                                        value="<%=sharedReport.getDescriptor().getReportId()%>"
+                                        <%=isScriptIncluded(sharedReport.getDescriptor().getReportId(), includedReports) ? "checked" : ""%>>
+                    <%=sharedReport.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)%>
+                </td></tr>
+                    <%}
+                }
             }
-            %>
+    %>
         </table>
     </div>
     <div id="dataDiv<%=uid%>" class="x-hide-display">
