@@ -109,6 +109,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _showExportButtons = true;
     private boolean _showInsertNewButton = true;
     private boolean _showDeleteButton = true;
+    private boolean _showConfiguredButtons = true;
     private boolean _allowExportExternalQuery = true;
     private List<ContainerFilter.Type> _allowableContainerFilterTypes = Arrays.asList(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders);
     private boolean _useQueryViewActionExportURLs = false;
@@ -1231,13 +1232,16 @@ public class QueryView extends WebPartView<Object>
 
         rgn.setTable(getTable());
 
-        // We first apply the button bar config from the table:
-        ButtonBarConfig tableBarConfig = getTable().getButtonBarConfig();
-        if (tableBarConfig != null)
-            rgn.addButtonBarConfig(tableBarConfig);
-        // Then any overriding button bar config (from javascript) is applied:
-        if (_buttonBarConfig != null)
-            rgn.addButtonBarConfig(_buttonBarConfig);
+        if (isShowConfiguredButtons())
+        {
+            // We first apply the button bar config from the table:
+            ButtonBarConfig tableBarConfig = getTable().getButtonBarConfig();
+            if (tableBarConfig != null)
+                rgn.addButtonBarConfig(tableBarConfig);
+            // Then any overriding button bar config (from javascript) is applied:
+            if (_buttonBarConfig != null)
+                rgn.addButtonBarConfig(_buttonBarConfig);
+        }
     }
 
     public void setButtonBarPosition(DataRegion.ButtonBarPosition buttonBarPosition)
@@ -1444,6 +1448,11 @@ public class QueryView extends WebPartView<Object>
 
     public Results getResults(ShowRows showRows) throws SQLException, IOException
     {
+        return getResults(showRows, false, false);
+    }
+
+    public Results getResults(ShowRows showRows, boolean async, boolean cache) throws SQLException, IOException
+    {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         ShowRows prevShowRows = getSettings().getShowRows();
@@ -1451,8 +1460,8 @@ public class QueryView extends WebPartView<Object>
         {
             // Set to the desired row policy
             getSettings().setShowRows(showRows);
-            rgn.setAllowAsync(false);
-            view.getRenderContext().setCache(false);
+            rgn.setAllowAsync(async);
+            view.getRenderContext().setCache(cache);
             RenderContext ctx = view.getRenderContext();
             if (null == rgn.getResultSet(ctx))
                 return null;
@@ -1884,6 +1893,16 @@ public class QueryView extends WebPartView<Object>
     public void setShowPaginationCount(boolean showPaginationCount)
     {
         _showPaginationCount = showPaginationCount;
+    }
+
+    public boolean isShowConfiguredButtons()
+    {
+        return _showConfiguredButtons;
+    }
+
+    public void setShowConfiguredButtons(boolean showConfiguredButtons)
+    {
+        _showConfiguredButtons = showConfiguredButtons;
     }
 
     public List<ContainerFilter.Type> getAllowableContainerFilterTypes()

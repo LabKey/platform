@@ -68,6 +68,7 @@ public class AssayTableMetadata
         return _datasetRowIdPropertyName;
     }
 
+    /** @return The Date or Visit FieldKey. */
     public FieldKey getVisitIDFieldKey(TimepointType timepointType)
     {
         if (timepointType == TimepointType.DATE)

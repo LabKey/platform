@@ -117,8 +117,7 @@ public class RenderContext extends BoundMap // extends ViewContext
             _showRows = _currentRegion.getShowRows();
             _recordSelectorValueColumns = _currentRegion.getRecordSelectorValueColumns();
 
-            if (_currentRegion.getShowRecordSelectors() &&
-                _currentRegion.getSelectionKey() != null)
+            if (_currentRegion.getSelectionKey() != null)
             {
                 _selected = DataRegionSelection.getSelected(getViewContext(),
                         _currentRegion.getSelectionKey(), true, false);

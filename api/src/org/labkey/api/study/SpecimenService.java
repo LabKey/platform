@@ -18,10 +18,14 @@ package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -63,6 +67,8 @@ public class SpecimenService
         Set<Pair<String, Double>> getSampleInfo(Container studyContainer) throws SQLException;
 
         Lsid getSpecimenMaterialLsid(Container studyContainer, String id);
+
+        void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException;
     }
 
     public static void register(Service serviceImpl)
