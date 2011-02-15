@@ -149,10 +149,18 @@ public class QueryTable extends QueryRelation
     String makeRelationName(String name)
     {
         SqlDialect d = getSchema().getDbSchema().getSqlDialect();
+        String gttp = null;
+        try { gttp = d.getGlobalTempTablePrefix(); } catch (UnsupportedOperationException x) { }
+
         if (StringUtils.isEmpty(name))
+        {
             name = "table";
-        else if (!StringUtils.isEmpty(d.getGlobalTempTablePrefix()) && name.startsWith(d.getGlobalTempTablePrefix()) && 10 < name.indexOf('$'))
-            name = name.substring(d.getGlobalTempTablePrefix().length(), name.indexOf("$"));
+        }
+        else if (!StringUtils.isEmpty(gttp))
+        {
+            if (name.startsWith(gttp) && 10 < name.indexOf('$'))
+                name = name.substring(gttp.length(), name.indexOf("$"));
+        }
         String r = AliasManager.makeLegalName(name, getSchema().getDbSchema().getSqlDialect(), true);
         r += "_" + _query.incrementAliasCounter();
         return r;
