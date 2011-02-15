@@ -274,6 +274,15 @@ public class StringExpressionFactory
             //assert MemTracker.put(this);
         }
 
+
+        protected synchronized ArrayList<StringPart> getParsedExpression()
+        {
+            if (null == _parsedExpression)
+                parse();
+            return _parsedExpression;
+        }
+        
+
         protected void parse()
         {
             _parsedExpression = new ArrayList<StringPart>();
@@ -297,13 +306,12 @@ public class StringExpressionFactory
         
         public String eval(Map context)
         {
-            if (null == _parsedExpression)
-                parse();
-            if (_parsedExpression.size() == 1)
-                return _parsedExpression.get(0).getValue(context);
+            ArrayList<StringPart> parts = getParsedExpression();
+            if (parts.size() == 1)
+                return parts.get(0).getValue(context);
             
             StringBuilder builder = new StringBuilder();
-            for (StringPart part : _parsedExpression)
+            for (StringPart part : parts)
                 builder.append(part.getValue(context));
             return builder.toString();
         }
@@ -468,9 +476,8 @@ public class StringExpressionFactory
         public FieldKeyStringExpression addParent(FieldKey parent, Map<FieldKey, FieldKey> remap)
         {
             FieldKeyStringExpression clone = this.clone();
-            clone.parse();
             StringBuilder source = new StringBuilder();
-            for (StringPart p : clone._parsedExpression)
+            for (StringPart p : clone.getParsedExpression())
             {
                 if (p instanceof FieldPart)
                 {
@@ -500,9 +507,7 @@ public class StringExpressionFactory
         public Set<FieldKey> getFieldKeys()
         {
             Set<FieldKey> set = new HashSet<FieldKey>();
-            if (null == _parsedExpression)
-                parse();
-            for (StringPart p : _parsedExpression)
+            for (StringPart p : getParsedExpression())
             {
                 if (p instanceof FieldPart)
                     set.add(((FieldPart)p).key);
@@ -523,10 +528,9 @@ public class StringExpressionFactory
         public FieldKeyStringExpression dropParent(String parentName)
         {
             FieldKeyStringExpression clone = this.clone();
-            clone.parse();
             StringBuilder source = new StringBuilder();
 
-            for (StringPart stringPart : clone._parsedExpression)
+            for (StringPart stringPart : clone.getParsedExpression())
             {
                 if (stringPart instanceof FieldPart)
                 {
