@@ -628,7 +628,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             },
             series: tempSeries.length > 0 ? tempSeries : series,
-            main: {title: this.chartInfo.title + (title != null ? ": " + title : "")}
+            title: this.chartInfo.title + (title != null ? ": " + title : "")
         });
 
     	var chartPanel = new Ext.Panel({

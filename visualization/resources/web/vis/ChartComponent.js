@@ -5,6 +5,10 @@
  */
 Ext.namespace("LABKEY", "LABKEY.vis");
 
+/**
+ * Each of these is a color set defined for "categorical" color schemes from ColorBrewer
+ * See ColorBrewer http://colorbrewer2.org/ and large palettes at http://learnr.wordpress.com/2009/04/15/ggplot2-qualitative-colour-palettes/
+ */
 LABKEY.vis.Colors = {
     "SET3": ["#8DD3C7", "#FFFFB3", "#BEBADA", "#FB8072", "#80B1D3", "#FDB462", "#B3DE69", "#FCCDE5", "#D9D9D9", "#BC80BD", "#CCEBC5", "#FFED6F"],
     "PASTEL1":["#FBB4AE", "#B3CDE3", "#CCEBC5", "#DECBE4", "#FED9A6", "#FFFFCC", "#E5D8BD", "#FDDAEC", "#F2F2F2"],
@@ -162,7 +166,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
     seriesStyle : {
         lineWidth: 4,
         markAlpha : .75,
-        shape: null, //If null will be assigned automatically using next available shape
+        shape: null, //If null will be assigned automatically using next available shape from LABKEY.vis.Shapes
         markColor: null //If null will be assigned automatically using next available seriesColor
     },
 
@@ -179,6 +183,15 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                .width(this.width)
                .height(this.height)
                .canvas(this.id);
+
+        if (this.title)
+        {
+            this.rootVisPanel.anchor("top").add(pv.Label)
+            .data([this.title])
+            .bottom(null)
+            .top(this.style.smallMargin)
+            .font(this.style.titleFont);
+        }
 
        //Chart width is outer width - left margin - legendWidth - 2 * (margin around legend)
        this.chartWidth = this.width - this.style.outerMargin - this.style.legendWidth - 2 * this.style.smallMargin;
