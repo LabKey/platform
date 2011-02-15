@@ -135,9 +135,16 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 
     protected void exposeModelAsRequestAttributes(Map model, HttpServletRequest request) throws Exception
     {
-        // init CSRF attribute as side-effect
-        CSRFUtil.getExpectedToken(request);
-
+        try
+        {
+            // init CSRF attribute as side-effect
+            CSRFUtil.getExpectedToken(request);
+        }
+        catch (IllegalStateException x)
+        {
+            // Cannot create a session after the response has been committed
+        }
+        
         // a) merge properties that were dropped into the spring ModelMap
         // b) copy parameters into request attributes where JSP framework/taglibs might expect them
         ViewContext context = getViewContext();
