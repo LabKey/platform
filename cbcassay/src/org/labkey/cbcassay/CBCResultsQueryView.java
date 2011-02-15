@@ -151,7 +151,7 @@ public final class CBCResultsQueryView extends ResultsQueryView
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             out.write("<input type=\"hidden\" name=\"objectId\" value=\"" + ctx.get(_resultRowIdFieldKey) + "\"/>");
-            out.write("<input type=\"text\" name=\"sampleId\" value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\">");
+            out.write("<input type=\"text\" name=\"sampleId\" value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\"/>");
         }
     }
 }

@@ -1309,7 +1309,7 @@ public class SpecimenImporter
             try
             {
                 // Create list of specimen columns, including unique columns not found in SPECIMEN_COLUMNS.
-                List<SpecimenColumn> cols = new ArrayList<SpecimenColumn>();
+                Set<SpecimenColumn> cols = new LinkedHashSet<SpecimenColumn>();
                 cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.SPECIMENS, true));
                 cols.add(new SpecimenColumn("ParticipantSequenceKey", "ParticipantSequenceKey", "VARCHAR(200)", TargetTable.SPECIMENS, true));
                 cols.addAll(getSpecimenCols(info.getAvailableColumns()));
@@ -1375,7 +1375,7 @@ public class SpecimenImporter
         insertSelectSql.append(prefix).append("study.Specimen.RowId AS SpecimenId");
         insertSelectSql.append(prefix).append("study.Specimen.SpecimenHash");
         insertSelectSql.append(prefix).append("VialList.Container");
-        insertSelectSql.append(prefix).append("?");
+        insertSelectSql.append(prefix).append("? AS Available");
         // Set a default value of true for the 'Available' column:
         insertSelectSql.add(Boolean.TRUE);
 
@@ -1402,7 +1402,7 @@ public class SpecimenImporter
             try
             {
                 // Create list of vial columns, including unique columns not found in SPECIMEN_COLUMNS.
-                List<SpecimenColumn> cols = new ArrayList<SpecimenColumn>();
+                Set<SpecimenColumn> cols = new LinkedHashSet<SpecimenColumn>();
                 // NOTE: study.Vial.RowId is actually an FK to exp.Material.RowId
                 // We can use RowId as a part of the unique key since the Material was created based on LSID and GlobalUniqueId
                 cols.add(new SpecimenColumn("RowId", "RowId", "INT NOT NULL", TargetTable.VIALS, true));
@@ -1466,7 +1466,7 @@ public class SpecimenImporter
                 // Events are special in that we want to merge based on a pseudo-unique set of columns:
                 //    Container, VialId (vial.GlobalUniqueId), LabId, StorageDate, ShipDate, LabReceiptDate
                 // We need to always add these extra columns, even if they aren't in the list of available columns.
-                List<SpecimenColumn> cols = new ArrayList<SpecimenColumn>();
+                Set<SpecimenColumn> cols = new LinkedHashSet<SpecimenColumn>();
                 cols.add(new SpecimenColumn("VialId", "VialId", "INT NOT NULL", TargetTable.VIALS, true));
                 cols.add(LAB_ID);
                 cols.add(SHIP_DATE);
@@ -1474,8 +1474,7 @@ public class SpecimenImporter
                 cols.add(LAB_RECEIPT_DATE);
                 for (SpecimenColumn col : getSpecimenEventCols(info.getAvailableColumns()))
                 {
-                    if (col != LAB_ID || col != SHIP_DATE || col != STORAGE_DATE || col != LAB_RECEIPT_DATE)
-                        cols.add(col);
+                    cols.add(col);
                 }
 
                 // Insert or update the vials from in the temp table.
@@ -1594,7 +1593,7 @@ public class SpecimenImporter
                 {
                     for (T column : potentialColumns)
                     {
-                        if (row.containsKey(column.getTsvColumnName()))
+                        if (row.containsKey(column.getTsvColumnName()) || row.containsKey(column.getDbColumnName()))
                             availableColumns.add(column);
                     }
 
@@ -1607,7 +1606,7 @@ public class SpecimenImporter
                     selectSql.append("SELECT * FROM ").append(tableName).append(" WHERE Container = ? ");
                     for (ImportableColumn col : uniqueCols)
                     {
-                        // Check for equality and null values.
+                        // Each unique col has two parameters in the null-equals check.
                         selectSql.append(" AND (");
                         selectSql.append("(").append(col.getDbColumnName()).append(" IS NULL AND ? IS NULL)");
                         selectSql.append(" OR ").append(col.getDbColumnName()).append(" = ? ");
@@ -1663,6 +1662,7 @@ public class SpecimenImporter
                     {
                         if (col.isUnique())
                         {
+                            // Each unique col has two parameters in the null-equals check.
                             updateSql.append(" AND (");
                             updateSql.append("(").append(col.getDbColumnName()).append(" IS NULL AND ? IS NULL)");
                             updateSql.append(" OR ").append(col.getDbColumnName()).append(" = ? ");
@@ -1709,33 +1709,23 @@ public class SpecimenImporter
                 if (!rowExists)
                 {
                     parameterMapInsert.clearParameters();
-                    int colIndex = 0;
-                    parametersInsert.get(colIndex++).setValue(container.getId());
+                    parameterMapInsert.put("Container", container.getId());
                     if (idCol != null)
-                        parametersInsert.get(colIndex++).setValue(idCol.getValue(row));
+                        parameterMapInsert.put(idCol.getName(), idCol.getValue(row));
                     for (ImportableColumn col : availableColumns)
-                        parametersInsert.get(colIndex++).setValue(getValueParameter(col, row));
+                        parameterMapInsert.put(col.getDbColumnName(), getValueParameter(col, row));
                     stmtInsert.execute();
                     rowsAdded++;
                 }
                 else
                 {
                     parameterMapUpdate.clearParameters();
-                    int colIndex = 0;
                     for (ImportableColumn col : availableColumns)
                     {
-                        if (!col.isUnique())
-                            parametersUpdate.get(colIndex++).setValue(getValueParameter(col, row));
-                    }
-                    parametersUpdate.get(colIndex++).setValue(container.getId());
-
-                    for (ImportableColumn col : uniqueCols)
-                    {
-                        // Each unique col has two parameters in the null-equals check.
                         Object value = getValueParameter(col, row);
-                        parametersUpdate.get(colIndex++).setValue(value);
-                        colIndex++;
+                        parameterMapUpdate.put(col.getDbColumnName(), value);
                     }
+                    parameterMapUpdate.put("Container", container.getId());
                     stmtUpdate.execute();
                     rowsUpdated++;
                 }
@@ -1815,7 +1805,7 @@ public class SpecimenImporter
                 {
                     for (T column : potentialColumns)
                     {
-                        if (row.containsKey(column.getTsvColumnName()))
+                        if (row.containsKey(column.getTsvColumnName()) || row.containsKey(column.getDbColumnName()))
                             availableColumns.add(column);
                     }
 
@@ -2064,7 +2054,12 @@ public class SpecimenImporter
     private Parameter.TypedValue getValueParameter(ImportableColumn col, Map tsvRow)
             throws SQLException
     {
-        Object value = tsvRow.get(col.getTsvColumnName());
+        Object value = null;
+        if (tsvRow.containsKey(col.getTsvColumnName()))
+            value = tsvRow.get(col.getTsvColumnName());
+        else if (tsvRow.containsKey(col.getDbColumnName()))
+            value = tsvRow.get(col.getDbColumnName());
+
         if (value == null)
             return Parameter.nullParameter(col.getSQLType());
         Parameter.TypedValue typed = new Parameter.TypedValue(value, col.getSQLType());

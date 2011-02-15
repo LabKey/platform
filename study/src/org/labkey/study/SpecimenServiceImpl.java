@@ -23,14 +23,17 @@ import org.labkey.api.data.Table;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.controllers.samples.AutoCompleteAction;
 
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -234,5 +237,13 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     public Lsid getSpecimenMaterialLsid(Container studyContainer, String id)
     {
         return new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + studyContainer.getRowId(), id);
+    }
+
+    @Override
+    public void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException
+    {
+        // CONSIDER: move ShowUploadSpecimensAction validation to importer.process()
+        SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
+        importer.process(user, container, rows, merge);
     }
 }
