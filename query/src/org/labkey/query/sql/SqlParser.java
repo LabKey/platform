@@ -698,19 +698,11 @@ public class SqlParser
                     Method m = Method.valueOf(name);
                     if (null != m)
                     {
-                        int count = exprList.childList().size();
-                        if (count < m._minArgs || count > m._maxArgs)
-                        {
-                            if (m._minArgs == m._maxArgs)
-                                _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " argument" + (m._minArgs==1?"":"s"), null, node.getLine(), node.getCharPositionInLine()));
-                            else
-                                _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " to " + m._maxArgs + " arguments", null, node.getLine(), node.getCharPositionInLine()));
-                        }
-                        }
+                        m.validate(node, exprList.childList(), _parseErrors);
+                    }
                 }
-                catch (Exception x)
+                catch (IllegalArgumentException x)
                 {
-
                 }
                 
 				break;

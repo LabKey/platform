@@ -16,17 +16,20 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.Group;
 import org.labkey.query.QueryServiceImpl;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 public abstract class Method
@@ -141,6 +144,23 @@ public abstract class Method
                 {
                     return new AgeMethodInfo();
                 }
+
+                @Override
+                public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors)
+                {
+                    super.validate(fn, args, parseErrors);
+                    // only YEAR, MONTH supported
+                    if (args.size() == 3)
+                    {
+                        QNode nodeInterval = args.get(2);
+                        TimestampDiffInterval i = TimestampDiffInterval.parse(nodeInterval.getTokenText());
+                        if (!(i == TimestampDiffInterval.SQL_TSI_MONTH || i == TimestampDiffInterval.SQL_TSI_YEAR))
+                        {
+                            parseErrors.add(new QueryParseException("AGE function supports SQL_TSI_YEAR or SQL_TSI_MONTH", null,
+                                    nodeInterval.getLine(), nodeInterval.getColumn()));
+                        }
+                    }
+                }
             });
         labkeyMethod.put("age_in_years", new Method(JdbcType.INTEGER, 2, 2)
             {
@@ -227,7 +247,20 @@ public abstract class Method
 
     abstract public MethodInfo getMethodInfo();
 
-    
+
+    public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors)
+    {
+        int count = args.size();
+        if (count < _minArgs || count > _maxArgs)
+        {
+            if (_minArgs == _maxArgs)
+                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " argument" + (_minArgs==1?"":"s"), null, fn.getLine(), fn.getCharPositionInLine()));
+            else
+                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " to " + _maxArgs + " arguments", null, fn.getLine(), fn.getCharPositionInLine()));
+        }
+    }
+
+
     class JdbcMethodInfoImpl extends AbstractMethodInfo
     {
         String _name;
@@ -269,24 +302,14 @@ public abstract class Method
             SQLFragment[] arguments = argumentsIN.clone();
             if (arguments.length >= 1)
             {
-                String interval = StringUtils.trimToEmpty(arguments[0].getSQL());
-                if (interval.length() >= 2 && interval.startsWith("'") && interval.endsWith("'"))
-                    interval = interval.substring(1,interval.length()-1);
-                if (!interval.startsWith("SQL_TSI"))
-                    interval = "SQL_TSI_" + interval;
-                try
-                {
-                    TimestampDiffInterval i = TimestampDiffInterval.valueOf(interval);
-                    if (i != null)
-                        arguments[0] = new SQLFragment(i.name());
-                }
-                catch (IllegalArgumentException x)
-                {
-                }
+                TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[0].getSQL());
+                if (i != null)
+                    arguments[0] = new SQLFragment(i.name());
             }
             return super.getSQL(schema, arguments);
         }
     }
+
 
     enum TimestampDiffInterval
     {
@@ -298,7 +321,26 @@ public abstract class Method
         SQL_TSI_WEEK,
         SQL_TSI_MONTH,
         SQL_TSI_QUARTER,
-        SQL_TSI_YEAR
+        SQL_TSI_YEAR;
+
+
+        static TimestampDiffInterval parse(String s)
+        {
+            String interval = StringUtils.trimToEmpty(s).toUpperCase();
+            if (interval.length() >= 2 && interval.startsWith("'") && interval.endsWith("'"))
+                interval = interval.substring(1,interval.length()-1);
+            if (!interval.startsWith("SQL_TSI"))
+                interval = "SQL_TSI_" + interval;
+            try
+            {
+                TimestampDiffInterval i = TimestampDiffInterval.valueOf(interval);
+                return i;
+            }
+            catch (IllegalArgumentException x)
+            {
+                return null;
+            }
+        }
     }
 
 
@@ -467,12 +509,15 @@ public abstract class Method
         {
             if (arguments.length == 2)
                 return new AgeInYearsMethodInfo().getSQL(schema, arguments);
-            String unit = StringUtils.strip(arguments[2].getSQL().toUpperCase(),"'");
-            if (unit.equals("YEAR") || unit.equals("SQL_TSI_YEAR"))
+            TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[2].getSQL());
+            if (i == TimestampDiffInterval.SQL_TSI_YEAR)
                 return new AgeInYearsMethodInfo().getSQL(schema, arguments);
-            if (unit.equals("MONTH") || unit.equals("SQL_TSI_MONTH"))
+            if (i == TimestampDiffInterval.SQL_TSI_MONTH)
                 return new AgeInMonthsMethodInfo().getSQL(schema, arguments);
-            throw new IllegalArgumentException("AGE(" + unit + ")");
+            if (null == i)
+                throw new IllegalArgumentException("AGE(" + arguments[2].getSQL() + ")");
+            else
+                throw new IllegalArgumentException("AGE only supports YEAR and MONTH");
         }
     }
 
