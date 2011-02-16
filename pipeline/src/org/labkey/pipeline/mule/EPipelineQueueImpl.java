@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
-import java.io.IOException;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.*;

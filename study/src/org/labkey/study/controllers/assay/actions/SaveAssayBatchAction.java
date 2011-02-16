@@ -36,6 +36,7 @@ import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -355,10 +356,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
             if (null == data)
             {
-                if (!NetworkDrive.exists(f))
-                {
-                    throw new IllegalArgumentException("No file with path '" + absolutePath + "' was found");
-                }
+                f = FileUtil.getAbsoluteCaseSensitiveFile(f);
                 String name = dataObject.optString(ExperimentJSONConverter.NAME, f.getName());
                 DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
                 String lsid = expSvc.generateLSID(container, type, name);

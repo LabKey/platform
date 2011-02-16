@@ -56,7 +56,7 @@ public class PipelineStatusManager
     {
         try
         {
-            return getStatusFile(new SimpleFilter("RowId", new Integer(rowId)));
+            return getStatusFile(new SimpleFilter("RowId", rowId));
         }
         catch (SQLException e)
         {
@@ -198,9 +198,9 @@ public class PipelineStatusManager
         try
         {
             beginTransaction(scope,active);
-            enforceLockOrder(sf.getJob(), sf.getFilePath(), active);
+            enforceLockOrder(sf.getJob(), active);
 
-            Table.update(null, _schema.getTableInfoStatusFiles(), sf, new Integer(sf.getRowId()));
+            Table.update(null, _schema.getTableInfoStatusFiles(), sf, sf.getRowId());
 
             commitTransaction(scope, active);
         }
@@ -221,7 +221,7 @@ public class PipelineStatusManager
         try
         {
             beginTransaction(scope, active);
-            enforceLockOrder(jobId, path, active);
+            enforceLockOrder(jobId, active);
 
             PipelineStatusFileImpl sfExist = getStatusFile(path);
             if (sfExist != null)
@@ -231,7 +231,7 @@ public class PipelineStatusManager
                 {
                     child.setJobParent(null);
                     child.beforeUpdate(null, child);
-                    enforceLockOrder(child.getJobId(), child.getFilePath(), active);
+                    enforceLockOrder(child.getJobId(), active);
                     updateStatusFile(child);
                 }
                 sfExist.setJob(jobId);
@@ -280,7 +280,7 @@ public class PipelineStatusManager
                 .append(" WHERE RowId = ?");
 
         Table.execute(_schema.getSchema(), sql.toString(),
-                new Object[] { xml, new Integer(sfExist.getRowId()) });
+                new Object[] { xml, sfExist.getRowId() });
     }
 
     public static String retrieveJob(int rowId) throws SQLException
@@ -308,7 +308,7 @@ public class PipelineStatusManager
                 .append(" SET JobStore = NULL")
                 .append(" WHERE RowId = ?");
 
-        Table.execute(_schema.getSchema(), sql.toString(), new Object[] { new Integer(sfExist.getRowId()) });
+        Table.execute(_schema.getSchema(), sql.toString(), new Object[] { sfExist.getRowId() });
 
         return sfExist.getJobStore();
     }
@@ -342,23 +342,6 @@ public class PipelineStatusManager
         new Object[]{container.getId(), parentId,PipelineJob.COMPLETE_STATUS }, Integer.class);
 
         return count.intValue();
-    }
-
-    /**
-     * Returns an array of <code>PipelineStatusFiles</code> for jobs not marked COMPLETE,
-     * all of which were created by splitting another job.
-     *
-     * @param parentId the jobGUID for the joined task that created split tasks
-     * @return array of <code>PipelineStatusFiles<code> not marked COMPLETE
-     * @throws SQLException database error
-     */
-    public static PipelineStatusFileImpl[] getIncompleteStatusFiles(String parentId) throws SQLException
-    {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
-        filter.addCondition("JobParent", parentId, CompareType.EQUAL);
-
-        return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
     public static List<PipelineStatusFileImpl> getStatusFilesForLocation(String location, boolean includeJobsOnQueue)
@@ -417,6 +400,21 @@ public class PipelineStatusManager
         return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
+    public static PipelineStatusFile[] getJobsWaitingForFiles(Container c)
+    {
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("Status", PipelineJob.WAITING_FOR_FILES);
+            filter.addCondition("Container", c.getId(), CompareType.EQUAL);
+
+            return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     public static PipelineStatusFileImpl[] getQueuedStatusFiles() throws SQLException
     {
         SimpleFilter filter = createQueueFilter();
@@ -429,6 +427,7 @@ public class PipelineStatusManager
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
         filter.addCondition("Status", PipelineJob.ERROR_STATUS, CompareType.NEQ);
+        filter.addCondition("Status", PipelineJob.WAITING_FOR_FILES, CompareType.NEQ);
         filter.addCondition("Status", PipelineJob.SPLIT_STATUS, CompareType.NEQ);
         filter.addCondition("Status", PipelineJob.INTERRUPTED_STATUS, CompareType.NEQ);
         filter.addCondition("Job", null, CompareType.NONBLANK);
@@ -612,10 +611,9 @@ public class PipelineStatusManager
      * readers from getting a share lock and ensuring the updater can update the index if necessary.
     *
     * @param jobId of the job that is going to be updated
-    * @param filePath path to the job that is going to be updated 
     * @throws SQLException database error
     */
-    protected static void enforceLockOrder(String jobId, String filePath, boolean active)
+    protected static void enforceLockOrder(String jobId, boolean active)
             throws SQLException
     {
         if (active)

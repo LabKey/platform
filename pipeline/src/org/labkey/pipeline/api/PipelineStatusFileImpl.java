@@ -38,6 +38,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     private static HashSet<String> _inactiveStatuses = new HashSet<String>(Arrays.asList(
             PipelineJob.COMPLETE_STATUS,
             PipelineJob.CANCELLED_STATUS,
+            PipelineJob.WAITING_FOR_FILES,
             PipelineJob.ERROR_STATUS,
             PipelineJob.SPLIT_STATUS    // Depends on status of split jobs
     ));

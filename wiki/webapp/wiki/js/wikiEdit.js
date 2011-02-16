@@ -652,7 +652,7 @@ function onDeleteAttachment(index)
     getExistingAttachmentIconImg(index).src = LABKEY.ActionURL.getContextPath() + "/_icons/_deleted.gif";
     row.cells[1].style.textDecoration = "line-through";
     row.cells[2].innerHTML = "<a class='labkey-button' onclick='onUndeleteAttachment(" + index + ")'><span>undelete</span></a>"
-            + "<input type='hidden' name='toDelete' value='" + _attachments[index].name + "'/>";
+            + "<input type='hidden' name='toDelete' value=\"" + Ext.util.Format.htmlEncode(_attachments[index].name) + "\"/>";
 
     //add a prop so we know we need to save the attachments
     _attachments.isDirty = true;

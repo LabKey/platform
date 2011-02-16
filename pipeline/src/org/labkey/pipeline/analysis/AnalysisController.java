@@ -21,7 +21,8 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
-import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.*;
@@ -75,12 +76,12 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    private FileAnalysisProtocol getProtocol(PipeRoot root, File dirData, FileAnalysisProtocolFactory factory, String protocolName)
+    private AbstractFileAnalysisProtocol getProtocol(PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory, String protocolName)
     {
         try
         {
             File protocolFile = factory.getParametersFile(dirData, protocolName, root);
-            FileAnalysisProtocol result;
+            AbstractFileAnalysisProtocol result;
             if (NetworkDrive.exists(protocolFile))
             {
                 result = factory.loadInstance(protocolFile);
@@ -100,7 +101,7 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    private FileAnalysisTaskPipeline getTaskPipeline(String taskIdString)
+    private TaskPipeline getTaskPipeline(String taskIdString)
     {
         try
         {
@@ -108,9 +109,7 @@ public class AnalysisController extends SpringActionController
             TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(taskId);
             if (pipeline == null)
                 throw new NotFoundException("The pipeline '" + taskId + "' was not found.");
-            if (!(pipeline instanceof FileAnalysisTaskPipeline))
-                throw new NotFoundException("The pipeline '" + taskId + "' is not of the expected type.");
-            return (FileAnalysisTaskPipeline)pipeline;
+            return pipeline;
         }
         catch (ClassNotFoundException e)
         {
@@ -118,12 +117,12 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    private FileAnalysisProtocolFactory getProtocolFactory(FileAnalysisTaskPipeline taskPipeline)
+    private AbstractFileAnalysisProtocolFactory getProtocolFactory(TaskPipeline taskPipeline)
     {
-        FileAnalysisPipelineProvider provider = (FileAnalysisPipelineProvider)
+        AbstractFileAnalysisProvider provider = (AbstractFileAnalysisProvider)
                 PipelineService.get().getPipelineProvider(FileAnalysisPipelineProvider.name);
         if (provider == null)
-            throw new NotFoundException();
+            throw new NotFoundException("No pipeline provider found for task pipeline: " + taskPipeline);
 
         return provider.getProtocolFactory(taskPipeline);
     }
@@ -131,15 +130,15 @@ public class AnalysisController extends SpringActionController
     @RequiresPermissionClass(InsertPermission.class)
     public class StartAnalysisAction extends AbstractAnalysisApiAction
     {
-        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, FileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException
+        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException
         {
-            FileAnalysisTaskPipeline taskPipeline = getTaskPipeline(form.getTaskId());
+            TaskPipeline taskPipeline = getTaskPipeline(form.getTaskId());
             if (form.getProtocolName() == null)
             {
                 throw new IllegalArgumentException("Must specify a protocol name");
             }
 
-            FileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
+            AbstractFileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
             if (protocol == null)
             {
                 String xml;
@@ -220,13 +219,13 @@ public class AnalysisController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class GetFileStatusAction extends AbstractAnalysisApiAction
     {
-        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, FileAnalysisProtocolFactory factory)
+        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory)
         {
             if (form.getProtocolName() == null || "".equals(form.getProtocolName()))
             {
                 throw new NotFoundException("No protocol specified");
             }
-            FileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
+            AbstractFileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
             File dirAnalysis = factory.getAnalysisDir(dirData, form.getProtocolName(), root);
             form.initStatus(protocol, dirData, dirAnalysis);
 
@@ -253,7 +252,7 @@ public class AnalysisController extends SpringActionController
 
     public abstract class AbstractAnalysisApiAction extends ApiAction<AnalyzeForm>
     {
-        protected abstract ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, FileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException;
+        protected abstract ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException;
 
         public ApiResponse execute(AnalyzeForm form, BindException errors) throws Exception
         {
@@ -266,11 +265,11 @@ public class AnalysisController extends SpringActionController
             {
                 dirData = pr.resolvePath(form.getPath());
                 if (dirData == null || !NetworkDrive.exists(dirData))
-                    throw new NotFoundException();
+                    throw new NotFoundException("Could not resolve path: " + form.getPath());
             }
 
-            FileAnalysisTaskPipeline taskPipeline = getTaskPipeline(form.getTaskId());
-            FileAnalysisProtocolFactory factory = getProtocolFactory(taskPipeline);
+            TaskPipeline taskPipeline = getTaskPipeline(form.getTaskId());
+            AbstractFileAnalysisProtocolFactory factory = getProtocolFactory(taskPipeline);
             return execute(form, pr, dirData, factory);
         }
     }
@@ -278,14 +277,14 @@ public class AnalysisController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class GetSavedProtocolsAction extends AbstractAnalysisApiAction
     {
-        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, FileAnalysisProtocolFactory factory)
+        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory)
         {
             JSONArray protocols = new JSONArray();
             for (String protocolName : factory.getProtocolNames(root, dirData))
             {
                 JSONObject protocol = new JSONObject();
                 protocol.put("name", protocolName);
-                FileAnalysisProtocol pipelineProtocol = getProtocol(root, dirData, factory, protocolName);
+                AbstractFileAnalysisProtocol pipelineProtocol = getProtocol(root, dirData, factory, protocolName);
                 protocol.put("description", pipelineProtocol.getDescription());
                 protocol.put("xmlParameters", pipelineProtocol.getXml());
                 ParamParser parser = PipelineJobService.get().createParamParser();
@@ -319,7 +318,7 @@ public class AnalysisController extends SpringActionController
 
         private static final String UNKNOWN_STATUS = "UNKNOWN";
         
-        public void initStatus(FileAnalysisProtocol protocol, File dirData, File dirAnalysis)
+        public void initStatus(AbstractFileAnalysisProtocol protocol, File dirData, File dirAnalysis)
         {
             if (fileInputStatus != null)
                 return;
@@ -333,7 +332,7 @@ public class AnalysisController extends SpringActionController
             fileInputStatus[len] = initStatusFile(protocol,  dirData, dirAnalysis, null, false);
         }
 
-        private String initStatusFile(FileAnalysisProtocol protocol, File dirData, File dirAnalysis,
+        private String initStatusFile(AbstractFileAnalysisProtocol protocol, File dirData, File dirAnalysis,
                                   String fileInputName, boolean statusSingle)
         {
             File fileStatus = null;
@@ -455,6 +454,42 @@ public class AnalysisController extends SpringActionController
         public void setRunAnalysis(boolean runAnalysis)
         {
             this.runAnalysis = runAnalysis;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class FileNotificationAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            PipelineStatusFile[] statusFiles = PipelineService.get().getJobsWaitingForFiles(getContainer());
+
+            for (PipelineStatusFile statusFile : statusFiles)
+            {
+                if (PipelineJob.WAITING_FOR_FILES.equals(statusFile.getStatus()) && statusFile.getJobStore() != null)
+                {
+                    PipelineJob pipelineJob = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
+                    if (pipelineJob instanceof AbstractFileAnalysisJob)
+                    {
+                        List<File> inputFiles = ((AbstractFileAnalysisJob) pipelineJob).getInputFiles();
+                        boolean allFilesAvailable = !inputFiles.isEmpty();
+                        for (File inputFile : inputFiles)
+                        {
+                            if (!NetworkDrive.exists(inputFile))
+                            {
+                                allFilesAvailable = false;
+                                break;
+                            }
+                        }
+                        if (allFilesAvailable)
+                        {
+                            PipelineService.get().queueJob(pipelineJob);
+                        }
+                    }
+                }
+            }
+            return new ApiSimpleResponse();
         }
     }
 }

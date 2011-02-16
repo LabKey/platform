@@ -44,7 +44,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -425,14 +424,19 @@ public class PipelineServiceImpl extends PipelineService
         return PipelineStatusManager.getQueuedStatusFiles();
     }
 
+    public PipelineStatusFile[] getJobsWaitingForFiles(Container c)
+    {
+        return PipelineStatusManager.getJobsWaitingForFiles(c);
+    }
+
     public PipelineStatusFile[] getQueuedStatusFiles(Container c) throws SQLException
     {
         return PipelineStatusManager.getQueuedStatusFilesForContainer(c);
     }
 
-    public boolean setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
+    public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert) throws Exception
     {
-        return PipelineStatusManager.setStatusFile(job, job.getUser(), status, statusInfo, false);
+        return PipelineStatusManager.setStatusFile(job, job.getUser(), status, statusInfo, allowInsert);
     }
 
     public void ensureError(PipelineJob job) throws Exception
