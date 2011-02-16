@@ -50,6 +50,7 @@ import java.util.List;
  */
 public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 {
+    public static final String PART_NAME = "Files";
     private static final Logger _log = Logger.getLogger(FilesWebPart.class);
 
     private boolean wide = true;
@@ -68,7 +69,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         container = c;
         setModelBean(new FilesForm());
         setFileSet(null);
-        setTitle("Files");
+        setTitle(PART_NAME);
         setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c));
 
         init();
@@ -319,7 +320,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     {
         public Factory(String location)
         {
-            super("Files", location, true, false);
+            super(PART_NAME, location, true, false);
         }
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
