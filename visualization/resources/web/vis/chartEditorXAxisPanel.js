@@ -20,13 +20,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         });
 
         this.addEvents(
-            'xAxisIntervalChanged',
-            'xAxisLabelChanged',
-            'measureDateChanged',
-            'zeroDateChanged',
-            'xAxisRangeAutomaticChecked',
-            'xAxisRangeManualMinChanged',
-            'xAxisRangeManualMaxChanged',
+            'chartDefinitionChanged',
             'measureMetadataRequestComplete'
         );
 
@@ -49,19 +43,18 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 listeners: {
                     scope: this,
                     'load': function(cmp, records, options) {
-                        this.fireEvent('xAxisIntervalChanged', 'Days', false);
-
-                        // if the zeroDateCol value has loaded, then set the default axis label
-                        if(this.zeroDateCombo && this.zeroDateCombo.getValue()) {
+                        // if this is not a saved chart and the zerodatecol value has loaded, then set the default axis label
+                        if(!this.axis.label && this.zeroDateCombo && this.zeroDateCombo.getValue()) {
                             var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('name', this.zeroDateCombo.getValue())).data.label;
                             var newLabel = "Days Since " + zeroDateLabel;
                             Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
-                            this.fireEvent('xAxisLabelChanged', newLabel, false);
+
+                            this.axis.label = newLabel;
                         }
                     }
                 }
             }),
-            value: 'Days',
+            value: this.dateOptions.interval,
             valueField: 'value',
             displayField: 'value',
             fieldLabel: 'Draw x-axis as',
@@ -74,12 +67,14 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('name', this.zeroDateCombo.getValue())).data.label;
                     var ending = " Since " + zeroDateLabel;
                     if(Ext.getCmp('x-axis-label-textfield').getValue().indexOf(ending) > -1) {
-                       var newLabel = record.data.value + " Since " + zeroDateLabel;
-                       Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
-                       this.fireEvent('xAxisLabelChanged', newLabel, false);
+                        var newLabel = record.data.value + " Since " + zeroDateLabel;
+                        Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
+
+                        this.axis.label = newLabel;
                     }
 
-                    this.fireEvent('xAxisIntervalChanged', cmp.getValue(), true);
+                    this.dateOptions.interval = cmp.getValue();
+                    this.fireEvent('chartDefinitionChanged', true);
                 }
             }
         });
@@ -98,7 +93,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'select': function(cmp, record, index) {
-                    this.fireEvent('measureDateChanged', record.data, true);
+                    this.measure = record.data;
+                    this.fireEvent('chartDefinitionChanged', true);
                 }
             }
         });
@@ -121,11 +117,13 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     var beginning = this.intervalCombo.getValue() + " Since ";
                     if(Ext.getCmp('x-axis-label-textfield').getValue().indexOf(beginning) == 0) {
                        var newLabel = this.intervalCombo.getValue() + " Since " + record.data.label;
-                       Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
-                       this.fireEvent('xAxisLabelChanged', newLabel, false);
+                        Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
+
+                        this.axis.label = newLabel;
                     }
 
-                    this.fireEvent('zeroDateChanged', record.data, true);
+                    this.dateOptions.zeroDateCol = record.data;
+                    this.fireEvent('chartDefinitionChanged', true);
                 }
             }
         });
@@ -150,11 +148,13 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             xtype: 'textfield',
             id: 'x-axis-label-textfield',
             fieldLabel: 'Axis label',
+            value: this.axis.label,
             width: 300,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.fireEvent('xAxisLabelChanged', newVal, true);
+                    this.axis.label = newVal;
+                    this.fireEvent('chartDefinitionChanged', false);
                 }
             }
         });
@@ -175,10 +175,14 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     if(checked) {
                         Ext.getCmp('xaxis-range-min-textfield').disable();
                         Ext.getCmp('xaxis-range-min-textfield').reset();
+                        delete this.axis.range.min;
+
                         Ext.getCmp('xaxis-range-max-textfield').disable();
                         Ext.getCmp('xaxis-range-max-textfield').reset();
+                        delete this.axis.range.max;
 
-                        this.fireEvent('xAxisRangeAutomaticChecked');
+                        this.axis.range.type = 'automatic';
+                        this.fireEvent('chartDefinitionChanged', false);
                     }
                 }
             }
@@ -189,6 +193,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             defaults: {flex: 1},
             items: [
                 {
+                    id: 'x-axis-range-manual-radio',
                     xtype: 'radio',
                     name: 'xaxis_range',
                     inputValue: 'manual',
@@ -202,7 +207,17 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                             if(checked) {
                                 Ext.getCmp('xaxis-range-min-textfield').enable();
                                 Ext.getCmp('xaxis-range-max-textfield').enable();
-                                Ext.getCmp('xaxis-range-min-textfield').focus();
+                                //Ext.getCmp('xaxis-range-min-textfield').focus();
+
+                                // if this is a saved chart with manual min and max set
+                                if(typeof this.axis.range.min == "number"){
+                                    Ext.getCmp('xaxis-range-min-textfield').setValue(this.axis.range.min);
+                                }
+                                if(typeof this.axis.range.max == "number"){
+                                    Ext.getCmp('xaxis-range-max-textfield').setValue(this.axis.range.max);
+                                }
+
+                                this.axis.range.type = 'manual';
                             }
                         }
                     }
@@ -217,7 +232,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     listeners: {
                         scope: this,
                         'change': function(cmp, newVal, oldVal) {
-                            this.fireEvent('xAxisRangeManualMinChanged', newVal);
+                            this.axis.range.min = newVal;
+                            // fire change event if max is also set
+                            if(typeof this.axis.range.max == "number"){
+                                this.fireEvent('chartDefinitionChanged', false);
+                            }
                         }
                     }
                 },
@@ -231,7 +250,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     listeners: {
                         scope: this,
                         'change': function(cmp, newVal, oldVal) {
-                            this.fireEvent('xAxisRangeManualMaxChanged', newVal);
+                            this.axis.range.max = newVal;
+                            // fire change event if min is also set
+                            if(typeof this.axis.range.min == "number"){
+                                this.fireEvent('chartDefinitionChanged', false);
+                            }
                         }
                     }
                 }
@@ -255,6 +278,13 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             }]
         }];
 
+        this.on('activate', function(){
+            // if this is rendering with a saved chart, set the range options
+            // since automatic is the default, only need to change it if type == manual
+            if(this.axis.range.type && this.axis.range.type == 'manual'){
+                Ext.getCmp('x-axis-range-manual-radio').setValue(true);
+            }
+        }, this);
 
         LABKEY.vis.ChartEditorXAxisPanel.superclass.initComponent.call(this);
     },
@@ -282,21 +312,31 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'load': function(store, records, options) {
-                    // initial value is StartDate if it exists, else first record should be used as default
-                    if(store.find('name', 'StartDate') > -1) {
-                        this.zeroDateCombo.setValue('StartDate');
+                    // if this is a saved report, we will have a zero date to select
+                    var index = 0;
+                    if(this.dateOptions.zeroDateCol){
+                        index = store.find('name', this.dateOptions.zeroDateCol.name);
                     }
-                    else {
-                        this.zeroDateCombo.setValue(records[0].get('name'));
+                    // otherwise, try a few hard-coded options
+                    else if(store.find('name', 'StartDate') > -1) {
+                        index = store.find('name', 'StartDate');
                     }
-                    this.fireEvent('zeroDateChanged', store.getAt(store.find('name', this.zeroDateCombo.getValue())).data, false);
+                    else if(store.find('name', 'EnrollmentDt') > -1) {
+                        index = store.find('name', 'EnrollmentDt');
+                    }
+                    else if(store.find('name', 'Date') > -1) {
+                        index = store.find('name', 'Date');
+                    }
+                    this.zeroDateCombo.setValue(store.getAt(index).get('name'));
+                    this.dateOptions.zeroDateCol = store.getAt(store.find('name', store.getAt(index).get('name'))).data;
 
-                    // if the interval value has loaded, then set the default axis label
-                    if(this.intervalCombo && this.intervalCombo.getValue()) {
+                    // if this is not a saved chart and the interval value has loaded, then set the default axis label
+                    if(!this.axis.label && this.intervalCombo && this.intervalCombo.getValue()) {
                         var zeroDateLabel = store.getAt(store.find('name', this.zeroDateCombo.getValue())).data.label;
                         var newLabel = this.intervalCombo.getValue() + " Since " + zeroDateLabel;
                         Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
-                        this.fireEvent('xAxisLabelChanged', newLabel, false);
+
+                        this.axis.label = newLabel;
                     }
 
                     // this is one of the requests being tracked, see if the rest are done
@@ -329,19 +369,37 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'load': function(store, records, options){
-                    // initial value is VisitDate if it exists, else first record should be used as default
-                    if(store.find('name', 'ParticipantVisit/VisitDate') > -1) {
-                        this.measureDateCombo.setValue('ParticipantVisit/VisitDate');
-                    }
-                    else {
-                        this.measureDateCombo.setValue(records[0].get('name'));
-                    }
-                    this.fireEvent('measureDateChanged', store.getAt(store.find('name', this.measureDateCombo.getValue())).data, false);
+                        // if this is a saved report, we will have a measure date to select
+                        var index = 0;
+                        if(this.measure.name){
+                            index = store.find('name', this.measure.name);
+                        }
+                        // otherwise, try a few hard-coded options
+                        else if(store.find('name', 'ParticipantVisit/VisitDate') > -1) {
+                            index = store.find('name', 'ParticipantVisit/VisitDate');
+                        }
+                        else if(store.find('name', 'Date') > -1) {
+                            index = store.find('name', 'Date');
+                        }
+                        this.measureDateCombo.setValue(store.getAt(index).get('name'));
+                        this.measure = store.getAt(store.find('name', store.getAt(index).get('name'))).data;
 
                     // this is one of the requests being tracked, see if the rest are done
                     this.fireEvent('measureMetadataRequestComplete');
                 }
             }
         });
+    },
+
+    getAxis: function(){
+        return this.axis;
+    },
+
+    getDateOptions: function(){
+        return this.dateOptions;
+    },
+
+    getMeasure: function(){
+        return this.measure;
     }
 });

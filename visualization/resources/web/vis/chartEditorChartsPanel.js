@@ -19,10 +19,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             items: []
         });
 
-        this.addEvents(
-            'chartLayoutChanged',
-            'chartTitleChanged'
-        );
+        this.addEvents('chartDefinitionChanged');
 
         LABKEY.vis.ChartEditorChartsPanel.superclass.constructor.call(this, config);
     },
@@ -40,6 +37,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             items: [
                 {
                     name: 'chart_layout',
+                    id: 'single',
                     boxLabel: 'One Chart',
                     inputValue: 'single',
                     checked: true,
@@ -47,27 +45,30 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                         scope: this,
                         'check': function(field, checked) {
                             if(checked) {
-                                this.fireEvent('chartLayoutChanged', 'single');
+                                this.chartLayout = 'single';
+                                this.fireEvent('chartDefinitionChanged', false);
                             }
                         }
                     }
                 },
                 {
                     name: 'chart_layout',
-                    boxLabel: 'One Chart for Each ' + this.viewInfo.subjectNounSingular,
+                    id: 'per_subject',
+                    boxLabel: 'One Chart for Each ' + this.subjectNounSingular,
                     inputValue: 'per_subject',
                     listeners: {
                         scope: this,
                         'check': function(field, checked) {
                             if(checked) {
-                                this.fireEvent('chartLayoutChanged', 'per_subject');
+                                this.chartLayout = 'per_subject';
+                                this.fireEvent('chartDefinitionChanged', false);
                             }
                         }
                     }
                 },
                 {
                     name: 'chart_layout',
-                    id: 'chart-layout-per-dimension',
+                    id: 'per_dimension',
                     boxLabel: 'One Chart for Each [Dimension]',
                     inputValue: 'per_dimension',
                     //hidden: true,
@@ -75,17 +76,10 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                         scope: this,
                         'check': function(field, checked) {
                             if(checked) {
-                                this.fireEvent('chartLayoutChanged', 'per_dimension');
+                                this.chartLayout = 'per_dimension';
+                                this.fireEvent('chartDefinitionChanged', false);
                             }
                         }
-//                        'show': function(cmp) {
-//                            console.log(cmp.isVisible());
-//                            cmp.getContainer().doLayout();
-//                        },
-//                        'hide': function(cmp) {
-//                            console.log(cmp.isVisible());
-//                            cmp.getContainer().doLayout();
-//                        }
                     }
                 }
             ]
@@ -94,11 +88,13 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         columnTwoItems.push({
             xtype: 'textfield',
             fieldLabel: 'Chart Title',
+            value: this.mainTitle,
             width: 300,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.fireEvent('chartTitleChanged', newVal);
+                    this.mainTitle = newVal;
+                    this.fireEvent('chartDefinitionChanged', false);
                 }
             }
         });
@@ -120,6 +116,21 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             }]
         }];
 
+        this.on('activate', function(){
+            // if this is rendering with a saved chart, set the layout option
+            Ext.getCmp(this.chartLayout).suspendEvents(false);
+            Ext.getCmp('chart-layout-radiogroup').setValue(this.chartLayout, true);
+            Ext.getCmp(this.chartLayout).resumeEvents();
+        }, this);
+
         LABKEY.vis.ChartEditorChartsPanel.superclass.initComponent.call(this);
+    },
+
+    getMainTitle: function(){
+        return this.mainTitle;
+    },
+
+    getChartLayout: function(){
+        return this.chartLayout;
     }
 });

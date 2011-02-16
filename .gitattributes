@@ -3031,10 +3031,12 @@ visualization/resources/web/protovis/protovis-r3.3.js -text
 visualization/resources/web/vis/ChartComponent.js -text
 visualization/resources/web/vis/chartEditorChartsPanel.js -text
 visualization/resources/web/vis/chartEditorMeasurePanel.js -text
+visualization/resources/web/vis/chartEditorOverviewPanel.js -text
 visualization/resources/web/vis/chartEditorXAxisPanel.js -text
 visualization/resources/web/vis/chartEditorYAxisPanel.js -text
 visualization/resources/web/vis/chartPanel.js -text
 visualization/resources/web/vis/measuresPanel.js -text
+visualization/resources/web/vis/subjectSeriesSelector.js -text
 visualization/resources/web/vis/timeChartPanel.js -text
 visualization/resources/web/vis/timeChartWizard.js -text
 visualization/resources/web/vis/visualizationWizard.js -text

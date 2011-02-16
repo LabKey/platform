@@ -16,15 +16,42 @@
         });
     });
 
+    var viewTypes = {};
     function storeVisualizationTypes(types) {
         // store the type information
-        var viewTypes = {};
         for (var i=0; i < types.length; i++)
         {
             var type = types[i];
             viewTypes[type.type] = type;
         }
 
+        // see if the wizard is being accessed with a saved visualization referenced on the URL
+        if(LABKEY.Visualization.getFromUrl({success: this.viewSavedChart})) {
+            // we have a saved chart being access, viewSavedChart will be called
+        }
+        else {
+            // no saved visualization to show, so just initialize the wizard without a pre-selected measure
+            this.initializeTimeChartPanel();
+        }
+    }
+
+    function viewSavedChart(result, response, options){
+        if(result.type == LABKEY.Visualization.Type.TimeChart){
+            var saveReportInfo = {
+                name: result.name,
+                description: result.description,
+                queryName: result.queryName,
+                schemaName: result.schemaName
+            };
+
+            initializeTimeChartPanel(result.visualizationConfig, saveReportInfo);
+        }
+        else {
+            Ext.Msg.alert("Error", "The saved chart is not of type = TimeChart");
+        }
+    }
+
+    function initializeTimeChartPanel(chartInfo, saveReportInfo) {
         // create a new chart panel and insert into the wizard
         var panel = new Ext.Panel({
             renderTo: 'vis-wizard-panel',
@@ -39,7 +66,9 @@
                     layout: 'border',
                     flex: 1,
                     border: false,
-                    viewInfo: viewTypes['line']
+                    viewInfo: viewTypes['line'],
+                    chartInfo: chartInfo,
+                    saveReportInfo: saveReportInfo
                 })
             ]
         });

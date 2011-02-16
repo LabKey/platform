@@ -10,6 +10,7 @@ Ext.QuickTips.init();
 LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
     constructor : function(config){
         Ext.apply(config, {
+            title: 'Y-Axis',
             autoHeight: true,
             autoWidth: true,
             bodyStyle: 'padding: 5px',
@@ -18,13 +19,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             items: []
         });
 
-        this.addEvents(
-            'yAxisScaleChanged',
-            'yAxisLabelChanged',
-            'yAxisRangeAutomaticChecked',
-            'yAxisRangeManualMinChanged',
-            'yAxisRangeManualMaxChanged'
-        );
+        this.addEvents('chartDefinitionChanged');
 
         LABKEY.vis.ChartEditorYAxisPanel.superclass.constructor.call(this, config);
     },
@@ -46,12 +41,13 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             valueField: 'value',
             displayField: 'display',
             fieldLabel: 'Scale',
-            value: 'linear',
+            value: this.axis.scale,
             forceSelection: true,
             listeners: {
                 scope: this,
                 'select': function(cmp, record, index) {
-                    this.fireEvent('yAxisScaleChanged', cmp.getValue());
+                    this.axis.scale = cmp.getValue();
+                    this.fireEvent('chartDefinitionChanged', false);
                 }
             }
         });
@@ -65,7 +61,8 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.fireEvent('yAxisLabelChanged', newVal);
+                    this.axis.label = newVal;
+                    this.fireEvent('chartDefinitionChanged', false);
                 }
             }
         });
@@ -86,10 +83,14 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
                     if(checked) {
                         yAxisRangeMinNumberField.disable();
                         yAxisRangeMinNumberField.reset();
+                        delete this.axis.range.min;
+
                         yAxisRangeMaxNumberField.disable();
                         yAxisRangeMaxNumberField.reset();
+                        delete this.axis.range.max;
 
-                        this.fireEvent('yAxisRangeAutomaticChecked');
+                        this.axis.range.type = 'automatic';
+                        this.fireEvent('chartDefinitionChanged', false);
                     }
                 }
             }
@@ -103,7 +104,11 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.fireEvent('yAxisRangeManualMinChanged', newVal);
+                    this.axis.range.min = newVal;
+                    // fire change event if max is also set
+                    if(typeof this.axis.range.max == "number"){
+                        this.fireEvent('chartDefinitionChanged', false);
+                    }
                 }
             }
         });
@@ -116,7 +121,11 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.fireEvent('yAxisRangeManualMaxChanged', newVal);
+                    this.axis.range.max = newVal;
+                    // fire change event if min is also set
+                    if(typeof this.axis.range.min == "number"){
+                        this.fireEvent('chartDefinitionChanged', false);
+                    }
                 }
             }
         });
@@ -126,6 +135,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             defaults: {flex: 1},
             items: [
                 {
+                    id: 'y-axis-range-manual-radio',
                     xtype: 'radio',
                     name: 'yaxis_range',
                     inputValue: 'manual',
@@ -139,7 +149,17 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
                             if(checked) {
                                 yAxisRangeMinNumberField.enable();
                                 yAxisRangeMaxNumberField.enable();
-                                yAxisRangeMinNumberField.focus();
+                                //yAxisRangeMinNumberField.focus();
+
+                                // if this is a saved chart with manual min and max set
+                                if(typeof this.axis.range.min == "number"){
+                                    yAxisRangeMinNumberField.setValue(this.axis.range.min);
+                                }
+                                if(typeof this.axis.range.max == "number"){
+                                    yAxisRangeMaxNumberField.setValue(this.axis.range.max);
+                                }
+
+                                this.axis.range.type = 'manual';
                             }
                         }
                     }
@@ -167,6 +187,26 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             }]
         }];
 
+        this.on('activate', function(){
+            // if this is rendering with a saved chart, set the range options
+            // since automatic is the default, only need to change it if type == manual
+            if(this.axis.range.type && this.axis.range.type == 'manual'){
+                Ext.getCmp('y-axis-range-manual-radio').setValue(true);
+            }
+        }, this);
+
         LABKEY.vis.ChartEditorYAxisPanel.superclass.initComponent.call(this);
+    },
+
+    getAxis: function(){
+        return this.axis;
+    },
+
+    setLabel: function(newLabel){
+        // if the label is not already set, use the newLabel
+        if(this.axis.label == ""){
+            this.axis.label = newLabel;
+            Ext.getCmp('y-axis-label-textfield').setValue(this.axis.label);
+        }
     }
 });
