@@ -548,7 +548,7 @@ starAtom
 primaryExpression
 	:   identPrimary
 	|   constant
-	|   OPEN! ( subQuery | expression ) CLOSE!
+	|   OPEN! ( expression | subQuery) CLOSE!
 	|   PARAM^ (NUM_INT)?
 	;
 

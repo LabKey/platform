@@ -1217,6 +1217,9 @@ public class SqlParser
             new Pair("SELECT * FROM R LEFT OUTER JOIN S ON x=y JOIN T ON y=z", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))) (RANGE T) (ON (= y z))))))"),
             new Pair("SELECT * FROM (R LEFT OUTER JOIN S ON x=y) JOIN T ON y=z", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))) (RANGE T) (ON (= y z))))))"),
             new Pair("SELECT * FROM R LEFT OUTER JOIN (S JOIN T on y=z) ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (JOIN (RANGE S) (RANGE T) (on (= y z))) (ON (= x y))))))"),
+            // 11440
+            new Pair("SELECT jrRuns.run_num FROM jrRuns WHERE ((SELECT max(jrRuns.run_num) FROM jrRuns) - jrRuns.run_num) < 10",
+                    "(QUERY (SELECT_FROM (SELECT (. jrRuns run_num)) (FROM (RANGE jrRuns))) (WHERE (< (- (QUERY (SELECT_FROM (SELECT (max (. jrRuns run_num))) (FROM (RANGE jrRuns)))) (. jrRuns run_num)) 10)))")
         };
 
         private void good(String sql)
