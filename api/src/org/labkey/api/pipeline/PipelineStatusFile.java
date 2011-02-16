@@ -36,11 +36,13 @@ public interface PipelineStatusFile
         PipelineStatusFile[] getQueuedStatusFiles() throws SQLException;
 
         PipelineStatusFile[] getQueuedStatusFiles(Container c) throws SQLException;
+
+        PipelineStatusFile[] getJobsWaitingForFiles(Container c);
     }
 
     public interface StatusWriter
     {
-        boolean setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception;
+        boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert) throws Exception;
 
         void ensureError(PipelineJob job) throws Exception;
     }

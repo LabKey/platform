@@ -167,7 +167,7 @@ public abstract class PipelineProtocol
         if (null != template)
             ppp.setTemplate(template);
 
-            Map mapNS = new HashMap();
+            Map<String, String> mapNS = new HashMap<String, String>();
             mapNS.put("", _xmlNamespace);
             XmlOptions opts = new XmlOptions()
                     .setSavePrettyPrint()

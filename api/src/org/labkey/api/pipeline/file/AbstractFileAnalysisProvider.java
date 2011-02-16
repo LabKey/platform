@@ -15,7 +15,6 @@
  */
 package org.labkey.api.pipeline.file;
 
-import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.module.Module;

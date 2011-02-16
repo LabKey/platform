@@ -25,6 +25,7 @@ import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -36,6 +37,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 
@@ -108,6 +110,10 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 {
                     col.setName(domainProperty.getName());
                     domainProperty.getPropertyDescriptor().copyTo(col);
+                    if (domainProperty.getPropertyDescriptor().getLookupQuery() != null)
+                    {
+                        col.setFk(new PdLookupForeignKey(_schema.getUser(), domainProperty.getPropertyDescriptor()));
+                    }
                 }
                 addColumn(col);
 

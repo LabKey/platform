@@ -18,7 +18,6 @@ package org.labkey.api.pipeline.browse;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -68,12 +67,16 @@ public class PipelinePathForm extends ViewForm
     }
 
     /**
-     * Ensures that the files are all in the same directory, which is under the container's pipeline root, and that
-     * they all exist on disk.
-     * Ensures that all files exist on disk, but they could be directories.
+     * Ensures that the files are all in the same directory, which is under the container's pipeline root,
+     * and that they all exist on disk, though they could be directories, not files.
      * Throws NotFoundException if no files are specified, invalid files are specified, there's no pipeline root, etc.
      */
     public List<File> getValidatedFiles(Container c)
+    {
+        return getValidatedFiles(c, false);
+    }
+
+    public List<File> getValidatedFiles(Container c, boolean allowNonExistentFiles)
     {
         PipeRoot pr = getPipeRoot(c);
 
@@ -90,7 +93,7 @@ public class PipelinePathForm extends ViewForm
         for (String fileName : _file)
         {
             File f = pr.resolvePath(getPath() + "/" + fileName);
-            if (!NetworkDrive.exists(f))
+            if (!allowNonExistentFiles && !NetworkDrive.exists(f))
             {
                 throw new NotFoundException("Could not find file '" + fileName + "' in '" + getPath() + "'");
             }

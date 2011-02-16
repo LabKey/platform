@@ -134,6 +134,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public static final String COMPLETE_STATUS = TaskStatus.complete.toString().toUpperCase();
     public static final String ERROR_STATUS = TaskStatus.error.toString().toUpperCase();
     public static final String CANCELLED_STATUS = "CANCELLED";
+    public static final String WAITING_FOR_FILES = "WAITING FOR FILES";
     public static final String INTERRUPTED_STATUS = "INTERRUPTED";
     public static final String SPLIT_STATUS = "SPLIT WAITING";
 
@@ -422,7 +423,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _settingStatus = true;
         try
         {
-            return PipelineJobService.get().getStatusWriter().setStatusFile(this, status, info);
+            return PipelineJobService.get().getStatusWriter().setStatus(this, status, info, false);
         }
         catch (RuntimeException e)
         {
