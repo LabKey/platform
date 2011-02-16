@@ -40,6 +40,8 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
@@ -86,6 +88,7 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
@@ -94,6 +97,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -117,6 +121,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -744,6 +750,7 @@ public class FileContentController extends SpringActionController
     static class NodeForm
     {
         private String _node;
+        private String _rootContainer;
 
         public String getNode()
         {
@@ -754,37 +761,26 @@ public class FileContentController extends SpringActionController
         {
             _node = node;
         }
+
+        public String getRootContainer()
+        {
+            return _rootContainer;
+        }
+
+        public void setRootContainer(String rootContainer)
+        {
+            _rootContainer = rootContainer;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class FileContentSummaryAction extends ApiAction<NodeForm>
+    public class FileContentSummaryAction extends FileTreeNodeAction
     {
-        @Override
-        public ApiResponseWriter createResponseWriter() throws IOException
-        {
-            return new ApiJsonWriter(getViewContext().getResponse(), getContentTypeOverride())
-            {
-                @Override
-                public void write(ApiResponse response) throws IOException
-                {
-                    // need to write out the json in a form that the ext tree loader expects
-                    Map<String, Object> props = response.getProperties();
-                    if (props.containsKey("children"))
-                    {
-                        JSONArray json = new JSONArray((Collection<Object>)props.get("children"));
-                        getWriter().write(json.toString(4));
-                    }
-                    else
-                        super.write(response);
-                }
-            };
-        }
-
         public ApiResponse execute(NodeForm form, BindException errors) throws Exception
         {
-            String container = form.getNode();
-
-            Container c = ContainerManager.getForId(container);
+            Container c = ContainerManager.getForId(form.getNode());
+            if (c == null)
+                c = ContainerManager.getForId(form.getRootContainer());
             if (c == null)
                 c = ContainerManager.getRoot();
 
@@ -843,8 +839,113 @@ public class FileContentController extends SpringActionController
             }
             return new ApiSimpleResponse("children", children);
         }
+    }
 
-        private Map<String, Object> createFileSetNode(String name, File dir)
+    /**
+     * Returns information for project file web part administrative information on a per project basis
+     */
+    @RequiresPermissionClass(ReadPermission.class)
+    public class FileContentProjectSummaryAction extends FileTreeNodeAction
+    {
+        private static final String NODE_LABEL = "file web part";
+
+        public ApiResponse execute(NodeForm form, BindException errors) throws Exception
+        {
+            Container c = ContainerManager.getForId(form.getNode());
+            if (c == null)
+                c = ContainerManager.getForId(form.getRootContainer());
+            if (c == null)
+                c = ContainerManager.getRoot();
+
+            Set<Map<String, Object>> children = new LinkedHashSet<Map<String, Object>>();
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+
+            try {
+                AttachmentDirectory root = svc.getMappedAttachmentDirectory(c, false);
+                ActionURL browse = new ActionURL(BeginAction.class, c);
+
+                if (root != null)
+                {
+
+                    Map<String, Object> node = createFileSetNode(NODE_LABEL, root.getFileSystemDirectory());
+
+                    if (containsFileWebPart(c))
+                    {
+                        ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getFolderSettingsURL(c);
+                        config.addParameter("tabId", "messages");
+
+                        node.put("configureURL", config.getEncodedLocalURIString());
+                        node.put("browseURL", browse.getEncodedLocalURIString());
+                    }
+                    else
+                    {
+                        node.put("path", "web part not added");                        
+                    }
+                    children.add(node);
+                }
+            }
+            catch (MissingRootDirectoryException e){}
+            catch (UnsetRootDirectoryException e){}
+
+            // include all child containers
+            for (Container child : c.getChildren())
+            {
+                Map<String, Object> node = new HashMap<String, Object>();
+
+                node.put("id", child.getId());
+                node.put("name", child.getName());
+
+                children.add(node);
+            }
+            return new ApiSimpleResponse("children", children);
+        }
+
+        private boolean containsFileWebPart(Container c)
+        {
+            SimpleFilter filter = new SimpleFilter("PageId", c.getId());
+            filter.addCondition("Name", FilesWebPart.PART_NAME);
+            ResultSet rs = null;
+
+            try {
+                rs = Table.select(Portal.getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, null);
+                return rs.next();
+            }
+            catch(SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public abstract class FileTreeNodeAction extends ApiAction<NodeForm>
+    {
+        @Override
+        public ApiResponseWriter createResponseWriter() throws IOException
+        {
+            return new ApiJsonWriter(getViewContext().getResponse(), getContentTypeOverride())
+            {
+                @Override
+                public void write(ApiResponse response) throws IOException
+                {
+                    // need to write out the json in a form that the ext tree loader expects
+                    Map<String, Object> props = response.getProperties();
+                    if (props.containsKey("children"))
+                    {
+                        JSONArray json = new JSONArray((Collection<Object>)props.get("children"));
+                        getWriter().write(json.toString(4));
+                    }
+                    else
+                        super.write(response);
+                }
+            };
+        }
+
+        protected Map<String, Object> createFileSetNode(String name, File dir)
         {
             Map<String, Object> node = new HashMap<String, Object>();
             if (dir != null)

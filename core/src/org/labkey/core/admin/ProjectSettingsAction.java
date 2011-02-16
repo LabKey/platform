@@ -480,6 +480,10 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                             }
                         });
                     }
+
+                    // add the folder tree view to show all folders and file content settings for this project
+                    box.addView(new JspView<AdminController.ProjectSettingsForm>("/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp", _form, _errors));
+                    
                     return box;
                 }
                 else
