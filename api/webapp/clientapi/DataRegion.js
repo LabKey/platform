@@ -913,6 +913,10 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     {
                         var minWidth = 0;
                         var tabContentWidth = 0;
+                        var VERTICAL_TAB_HEIGHT = 28; // pixels. Way to measure how tall the main panel should be
+                        var height = VERTICAL_TAB_HEIGHT * 4;
+                        if (tabPanelConfig.items.length > 4)
+                            height = VERTICAL_TAB_HEIGHT * tabPanelConfig.items.length;
 
                         // New up the TabPanel if we haven't already
                         // Only create one per button, even if that button is rendered both above and below the grid
@@ -920,6 +924,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                         tabPanelConfig.tabWidth = 80;
                         tabPanelConfig.renderTo = panelDiv;
                         tabPanelConfig.activeGroup = 0;
+                        tabPanelConfig.height = height;
                         var newItems = new Array(tabPanelConfig.items.length);
                         for (var i = 0; i < tabPanelConfig.items.length; i++)
                         {
@@ -937,7 +942,6 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                                 if (item.items.getCount() > 0 && item.items.items[0].contentEl)
                                 {
                                     tabContentWidth = Ext.get(item.items.items[0].contentEl).getWidth();
-                                    //                                tabContentWidth = Ext.get(newItems[i].contentEl).getWidth();
                                     item.addClass("x-hide-display");
                                     minWidth = Math.max(minWidth, tabContentWidth);
                                 }

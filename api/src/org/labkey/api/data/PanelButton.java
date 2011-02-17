@@ -70,13 +70,11 @@ public class PanelButton extends ActionButton
             config.append(PageFlowUtil.jsString(subPanelId));
             config.append(", title:");
             config.append(PageFlowUtil.jsString(entry.getKey()));
+            config.append(", autoScroll: true");
             config.append("}]})");
             if (includeContent)
             {
-                // HACK - since I can't figure out how to get the tabs to take the full height of the tab panel,
-                // force a minimum height in their enclosing div based on the number of tabs.
-                // Ideally, this would be handled by an Ext.layout.FitLayout instead
-                out.write("<div class=\"x-hide-display\" id=\"" + subPanelId + "\" style=\"min-height: " + _subpanels.size() * 2.1 + "em\">");
+                out.write("<div class=\"x-hide-display\" id=\"" + subPanelId + "\">");
                 try
                 {
                     entry.getValue().render(ctx.getRequest(), ctx.getViewContext().getResponse());

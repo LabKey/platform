@@ -74,7 +74,7 @@ public class PopupAdminView extends PopupMenuView
 
             if (context.isAdminMode())
                 navTree.addChild("Hide Navigation Bar", adminURL);
-            else //
+            else
                 navTree.addChild("Show Navigation Bar", adminURL);
         }
 

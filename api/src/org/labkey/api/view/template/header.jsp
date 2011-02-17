@@ -59,7 +59,7 @@
           if (currentContext.hasPermission(AdminPermission.class) || ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class))
           {
               include(new PopupAdminView(currentContext), out);
-              out.write("| ");
+              out.write(" | ");
           }
           else if (currentContext.getUser().isDeveloper())
           {
