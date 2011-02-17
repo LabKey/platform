@@ -1258,7 +1258,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "<span class='css-arrow-right'></span></a>";
+                ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
     }
 
     public static String textLink(String text, String href, String onClickScript, String id)
@@ -1266,7 +1266,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "<span class='css-arrow-right'></span></a>";
+                ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
     }
 
     public static String textLink(String text, String href, String onClickScript, String id, Map<String, String> properties)
@@ -1280,7 +1280,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' " + additions + "href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "<span class='css-arrow-right'></span></a>";
+                ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
     }
 
     public static String textLink(String text, ActionURL url, String onClickScript, String id)
@@ -1288,7 +1288,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "<span class='css-arrow-right'></span></a>";
+                ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
     }
 
     public static String textLink(String text, ActionURL url)
