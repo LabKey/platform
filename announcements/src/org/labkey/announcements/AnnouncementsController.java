@@ -65,7 +65,6 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.jsp.JspLoader;
-import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserIdRenderer;

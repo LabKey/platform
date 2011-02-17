@@ -997,7 +997,7 @@ public class ExperimentController extends SpringActionController
             }
             else
             {
-                sb.append("[<strong>graph summary view</strong>] ");
+                sb.append("<strong>graph summary view</strong> ");
             }
             if (showGraphDetail)
             {
@@ -1005,7 +1005,7 @@ public class ExperimentController extends SpringActionController
             }
             else
             {
-                sb.append("[<strong>graph detail view</strong>] ");
+                sb.append("<strong>graph detail view</strong> ");
             }
             if (showText)
             {
@@ -1013,7 +1013,7 @@ public class ExperimentController extends SpringActionController
             }
             else
             {
-                sb.append("[<strong>text view</strong>] ");
+                sb.append("<strong>text view</strong> ");
             }
             File runRoot = expRun.getFilePathRoot();
             if (runRoot != null && NetworkDrive.exists(runRoot))

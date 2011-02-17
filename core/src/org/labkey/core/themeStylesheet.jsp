@@ -213,13 +213,14 @@ a.labkey-menu-button:hover span
 
 a.labkey-button, a.labkey-button:visited
 {
+    border: 1px solid #<%= link %>;
     background-color: #<%= second %>;
     color: #<%= link %>;
 }
 
 a.labkey-button:hover
 {
-    border: 1px solid #<%= borderTitle %>;
+    border: 1px solid #<%= text %>;
     background-color: #<%= second %>;
     color: #<%= text %>;
 }
@@ -657,6 +658,11 @@ ul.x-tab-strip-top li
 .x-tab-strip span.x-tab-strip-text
 {
 	color: #<%= link %>;
+}
+
+li.labkey-tab-inactive a
+{
+    background-color: #<%= webpart %>;
 }
 
 .x-grid3-hd-inner
