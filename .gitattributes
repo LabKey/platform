@@ -499,8 +499,14 @@ core/script-fragments/labkey/Ajax.footer.js -text
 core/script-fragments/labkey/Ajax.header.js -text
 core/script-fragments/labkey/Filter.footer.js -text
 core/script-fragments/labkey/Filter.header.js -text
+core/script-fragments/labkey/Message.footer.js -text
+core/script-fragments/labkey/Message.header.js -text
 core/script-fragments/labkey/Query.footer.js -text
 core/script-fragments/labkey/Query.header.js -text
+core/script-fragments/labkey/Security.footer.js -text
+core/script-fragments/labkey/Security.header.js -text
+core/script-fragments/labkey/SecurityPolicy.footer.js -text
+core/script-fragments/labkey/SecurityPolicy.header.js -text
 core/script-fragments/labkey/Utils.footer.js -text
 core/script-fragments/labkey/Utils.header.js -text
 core/src/META-INF/core/common_jars.txt -text

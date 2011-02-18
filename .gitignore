@@ -2,6 +2,9 @@ core/resources/scripts/Ext.js
 core/resources/scripts/labkey/ActionURL.js
 core/resources/scripts/labkey/Ajax.js
 core/resources/scripts/labkey/Filter.js
+core/resources/scripts/labkey/Message.js
 core/resources/scripts/labkey/Query.js
+core/resources/scripts/labkey/Security.js
+core/resources/scripts/labkey/SecurityPolicy.js
 core/resources/scripts/labkey/Utils.js
 search/lib/bcmail-jdk15-144.jar

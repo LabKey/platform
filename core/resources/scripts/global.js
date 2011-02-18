@@ -89,12 +89,14 @@ window.location = location = Object.create({}, {
     }
 
 });
+Object.freeze(window.location);
 
 window.navigator = navigator = {
     userAgent:  "LabKey Server"
 };
 
 createStubs(navigator, ["appCodeName", "appName", "appVersion", "buildID", "cookieEnabled", "language", "mimeTypes", "onLine", "oscpu", "platform", "plugins", "product", "productStub", "vendor", "vendorStub"]);
+Object.freeze(window.navigator);
 
 window.document = document = {
     body: undefined,
@@ -113,9 +115,12 @@ window.document = document = {
 };
 
 createStubs(document, ["activeElement", "alinkColor", "all", "anchors", "applets", "async", "attributes", "baseURI", "baseURIObject", "bgColor", "characterSet", "childNodes", "cookie", "currentScript", "defaultView", "designMode", "doctype", "documentURI", "documentURIObject", "domain", "domConfig", "embeds", "fgColor", "firstChild", "forms", "height", "images", "implementation", "inputEncoding", "lastChild", "lastModified", "lastStyleSheetSet", "linkColor", "links", "location", "namespaceURI", "nodeName", "nodeType", "nodeValue", "nodePrincipal", "plugins", "popupNode", "preferredStyleSheetSet", "previousSibling", "readyState", "referrer", "selectedStyleSheetSet", "strictErrorChecking", "styleSheets", "styleSheetSets", "textContent", "title", "tooltipNode", "URL", "vlinkColor", "width", "xmlEncoding", "xmlStandalone", "xmlVersion"]);
+Object.freeze(window.document);
+Object.freeze(window);
 
 function setTimeout() { throw new Error("setTimeout not supported in server-side script"); }
 function setInterval() { throw new Error("setInterval not supported in server-side script"); }
 function clearTimeout() { throw new Error("clearTimeout not supported in server-side script"); }
 function clearInterval() { throw new Error("clearInterval not supported in server-side script"); }
 
+delete createStubs;

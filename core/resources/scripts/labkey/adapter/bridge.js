@@ -16,17 +16,6 @@ var Ext = require("Ext").Ext;
 
 const CONTENTTYPE = "Content-Type";
 
-function createExceptionObject(response, callbackArg, isAbort, isTimeout)
-{
-    return {
-        status: isAbort ? -1 : 0,
-        statusText: isAbort ? 'transaction aborted' : 'communication failure',
-        isAbort: isAbort,
-        isTimeout: isTimeout,
-        argument: callbackArg
-    }
-}
-
 function createResponseObject(response, callbackArg)
 {
     var o = {
@@ -49,23 +38,13 @@ function createResponseObject(response, callbackArg)
     return o;
 }
 
-function handleTransactionResponse(response, callback, isAbort, isTimeout)
+function handleTransactionResponse(response, callback)
 {
     var httpStatus = response.status;
-    var responseObject;
-
-    if (httpStatus >= 200 && httpStatus < 300)
-    {
-        responseObject = createResponseObject(response, callback.argument);
-        if (callback.success)
-            callback.success.call(callback.scope, responseObject);
-    }
-    else
-    {
-        responseObject = createExceptionObject(response, callback.argument, isAbort || false, isTimeout);
-        if (callback.error)
-            callback.error.call(callback.scope, responseObject);
-    }
+    var responseObject = createResponseObject(response, callback.argument);
+    var cb = (httpStatus >= 200 && httpStatus < 300) ? callback.success : callback.failure;
+    if (cb)
+        cb.call(callback.scope, responseObject);
 
     return responseObject;
 }
@@ -74,23 +53,9 @@ function mockRequest(method, uri, headers, callback, postData)
 {
     var actionUrl = new ActionURL(uri);
 
-    var context = HttpView.currentContext();
-    var request = AppProps.instance.createMockRequest();
-    request.userPrincipal = context.user;
-    for (var prop in headers)
-        request.addHeader(prop, headers[prop]);
-
-    var response;
-    if (method == "GET")
-    {
-        request.method = "GET";
-        response = ViewServlet.GET(request, actionUrl, null);
-    }
-    else
-    {
-        request.method = "POST";
-        throw new Error("not yet supported");
-    }
+    var context = HttpView.currentContext(); 
+    var request = ViewServlet.mockRequest(method, actionUrl, context.user, headers, postData);
+    var response = ViewServlet.mockDispatch(request, null);
 
     return handleTransactionResponse(response, callback);
 }

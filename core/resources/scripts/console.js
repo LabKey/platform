@@ -14,15 +14,21 @@ function formatPart(o)
         o = "undefined";
     else if (o == null)
         o = "null";
-    else if (typeof object == "string")
-        o = o;
-    else if (typeof object == "number")
-        o = ""+o;
-    else if (typeof object == "function")
-        o = ""+o;
+    else if (typeof o == "string" || typeof o == "number" || typeof o == "function")
+        // Don't JSON.stringify these types
+        ;
     else
-        o = JSON.stringify(o);
+    {
+        try
+        {
+            o = JSON.stringify(o);
+        }
+        catch (e) {
+            o = ""+o;
+        }
+    }
 
+    // create a primitive string
     return String(o);
 }
 
