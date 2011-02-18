@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import com.google.common.primitives.Ints;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -317,7 +318,7 @@ public class Parameter
 
     public String toString()
     {
-        return "[" + _indexes + (null==_name?"":":"+_name) + "]";
+        return "[" + Ints.join(",", _indexes) + (null==_name?"":":"+_name) + "]";
     }
 
 

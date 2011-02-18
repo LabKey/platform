@@ -1221,6 +1221,11 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         return _stmt.getResultSetHoldability();
     }
 
+    @Override
+    public String toString()
+    {
+        return _stmt.toString();
+    }
 
     // The following methods are "implemented" to allow compiling and running on JDK/JRE 6.0 while still supporting
     // JDK/JRE 5.0.  If/when we require JDK/JRE 6.0, these methods should be properly implemented.
