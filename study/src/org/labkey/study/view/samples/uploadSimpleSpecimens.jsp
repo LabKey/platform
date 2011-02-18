@@ -25,19 +25,20 @@
     ShowUploadSpecimensAction.UploadSpecimensForm bean = me.getModelBean();
 %>
 <labkey:errors/>
-Use this form to <b>replace all specimens</b> in the repository with a new list of specimens.<br>
+Use this form to insert or update specimens in the repository.<br>
 <%=textLink("Download a template workbook", "getSpecimenExcel.view")%><br><br>
 Paste data in the area below
 <form action="showUploadSpecimens.post" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
-    <%=generateSubmitButton("Submit")%> <%=buttonImg("Cancel", "window.history.back();return false;")%>
 
     <p>
-    <labkey:checkbox name="merge" id="merge" value="true" checked="<%=bean.getMerge()%>"/>
-    <label for="merge">Merge with existing specimens in the repository.</label>
+    <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="<%=bean.getReplaceOrMerge()%>"/>
+    <label for="merge"><b>Replace</b>: Replace all of the existing specimens.</label>
     <br>
-    By default, all specimens, vials, and events in the repository will be replaced with new records.
-    Check the checkbox to merge with existing records.
+    <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="<%=bean.getReplaceOrMerge()%>"/>
+    <label for="merge"><b>Merge</b>: Insert new specimens and update existing specimens.</label>
 
+    <p>
+    <%=generateSubmitButton("Submit")%> <%=buttonImg("Cancel", "window.history.back();return false;")%>
 </form>
 

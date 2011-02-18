@@ -199,7 +199,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         try
         {
             if (!errors.hasErrors())
-                importer.process(getViewContext().getUser(), study.getContainer(), specimenRows, form.getMerge());
+                importer.process(getViewContext().getUser(), study.getContainer(), specimenRows, form.isMerge());
         }
         catch (SQLException e)
         {
@@ -259,7 +259,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
     {
         private String tsv;
         private String redir;
-        private boolean merge;
+        private String replaceOrMerge = "merge";
 
         public String getTsv()
         {
@@ -281,14 +281,19 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             this.redir = redir;
         }
 
-        public boolean getMerge()
+        public String getReplaceOrMerge()
         {
-            return merge;
+            return replaceOrMerge;
         }
 
-        public void setMerge(boolean merge)
+        public void setReplaceOrMerge(String replaceOrMerge)
         {
-            this.merge = merge;
+            this.replaceOrMerge = replaceOrMerge;
+        }
+
+        public boolean isMerge()
+        {
+            return "merge".equals(this.replaceOrMerge);
         }
     }
 }
