@@ -2012,7 +2012,7 @@ search/lib/lucene-3.0.3.zip -text
 search/lib/lucene-core-3.0.3.jar -text
 search/lib/lucene-snowball-3.0.3-javadoc.jar -text
 search/lib/lucene-snowball-3.0.3.jar -text
-search/lib/tika-app-0.8.jar -text
+search/lib/tika-app-0.9.jar -text
 search/module.properties -text
 search/resources/schemas/dbscripts/postgresql/obsolete/search-0.00-0.03.sql -text
 search/resources/schemas/dbscripts/postgresql/obsolete/search-0.02-0.03.sql -text
