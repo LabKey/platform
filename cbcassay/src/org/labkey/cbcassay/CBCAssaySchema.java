@@ -30,7 +30,7 @@ public class CBCAssaySchema
 
     private CBCAssaySchema()
     {
-        // private contructor to prevent instantiation from
+        // private constructor to prevent instantiation from
         // outside this class: this singleton should only be
         // accessed via org.labkey.cbcassay.CBCAssaySchema.getInstance()
     }

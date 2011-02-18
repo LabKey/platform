@@ -27,20 +27,17 @@ import org.labkey.api.data.TableInfo;
  */
 public class DemoSchema
 {
-    private static DemoSchema _instance = null;
+    private static final DemoSchema _instance = new DemoSchema();
     private static final String SCHEMA_NAME = "demo";
 
     public static DemoSchema getInstance()
     {
-        if (null == _instance)
-            _instance = new DemoSchema();
-
         return _instance;
     }
 
     private DemoSchema()
     {
-        // private contructor to prevent instantiation from
+        // private constructor to prevent instantiation from
         // outside this class: this singleton should only be 
         // accessed via cpas.demo.DemoSchema.getInstance()
     }

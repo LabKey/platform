@@ -22,21 +22,18 @@ import org.labkey.api.data.TableInfo;
 
 public class caBIGSchema
 {
-    private static caBIGSchema _instance = null;
+    private static final caBIGSchema _instance = new caBIGSchema();
 
     public static caBIGSchema getInstance()
     {
-        if (null == _instance)
-            _instance = new caBIGSchema();
-
         return _instance;
     }
 
     private caBIGSchema()
     {
-        // private contructor to prevent instantiation from
+        // private constructor to prevent instantiation from
         // outside this class: this singleton should only be
-        // accessed via cpas.cabig.caBIGSchema.getInstance()
+        // accessed via org.labkey.cabig.caBIGSchema.getInstance()
     }
 
     public DbSchema getSchema()
