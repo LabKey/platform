@@ -735,6 +735,25 @@ public abstract class Method
     }
 
 
+    class OverlapsMethodInfo extends AbstractMethodInfo
+    {
+        OverlapsMethodInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+        
+        @Override
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            ret.append("(").append(arguments[0]).append(",").append(arguments[1]).append(")");
+            ret.append(" overlaps ");
+            ret.append("(").append(arguments[2]).append(",").append(arguments[3]).append(")");
+            return ret;
+        }
+    }
+
+
     static CaseInsensitiveHashMap<Method> postgresMethods = new CaseInsensitiveHashMap<Method>();
     static
     {
@@ -749,6 +768,13 @@ public abstract class Method
         postgresMethods.put("lpad",new PassthroughMethod("lpad",JdbcType.VARCHAR,2,3));
         postgresMethods.put("md5",new PassthroughMethod("md5",JdbcType.VARCHAR,1,1));
         postgresMethods.put("octet_length",new PassthroughMethod("octet_length",JdbcType.INTEGER,1,1));
+        postgresMethods.put("overlaps",new PassthroughMethod("overlaps",JdbcType.BOOLEAN,4,4) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new OverlapsMethodInfo();
+            }
+        });
         postgresMethods.put("quote_ident",new PassthroughMethod("quote_ident",JdbcType.VARCHAR,1,1));
         postgresMethods.put("quote_literal",new PassthroughMethod("quote_literal",JdbcType.VARCHAR,1,1));
         postgresMethods.put("regexp_replace",new PassthroughMethod("regexp_replace",JdbcType.VARCHAR,3,4));

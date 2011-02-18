@@ -32,6 +32,7 @@ import org.apache.log4j.Category;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -65,7 +66,7 @@ public class SqlParser
     ArrayList<Exception> _parseErrors;
     QNode _root;
     ArrayList<QParameter> _parameters;
-    
+    final SqlDialect _dialect;
 
     //
     // PUBLIC
@@ -73,6 +74,14 @@ public class SqlParser
 
     public SqlParser()
     {
+        _dialect =null;
+    }
+
+
+    /** providing a dialect only changes validation against passthrough methods */
+    public SqlParser(SqlDialect d)
+    {
+        _dialect = d;
     }
 
 
@@ -695,7 +704,7 @@ public class SqlParser
                 
                 try
                 {
-                    Method m = Method.valueOf(name);
+                    Method m = Method.resolve(_dialect, name);
                     if (null != m)
                     {
                         m.validate(node, exprList.childList(), _parseErrors);

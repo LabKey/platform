@@ -201,7 +201,7 @@ public class Query
     {
 		try
 		{
-            SqlParser parser = new SqlParser();
+            SqlParser parser = new SqlParser(getSchema().getDbSchema().getSqlDialect());
 
             parser.parseQuery(queryText, _parseErrors);
             _parameters = parser.getParameters();
@@ -954,8 +954,9 @@ public class Query
 	{
 		// ORDER BY tests
 		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date", 3, Rsize),
-        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date")
-	};
+        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date"),
+        new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE),CAST('2001-01-10' AS DATE),CAST('2001-01-05' AS DATE),CAST('2001-01-15' AS DATE))", 1, Rsize)
+    };
 
 	static SqlTest[] negative = new SqlTest[]
 	{
