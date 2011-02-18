@@ -25,9 +25,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.search.SearchService;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
@@ -147,22 +147,10 @@ public class ActionResource extends AbstractDocumentResource
     {
         if (null == _response)
         {
-            MockHttpServletRequest req = new MockHttpServletRequest(ViewServlet.getViewServletContext())
-            {
-                public Principal getUserPrincipal()
-                {
-                    return user;
-                }
-
-                @Override
-                public String getMethod()
-                {
-                    return "GET";
-                }
-            };
+            HttpServletRequest req = ViewServlet.mockRequest("GET", _indexUrl, user, null, null);
             try
             {
-                _response = ViewServlet.GET(req, _indexUrl, "text/html");
+                _response = ViewServlet.mockDispatch(req, "text/html");
                 return _response;
             }
             catch (IOException x)

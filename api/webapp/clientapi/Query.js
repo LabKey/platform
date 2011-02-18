@@ -71,7 +71,7 @@ LABKEY.Query = new function()
     function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope)
     {
         if (!callbackFn)
-            Ext.Msg.alert("Coding Error!", "You must supply a success function in your configuration object!");
+            alert("Programming Error: You must supply a success function in your configuration object!");
 
         return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
             if (data && data.rows && stripHiddenCols)

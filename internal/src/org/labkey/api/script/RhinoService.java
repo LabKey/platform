@@ -481,6 +481,8 @@ class RhinoEngine extends RhinoScriptEngine
 
         // Install the "require()" function to enable CommonJS module loading
         // from the shared SoftCachingModuleScriptProvider.
+        // NOTE: we can't install this in the topLevel since the Require instance
+        // holds on to all modules that have been require()'ed.
         Context cx = enterContext();
         try
         {

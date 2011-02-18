@@ -163,13 +163,13 @@ LABKEY.Security = new function()
         getGroupPermissions : function(config)
         {
             if(!LABKEY.Utils.getOnSuccess(config))
-                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getGroupPermissions()!");
+                alert("Programming Error: You must specify a callback function in config.success when calling LABKEY.Security.getGroupPermissions()!");
 
             var params = {};
             if(config.includeSubfolders != undefined)
                 params.includeSubfolders = config.includeSubfolders;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getGroupPerms", config.containerPath),
                 method : 'GET',
                 params: params,
@@ -279,7 +279,7 @@ LABKEY.Security = new function()
         getUserPermissions : function(config)
         {
             if(!LABKEY.Utils.getOnSuccess(config))
-                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getUserPermissions()!");
+                alert("Programming Error: You must specify a callback function in config.success when calling LABKEY.Security.getUserPermissions()!");
 
             var params = {};
 
@@ -291,7 +291,7 @@ LABKEY.Security = new function()
             if(config.includeSubfolders != undefined)
                 params.includeSubfolders = config.includeSubfolders;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getUserPerms", config.containerPath),
                 method : 'GET',
                 params: params,
@@ -337,7 +337,7 @@ LABKEY.Security = new function()
         getUsers : function(config)
         {
             if(!LABKEY.Utils.getOnSuccess(config))
-                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getUsers()!");
+                alert("Programming Error: You must specify a callback function in config.success when calling LABKEY.Security.getUsers()!");
 
             var params = {};
             if(undefined != config.groupId)
@@ -348,7 +348,7 @@ LABKEY.Security = new function()
             if(undefined != config.name)
                 params.name = config.name;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("user", "getUsers", config.containerPath),
                 method : 'GET',
                 params: params,
@@ -401,7 +401,7 @@ LABKEY.Security = new function()
             params.isWorkbook = config.isWorkbook;
             params.folderType = config.folderType;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("core", "createContainer", config.containerPath),
                 method : 'POST',
                 jsonData : params,
@@ -431,7 +431,7 @@ LABKEY.Security = new function()
          */
         deleteContainer : function(config)
         {
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("core", "deleteContainer", config.containerPath),
                 method : 'POST',
                 jsonData : {},
@@ -475,7 +475,7 @@ LABKEY.Security = new function()
          */
         getFolderTypes : function(config)
         {
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("core", "getFolderTypes", config.containerPath),
                 method : 'POST',
                 jsonData : {},
@@ -526,7 +526,7 @@ LABKEY.Security = new function()
         getContainers : function(config)
         {
             if(!LABKEY.Utils.getOnSuccess(config))
-                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getContainers()!");
+                alert("Programming Error: You must specify a callback function in config.success when calling LABKEY.Security.getContainers()!");
 
             var params = {};
             if(undefined != config.includeSubfolders)
@@ -534,7 +534,7 @@ LABKEY.Security = new function()
             if(undefined != config.depth)
                 params.depth = config.depth;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("project", "getContainers", config.containerPath),
                 method : 'GET',
                 params: params,
@@ -594,9 +594,9 @@ LABKEY.Security = new function()
         getGroupsForCurrentUser : function(config)
         {
             if(!LABKEY.Utils.getOnSuccess(config))
-                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Security.getGroupsForCurrentUser()!");
+                alert("Programming Error: You must specify a callback function in config.success when calling LABKEY.Security.getGroupsForCurrentUser()!");
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getGroupsForCurrentUser", config.containerPath),
                 method: 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -642,7 +642,7 @@ LABKEY.Security = new function()
                     window.location = LABKEY.ActionURL.buildURL("login", "login") + "?URI=" + window.location;
                 else
                 {
-                    Ext.Ajax.request({
+                    return LABKEY.Ajax.request({
                         url: LABKEY.ActionURL.buildURL("security", "ensureLogin"),
                         method: 'GET',
                         success: LABKEY.Utils.getCallbackWrapper(function(data, req){
@@ -710,7 +710,7 @@ LABKEY.Security = new function()
             if(undefined != config.includeEffectivePermissions)
                 params.includeEffectivePermissions = config.includeEffectivePermissions;
 
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getSecurableResources", config.containerPath),
                 method: "GET",
                 params: params,
@@ -753,7 +753,7 @@ LABKEY.Security = new function()
          */
         getRoles : function(config)
         {
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getRoles"),
                 method: "GET",
                 success: LABKEY.Utils.getCallbackWrapper(function(data, req){
@@ -814,7 +814,7 @@ LABKEY.Security = new function()
         getPolicy : function(config)
         {
             var params = {resourceId: config.resourceId};
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getPolicy", config.containerPath),
                 method: "GET",
                 params: params,
@@ -851,7 +851,7 @@ LABKEY.Security = new function()
         deletePolicy : function(config)
         {
             var params = {resourceId: config.resourceId};
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "deletePolicy", config.containerPath),
                 method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -889,7 +889,7 @@ LABKEY.Security = new function()
          */
         savePolicy : function(config)
         {
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "savePolicy", config.containerPath),
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -926,7 +926,7 @@ LABKEY.Security = new function()
         createGroup : function(config)
         {
             var params = {name: config.groupName};
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "createGroup", config.containerPath),
                 method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -961,7 +961,7 @@ LABKEY.Security = new function()
         deleteGroup : function(config)
         {
             var params = {id: config.groupId};
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "deleteGroup", config.containerPath),
                 method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -996,7 +996,7 @@ LABKEY.Security = new function()
          */
         renameGroup : function(config) {
             var params = {id: config.groupId, newName: config.newName};
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "renameGroup", config.containerPath),
                 method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -1036,7 +1036,7 @@ LABKEY.Security = new function()
                 groupId: config.groupId,
                 principalIds: (Ext.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
             };
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "addGroupMember", config.containerPath),
                 method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -1076,7 +1076,7 @@ LABKEY.Security = new function()
                 groupId: config.groupId,
                 principalIds: (Ext.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
             };
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "removeGroupMember", config.containerPath),
                 method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -1115,7 +1115,7 @@ LABKEY.Security = new function()
                 email: config.email,
                 sendEmail: config.sendEmail
             };
-            Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "createNewUser", config.containerPath),
                 method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),

@@ -239,7 +239,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
         return request;
     }
 
-
     public String getDefaultDomain()
     {
         return lookupStringValue(DEFAULT_DOMAIN_PROP, "");

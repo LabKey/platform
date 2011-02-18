@@ -47,6 +47,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -181,7 +182,6 @@ public class ViewServlet extends HttpServlet
         }
         module.dispatch(new ForwardWrapper(request, url), response, url);
     }
-
 
     static class ForwardWrapper extends HttpServletRequestWrapper
     {
@@ -356,13 +356,120 @@ public class ViewServlet extends HttpServlet
     }
 
 
-    public static MockHttpServletResponse GET(HttpServletRequest request, final ActionURL urlTest, final String expectedContentType)
+    public static HttpServletRequest mockRequest(String method, ActionURL url, User user, Map<String, Object> headers, String postData)
+    {
+        MockRequest request = new MockRequest(getViewServletContext(), method, url);
+
+        AppProps props = AppProps.getInstance();
+        request.setContextPath(props.getContextPath());
+        request.setServerPort(props.getServerPort());
+        request.setServerName(props.getServerName());
+        request.setScheme(props.getScheme());
+
+        if (user != null)
+            request.setUserPrincipal(user);
+
+        if (headers != null)
+        {
+            for (String header : headers.keySet())
+            {
+                if (header.equals("Content-Type"))
+                    request.setContentType((String)headers.get(header));
+                request.addHeader(header, headers.get(header));
+            }
+        }
+
+        if (method.equals("POST") && postData != null)
+            request.setContent(postData.getBytes(Charset.forName("UTF-8")));
+
+        return request;
+
+    }
+
+    public static class MockRequest extends MockHttpServletRequest
+    {
+        private ActionURL _actionURL;
+
+        public MockRequest()
+        {
+            super();
+        }
+
+        public MockRequest(ServletContext servletContext)
+        {
+            super(servletContext);
+        }
+
+        public MockRequest(String method, ActionURL actionURL)
+        {
+            super(method, actionURL.getURIString());
+            _actionURL = actionURL;
+        }
+
+        public MockRequest(ServletContext servletContext, String method, ActionURL actionURL)
+        {
+            super(servletContext, method, actionURL.getURIString());
+            _actionURL = actionURL;
+        }
+
+        public ActionURL getActionURL()
+        {
+            return _actionURL;
+        }
+
+        public void setActionURL(ActionURL actionURL)
+        {
+            setRequestURI(actionURL.getURIString());
+            _actionURL = actionURL;
+        }
+
+        @Override
+        public Map getParameterMap()
+        {
+            return _actionURL.getParameterMap();
+        }
+
+        @Override
+        public String[] getParameterValues(String name)
+        {
+            return _actionURL.getParameters(name);
+        }
+
+        @Override
+        public Enumeration getParameterNames()
+        {
+            return _actionURL.getParameterNames();
+        }
+    }
+
+
+    public static MockHttpServletResponse GET(ActionURL url, User user, Map<String, Object> headers)
             throws Exception
     {
-        if (!"GET".equals(request.getMethod()))
+        HttpServletRequest request = mockRequest("GET", url, user, headers, null);
+        return mockDispatch(request, null);
+    }
+
+    public static MockHttpServletResponse POST(ActionURL url, User user, Map<String, Object> headers, String postData)
+            throws Exception
+    {
+        HttpServletRequest request = mockRequest("POST", url, user, headers, postData);
+        return mockDispatch(request, null);
+    }
+
+
+    public static MockHttpServletResponse mockDispatch(HttpServletRequest request, final String requiredContentType)
+            throws Exception
+    {
+        if (!("GET".equals(request.getMethod()) || "POST".equals(request.getMethod())))
             throw new IllegalArgumentException(request.getMethod());
 
-        ActionURL url = urlTest.clone();
+        ActionURL url;
+        if (request instanceof MockRequest)
+            url = ((MockRequest)request).getActionURL().clone();
+        else
+            url = new ActionURL(request.getRequestURI());
+
         String path = url.getExtraPath();
         Container c = ContainerManager.getForPath(path);
         if (null == c)
@@ -376,38 +483,10 @@ public class ViewServlet extends HttpServlet
             @Override
             public void setContentType(String s)
             {
-                if (null != expectedContentType && !s.startsWith(expectedContentType))
+                if (null != requiredContentType && !s.startsWith(requiredContentType))
                     throw new IllegalStateException(s);
                 super.setContentType(s);
                 setHeader("Content-Type", s);
-            }
-        };
-
-
-        HttpServletRequestWrapper requestWrapper = new HttpServletRequestWrapper(request)
-        {
-            @Override
-            public Map getParameterMap()
-            {
-                return urlTest.getParameterMap();
-            }
-
-            @Override
-            public String getParameter(String name)
-            {
-                return super.getParameter(name);    //To change body of overridden methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public String[] getParameterValues(String name)
-            {
-                return urlTest.getParameters(name);
-            }
-
-            @Override
-            public Enumeration getParameterNames()
-            {
-                return urlTest.getParameterNames();
             }
         };
 
@@ -419,7 +498,7 @@ public class ViewServlet extends HttpServlet
                 HttpView.throwNotFound();
                 return null;
             }
-            module.dispatch(requestWrapper, mockResponse, url);
+            module.dispatch(request, mockResponse, url);
             return mockResponse;
         }
         catch (ServletException x)
