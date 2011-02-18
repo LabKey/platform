@@ -1492,11 +1492,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     if (dataMap.get(keyPropertyURI) == null)
                     {
                         currentKey++;
-                        // Create a new map because RowMaps don't work correctly doing put() in all scenarios.
-                        // TODO - once the RowMap implementation is fixed, remove this extra map creation
-                        dataMap = new HashMap<String, Object>(dataMap);
                         dataMap.put(keyPropertyURI, currentKey);
-                        dataMaps.set(i, dataMap);
                     }
                 }
                 if (logger != null) logger.debug("generated keys");
