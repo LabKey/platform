@@ -70,7 +70,8 @@ public class QJoin implements QJoinOrTable
                 builder.append("FULL OUTER JOIN ");
                 break;
             case cross:
-                builder.append(", ");
+                builder.append("CROSS JOIN ");
+                break;
         }
 
         if (parensRight)
@@ -107,13 +108,19 @@ public class QJoin implements QJoinOrTable
             case full:
                 sql.append("\nFULL JOIN ");
                 break;
+            case cross:
+                sql.append("\nCROSS JOIN ");
+                break;
         }
         _right.appendSql(sql, select);
 
         if (select.getParseErrors().size() > 0)
             return;
 
-        sql.append(" ON ");
-        select.resolveFields(_on, null).appendSql(sql);
+        if (null != _on)
+        {
+            sql.append(" ON ");
+            select.resolveFields(_on, null).appendSql(sql);
+        }
     }
 }

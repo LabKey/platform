@@ -112,6 +112,7 @@ BETWEEN : 'between';
 CASE : 'case';
 CAST : 'cast';
 COUNT : 'count';
+CROSS : 'cross';
 DELETE : 'delete';
 DISTINCT : 'distinct';
 DOT : '.';
@@ -290,7 +291,11 @@ fromClause
 	;
 
 joinExpression
-	: ((fromRange) -> fromRange) (((((jt=LEFT|jt=RIGHT|jt=FULL) (OUTER)?) | jt=INNER)? JOIN fromRange onClause) -> ^(JOIN $joinExpression $jt? fromRange onClause) {$jt=null})*
+	: ((fromRange) -> fromRange)
+	    (
+	        ((((jt=LEFT|jt=RIGHT|jt=FULL) (OUTER)?) | jt=INNER)? JOIN fromRange onClause) -> ^(JOIN $joinExpression $jt? fromRange onClause {$jt=null})
+	      | (CROSS JOIN fromRange) -> ^(JOIN $joinExpression CROSS fromRange)
+      )*
     ;
 
 fromRange

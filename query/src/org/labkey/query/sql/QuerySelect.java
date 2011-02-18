@@ -538,8 +538,9 @@ groupByLoop:
             }
 
             int childIndex = 0;
-            
-            QJoinOrTable left = parseNode(children.get(childIndex++));
+
+            QNode leftNode = children.get(childIndex++);
+            QJoinOrTable left = parseNode(leftNode);
 
             JoinType joinType = JoinType.inner;
             switch (children.get(childIndex++).getTokenType())
@@ -559,21 +560,34 @@ groupByLoop:
                 case SqlBaseParser.FULL:
                     joinType = JoinType.full;
                     break;
+                case SqlBaseParser.CROSS:
+                    joinType = JoinType.cross;
+                    break;
                 default:
                     childIndex--;
                     break;
             }
 
-            QJoinOrTable right = parseNode(children.get(childIndex++));
-            QNode on = children.get(childIndex++);
-            if (on.childList().size() != 1 || !(on.childList().get(0) instanceof QExpr))
+            QNode rightNode = children.get(childIndex++);
+            QJoinOrTable right = parseNode(rightNode);
+
+            QNode on = null;
+            if (children.size() > childIndex)
             {
-                parseError("Error in ON expression", on);
-                return null;
+                on = children.get(childIndex);
+                if (on.childList().size() != 1 || !(on.childList().get(0) instanceof QExpr))
+                {
+                    parseError("Error in ON expression", on);
+                    return null;
+                }
+                _ons.add((QExpr)on.childList().get(0));
             }
-            _ons.add((QExpr)on.childList().get(0));
-            
-            QJoin qjoin = new QJoin(left, right, joinType, (QExpr)on.childList().get(0));
+
+            if (joinType == JoinType.cross && null != on)
+                parseError("ON unexpected in a CROSS JOIN", on);
+            else if (joinType != JoinType.cross && null == on)
+                parseError("ON expected", rightNode);
+            QJoin qjoin = new QJoin(left, right, joinType, null==on ? null : (QExpr)on.childList().get(0));
             return qjoin;
         }
     }

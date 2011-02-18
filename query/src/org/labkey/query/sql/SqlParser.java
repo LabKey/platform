@@ -977,6 +977,7 @@ public class SqlParser
 			case OUTER:
 			case JOIN:
 			case FULL:
+            case CROSS:
 			case ASCENDING:
 			case DESCENDING:
 			case RANGE:
@@ -1263,7 +1264,7 @@ public class SqlParser
                 assertTrue(test.first + " has parse errors", errors.isEmpty());
                 assertNotNull(test.first + " did not parse", e);
                 String prefix = toPrefixString(e);
-                assertEquals(test.second,prefix);
+                assertEquals(test.first, test.second, prefix);
             }
             for (String sql : testSql)
             {
