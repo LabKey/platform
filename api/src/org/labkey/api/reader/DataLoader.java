@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.Container;
@@ -411,7 +412,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     active.add(column);
 
             _activeColumns = active.toArray(new ColumnDescriptor[active.size()]);
-            Map<String, Integer> colMap = new CaseInsensitiveHashMap<Integer>();
+            ArrayListMap.FindMap<String> colMap = new ArrayListMap.FindMap(new CaseInsensitiveHashMap<Integer>());
 
             for (int i = 0; i < _activeColumns.length; i++)
             {

@@ -26,12 +26,12 @@ import java.util.Map;
 
 public class RowMap<V> extends ArrayListMap<String, V>     // TODO: Move ArrayListMap methods into here
 {
-    RowMap(Map<String, Integer> findMap, List<V> row)
+    RowMap(FindMap<String> findMap, List<V> row)
     {
         super(findMap, row);
     }
 
-    RowMap(Map<String, Integer> findMap)
+    RowMap(FindMap<String> findMap)
     {
         super(findMap);
     }

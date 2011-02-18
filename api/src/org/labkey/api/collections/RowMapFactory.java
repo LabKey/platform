@@ -15,6 +15,7 @@
  */
 package org.labkey.api.collections;
 
+import java.util.BitSet;
 import java.util.Map;
 import java.util.List;
 import java.util.Arrays;
@@ -26,19 +27,19 @@ import java.util.Arrays;
  */
 public class RowMapFactory<V>
 {
-    private final Map<String, Integer> _findMap;
+    private final ArrayListMap.FindMap<String> _findMap;
 
     public RowMapFactory()
     {
-        _findMap = new CaseInsensitiveHashMap<Integer>();
+        _findMap = new ArrayListMap.FindMap(new CaseInsensitiveHashMap<Integer>());
     }
 
     public RowMapFactory(int columns)
     {
-        _findMap = new CaseInsensitiveHashMap<Integer>(2 * columns);
+        _findMap = new ArrayListMap.FindMap(new CaseInsensitiveHashMap<Integer>(2 * columns));
     }
 
-    public RowMapFactory(Map<String, Integer> findMap)
+    public RowMapFactory(ArrayListMap.FindMap<String> findMap)
     {
         _findMap = findMap;
     }

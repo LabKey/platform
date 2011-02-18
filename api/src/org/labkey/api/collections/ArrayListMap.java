@@ -25,18 +25,106 @@ import java.util.*;
 
 public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializable
 {
-    private final Map<K, Integer> _findMap;
+    public static class FindMap<K> implements Map<K,Integer>
+    {
+        final Map<K,Integer> _map;
+        int _max = -1;
+
+        public FindMap(Map<K,Integer> wrap)
+        {
+            _map = wrap;
+        }
+
+        @Override
+        public int size()
+        {
+            return _map.size();
+        }
+
+        @Override
+        public boolean isEmpty()
+        {
+            return _map.isEmpty();
+        }
+
+        @Override
+        public boolean containsKey(Object o)
+        {
+            return _map.containsKey(o);
+        }
+
+        @Override
+        public boolean containsValue(Object o)
+        {
+            return _map.containsValue(o);
+        }
+
+        @Override
+        public Integer get(Object o)
+        {
+            return _map.get(o);
+        }
+
+        @Override
+        public Integer put(K k, Integer integer)
+        {
+            assert null != integer;
+            assert !containsValue(integer);
+            if (integer > _max)
+                _max = integer;
+            return _map.put(k,integer);
+        }
+
+        @Override
+        public Integer remove(Object o)
+        {
+            return _map.remove(o);
+        }
+
+        @Override
+        public void putAll(Map<? extends K, ? extends Integer> map)
+        {
+            _map.putAll(map);
+        }
+
+        @Override
+        public void clear()
+        {
+            _map.clear();
+        }
+
+        @Override
+        public Set<K> keySet()
+        {
+            return _map.keySet();
+        }
+
+        @Override
+        public Collection<Integer> values()
+        {
+            return _map.values();
+        }
+
+        @Override
+        public Set<Entry<K, Integer>> entrySet()
+        {
+            return _map.entrySet();
+        }
+    };
+
+
+    private final FindMap<K> _findMap;
     private final List<V> _row;
 
     public ArrayListMap()
     {
-        this(new HashMap<K, Integer>(), new ArrayList<V>());
+        this(new FindMap(new HashMap<K, Integer>()), new ArrayList<V>());
     }
 
 
     public ArrayListMap(int columnCount)
     {
-        this(new HashMap<K, Integer>(columnCount * 2), new ArrayList<V>(columnCount));
+        this(new FindMap(new HashMap<K, Integer>(columnCount * 2)), new ArrayList<V>(columnCount));
     }
 
 
@@ -46,17 +134,16 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    protected ArrayListMap(Map<K, Integer> findMap)
+    protected ArrayListMap(FindMap<K> findMap)
     {
         this(findMap, new ArrayList<V>(findMap.size()));
     }
 
 
-    protected ArrayListMap(Map<K, Integer> findMap, List<V> row)
+    protected ArrayListMap(FindMap findMap, List<V> row)
     {
         _findMap = findMap;
         _row = row;
-        assert consistent();
     }
 
 
@@ -77,9 +164,8 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
         if (null == I)
         {
-            i = _findMap.size();
+            i = _findMap._max+1;
             _findMap.put(key, i);
-            assert consistent();
         }
         else
         {
@@ -200,7 +286,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    public Map<K, Integer> getFindMap()
+    public FindMap<K> getFindMap()
     {
         return _findMap;
     }
@@ -208,21 +294,6 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     public List<V> getRow()
     {
         return _row;
-    }
-
-
-    private boolean consistent()
-    {
-        BitSet s = new BitSet();
-        for (Map.Entry<K,Integer> e : _findMap.entrySet())
-        {
-            Integer i = e.getValue();
-// BUG DataLoader create bad ArrayListMaps
-//            assert 0 <= i && i < _findMap.size();
-            assert !s.get(i);
-            s.set(i);
-        }
-        return true;
     }
 
 
