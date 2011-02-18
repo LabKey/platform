@@ -691,6 +691,16 @@ public class SpecimenImporter
         populateSpecimens(info, merge);
         populateVials(info, merge);
         populateVialEvents(info, merge);
+
+        if (merge)
+        {
+            // Delete any orphaned specimen rows without vials
+            Table.execute(StudySchema.getInstance().getSchema(),
+                    "DELETE FROM " + StudySchema.getInstance().getTableInfoSpecimen() +
+                    " WHERE Container=? " +
+                    " AND RowId NOT IN (SELECT SpecimenId FROM " + StudySchema.getInstance().getTableInfoVial() + ")",
+                    new Object[] { info.getContainer() });
+        }
     }
 
     private static final int CURRENT_SITE_UPDATE_SIZE = 1000;
