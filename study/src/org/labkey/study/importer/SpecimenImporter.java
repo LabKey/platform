@@ -430,12 +430,12 @@ public class SpecimenImporter
     private static final String EVENT_ID_COL = "record_id";
 
     // SpecimenEvent columns that form a psuedo-unqiue constraint
-    private static final SpecimenColumn LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE;
+    private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE;
 
     public static final Collection<SpecimenColumn> SPECIMEN_COLUMNS = Arrays.asList(
             new SpecimenColumn(EVENT_ID_COL, "ExternalId", "INT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(10)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(20)", TargetTable.VIALS),
+            GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(20)", TargetTable.VIALS, true),
             LAB_ID = new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER") {
                 public boolean isUnique() { return true; }
             },
@@ -1311,11 +1311,13 @@ public class SpecimenImporter
                 // Create list of specimen columns, including unique columns not found in SPECIMEN_COLUMNS.
                 Set<SpecimenColumn> cols = new LinkedHashSet<SpecimenColumn>();
                 cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.SPECIMENS, true));
-                cols.add(new SpecimenColumn("ParticipantSequenceKey", "ParticipantSequenceKey", "VARCHAR(200)", TargetTable.SPECIMENS, true));
+                cols.add(new SpecimenColumn("ParticipantSequenceKey", "ParticipantSequenceKey", "VARCHAR(200)", TargetTable.SPECIMENS, false));
                 cols.addAll(getSpecimenCols(info.getAvailableColumns()));
 
                 // Insert or update the specimens from in the temp table.
                 rs = Table.executeQuery(info.getSchema(), insertSelectSql);
+                if (VERBOSE_DEBUG)
+                    ResultSetUtil.logData(rs, _logger);
                 mergeTable(info.getSchema(), info.getContainer(), "study.Specimen", cols, rs, false);
             }
             finally
@@ -1404,15 +1406,17 @@ public class SpecimenImporter
                 // Create list of vial columns, including unique columns not found in SPECIMEN_COLUMNS.
                 Set<SpecimenColumn> cols = new LinkedHashSet<SpecimenColumn>();
                 // NOTE: study.Vial.RowId is actually an FK to exp.Material.RowId
-                // We can use RowId as a part of the unique key since the Material was created based on LSID and GlobalUniqueId
-                cols.add(new SpecimenColumn("RowId", "RowId", "INT NOT NULL", TargetTable.VIALS, true));
-                cols.add(new SpecimenColumn("SpecimenId", "SpecimenId", "INT NOT NULL", TargetTable.VIALS, true));
-                cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.VIALS, true));
+                cols.add(GLOBAL_UNIQUE_ID);
+                cols.add(new SpecimenColumn("RowId", "RowId", "INT NOT NULL", TargetTable.VIALS, false));
+                cols.add(new SpecimenColumn("SpecimenId", "SpecimenId", "INT NOT NULL", TargetTable.VIALS, false));
+                cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.VIALS, false));
                 cols.add(new SpecimenColumn("Available", "Available", "BOOLEAN", TargetTable.VIALS, false));
                 cols.addAll(getVialCols(info.getAvailableColumns()));
 
                 // Insert or update the vials from in the temp table.
                 rs = Table.executeQuery(info.getSchema(), insertSelectSql);
+                if (VERBOSE_DEBUG)
+                    ResultSetUtil.logData(rs, _logger);
                 mergeTable(info.getSchema(), info.getContainer(), "study.Vial", cols, rs, false);
             }
             finally
@@ -1467,7 +1471,7 @@ public class SpecimenImporter
                 //    Container, VialId (vial.GlobalUniqueId), LabId, StorageDate, ShipDate, LabReceiptDate
                 // We need to always add these extra columns, even if they aren't in the list of available columns.
                 Set<SpecimenColumn> cols = new LinkedHashSet<SpecimenColumn>();
-                cols.add(new SpecimenColumn("VialId", "VialId", "INT NOT NULL", TargetTable.VIALS, true));
+                cols.add(new SpecimenColumn("VialId", "VialId", "INT NOT NULL", TargetTable.SPECIMEN_EVENTS, true));
                 cols.add(LAB_ID);
                 cols.add(SHIP_DATE);
                 cols.add(STORAGE_DATE);
@@ -1479,6 +1483,8 @@ public class SpecimenImporter
 
                 // Insert or update the vials from in the temp table.
                 rs = Table.executeQuery(info.getSchema(), insertSelectSql);
+                if (VERBOSE_DEBUG)
+                    ResultSetUtil.logData(rs, _logger);
                 mergeTable(info.getSchema(), info.getContainer(), "study.SpecimenEvent", cols, rs, false);
             }
             finally
@@ -1699,6 +1705,8 @@ public class SpecimenImporter
                         rs = Table.executeQuery(schema, selectSql.toString(), params);
                         if (rs.next())
                             rowExists = true;
+                        if (VERBOSE_DEBUG)
+                            info((rowExists ? "Row exists" : "Row does NOT exist") + " matching:\n" + JdbcUtil.format(selectSql.toString(), Arrays.asList(params)));
                     }
                     finally
                     {
@@ -1714,6 +1722,8 @@ public class SpecimenImporter
                         parameterMapInsert.put(idCol.getName(), idCol.getValue(row));
                     for (ImportableColumn col : availableColumns)
                         parameterMapInsert.put(col.getDbColumnName(), getValueParameter(col, row));
+                    if (VERBOSE_DEBUG)
+                        info(stmtInsert.toString());
                     stmtInsert.execute();
                     rowsAdded++;
                 }
@@ -1726,6 +1736,8 @@ public class SpecimenImporter
                         parameterMapUpdate.put(col.getDbColumnName(), value);
                     }
                     parameterMapUpdate.put("Container", container.getId());
+                    if (VERBOSE_DEBUG)
+                        info(stmtUpdate.toString());
                     stmtUpdate.execute();
                     rowsUpdated++;
                 }
@@ -2081,6 +2093,7 @@ public class SpecimenImporter
     }
 
     private static final boolean DEBUG = false;
+    private static final boolean VERBOSE_DEBUG = false;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {

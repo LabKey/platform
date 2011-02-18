@@ -203,7 +203,16 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         for (LookupTable lookupTable : lookupTables.values())
             inputs.put(lookupTable.getName(), lookupTable.toMaps());
 
-        super.process(user, container, inputs, merge, logger);
+        try
+        {
+            super.process(user, container, inputs, merge, logger);
+        }
+        catch (SQLException ex)
+        {
+            if (logger != null)
+                logger.error("Error during import", ex);
+            throw ex;
+        }
     }
 
 
