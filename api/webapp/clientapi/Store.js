@@ -100,6 +100,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             else
                 baseParams['query.sort'] = config.sort;
         }
+        if (config.parameters)
+        {
+            for (var n in config.parameters)
+                baseParams["query.param." + n] = config.parameters[n];
+        }
+
         delete config.sort; //important...otherwise the base Ext.data.Store interprets it
 
         if (config.sql)
@@ -107,13 +113,13 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         else
             LABKEY.Filter.appendFilterParams(baseParams, config.filterArray);
 
-        if(config.viewName && !config.sql)
+        if (config.viewName && !config.sql)
             baseParams['query.viewName'] = config.viewName;
 
-        if(config.columns && !config.sql)
+        if (config.columns && !config.sql)
             baseParams['query.columns'] = Ext.isArray(config.columns) ? config.columns.join(",") : config.columns;
 
-        if(config.containerFilter)
+        if (config.containerFilter)
             baseParams.containerFilter = config.containerFilter;
 
         baseParams.apiVersion = 9.1;

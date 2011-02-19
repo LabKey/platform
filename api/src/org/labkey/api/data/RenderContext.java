@@ -288,7 +288,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         return _rs;
     }
 
-    public Map<String, Aggregate.Result> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, List<Aggregate> aggregatesIn, boolean async) throws SQLException, IOException
+    public Map<String, Aggregate.Result> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, List<Aggregate> aggregatesIn, Map<String,Object> parameters, boolean async) throws SQLException, IOException
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
@@ -323,10 +323,10 @@ public class RenderContext extends BoundMap // extends ViewContext
         {
             if (async)
             {
-                return Table.selectAggregatesForDisplayAsync(tinfo, aggregates, cols, filter, getCache(), getViewContext().getResponse());
+                return Table.selectAggregatesForDisplayAsync(tinfo, aggregates, cols, parameters, filter, getCache(), getViewContext().getResponse());
             }
 
-            return Table.selectAggregatesForDisplay(tinfo, aggregates, cols, filter, getCache());
+            return Table.selectAggregatesForDisplay(tinfo, aggregates, cols, parameters, filter, getCache());
         }
 
         return Collections.emptyMap();

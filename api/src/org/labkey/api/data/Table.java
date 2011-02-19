@@ -1336,17 +1336,21 @@ public class Table
         return selectForDisplay(table, select, parameters, filter, sort, rowCount, offset, true, false);
     }
 
-    public static Map<String, Aggregate.Result>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, Collection<ColumnInfo> select, Filter filter, boolean cache) throws SQLException
+    public static Map<String, Aggregate.Result>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
+            Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, boolean cache) throws SQLException
     {
-        return selectAggregatesForDisplay(table, aggregates, select, filter, cache, null);
+        return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, cache, null);
     }
 
-    private static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, Collection<ColumnInfo> select, Filter filter, boolean cache, AsyncQueryRequest asyncRequest)
+    private static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
+            Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, boolean cache, AsyncQueryRequest asyncRequest)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, null, aggregates);
         SQLFragment innerSql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, 0, 0);
+        QueryService.get().bindNamedParameters(innerSql, parameters);
+        QueryService.get().validateNamedParameters(innerSql);
 
         Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, columns.values());
 
@@ -1389,14 +1393,15 @@ public class Table
         }
     }
 
-    public static Map<String, Aggregate.Result> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates, final Collection<ColumnInfo> select, final Filter filter, final boolean cache, HttpServletResponse response)
+    public static Map<String, Aggregate.Result> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates,
+            final Collection<ColumnInfo> select, final Map<String,Object> parameters, final Filter filter, final boolean cache, HttpServletResponse response)
             throws SQLException, IOException
     {
         final AsyncQueryRequest<Map<String, Aggregate.Result>> asyncRequest = new AsyncQueryRequest<Map<String, Aggregate.Result>>(response);
         return asyncRequest.waitForResult(new Callable<Map<String, Aggregate.Result>>() {
             public Map<String, Aggregate.Result> call() throws Exception
             {
-                return selectAggregatesForDisplay(table, aggregates, select, filter, cache, asyncRequest);
+                return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, cache, asyncRequest);
             }
         });
     }

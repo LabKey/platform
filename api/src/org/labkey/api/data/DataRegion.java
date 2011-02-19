@@ -665,7 +665,7 @@ public class DataRegion extends DisplayElement
                 newAggregates.addAll(ctx.getBaseAggregates());
             newAggregates.add(Aggregate.createCountStar());
 
-            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, isAllowAsync());
+            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
 
             Aggregate.Result result = _aggregateResults.remove(Aggregate.STAR);
             if (result != null)
@@ -673,7 +673,7 @@ public class DataRegion extends DisplayElement
             }
         else
         {
-            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), ctx.getBaseAggregates(), isAllowAsync());
+            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), ctx.getBaseAggregates(), getQueryParameters(), isAllowAsync());
         }
 
         // TODO: Move this into RenderContext?
