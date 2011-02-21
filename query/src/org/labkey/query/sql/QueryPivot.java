@@ -217,7 +217,7 @@ public class QueryPivot extends QueryRelation
             // find/verify
         }
         if (!pivotFound)
-            parseError("Could not find pivot column in group by list: " + _pivotColumn.getAlias(), null);
+            parseError("Could not find pivot column in group by list, expression must match exactly: " + _pivotColumn.getAlias(), null);
     }
 
 
