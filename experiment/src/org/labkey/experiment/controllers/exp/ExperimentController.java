@@ -1892,6 +1892,14 @@ public class ExperimentController extends SpringActionController
             super();
         }
 
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            // UNDONE: Need help topic on Runs
+            setHelpTopic("experiment");
+            return super.appendNavTrail(root);
+        }
+
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<ExpRun> runs = new ArrayList<ExpRun>();
@@ -1992,6 +2000,14 @@ public class ExperimentController extends SpringActionController
             super();
         }
 
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            // UNDONE: Need help topic on protocols
+            setHelpTopic("experiment");
+            return super.appendNavTrail(root);
+        }
+
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
@@ -2029,6 +2045,13 @@ public class ExperimentController extends SpringActionController
         public DeleteMaterialByRowIdAction()
         {
             super();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("sampleSets");
+            return super.appendNavTrail(root);
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
@@ -2082,6 +2105,14 @@ public class ExperimentController extends SpringActionController
         public DeleteSelectedDataAction()
         {
             super();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            // UNDONE: Need help topic on Datas
+            setHelpTopic("experiment");
+            return super.appendNavTrail(root);
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException, ServletException
@@ -2166,6 +2197,13 @@ public class ExperimentController extends SpringActionController
             }
             return experiments;
         }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("runGroups");
+            return super.appendNavTrail(root);
+        }
     }
 
     @RequiresPermissionClass(DeletePermission.class)
@@ -2174,6 +2212,13 @@ public class ExperimentController extends SpringActionController
         public DeleteMaterialSourceAction()
         {
             super();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("sampleSets");
+            return super.appendNavTrail(root);
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
@@ -3519,6 +3564,7 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("sampleSets");
             root = appendRootNavTrail(root);
             root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
             ExpSampleSet sampleSet = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleSet() : null;
