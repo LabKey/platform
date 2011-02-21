@@ -1420,7 +1420,7 @@ public class SpecimenImporter
                 cols.add(new SpecimenColumn("RowId", "RowId", "INT NOT NULL", TargetTable.VIALS, false));
                 cols.add(new SpecimenColumn("SpecimenId", "SpecimenId", "INT NOT NULL", TargetTable.VIALS, false));
                 cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.VIALS, false));
-                cols.add(new SpecimenColumn("Available", "Available", "BOOLEAN", TargetTable.VIALS, false));
+                cols.add(new SpecimenColumn("Available", "Available", BOOLEAN_TYPE, TargetTable.VIALS, false));
                 cols.addAll(getVialCols(info.getAvailableColumns()));
 
                 // Insert or update the vials from in the temp table.
