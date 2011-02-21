@@ -238,6 +238,13 @@ public class QueryController extends SpringActionController
             url.addParameter("externalSchemaId", Integer.toString(def.getExternalSchemaId()));
             return url;
         }
+
+        public ActionURL urlCreateExcelTemplate(Container c, String schemaName, String queryName)
+        {
+            return new ActionURL(ExportExcelTemplateAction.class, c)
+                    .addParameter(QueryParam.schemaName, schemaName)
+                    .addParameter("query.queryName", queryName);
+        }
     }
 
     protected boolean queryExists(QueryForm form)
@@ -3431,8 +3438,16 @@ public class QueryController extends SpringActionController
 
             // Get any previously existing non-session view.
             // The session custom view and the view-to-be-saved may have different names.
+            // If they do have different names, we may need to delete an existing session view with that name.
             // UNDONE: If the view has a different name, we will clobber it without asking.
             CustomView existingView = form.getQueryDef().getCustomView(getUser(), null, form.getNewName());
+            if (existingView != null && existingView.isSession())
+            {
+                // Delete any session view we are overwriting.
+                existingView.delete(getUser(), getViewContext().getRequest());
+                existingView = form.getQueryDef().getCustomView(getUser(), null, form.getNewName());
+            }
+
             if (existingView == null)
             {
                 User owner = form.isShared() ? null : getUser();
