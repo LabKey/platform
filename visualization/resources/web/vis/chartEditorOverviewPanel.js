@@ -40,6 +40,10 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
             }
         ];
 
+        this.on('activate', function(){
+           this.doLayout();
+        }, this);
+
         LABKEY.vis.ChartEditorOverviewPanel.superclass.initComponent.call(this);
     },
 

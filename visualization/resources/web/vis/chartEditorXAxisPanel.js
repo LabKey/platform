@@ -21,6 +21,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
         this.addEvents(
             'chartDefinitionChanged',
+            'measureMetadataRequestPending',
             'measureMetadataRequestComplete'
         );
 
@@ -159,9 +160,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             }
         });
 
-        columnTwoItems.push({
-            id: 'x-axis-range-automatic-radio',
-            xtype: 'radio',
+        this.rangeAutomaticRadio = new Ext.form.Radio({
             name: 'xaxis_range',
             fieldLabel: 'Range',
             inputValue: 'automatic',
@@ -173,15 +172,61 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 'check': function(field, checked){
                     // if checked, remove any manual axis min value
                     if(checked) {
-                        Ext.getCmp('xaxis-range-min-textfield').disable();
-                        Ext.getCmp('xaxis-range-min-textfield').reset();
-                        delete this.axis.range.min;
-
-                        Ext.getCmp('xaxis-range-max-textfield').disable();
-                        Ext.getCmp('xaxis-range-max-textfield').reset();
-                        delete this.axis.range.max;
-
                         this.axis.range.type = 'automatic';
+                        this.setRangeFormOptions(this.axis.range.type);
+                        this.fireEvent('chartDefinitionChanged', false);
+                    }
+                }
+            }
+        });
+        columnTwoItems.push(this.rangeAutomaticRadio);
+
+        this.rangeManualRadio = new Ext.form.Radio({
+            name: 'xaxis_range',
+            inputValue: 'manual',
+            boxLabel: 'Manual',
+            width: 85,
+            height: 1,
+            listeners: {
+                scope: this,
+                'check': function(field, checked){
+                    // if checked, enable the min and max fields and give min focus
+                    if(checked) {
+                        this.axis.range.type = 'manual';
+                        this.setRangeFormOptions(this.axis.range.type);
+                    }
+                }
+            }
+        });
+
+        this.rangeMinNumberField = new Ext.form.NumberField({
+            emptyText: 'Min',
+            selectOnFocus: true,
+            width: 75,
+            diabled: true,
+            listeners: {
+                scope: this,
+                'change': function(cmp, newVal, oldVal) {
+                    this.axis.range.min = newVal;
+                    // fire change event if max is also set
+                    if(typeof this.axis.range.max == "number"){
+                        this.fireEvent('chartDefinitionChanged', false);
+                    }
+                }
+            }
+        });
+
+        this.rangeMaxNumberField = new Ext.form.NumberField({
+            emptyText: 'Max',
+            selectOnFocus: true,
+            width: 75,
+            diabled: true,
+            listeners: {
+                scope: this,
+                'change': function(cmp, newVal, oldVal) {
+                    this.axis.range.max = newVal;
+                    // fire change event if min is also set
+                    if(typeof this.axis.range.min == "number"){
                         this.fireEvent('chartDefinitionChanged', false);
                     }
                 }
@@ -192,72 +237,9 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             xtype: 'compositefield',
             defaults: {flex: 1},
             items: [
-                {
-                    id: 'x-axis-range-manual-radio',
-                    xtype: 'radio',
-                    name: 'xaxis_range',
-                    inputValue: 'manual',
-                    boxLabel: 'Manual',
-                    width: 85,
-                    height: 1,
-                    listeners: {
-                        scope: this,
-                        'check': function(field, checked){
-                            // if checked, enable the min and max fields and give min focus
-                            if(checked) {
-                                Ext.getCmp('xaxis-range-min-textfield').enable();
-                                Ext.getCmp('xaxis-range-max-textfield').enable();
-                                //Ext.getCmp('xaxis-range-min-textfield').focus();
-
-                                // if this is a saved chart with manual min and max set
-                                if(typeof this.axis.range.min == "number"){
-                                    Ext.getCmp('xaxis-range-min-textfield').setValue(this.axis.range.min);
-                                }
-                                if(typeof this.axis.range.max == "number"){
-                                    Ext.getCmp('xaxis-range-max-textfield').setValue(this.axis.range.max);
-                                }
-
-                                this.axis.range.type = 'manual';
-                            }
-                        }
-                    }
-                },
-                {
-                    xtype: 'numberfield',
-                    id: 'xaxis-range-min-textfield',
-                    emptyText: 'Min',
-                    selectOnFocus: true,
-                    width: 75,
-                    diabled: true,
-                    listeners: {
-                        scope: this,
-                        'change': function(cmp, newVal, oldVal) {
-                            this.axis.range.min = newVal;
-                            // fire change event if max is also set
-                            if(typeof this.axis.range.max == "number"){
-                                this.fireEvent('chartDefinitionChanged', false);
-                            }
-                        }
-                    }
-                },
-                {
-                    xtype: 'numberfield',
-                    id: 'xaxis-range-max-textfield',
-                    emptyText: 'Max',
-                    selectOnFocus: true,
-                    width: 75,
-                    diabled: true,
-                    listeners: {
-                        scope: this,
-                        'change': function(cmp, newVal, oldVal) {
-                            this.axis.range.max = newVal;
-                            // fire change event if min is also set
-                            if(typeof this.axis.range.min == "number"){
-                                this.fireEvent('chartDefinitionChanged', false);
-                            }
-                        }
-                    }
-                }
+                this.rangeManualRadio,
+                this.rangeMinNumberField,
+                this.rangeMaxNumberField
             ]
         });
 
@@ -279,11 +261,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         }];
 
         this.on('activate', function(){
-            // if this is rendering with a saved chart, set the range options
-            // since automatic is the default, only need to change it if type == manual
-            if(this.axis.range.type && this.axis.range.type == 'manual'){
-                Ext.getCmp('x-axis-range-manual-radio').setValue(true);
-            }
+            this.doLayout();
         }, this);
 
         LABKEY.vis.ChartEditorXAxisPanel.superclass.initComponent.call(this);
@@ -401,5 +379,63 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
     getMeasure: function(){
         return this.measure;
+    },
+
+    setZeroDateStore: function(schema){
+        this.fireEvent('measureMetadataRequestPending');
+        var newZStore = this.newZeroDateStore(schema);
+        this.zeroDateCombo.bindStore(newZStore);
+    },
+
+    setMeasureDateStore: function(schema, query){
+        this.fireEvent('measureMetadataRequestPending');
+        var newMStore = this.newMeasureDateStore(schema, query);
+        this.measureDateCombo.bindStore(newMStore);
+    },
+
+    setRange: function(rangeType){
+        // select the given radio option without firing events
+        if(rangeType == 'manual'){
+            this.rangeManualRadio.suspendEvents(false);
+            this.rangeManualRadio.setValue(true);
+            this.rangeAutomaticRadio.setValue(false);
+            this.rangeManualRadio.resumeEvents();
+        }
+        else if(rangeType == 'automatic'){
+            this.rangeAutomaticRadio.suspendEvents(false);
+            this.rangeAutomaticRadio.setValue(true);
+            this.rangeManualRadio.setValue(false);
+            this.rangeAutomaticRadio.resumeEvents();
+        }
+
+        this.setRangeFormOptions(rangeType);
+    },
+
+    setRangeFormOptions: function(rangeType){
+        if(rangeType == 'manual'){
+            this.axis.range.type = 'manual';
+
+            this.rangeMinNumberField.enable();
+            this.rangeMaxNumberField.enable();
+
+            // if this is a saved chart with manual min and max set
+            if(typeof this.axis.range.min == "number"){
+                this.rangeMinNumberField.setValue(this.axis.range.min);
+            }
+            if(typeof this.axis.range.max == "number"){
+                this.rangeMaxNumberField.setValue(this.axis.range.max);
+            }
+        }
+        else if(rangeType == 'automatic'){
+            this.axis.range.type = 'automatic';
+
+            this.rangeMinNumberField.disable();
+            this.rangeMinNumberField.setValue("");
+            delete this.axis.range.min;
+
+            this.rangeMaxNumberField.disable();
+            this.rangeMaxNumberField.setValue("");
+            delete this.axis.range.max;
+        }
     }
 });

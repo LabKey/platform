@@ -24,48 +24,15 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
         LABKEY.vis.SubjectSeriesSelector.superclass.constructor.call(this, config);
     },
 
-    initComponent : function() {
-
-        // selection model for subject series selector
-        var sm = new  Ext.grid.CheckboxSelectionModel({
-            listeners: {
-                scope: this,
-                'selectionChange': function(selModel){
-                    // add the selected subjects to the subject object
-                    this.subject.selected = [];
-                    var selectedRecords = selModel.getSelections();
-                    for(var i = 0; i < selectedRecords.length; i++) {
-                        this.subject.selected.push(selectedRecords[i].get('value'));
-                    }
-
-                    this.fireEvent('chartDefinitionChanged', false);
-                }
-            }
-        });
-
-        this.items = [new Ext.grid.GridPanel({
-            id: 'subject-list-view',
-            autoHeight: true,
-            hidden: true, // initally hidden until subject values are loaded into the store
-            viewConfig: {forceFit: true},
-            border: false,
-            frame: false,
-            selModel: sm,
-            header: false,
-            store: new Ext.data.JsonStore({
-                root: 'values',
-                fields: ['value']
-            }),
-            columns: [
-                sm,
-                {header: this.subjectNounPlural, dataIndex:'value'}
-            ]
-         })];
-
-        LABKEY.vis.SubjectSeriesSelector.superclass.initComponent.call(this);
-    },
-
     getSubjectValues: function(schema, query) {
+        // if there was a previous gridPanel showing (i.e. user is now changing measure),
+        // remove it and delete the subject selected array
+        if(this.items && this.getComponent('subject-list-view')){
+            this.removeAll();
+            delete this.subject.selected;
+        }
+
+        // store the subject info for use in the getDimensionValues call
         var subjectInfo = {
             name: this.subjectColumn,
             schemaName: schema,
@@ -88,35 +55,72 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
     },
 
     renderSubjects: function(response, e) {
-        var reader = new Ext.data.JsonReader({root:'values'}, [{name:'value'}]);
-        var o = reader.read(response);
+        // decode the JSON responseText
+        var subjectValues = Ext.util.JSON.decode(response.responseText);
 
-        var subjectGridStore = Ext.getCmp('subject-list-view').getStore();
-        var subjectSelModel = Ext.getCmp('subject-list-view').getSelectionModel();
+        // selection model for subject series selector
+        var sm = new  Ext.grid.CheckboxSelectionModel({
+            listeners: {
+                scope: this,
+                'selectionChange': function(selModel){
+                    // add the selected subjects to the subject object
+                    this.subject.selected = [];
+                    var selectedRecords = selModel.getSelections();
+                    for(var i = 0; i < selectedRecords.length; i++) {
+                        this.subject.selected.push(selectedRecords[i].get('value'));
+                    }
 
-        // add all of the values to the subject list view store
-        if(subjectGridStore.getCount() > 0){
-            subjectGridStore.removeAll();
-            delete this.subject.selected;
-        }
-        subjectGridStore.add(o.records);
-
-        // if not saved chart, initially select first 5 subject values from the list view (but suspend events during selection)
-        if(!this.subject.selected) {
-            this.subject.selected = [];
-            // select the first 5 subjects by default (select all if length < 5)
-            for(var i = 0; i < (o.records.length < 5 ? o.records.length : 5); i++) {
-                this.subject.selected.push(o.records[i].data.value != undefined ? o.records[i].data.value : o.records[i].data);
+                    this.fireEvent('chartDefinitionChanged', false);
+                }
             }
-        }
-        subjectSelModel.suspendEvents(false);
-        for(var i = 0; i < this.subject.selected.length; i++){
-            subjectSelModel.selectRow(subjectGridStore.find('value', this.subject.selected[i]), true);
-        }
-        subjectSelModel.resumeEvents();
+        });
 
-        // now that the subject values are loaded, show the list view
-        Ext.getCmp('subject-list-view').show();
+        // initialize the subject gridPanel with the subjectValues from the getDimensionValues call
+        var subjectGridPanel = new Ext.grid.GridPanel({
+            id: 'subject-list-view',
+            autoHeight: true,
+            viewConfig: {forceFit: true},
+            border: false,
+            frame: false,
+            selModel: sm,
+            header: false,
+            enableHdMenu: false,
+            store: new Ext.data.JsonStore({
+                data: subjectValues,
+                root: 'values',
+                fields: ['value'],
+                sortInfo: {
+                    field: 'value',
+                    direction: 'ASC'
+                }
+            }),
+            columns: [
+                sm,
+                {header: this.subjectNounPlural, dataIndex:'value'}
+            ],
+            listeners: {
+                scope: this,
+                'viewready': function(grid){
+                    // if this is not a saved chart with pre-selected values, initially select the first 5 values
+                    if(!this.subject.selected){
+                        this.subject.selected = new Array();
+                        for(var i = 0; i < (grid.getStore().getCount() < 5 ? grid.getStore().getCount() : 5); i++) {
+                            this.subject.selected.push(grid.getStore().getAt(i).get("value"));
+                        }
+                    }
+
+                    // check selected subject values in grid panel (but suspend events during selection)
+                    sm.suspendEvents(false);
+                    for(var i = 0; i < this.subject.selected.length; i++){
+                        var index = grid.getStore().find('value', this.subject.selected[i]);
+                        sm.selectRow(index, true);
+                    }
+                    sm.resumeEvents();
+                }
+            }
+         });
+         this.add(subjectGridPanel);
+         this.doLayout();
 
         // this is one of the requests being tracked, see if the rest are done
         this.fireEvent('measureMetadataRequestComplete');

@@ -29,64 +29,68 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         var columnOneItems = [];
         var columnTwoItems = [];
 
-        columnOneItems.push({
+        this.chartLayoutSingleRadio = new Ext.form.Radio({
+            name: 'chart_layout',
+            boxLabel: 'One Chart',
+            inputValue: 'single',
+            checked: true,
+            listeners: {
+                scope: this,
+                'check': function(field, checked) {
+                    if(checked) {
+                        this.chartLayout = 'single';
+                        this.fireEvent('chartDefinitionChanged', false);
+                    }
+                }
+            }
+        });
+
+        this.chartLayoutPerSubjectRadio = new Ext.form.Radio({
+            name: 'chart_layout',
+            boxLabel: 'One Chart for Each ' + this.subjectNounSingular,
+            inputValue: 'per_subject',
+            listeners: {
+                scope: this,
+                'check': function(field, checked) {
+                    if(checked) {
+                        this.chartLayout = 'per_subject';
+                        this.fireEvent('chartDefinitionChanged', false);
+                    }
+                }
+            }
+        });
+
+        this.chartLayoutPerDimensionRadio = new Ext.form.Radio({
+            name: 'chart_layout',
+            boxLabel: 'One Chart for Each Dimension',
+            inputValue: 'per_dimension',
+            listeners: {
+                scope: this,
+                'check': function(field, checked) {
+                    if(checked) {
+                        this.chartLayout = 'per_dimension';
+                        this.fireEvent('chartDefinitionChanged', false);
+                    }
+                }
+            }
+        });
+
+        this.chartLayoutRadioGroup = new Ext.form.RadioGroup({
             xtype: 'radiogroup',
             id: 'chart-layout-radiogroup',
             fieldLabel: 'Layout',
             columns: 1,
             items: [
-                {
-                    name: 'chart_layout',
-                    id: 'single',
-                    boxLabel: 'One Chart',
-                    inputValue: 'single',
-                    checked: true,
-                    listeners: {
-                        scope: this,
-                        'check': function(field, checked) {
-                            if(checked) {
-                                this.chartLayout = 'single';
-                                this.fireEvent('chartDefinitionChanged', false);
-                            }
-                        }
-                    }
-                },
-                {
-                    name: 'chart_layout',
-                    id: 'per_subject',
-                    boxLabel: 'One Chart for Each ' + this.subjectNounSingular,
-                    inputValue: 'per_subject',
-                    listeners: {
-                        scope: this,
-                        'check': function(field, checked) {
-                            if(checked) {
-                                this.chartLayout = 'per_subject';
-                                this.fireEvent('chartDefinitionChanged', false);
-                            }
-                        }
-                    }
-                },
-                {
-                    name: 'chart_layout',
-                    id: 'per_dimension',
-                    boxLabel: 'One Chart for Each [Dimension]',
-                    inputValue: 'per_dimension',
-                    //hidden: true,
-                    listeners: {
-                        scope: this,
-                        'check': function(field, checked) {
-                            if(checked) {
-                                this.chartLayout = 'per_dimension';
-                                this.fireEvent('chartDefinitionChanged', false);
-                            }
-                        }
-                    }
-                }
+                this.chartLayoutSingleRadio,
+                this.chartLayoutPerSubjectRadio,
+                this.chartLayoutPerDimensionRadio
             ]
         });
+        columnOneItems.push(this.chartLayoutRadioGroup);
 
         columnTwoItems.push({
             xtype: 'textfield',
+            id: 'chart-title-textfield',
             fieldLabel: 'Chart Title',
             value: this.mainTitle,
             width: 300,
@@ -117,10 +121,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         }];
 
         this.on('activate', function(){
-            // if this is rendering with a saved chart, set the layout option
-            Ext.getCmp(this.chartLayout).suspendEvents(false);
-            Ext.getCmp('chart-layout-radiogroup').setValue(this.chartLayout, true);
-            Ext.getCmp(this.chartLayout).resumeEvents();
+           this.doLayout();
         }, this);
 
         LABKEY.vis.ChartEditorChartsPanel.superclass.initComponent.call(this);
@@ -132,5 +133,36 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
 
     getChartLayout: function(){
         return this.chartLayout;
+    },
+
+    setMainTitle: function(newMainTitle){
+        this.mainTitle = newMainTitle;
+        Ext.getCmp('chart-title-textfield').setValue(newMainTitle);
+    },
+
+    setChartLayout: function(newChartLayout){
+        this.chartLayout = newChartLayout;
+        // set the radio group option with the events suspended for the given radio options
+        if(this.chartLayout == 'single'){
+            this.chartLayoutSingleRadio.suspendEvents(false);
+            this.chartLayoutSingleRadio.setValue(true);
+            this.chartLayoutPerSubjectRadio.setValue(false);
+            this.chartLayoutPerDimensionRadio.setValue(false);
+            this.chartLayoutSingleRadio.resumeEvents();
+        }
+        else if(this.chartLayout == 'per_subject'){
+            this.chartLayoutPerSubjectRadio.suspendEvents(false);
+            this.chartLayoutSingleRadio.setValue(false);
+            this.chartLayoutPerSubjectRadio.setValue(true);
+            this.chartLayoutPerDimensionRadio.setValue(false);
+            this.chartLayoutPerSubjectRadio.resumeEvents();
+        }
+        else if(this.chartLayout == 'per_dimension'){
+            this.chartLayoutPerDimensionRadio.suspendEvents(false);
+            this.chartLayoutSingleRadio.setValue(false);
+            this.chartLayoutPerSubjectRadio.setValue(false);
+            this.chartLayoutPerDimensionRadio.setValue(true);
+            this.chartLayoutPerDimensionRadio.resumeEvents();
+        }
     }
 });

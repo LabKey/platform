@@ -29,9 +29,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         var columnOneItems = [];
         var columnTwoItems = [];
 
-        columnOneItems.push({
-            id: 'y-axis-scale-combo',
-            xtype: 'combo',
+        this.scaleCombo = new Ext.form.ComboBox({
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.ArrayStore({
@@ -51,6 +49,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
                 }
             }
         });
+        columnOneItems.push(this.scaleCombo);
 
         columnOneItems.push({
             id: 'y-axis-label-textfield',
@@ -67,9 +66,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             }
         });
 
-        columnTwoItems.push({
-            id: 'y-axis-range-automatic-radio',
-            xtype: 'radio',
+        this.rangeAutomaticRadio = new Ext.form.Radio({
             name: 'yaxis_range',
             fieldLabel: 'Range',
             inputValue: 'automatic',
@@ -81,22 +78,34 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
                 'check': function(field, checked){
                     // if checked, remove any manual axis min value
                     if(checked) {
-                        yAxisRangeMinNumberField.disable();
-                        yAxisRangeMinNumberField.reset();
-                        delete this.axis.range.min;
-
-                        yAxisRangeMaxNumberField.disable();
-                        yAxisRangeMaxNumberField.reset();
-                        delete this.axis.range.max;
-
                         this.axis.range.type = 'automatic';
+                        this.setRangeFormOptions(this.axis.range.type);
                         this.fireEvent('chartDefinitionChanged', false);
                     }
                 }
             }
         });
+        columnTwoItems.push(this.rangeAutomaticRadio);
 
-        var yAxisRangeMinNumberField = new Ext.form.NumberField({
+        this.rangeManualRadio = new Ext.form.Radio({
+            name: 'yaxis_range',
+            inputValue: 'manual',
+            boxLabel: 'Manual',
+            width: 85,
+            height: 1,
+            listeners: {
+                scope: this,
+                'check': function(field, checked){
+                    // if checked, enable the min and max textfields and give min focus
+                    if(checked) {
+                        this.axis.range.type = 'manual';
+                        this.setRangeFormOptions(this.axis.range.type);
+                    }
+                }
+            }
+        });
+
+        this.rangeMinNumberField = new Ext.form.NumberField({
             emptyText: 'Min',
             selectOnFocus: true,
             width: 75,
@@ -113,7 +122,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             }
         });
 
-        var yAxisRangeMaxNumberField = new Ext.form.NumberField({
+        this.rangeMaxNumberField = new Ext.form.NumberField({
             emptyText: 'Max',
             selectOnFocus: true,
             width: 75,
@@ -134,39 +143,9 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             xtype: 'compositefield',
             defaults: {flex: 1},
             items: [
-                {
-                    id: 'y-axis-range-manual-radio',
-                    xtype: 'radio',
-                    name: 'yaxis_range',
-                    inputValue: 'manual',
-                    boxLabel: 'Manual',
-                    width: 85,
-                    height: 1,
-                    listeners: {
-                        scope: this,
-                        'check': function(field, checked){
-                            // if checked, enable the min and max textfields and give min focus
-                            if(checked) {
-                                yAxisRangeMinNumberField.enable();
-                                yAxisRangeMaxNumberField.enable();
-                                //yAxisRangeMinNumberField.focus();
-
-                                // if this is a saved chart with manual min and max set
-                                if(typeof this.axis.range.min == "number"){
-                                    yAxisRangeMinNumberField.setValue(this.axis.range.min);
-                                }
-                                if(typeof this.axis.range.max == "number"){
-                                    yAxisRangeMaxNumberField.setValue(this.axis.range.max);
-                                }
-
-                                this.axis.range.type = 'manual';
-                            }
-                        }
-                    }
-
-                },
-                yAxisRangeMinNumberField,
-                yAxisRangeMaxNumberField
+                this.rangeManualRadio,
+                this.rangeMinNumberField,
+                this.rangeMaxNumberField
             ]
         });
 
@@ -188,11 +167,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         }];
 
         this.on('activate', function(){
-            // if this is rendering with a saved chart, set the range options
-            // since automatic is the default, only need to change it if type == manual
-            if(this.axis.range.type && this.axis.range.type == 'manual'){
-                Ext.getCmp('y-axis-range-manual-radio').setValue(true);
-            }
+            this.doLayout();
         }, this);
 
         LABKEY.vis.ChartEditorYAxisPanel.superclass.initComponent.call(this);
@@ -203,10 +178,58 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
     },
 
     setLabel: function(newLabel){
-        // if the label is not already set, use the newLabel
-        if(this.axis.label == ""){
-            this.axis.label = newLabel;
-            Ext.getCmp('y-axis-label-textfield').setValue(this.axis.label);
+        this.axis.label = newLabel;
+        Ext.getCmp('y-axis-label-textfield').setValue(this.axis.label);
+    },
+
+    setScale: function(newScale){
+        this.axis.scale = newScale;
+        this.scaleCombo.setValue(newScale);
+    },
+
+    setRange: function(rangeType){
+        // select the given radio option without firing events
+        if(rangeType == 'manual'){
+            this.rangeManualRadio.suspendEvents(false);
+            this.rangeManualRadio.setValue(true);
+            this.rangeAutomaticRadio.setValue(false);
+            this.rangeManualRadio.resumeEvents();
+        }
+        else if(rangeType == 'automatic'){
+            this.rangeAutomaticRadio.suspendEvents(false);
+            this.rangeAutomaticRadio.setValue(true);
+            this.rangeManualRadio.setValue(false);
+            this.rangeAutomaticRadio.resumeEvents();
+        }
+
+        this.setRangeFormOptions(rangeType);
+    },
+
+    setRangeFormOptions: function(rangeType){
+        if(rangeType == 'manual'){
+            this.axis.range.type = 'manual';
+
+            this.rangeMinNumberField.enable();
+            this.rangeMaxNumberField.enable();
+
+            // if this is a saved chart with manual min and max set
+            if(typeof this.axis.range.min == "number"){
+                this.rangeMinNumberField.setValue(this.axis.range.min);
+            }
+            if(typeof this.axis.range.max == "number"){
+                this.rangeMaxNumberField.setValue(this.axis.range.max);
+            }
+        }
+        else if(rangeType == 'automatic'){
+            this.axis.range.type = 'automatic';
+
+            this.rangeMinNumberField.disable();
+            this.rangeMinNumberField.setValue("");
+            delete this.axis.range.min;
+
+            this.rangeMaxNumberField.disable();
+            this.rangeMaxNumberField.setValue("");
+            delete this.axis.range.max;
         }
     }
 });
