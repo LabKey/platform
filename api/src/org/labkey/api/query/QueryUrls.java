@@ -31,4 +31,5 @@ public interface QueryUrls extends UrlProvider
     ActionURL urlUpdateSnapshot(Container c);
     ActionURL urlSchemaBrowser(Container c);
     ActionURL urlSchemaBrowser(Container c, String schemaName);
+    ActionURL urlCreateExcelTemplate(Container c, String schemaName, String queryName);
 }
