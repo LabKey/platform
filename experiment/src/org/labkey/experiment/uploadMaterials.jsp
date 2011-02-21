@@ -23,12 +23,18 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.query.QueryUrls" %>
+<%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<UploadMaterialSetForm> view = (JspView<UploadMaterialSetForm>) HttpView.currentView();
     UploadMaterialSetForm form = view.getModelBean();
     ExpSampleSet sampleSet = form.getSampleSet();
+
+    ActionURL templateURL = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(getContainer(), SamplesSchema.SCHEMA_NAME, form.getName());
 %>
 
 <%!
@@ -126,13 +132,14 @@
     <tr>
         <td class="labkey-form-label">Sample Set Data</td>
         <td>
-            Sample set uploads must formatted as tab separated values (TSV). Copy/paste from Microsoft Excel works well.<br>
-            The first row should contain column names, and subsequent rows should contain the data.
-            <br>
+            Sample set uploads must formatted as tab separated values (TSV).<br>
+            The first row should contain column names; subsequent rows should contain the data.<br>
+            Copy/paste from Microsoft Excel works well. <%=textLink("Download an Excel template workbook", templateURL)%><br>
             <% if (!form.isImportMoreSamples()) { %>
                 <b>Note:</b> If there is a column <em>'Name'</em>, it will be chosen as the unique identifier for the sample set.
                 <br>
             <% } %>
+            <br>
             <textarea id="textbox" onchange="updateIds(this)" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
             <script type="text/javascript">
                 Ext.EventManager.on('textbox', 'keydown', handleTabsInTextArea);

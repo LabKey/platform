@@ -18,15 +18,19 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.samples.ShowUploadSpecimensAction" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<ShowUploadSpecimensAction.UploadSpecimensForm> me = (JspView<ShowUploadSpecimensAction.UploadSpecimensForm>) HttpView.currentView();
     ShowUploadSpecimensAction.UploadSpecimensForm bean = me.getModelBean();
+    Container c = getViewContext().getContainer();
 %>
 <labkey:errors/>
 Use this form to insert or update specimens in the repository.<br>
-<%=textLink("Download a template workbook", "getSpecimenExcel.view")%><br><br>
+<%=textLink("Download a template workbook", new ActionURL(SpecimenController.GetSpecimenExcelAction.class, c))%><br><br>
 Paste data in the area below
 <form action="showUploadSpecimens.post" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
