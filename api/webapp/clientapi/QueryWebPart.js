@@ -383,7 +383,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             timerId = 0;
             var el = Ext.fly(this.renderTo);
             if (el)
+            {
+                if (el.getWidth() == 0 || el.getHeight() == 0)
+                    el.update("<p>&nbsp;</p>");
                 el.mask("Loading...");
+            }
         }.defer(500, this);
 
         Ext.Ajax.request({
@@ -392,9 +396,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             success: function(response) {
                 if (timerId > 0)
                     clearTimeout(timerId);
-                
-                var targetElem = Ext.get(this.renderTo);
 
+                var targetElem = Ext.get(this.renderTo);
                 if (targetElem)
                 {
                     targetElem.unmask();
@@ -427,9 +430,27 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                     this.fireEvent("render");
                 }
                 else
+                {
                     Ext.Msg.alert("Rendering Error", "The element '" + this.renderTo + "' does not exist in the document!");
+                }
             },
-            failure: LABKEY.Utils.getCallbackWrapper(this._failure, this.scope, true),
+            failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
+                if (timerId > 0)
+                    clearTimeout(timerId);
+
+                var targetElem = Ext.get(this.renderTo);
+                if (targetElem)
+                {
+                    targetElem.unmask();
+                    targetElem.update("<div class='labkey-error'>" + Ext.util.Format.htmlEncode(json.exception) + "</div>");
+                    if (this._failure)
+                        this._failure.call(this.scope || this, json, response, options);
+                }
+                else
+                {
+                    Ext.Msg.alert("Rendering Error", "The element '" + this.renderTo + "' does not exist in the document!");
+                }
+            }, this, true),
             method: 'POST',
             params: params,
             jsonData: json,
