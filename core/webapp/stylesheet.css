@@ -334,6 +334,7 @@ table.labkey-button-bar
 .labkey-button-bar .labkey-menu-button,
 .labkey-button-bar .labkey-button:visited,
 .labkey-button-bar .labkey-menu-button:visited {
+	background: none !important;
     background-color: #E7EFF4;
     border: 1px solid #E7EFF4;
 
@@ -358,7 +359,8 @@ table.labkey-button-bar
 
 .labkey-button-bar .labkey-button:hover,
 .labkey-button-bar .labkey-menu-button:hover {
-    background-color: #FFFFFF;
+    background: #fff !important;
+	background-color: #FFFFFF;
     border: 1px solid #676767;
 
     margin: 0.1em 0.8em 0.5em 0;
@@ -470,10 +472,9 @@ img.labkey-mv-indicator
 
 a.labkey-button,
 a.labkey-button:visited {
-    padding: 2px 5px;
+    padding: 3px 5px;
 	margin-right: 5px;
-    border: 1px solid #5894b8;
-    background-color: #FFFFFF;
+    border: 1px solid #b4b4b4;
     color: #126495;
     text-transform: uppercase;
     font-size: 10px;
@@ -483,6 +484,16 @@ a.labkey-button:visited {
 
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
+    border-radius: 5px;
+
+	/* For WebKit (Safari, Google Chrome etc) */
+    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+    /* For Mozilla/Gecko (Firefox etc) */
+    background: -moz-linear-gradient(top, #fff, #e5e5e5);
+    /* For Internet Explorer 5.5 - 7 */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#FFFFFFFF, endColorstr=#E5E5E5E5);
+    /* For Internet Explorer 8 */
+    -ms-filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#FFFFFFFF, endColorstr=#E5E5E5E5);
 
     /* *padding: 1px 5px 0px 5px; */
 	*padding: 3px 5px;
@@ -491,10 +502,9 @@ a.labkey-button:visited {
 
 a.labkey-button:hover
 {
-    padding: 2px 5px;
+    padding: 3px 5px;
 	*padding: 5px;
-    border: 1px solid #676767;
-    background-color: #ffffff;
+    border: 1px solid #b4b4b4;
     color: #000000;
     text-transform: uppercase;
     font-size: 10px;
@@ -502,9 +512,18 @@ a.labkey-button:hover
     font-weight: bold;
     cursor: pointer;
 
-    border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
+    border-radius: 5px;
+
+	/* For WebKit (Safari, Google Chrome etc) */
+    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+    /* For Mozilla/Gecko (Firefox etc) */
+    background: -moz-linear-gradient(top, #fff, #e5e5e5);
+    /* For Internet Explorer 5.5 - 7 */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#FFFFFFFF, endColorstr=#e5e5e5e5);
+    /* For Internet Explorer 8 */
+    -ms-filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#FFFFFFFF, endColorstr=#e5e5e5e5);
 
     /* *padding: 1px 5px 0px 5px; */
 	*padding: 3px 5px;
@@ -524,9 +543,9 @@ a.labkey-disabled-button {
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
 
-    border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
+    border-radius: 5px;
 
     /* *padding: 1px 5px 0px 5px; */
 	*padding: 3px 5px;
@@ -535,9 +554,8 @@ a.labkey-disabled-button {
 
 a.labkey-button:active
 {
-    border: 1px solid #676767;
+    border: 1px solid #b4b4b4;
     position: relative;
-    background-color: #FFFFFF;
 }
 
 /* Used across the site for simple indenting */
@@ -1684,8 +1702,12 @@ table.labkey-wp
     width: 100%;
     border-spacing: 0; *border-collapse: collapse;
     border: 5px solid #e0e6ea;
+
+	border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
+
+    margin-bottom: 20px;
 }
 
 /* This is the body of the web part */
@@ -1831,12 +1853,16 @@ span.labkey-wp-icon-button-inactive:hover {
 	padding: 4px 5px;
 	margin-left: 5px;
     border: 1px solid #fff;
-    color: #676767;
+    color: #126495;
     text-transform: uppercase;
     font-size: 10px;
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     white-space: nowrap;
+
+	border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
 }
 
 .labkey-wp-text-buttons a:hover {
@@ -1909,9 +1935,12 @@ a.labkey-text-link:hover .css-arrow-right {
 .css-arrow-down {
 	display: inline;
 	font-size: 0px; line-height: 0%; width: 0px;
-	border-top: 5px solid #5d9ac3;
-	border-left: 5px solid #fff;
-	border-right: 5px solid #fff;
+	border-top: 6px solid #126495;
+	border-left: 4px solid #fff;
+	border-right: 4px solid #fff;
+	opacity: 0.4;
+    filter: alpha(opacity=40);
+    -moz-opacity: 0.4;
 }
 
 
@@ -3256,9 +3285,9 @@ ul.labkey-tab-strip li
 
 ul.labkey-tab-strip a
 {
-    border-top : 1px solid #999;
-    border-right : 1px solid #999;
-    border-left : 1px solid #999;
+    border-top : 1px solid #89A1B4;
+    border-right : 1px solid #89A1B4;
+    border-left : 1px solid #89A1B4;
     border-bottom : none;
     float: left;
     line-height : 14px;
