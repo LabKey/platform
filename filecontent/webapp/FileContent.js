@@ -260,6 +260,19 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             this.adminOptions.setGridConfig(config.gridConfig);
         }
 
+        // update the expand collapse state of the file upload panel
+        if (!this.disableGeneralAdminSettings && config.expandFileUpload != undefined)
+        {
+            if (config.expandFileUpload)
+                this.fileUploadPanel.expand();
+            else
+                this.fileUploadPanel.collapse();
+
+            // push the new state into the action initial config because the toolbar buttons
+            // need to be recreated from the original actions
+            this.actions.upload.initialConfig.pressed = config.expandFileUpload;
+        }
+
         if (e.updatePipelineActions)
         {
             Ext.Ajax.request({
@@ -668,6 +681,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             isPipelineRoot : this.isPipelineRoot,
             tbarItemsConfig: this.tbarItemsConfig,
             actions: this.actions,
+            disableGeneralAdminSettings : this.disableGeneralAdminSettings,
             columnModel : cm, //this.grid.getColumnModel().config
             gridConfig : this.adminOptions.getGridConfig() 
         });
