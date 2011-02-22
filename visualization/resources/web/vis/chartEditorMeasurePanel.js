@@ -79,28 +79,34 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 'check': function(field, checked){
                     // when this radio option is selected, enable the dimension combo box
                     if(checked) {
-                        // by default select the first item and then give the input focus
+                        // enable the dimension and aggregate combo box
                         this.measureDimensionComboBox.enable();
+                        this.dimensionAggregateLabel.enable();
+                        this.dimensionAggregateComboBox.enable();
 
                         // if saved chart, then set dimension value based on the saved value
                         if(this.dimension){
                             this.measureDimensionComboBox.setValue(this.dimension.name);
                         }
+                        // otherwise select the first item and then give the input focus
                         else{
                             var selIndex = 0;
                             var selRecord = this.measureDimensionComboBox.getStore().getAt(selIndex);
                             this.measureDimensionComboBox.setValue(selRecord.get("name"));
                             this.measureDimensionComboBox.fireEvent('select', this.measureDimensionComboBox, selRecord, selIndex);
                         }
+
+                        // enable and set the dimension aggregate combo box
+                        this.dimensionAggregateLabel.enable();
+                        this.dimensionAggregateComboBox.enable();
+                        this.setDimensionAggregate(LABKEY.Visualization.Aggregate.AVG);
                     }
                 }
             }
         });
 
         this.measureDimensionComboBox = new Ext.form.ComboBox({
-            id: 'measure-dimension-combo',
             emptyText: '<Select Grouping Field>',
-            //editable: false,
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.Store({}),
@@ -118,11 +124,62 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
         columnTwoItems.push({
             xtype: 'compositefield',
-            //id: 'measure-series-per-subject-dimension',
             defaults: {flex: 1},
             items: [
                 this.seriesPerDimensionRadio,
                 this.measureDimensionComboBox
+            ]
+        });
+
+        // get the list of aggregate options from LABKEY.Visualization.Aggregate
+        var aggregates = new Array();
+        for(var item in LABKEY.Visualization.Aggregate){
+            aggregates.push([LABKEY.Visualization.Aggregate[item]]);
+        };
+
+        // initialize the aggregate combobox
+        this.dimensionAggregateComboBox = new Ext.form.ComboBox({
+            labelStyle: 'margin-left:50px;',
+            triggerAction: 'all',
+            mode: 'local',
+            store: new Ext.data.ArrayStore({
+                fields: ['name'],
+                data: aggregates,
+                sortInfo: {
+                    field: 'name',
+                    direction: 'ASC'
+                }
+            }),
+            valueField: 'name',
+            displayField: 'name',
+            disabled: true,
+            width: 75,
+            style: {
+                marginLeft: '50px'
+            },
+            listeners: {
+                scope: this,
+                'select': function(cmp, record, index) {
+                    this.setDimensionAggregate(cmp.getValue());
+                    this.fireEvent('chartDefinitionChanged', true);
+                }
+            }
+        });
+
+        // the aggregate combo label has to be a separate component so that it can also be disabled/enabled
+        this.dimensionAggregateLabel = new Ext.form.Label({
+            text: 'Display Duplicate Values as: ',
+            style: {
+                marginLeft: '50px'
+            },
+            disabled: true
+        });
+
+        columnTwoItems.push({
+            xtype: 'compositefield',
+            items: [
+                this.dimensionAggregateLabel,
+                this.dimensionAggregateComboBox
             ]
         });
 
@@ -380,18 +437,24 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         if(this.dimension){
             this.measureDimensionComboBox.enable();
             this.measureDimensionComboBox.setValue(this.dimension.name);
+
+            this.dimensionAggregateLabel.enable();
+            this.dimensionAggregateComboBox.enable();
+            this.setDimensionAggregate(this.measure.aggregate);
         }
         else{
             this.measureDimensionComboBox.disable();
+            this.dimensionAggregateLabel.disable();
+            this.dimensionAggregateComboBox.disable();
         }
 
 
         // set the dimension radio as enabled/disabled
         if(this.measureDimensionComboBox.getStore().getCount() == 0){
-            this.seriesPerDimensionRadio.setDisabled(true);
+            this.seriesPerDimensionRadio.disable();
         }
         else{
-            this.seriesPerDimensionRadio.setDisabled(false);
+            this.seriesPerDimensionRadio.enable();
         }
     },
 
@@ -403,8 +466,23 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         this.measureDimensionComboBox.disable();
         this.measureDimensionComboBox.setValue("");
 
+        // disable and clear the dimension aggregate combobox
+        this.dimensionAggregateLabel.disable();
+        this.dimensionAggregateComboBox.disable();
+        this.setDimensionAggregate("");
+
         // if there was a different dimension selection, remove that list view from the series selector
         Ext.getCmp('series-selector-tabpanel').remove('dimension-series-selector-panel', true);
         Ext.getCmp('series-selector-tabpanel').doLayout();
+    },
+
+    setDimensionAggregate: function(newAggregate){
+        this.dimensionAggregateComboBox.setValue(newAggregate);
+        if(newAggregate != ""){
+            this.measure.aggregate = newAggregate;
+        }
+        else{
+            delete this.measure.aggregate;
+        }
     }
 });
