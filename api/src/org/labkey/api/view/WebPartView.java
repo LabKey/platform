@@ -504,22 +504,22 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     {
                         // Collapse all items into one drop-down
                         // Render the navigation menu
-                        if (nMenu != null)
+                        if (nMenu == null)
+                            nMenu = new NavTree("More");
+
+                        // Portal
+                        if (links.length > 0)
                         {
-                            // Portal
-                            if (links.length > 0)
-                            {
-                                NavTree portal = new NavTree("Layout");
-                                for (NavTree link : links)
-                                    portal.addChild(link);
-                                nMenu.addChild(portal);
-                            }                            
-                            
-                            if (nMenu.hasChildren())
-                            {
-                                out.print("&nbsp;");
-                                renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
-                            }
+                            NavTree portal = new NavTree("Layout");
+                            for (NavTree link : links)
+                                portal.addChild(link);
+                            nMenu.addChild(portal);
+                        }
+
+                        if (nMenu.hasChildren())
+                        {
+                            out.print("&nbsp;");
+                            renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
                         }
                     }
                     else if (!isWebPart())
@@ -568,9 +568,14 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                     String linkHref = current.second;
                                     String linkText = current.first;
 
-                                    out.print("<span class=\"labkey-wp-icon-button-active\">");
                                     if (null != linkHref && 0 < linkHref.length())
+                                    {
+                                        out.print("<span class=\"labkey-wp-icon-button-active\">");
                                         out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
+                                    }
+                                    else
+                                        out.print("<span class=\"labkey-wp-icon-button-inactive\">");
+                                    
                                     if (null != current.getImageSrc())
                                     {
                                         if (current.getImageWidth() != 0 && current.getImageHeight() != 0)
@@ -599,9 +604,14 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                             String linkHref = link.second;
                             String linkText = link.first;
 
-                            out.print("<span class=\"labkey-wp-icon-button-active\">");
                             if (null != linkHref && 0 < linkHref.length())
+                            {
+                                out.print("<span class=\"labkey-wp-icon-button-active\">");
                                 out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
+                            }
+                            else
+                                out.print("<span class=\"labkey-wp-icon-button-inactive\">");
+                            
                             if (null != link.getImageSrc())
                             {
                                 if (link.getImageWidth() != 0 && link.getImageHeight() != 0)

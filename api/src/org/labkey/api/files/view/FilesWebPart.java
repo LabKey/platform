@@ -212,6 +212,14 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
     }
 
+    @Override
+    public String getLocation()
+    {
+        if (!this.isWide())
+            return WebPartFactory.LOCATION_RIGHT;
+        return WebPartFactory.LOCATION_BODY;
+    }
+
     public static String getRootPath(Container c, String davName)
     {
         return getRootPath(c, davName, null);

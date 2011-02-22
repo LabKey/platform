@@ -566,20 +566,23 @@ public class Portal
                 view.prepare(view.getModelBean());
 
                 NavTree navTree = view.getPortalLinks();
-                NavTree menu = view.getNavMenu();
                 if (canCustomize)
                 {
 
                     if (desc.isEditable())
                         view.setCustomizeLink(getCustomizeURL(context, part));                    
-                    
+
                     if (i > 0)
                         navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), contextPath + "/_images/partup.png");
+                    else if (part.getLocation().equals(WebPartFactory.LOCATION_RIGHT))
+                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), contextPath + "/_images/partupg.png");
                     else
                         navTree.addChild("", "", contextPath + "/_images/partupg.png");
 
                     if (i < partsForLocation.size() - 1)
                         navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), contextPath + "/_images/partdown.png");
+                    else if (part.getLocation().equals(WebPartFactory.LOCATION_RIGHT))
+                        navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), contextPath + "/_images/partdowng.png");
                     else
                         navTree.addChild("", "", contextPath + "/_images/partdowng.png");
                     

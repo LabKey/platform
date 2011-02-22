@@ -100,10 +100,16 @@ LABKEY.Portal = new function()
                     var insertPoint = swapTable.nextSibling;
                     var swapPoint = targetTable.nextSibling;
 
-                    parentEl.removeChild(targetTable);
-                    parentEl.removeChild(swapTable);
-                    parentEl.insertBefore(targetTable, insertPoint);
-                    parentEl.insertBefore(swapTable, swapPoint);
+                    // Need to make sure the element is actually a child before trying to remove
+                    for (var node = 0; node < parentEl.children.length; node++) {
+                        if (parentEl.children[node] === swapTable) {
+                            parentEl.removeChild(targetTable);
+                            parentEl.removeChild(swapTable);
+                            parentEl.insertBefore(targetTable, insertPoint);
+                            parentEl.insertBefore(swapTable, swapPoint);
+                            break;
+                        }
+                    }
                 }
             }
             else if (action == REMOVE_ACTION)
@@ -122,6 +128,7 @@ LABKEY.Portal = new function()
         imageEl.src = newImgSrc;
         // replace href with imageEl to remove the link entirely:
         hrefParent.replaceChild(imageEl, href);
+        hrefParent.className = "labkey-wp-icon-button-inactive";
     }
 
     function addImgHref(imageEl, href, newImgSrc)
@@ -129,6 +136,7 @@ LABKEY.Portal = new function()
         var hrefEl = document.createElement("a");
         hrefEl.href = href;
         imageEl.src = newImgSrc;
+        imageEl.parentNode.className = "labkey-wp-icon-button-active";
         imageEl.parentNode.replaceChild(hrefEl, imageEl);
         hrefEl.appendChild(imageEl);
     }

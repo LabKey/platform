@@ -221,22 +221,12 @@ public class HomeTemplate extends PrintTemplate
                         context.getRequest().getSession().setAttribute(PARENT_TRAIL_INFO, new ParentTrailInfo(url, saveChildren));
                     }
                 }
-                else //In a "service's" module. Add its links below the dashboard.
+                else //In a "services" module. Add its links below the dashboard.
                 {
                     //If we have stashed away the parent's trail info AND it looks like it is right, use it
                     ParentTrailInfo pti = (ParentTrailInfo) context.getRequest().getSession().getAttribute(PARENT_TRAIL_INFO);
                     if (null != pti && pti.url.getExtraPath().equals(url.getExtraPath()))
                         extraChildren = new ArrayList<NavTree>(pti.links);
-
-                    //If it specified a trail, use it. Otherwise do the default thing.
-                    // assume length == 1 is title only, length > 1 means root,...,title
-                    // TODO: Remove this completely in 11.1
-                    if (trailExtras.length <= 1)
-                    {
-                        ActionURL startUrl = curModule.getTabURL(context.getContainer(), context.getUser());
-                        if (null != startUrl && !equalBaseUrls(startUrl, url))
-                            extraChildren.add(new NavTree(curModule.getTabName(context), startUrl.getLocalURIString()));
-                    }
                     extraChildren.addAll(Arrays.asList(trailExtras));
                 }
             }
@@ -244,18 +234,7 @@ public class HomeTemplate extends PrintTemplate
             {
                 context.getRequest().getSession().removeAttribute(PARENT_TRAIL_INFO);
             }
-
-/*            if (trailExtras.length == 0)
-            {
-                int dashPos = pageFlow.indexOf('-');
-                if (dashPos > 0)
-                {
-                    String childFlow = pageFlow.substring(dashPos + 1);
-                    if (!"begin".equals(url.getAction()))
-                        extraChildren.add(new NavTree(childFlow, url.relativeUrl("begin.view", null, url.getPageFlow(), true)));
-                }
-            } */
-        } //  folderType != FolderType.NONE
+        }
 
         return new NavTrailView(context, pageTitle, page, extraChildren);
     }
