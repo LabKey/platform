@@ -60,6 +60,7 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.controllers.property.PropertyController;
@@ -121,6 +122,15 @@ public class ExperimentController extends SpringActionController
         return root;
     }
 
+    @Override
+    public PageConfig defaultPageConfig()
+    {
+        // set default help topic for query controler
+        PageConfig config = super.defaultPageConfig();
+        config.setHelpTopic(new HelpTopic("experiment"));
+        return config;
+    }
+
     @ActionNames("begin,gridView")
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends ShowRunsAction
@@ -140,7 +150,6 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("experiment");
             return appendRootNavTrail(root);
         }
     }
@@ -160,7 +169,6 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("experiment");
             return appendRootNavTrail(root).addChild("Experiment Runs");
         }
     }
@@ -559,7 +567,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ShowMaterialAction extends ShowMaterialSimpleAction 
+    public class ShowMaterialAction extends ShowMaterialSimpleAction
     {
         public VBox getView(ExpObjectForm form, BindException errors) throws Exception
         {
@@ -3712,6 +3720,7 @@ public class ExperimentController extends SpringActionController
         {
             _action = new DescribeDerivedSamplesAction();
             _action.setViewContext(getViewContext());
+            _action.setPageConfig(defaultPageConfig());
             return _action.getView(form, errors);
         }
 
