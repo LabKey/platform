@@ -373,20 +373,20 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
 	    // one series per subject/measure/dimensionvalue combination
 	    var seriesList = [];
-	    if(this.chartInfo.measures[yAxisMeasureIndex].dimension && this.chartInfo.measures[yAxisMeasureIndex].dimension.selected) {
-	        seriesList = this.chartInfo.measures[yAxisMeasureIndex].dimension.selected;
+	    if(this.chartInfo.measures[yAxisMeasureIndex].dimension && this.chartInfo.measures[yAxisMeasureIndex].dimension.values) {
+	        seriesList = this.chartInfo.measures[yAxisMeasureIndex].dimension.values;
 	    }
 	    else {
 	        seriesList = [this.chartInfo.measures[yAxisMeasureIndex].measure.name];
 	    }
 
         var series = [];
-        for(var j = 0; j < this.chartInfo.subject.selected.length; j++)
+        for(var j = 0; j < this.chartInfo.subject.values.length; j++)
         {
         	for(var i = 0; i < seriesList.length; i++)
         	{
                 var yAxisSeries = seriesList[i];
-                var subject = this.chartInfo.subject.selected[j];
+                var subject = this.chartInfo.subject.values[j];
 
                 series.push({
                     subject: subject,
@@ -406,7 +406,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 	    // three options: all series on one chart, one chart per subject, or one chart per measure/dimension
         var charts = [];
         if(this.chartInfo.chartLayout == "per_subject") {
-        	Ext.each(this.chartInfo.subject.selected, function(subject) {
+        	Ext.each(this.chartInfo.subject.values, function(subject) {
         		charts.push(this.newLineChart(size, series, {parameter: "subject", value: subject}, subject));
         	}, this);
         }

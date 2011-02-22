@@ -26,10 +26,10 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
 
     getSubjectValues: function(schema, query) {
         // if there was a previous gridPanel showing (i.e. user is now changing measure),
-        // remove it and delete the subject selected array
+        // remove it and delete the subject values array
         if(this.items && this.getComponent('subject-list-view')){
             this.removeAll();
-            delete this.subject.selected;
+            delete this.subject.values;
         }
 
         // store the subject info for use in the getDimensionValues call
@@ -64,13 +64,13 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
                 scope: this,
                 'selectionChange': function(selModel){
                     // add the selected subjects to the subject object
-                    this.subject.selected = [];
+                    this.subject.values = [];
                     var selectedRecords = selModel.getSelections();
                     for(var i = 0; i < selectedRecords.length; i++) {
-                        this.subject.selected.push(selectedRecords[i].get('value'));
+                        this.subject.values.push(selectedRecords[i].get('value'));
                     }
 
-                    this.fireEvent('chartDefinitionChanged', false);
+                    this.fireEvent('chartDefinitionChanged', true);
                 }
             }
         });
@@ -102,17 +102,17 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
                 scope: this,
                 'viewready': function(grid){
                     // if this is not a saved chart with pre-selected values, initially select the first 5 values
-                    if(!this.subject.selected){
-                        this.subject.selected = new Array();
+                    if(!this.subject.values){
+                        this.subject.values = new Array();
                         for(var i = 0; i < (grid.getStore().getCount() < 5 ? grid.getStore().getCount() : 5); i++) {
-                            this.subject.selected.push(grid.getStore().getAt(i).get("value"));
+                            this.subject.values.push(grid.getStore().getAt(i).get("value"));
                         }
                     }
 
                     // check selected subject values in grid panel (but suspend events during selection)
                     sm.suspendEvents(false);
-                    for(var i = 0; i < this.subject.selected.length; i++){
-                        var index = grid.getStore().find('value', this.subject.selected[i]);
+                    for(var i = 0; i < this.subject.values.length; i++){
+                        var index = grid.getStore().find('value', this.subject.values[i]);
                         sm.selectRow(index, true);
                     }
                     sm.resumeEvents();
