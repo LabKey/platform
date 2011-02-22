@@ -512,35 +512,37 @@ LABKEY.DataRegion = function (config)
     /**
      * Show a message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
+     * @return The Ext.Element of the newly created message div.
      */
     this.showMessage = function (html)
     {
         var div = this.msgbox.child("div");
         if (div.first())
             div.createChild({tag: 'hr'});
-        div.createChild({tag: 'div', cls: 'labkey-dataregion-msg', html: html});
+        var el = div.createChild({tag: 'div', cls: 'labkey-dataregion-msg', html: html});
         this.msgbox.setVisible(true);
+        return el;
     };
 
     this.showLoadingMessage = function (html)
     {
         html = html || "Loading...";
         this.clearMessage();
-        this.showMessage("<div><span class='loading-indicator'>&nbsp;</span><em>" + html + "</em></div>");
+        return this.showMessage("<div><span class='loading-indicator'>&nbsp;</span><em>" + html + "</em></div>");
     };
 
     this.showSuccessMessage = function (html)
     {
         html = html || "Completed successfully.";
         this.clearMessage();
-        this.showMessage("<div class='labkey-message'>" + html + "</div>");
+        return this.showMessage("<div class='labkey-message'>" + html + "</div>");
     };
 
     this.showErrorMessage = function (html)
     {
         html = html || "An error occurred.";
         this.clearMessage();
-        this.showMessage("<div class='labkey-error'>" + html + "</div>");
+        return this.showMessage("<div class='labkey-error'>" + html + "</div>");
     };
 
     /** Returns true if a message is currently being shown for this DataRegion. Messages are shown as a header. */
@@ -648,21 +650,33 @@ LABKEY.DataRegion = function (config)
         {
             msg = (this.viewName ? "The current view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
             msg += " &nbsp;";
-            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].revertCustomView();'>Revert</span>";
+            msg += "<span class='labkey-link unsavedview-revert'>Revert</span>";
             msg += ", &nbsp;";
-            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showCustomizeView(undefined, true);'>Edit</span>";
+            msg += "<span class='labkey-link unsavedview-edit'>Edit</span>";
             msg += ", &nbsp;";
-            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].saveSessionCustomView();'>Save</span>";
+            msg += "<span class='labkey-link unsavedview-save'>Save</span>";
         }
         else
         {
             msg = ("The current view has been customized.");
             msg += " &nbsp;";
-            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].revertCustomView();'>Revert</span>";
+            msg += "<span class='labkey-link unsavedview-revert' title='Revert'>Revert</span>";
             msg += ", &nbsp;";
-            msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showCustomizeView(undefined, true);'>Edit</span>";
+            msg += "<span class='labkey-link unsavedview-edit'>Edit</span>";
         }
-        this.showMessage(msg);
+
+        var el = this.showMessage(msg);
+        var revertEl = el.child(".labkey-link.unsavedview-revert");
+        if (revertEl)
+            revertEl.on('click', this.revertCustomView, this);
+
+        var showCustomizeViewEl = el.child(".labkey-link.unsavedview-edit");
+        if (showCustomizeViewEl)
+            showCustomizeViewEl.on('click', function () { this.showCustomizeView(undefined, true); }, this);
+
+        var saveEl = el.child(".labkey-link.unsavedview-save");
+        if (saveEl)
+            saveEl.on('click', this.saveSessionCustomView, this);
     }
 
     if (this.showInitialSelectMessage)
@@ -838,17 +852,34 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     {
         if (this.showRecordSelectors)
         {
-            msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].selectNone();' title='Clear selection from all rows'>None</span>";
+            msg += "&nbsp; Select: <span class='labkey-link select-none'>None</span>";
             var showOpts = new Array();
             if (this.showRows != "all")
-                showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showAll();' title='Show all rows'>All</span>");
+                showOpts.push("<span class='labkey-link show-all'>All</span>");
             if (this.showRows != "selected")
-               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showSelected();' title='Show all selected rows'>Selected</span>");
+               showOpts.push("<span class='labkey-link show-selected'>Selected</span>");
             if (this.showRows != "unselected")
-               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + encodeURIComponent(this.name) + "\"].showUnselected();' title='Show all unselected rows'>Unselected</span>");
+               showOpts.push("<span class='labkey-link show-unselected'>Unselected</span>");
             msg += "&nbsp; Show: " + showOpts.join(", ");
         }
-        this.showMessage(msg);
+
+        var el = this.showMessage(msg);
+        var selectNoneEl = el.child(".labkey-link.select-none");
+        if (selectNoneEl)
+            selectNoneEl.on('click', this.selectNone, this);
+
+        var showAllEl = el.child(".labkey-link.show-all");
+        if (showAllEl)
+            showAllEl.on('click', this.showAll, this);
+
+        var showSelectedEl = el.child(".labkey-link.show-selected");
+        if (showSelectedEl)
+            showSelectedEl.on('click', this.showSelected, this);
+
+        var showUnselectedEl = el.child(".labkey-link.show-unselected");
+        if (showUnselectedEl)
+            showUnselectedEl.on('click', this.showUnselected, this);
+
     },
 
     onSelectChange : function (hasSelected)
