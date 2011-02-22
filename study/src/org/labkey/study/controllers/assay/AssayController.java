@@ -431,6 +431,7 @@ public class AssayController extends SpringActionController
                 throw new NotFoundException("No assay was found with id " + form.getRowId());
             ModelAndView view = provider.createBeginView(getViewContext(), form.getProtocol());
             _hasCustomView = (null != view);
+            setHelpTopic("createDatasetViaAssay");
             return (null == view ? new AssayRunsView(_protocol, false) : view);
         }
 
