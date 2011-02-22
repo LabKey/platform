@@ -70,7 +70,7 @@
         });
 
         var emailCombo = new Ext.form.ComboBox({
-            hiddenName:'emailOption',
+            hiddenName:'fileEmailOption',
             fieldLabel:'Configure Selected Users',
             store: optionsStore,
             forceSelection:true,
