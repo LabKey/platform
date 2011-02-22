@@ -16,12 +16,14 @@
 
 package org.labkey.api.files.view;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
+import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -169,6 +171,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             actions.add(FilesForm.actions.editFileProps);
             actions.add(FilesForm.actions.upload);
+
+            FilesAdminOptions options = svc.getAdminOptions(context.getContainer());
+            boolean expandUpload = BooleanUtils.toBooleanDefaultIfNull(options.getExpandFileUpload(), true);
+
+            form.setExpandFileUpload(expandUpload);
         }
 
         if (canDisplayPipelineActions())
@@ -359,7 +366,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _isPipelineRoot;
         private String _statePrefix;
         private File _rootDirectory;
-        private boolean _fileUploadCollapsed;
+        private boolean _expandFileUpload;
+        private boolean _disableGeneralAdminSettings;
 
         public enum actions {
             download,
@@ -523,14 +531,24 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             _rootDirectory = rootDirectory;
         }
 
-        public boolean isFileUploadCollapsed()
+        public boolean isExpandFileUpload()
         {
-            return _fileUploadCollapsed;
+            return _expandFileUpload;
         }
 
-        public void setFileUploadCollapsed(boolean fileUploadCollapsed)
+        public void setExpandFileUpload(boolean expandFileUpload)
         {
-            _fileUploadCollapsed = fileUploadCollapsed;
+            _expandFileUpload = expandFileUpload;
+        }
+
+        public boolean isDisableGeneralAdminSettings()
+        {
+            return _disableGeneralAdminSettings;
+        }
+
+        public void setDisableGeneralAdminSettings(boolean disableGeneralAdminSettings)
+        {
+            _disableGeneralAdminSettings = disableGeneralAdminSettings;
         }
     }
 }
