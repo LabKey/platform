@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarContext;
@@ -90,9 +91,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
         PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
 
-        try {
+        // Hack to get TSV values to be properly quoted if they include tabs
+        TSVWriter writer = createTSVWriter();
+
+        try
+        {
             // serialize the run properties to a tsv
-            writeRunProperties(context, scriptDir, pw);
+            writeRunProperties(context, scriptDir, pw, writer);
 
             // add the run data entries
             writeRunData(context, run, scriptDir, pw);
@@ -233,7 +238,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         _sampleProperties.put(propertyName, rows);
     }
 
-    protected void writeRunProperties(AssayRunUploadContext context, File scriptDir, PrintWriter pw) throws ValidationException
+    protected void writeRunProperties(AssayRunUploadContext context, File scriptDir, PrintWriter pw, TSVWriter writer) throws ValidationException
     {
         try
         {
@@ -246,21 +251,21 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             // serialize the run properties to a tsv
             for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
             {
-                pw.append(entry.getKey().getName());
+                pw.append(writer.quoteValue(entry.getKey().getName()));
                 pw.append('\t');
-                pw.append(StringUtils.defaultString(entry.getValue()));
+                pw.append(writer.quoteValue(StringUtils.defaultString(entry.getValue())));
                 pw.append('\t');
-                pw.println(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName());
+                pw.println(writer.quoteValue(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName()));
             }
 
             // additional context properties
             for (Map.Entry<String, String> entry : getContextProperties(context, scriptDir).entrySet())
             {
-                pw.append(entry.getKey());
+                pw.append(writer.quoteValue(entry.getKey()));
                 pw.append('\t');
-                pw.append(entry.getValue());
+                pw.append(writer.quoteValue(entry.getValue()));
                 pw.append('\t');
-                pw.println(String.class.getName());
+                pw.println(writer.quoteValue(String.class.getName()));
             }
         }
         catch (ExperimentException e)
@@ -376,10 +381,14 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
         PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
 
-        try {
+        // Hack to get TSV values to be properly quoted if they include tabs
+        TSVWriter writer = createTSVWriter();
+
+        try
+        {
             AssayRunUploadContext context = new SampleRunUploadContext(protocol, viewContext);
 
-            writeRunProperties(context, scriptDir, pw);
+            writeRunProperties(context, scriptDir, pw, writer);
 
             // create the sample run data
             AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -426,6 +435,19 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             pw.close();
         }
+    }
+
+    /** Hack to get output TSV to properly quote values with tabs in them */
+    private TSVWriter createTSVWriter()
+    {
+        return new TSVWriter()
+        {
+            @Override
+            protected void write()
+            {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     public File createTransformationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception

@@ -293,14 +293,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
         }
-        for (int i = 0; i < rawData.size(); i++)
+        ListIterator<Map<String, Object>> iter = rawData.listIterator();
+        while (iter.hasNext())
         {
             Map<String, Object> filteredMap = new HashMap<String, Object>();
+            Map<String, Object> rawDataRow = iter.next();
             for (Map.Entry<String,String> expectedAndActualKeys : expectedKey2ActualKey.entrySet())
             {
-                filteredMap.put(expectedAndActualKeys.getKey(), rawData.get(i).get(expectedAndActualKeys.getValue()));
+                filteredMap.put(expectedAndActualKeys.getKey(), rawDataRow.get(expectedAndActualKeys.getValue()));
             }
-            rawData.set(i, filteredMap);
+            iter.set(filteredMap);
         }
     }
 

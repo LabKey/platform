@@ -86,7 +86,7 @@ public abstract class TSVWriter extends TextWriter
      * @param value The raw value.
      * @return The quoted value.
      */
-    protected String quoteValue(String value)
+    public String quoteValue(String value)
     {
         if (value == null)
             return "";
