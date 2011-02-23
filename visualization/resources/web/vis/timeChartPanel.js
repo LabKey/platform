@@ -64,8 +64,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     'initialMeasureSelected': function(initMeasure) {
                         this.measureSelected(initMeasure, true);
                     },
-                    'saveChart': function(saveBtnText, replace){
-                        this.saveChart(saveBtnText, replace);
+                    'saveChart': function(saveBtnType, replace, reportName, reportDescription){
+                        this.saveChart(saveBtnType, replace, reportName, reportDescription);
                      }
                 }
             });
@@ -567,79 +567,109 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         return index;
     },
 
-    saveChart: function(saveBtnText, replace) {
-        // basic form to get the name and description from the user
-        var vizSaveForm = new Ext.FormPanel({
-            monitorValid: true,
-            border: false,
-            frame: false,
-            items: [{
-                xtype: 'textfield',
-                fieldLabel: 'Name',
-                name: 'reportName',
-                disabled: replace,
-                value: (this.saveReportInfo ? this.saveReportInfo.name : ""),
-                width: 300,
-                allowBlank: false
-            },
-            {
-                xtype: 'textarea',
-                fieldLabel: 'Description',
-                name: 'reportDescription',
-                value: (this.saveReportInfo ? this.saveReportInfo.description : ""),
-                width: 300,
-                height: 70,
-                allowBlank: true
-            }],
-            buttons: [{
-                text: saveBtnText,
-                formBind: true,
-                handler: function(btn, evnt){
-                    var formValues = vizSaveForm.getForm().getFieldValues();
+    saveChart: function(saveBtnName, replace, reportName, reportDescription) {
+        // if queryName and schemaName are set on the URL then save them with the chart info
+        var schema = LABKEY.ActionURL.getParameter("schemaName") || null;
+        var query = LABKEY.ActionURL.getParameter("queryName") || null;
 
-                    // if queryName and schemaName are set on the URL then save them with the chart info
-                    var schema = LABKEY.ActionURL.getParameter("schemaName") || null;
-                    var query = LABKEY.ActionURL.getParameter("queryName") || null;
-
-                    LABKEY.Visualization.save({
-                        name: formValues.reportName,
-                        description: formValues.reportDescription,
-                        visualizationConfig: this.chartInfo,
-                        replace: replace,
-                        type: LABKEY.Visualization.Type.TimeChart,
-                        success: this.saveChartSuccess,
-                        schemaName: schema,
-                        queryName:query
-                    });
-
-                    win.hide();
+        // if the Save button was clicked, save the report using the name and description provided
+        if(saveBtnName == 'Save'){
+            this.executeSaveChart({
+                replace: replace,
+                reportName: reportName,
+                reportDescription: reportDescription,
+                query: query,
+                schema: schema
+            });
+        }
+        // if the Save As button was clicked, open a window for user to enter new report name and description
+        else if(saveBtnName == 'Save As'){
+            // basic form to get the name and description from the user
+            var vizSaveForm = new Ext.FormPanel({
+                monitorValid: true,
+                border: false,
+                frame: false,
+                items: [{
+                    xtype: 'textfield',
+                    fieldLabel: 'Name',
+                    name: 'reportName',
+                    value: reportName || null,
+                    width: 300,
+                    allowBlank: false
                 },
-                scope: this
-            },
-            {
-                text: 'Cancel',
-                handler: function(){
-                    win.hide();
-                }
-            }]
-        });
+                {
+                    xtype: 'textarea',
+                    fieldLabel: 'Description',
+                    name: 'reportDescription',
+                    value: reportDescription || null,
+                    width: 300,
+                    height: 70,
+                    allowBlank: true
+                }],
+                buttons: [{
+                    text: 'Save',
+                    formBind: true,
+                    handler: function(btn, evnt){
+                        var formValues = vizSaveForm.getForm().getFieldValues();
 
-        // pop-up window for user to enter viz name and description for saving
-        var win = new Ext.Window({
-            layout:'fit',
-            width:475,
-            height:200,
-            closeAction:'hide',
-            modal: true,
-            padding: 15,
-            title: saveBtnText + "...",
-            items: vizSaveForm
-        });
-        win.show(this);
+                        this.executeSaveChart({
+                            replace: replace,
+                            reportName: formValues.reportName,
+                            reportDescription: formValues.reportDescription,
+                            query: query,
+                            schema: schema
+                        });
+
+                        win.hide();
+                    },
+                    scope: this
+                },
+                {
+                    text: 'Cancel',
+                    handler: function(){
+                        win.hide();
+                    }
+                }]
+            });
+
+            // pop-up window for user to enter viz name and description for saving
+            var win = new Ext.Window({
+                layout:'fit',
+                width:475,
+                height:200,
+                closeAction:'hide',
+                modal: true,
+                padding: 15,
+                title: saveBtnName + "...",
+                items: vizSaveForm
+            });
+            win.show(this);
+        }
     },
 
-    saveChartSuccess: function(result, request, options) {
-        //this.chartEditorOverviewPanel.updateOverview(this.saveReportInfo);
-        Ext.Msg.alert("Success", "Chart Saved Successfully.");
+    executeSaveChart: function(config){
+        LABKEY.Visualization.save({
+            name: config.reportName,
+            description: config.reportDescription,
+            visualizationConfig: this.chartInfo,
+            replace: config.replace,
+            type: LABKEY.Visualization.Type.TimeChart,
+            success: this.saveChartSuccess(config.reportName, config.reportDescription),
+            schemaName: config.schema,
+            queryName: config.query,
+            scope: this
+        });
+    },
+
+    saveChartSuccess: function (reportName, reportDescription){
+        return function(result, request, options) {
+            // remove the panel mask if it is still showing
+            if(this.getEl().isMasked()) {
+                this.getEl().unmask();
+            }
+
+            this.chartEditorOverviewPanel.updateOverview({name: reportName, description: reportDescription});
+            Ext.Msg.alert("Success", "Chart Saved Successfully.");
+        }
     }
 });

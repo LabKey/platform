@@ -16,6 +16,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
             bodyStyle: 'padding:5px',
             border: false,
             buttonAlign: 'left',
+            monitorValid: true,
             items: [],
             buttons: []
         });
@@ -97,44 +98,73 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
     },
 
     updateOverview: function(reportInfo){
+        this.reportInfo = reportInfo;
+
+        // remove all of the items and buttons from the form
         this.removeAll();
 
         this.items.add(
-            new Ext.form.Label({
+            new Ext.form.TextField({
+                name: 'reportName',
                 fieldLabel: 'Name',
-                text: (typeof reportInfo == "object" ? reportInfo.name : '<Saved Report Name>')
+                readOnly: (typeof this.reportInfo == "object" ? true : false), // disabled for saved report
+                value: (typeof this.reportInfo == "object" ? this.reportInfo.name : null),
+                allowBlank: false,
+                anchor: '60%'
             })
         );
 
         this.items.add(
-            new Ext.form.Label({
+            new Ext.form.TextArea({
+                name: 'reportDescription',
                 fieldLabel: 'Description',
-                text: (typeof reportInfo == "object" ? reportInfo.description : '<Saved Report Description>')
+                value: (typeof this.reportInfo == "object" ? this.reportInfo.description : null),
+                allowBlank: true,
+                anchor: '60%'
             })
         );
 
-        this.addButton(
-            new Ext.Button({
-                text: "Save",
-                handler: function() {
-                    // the save button will not allow for replace if this is a new chart,
-                    // but will force replace if this is a change to a saved chart
-                    this.fireEvent('saveChart', 'Save', (typeof reportInfo == "object" ? true : false));
-                },
-                scope: this
-            })
-        );
+        // check to see if the save buttons need to be added
+        if(this.buttons.length == 0){
+            this.addSaveButtons();
+        }
+        // if they are already added, we may need to show the Save As button if we now have a saved chart
+        else if(typeof this.reportInfo == 'object'){
+            this.saveAsBtn.show();
+        }
 
-        this.addButton(
-            new Ext.Button({
-                text: "Save As",
-                hidden: (typeof reportInfo == "object" ? false : true), // save as only needed for saved chart
-                handler: function() {
-                    this.fireEvent('saveChart', 'Save As', false);
-                },
-                scope: this
-            })
-        );
+        this.doLayout();
+    },
+
+    addSaveButtons: function(){
+        this.saveBtn = new Ext.Button({
+            text: "Save",
+            handler: function() {
+                var formVals = this.getForm().getValues();
+
+                // the save button will not allow for replace if this is a new chart,
+                // but will force replace if this is a change to a saved chart
+                this.fireEvent('saveChart', 'Save', (typeof this.reportInfo == "object" ? true : false), formVals.reportName, formVals.reportDescription);
+            },
+            scope: this,
+            formBind: true
+        });
+        this.addButton(this.saveBtn);
+
+        // add save as button, initially hidden if not rendering a saved chart
+        this.saveAsBtn = new Ext.Button({
+            text: "Save As",
+            hidden: (typeof this.reportInfo == 'object' ? false : true),
+            handler: function() {
+                var formVals = this.getForm().getValues();
+
+                // the save as button does not allow for replace initially
+                this.fireEvent('saveChart', 'Save As', false, formVals.reportName, formVals.reportDescription);
+            },
+            scope: this,
+            formBind: true
+        });
+        this.addButton(this.saveAsBtn);
 
         this.doLayout();
     }
