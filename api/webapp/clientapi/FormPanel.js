@@ -959,7 +959,7 @@ Ext.override(Ext.layout.FormLayout,
 
     _toQtip : function(o)
     {
-        if (!o || !'html' in o || !o.html) return false;
+        if (!o || !o.html) return false;
         var qtip = 'ext:qtip="' + o.html + '"';
         if ('title' in o && o.title)
             qtip += ' ext:qtitle="' + Ext.util.Format.htmlEncode(o.title) + '"';
