@@ -137,7 +137,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
             ExpData data = ExperimentService.get().getExpDataByURL(file, getViewContext().getContainer());
             if (data != null && data.getRun() != null)
             {
-                errors.addError(new LabkeyError("The file " + file.getAbsolutePath() + " has already been uploaded"));
+                errors.addError(new LabkeyError("The file " + file.getAbsolutePath() + " has already been imported"));
             }
         }
         return files;

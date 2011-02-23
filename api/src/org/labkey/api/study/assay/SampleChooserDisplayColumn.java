@@ -112,24 +112,25 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
             // Reshow with the same selections
             for (int i = 0; i < _maxSamples; i++)
             {
+                ExpMaterial selectedMaterial;
                 try
                 {
-                    ExpMaterial selectedMaterial = getMaterial(i, ctx.getContainer(), ctx.getRequest());
-                    // If we find the material that the user selected, tell the GWT app to automatically select it
-                    if (selectedMaterial != null)
-                    {
-                        props.put(SampleChooserUtils.PROP_PREFIX_SELECTED_SAMPLE_LSID + i, selectedMaterial.getLSID());
-
-                        ExpSampleSet selectedSampleSet = selectedMaterial.getSampleSet();
-                        if (selectedSampleSet != null)
-                        {
-                            props.put(SampleChooserUtils.PROP_PREFIX_SELECTED_SAMPLE_SET_LSID + i, selectedSampleSet.getLSID());
-                        }
-                    }
+                    selectedMaterial = getMaterial(i, ctx.getContainer(), ctx.getRequest());
                 }
                 catch (ExperimentException e)
                 {
-                    throw new IOException(e);
+                    selectedMaterial = null;
+                }
+                // If we find the material that the user selected, tell the GWT app to automatically select it
+                if (selectedMaterial != null)
+                {
+                    props.put(SampleChooserUtils.PROP_PREFIX_SELECTED_SAMPLE_LSID + i, selectedMaterial.getLSID());
+
+                    ExpSampleSet selectedSampleSet = selectedMaterial.getSampleSet();
+                    if (selectedSampleSet != null)
+                    {
+                        props.put(SampleChooserUtils.PROP_PREFIX_SELECTED_SAMPLE_SET_LSID + i, selectedSampleSet.getLSID());
+                    }
                 }
             }
         }
