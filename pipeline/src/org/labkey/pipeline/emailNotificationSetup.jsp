@@ -96,7 +96,6 @@
 
 <form action="updateEmailNotification.view" method="post">
     <table>
-        <tr><td><labkey:errors /></td></tr>
         <tr><td colspan=2>Check the appropriate box(es) to configure notification emails to be sent
             when a pipeline job succeeds and/or fails.<br/><%=c.isRoot() ? "" : "<span class=\"labkey-error\">*</span>&nbsp;Indicates that the field value has been inherited from the site wide configuration."%>
         </td></tr>

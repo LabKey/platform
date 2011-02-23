@@ -260,7 +260,7 @@ public class PipelineController extends SpringActionController
             }
             catch (GeneralSecurityException e)
             {
-                errors.addError(new LabkeyError("Invalid Globus SSL configration: " + e.getMessage()));
+                errors.addError(new LabkeyError("Invalid Globus SSL configuration: " + e.getMessage()));
                 return false;
             }
         }
