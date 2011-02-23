@@ -105,6 +105,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         // check whether the import data button is enabled
         this.importDataEnabled = config.importDataEnabled ? config.importDataEnabled : false;
         this.fileConfig = config.fileConfig ? config.fileConfig : 'useDefault';
+        this.expandFileUpload = config.expandFileUpload != undefined ? config.expandFileUpload : true;
+        this.showFolderTree = config.showFolderTree;
 
         if ('object' == typeof config.actions)
         {
@@ -176,18 +178,19 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     renderDialog : function(data)
     {
-        var actionPanel = this.createActionsPropertiesPanel(data);
-        var filePanel = this.createFilePropertiesPanel();
-        var toolbarPanel = this.createToolbarPanel();
+        var items = [];
+
+        items.push(this.createActionsPropertiesPanel(data));
+        items.push(this.createFilePropertiesPanel());
+        items.push(this.createToolbarPanel());
+
+        if (!this.disableGeneralAdminSettings)
+            items.push(this.createGeneralPanel());
 
         var tabPanel = new Ext.TabPanel({
             activeTab: 'actionTab',
             stateful: false,
-            items: [
-                actionPanel,
-                filePanel,
-                toolbarPanel,
-            ]
+            items: items
         });
 
         var tbarResetHandler = function(b){
@@ -635,7 +638,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         var toolbarPanel = new Ext.Panel({
             id: 'toolbarTab',
-            title: 'UI Settings',
+            title: 'Toolbar and Grid Settings',
             bodyStyle : 'padding:10px;',
             layout: 'vbox',
             layoutConfig: {
@@ -808,7 +811,11 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         // grid column model changes
         adminOptions.gridConfig = this.grid.getState();
-        
+
+        // general settings
+        adminOptions.expandFileUpload = this.expandFileUpload;
+        adminOptions.showFolderTree = this.showFolderTree;
+
         Ext.Ajax.request({
             url: this.actionsUpdateURL,
             method : 'POST',
@@ -820,6 +827,54 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 'Content-Type' : 'application/json'
             }
         });
+    },
+
+    /**
+     * Add the general setttings preferences configuration panel
+     */
+    createGeneralPanel : function()
+    {
+        var checkItems = [];
+        checkItems.push({xtype: 'checkbox',
+            checked: this.expandFileUpload,
+            id: 'ck-expand-file-upload',
+            handler: function(cmp, checked){this.expandFileUpload = checked;},
+            scope: this,
+            boxLabel: 'Show the file upload panel by default.'});
+/*
+        checkItems.push({xtype: 'checkbox',
+            checked: this.showFolderTree,
+            id: 'ck-expand-folder-tree',
+            handler: function(cmp, checked){this.showFolderTree = checked;},
+            scope: this,
+            boxLabel: 'Show folder tree by default.'});
+*/
+
+        var panel = new Ext.form.FormPanel({
+            bodyStyle : 'padding:10px;',
+            labelWidth: 10,
+            height: 150,
+            border: false,
+            defaultType: 'checkbox',
+            items: checkItems
+        });
+
+        var generalPanel = new Ext.Panel({
+            id: 'generalTab',
+            title: 'General Settings',
+            bodyStyle : 'padding:10px;',
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: [
+                {html: '<span class="labkey-strong">Configure General Settings</span><br>Set the default File UI preferences for this folder.', border: false, height: 55, autoScroll:true},
+                panel
+            ]
+        });
+
+        return generalPanel;
     }
 });
 
