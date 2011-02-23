@@ -15,7 +15,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             autoWidth: true,
             bodyStyle: 'padding:5px',
             border: false,
-            labelAlign: 'top',
+            labelWidth: 0,
             items: []
         });
 
@@ -34,13 +34,18 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         var columnOneItems = [];
         var columnTwoItems = [];
 
+        // add labels indicating the selected measure and which query it is from
+        columnOneItems.push({
+            xtype: 'label',
+            html: 'Measure:<BR/>'
+        });
         columnOneItems.push({
             id: 'measure-label',
             xtype: 'label',
-            fieldLabel: 'Measure',
             text: this.measure.label + ' from ' + this.measure.queryName
         });
 
+        // add a button for the user to change which measure is selected for the chart
         columnOneItems.push({
             xtype: 'button',
             text: 'Change',
@@ -48,12 +53,16 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             scope: this
         });
 
+        // add a label and radio buttons for allowing user to divide data into series (subject and dimension options)
+        columnTwoItems.push({
+            xtype: 'label',
+            html: 'Divide data into Series:<BR/>'
+        });
         this.seriesPerSubjectRadio = new Ext.form.Radio({
-            fieldLabel: 'Divide data into Series',
             name: 'measure_series',
             inputValue: 'per_subject',
+            hideLabel: true,
             boxLabel: 'One Per ' + this.viewInfo.subjectNounSingular,
-            height: 1,
             checked: true,
             listeners: {
                 scope: this,
@@ -124,7 +133,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
         columnTwoItems.push({
             xtype: 'compositefield',
-            defaults: {flex: 1},
+            hideLabel: true,
             items: [
                 this.seriesPerDimensionRadio,
                 this.measureDimensionComboBox
@@ -139,7 +148,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
         // initialize the aggregate combobox
         this.dimensionAggregateComboBox = new Ext.form.ComboBox({
-            labelStyle: 'margin-left:50px;',
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.ArrayStore({
@@ -155,7 +163,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             disabled: true,
             width: 75,
             style: {
-                marginLeft: '50px'
+                marginLeft: '20px'
             },
             listeners: {
                 scope: this,
@@ -170,13 +178,14 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         this.dimensionAggregateLabel = new Ext.form.Label({
             text: 'Display Duplicate Values as: ',
             style: {
-                marginLeft: '50px'
+                marginLeft: '20px'
             },
             disabled: true
         });
 
         columnTwoItems.push({
             xtype: 'compositefield',
+            hideLabel: true,
             items: [
                 this.dimensionAggregateLabel,
                 this.dimensionAggregateComboBox

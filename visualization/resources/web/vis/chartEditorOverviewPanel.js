@@ -15,7 +15,9 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
             autoWidth: true,
             bodyStyle: 'padding:5px',
             border: false,
-            items: []
+            buttonAlign: 'left',
+            items: [],
+            buttons: []
         });
 
         this.addEvents(
@@ -111,7 +113,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
             })
         );
 
-        this.items.add(
+        this.addButton(
             new Ext.Button({
                 text: "Save",
                 handler: function() {
@@ -123,7 +125,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
             })
         );
 
-        this.items.add(
+        this.addButton(
             new Ext.Button({
                 text: "Save As",
                 hidden: (typeof reportInfo == "object" ? false : true), // save as only needed for saved chart

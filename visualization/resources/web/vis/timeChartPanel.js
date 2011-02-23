@@ -498,7 +498,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 padding: 10,
                 items: [{
                     xtype: 'label',
-                    text: 'Note: filters applied to the data grid will not be reflected in the chart view.',
+                    html: 'Note: filters applied to the data grid will not be reflected in the chart view.<BR/><BR/>',
                     style: 'font-style:italic'
                 },
                 {
