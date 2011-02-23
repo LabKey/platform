@@ -43,6 +43,8 @@ import java.util.*;
 public class FilesAdminOptions
 {
     private boolean _importDataEnabled = true;
+    private Boolean _showFolderTree;
+    private Boolean _expandFileUpload;
     private Container _container;
     private Map<String, PipelineActionConfig> _pipelineConfig = new HashMap<String, PipelineActionConfig>();
     private fileConfig _fileConfig = fileConfig.useDefault;
@@ -63,6 +65,8 @@ public class FilesAdminOptions
         tbarActions,
         inheritedFileConfig,
         gridConfig,
+        expandFileUpload,
+        showFolderTree,
     }
 
     public FilesAdminOptions(Container c, String xml)
@@ -89,6 +93,11 @@ public class FilesAdminOptions
             if (pipeOptions != null)
             {
                 _importDataEnabled = pipeOptions.getImportEnabled();
+
+                if (pipeOptions.isSetExpandFileUpload())
+                    _expandFileUpload = pipeOptions.getExpandFileUpload();
+                if (pipeOptions.isSetShowFolderTree())
+                    _showFolderTree = pipeOptions.getShowFolderTree();
 
                 if (pipeOptions.getFilePropertiesConfig() != null)
                     _fileConfig = fileConfig.valueOf(pipeOptions.getFilePropertiesConfig());
@@ -144,6 +153,26 @@ public class FilesAdminOptions
     public void setImportDataEnabled(boolean importDataEnabled)
     {
         _importDataEnabled = importDataEnabled;
+    }
+
+    public Boolean getShowFolderTree()
+    {
+        return _showFolderTree;
+    }
+
+    public void setShowFolderTree(Boolean showFolderTree)
+    {
+        _showFolderTree = showFolderTree;
+    }
+
+    public Boolean getExpandFileUpload()
+    {
+        return _expandFileUpload;
+    }
+
+    public void setExpandFileUpload(Boolean expandFileUpload)
+    {
+        _expandFileUpload = expandFileUpload;
     }
 
     public List<PipelineActionConfig> getPipelineConfig()
@@ -257,6 +286,10 @@ public class FilesAdminOptions
 
             pipelineOptions.setImportEnabled(isImportDataEnabled());
             pipelineOptions.setFilePropertiesConfig(_fileConfig.name());
+            if (_expandFileUpload != null)
+                pipelineOptions.setExpandFileUpload(_expandFileUpload);
+            if (_showFolderTree != null)
+                pipelineOptions.setShowFolderTree(_showFolderTree);
             
             if (!_pipelineConfig.isEmpty())
             {
@@ -339,6 +372,12 @@ public class FilesAdminOptions
         if (props.containsKey(configProps.fileConfig.name()))
             setFileConfig(fileConfig.valueOf((String)props.get(configProps.fileConfig.name())));
 
+        if (props.containsKey(configProps.expandFileUpload.name()))
+            setExpandFileUpload((Boolean)props.get(configProps.expandFileUpload.name()));
+
+        if (props.containsKey(configProps.showFolderTree.name()))
+            setShowFolderTree((Boolean)props.get(configProps.showFolderTree.name()));
+
         if (props.containsKey(configProps.tbarActions.name()))
         {
             Object actions = props.get(configProps.tbarActions.name());
@@ -385,6 +424,10 @@ public class FilesAdminOptions
         props.put(configProps.importDataEnabled.name(), isImportDataEnabled());
         props.put(configProps.fileConfig.name(), _fileConfig.name());
         props.put(configProps.inheritedFileConfig.name(), getInheritedFileConfig());
+        if (_expandFileUpload != null)
+            props.put(configProps.expandFileUpload.name(), _expandFileUpload);
+        if (_showFolderTree != null)
+            props.put(configProps.showFolderTree.name(), _showFolderTree);
 
         if (!_tbarConfig.isEmpty())
         {
