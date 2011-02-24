@@ -74,6 +74,8 @@ api/src/org/labkey/api/admin/CoreUrls.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
 api/src/org/labkey/api/announcements/api/Announcement.java -text
 api/src/org/labkey/api/announcements/api/AnnouncementService.java -text
+api/src/org/labkey/api/announcements/permissions/DeleteMessagePermission.java -text
+api/src/org/labkey/api/announcements/permissions/UpdateMessagePermission.java -text
 api/src/org/labkey/api/arrays/DoubleArray.java -text
 api/src/org/labkey/api/attachments/AttachmentCache.java -text
 api/src/org/labkey/api/attachments/AttachmentDirectory.java -text
