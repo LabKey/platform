@@ -110,6 +110,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
                 readOnly: (typeof this.reportInfo == "object" ? true : false), // disabled for saved report
                 value: (typeof this.reportInfo == "object" ? this.reportInfo.name : null),
                 allowBlank: false,
+                preventMark: true,
                 anchor: '60%'
             })
         );
@@ -141,6 +142,12 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
             text: "Save",
             handler: function() {
                 var formVals = this.getForm().getValues();
+
+                // report name is required for saving
+                if(!formVals.reportName){
+                    Ext.Msg.alert("Error", "Name must be specified when saving a report.");
+                    return;
+                }
 
                 // the save button will not allow for replace if this is a new chart,
                 // but will force replace if this is a change to a saved chart

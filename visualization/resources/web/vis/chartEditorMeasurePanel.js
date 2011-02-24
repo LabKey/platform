@@ -330,21 +330,18 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 }
 
                 // put the dimension values into a list view for the user to enable/disable series
-                var sm = new  Ext.grid.CheckboxSelectionModel({
-                    listeners: {
-                        scope: this,
-                        'selectionChange': function(selModel){
-                            // add the selected dimension values to the chartInfo
-                            this.dimension.values = new Array();
-                            var selectedRecords = selModel.getSelections();
-                            for(var i = 0; i < selectedRecords.length; i++) {
-                                this.dimension.values.push(selectedRecords[i].get('value'));
-                            }
-
-                            this.fireEvent('chartDefinitionChanged', true);
-                        }
+                var sm = new  Ext.grid.CheckboxSelectionModel({});
+                sm.on('selectionchange', function(selModel){
+                    // add the selected dimension values to the chartInfo
+                    this.dimension.values = new Array();
+                    var selectedRecords = selModel.getSelections();
+                    for(var i = 0; i < selectedRecords.length; i++) {
+                        this.dimension.values.push(selectedRecords[i].get('value'));
                     }
-                });
+
+                    this.fireEvent('chartDefinitionChanged', true);
+                }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
+
                 var newSeriesSelectorPanel = new Ext.Panel({
                     id: 'dimension-series-selector-panel',
                     title: this.dimension.label,
@@ -389,6 +386,10 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                          })
                     ]
                 });
+                newSeriesSelectorPanel.on('activate', function(){
+                   newSeriesSelectorPanel.doLayout();
+                }, this);
+
                 Ext.getCmp('series-selector-tabpanel').add(newSeriesSelectorPanel);
                 Ext.getCmp('series-selector-tabpanel').activate('dimension-series-selector-panel');
                 Ext.getCmp('series-selector-tabpanel').doLayout();

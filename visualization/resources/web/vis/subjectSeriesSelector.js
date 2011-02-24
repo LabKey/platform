@@ -21,6 +21,10 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
             'measureMetadataRequestComplete'
         );
 
+        this.on('activate', function(){
+           this.doLayout();
+        }, this);
+
         LABKEY.vis.SubjectSeriesSelector.superclass.constructor.call(this, config);
     },
 
@@ -59,21 +63,17 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
         var subjectValues = Ext.util.JSON.decode(response.responseText);
 
         // selection model for subject series selector
-        var sm = new  Ext.grid.CheckboxSelectionModel({
-            listeners: {
-                scope: this,
-                'selectionChange': function(selModel){
-                    // add the selected subjects to the subject object
-                    this.subject.values = [];
-                    var selectedRecords = selModel.getSelections();
-                    for(var i = 0; i < selectedRecords.length; i++) {
-                        this.subject.values.push(selectedRecords[i].get('value'));
-                    }
-
-                    this.fireEvent('chartDefinitionChanged', true);
-                }
+        var sm = new  Ext.grid.CheckboxSelectionModel({});
+        sm.on('selectionchange', function(selModel){
+            // add the selected subjects to the subject object
+            this.subject.values = [];
+            var selectedRecords = selModel.getSelections();
+            for(var i = 0; i < selectedRecords.length; i++) {
+                this.subject.values.push(selectedRecords[i].get('value'));
             }
-        });
+
+            this.fireEvent('chartDefinitionChanged', true);
+        }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
         // initialize the subject gridPanel with the subjectValues from the getDimensionValues call
         var subjectGridPanel = new Ext.grid.GridPanel({

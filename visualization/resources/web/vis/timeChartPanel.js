@@ -31,6 +31,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     initComponent : function() {
         // properties for this panel
         this.layout = 'border';
+        this.isMasked = false;
 
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         if(typeof this.chartInfo != "object") {
@@ -58,7 +59,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var items = [];
 
         if(this.viewInfo.type == "line") {
-            this.chartEditorOverviewPanel = new LABKEY.vis.ChartEditorOverviewPanel({
+            this.editorOverviewPanel = new LABKEY.vis.ChartEditorOverviewPanel({
                 listeners: {
                     scope: this,
                     'initialMeasureSelected': function(initMeasure) {
@@ -70,7 +71,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
-            this.chartEditorMeasurePanel = new LABKEY.vis.ChartEditorMeasurePanel({
+            this.editorMeasurePanel = new LABKEY.vis.ChartEditorMeasurePanel({
                 disabled: true,
                 measure: this.chartInfo.measures[yAxisMeasureIndex].measure,
                 dimension: this.chartInfo.measures[yAxisMeasureIndex].dimension || null,
@@ -91,7 +92,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
-            this.chartEditorXAxisPanel = new LABKEY.vis.ChartEditorXAxisPanel({
+            this.editorXAxisPanel = new LABKEY.vis.ChartEditorXAxisPanel({
                 disabled: true,
                 axis: this.chartInfo.measures[xAxisMeasureIndex].axis,
                 dateOptions: this.chartInfo.measures[xAxisMeasureIndex].dateOptions,
@@ -111,7 +112,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
-            this.chartEditorYAxisPanel = new LABKEY.vis.ChartEditorYAxisPanel({
+            this.editorYAxisPanelVar = new LABKEY.vis.ChartEditorYAxisPanel({
                 disabled: true,
                 axis: this.chartInfo.measures[yAxisMeasureIndex].axis,
                 listeners: {
@@ -127,7 +128,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
-            this.chartEditorChartsPanel = new LABKEY.vis.ChartEditorChartsPanel({
+            this.editorChartsPanel = new LABKEY.vis.ChartEditorChartsPanel({
                 disabled: true,
                 chartLayout: this.chartInfo.chartLayout,
                 mainTitle: this.chartInfo.title,
@@ -156,16 +157,16 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 title: '',
                 activeTab: 0,
                 items: [
-                    this.chartEditorOverviewPanel,
-                    this.chartEditorMeasurePanel,
-                    this.chartEditorXAxisPanel,
-                    this.chartEditorYAxisPanel,
-                    this.chartEditorChartsPanel
+                    this.editorOverviewPanel,
+                    this.editorMeasurePanel,
+                    this.editorXAxisPanel,
+                    this.editorYAxisPanelVar,
+                    this.editorChartsPanel
                 ]
             });
             items.push(this.chartEditor);
 
-            this.subjectSeriesSelector = new LABKEY.vis.SubjectSeriesSelector({
+            this.subjectSelector = new LABKEY.vis.SubjectSeriesSelector({
                 subject: this.chartInfo.subject,
                 subjectNounPlural: this.viewInfo.subjectNounPlural,
                 subjectColumn: this.viewInfo.subjectColumn,
@@ -195,7 +196,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 collapseMode: 'mini',
                 title: '',
                 enablePanelScroll: true,
-                items: [this.subjectSeriesSelector]
+                items: [this.subjectSelector]
             });
             items.push(this.seriesSelector);
 
@@ -242,48 +243,54 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var yAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
 
         // enable the charteditor tabs in the tabPanel
-        this.chartEditorMeasurePanel.enable();
-        this.chartEditorXAxisPanel.enable();
-        this.chartEditorYAxisPanel.enable();
-        this.chartEditorChartsPanel.enable();
+        this.editorMeasurePanel.enable();
+        this.editorXAxisPanel.enable();
+        this.editorYAxisPanelVar.enable();
+        this.editorChartsPanel.enable();
 
         // update chart definition information based on measure selection
-        this.chartEditorMeasurePanel.measure = measure;
-        this.subjectSeriesSelector.getSubjectValues(measure.schemaName, measure.queryName);
+        this.editorMeasurePanel.measure = measure;
+        this.subjectSelector.getSubjectValues(measure.schemaName, measure.queryName);
 
         // update chart editor form values based on selected measure
-        this.chartEditorMeasurePanel.setMeasureLabel(measure.label + " from " + measure.queryName)
-        this.chartEditorMeasurePanel.setDimensionStore(this.chartInfo.measures[yAxisMeasureIndex].dimension);
-        this.chartEditorXAxisPanel.setZeroDateStore(measure.schemaName);
-        this.chartEditorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName);
-        this.chartEditorXAxisPanel.setRange(this.chartInfo.measures[xAxisMeasureIndex].axis.range.type);
-        this.chartEditorYAxisPanel.setRange(this.chartInfo.measures[yAxisMeasureIndex].axis.range.type);
-        this.chartEditorYAxisPanel.setScale(this.chartInfo.measures[yAxisMeasureIndex].axis.scale);
-        this.chartEditorChartsPanel.setChartLayout(this.chartInfo.chartLayout);
-        this.chartEditorOverviewPanel.updateOverview(this.saveReportInfo);
+        this.editorMeasurePanel.setMeasureLabel(measure.label + " from " + measure.queryName)
+        this.editorMeasurePanel.setDimensionStore(this.chartInfo.measures[yAxisMeasureIndex].dimension);
+        this.editorXAxisPanel.setZeroDateStore(measure.schemaName);
+        this.editorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName);
+        this.editorXAxisPanel.setRange(this.chartInfo.measures[xAxisMeasureIndex].axis.range.type);
+        this.editorYAxisPanelVar.setRange(this.chartInfo.measures[yAxisMeasureIndex].axis.range.type);
+        this.editorYAxisPanelVar.setScale(this.chartInfo.measures[yAxisMeasureIndex].axis.scale);
+        this.editorChartsPanel.setChartLayout(this.chartInfo.chartLayout);
+        this.editorOverviewPanel.updateOverview(this.saveReportInfo);
         if(userSelectedMeasure){  // todo: do these need to be in the if statement?
-            this.chartEditorYAxisPanel.setLabel(measure.label);
-            this.chartEditorChartsPanel.setMainTitle(measure.queryName);
+            this.editorYAxisPanelVar.setLabel(measure.label);
+            this.editorChartsPanel.setMainTitle(measure.queryName);
         }
     },
 
     measureMetadataRequestPending:  function() {
-        this.getEl().mask("Loading...", "x-mask-loading");
+        // mask panel and remove the chart(s)
+        this.maskChartPanel();
+
+        // increase the request counter
         this.measureMetadataRequestCounter++;
     },
 
     measureMetadataRequestComplete: function() {
+        // decrease the request counter
         this.measureMetadataRequestCounter--;
+
+        // if all requests are complete, call getChartData
         if(this.measureMetadataRequestCounter == 0) {
-            if(this.getEl().isMasked()) {
-                this.getEl().unmask();
-            }
             this.getChartData();
         }
     },
 
     getChartData: function() {
         console.log("getChartData");
+
+        // mask panel and remove the chart(s)
+        this.maskChartPanel();
 
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
@@ -293,7 +300,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
            return;
         }
 
-        this.chart.getEl().mask("Loading...", "x-mask-loading");
         LABKEY.Visualization.getData({
             successCallback: function(data){
                 // store the data in an object by subject for use later when it comes time to render the line chart
@@ -350,11 +356,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     {
         console.log("renderLineChart");
 
-        // if the call to this function is coming from the getChartData success callback, then the panel is already masked
-        // but if not, mask the panel
-        if(!this.chart.getEl().isMasked()) {
-            this.chart.getEl().mask("Loading...", "x-mask-loading");
-        }
+        // mask panel and remove the chart(s)
+        this.maskChartPanel();
 
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
@@ -363,9 +366,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
            Ext.Msg.alert("Error", "Could not find y-axis in chart measure information.");
            return;
         }
-
-        // clear the components from the chart panel
-        this.chart.removeAll();
 
         // show the viewGrid button and hide the viewCharts button
         this.viewChartBtn.hide();
@@ -418,12 +418,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         else if(this.chartInfo.chartLayout == "single")
             charts.push(this.newLineChart(size, series, null, null));
 
+        this.chart.removeAll();
         this.chart.add(charts);
         this.chart.doLayout();
-
-        if(this.chart.getEl().isMasked()) {
-            this.chart.getEl().unmask();
-        }
     },
 
     newLineChart: function(size, series, seriesFilter, title)
@@ -484,8 +481,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // make sure the tempGridInfo is available
         if(typeof this.tempGridInfo == "object") {
             // mask panel and remove the chart(s)
-            this.chart.getEl().mask("Loading...", "x-mask-loading");
-            this.chart.removeAll();
+            this.maskChartPanel();
 
             // hide the viewGrid button and show the viewCharts button
             this.viewChartBtn.show();
@@ -493,7 +489,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
             // add a panel to put the queryWebpart in
             var gridPanelId = Ext.id();
-            this.chart.add(new Ext.Panel({
+            var dataGridPanel = new Ext.Panel({
                 autoScroll: true,
                 padding: 10,
                 items: [{
@@ -505,8 +501,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     xtype: 'panel',
                     id: gridPanelId
                 }]
-            }));
-            this.chart.doLayout();
+            });
 
             // create the queryWebpart using the temp grid schema and query name
             var chartQueryWebPart = new LABKEY.QueryWebPart({
@@ -519,8 +514,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 frame: "none"
             });
 
-            // unmask the panel
-            this.chart.getEl().unmask();
+            this.chart.removeAll();
+            this.chart.add(dataGridPanel);
+            this.chart.doLayout();
         }
     },
 
@@ -538,19 +534,19 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     getChartInfoFromEditorTabs: function(){
         return {
-            title: this.chartEditorChartsPanel.getMainTitle(),
-            chartLayout: this.chartEditorChartsPanel.getChartLayout(),
-            subject: this.subjectSeriesSelector.getSubject(),
+            title: this.editorChartsPanel.getMainTitle(),
+            chartLayout: this.editorChartsPanel.getChartLayout(),
+            subject: this.subjectSelector.getSubject(),
             measures: [
                 { // x-axis information
-                    axis: this.chartEditorXAxisPanel.getAxis(),
-                    dateOptions: this.chartEditorXAxisPanel.getDateOptions(),
-                    measure: this.chartEditorXAxisPanel.getMeasure()
+                    axis: this.editorXAxisPanel.getAxis(),
+                    dateOptions: this.editorXAxisPanel.getDateOptions(),
+                    measure: this.editorXAxisPanel.getMeasure()
                 },
                 { // y-axis information
-                    axis: this.chartEditorYAxisPanel.getAxis(),
-                    measure: this.chartEditorMeasurePanel.getMeasure(),
-                    dimension: this.chartEditorMeasurePanel.getDimension()
+                    axis: this.editorYAxisPanelVar.getAxis(),
+                    measure: this.editorMeasurePanel.getMeasure(),
+                    dimension: this.editorMeasurePanel.getDimension()
                 }
             ]
         }
@@ -663,13 +659,18 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     saveChartSuccess: function (reportName, reportDescription){
         return function(result, request, options) {
-            // remove the panel mask if it is still showing
-            if(this.getEl().isMasked()) {
-                this.getEl().unmask();
-            }
+            this.editorOverviewPanel.updateOverview({name: reportName, description: reportDescription});
+            Ext.Msg.alert("Success", "The chart has been successfully saved.");
+        }
+    },
 
-            this.chartEditorOverviewPanel.updateOverview({name: reportName, description: reportDescription});
-            Ext.Msg.alert("Success", "Chart Saved Successfully.");
+    // WORKAROUND: this is a workaround way of masking the chart panel since the ExtJS mask/unmask
+    // results in the chart image being masked in IE (even after unmask is called)
+    maskChartPanel: function(){
+        if(!this.isMasked){
+            this.chart.removeAll();
+            this.chart.add({xtype: 'label', text: 'Loading...'});
+            this.chart.doLayout();
         }
     }
 });
