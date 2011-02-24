@@ -26,4 +26,5 @@ import java.io.File;
 public interface SpecimenJobSupport
 {
     File getSpecimenArchive();
+    boolean isMerge();
 }

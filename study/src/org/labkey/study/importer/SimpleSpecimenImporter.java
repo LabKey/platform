@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.security.User;
@@ -52,17 +53,19 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     public static final String PARTICIPANT_ID = "ptid";
 
 
-    private static final HashMap<String, String> DEFAULT_COLUMN_LABELS = new HashMap<String, String>();
+    private static final Map<String, String> DEFAULT_COLUMN_LABELS = new CaseInsensitiveHashMap<String>();
 
     static
     {
         DEFAULT_COLUMN_LABELS.put(VIAL_ID, "Vial Id");
         DEFAULT_COLUMN_LABELS.put(SAMPLE_ID, "Sample Id");
-        DEFAULT_COLUMN_LABELS.put(DRAW_TIMESTAMP, "Date");
+        DEFAULT_COLUMN_LABELS.put(DRAW_TIMESTAMP, "Draw Date");
+        DEFAULT_COLUMN_LABELS.put(VISIT, "Visit Id");
         DEFAULT_COLUMN_LABELS.put(VOLUME, "Volume");
         DEFAULT_COLUMN_LABELS.put(UNITS, "Units");
         DEFAULT_COLUMN_LABELS.put(PRIMARY_SPECIMEN_TYPE, "Specimen Type");
         DEFAULT_COLUMN_LABELS.put(ADDITIVE_TYPE, "Additive Type");
+        DEFAULT_COLUMN_LABELS.put(DERIVIATIVE_TYPE, "Derivative Type");
         DEFAULT_COLUMN_LABELS.put(PARTICIPANT_ID, "Subject Id");
     }
 
@@ -165,7 +168,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         //Map from column name to
         Study study = StudyManager.getInstance().getStudy(container);
         Map<String,LookupTable> lookupTables = new HashMap<String,LookupTable>();
-        lookupTables.put("additive", new LookupTable("additives", "additive_type_id", "additive_id", "additive"));
+        lookupTables.put("additive_type", new LookupTable("additives", "additive_type_id", "additive_id", "additive"));
         lookupTables.put("derivative_type", new LookupTable("derivatives", "derivative_type_id", "derivative_id", "derivative"));
         lookupTables.put("primary_specimen_type", new LookupTable("primary_types", "primary_specimen_type_id", "primary_type_id", "primary_type"));
         LabLookupTable labLookup =  new LabLookupTable();

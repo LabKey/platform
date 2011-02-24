@@ -1,3 +1,4 @@
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 /*
  * Copyright (c) 2006-2009 LabKey Corporation
@@ -82,6 +83,14 @@ Specimen archive <b><%= h(bean.getArchive().getDefinitionFile().getName()) %></b
     %>
         <form action="submitSpecimenImport.post" method=POST>
             <input type="hidden" name="path" value="<%= h(bean.getPath())%>">
+            <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="replace" />
+            <label for="merge"><b>Replace</b>: Replace all of the existing specimens.</label>
+            <br>
+            <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="replace"/>
+            <label for="merge"><b>Merge</b>: Insert new specimens and update existing specimens.</label>
+
+            <p>
+
             <%= generateSubmitButton("Start Import")%>
         </form>
     <%

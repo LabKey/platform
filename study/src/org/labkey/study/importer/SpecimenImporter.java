@@ -551,7 +551,7 @@ public class SpecimenImporter
         process(user, container, iterMap, merge, logger);
     }
 
-    private static void resyncStudy(User user, Container container) throws SQLException
+    private void resyncStudy(User user, Container container) throws SQLException
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
@@ -565,7 +565,9 @@ public class SpecimenImporter
                 new Object[] {container, container, container});
 
         StudyImpl study = StudyManager.getInstance().getStudy(container);
+        info("Updating study-wide subject/visit information...");
         StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptyList());
+        info("Subject/visit update complete.");
     }
 
     private void updateAllStatistics() throws SQLException
@@ -1546,6 +1548,15 @@ public class SpecimenImporter
         return mergeTable(schema, container, tableName, potentialColumns, values, entityIdCol);
     }
 
+    private void appendEqualCheck(DbSchema schema, StringBuilder sql, ImportableColumn col)
+    {
+        String dialectType = schema.getSqlDialect().sqlTypeNameFromSqlType(col.getSQLType().sqlType);
+        String paramCast = "CAST(? AS " + dialectType + ")";
+        // Each unique col has two parameters in the null-equals check.
+        sql.append("(").append(col.getDbColumnName()).append(" IS NULL AND ").append(paramCast).append(" IS NULL)");
+        sql.append(" OR ").append(col.getDbColumnName()).append(" = ").append(paramCast);
+    }
+
     /**
      * Insert or update rows on the target table using the unique columns of <code>potentialColumns</code>
      * to identify the existing row.
@@ -1622,11 +1633,9 @@ public class SpecimenImporter
                     selectSql.append("SELECT * FROM ").append(tableName).append(" WHERE Container = ? ");
                     for (ImportableColumn col : uniqueCols)
                     {
-                        // Each unique col has two parameters in the null-equals check.
                         selectSql.append(" AND (");
-                        selectSql.append("(").append(col.getDbColumnName()).append(" IS NULL AND ? IS NULL)");
-                        selectSql.append(" OR ").append(col.getDbColumnName()).append(" = ? ");
-                        selectSql.append(")");
+                        appendEqualCheck(schema, selectSql, col);
+                        selectSql.append(")\n");
                     }
                     if (DEBUG)
                     {
@@ -1672,17 +1681,15 @@ public class SpecimenImporter
                             parametersUpdate.add(new Parameter(col.getDbColumnName(), p++, col.getSQLType()));
                         }
                     }
-                    updateSql.append(" WHERE Container = ?");
+                    updateSql.append(" WHERE Container = ?\n");
                     parametersUpdate.add(new Parameter("Container", p++, JdbcType.VARCHAR));
                     for (ImportableColumn col : availableColumns)
                     {
                         if (col.isUnique())
                         {
-                            // Each unique col has two parameters in the null-equals check.
                             updateSql.append(" AND (");
-                            updateSql.append("(").append(col.getDbColumnName()).append(" IS NULL AND ? IS NULL)");
-                            updateSql.append(" OR ").append(col.getDbColumnName()).append(" = ? ");
-                            updateSql.append(")");
+                            appendEqualCheck(schema, updateSql, col);
+                            updateSql.append(")\n");
                             parametersUpdate.add(new Parameter(col.getDbColumnName(), new int[] { p++, p++ }, col.getSQLType()));
                         }
                     }

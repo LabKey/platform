@@ -3561,7 +3561,7 @@ public class SpecimenController extends BaseStudyController
                     f = root.resolvePath(path);
             }
 
-            return submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f, root);
+            return submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f, root, form.isMerge());
         }
 
         public ActionURL getSuccessURL(PipelineForm pipelineForm)
@@ -3571,7 +3571,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    public static boolean submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root) throws IOException, SQLException
+    public static boolean submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root, boolean merge) throws IOException, SQLException
     {
         if (null == f || !f.exists() || !f.isFile())
         {
@@ -3582,7 +3582,7 @@ public class SpecimenController extends BaseStudyController
         if (logFile.exists() && logFile.isFile())
             return false;
 
-        SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(c, user, url), f, root);
+        SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(c, user, url), f, root, merge);
         batch.submit();
 
         return true;
@@ -4250,6 +4250,7 @@ public class SpecimenController extends BaseStudyController
     public static class PipelineForm extends PipelinePathForm
     {
         private boolean _deleteLogfile;
+        private String replaceOrMerge = "replace";
 
         public boolean isDeleteLogfile()
         {
@@ -4259,6 +4260,21 @@ public class SpecimenController extends BaseStudyController
         public void setDeleteLogfile(boolean deleteLogfile)
         {
             _deleteLogfile = deleteLogfile;
+        }
+
+        public String getReplaceOrMerge()
+        {
+            return replaceOrMerge;
+        }
+
+        public void setReplaceOrMerge(String replaceOrMerge)
+        {
+            this.replaceOrMerge = replaceOrMerge;
+        }
+
+        public boolean isMerge()
+        {
+            return "merge".equals(this.replaceOrMerge);
         }
     }
 
@@ -4491,7 +4507,7 @@ public class SpecimenController extends BaseStudyController
             }
 
             List<Map<String,Object>> defaultSpecimens = new ArrayList<Map<String, Object>>();
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(),  StudyService.get().getSubjectColumnName(c));
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(),  StudyService.get().getSubjectNounSingular(c));
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
                 col.setCaption(importer.label(col.getName()));

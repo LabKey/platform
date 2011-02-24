@@ -76,6 +76,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             columnAliases.put(entry.getValue(), entry.getKey());
         //And a few more aliases
         columnAliases.put(StudyService.get().getSubjectColumnName(getViewContext().getContainer()), SimpleSpecimenImporter.PARTICIPANT_ID);
+        columnAliases.put(StudyService.get().getSubjectNounSingular(getViewContext().getContainer()), SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Participant Id", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Subject", SimpleSpecimenImporter.PARTICIPANT_ID);
@@ -90,11 +91,14 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         columnAliases.put("volume Units", SimpleSpecimenImporter.UNITS);
         columnAliases.put("primaryType", SimpleSpecimenImporter.PRIMARY_SPECIMEN_TYPE);
         columnAliases.put("primary Type", SimpleSpecimenImporter.PRIMARY_SPECIMEN_TYPE);
+        columnAliases.put("additive", SimpleSpecimenImporter.ADDITIVE_TYPE);
         columnAliases.put("additiveType", SimpleSpecimenImporter.ADDITIVE_TYPE);
         columnAliases.put("additive Type", SimpleSpecimenImporter.ADDITIVE_TYPE);
+        columnAliases.put("derivative", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
         columnAliases.put("derivativeType", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
         columnAliases.put("derivative Type", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
         columnAliases.put("drawTimestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
+        columnAliases.put("Draw Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("draw Timestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("globalUniqueId", SimpleSpecimenImporter.VIAL_ID);
         columnAliases.put("global Unique Id", SimpleSpecimenImporter.VIAL_ID);

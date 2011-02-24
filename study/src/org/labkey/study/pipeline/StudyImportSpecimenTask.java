@@ -69,6 +69,11 @@ public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpe
         return null;
     }
 
+    @Override
+    protected boolean isMerge()
+    {
+        return false;
+    }
 
     public static class Factory extends AbstractSpecimenTaskFactory<Factory>
     {

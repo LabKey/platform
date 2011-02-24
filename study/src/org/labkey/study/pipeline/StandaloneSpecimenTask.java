@@ -39,6 +39,10 @@ public class StandaloneSpecimenTask extends AbstractSpecimenTask<StandaloneSpeci
         return getJob().getJobSupport(SpecimenJobSupport.class).getSpecimenArchive();
     }
 
+    protected boolean isMerge()
+    {
+        return getJob().getJobSupport(SpecimenJobSupport.class).isMerge();
+    }
 
     public static class Factory extends AbstractSpecimenTaskFactory<Factory>
     {

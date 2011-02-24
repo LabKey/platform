@@ -75,7 +75,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     job.setStatus("PROCESSING SPECIMENS");
 
                     SpecimenImporter importer = new SpecimenImporter();
-                    importer.process(job.getUser(), job.getContainer(), files, false, job.getLogger());
+                    importer.process(job.getUser(), job.getContainer(), files, isMerge(), job.getLogger());
                 }
                 catch (Exception e)
                 {
@@ -91,6 +91,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         return new RecordedActionSet();
     }
 
+    protected abstract boolean isMerge();
 
     private void delete(File file)
     {

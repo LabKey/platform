@@ -35,9 +35,12 @@ import java.sql.SQLException;
 // Pipeline job used for importing individual specimen archives (not as part of a study).
 public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJobSupport
 {
-    public SpecimenBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root) throws SQLException
+    private boolean _isMerge;
+
+    public SpecimenBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root, boolean merge) throws SQLException
     {
         super(info, definitionFile, root);
+        _isMerge = merge;
     }
 
     public String getDescription()
@@ -51,6 +54,11 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
     public File getSpecimenArchive()
     {
         return _definitionFile;
+    }
+
+    public boolean isMerge()
+    {
+        return _isMerge;
     }
 
     @Override
