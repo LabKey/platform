@@ -481,6 +481,10 @@ String getResultsSummary(int totalHits, @Nullable String description, @Nullable 
 
 String normalizeHref(Container c, Path contextPath, String href)
 {
+    // see issue #11481
+    if (href.startsWith("files/"))
+        href = "/" + href;
+        
     try
     {
         if (null != c && href.startsWith("/"))

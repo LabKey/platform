@@ -720,7 +720,7 @@ public class ExperimentController extends SpringActionController
             materialsView.setShowDetailsColumn(false);
             materialsView.setShowExportButtons(false);
             materialsView.setShadeAlternatingRows(true);
-            materialsView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            materialsView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             materialsView.setTitle(title);
             return materialsView;
         }
@@ -1224,7 +1224,7 @@ public class ExperimentController extends SpringActionController
                     bb.add(new ActionButton("Browse in pipeline", browseURL));
                 }
             }
-            dr.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            dr.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             dr.setButtonBar(bb);
 
             CustomPropertiesView cpv = new CustomPropertiesView(_data.getLSID(), c);

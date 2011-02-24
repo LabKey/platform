@@ -53,7 +53,7 @@ public class ExperimentRunGroupsView extends VBox
                 bar.add(new SimpleTextDisplayElement("<span id=\"experimentRunGroupMembershipStatus\" />", true));
             }
         };
-        experimentsView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+        experimentsView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
         experimentsView.setShowDetailsColumn(false);
 
         addView(experimentsView);

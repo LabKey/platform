@@ -181,7 +181,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
     @Override
     protected DataRegion.ButtonBarPosition getButtonBarPosition()
     {
-        return DataRegion.ButtonBarPosition.BOTTOM;
+        return DataRegion.ButtonBarPosition.TOP;
     }
 
     @Override

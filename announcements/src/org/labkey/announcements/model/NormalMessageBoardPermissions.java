@@ -18,6 +18,8 @@ package org.labkey.announcements.model;
 
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.announcements.permissions.DeleteMessagePermission;
+import org.labkey.api.announcements.permissions.UpdateMessagePermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
@@ -64,6 +66,10 @@ public class NormalMessageBoardPermissions implements Permissions
 
     public boolean allowUpdate(AnnouncementModel ann)
     {
+        // User might be explicity given permission to update
+        if (_c.hasPermission(_user, UpdateMessagePermission.class))
+            return true;
+        
         return _c.hasPermission(_user, UpdatePermission.class,
                 (ann.getCreatedBy() == _user.getUserId() && !_user.isGuest() ? RoleManager.roleSet(OwnerRole.class) : null));
     }
@@ -71,7 +77,7 @@ public class NormalMessageBoardPermissions implements Permissions
     public boolean allowDeleteMessage(AnnouncementModel ann)
     {
         //to delete, user must have delete permission for this message and all responses
-        if (_c.hasPermission(_user, DeletePermission.class,
+        if (_c.hasPermission(_user, DeleteMessagePermission.class) ||  _c.hasPermission(_user, DeletePermission.class,
                 (ann.getCreatedBy() == _user.getUserId() && !_user.isGuest() ? RoleManager.roleSet(OwnerRole.class) : null)))
         {
             for (AnnouncementModel a : ann.getResponses())
@@ -86,7 +92,7 @@ public class NormalMessageBoardPermissions implements Permissions
 
     public boolean allowDeleteAnyThread()
     {
-        return hasPermission(DeletePermission.class);
+        return (hasPermission(DeletePermission.class) || hasPermission(DeleteMessagePermission.class));
     }
 
     public SimpleFilter getThreadFilter()

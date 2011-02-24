@@ -144,7 +144,7 @@ public class FileWebdavProvider implements WebdavService.Provider
             Path fileServlet = new Path("files");
             Path contextPath = Path.parse(AppProps.getInstance().getContextPath());
             Path full = contextPath.append(fileServlet).append(rel);
-            return full.encode("/",null) + "?renderAs=DEFAULT";
+            return full.encode("/", null) + "?renderAs=DEFAULT";
         }
 
         @Override
