@@ -56,8 +56,6 @@
     ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
     int height = 350;
 %>
-<!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
-<div class="extContainer" style="height: <%= height %>px" id="<%=bean.getContentId()%>"></div>
 
 <%  if (!bean.isEnabled()) { %>
 
@@ -71,6 +69,9 @@
     </span>
 
 <%  } %>
+
+<!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
+<div class="extContainer" style="height: <%= height %>px" id="<%=bean.getContentId()%>"></div>
 
 <script type="text/javascript">
 

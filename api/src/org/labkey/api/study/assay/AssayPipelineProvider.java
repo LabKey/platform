@@ -89,24 +89,26 @@ public class AssayPipelineProvider extends PipelineProvider
                 }
             }
 
+            if (navTree.getChildCount() > 0)
+            {
+                directory.addAction(new PipelineAction(navTree, files, true, false));
+            }
+
+            NavTree root = new NavTree(_actionDescription);
+            root.setId(id);
             if (context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
             {
-                if (navTree.getChildCount() > 0)
-                {
-                    navTree.addSeparator();
-                }
-
                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(context.getContainer(), _assayProvider.getName(),
                         directory.getRelativePath(), new File[0]);
 
                 NavTree child = new NavTree("Create New " + _assayProvider.getName() + " Assay Design", url);
                 child.setId(id + ":Create Assay Definition");
-                navTree.addChild(child);
+                root.addChild(child);
             }
 
-            if (navTree.getChildCount() > 0)
+            if (root.getChildCount() > 0)
             {
-                directory.addAction(new PipelineAction(navTree, files, true, false));
+                directory.addAction(new PipelineAction(root, files, false, false));
             }
         }
     }
