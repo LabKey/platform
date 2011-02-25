@@ -60,9 +60,6 @@ public class AssayPublishService
                                        List<Map<String, Object>> dataMaps, Map<String, PropertyType> propertyTypes, String keyPropertyName, List<String> errors);
 
         ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, ExpProtocol protocol,
-                                       List<Map<String, Object>> dataMaps, List<PropertyDescriptor> propertyTypes, String keyPropertyName, List<String> errors);
-
-        ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, ExpProtocol protocol,
                                        List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
 
         /**
