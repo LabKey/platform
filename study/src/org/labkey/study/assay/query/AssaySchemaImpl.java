@@ -167,10 +167,7 @@ public class AssaySchemaImpl extends AssaySchema
     // returned an AssayTable type that knew it's protocol, we could override the UserSchema.overlayMetadata() method.
     protected void overlayMetadata(AssayProvider provider, ExpProtocol protocol, TableInfo table, String name)
     {
-        for (ColumnInfo col : table.getColumns())
-        {
-            fixupRenderers(col, col);
-        }
+        fixupRenderers(table);
 
         // Look for metadata using the table's raw name (ie. not prefixed with the provider's name)
         String prefix = protocol.getName() + " ";
@@ -190,7 +187,7 @@ public class AssaySchemaImpl extends AssaySchema
     }
 
 
-    public ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
+    private ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
     {
         final ExpExperimentTable result = ExperimentService.get().createExperimentTable(getBatchesTableName(protocol), this);
         result.populate();
@@ -238,7 +235,7 @@ public class AssaySchemaImpl extends AssaySchema
         return result;
     }
 
-    public ExpRunTable createRunTable(final ExpProtocol protocol, final AssayProvider provider)
+    private ExpRunTable createRunTable(final ExpProtocol protocol, final AssayProvider provider)
     {
         final ExpRunTable runTable = provider.createRunTable(this, protocol);
         runTable.setProtocolPatterns(protocol.getLSID());
@@ -269,7 +266,9 @@ public class AssaySchemaImpl extends AssaySchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createBatchesTable(protocol, provider, runTable.getContainerFilter());
+                ExpExperimentTable batchesTable = createBatchesTable(protocol, provider, runTable.getContainerFilter());
+                fixupRenderers(batchesTable);
+                return batchesTable;
             }
         });
         runTable.addColumn(batchColumn);
@@ -341,6 +340,14 @@ public class AssaySchemaImpl extends AssaySchema
     {
         for (ColumnInfo c : fk.getParentTable().getColumns())
             fixupPropertyURL(fk, c);
+    }
+
+    public void fixupRenderers(TableInfo table)
+    {
+        for (ColumnInfo col : table.getColumns())
+        {
+            fixupRenderers(col, col);
+        }
     }
 
     public void fixupRenderers(final ColumnRenderProperties col, ColumnInfo columnInfo)
