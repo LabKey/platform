@@ -340,12 +340,12 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
         {
             // apply current form to all files in this set
             for (var i = 0; i < this.files.length; i++)
-                Ext.apply(this.files[i], this.formPanel.getForm().getFieldValues(false));
+                Ext.apply(this.files[i], this.formPanel.getForm().getValues());
         }
         else
         {
             var data = this.files[this.fileIndex];
-            Ext.apply(data, this.formPanel.getForm().getFieldValues(false));
+            Ext.apply(data, this.formPanel.getForm().getValues());
         }
     },
 

@@ -445,12 +445,16 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                             }
                             else
                             {
-                                _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name());
                                 File root = service.getFileRoot(getViewContext().getContainer());
-                                if (root != null && root.exists())
+
+                                _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name());
+                                if (root != null)
                                 {
                                     _form.setProjectRootPath(root.getCanonicalPath());
-                                    confirmMessage = "The file root is set to: " + root.getCanonicalPath();
+                                    if (root.exists())
+                                        confirmMessage = "The file root is set to: " + root.getCanonicalPath();
+                                    else
+                                        _errors.reject(SpringActionController.ERROR_MSG, "File root '" + root + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
                                 }
                             }
                         }

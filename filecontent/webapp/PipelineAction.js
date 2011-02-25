@@ -425,7 +425,7 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
             for (var i=0; i < this.fileFields.length; i++)
             {
                 var prop = this.fileFields[i];
-                var mapName = prop.name.toLowerCase();
+                var mapName = prop.name;
 
                 if (prop.lookupQuery && prop.lookupSchema){
                     // for lookup columns, show the display value

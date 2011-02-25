@@ -46,6 +46,8 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
 
 import java.sql.SQLException;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -77,16 +79,18 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         Filter filter = getQueryFilter(keys);
+        Set<String> queryColumns = getQueryColumns(container);
 
-        Map<String, Object> rowMap = Table.selectObject(getQueryTable(), getQueryColumns(container), filter, null, Map.class);
-        if (rowMap != null)
+        Map<String, Object> selectMap = Table.selectObject(getQueryTable(), queryColumns, filter, null, Map.class);
+        Map<String, Object> rowMap = new HashMap<String, Object>();
+        if (selectMap != null)
         {
             Domain domain = getFileProperties(container);
             if (domain != null)
             {
                 for (DomainProperty prop : domain.getProperties())
                 {
-                    Object o = rowMap.get(prop.getName());
+                    Object o = selectMap.get(prop.getName());
                     if (o != null)
                     {
                         try {
@@ -94,13 +98,26 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                             
                             if (!String.valueOf(o).equals(fmt) && !rowMap.containsKey(prop.getName() + "_displayValue"))
                                 rowMap.put(prop.getName() + "_displayValue", fmt);
-                            rowMap.put(prop.getName(), o);
+
+                            if (o instanceof Date)
+                                rowMap.put(prop.getName(), fmt);
+                            else
+                                rowMap.put(prop.getName(), o);
                         }
                         catch (Exception e)
                         {
                             throw new QueryUpdateServiceException(e);
                         }
                     }
+                }
+            }
+
+            // gather any other standard columns for this QUS 
+            for (String colName : queryColumns)
+            {
+                if (!rowMap.containsKey(colName))
+                {
+                    rowMap.put(colName, selectMap.get(colName));
                 }
             }
         }

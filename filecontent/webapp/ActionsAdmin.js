@@ -732,14 +732,14 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     onEditFileProperties : function(btn, evt)
     {
-        //this.saveActionConfig(btn, evt);
-        window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', null, {'returnURL':window.location});
+        var handler = function(){window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', null, {'returnURL':window.location});};
+        this.saveActionConfig(btn, evt, handler);
     },
 
     /**
      * Save changes to the manage action dialog
      */
-    saveActionConfig : function(button, event)
+    saveActionConfig : function(button, event, handler)
     {
         var adminOptions = {actions: []};
         var records = this.actionsStore ? this.actionsStore.getModifiedRecords() : undefined;
@@ -816,11 +816,13 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         adminOptions.expandFileUpload = this.expandFileUpload;
         adminOptions.showFolderTree = this.showFolderTree;
 
+        var defaultHandler = function(){this.fireEvent('success')};
+
         Ext.Ajax.request({
             url: this.actionsUpdateURL,
             method : 'POST',
             scope: this,
-            success: function(){this.fireEvent('success');},
+            success: handler ? handler : defaultHandler,
             failure: function(){this.fireEvent('failure');},
             jsonData : adminOptions,
             headers : {
@@ -1045,7 +1047,7 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
         if (checked)
         {
             var msg = 'The default setting for this folder is: <span class="labkey-strong">None</span>';
-            if (this.emailPrefDefault == 512)
+            if (this.emailPrefDefault == 513)
                 msg = 'The default setting for this folder is: <span class="labkey-strong">15 Minute Digest</span>';
             else if (this.emailPrefDefault == 514)
                 msg = 'The default setting for this folder is: <span class="labkey-strong">Daily Digest</span>';
