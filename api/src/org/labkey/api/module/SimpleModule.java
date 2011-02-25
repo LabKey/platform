@@ -33,7 +33,6 @@ import org.labkey.data.xml.TablesDocument;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -158,7 +157,11 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
             {
                 public QuerySchema getSchema(final DefaultSchema schema)
                 {
-                    return QueryService.get().createSimpleUserSchema(schemaName, null, schema.getUser(), schema.getContainer(), dbschema);
+                    if (schema.getContainer().getActiveModules().contains(SimpleModule.this))
+                    {
+                        return QueryService.get().createSimpleUserSchema(schemaName, null, schema.getUser(), schema.getContainer(), dbschema);
+                    }
+                    return null;
                 }
             });
         }
@@ -190,6 +193,11 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     private void purgeSchema(String schemaName, Container c, User user)
     {
         UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
+        if (schema == null)
+        {
+            return;
+        }
+        
         try
         {
             List<TableInfo> sorted = schema.getSortedTables();
