@@ -64,6 +64,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private SaveButtonBar saveBarBottom;
     private HandlerRegistration _closeHandlerManager;
     private List<GWTContainer> _autoCopyTargets;
+    private boolean _isPlateBased;
 
     public AssayDesignerMainPanel(RootPanel rootPanel)
     {
@@ -377,6 +378,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
         if (assay.getAvailablePlateTemplates() != null)
         {
+            _isPlateBased = true;
             table.setHTML(row, 0, "Plate Template");
             final ListBox templateList = new ListBox();
             int selectedIndex = -1;
@@ -541,6 +543,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         if (0 == numProps)
             errors.add("You must create at least one Property.");
 
+        if (_isPlateBased && _assay.getSelectedPlateTemplate() == null)
+            errors.add("You must select a plate template from the list, or create one first.");
+        
         if (errors.size() > 0)
         {
             String errorString = "";
