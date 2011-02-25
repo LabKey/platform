@@ -108,27 +108,15 @@ abstract public class QExpr extends QNode
     static JdbcType getChildrenSqlType(List<QNode> children)
     {
         if (children.isEmpty())
-        {
             return JdbcType.OTHER;
-        }
-        if (!(children.get(0) instanceof QExpr))
-        {
-            return JdbcType.OTHER;
-        }
-        JdbcType result = ((QExpr)children.get(0)).getSqlType();
+
+        JdbcType result = JdbcType.NULL;
         for (QNode qNode : children)
         {
             if (qNode instanceof QExpr)
             {
-                JdbcType newType = ((QExpr) qNode).getSqlType();
-                if (JdbcType.NULL == result || JdbcType.OTHER == result)
-                {
-                    result = newType;
-                }
-                else if (JdbcType.NULL != newType && result != newType)
-                {
-                    return JdbcType.OTHER;
-                }
+                JdbcType nextType = ((QExpr) qNode).getSqlType();
+                result = JdbcType.promote(result, nextType);
             }
             else
             {
