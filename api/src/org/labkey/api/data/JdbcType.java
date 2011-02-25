@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -179,6 +180,46 @@ public enum JdbcType
         }
     }
 
+
+    public static JdbcType promote(@NotNull JdbcType a, @NotNull JdbcType b)
+    {
+        if (a == b)
+            return a;
+        if (a == NULL) return b;
+        if (b == NULL) return a;
+        if (a == OTHER || b == OTHER) return OTHER;
+        if (a == LONGVARCHAR || b == LONGVARCHAR)
+            return LONGVARCHAR;
+        if (a == VARCHAR || b == VARCHAR)
+            return VARCHAR;
+        boolean aIsNumeric = a.isNumeric(), bIsNumeric = b.isNumeric();
+        if (aIsNumeric && bIsNumeric)
+        {
+            if (a == DOUBLE || a == REAL || b == DOUBLE || b == REAL)
+                return DOUBLE;
+            if (a == DECIMAL || b == DECIMAL)
+                return DECIMAL;
+            if (a == BIGINT || b == BIGINT)
+                return BIGINT;
+            return INTEGER;
+        }
+        if (a.isDateOrTime() && b.isDateOrTime())
+        {
+            return TIMESTAMP;
+        }
+        return OTHER;
+    }
+
+
+    public boolean isNumeric()
+    {
+        return Number.class.isAssignableFrom(this.cls);
+    }
+
+    public boolean isDateOrTime()
+    {
+        return java.util.Date.class.isAssignableFrom(this.cls);
+    }
     
     public Object convert(Object o)
     {
@@ -290,6 +331,32 @@ public enum JdbcType
             try {INTEGER.convert(2.3); fail();} catch (ConversionException x){}
             try {INTEGER.convert("barney"); fail();} catch (ConversionException x){}
             try {BIGINT.convert("fred"); fail();} catch (ConversionException x){}
+        }
+
+        @Test
+        public void testPromote()
+        {
+            assertEquals(promote(NULL, INTEGER), INTEGER);
+            assertEquals(promote(NULL, VARCHAR), VARCHAR);
+            assertEquals(promote(NULL, TIMESTAMP), TIMESTAMP);
+            assertEquals(promote(SMALLINT, NULL), SMALLINT);
+            assertEquals(promote(REAL, NULL), REAL);
+            assertEquals(promote(LONGVARCHAR, NULL), LONGVARCHAR);
+
+            assertEquals(promote(INTEGER, DOUBLE), DOUBLE);
+            assertEquals(promote(INTEGER, SMALLINT), INTEGER);
+            assertEquals(promote(INTEGER, DECIMAL), DECIMAL);
+            assertEquals(promote(DECIMAL, DOUBLE), DOUBLE);
+
+            assertEquals(promote(VARCHAR, DOUBLE), VARCHAR);
+            assertEquals(promote(VARCHAR, SMALLINT), VARCHAR);
+            assertEquals(promote(INTEGER, VARCHAR), VARCHAR);
+            assertEquals(promote(DECIMAL, VARCHAR), VARCHAR);
+
+            assertEquals(promote(TIME, DATE), TIMESTAMP);
+
+            assertEquals(promote(BOOLEAN, DATE), OTHER);
+            assertEquals(promote(VARBINARY, INTEGER), OTHER);
         }
     }
 }
