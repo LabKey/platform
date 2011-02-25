@@ -34,7 +34,7 @@
     <tr><td colspan="2" class="labkey-announcement-title"><span>Project View for File Web Parts</span></td></tr>
     <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
     <tr><td>File web parts can be viewed on a project/folder basis. A file web part for a specific folder can
-        be browsed or have it's email notifications administered by selecting an item in the tree view and
+        be browsed or have its email notifications administered by selecting an item in the tree view and
         clicking the appropriate button on the toolbar.
     </td></tr>
     <tr><td>&nbsp;</td></tr>
