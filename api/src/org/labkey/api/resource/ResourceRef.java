@@ -53,6 +53,11 @@ public class ResourceRef
         _version = _resource.getVersionStamp();
     }
 
+    /**
+     * Check to see if the underlying Resource or one of it's dependencies has been modified.
+     * Calling <code>isStale()</code> will reset an internal staleness counter.
+     * @return
+     */
     public boolean isStale()
     {
         int counter = HeartBeat.getCounter();

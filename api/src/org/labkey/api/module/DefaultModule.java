@@ -818,6 +818,9 @@ public abstract class DefaultModule implements Module
                 File f = new File(new File(source), "web");
                 if (f.isDirectory())
                     l.add(f);
+                f = new File(new File(source), "resources/web");
+                if (f.isDirectory())
+                    l.add(f);
                 f = new File(new File(source), "webapp");
                 if (f.isDirectory())
                     l.add(f);
