@@ -27,13 +27,12 @@ import org.labkey.study.security.permissions.*;
 * Date: May 13, 2009
 * Time: 3:16:54 PM
 */
-public class SpecimenCoordinatorRole extends AbstractRole
+public class SpecimenCoordinatorRole extends AbstractSpecimenRole
 {
     public SpecimenCoordinatorRole()
     {
         super("Specimen Coordinator",
                 "Specimen Coordinators may perform a number of management tasks related to specimens",
-                StudyModule.class,
                 ManageRequestsPermission.class,
                 LockSpecimensPermission.class,
                 ManageDisplaySettingsPermission.class,

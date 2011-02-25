@@ -201,8 +201,8 @@ public class SecurityController extends SpringActionController
                 if (underscoreIndex <= 0 || underscoreIndex == permAndGroup.length() - 1)
                     continue;
 
-                String perm = permAndGroup.substring(0, underscoreIndex);
-                String gIdString = permAndGroup.substring(underscoreIndex + 1);
+                String gIdString = permAndGroup.substring(0, underscoreIndex);
+                String perm = permAndGroup.substring(underscoreIndex + 1);
                 int gid;
 
                 try
@@ -233,13 +233,13 @@ public class SecurityController extends SpringActionController
                         continue;
 
                     String perm = entry.getValue();
-                    if ("READ".equals(perm))
+                    for (Role role : RoleManager.getAllRoles())
                     {
-                        policy.addRoleAssignment(group, ReaderRole.class);
-                    }
-                    else if ("WRITE".equals(perm))
-                    {
-                        policy.addRoleAssignment(group, EditorRole.class);
+                        if (role.getClass().getName().equals(perm))
+                        {
+                            policy.addRoleAssignment(group, role);
+                            break;
+                        }
                     }
                 }
             }

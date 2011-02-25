@@ -26,6 +26,11 @@
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="org.labkey.api.security.roles.RoleManager" %>
+<%@ page import="org.labkey.api.security.roles.Role" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.roles.EditorRole" %>
+<%@ page import="org.labkey.api.security.roles.ReaderRole" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     String groupName(Group g)
@@ -149,24 +154,41 @@ else
 
         String inputName = "dataset." + ds.getDataSetId();
         %><tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><td><%=h(ds.getLabel())%></td><%
+
+        java.util.List<Role> possibleRoles = new ArrayList<Role>();
+        for (org.labkey.api.security.roles.Role role : org.labkey.api.security.roles.RoleManager.getAllRoles())
+        {
+            if (role.isApplicable(dsPolicy, ds) && role.getClass() != org.labkey.api.security.roles.ReaderRole.class && role.getClass() != org.labkey.api.security.roles.EditorRole.class)
+            {
+                possibleRoles.add(role);
+            }
+        }
+
         for (Group g : restrictedGroups)
         {
-            boolean writePerm = dsPolicy.hasPermission(g, UpdatePermission.class);
+            java.util.List<Role> roles = dsPolicy.getAssignedRoles(g);
+            Role assignedRole = roles.isEmpty() ? null : roles.get(0);
+
+            boolean writePerm = assignedRole != null && assignedRole.getClass() == org.labkey.api.security.roles.EditorRole.class;
             boolean readPerm = !writePerm && dsPolicy.hasPermission(g, ReadPermission.class);
 
             if (study.getSecurityType() == SecurityType.ADVANCED_READ && writePerm)
                 readPerm = true;
 
-            boolean noPerm = !writePerm && !readPerm;
+            boolean noPerm = !writePerm && !readPerm && assignedRole == null;
             int id = g.getUserId();
             %><td align=center>
                 <select name="<%=inputName%>">
-                    <option value="NONE_<%=id%>" <%=noPerm ? "selected" : ""%>>None</option>
-                    <option value="READ_<%=id%>" <%=readPerm ? "selected" : ""%>>Read</option><%
+                    <option value="<%=id%>_NONE" <%=noPerm ? "selected" : ""%>>None</option>
+                    <option value="<%=id%>_<%= ReaderRole.class.getName() %>" <%=readPerm ? "selected" : ""%>>Read</option><%
                     if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
                     {
                     %>
-                    <option value="WRITE_<%=id%>" <%=writePerm ? "selected" : ""%>>Edit</option>
+                    <option value="<%=id%>_<%= EditorRole.class.getName() %>" <%=writePerm ? "selected" : ""%>>Edit</option>
+                    <% for (Role possibleRole : possibleRoles)
+                    { %>
+                        <option value="<%=id%>_<%= h(possibleRole.getClass().getName()) %>" <%=possibleRole == assignedRole ? "selected" : ""%>><%= h(possibleRole.getName()) %></option><%
+                    } %>
                     <%
                     }
                     %>

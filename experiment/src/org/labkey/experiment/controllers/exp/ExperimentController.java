@@ -4283,11 +4283,6 @@ public class ExperimentController extends SpringActionController
             return result;
         }
 
-        public ActionURL getShowAddXarFileURL(Container c)
-        {
-            return new ActionURL(ShowAddXarFileAction.class, c);
-        }
-
         public ActionURL getShowExperimentsURL(Container c)
         {
             return new ActionURL(ShowRunGroupsAction.class, c);

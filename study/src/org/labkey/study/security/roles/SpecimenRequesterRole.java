@@ -26,13 +26,12 @@ import org.labkey.study.security.permissions.RequestSpecimensPermission;
 * Date: May 18, 2009
 * Time: 2:23:42 PM
 */
-public class SpecimenRequesterRole extends AbstractRole
+public class SpecimenRequesterRole extends AbstractSpecimenRole
 {
     public SpecimenRequesterRole()
     {
         super("Specimen Requester",
                 "Specimen Requesters may request specimen vials.",
-                StudyModule.class,
                 RequestSpecimensPermission.class);
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
     }
