@@ -97,10 +97,16 @@ abstract public class QExpr extends QNode
         return null;
     }
 
+
     /** If all the children are the same type, return as that type. Otherwise, return Types.OTHER */
     protected JdbcType getChildrenSqlType()
     {
-        List<QNode> children = childList();
+        return getChildrenSqlType(childList());
+    }
+
+
+    static JdbcType getChildrenSqlType(List<QNode> children)
+    {
         if (children.isEmpty())
         {
             return JdbcType.OTHER;
@@ -110,7 +116,7 @@ abstract public class QExpr extends QNode
             return JdbcType.OTHER;
         }
         JdbcType result = ((QExpr)children.get(0)).getSqlType();
-        for (QNode qNode : childList())
+        for (QNode qNode : children)
         {
             if (qNode instanceof QExpr)
             {

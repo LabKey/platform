@@ -18,8 +18,17 @@ package org.labkey.query.sql;
 
 import org.labkey.api.data.JdbcType;
 
+import java.util.ArrayList;
+
 public class QCase extends QExpr
 {
+    final boolean _switch;
+
+    QCase(boolean switchStyle)
+    {
+        _switch = switchStyle;
+    }
+    
     public void appendSql(SqlBuilder builder)
     {
         builder.append(" CASE ");
@@ -43,6 +52,12 @@ public class QCase extends QExpr
     @Override
     public JdbcType getSqlType()
     {
-        return getChildrenSqlType();
+        if (!_switch)
+            return getChildrenSqlType();
+
+        // skip the first expression
+        ArrayList<QNode> list = new ArrayList<QNode>(childList());
+        list.remove(0);
+        return getChildrenSqlType(list);
     }
 }

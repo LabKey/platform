@@ -32,6 +32,7 @@ import org.apache.log4j.Category;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;
@@ -489,6 +490,7 @@ public class SqlParser
             case AVG: return "AVG";
             case BETWEEN: return "BETWEEN";
             case CASE: return "CASE";
+            case CASE2: return "CASE";
             case CAST: return "CAST";
             case COUNT: return "COUNT";
             case DATATYPE: return "DATATYPE";
@@ -958,7 +960,8 @@ public class SqlParser
                 q = new QOrder();
 				break;
             case CASE:
-                q = new QCase();
+            case CASE2:
+                q = new QCase(type==CASE2);
 				break;
             case WHEN:
                 q = new QWhen();
@@ -1076,6 +1079,7 @@ public class SqlParser
         "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
 
         "SELECT CASE WHEN R.a=R.b THEN 'same' WHEN R.c IS NULL THEN 'different' ELSE R.c END FROM R",
+        "SELECT CASE R.a WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'few' END FROM R",
 
         "SELECT R.a FROM R WHERE R.a LIKE 'a%'",
 //		"SELECT R.a FROM R WHERE R.a LIKE 'a%' AND R.b LIKE 'a/%' ESCAPE '/'",
@@ -1218,6 +1222,17 @@ public class SqlParser
             new Pair("SUM(a+b)","(SUM (+ a b))"),
             new Pair("CAST(a AS VARCHAR)", "(METHOD_CALL CAST (EXPR_LIST a 'VARCHAR'))")
         };
+
+
+        Pair<String, JdbcType>[] typeExprs = new Pair[]
+        {
+            new Pair("CASE 1 WHEN 1 THEN 1 ELSE 2 END", JdbcType.INTEGER),
+            new Pair("CASE 1 WHEN 1 THEN '1' ELSE '2' END", JdbcType.VARCHAR),
+            new Pair("CASE 'one' WHEN 1 THEN 1 ELSE 2 END", JdbcType.INTEGER),
+            new Pair("CASE 'one' WHEN 1 THEN '1' ELSE '2' END", JdbcType.VARCHAR)
+        };
+
+
         Pair<String,String>[] parseStmts = new Pair[]
         {
             // joinExpression
@@ -1253,7 +1268,7 @@ public class SqlParser
 
 		
         @Test
-        public void test()
+        public void testExprs()
         {
             for (Pair<String,String> test : parseExprs)
             {
@@ -1265,6 +1280,26 @@ public class SqlParser
                 String prefix = toPrefixString(e);
                 assertEquals(test.second,prefix);
             }
+        }
+
+        @Test
+        public void testTypes()
+        {
+            for (Pair<String,JdbcType> test : typeExprs)
+            {
+                List<QueryParseException> errors = new ArrayList<QueryParseException>();
+                QExpr e = new SqlParser().parseExpr(test.first,errors);
+                assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
+                assertTrue(test.first + " has parse errors", errors.isEmpty());
+                assertNotNull(test.first + " did not parse", e);
+                assertEquals(e.getSqlType(), test.second);
+            }
+        }
+
+
+        @Test
+        public void testStmts()
+        {
             for (Pair<String,String> test : parseStmts)
             {
                 List<QueryParseException> errors = new ArrayList<QueryParseException>();
@@ -1275,6 +1310,12 @@ public class SqlParser
                 String prefix = toPrefixString(e);
                 assertEquals(test.first, test.second, prefix);
             }
+        }
+
+        @Test
+        public void testSql()
+        {
+
             for (String sql : testSql)
             {
                 try

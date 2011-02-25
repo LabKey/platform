@@ -19,7 +19,8 @@ tokens
     ASCENDING;
 	AGGREGATE;		// One of the aggregate functions (e.g. min, max, avg)
 	ALIAS;
-    DECLARATION; 
+    CASE2;
+    DECLARATION;
 	DESCENDING;
 	EXPR_LIST;
 	IN_LIST;
@@ -517,6 +518,7 @@ unaryExpression
 	
 caseExpression
 	: CASE^ (whenClause)+ (elseClause)? END! 
+	| (c=CASE^ { $c.tree.getToken().setType(CASE2); }) unaryExpression (altWhenClause)+ (elseClause)? END!
 	;
 	
 whenClause
