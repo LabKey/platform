@@ -228,6 +228,11 @@ public class AssaySchemaImpl extends AssaySchema
             propsCol.setFk(new AssayPropertyForeignKey(batchDomain));
         }
 
+        for (ColumnInfo col : result.getColumns())
+        {
+            fixupRenderers(col, col);
+        }
+
         result.setDescription("Contains a row per " + protocol.getName() + " batch, a group of runs that were loaded at the same time.");
 
         return result;

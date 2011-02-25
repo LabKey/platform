@@ -180,7 +180,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, Collections.<PropertyDescriptor>emptyList(), keyPropertyName, errors);
     }
 
-    public ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
+    private ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
                                           List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         // Partition dataMaps by targetStudy.
@@ -847,26 +847,22 @@ public class AssayPublishManager implements AssayPublishService.Service
                 Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
                 if (targetStudyContainer != null)
                 {
-                    Study study = StudyService.get().getStudy(targetStudyContainer);
+                    StudyImpl study = StudyManager.getInstance().getStudy(targetStudyContainer);
                     if (study != null)
                     {
-                        boolean foundDataset = false;
-                        // Check if we have permissions
-                        for (DataSet dataSet : study.getDataSets())
+                        boolean hasPermission = false;
+                        Set<Study> publishTargets = getValidPublishTargets(viewContext.getUser(), InsertPermission.class);
+                        for (Study publishTarget : publishTargets)
                         {
-                            if (dataSet.getProtocolId() != null && dataSet.getProtocolId().intValue() == protocol.getRowId())
+                            if (publishTarget.getContainer().equals(targetStudyContainer))
                             {
-                                foundDataset = true;
-                                if (!dataSet.canWrite(viewContext.getUser()))
-                                {
-                                    // Just bail out
-                                    return Collections.emptyList();
-                                }
+                                hasPermission = true;
+                                break;
                             }
                         }
-                        if (!foundDataset && !targetStudyContainer.hasPermission(viewContext.getUser(), InsertPermission.class))
+                        if (!hasPermission)
                         {
-                            // Dataset doesn't exist yet and we don't have permission to create it
+                            // We don't have permission to create or add to
                             return Collections.emptyList();
                         }
 
