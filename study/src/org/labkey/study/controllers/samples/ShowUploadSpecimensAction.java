@@ -99,6 +99,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         columnAliases.put("derivative Type", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
         columnAliases.put("drawTimestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("Draw Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);
+        columnAliases.put("Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("draw Timestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("globalUniqueId", SimpleSpecimenImporter.VIAL_ID);
         columnAliases.put("global Unique Id", SimpleSpecimenImporter.VIAL_ID);
