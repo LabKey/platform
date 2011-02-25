@@ -11,14 +11,10 @@ LABKEY.requiresScript("vis/chartEditorYAxisPanel.js");
 LABKEY.requiresScript("vis/chartEditorXAxisPanel.js");
 LABKEY.requiresScript("vis/chartEditorChartsPanel.js");
 LABKEY.requiresScript("vis/subjectSeriesSelector.js");
+LABKEY.requiresCss("_images/icons.css");
 
 
 Ext.QuickTips.init();
-
-var ONE_DAY = 1000 * 60 * 60 * 24;
-var ONE_WEEK = ONE_DAY * 7;
-var ONE_MONTH = ONE_WEEK * (52/12);
-var ONE_YEAR = ONE_DAY * 365;
 
 LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
@@ -146,23 +142,45 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
-            this.chartEditor = new Ext.TabPanel({
-                id: 'chart-editor-tabpanel',
+            this.chartEditor = new Ext.Panel({
+                layout: 'fit',
+                header: false,
                 region: 'north',
-                height: 200,
-                padding: 4,
+                height: 210,
+                border: false,
                 split: true,
                 collapsible: true,
                 collapseMode: 'mini',
-                title: '',
-                activeTab: 0,
+                hideCollapseTool: true,
                 items: [
-                    this.editorOverviewPanel,
-                    this.editorMeasurePanel,
-                    this.editorXAxisPanel,
-                    this.editorYAxisPanelVar,
-                    this.editorChartsPanel
-                ]
+                    new Ext.TabPanel({
+                        id: 'chart-editor-tabpanel',
+                        padding: 4,
+                        activeTab: 0,
+                        items: [
+                            this.editorOverviewPanel,
+                            this.editorMeasurePanel,
+                            this.editorXAxisPanel,
+                            this.editorYAxisPanelVar,
+                            this.editorChartsPanel
+                        ]
+                    })
+                ],
+                tbar: {
+                    height: 25,
+                    style:{backgroundColor :'#ffffff'},
+                    items:[
+                        '->',
+                        {
+                            iconCls:'iconClose',
+                            tooltip:'Close the chart editor tab panel.',
+                            handler: function(){
+                                this.chartEditor.collapse();
+                            },
+                            scope: this
+                        }
+                    ]
+                }
             });
             items.push(this.chartEditor);
 
@@ -185,18 +203,40 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
-            this.seriesSelector = new Ext.TabPanel({
-                id: 'series-selector-tabpanel',
-                activeTab: 0,
+            this.seriesSelector = new Ext.Panel({
                 region: 'east',
+                layout: 'fit',
                 width: 200,
-                padding: 5,
+                border: false,
                 split: true,
                 collapsible: true,
                 collapseMode: 'mini',
-                title: '',
-                enablePanelScroll: true,
-                items: [this.subjectSelector]
+                hideCollapseTool: true,
+                header: false,
+                items: [
+                    new Ext.TabPanel({
+                        id: 'series-selector-tabpanel',
+                        activeTab: 0,
+                        padding: 5,
+                        enablePanelScroll: true,
+                        items: [this.subjectSelector],
+                    })
+                ],
+                tbar: {
+                    height: 25,
+                    style:{backgroundColor :'#ffffff'},
+                    items:[
+                        '->',
+                        {
+                            iconCls:'iconClose',
+                            tooltip:'Close the series selector tab panel.',
+                            handler: function(){
+                                this.seriesSelector.collapse();
+                            },
+                            scope: this
+                        }
+                    ]
+                }
             });
             items.push(this.seriesSelector);
 
@@ -570,13 +610,22 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         // if the Save button was clicked, save the report using the name and description provided
         if(saveBtnName == 'Save'){
-            this.executeSaveChart({
+            var config = {
                 replace: replace,
                 reportName: reportName,
                 reportDescription: reportDescription,
                 query: query,
                 schema: schema
-            });
+            };
+
+            // if user clicked save button to replace an existing report, execute the save chart call
+            // otherwise, the user clicked save for a new report so check if the report name already exists
+            if(replace){
+                this.executeSaveChart(config);
+            }
+            else{
+                this.checkSaveChart(config);
+            }
         }
         // if the Save As button was clicked, open a window for user to enter new report name and description
         else if(saveBtnName == 'Save As'){
@@ -608,7 +657,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     handler: function(btn, evnt){
                         var formValues = vizSaveForm.getForm().getFieldValues();
 
-                        this.executeSaveChart({
+                        // call fnctn to check if a report of that name already exists
+                        this.checkSaveChart({
                             replace: replace,
                             reportName: formValues.reportName,
                             reportDescription: formValues.reportDescription,
@@ -636,11 +686,39 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 closeAction:'hide',
                 modal: true,
                 padding: 15,
-                title: saveBtnName + "...",
+                title: saveBtnName,
                 items: vizSaveForm
             });
             win.show(this);
         }
+    },
+
+    checkSaveChart: function(config){
+        // see if a report by this name already exists within this container
+        LABKEY.Visualization.get({
+            name: config.reportName,
+            success: function(result, request, options){
+                // a report by that name already exists within the container, ask user if they would like to replace
+                Ext.Msg.show({
+                    title:'Warning',
+                    msg: 'A report by the name \'' + config.reportName + '\' already exists within this container. Would you like to replace it?',
+                    buttons: Ext.Msg.YESNO,
+                    fn: function(btnId, text, opt){
+                        if(btnId == 'yes'){
+                            config.replace = true;
+                            this.executeSaveChart(config);
+                        }
+                    },
+                    icon: Ext.MessageBox.WARNING,
+                    scope: this
+                });
+            },
+            failure: function(errorInfo, response){
+                // no report exists with that name
+                this.executeSaveChart(config);
+            },
+            scope: this
+        });
     },
 
     executeSaveChart: function(config){
@@ -669,7 +747,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     maskChartPanel: function(){
         if(!this.isMasked){
             this.chart.removeAll();
-            this.chart.add({xtype: 'label', text: 'Loading...'});
+            this.chart.add(new Ext.Panel({
+                padding: 10,
+                html: "<table width='100%'><tr><td align='center' style='font-style:italic'>Loading...</td></tr></table>"
+            }));
             this.chart.doLayout();
         }
     }

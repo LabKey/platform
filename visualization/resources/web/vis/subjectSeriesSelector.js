@@ -72,6 +72,9 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
                 this.subject.values.push(selectedRecords[i].get('value'));
             }
 
+            // sort the selected subject array
+            this.subject.values.sort();
+
             this.fireEvent('chartDefinitionChanged', true);
         }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 

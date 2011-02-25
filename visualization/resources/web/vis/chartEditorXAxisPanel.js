@@ -244,6 +244,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         });
 
         this.items = [{
+            border: false,
             layout: 'column',
             items: [{
                 columnWidth: .5,

@@ -207,8 +207,8 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             if (!this.isDateAxis && axis.timeAxis)
                 continue;
 
-            var field = new Ext.form.TextField({disabled: true,
-                emptyText:'select from the list view',
+            var field = new Ext.form.TextField({readOnly: true,
+                emptyText:'Choose from the list view below',
                 width:500,
                 fieldLabel: axis.label
             });

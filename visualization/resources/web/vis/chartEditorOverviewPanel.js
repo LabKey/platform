@@ -30,18 +30,24 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
     },
 
     initComponent : function() {
-        this.items = [
-            {
+        this.items = [new Ext.Panel({
+            title: '',
+            autoHeight: true,
+            autoWidth: true,
+            bodyStyle: 'padding-top:25px;text-align: center',
+            buttonAlign: 'center',
+            border: false,
+            items: [{
                 xtype: 'label',
                 text: 'To get started, choose a Measure:'
-            },
-            {
+            }],
+            buttons: [{
                 xtype: 'button',
                 text: 'Choose a Measure',
                 handler: this.showMeasureSelectionWindow,
                 scope: this
-            }
-        ];
+            }]
+        })];
 
         this.on('activate', function(){
            this.doLayout();
@@ -53,6 +59,8 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
     showMeasureSelectionWindow: function() {
         delete this.changeMeasureSelection;
         var win = new Ext.Window({
+            cls: 'extContainer',
+            title: 'Choose a Measure...',
             layout:'fit',
             width:800,
             height:550,
@@ -62,7 +70,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
                 axis: [{
                     multiSelect: false,
                     name: "y-axis",
-                    label: "Choose a data measure for the y-axis"
+                    label: "Choose a data measure:"
                 }],
                 listeners: {
                     scope: this,
@@ -145,8 +153,13 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
 
                 // report name is required for saving
                 if(!formVals.reportName){
-                    Ext.Msg.alert("Error", "Name must be specified when saving a report.");
-                    return;
+                   Ext.Msg.show({
+                        title: "Error",
+                        msg: "Name must be specified when saving a report.",
+                        buttons: Ext.MessageBox.OK,
+                        icon: Ext.MessageBox.ERROR
+                   });
+                   return;
                 }
 
                 // the save button will not allow for replace if this is a new chart,

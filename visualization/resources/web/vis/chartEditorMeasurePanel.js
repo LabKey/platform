@@ -193,6 +193,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         });
 
         this.items = [{
+            border: false,
             layout: 'column',
             items: [{
                 columnWidth: .5,
@@ -219,6 +220,8 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
     showMeasureSelectionWindow: function() {
         delete this.changeMeasureSelection;
         var win = new Ext.Window({
+            cls: 'extContainer',
+            title: 'Change Measure...',
             layout:'fit',
             width:800,
             height:550,
@@ -228,7 +231,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 axis: [{
                     multiSelect: false,
                     name: "y-axis",
-                    label: "Choose a data measure for the y-axis"
+                    label: "Choose a data measure:"
                 }],
                 listeners: {
                     scope: this,
@@ -338,6 +341,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                     for(var i = 0; i < selectedRecords.length; i++) {
                         this.dimension.values.push(selectedRecords[i].get('value'));
                     }
+
+                    // sort the selected dimension array
+                    this.dimension.values.sort();
 
                     this.fireEvent('chartDefinitionChanged', true);
                 }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
