@@ -59,13 +59,22 @@ LABKEY.Visualization = new function() {
 
     // Create a thin wrapper around the success callback capable of converting the persisted (string/JSON) visualization
     // configuration into a native JavaScript object before handing it off to the caller:
-    function getVisualizatonConfigConverterCallback(successCallback)
+    function getVisualizatonConfigConverterCallback(successCallback, scope)
     {
         return function(data, response, options)
         {
-            if (data.visualizationConfig)
-                data.visualizationConfig = Ext.util.JSON.decode(data.visualizationConfig);
-            return successCallback(data, response, options);
+            //ensure data is JSON before trying to decode
+            var json = null;
+            if (data && data.getResponseHeader && data.getResponseHeader('Content-Type')
+                    && data.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
+            {
+                json = Ext.util.JSON.decode(data.responseText);
+                if (json.visualizationConfig)
+                    json.visualizationConfig = Ext.util.JSON.decode(json.visualizationConfig);
+            }
+
+            if(successCallback)
+                successCallback.call(scope || this, json, response, options);
         }
     }
 
@@ -313,11 +322,7 @@ LABKEY.Visualization = new function() {
             var successCallback = LABKEY.Utils.getOnSuccess(config);
 
             // wrap the callback to convert the visualizationConfig property from a JSON string into a native javascript object:
-            successCallback = getVisualizatonConfigConverterCallback(successCallback);
-
-            // the outer-most callback (first-called) translates the raw JSON of the overall response into JavaScript objects.
-            // This callback will not translate the visualizationConfig parameter, since is sent from the server as a string.
-            successCallback = LABKEY.Utils.getCallbackWrapper(successCallback, config.scope, false);
+            successCallback = getVisualizatonConfigConverterCallback(successCallback, config.scope);
 
             Ext.Ajax.request(
             {
