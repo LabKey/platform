@@ -15,8 +15,12 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.study.DataSet;
 
 /*
 * User: Dave
@@ -29,5 +33,11 @@ public class ReaderRole extends AbstractRole
     {
         super("Reader", "Readers may read information but may not change anything.",
                 ReadPermission.class, ReadSomePermission.class);
+    }
+
+    @Override
+    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    {
+        return resource instanceof Container || resource instanceof DataSet;
     }
 }

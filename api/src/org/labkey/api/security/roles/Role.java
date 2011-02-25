@@ -16,6 +16,8 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.module.Module;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.UserPrincipal;
 import org.jetbrains.annotations.NotNull;
@@ -96,4 +98,11 @@ public interface Role
      */
     @NotNull
     public Set<UserPrincipal> getExcludedPrincipals();
+
+    /**
+     * @return Whether this role is applicable to the policy. For example, some roles might only
+     * make sense in the context of a certain type of resource, such as a folder (or particular type of folder) or
+     * dataset
+     */
+    boolean isApplicable(SecurityPolicy policy, SecurableResource resource);
 }

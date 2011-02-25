@@ -15,7 +15,11 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.study.DataSet;
 
 /*
 * User: Dave
@@ -30,5 +34,11 @@ public class EditorRole extends AbstractRole
                 ReadPermission.class, ReadSomePermission.class, 
                 InsertPermission.class, UpdatePermission.class,
                 DeletePermission.class);
+    }
+
+    @Override
+    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    {
+        return resource instanceof Container || resource instanceof DataSet;
     }
 }

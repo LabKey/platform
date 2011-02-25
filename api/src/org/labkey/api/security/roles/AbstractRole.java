@@ -16,8 +16,11 @@
 package org.labkey.api.security.roles;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.UserPrincipal;
 
@@ -131,6 +134,12 @@ public abstract class AbstractRole implements Role
     public Set<UserPrincipal> getExcludedPrincipals()
     {
         return _excludedPrincipals;
+    }
+
+    @Override
+    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    {
+        return resource instanceof Container;
     }
 
     protected void addExcludedPrincipal(UserPrincipal principal)

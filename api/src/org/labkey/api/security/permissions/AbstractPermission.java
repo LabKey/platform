@@ -18,6 +18,8 @@ package org.labkey.api.security.permissions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.UserPrincipal;
 
 import java.util.Collections;
@@ -130,5 +132,11 @@ public abstract class AbstractPermission implements Permission
     public Set<UserPrincipal> getExcludedPrincipals()
     {
         return Collections.emptySet();
+    }
+
+    @Override
+    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    {
+        return true;
     }
 }

@@ -20,6 +20,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
@@ -92,7 +93,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         ContainerManager.getAllChildren(ContainerManager.getRoot());
 
         VBox result = new VBox();
-        if (_protocol != null)
+        if (_protocol != null && !form.isCopy())
         {
             result.addView(new AssayHeaderView(_protocol, getProvider(form), false, false, ContainerFilter.CURRENT));
         }

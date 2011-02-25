@@ -76,7 +76,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
                                                       !protocol.getContainer().equals(ContainerManager.getSharedContainer()) &&
                                                       !(form.getContainer().isWorkbook() && protocol.getContainer().equals(form.getContainer().getParent()))))
         {
-            throw new NotFoundException("Assay " + form.getRowId() + " does not exist.");
+            throw new NotFoundException("Assay " + form.getRowId() + " does not exist in " + form.getContainer().getPath());
         }
 
         // even if we don't validate that the protocol is from the current or project container,
