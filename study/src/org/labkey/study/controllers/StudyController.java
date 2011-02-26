@@ -4579,6 +4579,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @DeprecatedAction
     @RequiresPermissionClass(AdminPermission.class)
     public class SnapshotAction extends SimpleViewAction<SnapshotForm>
     {
