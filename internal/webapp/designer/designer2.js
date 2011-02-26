@@ -25,10 +25,11 @@ LABKEY.ext.SplitGroupTabPanel = Ext.extend(Ext.ux.GroupTabPanel, {
     afterRender : function () {
         var splitItem = this.splitItem;
         splitItem.render(this.bwrap, 0);
-        splitItem.getEl().applyStyles({float: "left"});
+        // Add 6px for the resizer on the right
+        splitItem.getEl().applyStyles({float: "left", "padding-right": "6px"});
         this.splitResizer = new Ext.Resizable(splitItem.getEl(), {
             handles: 'e',
-            //pinned: true, // always show the splitter
+            pinned: true, // always show the splitter
             constrainTo: this.bwrap,
             minWidth: 100,
             resizeElement : function () {
@@ -306,7 +307,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 title: "Available Fields",
                 xtype: 'panel',
                 layout: 'fit',
-                autoScroll: true,
+                autoScroll: false,
                 border: false,
                 style: { "border-left-width": "1px", "border-top-width": "1px", "border-bottom-width": "1px" },
                 items: [ this.fieldsTree ]
