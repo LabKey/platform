@@ -99,6 +99,17 @@ public class StudyDataTable extends FilteredTable
         sequenceNumColumn.setMeasure(false);
         addColumn(sequenceNumColumn);
 
+        // Find a name for the extra key column that doesn't conflict with any existing columns
+        String columnName = "AdditionalKey";
+        int suffix = 2;
+        while (getColumn(columnName) != null)
+        {
+            columnName = "AdditionalKey" + (suffix++);
+        }
+        ColumnInfo additionalKeyColumn = wrapColumn(columnName, _rootTable.getColumn("_key"));
+        addColumn(additionalKeyColumn);
+        defaultColumns.add(additionalKeyColumn.getFieldKey());
+        
         StudyImpl study = _schema.getStudy();
         if (study != null)
         {

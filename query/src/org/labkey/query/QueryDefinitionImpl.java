@@ -77,13 +77,6 @@ import java.util.Set;
 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
 public abstract class QueryDefinitionImpl implements QueryDefinition
 {
-    protected static final FilenameFilter customViewFileFilter = new FilenameFilter(){
-        public boolean accept(File dir, String name)
-        {
-            return name.toLowerCase().endsWith(CustomViewXmlReader.XML_FILE_EXTENSION);
-        }
-    };
-
     final static private QueryManager mgr = QueryManager.get();
     final static private Logger log = Logger.getLogger(QueryDefinitionImpl.class);
     protected User _user = null;

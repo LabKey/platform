@@ -195,8 +195,8 @@ public class CoreQuerySchema extends UserSchema
         //filter for container is null or container = current-container
         principals.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
 
-        //only users with admin perms in the container may see the principals
-        if(!getContainer().hasPermission(getUser(), AdminPermission.class))
+        //only non-guest users may see the principals
+        if(getUser().isGuest())
             addNullSetFilter(principals);
 
         principals.setDescription("Contains all principals (users and groups) who are members of the current project." +
