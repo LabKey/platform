@@ -169,6 +169,11 @@ public class FileUtil
             home = home.getCanonicalFile();
             file = file.getCanonicalFile();
         }
+        else
+        {
+            home = resolveFile(home);
+            file = resolveFile(file);
+        }
         return matchPathLists(getPathList(home), getPathList(file));
     }
 
@@ -671,7 +676,7 @@ quickScan:
     /**
      * Strips out ".." and "." from the path
      */
-    private static File resolveFile(File file)
+    public static File resolveFile(File file)
     {
         File parent = file.getParentFile();
         if (parent == null)
