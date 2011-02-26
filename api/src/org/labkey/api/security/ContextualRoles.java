@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.security;
 
 import org.labkey.api.security.roles.HasContextualRoles;
@@ -24,7 +25,7 @@ import java.lang.annotation.ElementType;
 /**
  * Annotation to add additional contextual roles during permission checking.
  */
-@Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
+@Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 public @interface ContextualRoles
 {
     Class<? extends HasContextualRoles>[] value();

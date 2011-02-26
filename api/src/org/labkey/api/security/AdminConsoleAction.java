@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
     - Requires AdminReadPermissions for GET operations
     - Requires SiteAdminRole for POST operations 
  */
-public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
+public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface AdminConsoleAction
 {
 }

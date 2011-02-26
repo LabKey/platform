@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  */
 
 // Don't use; switch to @RequiresPermissionClass!
-public @Deprecated @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
+public @Deprecated @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface RequiresPermission
 {
     int value();

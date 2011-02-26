@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.action;
 
 import java.lang.annotation.Retention;
@@ -26,11 +27,11 @@ import java.lang.annotation.ElementType;
 */
 
 /**
- * Annotation to declare the version of an API action or method. This is used
+ * Annotation to declare the version of an API action. This is used
  * in conjunction with a required version passed by the client.
  */
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD,ElementType.TYPE})
+@Target(ElementType.TYPE)
 public @interface ApiVersion
 {
     double value() default 8.3;

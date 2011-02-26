@@ -25,7 +25,7 @@ import java.lang.annotation.ElementType;
 * Date: Dec 22, 2009
 * Time: 10:52:20 AM
 */
-public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
+public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface RequiresNoPermission
 {
 }

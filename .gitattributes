@@ -32,6 +32,8 @@ api/src/org/labkey/api/action/AppBarAction.java -text
 api/src/org/labkey/api/action/BaseViewAction.java -text
 api/src/org/labkey/api/action/ConfirmAction.java -text
 api/src/org/labkey/api/action/CustomApiForm.java -text
+api/src/org/labkey/api/action/DeprecatedAction.java -text
+api/src/org/labkey/api/action/DeprecatedActionException.java -text
 api/src/org/labkey/api/action/ExportAction.java -text
 api/src/org/labkey/api/action/ExportException.java -text
 api/src/org/labkey/api/action/ExtFormAction.java -text

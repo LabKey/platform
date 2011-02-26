@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.security;
 
-import org.labkey.api.security.permissions.Permission;
+package org.labkey.api.action;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /*
-* User: Dave
-* Date: Apr 28, 2009
-* Time: 3:49:17 PM
+* User: adam
+* Date: Feb 24, 2011
+* Time: 7:03:57 PM
 */
 
-/**
- * Specifies the required permissions for an action.
- */
-@Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
-public @interface RequiresPermissionClass
+// Used to annotate an action we want to remove.  If the annotation-based permission checks pass, the action throws
+// an exception informing the user that the action has been removed and encouraging the user to contact LabKey; the
+// exception will also be logged to mothership.  This allows us to reinstate the action if we find clients are
+// actually using it.
+public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
+@interface DeprecatedAction
 {
-    Class<? extends Permission>[] value();
 }

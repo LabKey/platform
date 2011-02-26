@@ -26,13 +26,13 @@ import java.lang.annotation.Retention;
  * For example, if you annotate GetDataAction and want http://server/controller/container/getData.view to resolve,
  * you must include "getData" in your value string.
  *
- * First name in the list is the "primary" name -- it's when the class is passed to ActionURL. 
+ * First name in the list is the "primary" name -- it's used when the class is passed to ActionURL. 
  *
  * User: adam
  * Date: Dec 20, 2007
  * Time: 1:13:03 PM
  */
-public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
+public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface ActionNames
 {
     String value();

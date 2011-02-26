@@ -23,12 +23,13 @@ import java.lang.annotation.Target;
 /**
  * Tags an action as implementing protection against cross-site request forgery attempts by including a hidden
  * form parameter that matches the value stored in a session attribute on the server. This should be added to the form
- * by embedding the <labkey:csrf/> taglib in the JSP that renders the page. 
+ * by embedding the <labkey:csrf/> taglib in the JSP that renders the page.
+ *
  * User: matthewb
- * Date: Jan 11, 2007
+ * Date: May 11, 2010
  * Time: 11:35:28 AM
  */
-public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
+public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface CSRF
 {
 //    public enum Method {NONE, POST, ALL}

@@ -56,7 +56,6 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 16, 2007
  * Time: 1:48:01 PM
@@ -650,6 +649,10 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         if (null == oldReqPerm && null == requiresPerm && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction)
             throw new IllegalStateException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
+
+        // All permission checks have succeeded.  Now check for deprecated action.
+        if (actionClass.isAnnotationPresent(DeprecatedAction.class))
+            throw new DeprecatedActionException(actionClass);
     }
 
     private static Class<? extends Permission> translatePermission(RequiresPermission requiresPerm)

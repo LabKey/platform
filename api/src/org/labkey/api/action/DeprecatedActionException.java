@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.security;
 
-import org.labkey.api.security.permissions.Permission;
+package org.labkey.api.action;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import org.springframework.web.servlet.mvc.Controller;
 
 /*
-* User: Dave
-* Date: Apr 28, 2009
-* Time: 3:49:17 PM
+* User: adam
+* Date: Feb 24, 2011
+* Time: 7:11:17 PM
 */
-
-/**
- * Specifies the required permissions for an action.
- */
-@Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
-public @interface RequiresPermissionClass
+public class DeprecatedActionException extends RuntimeException
 {
-    Class<? extends Permission>[] value();
+    public DeprecatedActionException(Class<? extends Controller> clazz)
+    {
+        super("This action (" + clazz.getName() + ") has been removed from LabKey Server. If you are still using this action, please contact LabKey Software at info@labkey.com and include this entire message.");
+    }
 }
