@@ -43,18 +43,23 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 {
     private boolean _allowUnregisteredUser;
 
-    enum Props {
+    enum Props
+    {
         msgFrom,
         msgRecipients,
         msgSubject,
         msgContent,
         allowUnregisteredUser,
     }
-    enum MsgContent {
+
+    enum MsgContent
+    {
         type,
         content,
     }
-    enum MsgRecipient {
+
+    enum MsgRecipient
+    {
         type,
         address,
     }
@@ -67,8 +72,8 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         String from = json.getString(Props.msgFrom.name());
         String subject = json.getString(Props.msgSubject.name());
         _allowUnregisteredUser = BooleanUtils.toBoolean(json.getString(Props.allowUnregisteredUser.name()));
-        JSONArray recipients = null;
-        JSONArray contents = null;
+        JSONArray recipients;
+        JSONArray contents;
 
         if (from == null)
             throw new IllegalArgumentException("You must supply a msgFrom value.");
@@ -107,7 +112,8 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
     private Address getEmail(String email) throws IllegalArgumentException
     {
-        try {
+        try
+        {
             ValidEmail validEmail = new ValidEmail(email);
 
             if (!_allowUnregisteredUser)
@@ -127,7 +133,8 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
     private void addMsgRecipients(MailHelper.MultipartMessage msg, JSONArray recipients) throws IllegalArgumentException
     {
-        try {
+        try
+        {
             for (int i=0; i < recipients.length(); i++)
             {
                 JSONObject recipient = recipients.getJSONObject(i);
