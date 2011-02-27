@@ -267,6 +267,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
             var label = this.rootVisPanel.anchor(edge).add(pv.Label)
                     .data([axis.caption])
                     .textAngle(angle)
+                    .textAlign("center")
                     .font(this.style.axisLabelFont);
             if (edge == "left")
                 label.left(this.style.smallMargin + this.style.axisLabelHeight);
