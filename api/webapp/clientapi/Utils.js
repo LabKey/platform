@@ -577,8 +577,8 @@ LABKEY.Utils.convertToExcel(
             config.maxTests = config.maxTests || 1000;
             try
             {
-                if(config.testCallback.apply(config.scope || this, config.testArguments))
-                    LABKEY.Utils.getOnSuccess(config).apply(config.scope || this, config.successArguments);
+                if(config.testCallback.apply(config.scope || this, config.testArguments || []))
+                    LABKEY.Utils.getOnSuccess(config).apply(config.scope || this, config.successArguments || []);
                 else
                 {
                     if (config.maxTests <= 0) {
