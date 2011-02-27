@@ -307,6 +307,22 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         return this.chartPanel;
     },
 
+    addDataPanel : function () {
+        //Add the inner panel where data will be drawn.
+        //This aligns with the chartPanel but is clipped differently
+        //We use 3 panels for correct alignment/clipping
+
+        //chartPanel: Not clipped, allows ticks/labels to be drawn at negative margins
+        //clipPanel: Clipped to data area but just enough "slop" so that points drawn on margin draw correctly
+        //dataPanel: Range in which data should be drawn. Clipped by clipPanel so points can just overlap axes
+
+        var slopMargin = 5;
+        var clipPanel = this.chartPanel.add(pv.Panel).margin(-slopMargin).overflow("hidden");
+        this.dataPanel = clipPanel.add(pv.Panel).margin(slopMargin).overflow("visible");
+
+        return this.dataPanel;
+    },
+
     /**
      * @param axis
      * @param pixels -- number of pixels the scale should map to
@@ -471,13 +487,16 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
 
        var x = this.getScale(this.axes["x"], this.chartWidth, this.series, "getX");
        var y = this.getScale(this.axes["y"], this.chartHeight, this.series, "getY");
-       var dataPanel = this.addChartPanel();
+       var chartPanel = this.addChartPanel();
         //svgweb does not support default "show title on hover" behavior so we do something quick & dirty to get it...
        if (pv.renderer() == "svgweb")
            this.rootVisPanel.event("mousemove", pv.Behavior.point());
 
        this.drawRule(x, "bottom", this.axes["x"]);
        this.drawRule(y, "left", this.axes["y"]);
+
+       //To get z ordering right we add the dataPanel after rules etc have been drawn.
+       var dataPanel = this.addDataPanel();
 
        //In the case of logs, we pin all values to things that are in scale when we draw them.
        //scale._min gets stashed by getScale if we need to pin
@@ -487,7 +506,7 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
            else
             return value;
        }
-       
+
        var seriesIndex;
        this.series.forEach(function (s) {
            var style = s.style;
