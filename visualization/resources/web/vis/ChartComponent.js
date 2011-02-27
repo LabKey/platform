@@ -317,13 +317,76 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
     getScale : function (axis, pixels, series, getterName) {
 
         var domain;
+        var scale;
 
-        if (axis.max)
-            domain = [axis.min || 0, axis.max];
-        else
-            domain = this.collect(series, getterName);
+        var min = axis.min;
+        var max = axis.max;
 
-        return pv.Scale[axis.scale || "linear"](domain).nice().range(0, pixels);
+        //Both min and max are explicitly defined in axis. Let the person use them. However, still protect logs..
+        //Don't use illegal values for log min & max
+        var scaleType = axis.scale || "linear"; //default scale
+        if (min !== undefined && max !== undefined && (scaleType != "log" || (min > 0 && max > 0)))
+        {
+            scale =  pv.Scale[scaleType](min, max).range(0, pixels);
+            if (scaleType == "log") //Even if scale min & max are fine, still need to pin any possible bad values
+                scale._min = Number.MIN_VALUE; 
+
+            return scale;
+        }
+
+        //Round using a suitable power of 10
+        function round(x, dir) {
+            if (x == 0)
+                return x;
+            var absVal = Math.abs(x);
+
+            var step = Math.pow(10, Math.round(Math.log(absVal) / Math.log(10)) - 1);
+            return dir < 0 ? Math.floor(x / step) * step : Math.ceil(x/step) * step;
+        }
+
+        domain = this.collect(series, getterName);
+        //If no data, just return something reasonable
+        if (domain.length == 0)
+            return pv.Scale.linear(0, 1).range(0, pixels);
+
+        if (max === undefined)
+            max = round(pv.max(domain), 1);
+        if (min === undefined)
+            min = round(pv.min(domain), -1);
+
+        //For logs if some values are <=0 and rest are >= 1, pin everything <=0 to 1
+        //However, if some values are >0 and < 1 (negative logs), pin <= 0 to smallest non-negative integer.
+        ///For each scale we'll need to store a pin value.
+        if(scaleType == "log" && min <= 0) {
+            var minPos = undefined;
+            domain.forEach(function (x) {
+                if (x > 0 && (x < minPos || minPos === undefined))
+                    minPos = x;
+            });
+
+            //It's possible that *all* of the values are <= 0, so be careful...
+            if (minPos === undefined)
+                minPos = 1;
+
+            if (min < minPos)
+                min = minPos;
+            if (max < minPos)
+                max = minPos;
+        }
+
+        if (min == max) //pv blows up if min & max are the same
+            max = min + 1;
+
+
+        scale = pv.Scale[axis.scale || "linear"](min, max).range(0, pixels);
+        // Would be nicer to override pv.Scale with a subclass that does this, but don't want to dive into pv source
+        scale._min = min; //Stash these where our function can find them
+        scale._max = max;
+        //If user didn't explicitly specify either min or max, we can use nice() to give us better rounding
+        if (axis.min === undefined && axis.max === undefined)
+            scale.nice();
+        
+        return scale;
     },
 
     /**
@@ -416,14 +479,23 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        this.drawRule(x, "bottom", this.axes["x"]);
        this.drawRule(y, "left", this.axes["y"]);
 
+       //In the case of logs, we pin all values to things that are in scale when we draw them.
+       //scale._min gets stashed by getScale if we need to pin
+       function pinMin(scale, value) {
+           if ("_min" in scale && value < scale._min)
+            return scale._min;
+           else
+            return value;
+       }
+       
        var seriesIndex;
        this.series.forEach(function (s) {
            var style = s.style;
            var color = style.markColor;
            var lines = dataPanel.add(pv.Line)
              .data(s.data)
-            .left(function (d) {return x(s.getX(d))})
-            .bottom(function (d) {return y(s.getY(d))})
+            .left(function (d) { return x(s.getX(d))})
+            .bottom(function (d) { return y(pinMin(y, s.getY(d)))})
             .strokeStyle(color)
             .lineWidth(style.lineWidth);
            var dots = lines.add(pv.Dot)
@@ -524,3 +596,4 @@ LABKEY.vis.BarChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        this.rootVisPanel.render();
    }
 });
+
