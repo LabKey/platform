@@ -1085,6 +1085,9 @@ public class PageFlowUtil
 
     public static String generateButton(String text, URLHelper href, String onClick)
     {
+        // 11525 : NPE caused by generateButton.
+        if (href == null)
+            return generateButton(text, "", onClick);
         return generateButton(text, href.toString(), onClick);
     }
 
