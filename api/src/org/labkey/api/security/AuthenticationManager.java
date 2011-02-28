@@ -608,7 +608,7 @@ public class AuthenticationManager
 
             AttachmentFile aFile = new SpringAttachmentFile(file);
             aFile.setFilename(prefix + getProviderName());
-            AttachmentService.get().add(getViewContext().getUser(), ContainerManager.RootContainer.get(), Arrays.asList(aFile));
+            AttachmentService.get().addAttachments(ContainerManager.RootContainer.get(), Arrays.asList(aFile), getViewContext().getUser());
 
             return true;
         }
@@ -622,7 +622,7 @@ public class AuthenticationManager
                 return false;
 
             for (String logoName : deletedLogos)
-                AttachmentService.get().delete(getViewContext().getUser(), ContainerManager.RootContainer.get(), logoName);
+                AttachmentService.get().delete(ContainerManager.RootContainer.get(), logoName, getViewContext().getUser());
 
             return true;
         }

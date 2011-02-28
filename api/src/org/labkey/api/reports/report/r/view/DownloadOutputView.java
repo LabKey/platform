@@ -55,8 +55,8 @@ public abstract class DownloadOutputView extends ROutputView
             if (_parent.getEntityId() != null)
             {
                 AttachmentFile form = new FileAttachmentFile(getFile());
-                AttachmentService.get().deleteAttachment(_parent, getFile().getName());
-                AttachmentService.get().addAttachments(getViewContext().getUser(), _parent, Collections.singletonList(form));
+                AttachmentService.get().deleteAttachment(_parent, getFile().getName(), null);
+                AttachmentService.get().addAttachments(_parent, Collections.singletonList(form), null);
             }
             out.write("<table class=\"labkey-output\">");
             renderTitle(model, out);

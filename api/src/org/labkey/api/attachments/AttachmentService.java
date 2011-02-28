@@ -55,30 +55,44 @@ public class AttachmentService
 
     public interface Service
     {
-        public HttpView delete(User user, AttachmentParent parent, String name) throws SQLException;
         public void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;
+
+        // TODO: we should deprecate add and delete in favor of the void-returning methods addAttachments and deleteAttachments
+        @Deprecated
+        public HttpView add(AttachmentParent parent, List<AttachmentFile> files, User auditUser);
+        @Deprecated
+        public HttpView delete(AttachmentParent parent, String name, User auditUser) throws SQLException;
+
         public HttpView getAddAttachmentView(Container container, AttachmentParent parent);
         public HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors);
         public HttpView getConfirmDeleteView(Container container, Class<? extends Controller> deleteActionClass, AttachmentParent parent, String filename);
         public HttpView getHistoryView(ViewContext context, AttachmentParent parent);
-
-        public HttpView add(User user, AttachmentParent parent, List<AttachmentFile> files);
         public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
 
-        public void addAttachments(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException;
+        /**
+         * @param auditUser set to null to skip audit
+         */
+        public void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @Nullable User auditUser) throws IOException;
         public void deleteAttachments(AttachmentParent parent) throws SQLException;
-        public void deleteAttachment(AttachmentParent parent, String name);
-        public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws IOException;
-        public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException;
+
+        /**
+         * @param auditUser set to null to skip audit
+         */
+        public void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser);
+        public void renameAttachment(AttachmentParent parent, String oldName, String newName, User auditUser) throws IOException;
+        public void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
+
         public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
         // Returns an unmodifiable list of attachments for this parent
         public @NotNull List<Attachment> getAttachments(AttachmentParent parent);
         public List<Pair<String, String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince);
+
         public WebdavResource getAttachmentResource(Path path, AttachmentParent parent);
         public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
         public @Nullable Attachment getAttachment(AttachmentParent parent, String name);
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
         public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
+
         public void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);
     }
 
