@@ -950,6 +950,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 items: [{
                     ref: "../columnsList",
                     xtype: "dataview",
+                    cls: "labkey-customview-list",
                     plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
                     flex: 1,
                     store: this.columnStore,
@@ -1202,6 +1203,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 items: [{
                     ref: "../filterList",
                     xtype: "compdataview",
+                    cls: "labkey-customview-list",
                     flex: 1,
                     plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
                     store: this.filterStore,
@@ -1605,6 +1607,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 items: [{
                     title: "Selected Sort",
                     ref: "../sortList",
+                    cls: "labkey-customview-list",
                     xtype: "compdataview",
                     flex: 1,
                     store: this.sortStore,
