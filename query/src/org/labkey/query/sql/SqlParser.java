@@ -1229,7 +1229,15 @@ public class SqlParser
             new Pair("CASE 1 WHEN 1 THEN 1 ELSE 2 END", JdbcType.INTEGER),
             new Pair("CASE 1 WHEN 1 THEN '1' ELSE '2' END", JdbcType.VARCHAR),
             new Pair("CASE 'one' WHEN 1 THEN 1 ELSE 2 END", JdbcType.INTEGER),
-            new Pair("CASE 'one' WHEN 1 THEN '1' ELSE '2' END", JdbcType.VARCHAR)
+            new Pair("CASE 'one' WHEN 1 THEN '1' ELSE '2' END", JdbcType.VARCHAR),
+            new Pair("1 = 1", JdbcType.BOOLEAN),
+            new Pair("'one' = 'two'", JdbcType.BOOLEAN),
+            new Pair("1 = 'two'", JdbcType.BOOLEAN),
+            new Pair("'this ' || 'that'", JdbcType.VARCHAR),
+            new Pair("1 || ' plus ' || 2", JdbcType.VARCHAR),
+            new Pair("1 + 2", JdbcType.INTEGER),
+            new Pair("1.0 + 2.1", JdbcType.DOUBLE),
+            new Pair("1 + 2.1", JdbcType.DOUBLE)
         };
 
 
