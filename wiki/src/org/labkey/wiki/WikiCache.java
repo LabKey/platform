@@ -85,7 +85,8 @@ public class WikiCache
 
     private static String getCacheKey(Container c, String name)
     {
-        return "Pages/" + c.getId() + "/" + c.getPath() + "/" + name;
+        // forcing cache key lookup to lower case to properly handle case-insensitive URLs, see 11625
+        return "Pages/" + c.getId() + "/" + c.getPath() + "/" + name.toLowerCase();
     }
 
     private static <V> V get(Container c, String name, WikiCacheLoader<V> loader)
