@@ -101,8 +101,8 @@ LABKEY.Portal = new function()
                     var swapPoint = targetTable.nextSibling;
 
                     // Need to make sure the element is actually a child before trying to remove
-                    for (var node = 0; node < parentEl.children.length; node++) {
-                        if (parentEl.children[node] === swapTable) {
+                    for (var node = 0; node < parentEl.childNodes.length; node++) {
+                        if (parentEl.childNodes[node] === swapTable) {
                             parentEl.removeChild(targetTable);
                             parentEl.removeChild(swapTable);
                             parentEl.insertBefore(targetTable, insertPoint);
