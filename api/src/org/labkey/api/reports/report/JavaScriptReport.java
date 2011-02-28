@@ -18,7 +18,9 @@ package org.labkey.api.reports.report;
 
 import org.labkey.api.query.CreateJavaScriptModel;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.report.view.RunScriptReportView;
+import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
+import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
@@ -107,7 +109,15 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
-        return new RunScriptReportView(this);
+        // TODO: Move to ScriptReport?
+        Mode mode = ("Source".equals(context.get("tabId")) ? Mode.update : Mode.view);
+        return new AjaxRunScriptReportView(this, mode);
+    }
+
+    @Override
+    public ActionURL getEditReportURL(ViewContext context)
+    {
+        return super.getEditReportURL(context);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     public class JavaScriptReportBean

@@ -16,7 +16,6 @@
 package org.labkey.api.reports.report.view;
 
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.URLHelper;

@@ -22,6 +22,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -121,7 +122,10 @@ public class ReportService
 
     public interface ViewFactory
     {
+        @Deprecated // This will be removed, in favor of getExtraFormHtml(), which allows us to generated well formed HTML
         public HttpView createView(ViewContext context, RReportBean bean);
+
+        public String getExtraFormHtml(ViewContext ctx, ScriptReportBean bean);
     }
 
     public interface DesignerInfo

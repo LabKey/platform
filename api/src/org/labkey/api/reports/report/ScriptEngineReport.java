@@ -193,15 +193,18 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         }
 
         Matcher m = scriptPattern.matcher(text);
+
         while (m.find())
         {
             String value = m.group(1);
+
             if (!isValidReplacement(value))
             {
                 errors.add("Invalid template, the replacement parameter: " + value + " is unknown.");
                 return false;
             }
         }
+
         return true;
     }
 
@@ -222,39 +225,48 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         if (context != null)
         {
             Results r = generateResults(context);
+
             if (r != null && r.getResultSet() != null)
             {
                 TSVGridWriter tsv = createGridWriter(r);
                 tsv.write(resultFile);
             }
         }
+
         return resultFile;
     }
 
     public File getReportDir()
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
+
         if (_tempFolder == null || _tempFolderPipeline != isPipeline)
         {
             File tempRoot = getTempRoot();
             String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
+
             if (isPipeline)
                 _tempFolder = new File(tempRoot, "Report_" + reportId);
             else
                 _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "Report_" + reportId, String.valueOf(Thread.currentThread().getId()));
 
             _tempFolderPipeline = isPipeline;
+
             if (!_tempFolder.exists())
                 _tempFolder.mkdirs();
         }
+
         return _tempFolder;
     }
 
     public void deleteReportDir()
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
-        try {
+
+        try
+        {
             File dir = getReportDir();
+
             if (!isPipeline)
                 dir = dir.getParentFile();
 
@@ -274,12 +286,14 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
         if (StringUtils.isEmpty(tempFolderName))
         {
-            try {
+            try
+            {
                 if (isPipeline && getDescriptor().getContainerId() != null)
                 {
                     Container c = ContainerManager.getForId(getDescriptor().getContainerId());
                     PipeRoot root = PipelineService.get().findPipelineRoot(c);
                     tempRoot = root.resolvePath(REPORT_DIR);
+
                     if (!tempRoot.exists())
                         tempRoot.mkdirs();
                 }
@@ -287,6 +301,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 {
                     File tempDir = new File(System.getProperty("java.io.tmpdir"));
                     tempRoot = new File(tempDir, REPORT_DIR);
+
                     if (!tempRoot.exists())
                         tempRoot.mkdirs();
                 }
@@ -300,6 +315,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         {
             tempRoot = new File(tempFolderName);
         }
+
         return tempRoot;
     }
 
@@ -310,11 +326,13 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
         List<String> outputColumnNames = outputColumnNames(r);
         List<DisplayColumn> dataColumns = new ArrayList<DisplayColumn>();
+
         for (int i = 0; i < cols.length; i++)
         {
             int sqlColumn = i + 1;
             dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new ColumnInfo(md, sqlColumn)));
         }
+
         TSVGridWriter tsv = new TSVGridWriter(r, dataColumns);
         tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
 
@@ -336,39 +354,48 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             assert fkey.equals(col.getFieldKey());
 
             String alias = oldLegalName(fkey);
+
             if (!aliases.add(alias))
             {
                 int i;
-                for (i=1; !aliases.add(alias+i) ;i++)
+
+                for (i=1; !aliases.add(alias+i); i++)
                     ;
-                alias = alias+i;
+
+                alias = alias + i;
             }
+
             remap.put(col.getAlias(), alias);
         }
 
-        ArrayList<String> ret = new ArrayList<String>(r.getResultSet().getMetaData().getColumnCount());
-        // now go through the resultset
         ResultSetMetaData md = r.getResultSet().getMetaData();
+        ArrayList<String> ret = new ArrayList<String>(md.getColumnCount());
+        // now go through the resultset
 
-        for (int col=1, count=md.getColumnCount() ; col<=count ; col++)
+        for (int col=1, count=md.getColumnCount(); col<=count; col++)
         {
             String name = md.getColumnName(col);
             String alias = remap.get(name);
+
             if (null != alias)
             {
                 ret.add(alias);
                 continue;
             }
+
             alias = ColumnInfo.propNameFromName(name).toLowerCase();
+
             if (!aliases.add(alias))
             {
                 int i;
                 for (i=1; !aliases.add(alias+i); i++)
                     ;
-                alias = alias+i;
+                alias = alias + i;
             }
+
             ret.add(alias);
         }
+
         return ret;
     }
     
@@ -386,10 +413,12 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         String sections = (String)HttpView.currentContext().get(renderParam.showSection.name());
         List<String> sectionNames = Collections.emptyList();
+
         if (sections != null)
             sectionNames = Arrays.asList(sections.split("&"));
 
         ViewContext context = HttpView.currentContext();
+
         for (ParamReplacement param : parameters)
         {
             if (isViewable(param, sectionNames))
@@ -397,10 +426,12 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 // don't show headers if not all sections are being rendered
                 if (!sectionNames.isEmpty())
                     param.setHeaderVisible(false);
+
                 param.setReport(report);
                 view.addView(param.render(context));
             }
         }
+
         if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground)))
             view.addView(new TempFileCleanup(report.getReportDir().getAbsolutePath()));
     }
@@ -408,12 +439,14 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     protected static boolean isViewable(ParamReplacement param, List<String> sectionNames)
     {
         File data = param.getFile();
+
         if (data.exists())
         {
             if (!sectionNames.isEmpty())
                 return sectionNames.contains(param.getName());
             return true;
         }
+
         return false;
     }
 
@@ -475,6 +508,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             // for script based reports, write the script portion to a separate file to facilitate script modifications
             String scriptFileName = getSerializedScriptFileName();
             PrintWriter writer = null;
+
             try
             {
                 writer = directory.getPrintWriter(scriptFileName);
@@ -571,6 +605,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
             if (StringUtils.isEmpty(value))
                 return "NA";
+
             return value;
         }
     }

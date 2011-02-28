@@ -26,7 +26,6 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Wrapper;
 import java.util.List;
 import java.util.Map;
 

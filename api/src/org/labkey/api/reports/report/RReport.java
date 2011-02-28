@@ -21,6 +21,8 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
+import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
@@ -225,7 +227,14 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
 
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
-        return new RunRReportView(this);
+        // TODO: Move to ScriptReport?
+        String tabId = (String)context.get("tabId");
+
+        if (null == tabId)
+            tabId = context.getActionURL().getParameter("tabId");
+
+        Mode mode = ("Source".equals(tabId) ? Mode.update : Mode.view);
+        return new AjaxRunScriptReportView(this, mode);
     }
 
     public ActionURL getEditReportURL(ViewContext context)
@@ -246,7 +255,8 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
 
         for (Report r : ReportUtil.getReports(context.getContainer(), context.getUser(), reportKey, true))
         {
-            if (!ScriptReportDescriptor.class.isAssignableFrom(r.getDescriptor().getClass()))
+            // List only R scripts.  TODO: Need better, more general mechanism for this
+            if (!RReportDescriptor.class.isAssignableFrom(r.getDescriptor().getClass()))
                 continue;
 
             if (reportName == null || !reportName.equals(r.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)))
@@ -258,7 +268,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
 
     public String getDownloadDataHelpMessage()
     {
-        return "LabKey Server automatically exports the data into a data frame called \"labkey.data\". You can download the data via this link to help with the development of your R script.";
+        return "LabKey Server automatically exports query data into a data frame called \"labkey.data\". You can download the data via this link to help with the development of your R script.";
     }
 
     public @Nullable String getDesignerHelpHtml()
@@ -271,6 +281,14 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String getDefaultScript()
+    {
+        return "# This sample code returns the query data in tab-separated values format, which LabKey then\n" +
+               "# renders as HTML. Replace this code with your R script. See the Help tab for more details.\n" +
+               "write.table(labkey.data, file = \"${tsvout:tsvfile}\", sep = \"\\t\", qmethod = \"double\", col.names=NA)\n";
     }
 }
 

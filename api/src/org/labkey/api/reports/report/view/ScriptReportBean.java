@@ -22,6 +22,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
+import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -45,29 +46,23 @@ public class ScriptReportBean extends ReportDesignBean
     private ActionURL _renderURL;
     private boolean _inherited;
     private List<String> _includedReports = Collections.emptyList();
-    private final boolean _designer;
+    private Mode _mode = Mode.create;  // TODO: setting value for backward compatibility -- remove
 
     public ScriptReportBean()
     {
-        _designer = true;
     }
 
     public ScriptReportBean(QuerySettings settings)
     {
-        this(settings, true);
-    }
-
-    public ScriptReportBean(QuerySettings settings, boolean designer)
-    {
         super(settings);
-        _designer = designer;
     }
 
     // Bean has been populated and is about to be used in a view... initialize unset values and properties.
     // This is redundant with RunScriptReportView.populateReportForm(), but we're trying to move all this handling into
     // the bean.
-    public void init() throws Exception
+    public void init(Mode mode) throws Exception
     {
+        setMode(mode);
         ScriptReport report = (ScriptReport)getReport(); // TODO: Should use generics (ScriptReportBean<ScriptReport>)
 
         if (null == _script)
@@ -198,7 +193,7 @@ public class ScriptReportBean extends ReportDesignBean
 
     public boolean isReadOnly()
     {
-        return _isReadOnly || !_designer;
+        return _isReadOnly || _mode.isReadOnly();
     }
 
     public void setReadOnly(boolean readOnly)
@@ -236,8 +231,13 @@ public class ScriptReportBean extends ReportDesignBean
         return _includedReports;
     }
 
-    public boolean isDesigner()
+    public Mode getMode()
     {
-        return _designer;
+        return _mode;
+    }
+
+    public void setMode(Mode mode)
+    {
+        _mode = mode;
     }
 }

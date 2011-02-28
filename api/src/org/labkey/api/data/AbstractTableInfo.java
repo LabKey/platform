@@ -16,12 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlError;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
@@ -31,7 +27,17 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.module.Module;
-import org.labkey.api.query.*;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataException;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
@@ -39,11 +45,16 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.SimpleNamedObject;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.TablesDocument;
 
 import javax.script.ScriptException;
 import java.io.IOException;
@@ -51,7 +62,15 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 {

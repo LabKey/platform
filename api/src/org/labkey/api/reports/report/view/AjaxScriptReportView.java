@@ -16,6 +16,9 @@
 
 package org.labkey.api.reports.report.view;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.view.JspView;
 
 /*
@@ -25,9 +28,65 @@ import org.labkey.api.view.JspView;
 */
 public class AjaxScriptReportView extends JspView<ScriptReportBean>
 {
-    public AjaxScriptReportView(ScriptReportBean bean) throws Exception
+    public enum Mode
+    {
+        create(true, true, false, false),
+        update(true, false, false, false),
+        view(false, false, true, true);
+
+        private final boolean _showSource;
+        private final boolean _showHelp;
+        private final boolean _allowsMultiplePerPage;
+        private final boolean _readOnly;
+
+        Mode(boolean showSource, boolean showHelp, boolean allowsMultiplePerPage, boolean readOnly)
+        {
+            _showSource = showSource;
+            _showHelp = showHelp;
+            _allowsMultiplePerPage = allowsMultiplePerPage;
+            _readOnly = readOnly;
+        }
+
+        public boolean showSource()
+        {
+            return _showSource;
+        }
+
+        public boolean showHelp()
+        {
+            return _showHelp;
+        }
+
+        public boolean allowsMultiplePerPage()
+        {
+            return _allowsMultiplePerPage;
+        }
+
+        public boolean isReadOnly()
+        {
+            return _readOnly;
+        }
+    }
+
+    protected Report _report;
+    protected ReportIdentifier _reportId;
+
+    public AjaxScriptReportView(@Nullable Report report, ScriptReportBean bean, Mode mode) throws Exception
     {
         super("/org/labkey/api/reports/report/view/ajaxScriptReportDesigner.jsp", bean);
-        bean.init();
+
+        _report = report;
+
+        if (_report != null)
+        {
+            _reportId = _report.getDescriptor().getReportId();
+        }
+
+        init(bean, mode);
+    }
+
+    protected void init(ScriptReportBean bean, Mode mode) throws Exception
+    {
+        bean.init(mode);
     }
 }

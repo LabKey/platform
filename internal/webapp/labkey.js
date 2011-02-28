@@ -133,15 +133,19 @@ LABKEY.requiresScript = function(file, immediate, callback, scope)
         //during parse time, IE does not. So if the document is
         //closed, use the DOM to create a script element and append it
         //to the head element. Otherwise (still parsing), use document.write()
+
+        // Support both LabKey and external JavaScript files
+        var src = file.substr(0, 4) != "http" ? LABKEY.contextPath + "/" + file + '?' + LABKEY.hash : file;
+
         if (LABKEY.isDocumentClosed || callback)
         {
             //create a new script element and append it to the head element
             var script = LABKEY.addElemToHead("script", {
-                src: LABKEY.contextPath + "/" + file + "?" + LABKEY.hash,
+                src: src,
                 type: "text/javascript"
             });
 
-            // IE has a differeny way of handling <script> loads
+            // IE has a different way of handling <script> loads
             if (script.readyState)
             {
                 script.onreadystatechange = function () {
@@ -157,7 +161,7 @@ LABKEY.requiresScript = function(file, immediate, callback, scope)
             }
         }
         else
-            document.write('\n<script type="text/javascript" language="javascript" src="' + LABKEY.contextPath + "/" + file + '?' + LABKEY.hash + '"></script>\n');
+            document.write('\n<script type="text/javascript" language="javascript" src="' + src + '"></script>\n');
     }
 };
 

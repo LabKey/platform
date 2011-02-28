@@ -372,6 +372,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (null != action)
                 _actionResolver.addTime(action, System.currentTimeMillis() - startTime);
         }
+
         return null;
     }
 

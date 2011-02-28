@@ -15,60 +15,61 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.pipeline.PipelineJob" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineStatusFile" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.RReportJob" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RReport> me = (JspView<RReport>) HttpView.currentView();
     RReport bean = me.getModelBean();
-
     ViewContext context = HttpView.currentContext();
 
     File logFile = new File(bean.getReportDir(), RReportJob.LOG_FILE_NAME);
     PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile.getAbsolutePath());
     boolean autoRefresh = statusFile != null &&
             (statusFile.getStatus().equals(PipelineJob.WAITING_STATUS) || statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS));
-%>
-<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("connection");</script>
-<script type="text/javascript">
-    function startJob()
-    {
-        LABKEY.setSubmit(true);
 
-        var url = "<%=context.cloneActionURL().
+    // TODO: uniqueid
+    // TODO: wrap javascript in anonymous function
+    // TOOD: disable start button?
+    // TODO: Fix these URLs
+    ActionURL startReportURL = context.cloneActionURL().
                 setPageFlow("reports").
                 setAction("startBackgroundRReport").
-                replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId())).
-                getLocalURIString()%>";
-        YAHOO.util.Connect.asyncRequest("GET", url, {success : postProcess, failure: handleFailure});
-    }
+                replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 
-    function init()
+    ActionURL getResultsURL = startReportURL.clone().setAction("getBackgroundReportResults");
+%>
+<script type="text/javascript">
+    var timer;
+
+    function startJob()
     {
-<%
-        if (autoRefresh) {
-%>
-            window.setInterval("switchTab('<%=context.cloneActionURL().replaceParameter("tabId", "View")%>')", 4000);
-<%
-        }
-%>
+        Ext.Ajax.request({
+            url: <%=q(startReportURL.getLocalURIString())%>,
+            method: 'GET',
+            success: startJobSuccess,
+            failure: startJobFailure
+        });
     }
 
-	var handleFailure = function(o)
+    function startJobSuccess(o)
+    {
+        init();
+    }
+
+	function startJobFailure(o)
     {
         var div = document.getElementById('container');
+
 	    if (o.responseText !== undefined)
         {
             var msg = "<font class=\"labkey-error\">"
@@ -81,14 +82,57 @@
             msg += "</font>";
             div.innerHTML = msg;
         }
-	};
+	}
 
-    function postProcess(o)
+    function init()
     {
-        switchTab('<%=context.cloneActionURL().replaceParameter("tabId", "View")%>');
+        pollForResults();
     }
-    YAHOO.util.Event.addListener(window, "load", init);
 
+<%
+    if (autoRefresh)
+    { %>
+        Ext.onReady(init());
+<%
+    } %>
+
+    function pollForResults()
+    {
+        Ext.Ajax.request({
+            url: <%=q(getResultsURL.getLocalURIString())%>,
+            method: 'GET',
+            success: resultsSuccess,
+            failure: resultsFailure
+        });
+    }
+
+    function resultsSuccess(response)
+    {
+        var map = Ext.util.JSON.decode(response.responseText);
+
+        var extDiv = Ext.get("results");
+        extDiv.update(map['results']);
+
+        if (map['status'] == "<%=PipelineJob.COMPLETE_STATUS%>")
+            stopPolling();
+        else if (!timer)
+            timer = window.setInterval("pollForResults()", 4000);
+    }
+
+    function resultsFailure(o)
+    {
+        alert("Failure retrieving results: " + o);
+        stopPolling();
+    }
+
+    function stopPolling()
+    {
+        if (timer)
+        {
+            window.clearInterval(timer);
+            timer = null;
+        }
+    }
 </script>
 
 <div id="container"></div>
@@ -100,27 +144,13 @@
         refresh until the job is complete.
     </i></td>
     </tr>
-    <tr><td colspan="2">&nbsp;</td></tr>
-<%
-    if (statusFile != null)
-    {
-%>
-    <tr><td class="labkey-form-label">Description</td><td><%=statusFile.getDescription()%></td></tr>
-    <tr><td class="labkey-form-label">Status</td><td><%=statusFile.getStatus()%></td></tr>
-    <tr><td class="labkey-form-label">Email</td><td><%=statusFile.getEmail()%></td></tr>
-    <tr><td class="labkey-form-label">Info</td><td><%=StringUtils.defaultString(statusFile.getInfo(), "")%></td></tr>
-<%
-    }
-    else
-    {
-%>
-    <tr><td class="labkey-form-label">Status</td><td>Not Run</td></tr>
-<%
-    }
+    <tr><td colspan="2">&nbsp;</td></tr><%
 
-    if (!autoRefresh) {
+    if (!autoRefresh)
+    {
 %>
-    <tr><td colspan="2">&nbsp;</td></tr>
-    <tr><td><%=PageFlowUtil.generateButton("Start Job", "javascript:void(0)", "javascript:startJob()")%></td></tr>
-<%  } %>
+    <tr><td><%=generateButton("Start Job", "javascript:void(0)", "javascript:startJob()")%></td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr><%
+    } %>
 </table>
+<div id="results"></div>

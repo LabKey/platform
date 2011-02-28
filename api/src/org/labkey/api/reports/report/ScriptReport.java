@@ -24,7 +24,11 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.view.ReportQueryView;
+import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
@@ -94,6 +98,16 @@ public abstract class ScriptReport extends AbstractReport
 
     public @Nullable String getDesignerHelpHtml()
     {
+        return null;
+    }
+
+    @Override
+    public ActionURL getEditReportURL(ViewContext context)
+    {
+        if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
+        {
+            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
+        }
         return null;
     }
 }
