@@ -673,7 +673,7 @@ public class PlateManager implements PlateService.Service
 
     public void setDataFile(User user, Plate plate, AttachmentFile file) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
-        AttachmentService.get().addAttachments(user, plate, Collections.singletonList(file));
+        AttachmentService.get().addAttachments(plate, Collections.singletonList(file), user);
     }
 
     public ActionURL getDataFileURL(Plate iplate, Class<? extends Controller> downloadClass)

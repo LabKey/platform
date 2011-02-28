@@ -519,7 +519,7 @@ public class FileContentController extends SpringActionController
 
            try
            {
-               _closeView = AttachmentService.get().add(getUser(), getAttachmentParent(form), SpringAttachmentFile.createList(fileMap));
+               _closeView = AttachmentService.get().add(getAttachmentParent(form), SpringAttachmentFile.createList(fileMap), getUser());
            }
            catch (NotFoundException x)
            {
@@ -575,7 +575,7 @@ public class FileContentController extends SpringActionController
        {
            try
            {
-               _closeView = AttachmentService.get().delete(getUser(), getAttachmentParent(form), form.getName());
+               _closeView = AttachmentService.get().delete(getAttachmentParent(form), form.getName(), getUser());
            }
            catch (NotFoundException e)
            {

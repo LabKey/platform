@@ -609,7 +609,7 @@ public class AnnouncementsController extends SpringActionController
     {
         public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
         {
-            return AttachmentService.get().add(getUser(), parent, getAttachmentFileList());
+            return AttachmentService.get().add(parent, getAttachmentFileList(), getUser());
         }
     }
 
@@ -650,7 +650,7 @@ public class AnnouncementsController extends SpringActionController
     {
         public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
         {
-            return AttachmentService.get().delete(getUser(), parent, form.getName());
+            return AttachmentService.get().delete(parent, form.getName(), getUser());
         }
     }
 

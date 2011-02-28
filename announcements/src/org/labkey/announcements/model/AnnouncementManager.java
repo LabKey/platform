@@ -328,7 +328,7 @@ public class AnnouncementManager
             insertMemberList(user, ann.getMemberList(), first);
         }
 
-        AttachmentService.get().addAttachments(user, insert, files);
+        AttachmentService.get().addAttachments(insert, files, user);
         indexThread(insert);
     }
 

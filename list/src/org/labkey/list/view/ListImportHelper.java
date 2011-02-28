@@ -116,7 +116,7 @@ public class ListImportHelper implements OntologyManager.ImportHelper
             }
 
             if (!attachmentFiles.isEmpty())
-                AttachmentService.get().addAttachments(_user, new ListItemAttachmentParent(item, _list.getContainer()), attachmentFiles);
+                AttachmentService.get().addAttachments(new ListItemAttachmentParent(item, _list.getContainer()), attachmentFiles, _user);
 
             return ret;
         }

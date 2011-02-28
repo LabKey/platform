@@ -759,7 +759,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getRedirectURL(Object o) throws Exception
         {
-            deleteExistingLogo(getContainer());
+            deleteExistingLogo(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
@@ -790,7 +790,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    static void deleteExistingLogo(Container c) throws SQLException
+    static void deleteExistingLogo(Container c, User user) throws SQLException
     {
         ContainerParent parent = new ContainerParent(c);
         Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
@@ -798,7 +798,7 @@ public class AdminController extends SpringActionController
         {
             if (attachment.getName().startsWith(AttachmentCache.LOGO_FILE_NAME_PREFIX))
             {
-                AttachmentService.get().deleteAttachment(parent, attachment.getName());
+                AttachmentService.get().deleteAttachment(parent, attachment.getName(), user);
                 AttachmentCache.clearLogoCache();
             }
         }
@@ -818,7 +818,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getRedirectURL(Object o) throws Exception
         {
-            deleteExistingFavicon(getContainer());
+            deleteExistingFavicon(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
@@ -826,10 +826,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    static void deleteExistingFavicon(Container c) throws SQLException
+    static void deleteExistingFavicon(Container c, User user) throws SQLException
     {
         ContainerParent parent = new ContainerParent(c);
-        AttachmentService.get().deleteAttachment(parent, AttachmentCache.FAVICON_FILE_NAME);
+        AttachmentService.get().deleteAttachment(parent, AttachmentCache.FAVICON_FILE_NAME, user);
         AttachmentCache.clearFavIconCache();
     }
 
@@ -847,17 +847,17 @@ public class AdminController extends SpringActionController
 
         public ActionURL getRedirectURL(Object o) throws Exception
         {
-            deleteExistingCustomStylesheet(getContainer());
+            deleteExistingCustomStylesheet(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
     }
 
 
-    static void deleteExistingCustomStylesheet(Container c) throws SQLException
+    static void deleteExistingCustomStylesheet(Container c, User user) throws SQLException
     {
         ContainerParent parent = new ContainerParent(c);
-        AttachmentService.get().deleteAttachment(parent, AttachmentCache.STYLESHEET_FILE_NAME);
+        AttachmentService.get().deleteAttachment(parent, AttachmentCache.STYLESHEET_FILE_NAME, user);
 
         // This custom stylesheet is still cached in CoreController, but look & feel revision checking should ensure
         // that it gets cleared out on the next request.

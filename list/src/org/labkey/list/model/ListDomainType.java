@@ -31,7 +31,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.list.view.ListController;
@@ -134,7 +133,8 @@ public class ListDomainType extends AbstractDomainKind
                 if (null != file)
                 {
                     AttachmentParent parent = new ListItemAttachmentParent(item, c);
-                    AttachmentService.get().deleteAttachment(parent, file.toString());
+                    // Not auditing individual file deletions.  Not sure this is correct.
+                    AttachmentService.get().deleteAttachment(parent, file.toString(), null);
                 }
             }
         }

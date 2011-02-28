@@ -814,7 +814,7 @@ public class SampleManager
         event = createRequestEvent(user, event);
         try
         {
-            AttachmentService.get().addAttachments(user, event, attachments);
+            AttachmentService.get().addAttachments(event, attachments, user);
         }
         catch (AttachmentService.DuplicateFilenameException e)
         {

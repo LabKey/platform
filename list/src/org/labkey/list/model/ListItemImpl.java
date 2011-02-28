@@ -297,7 +297,7 @@ public class ListItemImpl implements ListItem
                     if (_oldProperties.containsKey(entry.getKey())) // oldProperty may be null, but it could have a record
                     {
                         if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && oldProperty != null)
-                            AttachmentService.get().deleteAttachment(parent, oldProperty.getStringValue());
+                            AttachmentService.get().deleteAttachment(parent, oldProperty.getStringValue(), user);
                         OntologyManager.deleteProperty(obj.getObjectURI(), entry.getKey(), obj.getContainer(), obj.getContainer());
                     }
                     if (newProperty.value() != null || newProperty.getMvIndicator() != null)
@@ -317,7 +317,7 @@ public class ListItemImpl implements ListItem
                     }
                 }
                 _oldProperties = null;
-                AttachmentService.get().addAttachments(user, parent, newAttachments);
+                AttachmentService.get().addAttachments(parent, newAttachments, user);
             }
             if (_new)
             {

@@ -126,7 +126,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         ContainerManager.addContainerListener(this);
     }
 
-    public HttpView add(User user, AttachmentParent parent, List<AttachmentFile> files)
+
+    @Override
+    @Deprecated
+    public HttpView add(AttachmentParent parent, List<AttachmentFile> files, User auditUser)
     {
         String message = null;
 
@@ -134,7 +137,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             try
             {
-                addAttachments(user, parent, files);
+                addAttachments(parent, files, auditUser);
                 message = getErrorHtml(files);
             }
             catch (AttachmentService.DuplicateFilenameException e)
@@ -154,18 +157,15 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         return template;
     }
 
-
-    public HttpView delete(User user, AttachmentParent parent, String name) throws SQLException
+    @Override
+    @Deprecated
+    public HttpView delete(AttachmentParent parent, String name, User auditUser) throws SQLException
     {
-        Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
-        if (parent instanceof AttachmentDirectory)
-            ((AttachmentDirectory)parent).deleteAttachment(user, name);
-        addAuditEvent(user, parent, name, "The attachment: " + name + " was deleted");
-        AttachmentCache.removeAttachments(parent);
+        deleteAttachment(parent, name, auditUser);
         return new RefreshParentView();
     }
 
-
+    @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename) throws ServletException, IOException
     {
         if (null == filename || 0 == filename.length())
@@ -178,25 +178,32 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
         response.reset();
         writeDocument(new ResponseWriter(response), parent, filename, asAttachment);
-        addAuditEvent(null, parent, filename, "The attachment: " + filename + " was downloaded");
+
+        User user = null;
+        try
+        {
+            ViewContext context = HttpView.currentContext();
+            if (context != null)
+                user = context.getUser();
+        }
+        catch (RuntimeException e)
+        {
+        }
+
+        // Change in behavior added in 11.1:  no longer audit download events for the guest user
+        if (null != user && !user.isGuest())
+            addAuditEvent(user, parent, filename, "The attachment " + filename + " was downloaded");
+
     }
 
+
+    @Override
     public void addAuditEvent(User user, AttachmentParent parent, String filename, String comment)
     {
         if (user == null)
-        {
-            try
-            {
-                ViewContext context = HttpView.currentContext();
-                if (context != null)
-                    user = context.getUser();
-            }
-            catch (RuntimeException e)
-            {
-            }
-        }
+            throw new IllegalArgumentException("Cannot create attachment audit events for the null user.");
 
-        if (user != null && parent != null)
+        if (parent != null)
         {
             {
             AuditLogEvent event = new AuditLogEvent();
@@ -234,16 +241,19 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
     }
 
+    @Override
     public HttpView getHistoryView(ViewContext context, AttachmentParent parent)
     {
         return AttachmentAuditViewFactory.createAttachmentView(context, parent);
     }
 
+    @Override
     public HttpView getAddAttachmentView(Container container, AttachmentParent parent)
     {
         return getAddAttachmentView(container, parent, null);
     }
 
+    @Override
     public HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors)
     {
         HttpView view = new AddAttachmentView(parent, errors);
@@ -253,6 +263,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         return template;
     }
 
+    @Override
     public HttpView getConfirmDeleteView(Container container, Class<? extends Controller> deleteActionClass, AttachmentParent parent, String filename)
     {
         DownloadURL deleteURL = new DownloadURL(deleteActionClass, container, parent.getEntityId(), filename);
@@ -302,8 +313,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
     }
 
-
-    public synchronized void addAttachments(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException
+    @Override
+    public synchronized void addAttachments(AttachmentParent parent, List<AttachmentFile> files, User user) throws IOException
     {
         try
         {
@@ -340,7 +351,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 hm.put("Container", parent.getContainerId());
                 Table.insert(user, coreTables().getTableInfoDocuments(), hm);
 
-                addAuditEvent(user, parent, file.getFilename(), "The attachment: " + file.getFilename() + " was added");
+                if (null != user)
+                    addAuditEvent(user, parent, file.getFilename(), "The attachment " + file.getFilename() + " was added");
             }
 
             AttachmentCache.removeAttachments(parent);
@@ -354,7 +366,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
     }
 
-
+    @Override
     public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnURL)
     {
         boolean hasErrors = null != errors && errors.hasErrors();
@@ -407,6 +419,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
+    @Override
     public void deleteAttachments(AttachmentParent parent) throws SQLException
     {
         List<Attachment> atts = getAttachments(parent);
@@ -422,7 +435,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public void deleteAttachment(AttachmentParent parent, String name)
+    @Override
+    public void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser)
     {
         try
         {
@@ -436,7 +450,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
             if (parent instanceof AttachmentDirectory)
-                ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), name);
+                ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
 
             AttachmentCache.removeAttachments(parent);
         }
@@ -444,9 +458,14 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             throw new RuntimeSQLException(x);
         }
+
+        if (null != auditUser)
+            addAuditEvent(auditUser, parent, name, "The attachment " + name + " was deleted");
     }
 
-    public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws IOException
+
+    @Override
+    public void renameAttachment(AttachmentParent parent, String oldName, String newName, User auditUser) throws IOException
     {
         File dir = null;
         File dest = null;
@@ -463,7 +482,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 throw new AttachmentService.DuplicateFilenameException(newName);
 
             // make sure newName attachment doesn't exist. if it does exist, it's already orphaned
-            deleteAttachment(parent, newName);
+            deleteAttachment(parent, newName, null);
         }
 
         if (exists(parent, newName))
@@ -478,20 +497,27 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             throw new RuntimeSQLException(x);
         }
 
+        // rename the file in the filesystem only if an Attachment director and the db rename succeded
         if (null != dir)
             src.renameTo(dest);
+
+        AttachmentCache.removeAttachments(parent);
+
+        addAuditEvent(auditUser, parent, newName, "The attachment " + oldName + " was renamed " + newName);
     }
 
 
     // Copies an attachment -- same container, same parent, but new name.  
-    public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException
+    @Override
+    public void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException
     {
         DatabaseAttachmentFile file = new DatabaseAttachmentFile(a);
         file.setFilename(newName);
-        addAttachments(user, parent, Collections.singletonList((AttachmentFile)file));
+        addAttachments(parent, Collections.singletonList((AttachmentFile)file), auditUser);
     }
 
 
+    @Override
     public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException
     {
         List<AttachmentFile> files = new ArrayList<AttachmentFile>(attachments.size());
@@ -1113,7 +1139,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             {
                 if (user != null && !canDelete(user))
                     return false;
-                AttachmentService.get().delete(user, _parent, _name);
+                AttachmentService.get().delete(_parent, _name, user);
                 return true;
             }
             catch (SQLException x)
@@ -1147,7 +1173,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 AttachmentResource from = (AttachmentResource) r;
                 if (from._parent == this._parent)
                 {
-                    renameAttachment(this._parent, from.getName(), getName());
+                    renameAttachment(this._parent, from.getName(), getName(), user);
                     return;
                 }
             }
@@ -1202,8 +1228,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 };
 
                 if (AttachmentServiceImpl.this.exists(_parent,_name))
-                    deleteAttachment(_parent, _name);
-                addAttachments(user, _parent, Collections.singletonList(file));
+                    deleteAttachment(_parent, _name, user);
+                addAttachments(_parent, Collections.singletonList(file), user);
             }
             catch (AttachmentService.DuplicateFilenameException x)
             {
@@ -1339,52 +1365,59 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public static class TestCase extends Assert
     {
+
+        private static final String _testDirName = "/_jUnitAttachment";
+
         @Test
         public void testDirectories() throws IOException, SQLException, AttachmentService.DuplicateFilenameException
         {
+
+            User user = TestContext.get().getUser();
+            assertTrue(null != user);
+
             String projectRoot = AppProps.getInstance().getProjectRoot();
             if (projectRoot == null || projectRoot.equals("")) projectRoot = "C:/Labkey";
-            File buildDir = new File(projectRoot, "build");
-            File testDir = new File(buildDir, "AttachmentTest");
-            File webRoot = new File(testDir, "JUnitWebFileRoot");
 
-            if (null != ContainerManager.getForPath("/JUnitAttachmentProject/Test"))
-                ContainerManager.delete(ContainerManager.getForPath("/JUnitAttachmentProject/Test"), TestContext.get().getUser());
-            if (null != ContainerManager.getForPath("/JUnitAttachmentProject/newName"))
-                ContainerManager.delete(ContainerManager.getForPath("/JUnitAttachmentProject/newName"), TestContext.get().getUser());
-            if (null != ContainerManager.getForPath("/JUnitAttachmentProject"))
-                ContainerManager.delete(ContainerManager.getForPath("/JUnitAttachmentProject"), TestContext.get().getUser());
-            Container proj = ContainerManager.ensureContainer("/JUnitAttachmentProject");
-            Container folder = ContainerManager.ensureContainer("/JUnitAttachmentProject/Test");
-            webRoot.mkdirs();
+            // clean up if anything was left over from last time
+            if (null != ContainerManager.getForPath(_testDirName))
+                ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), user);
+
+            Container proj = ContainerManager.ensureContainer(_testDirName);
+            Container folder = ContainerManager.ensureContainer(_testDirName + "/Test");
 
             FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
             AttachmentService.Service svc = AttachmentService.get();
 
             File curRoot = fileService.getFileRoot(proj);
-            if (null == curRoot)
-            {
-                fileService.setFileRoot(proj, webRoot);
-                assertSameFile(fileService.getFileRoot(proj), webRoot);
-            }
+            assertTrue(curRoot.isDirectory());
+
             AttachmentDirectory attachParent = fileService.getMappedAttachmentDirectory(folder, true);
             File attachDir = attachParent.getFileSystemDirectory();
             assertTrue(attachDir.exists());
-            //assertSameFile(attachDir, new File(webRoot, "Test"));
 
             MultipartFile f = new MockMultipartFile("file.txt", "file.txt", "text/plain", "Hello World".getBytes());
             Map<String, MultipartFile> fileMap = new HashMap<String, MultipartFile>();
             fileMap.put("file.txt", f);
             List<AttachmentFile> files = SpringAttachmentFile.createList(fileMap);
 
-            svc.addAttachments(HttpView.currentContext().getUser(), attachParent, files);
+            svc.addAttachments(attachParent, files, user);
             List<Attachment> att = svc.getAttachments(attachParent);
             assertEquals(att.size(), 1);
             assertTrue(att.get(0).getFile().exists());
 
+            // test rename
+            String oldName = f.getName();
+            String newName = "newname.txt";
+            svc.renameAttachment(attachParent, oldName, newName, user);
+            assertNull(svc.getAttachment(attachParent, oldName));
+            assertNotNull(svc.getAttachment(attachParent, newName));
+            // put things back as we found them...
+            svc.renameAttachment(attachParent, newName, oldName, user);
+
+
             assertTrue(new File(attachDir, UPLOAD_LOG).exists());
 
-            File otherDir = new File(testDir, "subdir");
+            File otherDir = new File(attachDir, "subdir");
             otherDir.mkdir();
             AttachmentDirectory namedParent = fileService.registerDirectory(folder, "test", otherDir.getCanonicalPath(), false);
 
@@ -1392,7 +1425,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             assertNotNull(namedParentTest);
             assertSameFile(namedParentTest.getFileSystemDirectory(), namedParent.getFileSystemDirectory());
 
-            svc.addAttachments(HttpView.currentContext().getUser(), namedParent, files);
+            svc.addAttachments(namedParent, files, user);
             att = svc.getAttachments(namedParent);
             assertEquals(att.size(), 1);
             assertTrue(att.get(0).getFile().exists());
@@ -1403,16 +1436,15 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             namedParentTest = fileService.getRegisteredDirectory(folder, "test");
             assertNull(namedParentTest);
 
-            //registering a directory doesn't make sure it exists
-            AttachmentDirectory relativeParent = fileService.registerDirectory(folder, "relative", "subdir2", true);
-            File relativeDir = relativeParent.getFileSystemDirectory();
+            File relativeDir = new File(attachDir, "subdir2");
             relativeDir.mkdirs();
+            AttachmentDirectory relativeParent = fileService.registerDirectory(folder, "relative", relativeDir.getCanonicalPath(), false);
             
             AttachmentDirectory relativeParentTest = fileService.getRegisteredDirectory(folder, "relative");
             assertNotNull(relativeParentTest);
             assertSameFile(relativeParentTest.getFileSystemDirectory(), relativeParent.getFileSystemDirectory());
 
-            svc.addAttachments(HttpView.currentContext().getUser(), relativeParent, files);
+            svc.addAttachments(relativeParent, files, user);
             att = svc.getAttachments(relativeParent);
             assertEquals(att.size(), 1);
 
@@ -1423,14 +1455,15 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             assertTrue(new File(relativeDir, "file.txt").equals(expectedFile1));
             assertTrue(expectedFile2.exists());
 
-            // Slight detour... test FileAttachmentFile using these just-created files before we delete them
-            testFileAttachmentFiles(expectedFile1, expectedFile2);
 
-            //Need to reselect folder or its name is wrong!
-            folder = ContainerManager.getForId(folder.getId());
-            ContainerManager.delete(folder, TestContext.get().getUser());
-            ContainerManager.delete(proj, TestContext.get().getUser());
+            // Slight detour... test FileAttachmentFile using these just-created files before we delete them
+            testFileAttachmentFiles(expectedFile1, expectedFile2, user);
+
+            // clean up
+            ContainerManager.deleteAll(proj, user);
         }
+
+
 
         private void assertSameFile(File a, File b)
         {
@@ -1448,30 +1481,33 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             }
         }
 
-        private void testFileAttachmentFiles(File file1, File file2) throws IOException, SQLException
+        private void testFileAttachmentFiles(File file1, File file2, User user) throws IOException, SQLException
         {
+
             AttachmentFile aFile1 = new FileAttachmentFile(file1);
             AttachmentFile aFile2 = new FileAttachmentFile(file2);
 
             AttachmentService.Service service = AttachmentService.get();
             AttachmentParent root = ContainerManager.RootContainer.get();
-			service.deleteAttachment(root, file1.getName());
-            service.deleteAttachment(root, file2.getName());
+			service.deleteAttachment(root, file1.getName(), user);
+            service.deleteAttachment(root, file2.getName(), user);
 
             List<Attachment> attachments = service.getAttachments(root);
             int originalCount = attachments.size();
 
-            service.add(HttpView.currentContext().getUser(), root, Arrays.asList(aFile1, aFile2));
+            service.addAttachments(root, Arrays.asList(aFile1, aFile2), user);
             attachments = service.getAttachments(root);
             assertTrue((originalCount + 2) == attachments.size());
 
-            service.deleteAttachment(root, file1.getName());
+            service.deleteAttachment(root, file1.getName(), user);
             attachments = service.getAttachments(root);
             assertTrue((originalCount + 1) == attachments.size());
 
-            service.deleteAttachment(root, file2.getName());
+            service.deleteAttachment(root, file2.getName(), user);
             attachments = service.getAttachments(root);
             assertTrue(originalCount == attachments.size());
+
+
         }
     }
 }

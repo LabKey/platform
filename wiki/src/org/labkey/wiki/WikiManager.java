@@ -137,7 +137,7 @@ public class WikiManager
             wikiInsert.setPageVersionId(wikiversion.getRowId());
             Table.update(user, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId());
 
-            AttachmentService.get().addAttachments(user, wikiInsert, files);
+            AttachmentService.get().addAttachments(wikiInsert, files, user);
 
             scope.commitTransaction();
         }
@@ -446,7 +446,7 @@ public class WikiManager
         {
             WikiManager.updateWiki(user, destPage, newWikiVersion);
             AttachmentService.get().deleteAttachments(destPage);
-            AttachmentService.get().addAttachments(user, destPage, files);
+            AttachmentService.get().addAttachments(destPage, files, user);
             // NOTE indexWiki() gets called twice in this case
             touch(destPage);
             indexWiki(destPage);
@@ -479,7 +479,7 @@ public class WikiManager
         {
             for (String name : deleteNames)
             {
-                attsvc.deleteAttachment(wiki, name);
+                attsvc.deleteAttachment(wiki, name, user);
             }
             changes = true;
         }
@@ -489,7 +489,7 @@ public class WikiManager
         {
             try
             {
-                attsvc.addAttachments(user, wiki, files);
+                attsvc.addAttachments(wiki, files, user);
             }
             catch (AttachmentService.DuplicateFilenameException e)
             {

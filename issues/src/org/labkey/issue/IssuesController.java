@@ -533,7 +533,7 @@ public class IssuesController extends SpringActionController
 
                 changeSummary = createChangeSummary(_issue, orig, null, user, form.getAction(), form.getComment(), getColumnCaptions(), getUser());
                 IssueManager.saveIssue(user, c, _issue);
-                AttachmentService.get().addAttachments(user, changeSummary.getComment(), getAttachmentFileList());
+                AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
                 if (ownsTransaction)
                     scope.commitTransaction();
             }
@@ -682,7 +682,7 @@ public class IssuesController extends SpringActionController
 
                 changeSummary = createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnCaptions(), getUser());
                 IssueManager.saveIssue(user, c, issue);
-                AttachmentService.get().addAttachments(user, changeSummary.getComment(), getAttachmentFileList());
+                AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
 
                 if (duplicateOf != null)
                 {

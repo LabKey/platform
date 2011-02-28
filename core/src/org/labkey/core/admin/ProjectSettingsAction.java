@@ -325,11 +325,11 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
         ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
         // Get rid of any existing logo
-        AdminController.deleteExistingLogo(c);
+        AdminController.deleteExistingLogo(c, user);
 
         AttachmentFile renamed = new SpringAttachmentFile(file);
         renamed.setFilename(AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
-        AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
+        AttachmentService.get().addAttachments(parent, Collections.<AttachmentFile>singletonList(renamed), user);
         AttachmentCache.clearLogoCache();
     }
 
@@ -343,12 +343,12 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             throw new ServletException("FavIcon must be a .ico file");
         }
 
-        AdminController.deleteExistingFavicon(c);
+        AdminController.deleteExistingFavicon(c, user);
 
         ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
         AttachmentFile renamed = new SpringAttachmentFile(file);
         renamed.setFilename(AttachmentCache.FAVICON_FILE_NAME);
-        AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
+        AttachmentService.get().addAttachments(parent, Collections.<AttachmentFile>singletonList(renamed), user);
         AttachmentCache.clearFavIconCache();
     }
 
@@ -356,12 +356,12 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     {
         User user = getViewContext().getUser();
 
-        AdminController.deleteExistingCustomStylesheet(c);
+        AdminController.deleteExistingCustomStylesheet(c, user);
 
         ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
         AttachmentFile renamed = new SpringAttachmentFile(file);
         renamed.setFilename(AttachmentCache.STYLESHEET_FILE_NAME);
-        AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
+        AttachmentService.get().addAttachments(parent, Collections.<AttachmentFile>singletonList(renamed), user);
 
         // Don't need to clear cache -- lookAndFeelRevision gets checked on retrieval
     }

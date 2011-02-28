@@ -1005,7 +1005,7 @@ public class ReportsController extends BaseStudyController
             int id = ReportService.get().saveReport(getViewContext(), form.getLabel(), report);
 
             report = (AttachmentReport)ReportService.get().getReport(id);
-            AttachmentService.get().addAttachments(getViewContext().getUser(), report, getAttachmentFileList());
+            AttachmentService.get().addAttachments(report, getAttachmentFileList(), getViewContext().getUser());
 
             return true;
         }
