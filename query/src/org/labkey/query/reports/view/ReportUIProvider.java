@@ -104,7 +104,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             bean.setRedirectUrl(context.getActionURL().getLocalURIString());
             bean.setScriptExtension(".js");
             bean.setReportType(JavaScriptReport.TYPE);
-            designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "I'm a really cool javascript thingy", ReportUtil.getScriptReportDesignerURL(context, bean)));
+            designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "JavaScript View", ReportUtil.getScriptReportDesignerURL(context, bean)));
         }
 
         return designers;

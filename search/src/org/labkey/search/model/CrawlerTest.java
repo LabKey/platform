@@ -35,7 +35,6 @@ import java.util.*;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Dec 12, 2009
  * Time: 3:51:51 PM

@@ -30,12 +30,14 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -2149,9 +2151,61 @@ public class ReportsController extends BaseStudyController
 
             return null;
         }
+
+        @Override
+        public String getExtraFormHtml(ViewContext ctx, ScriptReportBean bean)
+        {
+            Report report;
+
+            try
+            {
+                report = bean.getReport();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            if (StudyManager.getInstance().getStudy(ctx.getContainer()) == null || !RReport.class.isAssignableFrom(report.getClass()))
+                return null;
+
+            boolean hasQuery = bean.getQueryName() != null || bean.getSchemaName() != null || bean.getViewName() != null;
+
+            StringBuilder html = new StringBuilder();
+            html.append("<tr class=\"labkey-wp-header\"><th align=\"left\" colspan=\"2\">Study Module Options</th></tr>");
+
+            if (hasQuery)
+            {
+                String subjectNoun = StudyService.get().getSubjectNounSingular(ctx.getContainer());
+                html.append("<tr><td>");
+                html.append("<input type=\"checkbox\" value=\"participantId\" name=\"");
+                html.append(ReportDescriptor.Prop.filterParam);
+                html.append("\"");
+                html.append("participantId".equals(bean.getFilterParam()) ? "checked" : "");
+//                html.append(" onchange=\"LABKEY.setDirty(true);return true;\");
+                html.append("> ");
+                html.append(PageFlowUtil.filter(subjectNoun));
+                html.append(" chart&nbsp;");
+                html.append(PageFlowUtil.helpPopup(subjectNoun + " chart", subjectNoun +
+                        " chart views show measures for only one " + subjectNoun + " at a time. " + subjectNoun +
+                        " chart views allow the user to step through charts for each " + subjectNoun + " shown in any dataset grid."));
+                html.append("</td></tr>");
+            }
+
+            html.append("<tr><td><input type=\"checkbox\" name=\"cached\" ");
+            html.append(bean.isCached() ? "checked" : "");
+
+            // TODO: Check dirty
+            //html.append(" onchange=\"LABKEY.setDirty(true);return true;\"");
+
+            html.append("> Automatically cache this report for faster reloading</td></tr>");
+            html.append("<tr><td>&nbsp;</td></tr>");
+
+            return html.toString();
+        }
     }
 
-    public static class StudyRReportView extends WebPartView
+    private static class StudyRReportView extends WebPartView
     {
         public StudyRReportView(RReportBean bean)
         {

@@ -15,34 +15,35 @@
  */
 package org.labkey.study.reports;
 
-import org.labkey.api.reports.report.view.DefaultReportUIProvider;
-import org.labkey.api.reports.report.view.ChartDesignerBean;
-import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.reports.report.view.RReportBean;
+import org.apache.commons.lang.math.NumberUtils;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.reports.report.view.ChartDesignerBean;
+import org.labkey.api.reports.report.view.DefaultReportUIProvider;
+import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.study.reports.CrosstabReport;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.TimeChartReport;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.controllers.reports.ReportsController;
-import org.apache.commons.lang.math.NumberUtils;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.ArrayList;/*
+
+/*
  * User: Karl Lum
  * Date: May 16, 2008
  * Time: 5:19:28 PM
  */
-
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
     private static ReportService.ItemFilter _filter = new ReportService.ItemFilter(){
@@ -112,6 +113,16 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, CrosstabReport.TYPE);
             designers.add(new DesignerInfoImpl(CrosstabReport.TYPE, "Crosstab View", crossTabURL));
         }
+
+        if (ReportUtil.canCreateScript(context))
+        {
+            ScriptReportBean bean = new ScriptReportBean(settings);
+            bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+            bean.setScriptExtension(".js");
+            bean.setReportType(JavaScriptReport.TYPE);
+            designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "JavaScript View", ReportUtil.getScriptReportDesignerURL(context, bean)));
+        }
+
         return designers;
     }
 

@@ -51,6 +51,7 @@ public class StudyRunRReportView extends RunRReportView
         {
             VBox view = new VBox();
             boolean isParticipantChart = PARTICIPANT_KEY.equals(getReport().getDescriptor().getProperty(ReportDescriptor.Prop.filterParam));
+
             if (isParticipantChart)
             {
                 ViewContext context = getViewContext();

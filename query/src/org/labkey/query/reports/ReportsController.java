@@ -39,6 +39,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
@@ -65,8 +66,10 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.AjaxScriptReportView;
+import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportDesignerSessionCache;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -165,13 +168,13 @@ public class ReportsController extends SpringActionController
         @Deprecated
         public ActionURL urlCreateRReport(Container c)
         {
-            return new ActionURL(CreateRReportAction.class, c);
+            return new ActionURL(CreateScriptReportAction.class, c);
         }
 
         @Override
-        public ActionURL urlPreviewScriptReport(Container c)
+        public ActionURL urlViewScriptReport(Container c)
         {
-            return new ActionURL(PreviewScriptReportAction.class, c);
+            return new ActionURL(ViewScriptReportAction.class, c);
         }
 
         public ActionURL urlCreateScriptReport(Container c)
@@ -594,7 +597,7 @@ public class ReportsController extends SpringActionController
             }
             else
             {
-                return new AjaxScriptReportView(form);
+                return new AjaxScriptReportView(null, form, Mode.create);
             }
         }
 
@@ -616,7 +619,7 @@ public class ReportsController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class PreviewScriptReportAction extends ApiAction<ScriptReportBean>
+    public class ViewScriptReportAction extends ApiAction<ScriptReportBean>
     {
         @Override
         public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
@@ -625,10 +628,100 @@ public class ReportsController extends SpringActionController
 
             // ApiAction doesn't seem to bind URL parameters on POST... so manually populate them into the bean.
             errors.addAllErrors(defaultBindParameters(bean, getViewContext().getBindPropertyValues()));
-            HttpView resultsView = bean.getReport().renderReport(getViewContext());
-            resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
+
+            HttpView resultsView = null;
+            Report report = bean.getReport();
+
+            // for now, limit pipeline view to saved R reports
+            if (null != bean.getReportId() && bean.isRunInBackground())
+            {
+                if (report instanceof RReport)
+                {
+//                    VBox vbox = new VBox();
+                    resultsView = new JspView<RReport>("/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp", (RReport)report);
+
+/*
+                    File logFile = new File(((RReport)report).getReportDir(), RReportJob.LOG_FILE_NAME);
+                    PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile.getAbsolutePath());
+
+                   TODO: Remove -- we want to AJAX the results in place
+                   if (statusFile != null &&
+                            !(statusFile.getStatus().equals(PipelineJob.WAITING_STATUS) ||
+                              statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS)))
+                        vbox.addView(new RenderBackgroundRReportView((RReport)report));
+*/
+//                    resultsView = vbox;
+                }
+            }
+            else
+            {
+                if (report != null)
+                {
+                    if (bean.getIsDirty())
+                        report.clearCache();
+                    resultsView = report.renderReport(getViewContext());
+                }
+            }
+
+            // TODO: assert?
+            if (null != resultsView)
+                resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
 
             return null;
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetBackgroundReportResultsAction extends ApiAction<ScriptReportBean>
+    {
+        @Override
+        public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
+        {
+            Report report = bean.getReport();
+            File logFile = new File(((RReport)report).getReportDir(), RReportJob.LOG_FILE_NAME);
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile.getAbsolutePath());
+
+            VBox vbox = new VBox();
+
+            StringBuilder html = new StringBuilder("<table>\n");
+
+            if (null != statusFile)
+            {
+                html.append("<tr><td class=\"labkey-form-label\">Description</td><td>");
+                html.append(PageFlowUtil.filter(statusFile.getDescription()));
+                html.append("</td></tr>\n");
+                html.append("<tr><td class=\"labkey-form-label\">Status</td><td>");
+                html.append(PageFlowUtil.filter(statusFile.getStatus()));
+                html.append("</td></tr>\n");
+                html.append("<tr><td class=\"labkey-form-label\">Email</td><td>");
+                html.append(PageFlowUtil.filter(statusFile.getEmail()));
+                html.append("</td></tr>\n");
+                html.append("<tr><td class=\"labkey-form-label\">Info</td><td>");
+                html.append(PageFlowUtil.filter(StringUtils.defaultString(statusFile.getInfo(), "")));
+                html.append("</td></tr>\n");
+                html.append("<tr><td colspan=\"2\">&nbsp;</td></tr>\n");
+            }
+            else
+            {
+                html.append("<tr><td class=\"labkey-form-label\">Status</td><td>Not Run</td></tr>");
+            }
+
+            html.append("<table>\n");
+            vbox.addView(new HtmlView(html.toString()));
+
+            if (statusFile != null &&
+                    !(statusFile.getStatus().equals(PipelineJob.WAITING_STATUS) ||
+                      statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS)))
+                vbox.addView(new RenderBackgroundRReportView((RReport)report));
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("results", HttpView.renderToString(vbox, getViewContext().getRequest()));
+
+            if (null != statusFile)
+                response.put("status", statusFile.getStatus());
+
+            return response;
         }
     }
 
@@ -777,13 +870,16 @@ public class ReportsController extends SpringActionController
 
         private boolean reportNameExists(String reportName, String key)
         {
-            try {
+            try
+            {
                 ViewContext context = getViewContext();
+
                 for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
                 {
                     if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
                         return true;
                 }
+
                 return false;
             }
             catch (Exception e)
@@ -804,13 +900,13 @@ public class ReportsController extends SpringActionController
         {
             final ViewContext context = getViewContext();
             final Container c = getContainer();
-            final ViewBackgroundInfo info = new ViewBackgroundInfo(c,
-                    context.getUser(), context.getActionURL());
+            final ViewBackgroundInfo info = new ViewBackgroundInfo(c, context.getUser(), context.getActionURL());
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             Report report;
             PipelineJob job;
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+
             if (null == form.getReportId())
             {
                 // report not saved yet, get state from the cache
@@ -832,6 +928,7 @@ public class ReportsController extends SpringActionController
                 PipelineService.get().getPipelineQueue().addJob(job);
                 response.put("success", true);
             }
+
             return response;
         }
     }
@@ -1594,54 +1691,6 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    public static class CustomizeQueryForm
-    {
-        private String _schemaName;
-        private String _queryName;
-        private String _viewName;
-        private String _srcURL;
-
-        public String getSchemaName()
-        {
-            return _schemaName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            _schemaName = schemaName;
-        }
-
-        public String getQueryName()
-        {
-            return _queryName;
-        }
-
-        public void setQueryName(String queryName)
-        {
-            _queryName = queryName;
-        }
-
-        public String getViewName()
-        {
-            return _viewName;
-        }
-
-        public void setViewName(String viewName)
-        {
-            _viewName = viewName;
-        }
-
-        public String getSrcURL()
-        {
-            return _srcURL;
-        }
-
-        public void setSrcURL(String srcURL)
-        {
-            _srcURL = srcURL;
         }
     }
 }

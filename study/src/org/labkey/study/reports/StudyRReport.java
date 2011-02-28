@@ -22,13 +22,20 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.RunRReportView;
+import org.labkey.api.study.Study;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyManager;
+
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -59,7 +66,47 @@ public class StudyRReport extends RReport
 
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
-        return new StudyRunRReportView(this);
+        // Special handling for study R report -- from StudyRunRReportView
+        HttpView reportView = super.getRunReportView(context);
+
+        boolean isParticipantChart = StudyRunRReportView.PARTICIPANT_KEY.equals(getDescriptor().getProperty(ReportDescriptor.Prop.filterParam));
+
+        if (!isParticipantChart)
+            return reportView;
+
+        int datasetId = 0;
+        DataSetDefinition def = getDataSetDefinition(context);
+        if (def != null)
+            datasetId = def.getRowId();
+
+        String qcState = context.getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
+        List<String> participants = StudyController.getParticipantListFromCache(context, datasetId,
+                getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, qcState);
+
+        VBox vBox = new VBox();
+        vBox.addView(ReportsController.getParticipantNavTrail(context, participants));
+        vBox.addView(reportView);
+
+        return vBox;
+    }
+
+    protected DataSetDefinition getDataSetDefinition(ViewContext context)
+    {
+        try
+        {
+            final Study study = StudyManager.getInstance().getStudy(context.getContainer());
+
+            if (study != null)
+            {
+                return StudyManager.getInstance().
+                        getDataSetDefinition(study, getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 
     public ActionURL getRunReportURL(ViewContext context)
