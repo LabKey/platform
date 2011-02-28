@@ -30,25 +30,33 @@
             (JspView<SpecimenController.ImportSpecimensBean>) HttpView.currentView();
     SpecimenController.ImportSpecimensBean bean = me.getModelBean();
     boolean hasError = !bean.getErrors().isEmpty();
-    List<SpecimenArchive.EntryDescription> entries = bean.getArchive().getEntryDescriptions();
+    int archiveCount = bean.getArchives().size();
 %>
-Specimen archive <b><%= h(bean.getArchive().getDefinitionFile().getName()) %></b> contains the following files:<br><br>
-<table class="labkey-data-region labkey-show-borders">
-    <tr><th>File</th><th>Size</th><th>Modified</th></tr>
-    <%
-        int row = 0;
-        for (SpecimenArchive.EntryDescription entry : entries)
-        {
-    %>
-        <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row"%>">
-            <td><%= h(entry.getName()) %></td>
-            <td align="right"><%= entry.getSize() == 0 ? "0" : Math.max(1, entry.getSize() / 1000) %> kb</td>
-            <td><%= h(formatDateTime(entry.getDate())) %></td>
-        </tr>
-    <%
-        }
-    %>
-</table><br>
+<%= archiveCount %> specimen archive<%= archiveCount > 1 ? "s" : "" %> selected.<br><br>
+<%
+    for (SpecimenArchive archive : bean.getArchives())
+    {
+%>
+    Specimen archive <b><%= h(archive.getDefinitionFile().getName()) %></b> contains the following files:<br><br>
+    <table class="labkey-data-region labkey-show-borders">
+        <tr><th>File</th><th>Size</th><th>Modified</th></tr>
+        <%
+            int row = 0;
+            for (SpecimenArchive.EntryDescription entry : archive.getEntryDescriptions())
+            {
+        %>
+            <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row"%>">
+                <td><%= h(entry.getName()) %></td>
+                <td align="right"><%= entry.getSize() == 0 ? "0" : Math.max(1, entry.getSize() / 1000) %> kb</td>
+                <td><%= h(formatDateTime(entry.getDate())) %></td>
+            </tr>
+        <%
+            }
+        %>
+    </table><br>
+<%
+    }
+%>
 
 <div>
     <%
@@ -63,38 +71,28 @@ Specimen archive <b><%= h(bean.getArchive().getDefinitionFile().getName()) %></b
         }
         else
         {
-            if (bean.isPreviouslyRun())
+%>
+    <form action="submitSpecimenBatchImport.post" method=POST>
+        <input type="hidden" name="path" value="<%= h(bean.getPath()) %>">
+        <%
+            for (String file : bean.getFiles())
             {
-    %>
-    <span class="labkey-error">WARNING: A file by this name appears to have been previously imported.</span><br>
-    To import a file by this name, the old log file must be deleted.<br><br>
-    <a href="<%= h(urlProvider(PipelineStatusUrls.class).urlBegin(bean.getContainer()))%>">
-        Click here</a> to view previous pipeline runs.<br><br>
-
-        <form action="importSpecimenData.post" method=POST>
-            <input type="hidden" name="deleteLogfile" value="true">
-            <input type="hidden" name="path" value="<%= h(bean.getPath())%>">
-            <%= generateSubmitButton("Delete logfile")%>&nbsp;<%= generateButton("Cancel", urlProvider(PipelineUrls.class).urlBegin(bean.getContainer()))%>
-        </form>
-    <%
+        %>
+        <input type="hidden" name="file" value="<%= h(file) %>">
+        <%
             }
-            else
-            {
-    %>
-        <form action="submitSpecimenImport.post" method=POST>
-            <input type="hidden" name="path" value="<%= h(bean.getPath())%>">
-            <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="replace" />
-            <label for="merge"><b>Replace</b>: Replace all of the existing specimens.</label>
-            <br>
-            <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="replace"/>
-            <label for="merge"><b>Merge</b>: Insert new specimens and update existing specimens.</label>
+        %>
+        <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="replace" />
+        <label for="merge"><b>Replace</b>: Replace all of the existing specimens.</label>
+        <br>
+        <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="replace"/>
+        <label for="merge"><b>Merge</b>: Insert new specimens and update existing specimens.</label>
 
-            <p>
+        <p>
 
-            <%= generateSubmitButton("Start Import")%>
-        </form>
-    <%
-            }
+        <%= generateSubmitButton("Start Import")%>
+    </form>
+<%
         }
     %>
 </div>

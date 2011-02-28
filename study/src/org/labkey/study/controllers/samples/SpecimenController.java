@@ -3495,52 +3495,85 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermissionClass(AdminPermission.class)
     public class ImportSpecimenData extends SimpleViewAction<PipelineForm>
     {
-        private String _path = null;
-
+        private String[] _filePaths = null;
         public ModelAndView getView(PipelineForm form, BindException bindErrors) throws Exception
         {
-            File dataFile = form.getValidatedSingleFile(getContainer());
-
-            _path = form.getPath();
-            if (!_path.endsWith("/"))
-            {
-                _path += "/";
-            }
-            _path += dataFile.getName();
-
-            if (null == dataFile || !dataFile.exists() || !dataFile.isFile())
-            {
-                throw new NotFoundException();
-            }
-
+            List<File> dataFiles = form.getValidatedFiles(getContainer());
+            List<SpecimenArchive> archives = new ArrayList<SpecimenArchive>();
             List<String> errors = new ArrayList<String>();
-            if (!dataFile.canRead())
-                errors.add("Can't read data file: " + _path);
-
-            boolean previouslyRun = false;
-            File logFile = new File(dataFile.getPath() + ".log");
-            if (logFile.exists() && logFile.isFile())
+            _filePaths = form.getFile();
+            for (File dataFile : dataFiles)
             {
-                if (form.isDeleteLogfile())
-                    logFile.delete();
-                else
-                    previouslyRun = true;
+                String path = form.getPath();
+                if (!path.endsWith("/"))
+                {
+                    path += "/";
+                }
+                path += dataFile.getName();
+
+                if (null == dataFile || !dataFile.exists() || !dataFile.isFile())
+                {
+                    throw new NotFoundException();
+                }
+
+                if (!dataFile.canRead())
+                    errors.add("Can't read data file: " + path);
+
+                SpecimenArchive archive = new SpecimenArchive(dataFile);
+                archives.add(archive);
             }
-
-            SpecimenArchive archive = new SpecimenArchive(dataFile);
-
             return new JspView<ImportSpecimensBean>("/org/labkey/study/view/samples/importSpecimens.jsp",
-                    new ImportSpecimensBean(getContainer(), archive, _path, errors, previouslyRun));
+                    new ImportSpecimensBean(getContainer(), archives, form.getPath(), form.getFile(), errors));
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Import Study Batch - " + _path);
+            String msg;
+            if (_filePaths.length == 1)
+                msg = _filePaths[0];
+            else
+                msg = _filePaths.length + " specimen archives";
+            root.addChild("Import Study Batch - " + msg);
             return root;
         }
     }
 
 
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SubmitSpecimenBatchImport extends FormHandlerAction<PipelineForm>
+    {
+        public void validateCommand(PipelineForm target, Errors errors)
+        {
+        }
+
+        public boolean handlePost(PipelineForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            PipeRoot root = PipelineService.get().findPipelineRoot(c);
+            boolean first = true;
+            for (File f : form.getValidatedFiles(c))
+            {
+                // Only possibly overwrite when the first archive is loaded:
+                boolean merge = !first || form.isMerge();
+                submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f, root, merge);
+                first = false;
+            }
+            return true;
+        }
+
+
+        public ActionURL getSuccessURL(PipelineForm pipelineForm)
+        {
+            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+        }
+    }
+
+    /**
+     * Legacy method hit via WGET/CURL to programmatically initiate a specimen import; no longer used by the UI,
+     * but this method should be kept around until we receive verification that the URL is no longer being hit
+     * programmatically.
+     */
     @RequiresPermissionClass(AdminPermission.class)
     public class SubmitSpecimenImport extends FormHandlerAction<PipelineForm>
     {
@@ -3561,8 +3594,10 @@ public class SpecimenController extends BaseStudyController
                     f = root.resolvePath(path);
             }
 
-            return submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f, root, form.isMerge());
+            submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f, root, form.isMerge());
+            return true;
         }
+
 
         public ActionURL getSuccessURL(PipelineForm pipelineForm)
         {
@@ -3571,45 +3606,37 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    public static boolean submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root, boolean merge) throws IOException, SQLException
+    public static void submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root, boolean merge) throws IOException, SQLException
     {
         if (null == f || !f.exists() || !f.isFile())
-        {
             HttpView.throwNotFound();   // TODO: Better error message
-            return false;
-        }
-        File logFile = new File(f.getPath() + ".log");
-        if (logFile.exists() && logFile.isFile())
-            return false;
 
         SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(c, user, url), f, root, merge);
         batch.submit();
-
-        return true;
     }
 
 
     public static class ImportSpecimensBean
     {
         private String _path;
-        private SpecimenArchive _archive;
+        private List<SpecimenArchive> _archives;
         private List<String> _errors;
-        private boolean _previouslyRun;
         private Container _container;
+        private String[] _files;
 
-        public ImportSpecimensBean(Container container, SpecimenArchive archive,
-                                   String path, List<String> errors, boolean previouslyRun)
+        public ImportSpecimensBean(Container container, List<SpecimenArchive> archives,
+                                   String path, String[] files, List<String> errors)
         {
             _path = path;
-            _archive = archive;
+            _files = files;
+            _archives = archives;
             _errors = errors;
-            _previouslyRun = previouslyRun;
             _container = container;
         }
 
-        public SpecimenArchive getArchive()
+        public List<SpecimenArchive> getArchives()
         {
-            return _archive;
+            return _archives;
         }
 
         public String getPath()
@@ -3617,14 +3644,14 @@ public class SpecimenController extends BaseStudyController
             return _path;
         }
 
+        public String[] getFiles()
+        {
+            return _files;
+        }
+
         public List<String> getErrors()
         {
             return _errors;
-        }
-
-        public boolean isPreviouslyRun()
-        {
-            return _previouslyRun;
         }
 
         public Container getContainer()
@@ -4249,18 +4276,7 @@ public class SpecimenController extends BaseStudyController
 
     public static class PipelineForm extends PipelinePathForm
     {
-        private boolean _deleteLogfile;
         private String replaceOrMerge = "replace";
-
-        public boolean isDeleteLogfile()
-        {
-            return _deleteLogfile;
-        }
-
-        public void setDeleteLogfile(boolean deleteLogfile)
-        {
-            _deleteLogfile = deleteLogfile;
-        }
 
         public String getReplaceOrMerge()
         {

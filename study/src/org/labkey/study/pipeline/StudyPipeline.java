@@ -81,7 +81,7 @@ public class StudyPipeline extends PipelineProvider
             });
 
             String actionId = createActionId(SpecimenController.ImportSpecimenData.class, "Import Specimen Data");
-            addAction(actionId, SpecimenController.ImportSpecimenData.class, "Import Specimen Data", directory, files, false, false, includeAll);
+            addAction(actionId, SpecimenController.ImportSpecimenData.class, "Import Specimen Data", directory, files, true, false, includeAll);
         }
         catch (IOException e)
         {
