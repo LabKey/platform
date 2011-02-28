@@ -1081,6 +1081,10 @@ img.labkey-grid-filter-icon
     display: inline;
 }
 
+.labkey-customview-list {
+    cursor: pointer;
+}
+
 .labkey-grab {
     background: url(./_images/grab.png) repeat-y 2px 0;
     width: 8px;
