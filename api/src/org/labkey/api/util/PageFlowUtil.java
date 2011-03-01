@@ -229,8 +229,14 @@ public class PageFlowUtil
                             if (m.find())
                             {
                                 String href = m.group(1);
-                                if (href.endsWith(".")) href = href.substring(0, href.length() - 1);
-                                sb.append("<a href=\"").append(href).append("\">").append(href).append("</a>");
+                                if (href.endsWith("."))
+                                    href = href.substring(0, href.length() - 1);
+                                // for html/xml careful of " and "> and "/>
+                                int lastQuote = Math.max(href.lastIndexOf("\""),href.lastIndexOf("\'"));
+                                if (lastQuote >= href.length()-3)
+                                    href = href.substring(0, lastQuote);
+                                String filterHref = filter(href, false, false);
+                                sb.append("<a href=\"").append(filterHref).append("\">").append(filterHref).append("</a>");
                                 i += href.length() - 1;
                                 break;
                             }
