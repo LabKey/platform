@@ -164,6 +164,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
                 {header: "Description", width: 100, dataIndex: 'description', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
                 {header: "Usages", width: 100, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage},
+                {header: "Download Link", width: 100, dataIndex: 'fileLink', sortable: true, hidden:true},
                 {header: "File Extension", width: 80, dataIndex: 'fileExt', sortable: true, hidden:true, renderer:Ext.util.Format.htmlEncode}
             ];
 

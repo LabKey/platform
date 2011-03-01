@@ -1008,6 +1008,17 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                     return uri ? uri.href : "";
                 }
             },
+            {name: 'fileLink', mapping: 'href',
+                convert : function(v, rec)
+                {
+                    var uri = getURI(v,rec);
+
+                    if (uri && uri.file)
+                        return $dom.markup({tag:'a', href: Ext.util.Format.htmlEncode(uri.href), html: Ext.util.Format.htmlEncode(uri.file)});
+                    else
+                        return '';
+                }
+            },
             {name: 'path', mapping: 'href',
                 convert : function (v, rec)
                 {

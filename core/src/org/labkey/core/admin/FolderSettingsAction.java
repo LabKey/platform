@@ -446,7 +446,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
                         {
                             User user = UserManager.getUser(((Integer)ctx.get("userId")).intValue());
 
-                            if (ctx.getContainer().hasPermission(user, ReadPermission.class))
+                            if (ctx.getContainer().hasPermission(user, ReadPermission.class) && user.isActive())
                                 super.renderTableRow(ctx, out, renderers, realRowIndex++);  // rowIndex doesn't know anything about filtering  TODO: Change DataRegion to handle this better in 8.2
                         }
 

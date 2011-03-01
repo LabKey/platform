@@ -89,17 +89,17 @@ public class MessageConfigManager
         SQLFragment sql = new SQLFragment();
         List<EmailPref> prefs = new ArrayList<EmailPref>();
 
-        sql.append("SELECT u.userId, email, firstName, lastName, displayName, emailOptionId, emailFormatId, type, lastModifiedBy FROM ");
+        sql.append("SELECT u.userId, email, firstName, lastName, displayName, emailOptionId, emailFormatId, type, lastModifiedBy, container FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" LEFT JOIN ");
         sql.append(_comm.getTableInfoEmailPrefs(), "prefs").append(" ON u.userId = prefs.userId ");
-        sql.append("AND type = ?");
+        sql.append("AND type = ? AND container = ?");
 
-        EmailPref[] p = Table.executeQuery(_comm.getSchema(), sql.getSQL(), new Object[]{type}, EmailPref.class);
+        EmailPref[] p = Table.executeQuery(_comm.getSchema(), sql.getSQL(), new Object[]{type, c.getId()}, EmailPref.class);
 
         for (EmailPref ep : p)
         {
             User user = ep.getUser();
-            if (c.hasPermission(user, ReadPermission.class))
+            if (c.hasPermission(user, ReadPermission.class) && user.isActive())
                 prefs.add(ep);
         }
 

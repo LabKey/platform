@@ -1438,7 +1438,7 @@ public class FileContentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new BeginAction().appendNavTrail(root).addChild("Send daily digest");
+            return new BeginAction().appendNavTrail(root).addChild("Send mail digest");
         }
     }
 
