@@ -52,7 +52,7 @@ public class SearchUtils
 
         if (includeBooleanOperatorMessage)
         {
-            out.write("  <tr><td>Boolean operators AND, OR, and NOT have special meaning within search queries.  To search for these you can enclose the query string in double quotes.</td></tr>\n");
+            out.write("  <tr><td>Boolean operators AND, OR, and NOT have special meaning within search queries.  To search for these words you can enclose the query string in double quotes.</td></tr>\n");
             out.write("  <tr><td>&nbsp;</td></tr>\n");
         }
 
@@ -71,15 +71,9 @@ public class SearchUtils
 
         public LuceneMessageParser(String message)
         {
-            // Strip the whole "Was expecting..." part of the message
-            int idx = message.indexOf("\r\nWas expecting");
-
-            if (-1 != idx)
-                message = message.substring(0, idx);
-
             Matcher m = p.matcher(message);
 
-            _parseable = m.matches();
+            _parseable = m.lookingAt();
             _encountered = _parseable ? m.group(1) : null;
             _line = _parseable ? Integer.parseInt(m.group(2)) : -1;
             _column = _parseable ? Integer.parseInt(m.group(3)) : -1;
