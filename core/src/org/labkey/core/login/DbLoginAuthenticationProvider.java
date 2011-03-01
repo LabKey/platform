@@ -27,11 +27,13 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Date;
+import java.util.EmptyStackException;
 import java.util.LinkedList;
 
 /**
@@ -81,8 +83,6 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
         // Password is correct for this user.  Now check password rules and expiration.
 
-        // TODO: skip these checks if basic auth
-
         PasswordRule rule = DbLoginManager.getPasswordRule();
         User user = UserManager.getUser(email);
         assert null != user;
@@ -111,7 +111,16 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     {
         _log.info("Password for " + user.getEmail() + " " + description + ".");
 
-        ViewContext ctx = HttpView.currentContext();
+        ViewContext ctx = null;
+
+        try
+        {
+            ctx = HttpView.currentContext();
+        }
+        catch (EmptyStackException e)
+        {
+            // Basic auth is checked in AuthFilter, so there won't be a ViewContext.in that case.
+        }
 
         if (null != ctx)
         {
@@ -132,7 +141,8 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             }
         }
 
-        return null;
+        // TODO: This is not right... shouldn't be throwing Unauthorized from here, plus Tomcat renders it as HTML
+        throw new UnauthorizedException("Your password " + description);
     }
 
     public ActionURL getConfigurationLink()
