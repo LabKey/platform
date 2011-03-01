@@ -115,14 +115,7 @@ public class StudyUnionTableInfo extends VirtualTable
                 else
                 {
                     // in at least Postgres, it isn't legal to union two columns where one is NULL and the other is
-                    // numeric. It's OK when the other column is text. It's presently unknown whether this is a problem if the
-                    // missing column is something other than text or numeric.
-                    //
-                    // The following selects a 0 if the column is numeric and isn't present for one of the tables in
-                    // the union.
-                    //
-                    // Too bad study.getSharedProperties returns properties that aren't present on all datasets.
-
+                    // numeric. It's OK when the other column is text.
                     String empty;
                     switch (pd.getSqlTypeInt())
                     {
@@ -132,6 +125,9 @@ public class StudyUnionTableInfo extends VirtualTable
                         case Types.DOUBLE:
                         case Types.DECIMAL:
                         case Types.FLOAT:
+                        case Types.TIMESTAMP:
+                        case Types.TIME:
+                        case Types.DATE:
                             empty = "CAST(NULL AS " + getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()) + ")";
                             break;
                         default:
