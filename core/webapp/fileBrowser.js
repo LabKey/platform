@@ -1230,10 +1230,10 @@ var FileListMenu = function(fileSystem, path, folderFilter, fn)
     this.path = path;
     this.folderFilter = folderFilter;
 
-    if (path && path != fileSystem.rootPath)
-    {
-        this.addMenuItem(new Ext.menu.Item({text: '[up]', path:this.fileSystem.parentPath(path)}));
-    }
+//    if (path && path != fileSystem.rootPath)
+//    {
+//        this.addMenuItem(new Ext.menu.Item({text: '[up]', path:this.fileSystem.parentPath(path)}));
+//    }
 
     var records = fileSystem.directoryFromCache(path);
     var populate = function(filesystem, success, path, records)
@@ -2650,6 +2650,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     updateAddressBar : function(path)
     {
+        var i;
+        var folderImg = '<img src="' + this.FOLDER_ICON + '" border=0>';
         var el = $('addressBar');
         if (!el)
             return;
@@ -2658,28 +2660,71 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         elStyle.height = "100%";
         elStyle.width = "100%";
 
-        if (this.addressBarHandler)
+        var parts = [];
+        while (path)
         {
-            el.un("click", this.addressBarHandler);
-            this.addressBarHandler = null;
+            var name = this.fileSystem.fileName(path);
+            if (!name)
+                break;
+            if (name == '/')
+                name = this.fileSystem.rootName || '/';
+            parts.push({path:path, name:name, id:Ext.id(null,'name'), idImg:Ext.id(null,'img')});
+            var parent = this.fileSystem.parentPath(path);
+            if (parent == path)
+                break;
+            path = parent;
         }
-        var text;
-        if (path == this.fileSystem.rootPath)
-            text = '';
-            //text = $h(this.fileSystem.rootRecord.data.name);
-        else
-            text = 'folder: ' + $h(path);
-        el.update('<table height=100% width=100%><tr><td height=100% width=100% valign=middle align=left>' + text + '</td></tr></table>');
-        this.addressBarHandler = this.showFileListMenu.createDelegate(this, [path]);
-        el.on("click", this.addressBarHandler);
+        parts = parts.reverse();
+
+        var html = [];
+        html.push('<table><tr>');
+        for (i=0 ; i<parts.length ; i++)
+        {
+            html.push('<td id="' + parts[i].idImg + '">');
+            html.push(folderImg);
+            html.push('</td><td id="' + parts[i].id + '">');
+            html.push($h(parts[i].name));
+            html.push("</td><td>&nbsp;</td>");
+        }
+        html.push("</tr></table>");
+
+        el.update('<table height=100% width=100%><tr><td height=100% width=100% valign=middle align=left>' + html.join('') + '</td></tr></table>');
+
+        for (i=0 ; i<parts.length ; i++)
+        {
+            var addressBarHandler = this.showFileListMenu.createDelegate(this, [parts[i]]);
+            var changeDirectory = function(path)
+            {
+                this.hideFileListMenu();
+                this.changeDirectory(path);
+            }.createDelegate(this, [parts[i].path]);
+            $(parts[i].id).on("click", addressBarHandler);
+            $(parts[i].id).on("dblclick", changeDirectory);
+            $(parts[i].idImg).on("click", addressBarHandler);
+            $(parts[i].idImg).on("dblclick", changeDirectory);
+        }
     },
 
-    showFileListMenu : function(path)
+    _filelistmenu : null,
+
+
+    showFileListMenu : function(part)
     {
-        var el = $('addressBar');
-        var menu = new FileListMenu(this.fileSystem, path, this.fileFilter, this.changeDirectory.createDelegate(this));
-        menu.show(el);
+        this.hideFileListMenu();
+        this._filelistmenu = new FileListMenu(this.fileSystem, part.path, this.fileFilter, this.changeDirectory.createDelegate(this));
+        this._filelistmenu.show($(part.idImg) || $('addressBar'));
     },
+
+
+    hideFileListMenu : function()
+    {
+        if (this._filelistmenu)
+        {
+            this._filelistmenu.destroy();
+            this._filelistmenu = null;
+        }
+    },
+
 
     updateFileDetails : function(record)
     {
