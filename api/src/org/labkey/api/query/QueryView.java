@@ -1235,7 +1235,7 @@ public class QueryView extends WebPartView<Object>
         if (isShowConfiguredButtons())
         {
             // We first apply the button bar config from the table:
-            ButtonBarConfig tableBarConfig = getTable().getButtonBarConfig();
+            ButtonBarConfig tableBarConfig = getTable() == null ? null : getTable().getButtonBarConfig();
             if (tableBarConfig != null)
                 rgn.addButtonBarConfig(tableBarConfig);
             // Then any overriding button bar config (from javascript) is applied:

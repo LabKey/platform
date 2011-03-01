@@ -376,7 +376,11 @@ public class RenderContext extends BoundMap // extends ViewContext
         Set<String> selected = getAllSelected();
         SimpleFilter.FilterClause clause;
 
-        if (selectorColumns.size() == 1 || selected.isEmpty())
+        if (selected.isEmpty())
+        {
+            clause = new SimpleFilter.SQLClause("1 = 0", null);
+        }
+        else if (selectorColumns.size() == 1)
         {
             clause = new SimpleFilter.InClause(selectorColumns.get(0), selected, true);
         }

@@ -218,8 +218,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         buttonBar: false,
         maxRows: false,
         offset: false,
-        scope: false,
-        _customizeViewWin: false
+        scope: false
     },
 
     constructor : function(config)
@@ -278,6 +277,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         params[this.dataRegionName + ".queryName"] = this.queryName;
         if (this.viewName)
             params[this.dataRegionName + ".viewName"] = this.viewName;
+        if (this.reportId)
+            params[this.dataRegionName + ".reportId"] = this.reportId;
         if (this.containerFilter)
             params[this.dataRegionName + ".containerFilterName"] = this.containerFilter;
         if (this.maxRows)
