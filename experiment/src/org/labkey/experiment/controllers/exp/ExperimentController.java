@@ -1207,7 +1207,8 @@ public class ExperimentController extends SpringActionController
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
 
-            ActionURL viewDataURL = _data.findDataHandler().getContentURL(getContainer(), _data);
+            ExperimentDataHandler handler = _data.findDataHandler();
+            ActionURL viewDataURL = handler == null ? null : handler.getContentURL(getContainer(), _data);
             if (viewDataURL != null)
             {
                 bb.add(new ActionButton("View data", viewDataURL));
