@@ -2323,9 +2323,7 @@ function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, 
 }
 
 
-/**
- * If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.
- */
+// If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.
 function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singularConfirmText)
 {
     var checked = 0;
