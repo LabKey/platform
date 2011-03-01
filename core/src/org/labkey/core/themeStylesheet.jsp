@@ -173,31 +173,10 @@ div.labkey-button-bar, table.labkey-button-bar
     color: #<%= text %>;
 }
 
-.labkey-button-bar .labkey-disabled-button,
-.labkey-button-bar .labkey-disabled-button:visited,
-.labkey-button-bar .labkey-disabled-button:hover
-.labkey-menu-button .labkey-disabled-button,
-.labkey-menu-button .labkey-disabled-button:visited,
-.labkey-menu-button .labkey-disabled-button:hover
-.labkey-disabled-menu-button,
-.labkey-disabled-menu-button:visited,
-.labkey-disabled-menu-button:hover
-{
-    background-color: #<%= grid %>;
-    border: 1px solid #<%= grid %>;
-}
-
 /* this keeps the enabled button text blue */
 a.labkey-menu-button
 {
     color: #<%= link %>;
-}
-
-/* this keeps disabled button hover bg invisible and no hand cursor */
-.labkey-button-bar .labkey-disabled-button:hover
-{
-    border: 1px solid #<%= grid %>;
-    background-color: #<%= grid %>;
 }
 
 /* this keeps the hover state style for enabled buttons */
@@ -221,14 +200,6 @@ a.labkey-button:hover
 {
     background-color: #<%= second %>;
     color: #<%= text %>;
-}
-
-.labkey-disabled-button,
-.labkey-disabled-button:visited
-a.labkey-disabled-button
-{
-    border: 1px solid #<%= borderTitle %>;
-    background-color: #<%= second %>;
 }
 
 a.labkey-button:active

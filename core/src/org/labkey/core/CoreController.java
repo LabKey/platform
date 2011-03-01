@@ -849,6 +849,7 @@ public class CoreController extends SpringActionController
     public static class ExtContainerTreeForm
     {
         private int _node;
+        private boolean _move = false;
         private String _requiredPermission;
 
         public int getNode()
@@ -861,6 +862,16 @@ public class CoreController extends SpringActionController
             _node = node;
         }
 
+        public boolean getMove()
+        {
+            return _move;
+        }
+
+        public void setMove(boolean move)
+        {
+            _move = move;
+        }
+        
         public String getRequiredPermission()
         {
             return _requiredPermission;
@@ -876,10 +887,13 @@ public class CoreController extends SpringActionController
     public class GetExtContainerTreeAction extends ApiAction<ExtContainerTreeForm>
     {
         protected Class<? extends Permission> _reqPerm = ReadPermission.class;
+        protected boolean _move = false;
+        
         public ApiResponse execute(ExtContainerTreeForm form, BindException errors) throws Exception
         {
             User user = getViewContext().getUser();
             JSONArray children = new JSONArray();
+            _move = form.getMove();
 
             Container parent = ContainerManager.getForRowId(form.getNode());
             if (null != parent)
@@ -972,6 +986,49 @@ public class CoreController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetExtContainerAdminTreeAction extends GetExtContainerTreeAction
+    {
+        @Override
+        protected JSONObject getContainerProps(Container c)
+        {
+            JSONObject props = super.getContainerProps(c);
+            String text = PageFlowUtil.filter(c.getName());
+            if (c.equals(getViewContext().getContainer()))
+            {
+                props.put("cls", "x-tree-node-current");
+                if (_move)
+                    props.put("hidden", true);
+            }
+
+            if (ContainerManager.getHomeContainer().equals(c) || ContainerManager.getSharedContainer().equals(c) ||
+                    ContainerManager.getRoot().equals(c))
+            {
+                props.put("notModifiable", true);
+            }
+
+            //if the current container is an ancestor of the request container
+            //recurse into the children so that we can show the request container
+            if (getViewContext().getContainer().isDescendant(c))
+            {
+                JSONArray childrenProps = new JSONArray();
+                for (Container child : c.getChildren())
+                {
+                    if (!child.isWorkbook())
+                    {
+                        JSONObject childProps = getContainerProps(child);
+                        childProps.put("expanded", true);
+                        childrenProps.put(childProps);
+                    }
+                }
+                props.put("children", childrenProps);
+                props.put("expanded", true);
+            }
+
+            return props;
+        }
+    }
+    
     public static class MoveWorkbookForm
     {
         public int _workbookId = -1;

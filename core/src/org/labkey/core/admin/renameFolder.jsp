@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -36,7 +35,7 @@
     String errorHTML = formatMissedErrors("form");
 %>
 <form action="renameFolder.view" method="post">
-    <table class="labkey-data-region"><%
+    <table><%
         if (errorHTML.length() > 0)
         { %>
         <tr><td><%=errorHTML%></td></tr><%

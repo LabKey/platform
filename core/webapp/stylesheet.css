@@ -338,8 +338,8 @@ table.labkey-button-bar
     background-color: #E7EFF4;
     border: 1px solid #E7EFF4;
 
-    margin: 0.1em 0.8em 0.5em 0;
-    padding: 4px;
+    margin-right: 5px;
+    padding: 3px 5px;
     position: relative;
     vertical-align: middle;
     white-space: nowrap;
@@ -363,8 +363,8 @@ table.labkey-button-bar
 	background-color: #FFFFFF;
     border: 1px solid #676767;
 
-    margin: 0.1em 0.8em 0.5em 0;
-    padding: 4px;
+    margin-right: 5px;
+    padding: 3px 5px;
     position: relative;
     vertical-align: middle;
     white-space: nowrap;
@@ -374,38 +374,6 @@ table.labkey-button-bar
     border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-}
-
-.labkey-button-bar .labkey-disabled-button,
-.labkey-button-bar .labkey-disabled-button:visited,
-.labkey-button-bar .labkey-disabled-button:hover
-.labkey-menu-button .labkey-disabled-button,
-.labkey-menu-button .labkey-disabled-button:visited,
-.labkey-menu-button .labkey-disabled-button:hover
-.labkey-disabled-menu-button,
-.labkey-disabled-menu-button:visited,
-.labkey-disabled-menu-button:hover {
-    background-color: #E7EFF4;
-    border: 1px solid #E7EFF4;
-
-    margin: 0.1em 0.8em 0.5em 0;
-    padding: 4px;
-    position: relative;
-    vertical-align: middle;
-    white-space: nowrap;
-
-    color: #808080;
-    text-transform: uppercase;
-    font-size: 10px;
-    font-weight: bold;
-    font-family: Verdana, Arial, Helvetica, sans serif;
-    cursor: default;
-
-    line-height: 2.3em;
-    *line-height: 1.9em;
-    *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
-                    is required for IE to recognize its position attribute, which in
-                    turn enables relative positioning of our menu button arrow gif. */
 }
 
 /* this keeps the space between text and menu down arrows */
@@ -419,14 +387,6 @@ a.labkey-disabled-menu-button span
 a.labkey-menu-button
 {
     color: #126495;
-}
-
-/* this keeps disabled button hover bg invisible and no hand cursor */
-.labkey-button-bar .labkey-disabled-button:hover
-{
-    border: 1px solid #E7EFF4;
-    background-color: #E7EFF4;
-	cursor: default;
 }
 
 /* this keeps the hover state style for enabled buttons */
@@ -531,17 +491,19 @@ a.labkey-button:hover
 }
 
 .labkey-disabled-button,
-.labkey-disabled-button:visited
-a.labkey-disabled-button {
-    padding: 2px 5px;
-    border: 1px solid #676767;
-    margin-right: 5px;
-    background-color: #fff;
-    color: #808080;
+.labkey-disabled-button:visited,
+a.labkey-disabled-button,
+a.labkey-disabled-button:hover {
+    padding: 3px 5px;
+	margin-right: 5px;
+    border: 1px solid transparent;
+    color: #b4b4b4;
     text-transform: uppercase;
     font-size: 10px;
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
+    white-space: nowrap;
+    cursor: default;
 
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
@@ -550,6 +512,18 @@ a.labkey-disabled-button {
     /* *padding: 1px 5px 0px 5px; */
 	*padding: 3px 5px;
 	*margin-bottom: 2px;
+}
+
+.labkey-button-bar .labkey-disabled-button,
+.labkey-button-bar .labkey-disabled-button:visited,
+.labkey-button-bar .labkey-disabled-button:hover
+.labkey-menu-button .labkey-disabled-button,
+.labkey-menu-button .labkey-disabled-button:visited,
+.labkey-menu-button .labkey-disabled-button:hover
+.labkey-disabled-menu-button,
+.labkey-disabled-menu-button:visited,
+.labkey-disabled-menu-button:hover {
+    background: transparent;
 }
 
 a.labkey-button:active
