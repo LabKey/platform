@@ -61,7 +61,6 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
@@ -2845,32 +2844,25 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(UpgradeStatusForm form, BindException errors) throws Exception
         {
-            VBox vbox = new VBox();
-            vbox.addView(new ModuleStatusView());
             ModuleLoader loader = ModuleLoader.getInstance();
+            VBox vbox = new VBox();
 
             if (loader.isUpgradeRequired())
             {
-                vbox.addView(new UpgradeView());
+                vbox.addView(new UpgradeButtonView(Location.top));
+                vbox.addView(new ModuleStatusView());
+                vbox.addView(new UpgradeButtonView(Location.bottom));
             }
             else
             {
-                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-
-                if (AppProps.getInstance().getFileSystemRoot() == null)
-                {
-                    ActionURL url = new AdminUrlsImpl().getFilesSiteSettingsURL(true);
-                    vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", url) + PageFlowUtil.generateRedirectOnEnter(url)));
-                }
-                else
-                {
-                    ActionURL url = new AdminUrlsImpl().getCustomizeSiteURL(true);
-                    vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", url) + PageFlowUtil.generateRedirectOnEnter(url)));
-                }
+                ActionURL nextURL = AppProps.getInstance().getFileSystemRoot() == null ? new AdminUrlsImpl().getFilesSiteSettingsURL(true) : new AdminUrlsImpl().getCustomizeSiteURL(true);
+                vbox.addView(new HtmlView("<p>All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", nextURL) + "</p>"));
+                vbox.addView(new ModuleStatusView());
+                vbox.addView(new HtmlView("<p>All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", nextURL) + PageFlowUtil.generateRedirectOnEnter(nextURL) + "</p>"));
             }
 
             getPageConfig().setTemplate(Template.Dialog);
-            getPageConfig().setTitle((ModuleLoader.getInstance().isNewInstall() ? "Install" : "Upgrade") + " Status");
+            getPageConfig().setTitle((loader.isNewInstall() ? "Install" : "Upgrade") + " Status");
 
             return vbox;
         }
@@ -2952,8 +2944,33 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class UpgradeView extends HttpView
+    private static enum Location
     {
+        top("padding-top:3px;padding-bottom:10px;"),
+        bottom("padding-top:10px;");
+
+        private String _style;
+
+        private Location(String style)
+        {
+            _style = style;
+        }
+
+        private String getStyle()
+        {
+            return _style;
+        }
+    }
+
+    public static class UpgradeButtonView extends HttpView
+    {
+        private final Location _location;
+
+        public UpgradeButtonView(Location location)
+        {
+            _location = location;
+        }
+
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
@@ -2978,17 +2995,23 @@ public class AdminController extends SpringActionController
             // Upgrade is not started
             if (!loader.isUpgradeInProgress())
             {
-                out.write(PageFlowUtil.generateButton(action, continueURL));
-                out.write(PageFlowUtil.generateRedirectOnEnter(continueURL));
+                out.write("<div style='" + _location.getStyle() + "'>" + PageFlowUtil.generateButton(action, continueURL.toString()) + "</div>");
+
+                if (Location.bottom == _location)
+                    out.write(PageFlowUtil.generateRedirectOnEnter(continueURL));
             }
             //I'm already upgrading
             else
             {
-                out.write("<script type=\"text/javascript\">var timeout = window.setTimeout(\"doRefresh()\", 1000);" +
-                        "function doRefresh() {\n" +
-                        "   window.clearTimeout(timeout);\n" +
-                        "   window.location = '" + continueURL.getEncodedLocalURIString() + "';\n" +
-                        "}\n</script>");
+                if (Location.bottom == _location)
+                {
+                    out.write("<script type=\"text/javascript\">var timeout = window.setTimeout(\"doRefresh()\", 1000);" +
+                            "function doRefresh() {\n" +
+                            "   window.clearTimeout(timeout);\n" +
+                            "   window.location = '" + continueURL.getEncodedLocalURIString() + "';\n" +
+                            "}\n</script>");
+                }
+
                 out.write("<p>");
                 out.write(ing + "...");
                 out.write("<p>This page should refresh automatically. If the page does not refresh <a href=\"");
