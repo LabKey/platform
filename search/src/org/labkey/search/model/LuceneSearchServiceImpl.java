@@ -477,6 +477,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 // Corrupt Java file -- see SearchModule.class, which was hand-mangled
                 logAsWarning(r, "Can't parse this Java class file [" + rootMessage + "]");
             }
+            else if (topMessage.equals("TIKA-418: RuntimeException while getting content for thmx and xps file types"))
+            {
+                // Tika doesn't support .thmx or .xps file types
+                // Example: Extending LabKey.thmx
+                logAsWarning(r, "Can't parse this document type [" + rootMessage + "]");
+            }
             else
             {
                 logAsPreProcessingException(r, e);
