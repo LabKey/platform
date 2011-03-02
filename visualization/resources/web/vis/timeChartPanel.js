@@ -76,6 +76,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 listeners: {
                     scope: this,
                     'measureSelected': this.measureSelected,
+                    'dimensionSelected': function(hasDimension){
+                        this.editorChartsPanel.disableDimensionOption(hasDimension);
+                    },
                     'chartDefinitionChanged': function(requiresDataRefresh){
                         if(requiresDataRefresh){
                             this.getChartData();
@@ -302,6 +305,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.editorYAxisPanelVar.setRange(this.chartInfo.measures[yAxisMeasureIndex].axis.range.type);
         this.editorYAxisPanelVar.setScale(this.chartInfo.measures[yAxisMeasureIndex].axis.scale);
         this.editorChartsPanel.setChartLayout(this.chartInfo.chartLayout);
+        this.editorChartsPanel.disableDimensionOption((this.chartInfo.measures[yAxisMeasureIndex].dimension ? true : false));
         if(userSelectedMeasure){  // todo: do these need to be in the if statement?
             this.editorOverviewPanel.updateOverview(this.saveReportInfo);
             this.editorYAxisPanelVar.setLabel(measure.label);
@@ -429,10 +433,15 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 var yAxisSeries = seriesList[i];
                 var subject = this.chartInfo.subject.values[j];
 
+                var caption = subject;
+                if(this.chartInfo.measures[yAxisMeasureIndex].dimension || this.chartInfo.chartLayout != "single"){
+                    caption += " " + yAxisSeries;
+                }
+
                 series.push({
                     subject: subject,
                     yAxisSeries: yAxisSeries,
-                    caption: subject + " " + yAxisSeries,
+                    caption: caption,
                     data: this.chartSubjectData[subject][yAxisSeries],
                     xProperty:"interval",
                     yProperty: "dataValue",
