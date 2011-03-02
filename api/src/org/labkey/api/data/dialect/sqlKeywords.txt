@@ -1,6 +1,6 @@
 # A list of SQL keyword candidates -- all known and potential future keywords across all databases.  We use this for testing.
-# Sources include the old, hard-coded keyword lists in the dialects, the reserved word lists in the PostgreSQL, SQL Server,
-# and MySQL documentation, and the return values of DatabaseMetaData.getSqlKeywords() for every database we support.
+# Sources include the old, hard-coded keyword lists in the dialects, the reserved word lists in the PostgreSQL, MySQL, and
+# SQL Server documentation, and the return values of DatabaseMetaData.getSqlKeywords() for every database we support.
 a
 abort
 abs
@@ -345,6 +345,7 @@ identity_insert
 identitycol
 if
 ignore
+ignore_server_ids
 ilike
 immediate
 immutable
@@ -441,6 +442,7 @@ lower
 m
 map
 mapping
+master_heartbeat_period
 master_ssl_verify_server_cert
 match
 matched
@@ -651,6 +653,7 @@ require
 requiring
 reserved_pgs
 reset
+resignal
 respect
 restart
 restore
@@ -720,9 +723,11 @@ share
 shared
 show
 shutdown
+signal
 similar
 simple
 size
+slow
 smallint
 some
 source

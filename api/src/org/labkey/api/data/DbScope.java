@@ -747,6 +747,12 @@ public class DbScope
     }
 
 
+    public static boolean isLabKeyScope(DbScope scope)
+    {
+        return scope == getLabkeyScope();
+    }
+
+
     public static DbScope getDbScope(String dsName)
     {
         synchronized (_scopes)
