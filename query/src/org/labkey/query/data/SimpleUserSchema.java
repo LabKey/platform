@@ -144,9 +144,11 @@ public class SimpleUserSchema extends UserSchema
                 wrap.setReadOnly(col.isReadOnly());
 
                 final String colName = col.getName();
-                if (colName.equalsIgnoreCase("owner") ||
-                        colName.equalsIgnoreCase("createdby") ||
-                        colName.equalsIgnoreCase("modifiedby"))
+
+                // Add an FK to the Users table for special fields... but ONLY if for type integer and in the LabKey data source.  #11660
+                if (JdbcType.INTEGER == col.getJdbcType() &&
+                   (colName.equalsIgnoreCase("owner") || colName.equalsIgnoreCase("createdby") || colName.equalsIgnoreCase("modifiedby")) &&
+                   (DbScope.isLabKeyScope(_userSchema.getDbSchema().getScope())))
                 {
                     wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
                 }
