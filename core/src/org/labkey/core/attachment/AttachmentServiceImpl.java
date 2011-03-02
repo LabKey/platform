@@ -314,8 +314,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
     @Override
-    public synchronized void addAttachments(AttachmentParent parent, List<AttachmentFile> files, User user) throws IOException
+    public synchronized void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException
     {
+        if (null == user)
+            throw new IllegalArgumentException("Cannot add attachments for the null user");
+
         try
         {
             if (null == files || files.isEmpty())
@@ -351,8 +354,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 hm.put("Container", parent.getContainerId());
                 Table.insert(user, coreTables().getTableInfoDocuments(), hm);
 
-                if (null != user)
-                    addAuditEvent(user, parent, file.getFilename(), "The attachment " + file.getFilename() + " was added");
+                addAuditEvent(user, parent, file.getFilename(), "The attachment " + file.getFilename() + " was added");
             }
 
             AttachmentCache.removeAttachments(parent);
