@@ -610,15 +610,20 @@ public class Query
     void mergeParameters(Query fromQuery)
     {
         CaseInsensitiveHashMap<QParameter> map = new CaseInsensitiveHashMap<QParameter>();
+        if (null == _parameters)
+            _parameters = new ArrayList<QParameter>();
         for (QParameter p : _parameters)
             map.put(p.getName(),p);
-        for (QParameter p : fromQuery._parameters)
+        if (null != fromQuery._parameters)
         {
-            QParameter to = map.get(p.getName());
-            if (null == to)
-                _parameters.add(p);
-            else if (to.getType() != p.getType())
-                parseError(_parseErrors, "Parameter is declared with different types: " + p.getName(), to);
+            for (QParameter p : fromQuery._parameters)
+            {
+                QParameter to = map.get(p.getName());
+                if (null == to)
+                    _parameters.add(p);
+                else if (to.getType() != p.getType())
+                    parseError(_parseErrors, "Parameter is declared with different types: " + p.getName(), to);
+            }
         }
     }
 
@@ -1034,7 +1039,7 @@ public class Query
             S.save(user);
             S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
 
-            if (0==1)
+            if (1==1)
             {
                 try{
                     ListDefinition RHOME = s.createList(ContainerManager.getForPath("/home"), "R");

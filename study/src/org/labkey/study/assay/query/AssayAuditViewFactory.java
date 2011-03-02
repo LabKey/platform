@@ -26,6 +26,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
@@ -204,7 +205,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
         public PublishDetailsColumn(Map<String, ColumnInfo> columns, ColumnInfo containerId)
         {
-            super(null);
+            super((StringExpression)null);
 
             _columns = columns;
             _containerId = containerId;
