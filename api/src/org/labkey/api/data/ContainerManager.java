@@ -1312,8 +1312,6 @@ public class ContainerManager
 
     private static void _removeFromCache(Container c)
     {
-        LOG.info("Removing " + c.getPath() + " from the cache");
-
         Container project = c.getProject();
         Container parent = c.getParent();
 
@@ -1881,9 +1879,7 @@ public class ContainerManager
             assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
 
             FolderType randomType = getRandomFolderType();
-            LOG.info("Setting folder type to " + randomType);
             newFolder.setFolderType(randomType);
-            LOG.info("Done setting folder type to " + randomType);
 
             newFolderFromCache = getForId(newFolder.getId());
             assertEquals(newFolderFromCache.getFolderType(), randomType);

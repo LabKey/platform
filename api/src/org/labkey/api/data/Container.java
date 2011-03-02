@@ -631,7 +631,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (folderType.equals(oldType))
             return;
 
-        _log.info("Setting folder type of " + System.identityHashCode(this) + " to " + folderType.getName());
         oldType.unconfigureContainer(this);
         folderType.configureContainer(this);
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), FOLDER_TYPE_PROPERTY_SET_NAME, true);

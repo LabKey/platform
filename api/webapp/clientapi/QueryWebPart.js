@@ -40,8 +40,9 @@
  * @param {String} config.queryName The name of the query within the schema the web part will select and display.
  * @param {String} [config.viewName] the name of a saved view you wish to display for the given schema and query name.
  * @param {String} [config.reportId] the report id of a saved report you wish to display for the given schema and query name.
- * @param {String} [config.renderTo] The id of the element inside of which the part should be rendered. This is typically a &lt;div&gt;.
+ * @param {Mixed} [config.renderTo] The element id, DOM element, or Ext element inside of which the part should be rendered. This is typically a &lt;div&gt;.
  * If not supplied in the configuration, you must call the render() method to render the part into the page.
+ * @param {Mixed} [config.maskEl] An optional element id, DOM element, or Ext element that should be masked while the part is rendered. (default renderTo).
  * @param {String} [config.title] An optional title for the web part. If not supplied, the query name will be used as the title.
  * @param {String} [config.titleHref] If supplied, the title will be rendered as a hyperlink with this value as the href attribute.
  * @param {String} [config.buttonBarPosition] DEPRECATED--see config.buttonBar.position
@@ -119,7 +120,12 @@
  * <li><b>dataRegion:</b> the LABKEY.DataRegion object representing the rendered QueryWebPart</li>
  * <li><b>request:</b> the XMLHTTPRequest that was issued to the server</li>
  * </ul>
- * @param {Function} [config.failure] An optional function to call if the request to retrieve the content fails.
+ * @param {Function} [config.failure] An optional function to call if the request to retrieve the content fails. It will be passed three arguments:
+ * <ul>
+ * <li><b>json:</b> JSON object containing the exception.</li>
+ * <li><b>response:</b> The XMLHttpRequest object containing the response data.</li>
+ * <li><b>options:</b> The parameter to the request call.</li>
+ * </ul>
  * @param {Object} [config.scope] An object to use as the callback function's scope. Defaults to this.
  * @param {int} [config.timeout] A timeout for the AJAX call, in milliseconds. Default is 30000 (30 seconds).
  * @param {String} [config.containerPath] The container path in which the schema and query name are defined. If not supplied, the current container path will be used.
@@ -383,13 +389,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
 
         var timerId = function () {
             timerId = 0;
-            var el = Ext.fly(this.renderTo);
-            if (el)
-            {
-                if (el.getWidth() == 0 || el.getHeight() == 0)
-                    el.update("<p>&nbsp;</p>");
-                el.mask("Loading...");
-            }
+            this.mask("Loading...");
         }.defer(500, this);
 
         Ext.Ajax.request({
@@ -402,31 +402,38 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 var targetElem = Ext.get(this.renderTo);
                 if (targetElem)
                 {
-                    targetElem.unmask();
+                    this.unmask();
                     targetElem.update(response.responseText, true); //execute scripts
 
                     //get the data region and subscribe to events
                     Ext.onReady(function(){
                         var dr = LABKEY.DataRegions[this.dataRegionName];
-                        if (!dr)
-                            throw "Couldn't get dataregion '" + this.dataRegionName + "' object.";
 
-                        dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
-                        dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
-                        dr.on("beforesortchange", this.beforeSortChange, this);
-                        dr.on("beforeclearsort", this.beforeClearSort, this);
-                        dr.on("beforefilterchange", this.beforeFilterChange, this);
-                        dr.on("beforeclearfilter", this.beforeClearFilter, this);
-                        dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
-                        dr.on("beforechangeview", this.beforeChangeView, this);
-                        dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
-                        dr.on("buttonclick", this.onButtonClick, this);
+                        if (dr)
+                        {
+                            dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
+                            dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
+                            dr.on("beforesortchange", this.beforeSortChange, this);
+                            dr.on("beforeclearsort", this.beforeClearSort, this);
+                            dr.on("beforefilterchange", this.beforeFilterChange, this);
+                            dr.on("beforeclearfilter", this.beforeClearFilter, this);
+                            dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
+                            dr.on("beforechangeview", this.beforeChangeView, this);
+                            dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
+                            dr.on("buttonclick", this.onButtonClick, this);
 
-                        if (customizeViewVisible)
-                            dr.showCustomizeView(null, false, false);
+                            if (customizeViewVisible)
+                                dr.showCustomizeView(null, false, false);
 
-                        if (this._success) //11425 : Make callback consistent with documentation
-                            Ext.onReady(function(){this._success.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()
+                            if (this._success) //11425 : Make callback consistent with documentation
+                                Ext.onReady(function(){this._success.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()
+                        }
+                        else
+                        {
+                            // We've failed to get the data region (could be bad query params) and have probably displayed
+                            // error message.  Should failure be called?  Or should we add a new failure/success callback pair
+                            // for the webpart itself (as opposed to the webpart's contents)?
+                        }
                     }, this, {delay: 100});
 
                     this.fireEvent("render");
@@ -443,7 +450,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 var targetElem = Ext.get(this.renderTo);
                 if (targetElem)
                 {
-                    targetElem.unmask();
+                    this.unmask();
                     targetElem.update("<div class='labkey-error'>" + Ext.util.Format.htmlEncode(json.exception) + "</div>");
                     if (this._failure)
                         this._failure.call(this.scope || this, json, response, options);
@@ -458,6 +465,22 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             jsonData: json,
             scope: this
         });
+    },
+
+    mask : function(message) {
+        var el = Ext.get(this.maskEl || this.renderTo);
+        if (el)
+        {
+            if (el.getWidth() == 0 || el.getHeight() == 0)
+                el.update("<p>&nbsp;</p>");
+            el.mask(message);
+        }
+    },
+
+    unmask : function() {
+        var el = Ext.get(this.maskEl || this.renderTo);
+        if (el)
+            el.unmask();
     },
 
     processButtonBar : function() {

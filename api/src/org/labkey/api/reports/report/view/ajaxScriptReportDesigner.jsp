@@ -79,7 +79,8 @@ var f_scope<%=uid%> = new (function() {
     var dataDivExtElement = null;
     var tabsDivExtElement;
     var baseViewURL = <%=q(viewURL.toString())%>;
-    var qwpFirstLoad = true;
+    var dataFirstLoad = true;
+    var dataRegion = null;
 
     Ext.onReady(function(){
         scriptText = document.getElementById("<%=scriptId%>");
@@ -162,8 +163,7 @@ var f_scope<%=uid%> = new (function() {
     // CONSIDER: AJAX post the form and track dirty on the form, data filters, data sorts, etc.
     function getViewURL()
     {
-        var dr = LABKEY.DataRegions[<%=q(dataTabRegionName)%>];
-        var url = dr ? addFilterAndSort(baseViewURL, dr) : baseViewURL;
+        var url = dataRegion ? addFilterAndSort(baseViewURL, dataRegion) : baseViewURL;
 
         url = addIncludeScripts(url);
         url = addRunInBackground(url);
@@ -234,7 +234,6 @@ var f_scope<%=uid%> = new (function() {
         if (null == dataDivExtElement)
         {
             dataDivExtElement = Ext.get('dataDiv<%=uid%>');
-            tabsDivExtElement.mask("Loading data grid...", "x-mask-loading");
 
             new LABKEY.QueryWebPart({
                 schemaName: <%=q(bean.getSchemaName())%>,
@@ -251,28 +250,32 @@ var f_scope<%=uid%> = new (function() {
                 showDetailsColumn: false,
                 showUpdateColumn: false,
                 renderTo: dataDivExtElement,
+                maskEl: tabsDivExtElement,
                 success: dataSuccess,
-                failure: dataFailure});
+                failure: dataFailure
+            });
         }
     }
 
-    function dataSuccess()
+    function dataSuccess(dr)
     {
-        tabsDivExtElement.unmask();
-
         // On first load of the QWP, initialize the "previous view URL" to match the current dataregion state.  This
         // prevents an unnecessary refresh of the report in scenarios like "Source" -> "View" -> "Data" -> "View".
-        if (qwpFirstLoad)
+        if (dataFirstLoad)
         {
-            previousViewURL = getViewURL();
-            qwpFirstLoad = false;
+            dataFirstLoad = false;
+
+            if (dr)
+            {
+                previousViewURL = getViewURL();
+                dataRegion = dr;
+            }
         }
     }
 
     function dataFailure()
     {
         dataDivExtElement.update("Failed to retrieve data grid.");
-        tabsDivExtElement.unmask();
         dataDivExtElement = null;  // Request the data grid again next time
     }
 
