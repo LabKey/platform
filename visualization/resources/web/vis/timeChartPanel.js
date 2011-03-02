@@ -56,6 +56,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         if(this.viewInfo.type == "line") {
             this.editorOverviewPanel = new LABKEY.vis.ChartEditorOverviewPanel({
+                reportInfo: this.saveReportInfo,
                 listeners: {
                     scope: this,
                     'initialMeasureSelected': function(initMeasure) {
@@ -219,7 +220,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         activeTab: 0,
                         padding: 5,
                         enablePanelScroll: true,
-                        items: [this.subjectSelector],
+                        items: [this.subjectSelector]
                     })
                 ],
                 tbar: {
@@ -301,8 +302,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.editorYAxisPanelVar.setRange(this.chartInfo.measures[yAxisMeasureIndex].axis.range.type);
         this.editorYAxisPanelVar.setScale(this.chartInfo.measures[yAxisMeasureIndex].axis.scale);
         this.editorChartsPanel.setChartLayout(this.chartInfo.chartLayout);
-        this.editorOverviewPanel.updateOverview(this.saveReportInfo);
         if(userSelectedMeasure){  // todo: do these need to be in the if statement?
+            this.editorOverviewPanel.updateOverview(this.saveReportInfo);
             this.editorYAxisPanelVar.setLabel(measure.label);
             this.editorChartsPanel.setMainTitle(measure.queryName);
         }
@@ -698,20 +699,30 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         LABKEY.Visualization.get({
             name: config.reportName,
             success: function(result, request, options){
-                // a report by that name already exists within the container, ask user if they would like to replace
-                Ext.Msg.show({
-                    title:'Warning',
-                    msg: 'A report by the name \'' + config.reportName + '\' already exists within this container. Would you like to replace it?',
-                    buttons: Ext.Msg.YESNO,
-                    fn: function(btnId, text, opt){
-                        if(btnId == 'yes'){
-                            config.replace = true;
-                            this.executeSaveChart(config);
-                        }
-                    },
-                    icon: Ext.MessageBox.WARNING,
-                    scope: this
-                });
+                // a report by that name already exists within the container, if the user can update, ask if they would like to replace
+                if(LABKEY.Security.currentUser.canUpdate){
+                    Ext.Msg.show({
+                        title:'Warning',
+                        msg: 'A report by the name \'' + config.reportName + '\' already exists within this container. Would you like to replace it?',
+                        buttons: Ext.Msg.YESNO,
+                        fn: function(btnId, text, opt){
+                            if(btnId == 'yes'){
+                                config.replace = true;
+                                this.executeSaveChart(config);
+                            }
+                        },
+                        icon: Ext.MessageBox.WARNING,
+                        scope: this
+                    });
+                }
+                else{
+                    Ext.Msg.show({
+                        title:'Error',
+                        msg: 'A report by the name \'' + config.reportName + '\' already exists within this container.',
+                        buttons: Ext.Msg.OK,
+                        icon: Ext.MessageBox.ERROR
+                    });
+                }
             },
             failure: function(errorInfo, response){
                 // no report exists with that name

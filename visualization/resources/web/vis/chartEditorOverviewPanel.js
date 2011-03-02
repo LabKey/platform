@@ -7,18 +7,15 @@ Ext.namespace("LABKEY.vis");
 
 Ext.QuickTips.init();
 
-LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
+LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
     constructor : function(config){
         Ext.applyIf(config, {
             title: 'Overview',
-            autoHeight: true,
-            autoWidth: true,
+            layout: 'card',
             bodyStyle: 'padding:5px',
-            border: false,
-            buttonAlign: 'left',
+            autoScroll: true,
             monitorValid: true,
-            items: [],
-            buttons: []
+            items: []
         });
 
         this.addEvents(
@@ -30,7 +27,17 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
     },
 
     initComponent : function() {
-        this.items = [new Ext.Panel({
+        var items = [];
+
+        var chartEditorDescription = 'A time chart allows you to view data for a selected measure over time.<br/>'
+                    + 'The wizard options provided allow you to:<br/>'
+                    + '- edit chart title, axis label, axis scale, etc.<br/>'
+                    + '- view data grid or export chart to a PDF<br/>'
+                    + '- show/hide series<br/>'
+                    + '- more...';
+
+        // first item in card layout: intial choose measure panel when not showing saved report
+        items.push(new Ext.Panel({
             title: '',
             autoHeight: true,
             autoWidth: true,
@@ -47,7 +54,149 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
                 handler: this.showMeasureSelectionWindow,
                 scope: this
             }]
-        })];
+        }));
+
+        // second item in the card layout: panel for users without insert perms (shows description and report name/description if available)
+        var displayItems = [];
+        this.nameDisplayField = new Ext.form.DisplayField({
+            fieldLabel: 'Report Name',
+            value: (typeof this.reportInfo == 'object' ? this.reportInfo.name : null),
+            border: false
+        });
+
+        this.descDisplayField = new Ext.form.DisplayField({
+            fieldLabel: 'Report Description',
+            value: (typeof this.reportInfo == 'object' ? this.reportInfo.description : null),
+            border: false
+        });
+
+        // only add the display fields to the panel if they have something to show
+        if(typeof this.reportInfo == 'object'){
+            displayItems.push(this.nameDisplayField);
+            displayItems.push(this.descDisplayField);
+        }
+
+        items.push({
+            layout: 'column',
+            title: '',
+            autoHeight: true,
+            autoWidth: true,
+            border: false,
+            items: [{
+                columnWidth: .6,
+                border: false,
+                bodyStyle: 'padding: 5px 20px 5px 5px',
+                html: chartEditorDescription
+            },{
+                columnWidth: .4,
+                layout: 'form',
+                border: false,
+                bodyStyle: 'padding: 5px',
+                labelWidth: 125,
+                items: displayItems
+            }]
+        });
+
+        // third item in the card layout: panel for users with insert permissions (shows desription and report name/description input fields)
+        this.saveBtn = new Ext.Button({
+            text: "Save",
+            hidden: (typeof this.reportInfo == 'object' && !LABKEY.Security.currentUser.canUpdate ? true : false), // hide if user can't update a saved report
+            handler: function() {
+                var formVals = this.saveChartFormPanel.getForm().getValues();
+
+                // report name is required for saving
+                if(!formVals.reportName){
+                   Ext.Msg.show({
+                        title: "Error",
+                        msg: "Name must be specified when saving a report.",
+                        buttons: Ext.MessageBox.OK,
+                        icon: Ext.MessageBox.ERROR
+                   });
+                   return;
+                }
+
+                // the save button will not allow for replace if this is a new chart,
+                // but will force replace if this is a change to a saved chart
+                this.fireEvent('saveChart', 'Save', (typeof this.reportInfo == "object" ? true : false), formVals.reportName, formVals.reportDescription);
+            },
+            scope: this,
+            formBind: true
+        });
+
+        // save as button, initially hidden if not rendering a saved chart
+        this.saveAsBtn = new Ext.Button({
+            text: "Save As",
+            hidden: (typeof this.reportInfo == 'object' ? false : true),
+            handler: function() {
+                var formVals = this.saveChartFormPanel.getForm().getValues();
+
+                // the save as button does not allow for replace initially
+                this.fireEvent('saveChart', 'Save As', false, formVals.reportName, formVals.reportDescription);
+            },
+            scope: this,
+            formBind: true
+        });
+
+        this.saveChartFormPanel = new Ext.FormPanel({
+            title: '',
+            autoHeight: true,
+            autoWidth: true,
+            buttonAlign: 'right',
+            border: false,
+            labelWidth: 125,
+            items: [
+                new Ext.form.TextField({
+                    name: 'reportName',
+                    fieldLabel: 'Report Name',
+                    readOnly: (typeof this.reportInfo == "object" ? true : false), // disabled for saved report
+                    value: (typeof this.reportInfo == "object" ? this.reportInfo.name : null),
+                    allowBlank: false,
+                    preventMark: true,
+                    anchor: '100%'
+                }),
+                new Ext.form.TextArea({
+                    name: 'reportDescription',
+                    fieldLabel: 'Report Description',
+                    value: (typeof this.reportInfo == "object" ? this.reportInfo.description : null),
+                    allowBlank: true,
+                    anchor: '100%'
+                })
+            ],
+            buttons: [
+                this.saveBtn,
+                this.saveAsBtn
+            ]
+        });
+
+        items.push({
+            layout: 'column',
+            title: '',
+            autoHeight: true,
+            autoWidth: true,
+            border: false,
+            items: [{
+                columnWidth: 0.6,
+                border: false,
+                bodyStyle: 'padding: 5px 20px 5px 5px',
+                html: chartEditorDescription
+            },{
+                columnWidth: 0.4,
+                layout: 'form',
+                border: false,
+                bodyStyle: 'padding: 5px',
+                items: [this.saveChartFormPanel]
+            }]
+        });
+
+        this.items = items;
+
+        // determine the initial active item to set for this chart layout
+        var active = 0;
+        // if showing saved report and user can insert, show input fields; else, show displayfields
+        if(typeof this.reportInfo == 'object'){
+            active = (LABKEY.Security.currentUser.canInsert ? 2 : 1);
+        }
+        this.activeItem = active;
 
         this.on('activate', function(){
            this.doLayout();
@@ -66,7 +215,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
             height:550,
             modal: true,
             closeAction:'hide',
-            items: new LABKEY.vis.MeasuresPanel({
+            items: [new LABKEY.vis.MeasuresPanel({
                 axis: [{
                     multiSelect: false,
                     name: "y-axis",
@@ -81,7 +230,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
                         Ext.getCmp('measure-selection-button').setDisabled(false);
                     }
                 }
-            }),
+            })],
             buttons: [{
                 id: 'measure-selection-button',
                 text:'Select',
@@ -108,83 +257,25 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.FormPanel, {
     updateOverview: function(reportInfo){
         this.reportInfo = reportInfo;
 
-        // remove all of the items and buttons from the form
-        this.removeAll();
+        // update the name/description field values accordingly
+        if(typeof this.reportInfo == 'object'){
+            this.saveChartFormPanel.getComponent(0).setValue(this.reportInfo.name);
+            this.saveChartFormPanel.getComponent(0).setReadOnly(true); // disabled for saved report
+            this.saveChartFormPanel.getComponent(1).setValue(this.reportInfo.description);
 
-        this.items.add(
-            new Ext.form.TextField({
-                name: 'reportName',
-                fieldLabel: 'Name',
-                readOnly: (typeof this.reportInfo == "object" ? true : false), // disabled for saved report
-                value: (typeof this.reportInfo == "object" ? this.reportInfo.name : null),
-                allowBlank: false,
-                preventMark: true,
-                anchor: '60%'
-            })
-        );
-
-        this.items.add(
-            new Ext.form.TextArea({
-                name: 'reportDescription',
-                fieldLabel: 'Description',
-                value: (typeof this.reportInfo == "object" ? this.reportInfo.description : null),
-                allowBlank: true,
-                anchor: '60%'
-            })
-        );
-
-        // check to see if the save buttons need to be added
-        if(this.buttons.length == 0){
-            this.addSaveButtons();
-        }
-        // if they are already added, we may need to show the Save As button if we now have a saved chart
-        else if(typeof this.reportInfo == 'object'){
-            this.saveAsBtn.show();
+            // if the user can update, show save button (which is now for replacing the saved report)
+            (LABKEY.Security.currentUser.canUpdate ? this.saveBtn.show() : this.saveBtn.hide());
+            // if the user can insert, show them the save as button
+            (LABKEY.Security.currentUser.canInsert ? this.saveAsBtn.show() : this.saveAsBtn.hide());
         }
 
-        this.doLayout();
-    },
-
-    addSaveButtons: function(){
-        this.saveBtn = new Ext.Button({
-            text: "Save",
-            handler: function() {
-                var formVals = this.getForm().getValues();
-
-                // report name is required for saving
-                if(!formVals.reportName){
-                   Ext.Msg.show({
-                        title: "Error",
-                        msg: "Name must be specified when saving a report.",
-                        buttons: Ext.MessageBox.OK,
-                        icon: Ext.MessageBox.ERROR
-                   });
-                   return;
-                }
-
-                // the save button will not allow for replace if this is a new chart,
-                // but will force replace if this is a change to a saved chart
-                this.fireEvent('saveChart', 'Save', (typeof this.reportInfo == "object" ? true : false), formVals.reportName, formVals.reportDescription);
-            },
-            scope: this,
-            formBind: true
-        });
-        this.addButton(this.saveBtn);
-
-        // add save as button, initially hidden if not rendering a saved chart
-        this.saveAsBtn = new Ext.Button({
-            text: "Save As",
-            hidden: (typeof this.reportInfo == 'object' ? false : true),
-            handler: function() {
-                var formVals = this.getForm().getValues();
-
-                // the save as button does not allow for replace initially
-                this.fireEvent('saveChart', 'Save As', false, formVals.reportName, formVals.reportDescription);
-            },
-            scope: this,
-            formBind: true
-        });
-        this.addButton(this.saveAsBtn);
+        // change the active card layout item
+        if(LABKEY.Security.currentUser.canInsert){
+            this.getLayout().setActiveItem(2);
+        }
+        else{
+            this.getLayout().setActiveItem(1);
+        }
 
         this.doLayout();
     }

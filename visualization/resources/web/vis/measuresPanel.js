@@ -43,7 +43,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                         queryName: this.selectedMeasure.queryName})];
             }
             this.measuresStore.load({params:{filters: filter, dateMeasures: this.isDateAxis}});
-            //this.info.panel.getEl().mask("loading type data...", "x-mask-loading");
+            this.getEl().mask("loading measures...", "x-mask-loading");
         }, this);
 
         LABKEY.vis.MeasuresPanel.superclass.initComponent.call(this);
@@ -68,11 +68,11 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             }
         });
         this.measuresStore.on('load', function(){
-            //this.info.panel.getEl().unmask();
+            this.getEl().unmask();
         }, this);
         this.measuresStore.on('exception', function(proxy, type, action, options, resp){
             LABKEY.Utils.displayAjaxErrorResponse(resp, options);
-            //this.info.panel.getEl().unmask();
+            this.getEl().unmask();
         }, this);
 
         var items = [];
