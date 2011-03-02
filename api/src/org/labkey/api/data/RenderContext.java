@@ -217,8 +217,12 @@ public class RenderContext extends BoundMap // extends ViewContext
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
     {
         Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new LinkedHashSet<ColumnInfo>());
+        LinkedHashSet<FieldKey> keys = new LinkedHashSet<FieldKey>();
+
         if (null == displayColumns || displayColumns.size() == 0)
+        {
             ret.addAll(tinfo.getColumns());
+        }
         else
         {
             for (DisplayColumn displayColumn : displayColumns)
@@ -230,26 +234,28 @@ public class RenderContext extends BoundMap // extends ViewContext
             }
 
             // add any additional columns specified by FieldKey
-            LinkedHashSet<FieldKey> keys = new LinkedHashSet<FieldKey>();
             for (DisplayColumn dc : displayColumns)
                 dc.addQueryFieldKeys(keys);
+        }
 
-            Collection<ColumnInfo> infoCollection = QueryService.get().getColumns(tinfo, keys, ret).values();
-            ret.addAll(infoCollection);
+        Set<FieldKey> detailsUrlKeys = tinfo.getDetailsURLKeys();
+        keys.addAll(detailsUrlKeys);
 
-            List<ColumnInfo> pkColumns = tinfo.getPkColumns();
-            if (null != pkColumns)
-            {
-                //always need to select pks
-                ret.addAll(pkColumns);
-            }
+        Collection<ColumnInfo> infoCollection = QueryService.get().getColumns(tinfo, keys, ret).values();
+        ret.addAll(infoCollection);
 
-            String versionCol = tinfo.getVersionColumnName();
-            if (null != versionCol)
-            {
-                ColumnInfo col = tinfo.getColumn(versionCol);
-                ret.add(col);
-            }
+        List<ColumnInfo> pkColumns = tinfo.getPkColumns();
+        if (null != pkColumns)
+        {
+            //always need to select pks
+            ret.addAll(pkColumns);
+        }
+
+        String versionCol = tinfo.getVersionColumnName();
+        if (null != versionCol)
+        {
+            ColumnInfo col = tinfo.getColumn(versionCol);
+            ret.add(col);
         }
 
         return new ArrayList<ColumnInfo>(ret);

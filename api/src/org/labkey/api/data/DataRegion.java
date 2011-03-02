@@ -818,6 +818,15 @@ public class DataRegion extends DisplayElement
             int colCount = 0;
             for (DisplayColumn col : renderers)
             {
+                // check that detail columns have valid urls
+                if (col instanceof DetailsColumn)
+                {
+                    DetailsColumn details = (DetailsColumn)col;
+                    Set<FieldKey> fieldKeys = ctx.getFieldMap().keySet();
+                    Container c = ctx.getContainer();
+                    if (!details.isValid(fieldKeys, c))
+                        details.setVisible(false);
+                }
                 if (col.isVisible(ctx))
                     colCount++;
             }

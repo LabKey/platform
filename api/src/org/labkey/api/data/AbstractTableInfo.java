@@ -67,6 +67,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -446,6 +447,20 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     public void addDetailsURL(DetailsURL detailsURL)
     {
         _detailsURLs.add(detailsURL);
+    }
+
+    @Override
+    public boolean hasDetailsURL()
+    {
+        return !_detailsURLs.isEmpty();
+    }
+
+    public Set<FieldKey> getDetailsURLKeys()
+    {
+        HashSet<FieldKey> set = new HashSet<FieldKey>();
+        for (DetailsURL dUrl : _detailsURLs)
+            set.addAll(dUrl.getFieldKeys());
+        return set;
     }
 
     public void setGridURL(DetailsURL gridURL)

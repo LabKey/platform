@@ -25,6 +25,7 @@ import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -130,6 +131,23 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     {
         StringExpression expr = super.getDetailsURL(columns, container);
         return expr != null ? expr : getRealTable().getDetailsURL(columns, container);
+    }
+
+    @Override
+    public boolean hasDetailsURL()
+    {
+        return super.hasDetailsURL() || getRealTable().hasDetailsURL();
+    }
+
+    @Override
+    public Set<FieldKey> getDetailsURLKeys()
+    {
+        HashSet<FieldKey> ret = new HashSet<FieldKey>();
+        Set<FieldKey> superKeys = super.getDetailsURLKeys();
+        Set<FieldKey> realKeys = getRealTable().getDetailsURLKeys();
+        ret.addAll(superKeys);
+        ret.addAll(realKeys);
+        return ret;
     }
 
     private String filterName(ColumnInfo c)

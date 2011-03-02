@@ -770,7 +770,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         }
         return null;
     }
-    
+
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
         if (_detailsURL != null && _detailsURL.validateFieldKeys(columns))
@@ -779,6 +779,21 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         }
         return null;
     }
+
+    @Override
+    public boolean hasDetailsURL()
+    {
+        return _detailsURL != null;
+    }
+
+    public Set<FieldKey> getDetailsURLKeys()
+    {
+        HashSet<FieldKey> set = new HashSet<FieldKey>();
+        if (null != _detailsURL)
+            set.addAll(_detailsURL.getFieldKeys());
+        return set;
+    }
+
 
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {

@@ -16,7 +16,10 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
+
+import java.util.Set;
 
 public class DetailsColumn extends UrlColumn
 {
@@ -25,6 +28,31 @@ public class DetailsColumn extends UrlColumn
         super(urlExpression, "details");
         setGridHeaderClass("");
         addDisplayClass("labkey-details");
+    }
+
+    TableInfo tinfo;
+
+    public DetailsColumn(TableInfo table)
+    {
+        this((StringExpression)null);
+        tinfo = table;
+    }
+
+    public boolean isValid(Set<FieldKey> keys, Container c)
+
+    {
+        if (null != getURLExpression())
+            return true;
+        if (null != tinfo)
+        {
+            StringExpression se = tinfo.getDetailsURL(keys, c);
+            if (null != se)
+            {
+                setURLExpression(se);
+                return true;
+            }
+        }
+        return false;
     }
 }
 

@@ -1735,13 +1735,20 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table == null)
             return Collections.emptyList();
-        if (_showDetailsColumn && !isPrintView() && !isExportView())
+        if (_showDetailsColumn && !isPrintView() && !isExportView() && table.hasDetailsURL())
         {
             StringExpression urlDetails = table.getDetailsURL(Table.createFieldKeyMap(table).keySet(), getContainer());
 
             if (urlDetails != null)
             {
                 ret.add(new DetailsColumn(urlDetails));
+            }
+            else
+            {
+                // We resolve lookups later.  Assume this will table will have a valid details url.
+                // this is messy because for most columns we just omit the link if the url is not valid
+                // for details url we want to be sure to omit the column in the grid altogether
+                ret.add(new DetailsColumn(table));
             }
         }
 

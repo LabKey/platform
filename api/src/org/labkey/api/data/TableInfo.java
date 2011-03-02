@@ -163,6 +163,8 @@ public interface TableInfo
      * actually be represented by the "ProtocolLSID" column from the ProtocolApplication table).
      */
     StringExpression getDetailsURL(Set<FieldKey> columns, Container container);
+    boolean hasDetailsURL();
+    public Set<FieldKey> getDetailsURLKeys();
 
     boolean hasPermission(User user, Class<? extends Permission> perm);
 
