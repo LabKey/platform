@@ -975,10 +975,14 @@ public enum CompareType
         {
             ColumnInfo colInfo = columnMap.get(_colName);
             assert getParamVals().length == 1;
-            if (isUrlClause() && convertParamValue(colInfo, getParamVals()[0]) == null)
+            if (isUrlClause())
             {
-                // Flip to treat this as an IS NULL comparison request
-                return ISBLANK.createFilterClause(_colName, null).toSQLFragment(columnMap, dialect);
+                Object value = convertParamValue(colInfo, getParamVals()[0]);
+                if (null == value || (value instanceof String && ((String)value).length() == 0))
+                {
+                    // Flip to treat this as an IS NULL comparison request
+                    return ISBLANK.createFilterClause(_colName, null).toSQLFragment(columnMap, dialect);
+                }
             }
 
             return super.toSQLFragment(columnMap, dialect);
