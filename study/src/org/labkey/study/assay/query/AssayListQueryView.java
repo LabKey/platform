@@ -19,7 +19,9 @@ package org.labkey.study.assay.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.study.assay.PlateUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -75,6 +77,16 @@ public class AssayListQueryView extends QueryView
             ActionButton sharedButton = new ActionButton("Manage Shared Project Assays", manageProjectAssays);
             sharedButton.setActionType(ActionButton.Action.LINK);
             bar.add(sharedButton);
+        }
+
+        if (getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class))
+        {
+            ActionURL plateURL = PageFlowUtil.urlProvider(PlateUrls.class).getPlateTemplateListURL(getContainer());
+            plateURL.addParameter("returnURL", getViewContext().getActionURL().getLocalURIString());
+            ActionButton insert = new ActionButton("Configure Plate Templates", plateURL);
+            insert.setActionType(ActionButton.Action.LINK);
+            insert.setDisplayPermission(DesignAssayPermission.class);
+            bar.add(insert);
         }
     }
 
