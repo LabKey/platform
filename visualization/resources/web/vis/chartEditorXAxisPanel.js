@@ -306,11 +306,14 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     else if(store.find('name', 'Date') > -1) {
                         index = store.find('name', 'Date');
                     }
-                    this.zeroDateCombo.setValue(store.getAt(index).get('name'));
-                    this.dateOptions.zeroDateCol = store.getAt(store.find('name', store.getAt(index).get('name'))).data;
+
+                    if(store.getAt(index)){
+                        this.zeroDateCombo.setValue(store.getAt(index).get('name'));
+                        this.dateOptions.zeroDateCol = store.getAt(index).data;
+                    }
 
                     // if this is not a saved chart and the interval value has loaded, then set the default axis label
-                    if(!this.axis.label && this.intervalCombo && this.intervalCombo.getValue()) {
+                    if(!this.axis.label && this.intervalCombo && this.intervalCombo.getValue() && store.find('name', this.zeroDateCombo.getValue()) > -1) {
                         var zeroDateLabel = store.getAt(store.find('name', this.zeroDateCombo.getValue())).data.label;
                         var newLabel = this.intervalCombo.getValue() + " Since " + zeroDateLabel;
                         Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
@@ -360,8 +363,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         else if(store.find('name', 'Date') > -1) {
                             index = store.find('name', 'Date');
                         }
-                        this.measureDateCombo.setValue(store.getAt(index).get('name'));
-                        this.measure = store.getAt(store.find('name', store.getAt(index).get('name'))).data;
+
+                        if(store.getAt(index)){
+                            this.measureDateCombo.setValue(store.getAt(index).get('name'));
+                            this.measure = store.getAt(index).data;
+                        }
 
                     // this is one of the requests being tracked, see if the rest are done
                     this.fireEvent('measureMetadataRequestComplete');

@@ -28,6 +28,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // properties for this panel
         this.layout = 'border';
         this.isMasked = false;
+        this.maxCharts = 30;
 
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         if(typeof this.chartInfo != "object") {
@@ -43,7 +44,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             scope: this,
             'render': function(){
                 if(typeof this.saveReportInfo == "object") {
-                    // todo: change this to not have to pass a measure
                     this.measureSelected(this.chartInfo.measures[yAxisMeasureIndex].measure, false);
                 }
             }
@@ -60,6 +60,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 listeners: {
                     scope: this,
                     'initialMeasureSelected': function(initMeasure) {
+                        Ext.getCmp('chart-editor-tabpanel').activate(this.editorMeasurePanel.getId());
                         this.measureSelected(initMeasure, true);
                     },
                     'saveChart': function(saveBtnType, replace, reportName, reportDescription){
@@ -306,7 +307,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.editorYAxisPanelVar.setScale(this.chartInfo.measures[yAxisMeasureIndex].axis.scale);
         this.editorChartsPanel.setChartLayout(this.chartInfo.chartLayout);
         this.editorChartsPanel.disableDimensionOption((this.chartInfo.measures[yAxisMeasureIndex].dimension ? true : false));
-        if(userSelectedMeasure){  // todo: do these need to be in the if statement?
+        if(userSelectedMeasure){
             this.editorOverviewPanel.updateOverview(this.saveReportInfo);
             this.editorYAxisPanelVar.setLabel(measure.label);
             this.editorChartsPanel.setMainTitle(measure.queryName);
@@ -332,8 +333,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     },
 
     getChartData: function() {
-        console.log("getChartData");
-
         // mask panel and remove the chart(s)
         this.maskChartPanel();
 
@@ -399,8 +398,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     renderLineChart: function()
     {
-        console.log("renderLineChart");
-
         // mask panel and remove the chart(s)
         this.maskChartPanel();
 
@@ -451,24 +448,53 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
 
         var size = {width: (this.chart.getInnerWidth() * .95), height: (this.chart.getInnerHeight() * .97)};
-        //var size = {width: this.chart.getInnerWidth(), height: this.chart.getInnerHeight()};
 
 	    // three options: all series on one chart, one chart per subject, or one chart per measure/dimension
         var charts = [];
+        var warningText = null;
         if(this.chartInfo.chartLayout == "per_subject") {
-        	Ext.each(this.chartInfo.subject.values, function(subject) {
+        	for(var i = 0; i < (this.chartInfo.subject.values.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.values.length); i++){
+        	    var subject = this.chartInfo.subject.values[i];
         		charts.push(this.newLineChart(size, series, {parameter: "subject", value: subject}, subject));
-        	}, this);
+        	}
+
+            // warn if user doesn't have an subjects selected or if the max number has been exceeded
+            if(this.chartInfo.subject.values.length == 0){
+                warningText = "Please select at least one subject.";
+            }
+        	else if(this.chartInfo.subject.values.length > this.maxCharts){
+        	    warningText = "Only showing the first " + this.maxCharts + " charts.";
+        	}
         }
         else if(this.chartInfo.chartLayout == "per_dimension") {
-        	Ext.each(seriesList, function(md) {
+        	for(var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++){
+        	    var md = seriesList[i];
         		charts.push(this.newLineChart(size, series, {parameter: "yAxisSeries", value: md}, md));
-        	}, this);
+        	}
+
+            // warn if user doesn't have an dimension values selected or if the max number has been exceeded
+            if(seriesList.length == 0){
+                warningText = "Please select at least one dimension value.";
+            }
+        	else if(seriesList.length > this.maxCharts){
+        	    warningText = "Only showing the first " + this.maxCharts + " charts";
+        	}
         }
         else if(this.chartInfo.chartLayout == "single")
             charts.push(this.newLineChart(size, series, null, null));
 
         this.chart.removeAll();
+
+        // if the user has selected more charts than the max allowed, show warning
+        if(warningText){
+            this.chart.add(new Ext.form.DisplayField({
+                autoHeight: 25,
+                autoWidth: true,
+                value: warningText,
+                style: "font-style:italic;width:100%;padding:5px;text-align:center;"
+            }));
+        };
+
         this.chart.add(charts);
         this.chart.doLayout();
     },
@@ -495,7 +521,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         var chartComponent = new LABKEY.vis.LineChart({
             width: size.width,
-            height: size.height - 25, // todo: find a better way to size the chart (leaving room for export button)
+            height: size.height - 25,
             axes: {
                 y: {
                     min: (this.chartInfo.measures[yAxisMeasureIndex].axis.range.min ? this.chartInfo.measures[yAxisMeasureIndex].axis.range.min : undefined),
@@ -543,9 +569,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 autoScroll: true,
                 padding: 10,
                 items: [{
-                    xtype: 'label',
-                    html: 'Note: filters applied to the data grid will not be reflected in the chart view.<BR/><BR/>',
-                    style: 'font-style:italic'
+                    xtype: 'displayfield',
+                    value: 'Note: filters applied to the data grid will not be reflected in the chart view.',
+                    style: 'font-style:italic;padding:10px'
                 },
                 {
                     xtype: 'panel',
@@ -644,9 +670,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 monitorValid: true,
                 border: false,
                 frame: false,
+                labelWidth: 125,
                 items: [{
                     xtype: 'textfield',
-                    fieldLabel: 'Name',
+                    fieldLabel: 'Report Name',
                     name: 'reportName',
                     value: reportName || null,
                     width: 300,
@@ -654,7 +681,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 },
                 {
                     xtype: 'textarea',
-                    fieldLabel: 'Description',
+                    fieldLabel: 'Report Description',
                     name: 'reportDescription',
                     value: reportDescription || null,
                     width: 300,

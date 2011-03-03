@@ -99,12 +99,14 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                         if(this.dimension){
                             this.measureDimensionComboBox.setValue(this.dimension.name);
                         }
-                        // otherwise select the first item and then give the input focus
+                        // otherwise try to select the first item and then give the input focus
                         else{
                             var selIndex = 0;
                             var selRecord = this.measureDimensionComboBox.getStore().getAt(selIndex);
-                            this.measureDimensionComboBox.setValue(selRecord.get("name"));
-                            this.measureDimensionComboBox.fireEvent('select', this.measureDimensionComboBox, selRecord, selIndex);
+                            if(selRecord){
+                                this.measureDimensionComboBox.setValue(selRecord.get("name"));
+                                this.measureDimensionComboBox.fireEvent('select', this.measureDimensionComboBox, selRecord, selIndex);
+                            }
                         }
 
                         // enable and set the dimension aggregate combo box
@@ -129,7 +131,13 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'select': function(cmp, record, index) {
-                    this.dimension = record.data;
+                    this.dimension = {
+                        label: record.data.label,
+                        name: record.data.name,
+                        queryName: record.data.queryName,
+                        schemaName: record.data.schemaName,
+                        type: record.data.type
+                    };
                     this.measureDimensionSelected(true);
                 }
             }
@@ -235,7 +243,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 axis: [{
                     multiSelect: false,
                     name: "y-axis",
-                    label: "Choose a data measure:"
+                    label: "Choose a data measure"
                 }],
                 listeners: {
                     scope: this,
@@ -326,15 +334,12 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 // decode the JSON responseText
                 var dimensionValues = Ext.util.JSON.decode(response.responseText);
 
-                // todo: get this to select the first 5 values after the gridPanel is sorted
-                // if this is not a saved chart with pre-selected values, initially select the first 5 values
-                if(!this.dimension.values){
-                    this.dimension.values = new Array();
-                    //var gridStore = Ext.getCmp('dimension-list-view').getStore();
-                    for(var i = 0; i < (dimensionValues.values.length < 5 ? dimensionValues.values.length : 5); i++) {
-                        this.dimension.values.push(dimensionValues.values[i].value);
-                    }
-                }
+                this.defaultDisplayField = new Ext.form.DisplayField({
+                    hideLabel: true,
+                    hidden: true,
+                    value: 'Selecting 5 values by default',
+                    style: 'font-size:75%;color:red;'
+                });
 
                 // put the dimension values into a list view for the user to enable/disable series
                 var sm = new  Ext.grid.CheckboxSelectionModel({});
@@ -357,6 +362,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                     title: this.dimension.label,
                     autoScroll: true,
                     items: [
+                        this.defaultDisplayField,
                         new Ext.grid.GridPanel({
                             id: 'dimension-list-view',
                             autoHeight: true,
@@ -382,6 +388,16 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                             listeners: {
                                 scope: this,
                                 'viewready': function(grid) {
+                                    // if this is not a saved chart with pre-selected values, initially select the first 5 values
+                                    var selectDefault = false;
+                                    if(!this.dimension.values){
+                                        selectDefault = true;
+                                        this.dimension.values = [];
+                                        for(var i = 0; i < (grid.getStore().getCount() < 5 ? grid.getStore().getCount() : 5); i++) {
+                                            this.dimension.values.push(grid.getStore().getAt(i).data.value);
+                                        }
+                                    }
+
                                     // check selected dimension values in grid panel (but suspend events during selection)
                                     var dimSelModel = grid.getSelectionModel();
                                     var dimStore = grid.getStore();
@@ -391,6 +407,22 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                                         dimSelModel.selectRow(index, true);
                                     }
                                     dimSelModel.resumeEvents();
+
+                                    // show the selecting default text if necessary
+                                    if(grid.getStore().getCount() > 5 && selectDefault){
+                                        // show the display for 3 seconds before hiding it again
+                                        var refThis = this;
+                                        refThis.defaultDisplayField.show();
+                                        refThis.doLayout();
+                                        setTimeout(function(){
+                                            refThis.defaultDisplayField.hide();
+                                            refThis.doLayout();
+                                        },5000);
+                                    }
+
+                                    if(reloadChartData){
+                                        this.fireEvent('chartDefinitionChanged', true);
+                                    }
                                 }
                             }
                          })
@@ -403,10 +435,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 Ext.getCmp('series-selector-tabpanel').add(newSeriesSelectorPanel);
                 Ext.getCmp('series-selector-tabpanel').activate('dimension-series-selector-panel');
                 Ext.getCmp('series-selector-tabpanel').doLayout();
-
-                if(reloadChartData){
-                    this.fireEvent('chartDefinitionChanged', true);
-                }
             },
             failure: function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
             scope: this

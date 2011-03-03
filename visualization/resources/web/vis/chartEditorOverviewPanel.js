@@ -29,12 +29,8 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
     initComponent : function() {
         var items = [];
 
-        var chartEditorDescription = 'A time chart allows you to view data for a selected measure over time.<br/>'
-                    + 'The wizard options provided allow you to:<br/>'
-                    + '- edit chart title, axis label, axis scale, etc.<br/>'
-                    + '- view data grid or export chart to a PDF<br/>'
-                    + '- show/hide series<br/>'
-                    + '- more...';
+        var chartEditorDescription = 'A time chart allows you to view data for a selected measure over time.<br/><br/>'
+            + 'You can use the tabs above to make changes to the chart.';
 
         // first item in card layout: intial choose measure panel when not showing saved report
         items.push(new Ext.Panel({
@@ -60,13 +56,13 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
         var displayItems = [];
         this.nameDisplayField = new Ext.form.DisplayField({
             fieldLabel: 'Report Name',
-            value: (typeof this.reportInfo == 'object' ? this.reportInfo.name : null),
+            value: (typeof this.reportInfo == 'object' ? Ext.util.Format.htmlEncode(this.reportInfo.name) : null),
             border: false
         });
 
         this.descDisplayField = new Ext.form.DisplayField({
             fieldLabel: 'Report Description',
-            value: (typeof this.reportInfo == 'object' ? this.reportInfo.description : null),
+            value: (typeof this.reportInfo == 'object' ? Ext.util.Format.htmlEncode(this.reportInfo.description) : null),
             border: false
         });
 
@@ -219,7 +215,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                 axis: [{
                     multiSelect: false,
                     name: "y-axis",
-                    label: "Choose a data measure:"
+                    label: "Choose a data measure"
                 }],
                 listeners: {
                     scope: this,

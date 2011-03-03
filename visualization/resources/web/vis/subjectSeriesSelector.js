@@ -62,6 +62,14 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
         // decode the JSON responseText
         var subjectValues = Ext.util.JSON.decode(response.responseText);
 
+        this.defaultDisplayField = new Ext.form.DisplayField({
+            hideLabel: true,
+            hidden: true,
+            value: 'Selecting 5 values by default',
+            style: 'font-size:75%;color:red;'
+        });
+        this.add(this.defaultDisplayField);
+
         // selection model for subject series selector
         var sm = new  Ext.grid.CheckboxSelectionModel({});
         sm.on('selectionchange', function(selModel){
@@ -105,11 +113,25 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
                 scope: this,
                 'viewready': function(grid){
                     // if this is not a saved chart with pre-selected values, initially select the first 5 values
+                    var selectDefault = false;
                     if(!this.subject.values){
+                        selectDefault = true;
                         this.subject.values = new Array();
                         for(var i = 0; i < (grid.getStore().getCount() < 5 ? grid.getStore().getCount() : 5); i++) {
                             this.subject.values.push(grid.getStore().getAt(i).get("value"));
                         }
+                    }
+
+                    // show the selecting default text if necessary
+                    if(grid.getStore().getCount() > 5 && selectDefault){
+                        // show the display for 3 seconds before hiding it again
+                        var refThis = this;
+                        refThis.defaultDisplayField.show();
+                        refThis.doLayout();
+                        setTimeout(function(){
+                            refThis.defaultDisplayField.hide();
+                            refThis.doLayout();
+                        },5000);
                     }
 
                     // check selected subject values in grid panel (but suspend events during selection)

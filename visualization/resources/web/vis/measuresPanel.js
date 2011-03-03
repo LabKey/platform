@@ -207,10 +207,12 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             if (!this.isDateAxis && axis.timeAxis)
                 continue;
 
-            var field = new Ext.form.TextField({readOnly: true,
-                emptyText:'Choose from the list view below',
+            var field = new Ext.form.DisplayField({
                 width:500,
-                fieldLabel: axis.label
+                fieldLabel: axis.label,
+                labelStyle: {
+                    style: 'italic'
+                }
             });
 
             // stash the textfield id so we can update it later from the listview
@@ -224,8 +226,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         this.hasBtnSelection = items.length > 1;
 
         var panel = new Ext.form.FormPanel({
-//            border: false,
-            labelWidth: 200,
+            labelWidth: 175,
             bodyStyle:'padding:25px;',
             region: 'north',
             items: items
