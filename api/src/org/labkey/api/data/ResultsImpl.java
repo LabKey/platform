@@ -78,22 +78,23 @@ public class ResultsImpl implements Results
     }
 
 
-    public ResultsImpl(ResultSet rs,  @NotNull Collection<ColumnInfo> cols)
+    public ResultsImpl(ResultSet rs, @NotNull Collection<ColumnInfo> cols)
     {
         _rs = rs;
         _fieldMap = new HashMap<FieldKey, ColumnInfo>(cols.size()*2);
         _fieldIndexMap = new HashMap<FieldKey, Integer>(cols.size()*2);
-        try
+
+        for (ColumnInfo col : cols)
         {
-            for (ColumnInfo col : cols)
+            try
             {
                 _fieldMap.put(col.getFieldKey(), col);
                 _fieldIndexMap.put(col.getFieldKey(), rs.findColumn(col.getAlias()));
             }
-        }
-        catch (SQLException x)
-        {
-            throw new IllegalArgumentException("Column not found in resultset");
+            catch (SQLException x)
+            {
+                throw new IllegalArgumentException("Column not found in resultset: [" + col.getParentTable().getName() + "." + col.getName() + ", " + col.getAlias() + ", " + col.getFieldKey() + "]");
+            }
         }
     }
 
