@@ -235,6 +235,7 @@ public class LookupEditorPanel extends LayoutContainer
             {
                 if (!folder.equals(lastFolderTableStore) || !schema.equals(lastSchemaTableStore))
                     return;
+                store.removeAll();
                 String[] names = m.keySet().toArray(new String[m.size()]);
                 Arrays.sort(names, String.CASE_INSENSITIVE_ORDER);
                 for (String table : names)
