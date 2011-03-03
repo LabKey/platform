@@ -625,8 +625,12 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
     public void cancel()
     {
-        // We're already listening for navigation if the dirty bit is set,
-        // so no extra handling is needed.
+        // if the user has canceled, we don't need to run the dirty page checking
+        if (_closeHandlerManager != null)
+        {
+            _closeHandlerManager.removeHandler();
+            _closeHandlerManager = null;
+        }
         String loc = PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/begin.view";
         WindowUtil.setLocation(loc);
     }
