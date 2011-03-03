@@ -72,6 +72,8 @@
 	EditArea.prototype.get_syntax_trace= function(text){
 		if(this.settings["syntax"].length>0 && parent.editAreaLoader.syntax[this.settings["syntax"]]["syntax_trace_regexp"])
 			return text.replace(parent.editAreaLoader.syntax[this.settings["syntax"]]["syntax_trace_regexp"], "$3");
+        else
+            return text;
 	};
 	
 		
