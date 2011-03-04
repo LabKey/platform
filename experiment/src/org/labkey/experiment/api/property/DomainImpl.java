@@ -102,8 +102,6 @@ public class DomainImpl implements Domain
     public DomainKind getDomainKind()
     {
         DomainKind kind = PropertyService.get().getDomainKind(getTypeURI());
-        if (null == kind)
-            _log.warn("DomainKind not found: " + getTypeURI());
         return kind;
     }
 
