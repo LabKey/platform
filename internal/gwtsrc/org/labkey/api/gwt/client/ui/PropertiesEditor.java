@@ -535,7 +535,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
             if (_defaultValueSelector != null)
             {
-                _defaultValueSelector.setEnabled(_domain.getDefaultValueOptions().length > 0);
+                _defaultValueSelector.setEnabled(!readOnly && _domain.getDefaultValueOptions().length > 0);
             }
 
             Element e = _table.getRowFormatter().getElement(tableRow);
