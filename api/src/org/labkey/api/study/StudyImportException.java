@@ -30,7 +30,6 @@ public class StudyImportException extends Exception
         super(message, t);
     }
 
-
     // Returns a filepath relative to root... this provides path information but hides the pipeline root path.
     public static String getRelativePath(File root, File file)
     {
