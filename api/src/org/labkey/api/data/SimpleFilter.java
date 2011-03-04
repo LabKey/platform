@@ -87,7 +87,7 @@ public class SimpleFilter implements Filter
             {
                 if (o instanceof Calendar)
                     o = ((Calendar)o).getTime();
-                String param = ConvertUtils.convert(o);
+                String param = StringUtils.defaultString(ConvertUtils.convert(o), "NULL");
                 int i = sb.indexOf("?", fromIndex);
                 fromIndex += param.length();         // Protects against previous param values in this clause containing '?'
                 sb.replace(i, i + 1, param);
