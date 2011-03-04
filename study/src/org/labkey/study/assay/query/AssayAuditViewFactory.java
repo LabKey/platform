@@ -236,6 +236,12 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         }
 
         @Override
+        public boolean isValid(Set<FieldKey> keys, Container c)
+        {
+            return true;
+        }
+
+        @Override
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             for (Map.Entry<String, ColumnInfo> entry : _columns.entrySet())
