@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.study.importer;
 
-import java.io.IOException;
-import java.util.List;
-
-/**
- * User: adam
- * Date: Apr 15, 2009
- * Time: 8:41:34 PM
- */
-public interface VisitMapReader
+/*
+* User: adam
+* Date: Mar 3, 2011
+* Time: 12:51:40 PM
+*/
+public class VisitMapParseException extends Exception
 {
-    List<VisitMapRecord> getRecords(String content) throws VisitMapParseException, IOException;
+    public VisitMapParseException(String message)
+    {
+        super(message);
+    }
+
+    public VisitMapParseException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }

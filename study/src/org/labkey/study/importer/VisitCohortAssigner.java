@@ -17,9 +17,9 @@ package org.labkey.study.importer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -43,7 +43,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
         return "visit map cohort assignments";
     }
 
-    // Parses the whole visit map again to retrieve the cohort assigments; should cache info from the first parsing
+    // Parses the whole visit map again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the ImportContext
     public void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, StudyImportException
     {
@@ -66,7 +66,16 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
             VisitMapImporter.Format vmFormat = VisitMapImporter.Format.getFormat(visitMap);
             String contents = PageFlowUtil.getFileContentsAsString(visitMap);
-            List<VisitMapRecord> records = vmFormat.getReader().getRecords(contents);
+            List<VisitMapRecord> records;
+
+            try
+            {
+                records = vmFormat.getReader().getRecords(contents);
+            }
+            catch (Exception e)
+            {
+                throw new StudyImportException("Unable to parse visit map", e);
+            }
 
             for (VisitMapRecord record : records)
             {

@@ -16,21 +16,29 @@
 
 package org.labkey.study.importer;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.*;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitDataSetType;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.visitmanager.VisitManager;
-import org.apache.log4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -52,6 +60,7 @@ public class VisitMapImporter
                 return ".txt";
             }},
 
+        @SuppressWarnings({"UnusedDeclaration"})
         Xml {
             public VisitMapReader getReader()
             {
@@ -78,7 +87,7 @@ public class VisitMapImporter
         }
     }
 
-    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException, StudyImportException
+    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
         {
@@ -97,12 +106,17 @@ public class VisitMapImporter
         {
             records = format.getReader().getRecords(content);
         }
-        catch (NumberFormatException x)
+        catch (VisitMapParseException x)
         {
-            errors.add(x.getMessage());
+            errors.add("Unable to parse the visit map format: " + x.getMessage());
             return false;
         }
-        
+        catch (IOException x)
+        {
+            errors.add("IOException while parsing visit map: " + x.getMessage());
+            return false;
+        }
+
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
         try

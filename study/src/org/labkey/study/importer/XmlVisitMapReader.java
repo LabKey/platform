@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.study.importer;
 
-import org.labkey.study.xml.VisitMapDocument;
-import org.labkey.study.xml.DatasetType;
-import org.labkey.api.study.StudyImportException;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlError;
+import org.labkey.study.xml.DatasetType;
+import org.labkey.study.xml.VisitMapDocument;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: adam
@@ -34,7 +34,7 @@ import java.util.ArrayList;
  */
 public class XmlVisitMapReader implements VisitMapReader
 {
-    public List<VisitMapRecord> getRecords(String xml) throws StudyImportException
+    public List<VisitMapRecord> getRecords(String xml) throws VisitMapParseException
     {
         VisitMapDocument doc;
 
@@ -47,11 +47,11 @@ public class XmlVisitMapReader implements VisitMapReader
         {
             // TODO: Use InvalidFileException... but need to pass in root and file instead of an xml string
             XmlError error = x.getError();
-            throw new StudyImportException("visit map XML file is not valid: " + error.getLine() + ":" + error.getColumn() + ": " + error.getMessage());
+            throw new VisitMapParseException("visit map XML file is not valid: " + error.getLine() + ":" + error.getColumn() + ": " + error.getMessage());
         }
         catch (XmlValidationException e)
         {
-            throw new StudyImportException("visit map XML file is not valid: it does not conform to visitMap.xsd", e);
+            throw new VisitMapParseException("visit map XML file is not valid: it does not conform to visitMap.xsd", e);
         }
 
         VisitMapDocument.VisitMap.Visit[] visitsXml = doc.getVisitMap().getVisitArray();

@@ -2556,6 +2556,7 @@ study/src/org/labkey/study/importer/StudyReload.java -text
 study/src/org/labkey/study/importer/VisitCohortAssigner.java -text
 study/src/org/labkey/study/importer/VisitImporter.java -text
 study/src/org/labkey/study/importer/VisitMapImporter.java -text
+study/src/org/labkey/study/importer/VisitMapParseException.java -text
 study/src/org/labkey/study/importer/VisitMapReader.java -text
 study/src/org/labkey/study/importer/VisitMapRecord.java -text
 study/src/org/labkey/study/importer/XmlVisitMapReader.java -text

@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public class DataFaxVisitMapReader implements VisitMapReader
 {
-    public List<VisitMapRecord> getRecords(String content)
+    public List<VisitMapRecord> getRecords(String content) throws IOException, VisitMapParseException
     {
         String tsv = content.replace('|','\t');
 
@@ -70,13 +70,9 @@ public class DataFaxVisitMapReader implements VisitMapReader
 
             return IteratorUtil.toList(iterator);
         }
-        catch (IOException x)
+        catch (NumberFormatException x)
         {
-            throw new RuntimeException(x);
-        }
-        catch (Exception x)
-        {
-            throw new RuntimeException(x);
+            throw new VisitMapParseException("Error parsing data fax format visit map", x);
         }
     }
 }
