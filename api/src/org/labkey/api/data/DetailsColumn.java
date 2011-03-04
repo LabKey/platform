@@ -39,18 +39,17 @@ public class DetailsColumn extends UrlColumn
     }
 
     public boolean isValid(Set<FieldKey> keys, Container c)
-
     {
         if (null != getURLExpression())
             return true;
-        if (null != tinfo)
+        if (null == tinfo)
+            return true;
+        // see if we now have a legal details url
+        StringExpression se = tinfo.getDetailsURL(keys, c);
+        if (null != se)
         {
-            StringExpression se = tinfo.getDetailsURL(keys, c);
-            if (null != se)
-            {
-                setURLExpression(se);
-                return true;
-            }
+            setURLExpression(se);
+            return true;
         }
         return false;
     }
