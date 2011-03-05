@@ -703,6 +703,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
+    // CONSIDER: Return success/failure notification so caller can take action (render a default document) in all the failure scenarios.
     public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException
     {
         Connection conn = null;
@@ -749,6 +750,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                     writer.setContentLength(size);
 
                 s = rs.getBinaryStream("Document");
+                if (null == s)
+                    return;
             }
             out = writer.getOutputStream();
             try
