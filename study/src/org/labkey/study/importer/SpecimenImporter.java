@@ -2190,11 +2190,8 @@ public class SpecimenImporter
         @After
         public void dropTable() throws SQLException
         {
-            try
-            {
-                Table.execute(_schema, "DROP TABLE " + _tableName, null);
-            }
-            catch (SQLException _) { }
+            SqlDialect dialect = _schema.getSqlDialect();
+            dialect.dropIfExists(_schema, _tableName, "TABLE", null);
         }
 
         private Table.TableResultSet selectValues()
