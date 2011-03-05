@@ -2173,13 +2173,14 @@ public class SpecimenImporter
     {
         private DbSchema _schema;
         private String _tableName;
+        private static final String TABLE = "SpecimenImporterTest";
 
         @Before
         public void createTable() throws SQLException
         {
             _schema = TestSchema.getInstance().getSchema();
 
-            _tableName = _schema.getSqlDialect().getGlobalTempTablePrefix() + "SpecimenImporterTest";
+            _tableName = _schema.getName() + "." + TABLE;
             dropTable();
 
             Table.execute(_schema,
@@ -2190,8 +2191,7 @@ public class SpecimenImporter
         @After
         public void dropTable() throws SQLException
         {
-            SqlDialect dialect = _schema.getSqlDialect();
-            dialect.dropIfExists(_schema, _tableName, "TABLE", null);
+            _schema.dropTableIfExists(TABLE);
         }
 
         private Table.TableResultSet selectValues()
