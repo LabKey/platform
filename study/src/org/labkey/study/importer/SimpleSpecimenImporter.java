@@ -19,13 +19,18 @@ package org.labkey.study.importer;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
-import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.study.Study;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
@@ -168,10 +173,10 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         //Map from column name to
         Study study = StudyManager.getInstance().getStudy(container);
         Map<String,LookupTable> lookupTables = new HashMap<String,LookupTable>();
-        lookupTables.put("additive_type", new LookupTable("additives", "additive_type_id", "additive_id", "additive"));
-        lookupTables.put("derivative_type", new LookupTable("derivatives", "derivative_type_id", "derivative_id", "derivative"));
-        lookupTables.put("primary_specimen_type", new LookupTable("primary_types", "primary_specimen_type_id", "primary_type_id", "primary_type"));
-        LabLookupTable labLookup =  new LabLookupTable();
+        lookupTables.put("additive_type", new LookupTable(StudySchema.getInstance().getTableInfoAdditiveType(), container, "additives", "additive_type_id", "additive_id", "additive", "Additive"));
+        lookupTables.put("derivative_type", new LookupTable(StudySchema.getInstance().getTableInfoDerivativeType(), container, "derivatives", "derivative_type_id", "derivative_id", "derivative", "Derivative"));
+        lookupTables.put("primary_specimen_type", new LookupTable(StudySchema.getInstance().getTableInfoPrimaryType(), container, "primary_types", "primary_specimen_type_id", "primary_type_id", "primary_type", "PrimaryType"));
+        LabLookupTable labLookup =  new LabLookupTable(container);
         lookupTables.put("lab", labLookup);
 
         List<Map<String,Object>> specimenRows = new ArrayList<Map<String,Object>>();
@@ -204,7 +209,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         Map<String, Iterable<Map<String, Object>>> inputs = new HashMap<String, Iterable<Map<String, Object>>>();
         inputs.put("specimens", specimenRows);
         for (LookupTable lookupTable : lookupTables.values())
-            inputs.put(lookupTable.getName(), lookupTable.toMaps());
+            inputs.put(lookupTable.getTsvName(), lookupTable.toMaps());
 
         try
         {
@@ -221,18 +226,42 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
     private static class LookupTable
     {
-        private final String name;
+        private final String tsvName;
         private final String foreignKeyCol;
-        private final String idCol;
-        private final String labelCol;
-        private final HashMap<String, Integer> keyMap = new HashMap<String, Integer>();
+        private final String tsvIdCol;
+        private final String tsvLabelCol;
+        // additive, derivative, primarytype, and site all use ExternalId as the id column.
+        private final String dbIdCol = "ExternalId";
+        private final String dbLabelCol;
 
-        LookupTable(String name, String foreignKeyCol, String idCol, String labelCol)
+        // Maps of label -> id
+        private final HashMap<String, Integer> existingKeyMap = new HashMap<String, Integer>();
+        private final HashMap<String, Integer> keyMap = new HashMap<String, Integer>();
+        private int lastId = 0;
+
+        LookupTable(TableInfo table, Container c, String tsvName, String foreignKeyCol, String tsvIdCol, String tsvLabelCol, String dbLabelCol)
+                throws SQLException
         {
-            this.name = name;
+            this.tsvName = tsvName;
             this.foreignKeyCol = foreignKeyCol;
-            this.idCol = idCol;
-            this.labelCol = labelCol;
+            this.tsvIdCol = tsvIdCol;
+            this.tsvLabelCol = tsvLabelCol;
+            this.dbLabelCol = dbLabelCol;
+
+            getKeyMap(table, c);
+        }
+
+        private void getKeyMap(TableInfo table, Container c)
+                throws SQLException
+        {
+            Filter filter = new SimpleFilter("Container", c.getId());
+            Map<String, Object>[] maps = Table.selectMaps(table, Sets.newCaseInsensitiveHashSet(dbIdCol, dbLabelCol), filter, null);
+            for (Map<String, Object> map : maps)
+            {
+                Integer id = (Integer)map.get(dbIdCol);
+                existingKeyMap.put((String)map.get(dbLabelCol), id);
+                lastId = Math.max(lastId, id);
+            }
         }
 
         Integer getVal(String label)
@@ -240,8 +269,16 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             Integer i = keyMap.get(label);
             if (null == i)
             {
-                i = keyMap.size() + 1;
-                keyMap.put(label, i);
+                i = existingKeyMap.get(label);
+                if (null == i)
+                {
+                    i = lastId = lastId+1;
+                    keyMap.put(label, i);
+                }
+                else
+                {
+                    keyMap.put(label, i);
+                }
             }
             return i;
         }
@@ -249,29 +286,34 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         List<Map<String, Object>> toMaps()
         {
             List<Map<String, Object>> maps = new ArrayList<Map<String, Object>>(keyMap.size());
-            for (int i = 0; i < keyMap.size(); i++)
-            {
-                // Grow the list so that we can set them in any order
-                maps.add(null);
-            }
             for (Map.Entry<String, Integer> entry : keyMap.entrySet())
             {
                 Map<String, Object> m = new HashMap<String, Object>();
-                m.put(labelCol, entry.getKey());
-                m.put(idCol, entry.getValue());
-                maps.set(entry.getValue().intValue() - 1, m);
+                m.put(tsvLabelCol, entry.getKey());
+                m.put(tsvIdCol, entry.getValue());
+                maps.add(m);
             }
+            Collections.sort(maps, new Comparator<Map<String, Object>>()
+            {
+                @Override
+                public int compare(Map<String, Object> a, Map<String, Object> b)
+                {
+                    Integer aId = (Integer)a.get(tsvIdCol);
+                    Integer bId = (Integer)b.get(tsvIdCol);
+                    return aId.compareTo(bId);
+                }
+            });
             return maps;
         }
 
-        public String getName()
+        public String getTsvName()
         {
-            return name;
+            return tsvName;
         }
 
-        public String getIdCol()
+        public String getTsvIdCol()
         {
-            return idCol;
+            return tsvIdCol;
         }
 
         public String getForeignKeyCol()
@@ -285,9 +327,10 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         static final String DEFAULT_LAB = "Not Specified";
         private final Integer defaultLabId;
 
-        LabLookupTable()
+        LabLookupTable(Container c)
+                throws SQLException
         {
-            super("labs", "lab_id", "lab_id", "lab_name");
+            super(StudySchema.getInstance().getTableInfoSite(), c, "labs", "lab_id", "lab_id", "lab_name", "Label");
             defaultLabId = getVal(DEFAULT_LAB);
         }
 

@@ -176,6 +176,9 @@ public class SpecimenServiceImpl implements SpecimenService.Service
 
     public String getCompletionURLBase(Container studyContainer, SpecimenService.CompletionType type)
     {
+        if (studyContainer == null)
+            return null;
+
         ActionURL url = new ActionURL(AutoCompleteAction.class, studyContainer);
         url.addParameter("type", type.name());
         return url.getLocalURIString() + "&prefix=";

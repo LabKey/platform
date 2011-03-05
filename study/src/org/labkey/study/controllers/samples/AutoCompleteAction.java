@@ -66,6 +66,12 @@ public class AutoCompleteAction extends SimpleViewAction<AutoCompleteAction.Auto
             tinfo = StudySchema.getInstance().getTableInfoParticipantVisit();
             column = "SequenceNum";
         }
+        else if (SpecimenService.CompletionType.LabId.name().equals(form.getType()))
+        {
+            tinfo = StudySchema.getInstance().getTableInfoSite();
+            column = "Label";
+            insensitiveCompare = true;
+        }
         else
             throw new IllegalArgumentException("Completion type " + form.getType() + " not recognized.");
 
