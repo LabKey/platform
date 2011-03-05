@@ -20,6 +20,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -465,6 +468,30 @@ public class FileSystemResource extends AbstractWebdavResource
         File file = getFile();
         if (file == null || (null != user && !canDelete(user)))
             return false;
+
+        try {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            AttachmentDirectory dir;
+            dir = svc.getMappedAttachmentDirectory(getContainer(), false);
+
+            if (dir != null)
+            {
+                // legacy support for files added through the narrow files web part but deleted through
+                // the newer file browser (issue: 11396). This is the difference between files stored through
+                // webdav or via the attachments service.
+                //
+                Attachment attach = AttachmentService.get().getAttachment(dir, file.getName());
+                if (attach != null)
+                {
+                    AttachmentService.get().deleteAttachment(dir, file.getName(), user);
+                    return true;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _log.error(e);
+        }
         return file.delete();
     }
 
