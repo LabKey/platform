@@ -95,6 +95,7 @@ var f_scope<%=uid%> = new (function() {
             frame: true,
             plain: true,
             defaults: {autoScroll: true},
+            listeners: {beforetabchange: beforeTabChange},
             items: [<%
 
                 if (mode.showSource())
@@ -127,6 +128,14 @@ var f_scope<%=uid%> = new (function() {
 
         tabs.strip.applyStyles({'background':'#ffffff'});
     });
+
+    function beforeTabChange()
+    {
+        // Work around editarea.js + Ext TabPanel focus issue on Firefox. See #11727.
+        // Do this only on Firefox, since it steals focus from the editarea. 
+        if (Ext.isGecko)
+            Ext.get("bogusTextArea").focus();
+    }
 
     function activateViewTab(tab)
     {
@@ -259,16 +268,16 @@ var f_scope<%=uid%> = new (function() {
 
     function dataSuccess(dr)
     {
-        // On first load of the QWP, initialize the "previous view URL" to match the current dataregion state.  This
-        // prevents an unnecessary refresh of the report in scenarios like "Source" -> "View" -> "Data" -> "View".
-        if (dataFirstLoad)
+        if (dr)
         {
-            dataFirstLoad = false;
+            dataRegion = dr;
 
-            if (dr)
+            // On first load of the QWP, initialize the "previous view URL" to match the current dataregion state.  This
+            // prevents an unnecessary refresh of the report in scenarios like "Source" -> "View" -> "Data" -> "View".
+            if (dataFirstLoad)
             {
+                dataFirstLoad = false;
                 previousViewURL = getViewURL();
-                dataRegion = dr;
             }
         }
     }
@@ -337,7 +346,7 @@ var f_scope<%=uid%> = new (function() {
         return includedScripts.contains(String.valueOf(id));
     }
 %>
-
+<textarea cols=0 rows=0 id="bogusTextArea" style="height:0;width:0;left:-10px;top:-10px;position:absolute;"></textarea>
 <div id="tabsDiv<%=uid%>" class="extContainer">
     <div id="<%=viewDivId%>" class="x-hide-display">
     </div>
@@ -350,7 +359,7 @@ var f_scope<%=uid%> = new (function() {
                     if (readOnly)
                     { %>
                     readonly="true"<% } %>
-                    style="width: 100%;"
+                    style="width:100%;margin:0;padding:0;"
                     cols="120"
                     wrap="on"
                     rows="25"><%=h(StringUtils.trimToEmpty(bean.getScript()))%></textarea><%
