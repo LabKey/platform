@@ -114,6 +114,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -302,20 +303,7 @@ public class FileContentController extends SpringActionController
                             @Override
                             protected void renderView(Object model, PrintWriter out) throws Exception
                             {
-                                InputStream fis = null;
-                                try
-                                {
-                                    fis = _resource.getInputStream(getUser());
-                                    IOUtils.copy(new InputStreamReader(fis), out);
-                                }
-                                catch (FileNotFoundException x)
-                                {
-                                    out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
-                                }
-                                finally
-                                {
-                                    IOUtils.closeQuietly(fis);
-                                }
+                                renderResourceContents(out, _resource);
                             }
                         };
                         webPart.setTitle(_resource.getName());
@@ -329,21 +317,7 @@ public class FileContentController extends SpringActionController
                             @Override
                             protected void renderView(Object model, PrintWriter out) throws Exception
                             {
-                                try
-                                {
-                                    // UNDONE stream html filter
-                                    String fileContents = PageFlowUtil.getStreamContentsAsString(_resource.getInputStream(getUser()));
-                                    String html = PageFlowUtil.filter(fileContents, true, true);
-                                    out.write(html);
-                                }
-                                catch (FileNotFoundException x)
-                                {
-                                    out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
-                                }
-                                catch (OutOfMemoryError x)
-                                {
-                                    out.write("<span class='labkey-error'>file is too long: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
-                                }
+                                renderResourceContents(out, _resource);
                             }
                         };
                         webPart.setTitle(_resource.getName());
@@ -362,6 +336,55 @@ public class FileContentController extends SpringActionController
             catch (Exception e)
             {
                 throw new NotFoundException("An error occurred with the requested file : " + e.getMessage());
+            }
+        }
+
+        private void renderResourceContents(PrintWriter out, WebdavResource resource) throws IOException
+        {
+            StringBuilder contents = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(getUser())));
+            String line;
+            String newline = System.getProperty("line.separator");
+            final int MAX_SIZE = 5000;
+            int size = 0;
+            try
+            {
+                while ((line = reader.readLine()) != null)
+                {
+                    contents.append(line);
+                    contents.append(newline);
+
+                    if (size++ > MAX_SIZE)
+                        break;
+                }
+
+                if (size > MAX_SIZE)
+                {
+                    StringBuilder sb = new StringBuilder();
+
+                    sb.append("<span class='labkey-error'>");
+                    sb.append("The requested file is too large to display on a page, only part of the file is shown. To download the entire file contents ");
+                    sb.append("click on the download link below.").append("</span><br>");
+                    sb.append("<br>").append("<a href=\"").append(resource.getHref(getViewContext())).append("?contentDisposition=attachment");
+                    sb.append("\">download ").append(PageFlowUtil.filter(resource.getName())).append("</a>");
+                    sb.append("<br><br>");
+
+                    out.write(sb.toString());
+                }
+
+                out.write(PageFlowUtil.filter(contents.toString(), true, true));
+            }
+            catch (FileNotFoundException x)
+            {
+                out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(resource.getName()) + "</span>");
+            }
+            catch (IOException e)
+            {
+                out.write("<span class='labkey-error'>IOException: " + PageFlowUtil.filter(resource.getName()) + "</span>");
+            }
+            finally
+            {
+                IOUtils.closeQuietly(reader);
             }
         }
 

@@ -165,7 +165,7 @@
 <% if (context.hasPermission(InsertPermission.class))
 {
     // UNDONE: use yahoo dialog to avoid pop-under
-    %><%=textLink("Upload File", "#uploadFile", "window.open('" + addAttachmentUrl + "', 'uploadFiles', 'height=200,width=550,resizable=yes', false);")%>&nbsp;<%
+    %><%=textLink("Upload File", "#uploadFile", "window.open('" + addAttachmentUrl + "', 'uploadFiles', 'height=200,width=550,resizable=yes', false);", "upload-file-id")%>&nbsp;<%
 }
 if (context.hasPermission(UpdatePermission.class))
 {

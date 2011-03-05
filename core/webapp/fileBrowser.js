@@ -1014,7 +1014,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                     var uri = getURI(v,rec);
 
                     if (uri && uri.file)
-                        return $dom.markup({tag:'a', href: Ext.util.Format.htmlEncode(uri.href), html: Ext.util.Format.htmlEncode(uri.file)});
+                        return $dom.markup({tag:'a', href: Ext.util.Format.htmlEncode(uri.href + '?contentDisposition=attachment'), html: Ext.util.Format.htmlEncode(decodeURIComponent(uri.file))});
                     else
                         return '';
                 }
