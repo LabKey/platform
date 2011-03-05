@@ -524,6 +524,11 @@ LABKEY.DataRegion = function (config)
         return el;
     };
 
+    /**
+     * Show a message in the header of this DataRegion with a loading indicator.
+     * @param html the HTML source of the message to be shown
+     * @return The Ext.Element of the newly created message div.
+     */
     this.showLoadingMessage = function (html)
     {
         html = html || "Loading...";
@@ -531,6 +536,11 @@ LABKEY.DataRegion = function (config)
         return this.showMessage("<div><span class='loading-indicator'>&nbsp;</span><em>" + html + "</em></div>");
     };
 
+    /**
+     * Show a success message in the header of this DataRegion.
+     * @param html the HTML source of the message to be shown
+     * @return The Ext.Element of the newly created message div.
+     */
     this.showSuccessMessage = function (html)
     {
         html = html || "Completed successfully.";
@@ -538,6 +548,11 @@ LABKEY.DataRegion = function (config)
         return this.showMessage("<div class='labkey-message'>" + html + "</div>");
     };
 
+    /**
+     * Show an error message in the header of this DataRegion.
+     * @param html the HTML source of the message to be shown
+     * @return The Ext.Element of the newly created message div.
+     */
     this.showErrorMessage = function (html)
     {
         html = html || "An error occurred.";
@@ -1431,7 +1446,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                     name: "saveCustomView_namedView",
                     checked: !canEdit || viewName,
                     handler: function (radio, value) {
-                        // items will be populated after initComponent
+                        // nameCompositeField.items will be populated after initComponent
                         if (win.nameCompositeField.items.get)
                         {
                             var nameField = win.nameCompositeField.items.get(1);

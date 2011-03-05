@@ -30,6 +30,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -225,8 +226,12 @@ public class PublishResultsQueryView extends ResultsQueryView
         return hidden;
     }
 
-    public class ResolverHelper
+    public static class ResolverHelper
     {
+        private final ExpProtocol _protocol;
+        private final Container _targetStudyContainer;
+        private final User _user;
+
         private final ColumnInfo _runIdCol;
         private final ColumnInfo _objectIdCol;
         private final ColumnInfo _ptidCol;
@@ -240,12 +245,24 @@ public class PublishResultsQueryView extends ResultsQueryView
         private final ColumnInfo _targetStudyCol;
         private Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<Integer, ParticipantVisitResolver>();
 
-        public ResolverHelper(ColumnInfo runIdCol, ColumnInfo objectIdCol,
+        private Map<Object, String> _reshowVisits;
+        private Map<Object, String> _reshowDates;
+        private Map<Object, String> _reshowPtids;
+        private Map<Object, String> _reshowTargetStudies;
+
+        public ResolverHelper(ExpProtocol protocol,
+                              Container targetStudyContainer,
+                              User user,
+                              ColumnInfo runIdCol, ColumnInfo objectIdCol,
                               ColumnInfo ptidCol, ColumnInfo visitIdCol, ColumnInfo dateCol,
                               ColumnInfo specimenIDCol, ColumnInfo assayMatchCol,
                               ColumnInfo specimenPTIDCol, ColumnInfo specimenVisitCol, ColumnInfo specimenDateCol,
                               ColumnInfo targetStudyCol)
         {
+            _protocol = protocol;
+            _targetStudyContainer = targetStudyContainer;
+            _user = user;
+
             _runIdCol = runIdCol;
             _objectIdCol = objectIdCol;
             _ptidCol = ptidCol;
@@ -257,6 +274,19 @@ public class PublishResultsQueryView extends ResultsQueryView
             _specimenVisitCol = specimenVisitCol;
             _specimenDateCol = specimenDateCol;
             _targetStudyCol = targetStudyCol;
+        }
+
+        private User getUser()
+        {
+            return _user;
+        }
+
+        private void setReshow(Map<Object, String> reshowVisits, Map<Object, String> reshowDates, Map<Object, String> reshowPtids, Map<Object, String> reshowTargetStudies)
+        {
+            _reshowVisits = reshowVisits;
+            _reshowDates = reshowDates;
+            _reshowPtids = reshowPtids;
+            _reshowTargetStudies = reshowTargetStudies;
         }
 
         public ParticipantVisitResolver getResolver(RenderContext ctx) throws IOException
@@ -639,7 +669,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     }
 
-    private static abstract class InputColumn extends SimpleDisplayColumn
+    public static abstract class InputColumn extends SimpleDisplayColumn
     {
         private static String RENDERED_REQUIRES_COMPLETION = InputColumn.class.getName() + "-requiresScript";
 
@@ -648,7 +678,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         private String _completionBase;
         protected final ResolverHelper _resolverHelper;
 
-        private InputColumn(String caption, boolean editable, String formElementName, String completionBase, ResolverHelper resolverHelper)
+        public InputColumn(String caption, boolean editable, String formElementName, String completionBase, ResolverHelper resolverHelper)
         {
             _editable = editable;
             _formElementName = formElementName;
@@ -660,14 +690,21 @@ public class PublishResultsQueryView extends ResultsQueryView
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             super.addQueryColumns(set);
-            _resolverHelper.addQueryColumns(set);
+            if (_resolverHelper != null)
+                _resolverHelper.addQueryColumns(set);
+        }
+
+        protected String getCompletionBase(RenderContext ctx) throws IOException
+        {
+            return _completionBase;
         }
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             if (_editable)
             {
-                if (_completionBase != null)
+                String completionBase = getCompletionBase(ctx);
+                if (completionBase != null)
                 {
                     if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
                     {
@@ -684,7 +721,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                         out.write("tabindex=\"" + ctx.getResultSet().getRow() + "\"\n");
                     }
                     catch (SQLException e) {}
-                    out.write("onKeyUp=\"return handleChange(this, event, '" + _completionBase + "');\">");
+                    out.write("onKeyUp=\"return handleChange(this, event, '" + completionBase + "');\">");
                 }
                 else
                 {
@@ -701,12 +738,25 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
     }
 
+    private Container rowTargetStudy(ResolverHelper helper, RenderContext ctx)
+            throws IOException
+    {
+        return _targetStudyContainer != null ? _targetStudyContainer : helper.getUserTargetStudy(ctx);
+    }
+
     private class ParticipantIDDataInputColumn extends DataInputColumn
     {
-        public ParticipantIDDataInputColumn(String completionBase, ResolverHelper resolverHelper, ColumnInfo ptidCol)
+        public ParticipantIDDataInputColumn(ResolverHelper resolverHelper, ColumnInfo ptidCol)
         {
             super(AbstractAssayProvider.PARTICIPANTID_PROPERTY_CAPTION, "participantId",
-                    true, completionBase, resolverHelper, ptidCol);
+                    true, null, resolverHelper, ptidCol);
+        }
+
+        @Override
+        protected String getCompletionBase(RenderContext ctx) throws IOException
+        {
+            Container c = rowTargetStudy(_resolverHelper, ctx);
+            return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.ParticipantId);
         }
 
         protected Object calculateValue(RenderContext ctx) throws IOException
@@ -717,10 +767,17 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     private class VisitIDDataInputColumn extends DataInputColumn
     {
-        public VisitIDDataInputColumn(String completionBase, ResolverHelper resolverHelper, ColumnInfo visitIDCol)
+        public VisitIDDataInputColumn(ResolverHelper resolverHelper, ColumnInfo visitIDCol)
         {
             super(AbstractAssayProvider.VISITID_PROPERTY_CAPTION, "visitId",
-                        true, completionBase, resolverHelper, visitIDCol);
+                        true, null, resolverHelper, visitIDCol);
+        }
+
+        @Override
+        protected String getCompletionBase(RenderContext ctx) throws IOException
+        {
+            Container c = rowTargetStudy(_resolverHelper, ctx);
+            return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.VisitId);
         }
 
         protected Object calculateValue(RenderContext ctx) throws IOException
@@ -858,7 +915,10 @@ public class PublishResultsQueryView extends ResultsQueryView
         ColumnInfo specimenDateCol = colInfos.get(specimenDateFieldKey);
         ColumnInfo targetStudyCol = colInfos.get(targetStudyFieldKey);
 
-        ResolverHelper resolverHelper = new ResolverHelper(runIdCol, objectIdCol, assayPTIDCol, assayVisitIDCol, assayDateCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, specimenDateCol, targetStudyCol);
+        ResolverHelper resolverHelper = new ResolverHelper(
+                _protocol, _targetStudyContainer, getUser(),
+                runIdCol, objectIdCol, assayPTIDCol, assayVisitIDCol, assayDateCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, specimenDateCol, targetStudyCol);
+        resolverHelper.setReshow(_reshowVisits, _reshowDates, _reshowPtids, _reshowTargetStudies);
 
         if (targetStudyCol != null)
             columns.add(new TargetStudyInputColumn(resolverHelper, targetStudyCol));
@@ -898,18 +958,12 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         columns.add(new ObjectIDDataInputColumn(null, resolverHelper, objectIdCol));
 
-        // UNDONE: Make the completion work on the row's current target study container.
-        String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(_targetStudyContainer,
-                SpecimenService.CompletionType.ParticipantId);
-        columns.add(new ParticipantIDDataInputColumn(ptidCompletionBase, resolverHelper, assayPTIDCol));
-
-        String visitCompletionBase = SpecimenService.get().getCompletionURLBase(_targetStudyContainer,
-                SpecimenService.CompletionType.VisitId);
+        columns.add(new ParticipantIDDataInputColumn(resolverHelper, assayPTIDCol));
 
         // UNDONE: If selected ids contain studies of different timepoint types, include both Date and Visit columns and enable and disable the inputs when the study picker changes.
         // For now, just include both Date and Visit columns if the target study isn't known yet.
         if (_timepointType == null || _timepointType == TimepointType.VISIT)
-            columns.add(new VisitIDDataInputColumn(visitCompletionBase, resolverHelper, assayVisitIDCol));
+            columns.add(new VisitIDDataInputColumn(resolverHelper, assayVisitIDCol));
         if (_timepointType == null || _timepointType == TimepointType.DATE || _timepointType == TimepointType.CONTINUOUS)
             columns.add(new DateDataInputColumn(null, resolverHelper, assayDateCol));
 

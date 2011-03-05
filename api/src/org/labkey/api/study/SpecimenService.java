@@ -48,7 +48,8 @@ public class SpecimenService
     {
         SpecimenGlobalUniqueId,
         ParticipantId,
-        VisitId
+        VisitId,
+        LabId
     }
 
     public interface Service

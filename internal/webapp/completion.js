@@ -22,7 +22,14 @@ var BACKSPACE_KEYCODE = 8;
 function getCompletionDiv()
 {
     if (!_completionDiv)
+    {
+        LABKEY.addMarkup(
+        '<div id="completionDiv" class="labkey-completion">' +
+        '  <div id="completionBody"></div>' +
+        '</div>'
+        );
         _completionDiv = document.getElementById("completionDiv");
+    }
     return _completionDiv;
 }
 
@@ -80,6 +87,7 @@ function isCompletionVisible()
 
 function selectOption(index)
 {
+    getCompletionDiv();
     if (index >= 0)
         _optionSelectedIndex = index;
     var newlineIndex = _elem.value.lastIndexOf('\n');
@@ -93,6 +101,7 @@ function selectOption(index)
 
 function changeSelectedOption(forward)
 {
+    getCompletionDiv();
     var oldSpan = document.getElementById("completionTR" + _optionSelectedIndex);
     var newIndex = -1;
     if (forward)
@@ -120,7 +129,7 @@ function postProcess(responseXML)
     }
 
     var completionText = "<table class='labkey-completion' width='100%'>";
-    var completionList = completions.getElementsByTagName("completion")
+    var completionList = completions.getElementsByTagName("completion");
     for (var i = 0; i < completionList.length; i++)
     {
         var completion = completionList[i];
@@ -137,6 +146,7 @@ function postProcess(responseXML)
     }
     _optionCount = completionList.length;
     completionText += "</table>";
+    getCompletionDiv();
     document.getElementById("completionBody").innerHTML = completionText;
     showCompletionDiv(_elem);
 }
@@ -235,14 +245,4 @@ function hideCompletionDivImmediate()
     _optionSelectedIndex = 0;
 }
 
-LABKEY.addMarkup(
-'<div id="completionDiv" class="labkey-completion">' +
-'  <table>' +
-'    <tr>' +
-'      <td>' +
-'        <span id="completionBody"></span>' +
-'      </td>' +
-'    </tr>' +
-'  </table>' +
-'</div>'
-);
+
