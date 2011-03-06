@@ -1047,7 +1047,7 @@ public class QueryServiceImpl extends QueryService
             else
             {
                 //in production, cache the set of query defs for each module on first request
-                String fileSetCacheKey = QUERYDEF_METADATA_SET_CACHE_ENTRY + dir.toString();
+                String fileSetCacheKey = QUERYDEF_METADATA_SET_CACHE_ENTRY + module.toString() + "." + dir.toString();
                 //noinspection unchecked
                 queryMetadatas = (Collection<? extends Resource>) MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
 
