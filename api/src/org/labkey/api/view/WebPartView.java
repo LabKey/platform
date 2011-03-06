@@ -495,10 +495,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
                     // Add Custom link
                     NavTree nMenu = getNavMenu();
-                    if (nMenu != null && getCustomizeLink() != null)
-                    {
+                    if (nMenu == null)
+                        nMenu = new NavTree("More");  // // 11730 : Customize link missing on many webparts
+
+                    if (getCustomizeLink() != null)
                         nMenu.addChild("Customize", getCustomizeLink());
-                    }
                     
                     if(getLocation() != null && getLocation().equals(WebPartFactory.LOCATION_RIGHT))
                     {
