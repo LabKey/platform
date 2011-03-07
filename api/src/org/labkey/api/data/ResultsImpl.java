@@ -65,7 +65,9 @@ public class ResultsImpl implements Results
             _fieldIndexMap = new HashMap<FieldKey, Integer>(count*2);
             for (int i=1 ; i<=count ; i++)
             {
+                String name = rsmd.getColumnName(i);
                 ColumnInfo col = new ColumnInfo(rsmd,i);
+                col.setAlias(name);
                 _fieldMap.put(col.getFieldKey(), col);
                 _fieldIndexMap.put(col.getFieldKey(), i);
             }
