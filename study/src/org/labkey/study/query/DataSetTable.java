@@ -235,11 +235,19 @@ public class DataSetTable extends FilteredTable
             TableInfo assayResultTable = createAssayResultTable();
             if (assayResultTable != null)
             {
-                for (ColumnInfo columnInfo : assayResultTable.getColumns())
+                for (final ColumnInfo columnInfo : assayResultTable.getColumns())
                 {
                     if (getColumn(columnInfo.getName()) == null)
                     {
-                        ExprColumn wrappedColumn = new ExprColumn(this, columnInfo.getName(), columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType());
+                        ExprColumn wrappedColumn = new ExprColumn(this, columnInfo.getName(), columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType())
+                        {
+                            @Override
+                            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+                            {
+                                super.declareJoins(parentAlias, map);
+                                columnInfo.declareJoins(getAssayResultAlias(parentAlias), map);
+                            }
+                        };
                         wrappedColumn.copyAttributesFrom(columnInfo);
                         addColumn(wrappedColumn);
                     }
@@ -277,37 +285,40 @@ public class DataSetTable extends FilteredTable
             // We used to flatten all of the different domains/tables on the assay side into a row in the dataset,
             // so transform to do a lookup instead 
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId());
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-            FieldKey runFieldKey = provider.getTableMetadata().getRunFieldKeyFromResults();
-            if (name.toLowerCase().startsWith("run"))
+            if (protocol != null)
             {
-                String runProperty = name.substring("run".length()).trim();
-                if (runProperty.length() > 0)
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                FieldKey runFieldKey = provider.getTableMetadata().getRunFieldKeyFromResults();
+                if (name.toLowerCase().startsWith("run"))
                 {
-                    fieldKey = new FieldKey(runFieldKey, runProperty);
-                }
-            }
-            else if (name.toLowerCase().startsWith("batch"))
-            {
-                String batchPropertyName = name.substring("batch".length()).trim();
-                if (batchPropertyName.length() > 0)
-                {
-                    fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
-                }
-            }
-            else if (name.toLowerCase().startsWith("analyte"))
-            {
-                String analytePropertyName = name.substring("analyte".length()).trim();
-                if (analytePropertyName.length() > 0)
-                {
-                    fieldKey = FieldKey.fromParts("Analyte", analytePropertyName);
-                    Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
-                    result = columns.get(fieldKey);
-                    if (result != null)
+                    String runProperty = name.substring("run".length()).trim();
+                    if (runProperty.length() > 0)
                     {
-                        return result;
+                        fieldKey = new FieldKey(runFieldKey, runProperty);
                     }
-                    fieldKey = FieldKey.fromParts("Analyte", "Properties", analytePropertyName);
+                }
+                else if (name.toLowerCase().startsWith("batch"))
+                {
+                    String batchPropertyName = name.substring("batch".length()).trim();
+                    if (batchPropertyName.length() > 0)
+                    {
+                        fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
+                    }
+                }
+                else if (name.toLowerCase().startsWith("analyte"))
+                {
+                    String analytePropertyName = name.substring("analyte".length()).trim();
+                    if (analytePropertyName.length() > 0)
+                    {
+                        fieldKey = FieldKey.fromParts("Analyte", analytePropertyName);
+                        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
+                        result = columns.get(fieldKey);
+                        if (result != null)
+                        {
+                            return result;
+                        }
+                        fieldKey = FieldKey.fromParts("Analyte", "Properties", analytePropertyName);
+                    }
                 }
             }
         }
@@ -355,9 +366,13 @@ public class DataSetTable extends FilteredTable
             // Join in Assay-side data to make it appear as if it's in the dataset table itself 
             String assayResultAlias = getAssayResultAlias(alias);
             TableInfo assayResultTable = createAssayResultTable();
-            from.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
-            from.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
-            from.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
+            // Check if assay design has been deleted
+            if (assayResultTable != null)
+            {
+                from.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
+                from.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
+                from.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
+            }
         }
 
         return from;

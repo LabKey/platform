@@ -17,6 +17,8 @@
 package org.labkey.experiment.controllers.exp;
 
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -98,24 +100,26 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             {
                 ActionURL url = new ActionURL(ExperimentController.ToggleRunExperimentMembershipAction.class, ctx.getContainer());
                 out.write("<script language=\"javascript\">\n" +
-                        "LABKEY.requiresYahoo('yahoo', true);\n" +
-                        "LABKEY.requiresYahoo('connection');\n" +
                         "function toggleRunExperimentMembership(expId, runId, included, dataRegionName)\n" +
                         "{\n" +
-                        "    var callback = { \n" +
+                        "    var config = { \n" +
                         "        success: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('Run group information saved successfully.') },\n" +
                         "        failure: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('<div class=\"labkey-error\">Run group information save failed.</div>') },\n" +
+                        "        url: " + PageFlowUtil.jsString(url.getLocalURIString()) + " + 'runId=' + runId + '&experimentId=' + expId + '&included=' + included,\n" +
+                        "        method: 'GET',\n" +
                         "    }\n" +
-                        "    YAHOO.util.Connect.asyncRequest('GET', '" + url + "runId=' + runId + '&experimentId=' + expId + '&included=' + included, callback, null); \n" +
+                        "    LABKEY.Ajax.request(config); \n" +
                         "};\n" +
                         "</script>");
                 _renderedFunction = true;
             }
 
             out.write("<input type=\"checkbox\" name=\"experimentMembership\" ");
-            if (ctx.getViewContext().hasPermission(UpdatePermission.class))
+            int currentExpId = getExpId(ctx);
+            ExpExperiment exp = ExperimentService.get().getExpExperiment(currentExpId);
+            if (exp != null && exp.getContainer().hasPermission(ctx.getViewContext().getUser(), UpdatePermission.class))
             {
-                out.write(" onclick=\"javascript:toggleRunExperimentMembership(" + getExpId(ctx) + ", " + getRunId(ctx) + ", this.checked, '" + PageFlowUtil.filter(ctx.getCurrentRegion().getName()) + "');\"");
+                out.write(" onclick=\"javascript:toggleRunExperimentMembership(" + currentExpId + ", " + getRunId(ctx) + ", this.checked, '" + PageFlowUtil.filter(ctx.getCurrentRegion().getName()) + "');\"");
             }
             else
             {
