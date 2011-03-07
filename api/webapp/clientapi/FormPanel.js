@@ -157,26 +157,6 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         this.el.addClass('extContainer');
     },
 
-
-    /* labels are rendered as part of layout
-    doLayout : function()
-    {
-        LABKEY.ext.FormPanel.superclass.doLayout.call(this);
-        var fn = function(c)
-        {
-            if (c.helpPopup && c.helpPopup.target)
-            {
-                // First line: open on click; Second line: open on hover
-                //Ext.get(c.helpPopup.target).on("click", c.helpPopup.onTargetOver, c.helpPopup);
-                c.helpPopup.initTarget(c.helpPopup.target);
-            }
-            if (c.items)
-                c.items.each(fn);
-        };
-        this.items.each(fn);
-    },  */
-
-
     // private
     initFieldDefaults : function(config)
     {
@@ -451,7 +431,7 @@ LABKEY.ext.FormHelper =
      * @param {boolean} [config.lookups] use lookups=false to prevent creating default combobox for lookup columns
      * @param {object}  [config.ext] is a standard Ext config object that will be merged with the computed field config
      *      e.g. ext:{width:120, tpl:new Ext.Template(...)}
-     * @param {object} [config.store] advanced! Pass in your own custom store for a lookup field
+     * @param {object} [config.lookup.store] advanced! Pass in your own custom store for a lookup field
      * @param {boolean} [config.lazyCreateStore] If false, the store will be created immediately.  If true, the store will be created when the component is created. (default true)
      *
      * Will accept multiple config parameters which will be combined.
@@ -493,9 +473,12 @@ LABKEY.ext.FormHelper =
         if (config.lookup && false !== config.lookups)
         {
             var l = config.lookup;
+            var store = config.lookup.store || config.store;
+            if (store && store == config.store)
+                console.debug("use config.lookup.store");
 
-            if (Ext.isObject(config.store) && config.store.events)
-                field.store = config.store;
+            if (Ext.isObject(store) && store.events)
+                field.store = store;
             else
                 field.store = LABKEY.ext.FormHelper.getLookupStoreConfig(config);
 
@@ -659,7 +642,7 @@ LABKEY.ext.FormHelper =
             storeId: LABKEY.ext.FormHelper.getLookupStoreId(c),
             schemaName: l.schemaName,
             queryName: l.queryName,
-            containerPath: l.container || c.containerPath || LABKEY.container.path,
+            containerPath: l.container || l.containerPath || c.containerPath || LABKEY.container.path,
             autoLoad: true
         };
 
