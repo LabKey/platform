@@ -2419,7 +2419,7 @@ public class StudyController extends BaseStudyController
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;
 
-                qus.deleteRows(getViewContext().getUser(), getContainer(), keys);
+                qus.deleteRows(getViewContext().getUser(), getContainer(), keys, Collections.<String, Object>emptyMap());
 
                 scope.commitTransaction();
                 inTransaction = false;

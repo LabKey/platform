@@ -1800,7 +1800,7 @@ public class QueryController extends SpringActionController
 
             try
             {
-                updateService.deleteRows(getUser(), getContainer(), keyValues);
+                updateService.deleteRows(getUser(), getContainer(), keyValues, Collections.<String, Object>emptyMap());
                 _url = forward;
             }
             catch (SQLException x)
@@ -1908,7 +1908,7 @@ public class QueryController extends SpringActionController
                 
                 if (insert)
                 {
-                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values));
+                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.<String, Object>emptyMap());
                 }
                 else
                 {
@@ -1919,7 +1919,7 @@ public class QueryController extends SpringActionController
                         if (!(oldValues instanceof CaseInsensitiveMapWrapper))
                             oldValues = new CaseInsensitiveMapWrapper<Object>(oldValues);
                     }
-                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues));
+                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), Collections.<String, Object>emptyMap());
                 }
 
                 if (ownTransaction)
@@ -2498,16 +2498,16 @@ public class QueryController extends SpringActionController
     {
         insert(InsertPermission.class)
         {
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
             {
-                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows);
+                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, extraContext);
                 return qus.getRows(user, container, insertedRows);
             }
         },
         insertWithKeys(InsertPermission.class)
         {
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
             {
                 List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
@@ -2517,7 +2517,7 @@ public class QueryController extends SpringActionController
                     newRows.add((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES));
                     oldKeys.add((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS));
                 }
-                List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows);
+                List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, extraContext);
                 updatedRows = qus.getRows(user, container, updatedRows);
                 List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
                 for (int i = 0; i < updatedRows.size(); i++)
@@ -2532,16 +2532,16 @@ public class QueryController extends SpringActionController
         },
         update(UpdatePermission.class)
         {
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
             {
-                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, rows);
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, rows, extraContext);
                 return qus.getRows(user, container, updatedRows);
             }
         },
         updateChangingKeys(UpdatePermission.class)
         {
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
             {
                 List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
@@ -2551,7 +2551,7 @@ public class QueryController extends SpringActionController
                     newRows.add((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES));
                     oldKeys.add((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS));
                 }
-                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys);
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, extraContext);
                 updatedRows = qus.getRows(user, container, updatedRows);
                 List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
                 for (int i = 0; i < updatedRows.size(); i++)
@@ -2567,10 +2567,10 @@ public class QueryController extends SpringActionController
         delete(DeletePermission.class)
         {
             @Override
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
             {
-                return qus.deleteRows(user, container, rows);
+                return qus.deleteRows(user, container, rows, extraContext);
             }
         };
 
@@ -2586,7 +2586,7 @@ public class QueryController extends SpringActionController
             return _permission;
         }
 
-        public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+        public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
                 throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException;
     }
 
@@ -2614,6 +2614,9 @@ public class QueryController extends SpringActionController
             String queryName = json.getString(PROP_QUERY_NAME);
             TableInfo table = getTableInfo(container, user, schemaName, queryName);
 
+            if (!table.hasPermission(user, commandType.getPermission()))
+                HttpView.throwUnauthorized();
+
             if (table.getPkColumns().size() == 0)
                 throw new IllegalArgumentException("The table '" + table.getPublicSchemaName() + "." +
                         table.getPublicName() + "' cannot be updated because it has no primary key defined!");
@@ -2637,9 +2640,7 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            if (!table.hasPermission(user, commandType.getPermission()))
-                HttpView.throwUnauthorized();
-
+            Map<String, Object> extraContext = json.optJSONObject("extraContext");
 
             //we will transact operations by default, but the user may
             //override this by sending a "transacted" property set to false
@@ -2658,7 +2659,7 @@ public class QueryController extends SpringActionController
             try
             {
                 List<Map<String, Object>> responseRows =
-                        commandType.saveRows(qus, rowsToProcess, getViewContext().getUser(), getViewContext().getContainer());
+                        commandType.saveRows(qus, rowsToProcess, getViewContext().getUser(), getViewContext().getContainer(), extraContext);
 
                 response.put("rows", responseRows);
 

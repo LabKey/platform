@@ -137,7 +137,7 @@ class SampleSetUpdateService implements QueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows)
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.insertOnly, user, container, rows);
@@ -150,7 +150,7 @@ class SampleSetUpdateService implements QueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys)
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.updateOnly, user, container, rows);
@@ -163,7 +163,7 @@ class SampleSetUpdateService implements QueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys)
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         int[] ids = new int[keys.size()];

@@ -1077,7 +1077,7 @@ public class FileContentController extends SpringActionController
             QueryUpdateService qus = ti.getUpdateService();
 
             try {
-                qus.updateRows(getUser(), getContainer(), _files, null);
+                qus.updateRows(getUser(), getContainer(), _files, null, Collections.<String, Object>emptyMap());
                 response.put("success", true);
             }
             catch (QueryUpdateServiceException e)

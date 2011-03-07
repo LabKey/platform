@@ -252,7 +252,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
             if (isInsert())
             {
-                List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data));
+                List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data), Collections.<String, Object>emptyMap());
                 if (insertedRows.size() == 0)
                     return false;
 
@@ -282,7 +282,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             else
             {
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, c, Collections.singletonList(data),
-                        Collections.singletonList(Collections.<String, Object>singletonMap("lsid", form.getLsid())));
+                        Collections.singletonList(Collections.<String, Object>singletonMap("lsid", form.getLsid())), Collections.<String, Object>emptyMap());
                 if (updatedRows.size() == 0)
                     return false;
             }
