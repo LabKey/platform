@@ -104,7 +104,8 @@ public abstract class ExportScriptModel
         String name;
         CompareType operator;
         String value;
-        for(SimpleFilter.FilterClause clause : filter.getClauses())
+
+        for (SimpleFilter.FilterClause clause : filter.getClauses())
         {
             //all filter clauses can report col names and values,
             //each of which in this case should contain only one value
@@ -112,7 +113,7 @@ public abstract class ExportScriptModel
             value = getFilterValue(clause, clause.getParamVals());
 
             //two kinds of clauses can be used on URLs: CompareClause and InClause
-            if(clause instanceof CompareType.CompareClause)
+            if (clause instanceof CompareType.CompareClause)
                 operator = ((CompareType.CompareClause)clause).getComparison();
             else if(clause instanceof SimpleFilter.InClause)
                 operator = CompareType.IN;

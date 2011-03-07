@@ -16,15 +16,13 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Assert;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -34,8 +32,15 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import java.sql.Types;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * User: brittp
@@ -313,7 +318,7 @@ public enum CompareType
                 {
                     throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
                 }},
-    HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "QC_VALUE", OperatorType.HASMVVALUE)
+    HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
     // TODO: Switch to MV_INDICATOR
             {
                 @Override
@@ -328,7 +333,7 @@ public enum CompareType
                     throw new UnsupportedOperationException("Conditional formatting not yet supported for QC/MV value indicators");
                 }
             },
-    NO_QC("Does Not Have A QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NOT_QC_VALUE", OperatorType.NOMVVALUE)
+    NO_QC("Does Not Have A QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
     // TODO: Switch to MV_INDICATOR
             {
                 @Override

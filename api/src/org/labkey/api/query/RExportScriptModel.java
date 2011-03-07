@@ -56,12 +56,13 @@ public class RExportScriptModel extends ExportScriptModel
         StringBuilder filtersExpr = new StringBuilder("makeFilter(");
         String sep = "";
 
-        for(String mf : filterExprs)
+        for (String mf : filterExprs)
         {
             filtersExpr.append(sep);
             filtersExpr.append(mf);
             sep = ",";
         }
+
         filtersExpr.append(")");
 
         return filtersExpr.toString();
