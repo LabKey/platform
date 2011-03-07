@@ -71,10 +71,13 @@ public class AuditLogEvent
     
     public void setCreatedBy(User user)
     {
-        _createdBy = user;
+        if (user != null)
+        {
+            _createdBy = user;
 
-        if (user.isImpersonated())
-            setImpersonatedBy(user.getImpersonatingUser().getUserId());
+            if (user.isImpersonated())
+                setImpersonatedBy(user.getImpersonatingUser().getUserId());
+        }
     }
 
     public Integer getImpersonatedBy()

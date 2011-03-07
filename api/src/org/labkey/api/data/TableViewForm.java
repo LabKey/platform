@@ -385,7 +385,26 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                     if (null == col || col.isNullable())
                         values.put(propName, null);
                     else
-                        errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_REQUIRED}, new String[] {caption}, caption + " must not be empty."));
+                    {
+                        boolean isError = true;
+
+                        // if the column is mv-enabled and a mv indicator has been specified, don't flag the required
+                        // error
+                        if (col.isMvEnabled())
+                        {
+                            ColumnInfo mvCol = _tinfo.getColumn(col.getMvColumnName());
+                            if (mvCol != null)
+                            {
+                                String ff_mvName = getFormFieldName(mvCol);
+                                isError = StringUtils.trimToNull(_stringValues.get(ff_mvName)) == null;
+                            }
+                        }
+                        if (isError)
+                            errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_REQUIRED}, new String[] {caption}, caption + " must not be empty."));
+                        else
+                            values.put(propName, null);
+                    }
+
                 }
                 else
                 {
