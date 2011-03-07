@@ -759,12 +759,12 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             return null;
 
         // Create legal path name
-        Path pathNew = new Path("queries",
+        Path pathNew = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
                 FileUtil.makeLegalName(getPublicSchemaName()),
                 FileUtil.makeLegalName(getName()) + ".js");
 
         // For backwards compat with 10.2
-        Path pathOld = new Path("queries",
+        Path pathOld = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
                 getPublicSchemaName().replaceAll("\\W", "_"),
                 getName().replaceAll("\\W", "_") + ".js");
 
@@ -788,7 +788,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return tableScript;
     }
 
-    protected <T> T invokeTableScript(Container c, Class<T> resultType, String methodName, Object... args)
+    protected <T> T invokeTableScript(Container c, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
     {
         try
         {
@@ -796,37 +796,21 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             if (script == null)
                 return null;
 
-            final Logger scriptLogger = Logger.getLogger(ScriptService.Console.class);
-
-            if (scriptLogger.isEnabledFor(Level.DEBUG))
+            if (!script.evaluated())
             {
-                script.getContext().setWriter(new PrintWriter(new Writer(){
-                    @Override
-                    public void write(String str) throws IOException
-                    {
-                        scriptLogger.debug(str);
-                    }
+                Map<String, Object> bindings = new HashMap<String, Object>();
+                if (extraContext != null && !extraContext.isEmpty())
+                    bindings.put("extraContext", extraContext);
+                bindings.put("schemaName", getPublicSchemaName());
+                bindings.put("tableName", getPublicName());
 
-                    @Override
-                    public void write(char[] cbuf, int off, int len) throws IOException
-                    {
-                        scriptLogger.debug(new String(cbuf, off, len));
-                    }
-
-                    @Override
-                    public void flush() throws IOException
-                    {
-                    }
-
-                    @Override
-                    public void close() throws IOException
-                    {
-                    }
-                }));
+                script.eval(bindings);
             }
 
             if (script.hasFn(methodName))
+            {
                 return script.invokeFn(resultType, methodName, args);
+            }
         }
         catch (NoSuchMethodException e)
         {
@@ -843,18 +827,18 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     private Object[] EMPTY_ARGS = new Object[0];
 
     @Override
-    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors)
+    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors, Map<String, Object> extraContext)
             throws ValidationException
     {
         assert errors != null;
         List<Map<String, Object>> list = errors.toList();
 
         String triggerMethod = (before ? "init" : "complete");
-        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, type.name().toLowerCase(), list);
+        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, extraContext, type.name().toLowerCase(), list);
 
         errors = ValidationException.fromList(list);
         if (success != null && !success.booleanValue())
-                errors.addError(new SimpleValidationError(triggerMethod + " validation failed"));
+            errors.addError(new SimpleValidationError(triggerMethod + " validation failed"));
 
         if (errors.hasErrors())
             throw errors;
@@ -862,7 +846,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     @Override
     public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
-                                  Map<String, Object> newRow, Map<String, Object> oldRow)
+                                  Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException
     {
         Map<String, Object> errors = new LinkedHashMap<String, Object>();
@@ -889,7 +873,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                 case DELETE: args = new Object[] { oldRow, errors };         break;
             }
         }
-        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, args);
+        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, extraContext, args);
         if (success != null && !success.booleanValue())
             errors.put(null, triggerMethod + " validation failed");
 

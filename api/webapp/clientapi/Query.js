@@ -45,7 +45,8 @@ LABKEY.Query = new function()
             schemaName : config.schemaName,
             queryName : config.queryName,
             rows : config.rowDataArray,
-            transacted : config.transacted
+            transacted : config.transacted,
+            extraContext : config.extraContext
         };
 
         return LABKEY.Ajax.request({
@@ -474,15 +475,16 @@ LABKEY.Query = new function()
         * @param {String} config.queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
+        *               The row array must include the primary key column values and values for
+        *               other columns you wish to update.
+        * @param {Object} [config.extraContext] <b>Experimental:</b> Optional extra context object passed into the transformation/validation script environment.
         * @param {Function} config.success Function called when the "updateRows" function executes successfully.
         	    Will be called with arguments:
                 the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
                 (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
         * @param {Function} [config.failure] Function called when execution of the "updateRows" function fails.
         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
-        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
-        *               The row array must include the primary key column values and values for
-        *               other columns you wish to update.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
         *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
@@ -514,6 +516,7 @@ LABKEY.Query = new function()
         * @param {String} config.commands[].command Name of the command to be performed. Must be one of "insert", "update", or "delete".
         * @param {Array} config.commands[].rows An array of data for each row to be changed. See {@link LABKEY.Query.insertRows},
         * {@link LABKEY.Query.updateRows}, or {@link LABKEY.Query.deleteRows} for requirements of what data must be included for each row.
+        * @param {Object} [config.extraContext] <b>Experimental:</b> Optional extra context object passed into the transformation/validation script environment.
         * @param {Function} config.success Function called when the "saveRows" function executes successfully.
         	    Will be called with arguments:
                 an object with a single "result" property - an array of parsed response data ({@link LABKEY.Query.ModifyRowsResults}) (one for each command in the request),
@@ -558,16 +561,17 @@ LABKEY.Query = new function()
         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
+        *                  The row data array must include all column values except for the primary key column.
+        *                  However, you will need to include the primary key column values if you defined
+        *                  them yourself instead of relying on auto-number.
+        * @param {Object} [config.extraContext] <b>Experimental:</b> Optional extra context object passed into the transformation/validation script environment.
         * @param {Function} config.success Function called when the "insertRows" function executes successfully.
 						Will be called with the following arguments:
                         the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
                         (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
 		* @param {Function} [config.failure]  Function called when execution of the "insertRows" function fails.
         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
-        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
-        *                  The row data array must include all column values except for the primary key column.
-        *                  However, you will need to include the primary key column values if you defined
-        *                  them yourself instead of relying on auto-number.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
         *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
@@ -617,6 +621,7 @@ LABKEY.Query = new function()
         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {Object} [config.extraContext] <b>Experimental:</b> Optional extra context object passed into the transformation/validation script environment.
         * @param {Function} config.success Function called when the "deleteRows" function executes successfully.
                      Will be called with the following arguments:
                      the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and

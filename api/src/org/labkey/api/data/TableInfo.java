@@ -288,9 +288,10 @@ public interface TableInfo
      * @param type The TriggerType for the event.
      * @param before true if the trigger is before the event, false if after the event.
      * @param errors Any errors created by the validation script will be added to the errors collection.
+     * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors)
+    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors, Map<String, Object> extraContext)
             throws ValidationException;
 
     /**
@@ -325,10 +326,11 @@ public interface TableInfo
      * @param before true if the trigger is before the event, false if after the event.
      * @param oldRow The previous row for UPDATE and DELETE
      * @param newRow The new row for INSERT and UPDATE.
+     * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
     public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
-                                  Map<String, Object> newRow, Map<String, Object> oldRow)
+                                  Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException;
 
 }

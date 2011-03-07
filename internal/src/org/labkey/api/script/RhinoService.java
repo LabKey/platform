@@ -209,22 +209,32 @@ class ScriptReferenceImpl implements ScriptReference
             Context.exit();
         }
 
-        ScriptContext ctxt = getContext();
-        if (map != null)
+        ctx = Context.enter();
+        try
         {
-            Scriptable scope = engine.getRuntimeScope(ctxt);
-            Bindings bindings = ctxt.getBindings(ScriptContext.ENGINE_SCOPE);
-            for (Map.Entry<String, ?> entry : map.entrySet())
-                bindings.put(entry.getKey(), Context.javaToJS(entry.getValue(), scope));
-            ctxt.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        }
-        ctxt.getBindings(ScriptContext.ENGINE_SCOPE).put(ScriptEngine.FILENAME, r.getPath().toString());
+            ScriptContext ctxt = getContext();
+            if (map != null)
+            {
+                Scriptable scope = engine.getRuntimeScope(ctxt);
+                Bindings bindings = ctxt.getBindings(ScriptContext.ENGINE_SCOPE);
+                for (Map.Entry<String, ?> entry : map.entrySet())
+                    bindings.put(entry.getKey(), Context.javaToJS(entry.getValue(), scope));
+                ctxt.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+            }
+            ctxt.getBindings(ScriptContext.ENGINE_SCOPE).put(ScriptEngine.FILENAME, r.getPath().toString());
 
-        RhinoService.LOG.debug("Evaluating script '" + r.getPath().toString() + "'");
-        Object result = script.eval(ctxt);
-        evaluated = true;
-        return result;
+            RhinoService.LOG.debug("Evaluating script '" + r.getPath().toString() + "'");
+            Object result = script.eval(ctxt);
+            evaluated = true;
+            return result;
+        }
+        finally
+        {
+            Context.exit();
+        }
     }
+
+    public boolean evaluated() { return evaluated; }
 
     public boolean hasFn(String name) throws ScriptException
     {
@@ -238,10 +248,17 @@ class ScriptReferenceImpl implements ScriptReference
 
     public <T> T invokeFn(Class<T> resultType, String name, Object... args) throws ScriptException, NoSuchMethodException
     {
+        // compile and evaluate if necessary
+        if (!evaluated)
+            eval();
+
         Context ctx = Context.enter();
         try
         {
-            Object result = invokeFn(name, args);
+            RhinoService.LOG.debug("Invoking method '" + name + "' in script '" + r.getPath().toString() + "'");
+            ScriptContext ctxt = getContext();
+            Scriptable scope = engine.getRuntimeScope(ctxt);
+            Object result = engine.invokeMethod(scope, name, args);
             if (result == null)
                 return null;
             return (T)ScriptUtils.jsToJava(result, resultType);
@@ -254,14 +271,7 @@ class ScriptReferenceImpl implements ScriptReference
 
     public Object invokeFn(String name, Object... args) throws ScriptException, NoSuchMethodException
     {
-        // compile and evaluate if necessary
-        if (!evaluated)
-            eval();
-
-        RhinoService.LOG.debug("Invoking method '" + name + "' in script '" + r.getPath().toString() + "'");
-        ScriptContext ctxt = getContext();
-        Scriptable scope = engine.getRuntimeScope(ctxt);
-        return engine.invokeMethod(scope, name, args);
+        return invokeFn(Object.class, name, args);
     }
 
 }
@@ -288,7 +298,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
 
     protected ModuleSource load(String moduleScript, Object validator)
     {
-        // NOTE: Don't recheck for stale-ness: callins .isStale() resets the staleness of the ResourceRef.
+        // NOTE: Don't recheck for stale-ness: calling .isStale() resets the staleness of the ResourceRef.
         //if (validator instanceof ResourceRef && !((ResourceRef)validator).isStale())
         //    return NOT_MODIFIED;
 

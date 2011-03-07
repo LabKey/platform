@@ -40,6 +40,9 @@ public interface ScriptReference
     public <T> T eval(Class<T> resultType) throws ScriptException;
     public <T> T eval(Class<T> resultType, Map<String, ?> bindings) throws ScriptException;
 
+    /** True if the script has been evaluated sucessfully. */
+    public boolean evaluated();
+
     /**
      * Checks if a JavaScript function is in scope after {@link eval()}uating the compiled script.
      * @param name
