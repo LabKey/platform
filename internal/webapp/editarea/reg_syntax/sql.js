@@ -7,8 +7,8 @@ editAreaLoader.load_syntax["sql"] = {
 	,'KEYWORDS' : {
 		'statements' : [
 			'select', 'SELECT', 'where', 'order', 'by',
-			'insert', 'from', 'update', 'grant', 'left join', 'right join', 
-            'union', 'group', 'having', 'limit', 'alter', 'LIKE','IN','CASE'
+			'insert', 'from', 'update', 'grant', 'left join', 'right join',
+            'union', 'group', 'having', 'limit', 'alter', 'LIKE', 'IN', 'CASE', 'pivot'
 		]
 		,'reserved' : [
 			'null', 'enum', 'int', 'boolean', 'add', 'varchar'
@@ -40,12 +40,12 @@ editAreaLoader.load_syntax["sql"] = {
 		}
 	}
 	,'STYLES' : {
-		'COMMENTS': 'color: #AAAAAA;'
-		,'QUOTESMARKS': 'color: #879EFA;'
+		'COMMENTS': 'color: #CCCCCC;'
+		,'QUOTESMARKS': 'color: #6374B7;'
 		,'KEYWORDS' : {
-			'reserved' : 'color: #48BDDF;'
-			,'functions' : 'color: #0040FD;'
-			,'statements' : 'color: #60CA00;'
+			'reserved' : 'color: #48BDDF; font-weight: bold;'
+			,'functions' : 'color: #0040FD; font-weight: bold;'
+			,'statements' : 'color: #428900; font-weight: bold;'
 			}
 		,'OPERATORS' : 'color: #FF00FF;'
 		,'DELIMITERS' : 'color: #2B60FF;'
