@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.controllers.property;
 
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -270,13 +271,15 @@ public class PropertyController extends SpringActionController
                 data = data.replaceAll("\r|\n", "<br>");
                 data = data.replaceAll("\t", "<tab>");
                 writer.write(data);
-
                 writer.flush();
-                writer.close();
             }
             catch (Exception e)
             {
                 error(writer, e.getMessage());
+            }
+            finally
+            {
+                IOUtils.closeQuietly(writer);
             }
         }
 

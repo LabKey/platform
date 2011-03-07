@@ -26,7 +26,7 @@
     <tr><td>The list of users below contains all users that have READ access to this folder and are available to receive notifications
         by email for message boards and file content events.<br/>
         A users current message or file notification setting will be visible in the appropriately named column. Administrators
-        may bulk edit users settings by clicking on the 'Admin' button to expose the configuration panels for each
+        may bulk edit users settings by clicking on the 'Settings' button to expose the configuration panels for each
         notification type. Configuration affects only the users that are selected with the record check boxes.
     </td></tr>
 </table>

@@ -430,6 +430,9 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
 
         private HttpView getMessageTabView() throws Exception
         {
+            final String key = DataRegionSelection.getSelectionKey("core", CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME, null, DATA_REGION_NAME);
+            DataRegionSelection.clearAll(getViewContext(), key);
+
             QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME);
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(true);
@@ -461,8 +464,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
                     try {
                         // add the provider configuration views to the admin panel button
                         PanelButton adminButton = new PanelButton("Settings", getDataRegionName());
-                        PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(),
-                                DataRegionSelection.getSelectionKey("core", CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME, null, DATA_REGION_NAME));
+                        PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
                         for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
                         {
                             VBox view = new VBox();

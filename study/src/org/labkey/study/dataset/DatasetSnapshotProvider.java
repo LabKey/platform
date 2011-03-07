@@ -208,14 +208,17 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         Map<String, String> columnMap = new CaseInsensitiveHashMap<String>();
         Study study = StudyManager.getInstance().getStudy(view.getContainer());
 
-        for (FieldKey fieldKey : fieldKeys)
+        if (fieldMap != null)
         {
-            ColumnInfo col = fieldMap.get(fieldKey);
-            if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
+            for (FieldKey fieldKey : fieldKeys)
             {
-                // The key of the entry is the same code that generates the TSV header lines for
-                // TSVGridWriter.ColumnHeaderType.queryColumnName. It would be nice to use the code directly.
-                columnMap.put(FieldKey.fromString(col.getName()).getDisplayString(), getPropertyURI(d, col));
+                ColumnInfo col = fieldMap.get(fieldKey);
+                if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
+                {
+                    // The key of the entry is the same code that generates the TSV header lines for
+                    // TSVGridWriter.ColumnHeaderType.queryColumnName. It would be nice to use the code directly.
+                    columnMap.put(FieldKey.fromString(col.getName()).getDisplayString(), getPropertyURI(d, col));
+                }
             }
         }
         return columnMap;

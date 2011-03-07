@@ -297,7 +297,7 @@ public class ReportsController extends SpringActionController
 
             if (report instanceof Report.ImageReport)
                 ((Report.ImageReport)report).renderImage(context);
-            else
+            else if (report != null)
                 throw new RuntimeException("Report must implement Report.ImageReport to use the plot chart action");
             
             return null;

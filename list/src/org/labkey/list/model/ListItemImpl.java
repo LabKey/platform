@@ -33,6 +33,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
@@ -391,10 +392,15 @@ public class ListItemImpl implements ListItem
         boolean ret = true;
 
         //check for isRequired
-        if (prop.isRequired() && (null == value || (value instanceof ObjectProperty && ((ObjectProperty)value).value() == null)))
+        if (prop.isRequired())
         {
-            errors.add(new PropertyValidationError("The field '" + prop.getName() + "' is required.", prop.getName()));
-            return false;
+            // for mv indicator columns either an indicator or a field value is sufficient
+            boolean hasMvIndicator = prop.isMvEnabled() && (value instanceof ObjectProperty && ((ObjectProperty)value).getMvIndicator() != null);
+            if (!hasMvIndicator && (null == value || (value instanceof ObjectProperty && ((ObjectProperty)value).value() == null)))
+            {
+                errors.add(new PropertyValidationError("The field '" + prop.getName() + "' is required.", prop.getName()));
+                return false;
+            }
         }
 
         for (IPropertyValidator validator : prop.getValidators())
