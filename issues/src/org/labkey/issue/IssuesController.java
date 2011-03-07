@@ -1352,7 +1352,11 @@ public class IssuesController extends SpringActionController
             int type = form.getType();
             HString keyword = form.getKeyword();
 
-            if (ISSUE_PRIORITY == type)
+            if (null == keyword || StringUtils.isBlank(keyword.getSource()))
+            {
+                errors.reject(ERROR_MSG, "Enter a value in the text box before clicking any of the \"Add <Keyword>\" buttons");
+            }
+            else if (ISSUE_PRIORITY == type)
             {
                 try
                 {
@@ -1363,9 +1367,6 @@ public class IssuesController extends SpringActionController
                     errors.reject(ERROR_MSG, "Priority must be an integer");
                 }
             }
-
-            if (null == keyword || StringUtils.isBlank(keyword.getSource()))
-                errors.reject(ERROR_MSG, "Enter a value in the text box before clicking any of the \"Add <Keyword>\" buttons");
         }
 
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
