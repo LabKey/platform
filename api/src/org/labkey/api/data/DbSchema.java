@@ -168,7 +168,12 @@ public class DbSchema
             }
         }
 
-        _log.debug("" + schema.getTables().size() + " tables loaded in " + DateUtil.formatDuration(System.currentTimeMillis()-startLoad));
+        long elapsed = System.currentTimeMillis() - startLoad;
+
+        // Seems impossible, but we've seen a negative elapsed time (clock change in the middle of a schema load?).  See #11739.
+        if (elapsed >= 0)
+            _log.debug("" + schema.getTables().size() + " tables loaded in " + DateUtil.formatDuration(elapsed));
+
         return schema;
     }
 
