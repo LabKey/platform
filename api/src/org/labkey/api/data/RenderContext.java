@@ -22,7 +22,6 @@ import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -33,9 +32,15 @@ import org.springframework.validation.Errors;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class RenderContext extends BoundMap // extends ViewContext
 {
@@ -182,38 +187,6 @@ public class RenderContext extends BoundMap // extends ViewContext
         _rs = rs;
     }
 
-    @Deprecated // use setResults()
-    public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
-    {
-        if (fieldMap == null)
-        {
-            if (AppProps.getInstance().isDevMode())
-                _log.warn("Call to RenderContext.setResultSet() without a field map"); // , new Throwable());
-            fieldMap = new LinkedHashMap<FieldKey, ColumnInfo>();
-
-            try
-            {
-                if (null != rs)
-                {
-                    ResultSetMetaData rsmd = rs.getMetaData();
-                    for (int i = 1; i <= rsmd.getColumnCount(); i++)
-                    {
-                        String name = rsmd.getColumnName(i);
-                        ColumnInfo col = new ColumnInfo(name);
-                        col.setAlias(name);
-                        fieldMap.put(col.getFieldKey(), col);
-                    }
-                }
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-        }
-
-        _rs = new ResultsImpl(rs, fieldMap);
-    }
-    
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
     {
         Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new LinkedHashSet<ColumnInfo>());

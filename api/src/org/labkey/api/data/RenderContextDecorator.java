@@ -135,12 +135,6 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
-    {
-        _ctx.setResultSet(rs, fieldMap);
-    }
-
-    @Override
     public ActionURL getSortFilterURLHelper()
     {
         return _ctx.getSortFilterURLHelper();
@@ -153,7 +147,7 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, Map<String,Object> parameters, int maxRows, long offset, String name, boolean async)
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async)
             throws SQLException, IOException
     {
         return _ctx.getResultSet(fieldMap, tinfo, parameters, maxRows, offset, name, async);
@@ -161,7 +155,7 @@ public class RenderContextDecorator extends RenderContext
 
     @Override
     public Map<String, Aggregate.Result> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName,
-            List<Aggregate> aggregatesIn, Map<String,Object> parameters, boolean async)
+            List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async)
             throws SQLException, IOException
     {
         return _ctx.getAggregates(displayColumns, tinfo, dataRegionName, aggregatesIn, parameters, async);
@@ -186,7 +180,7 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String,Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
+    public Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
             throws SQLException, IOException
     {
         return _ctx.selectForDisplay(table, columns, parameters, filter, sort, maxRows, offset, async);

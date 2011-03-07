@@ -65,7 +65,6 @@ public class ResultsImpl implements Results
             _fieldIndexMap = new HashMap<FieldKey, Integer>(count*2);
             for (int i=1 ; i<=count ; i++)
             {
-                String name = rsmd.getColumnName(i);
                 ColumnInfo col = new ColumnInfo(rsmd,i);
                 _fieldMap.put(col.getFieldKey(), col);
                 _fieldIndexMap.put(col.getFieldKey(), i);
@@ -98,7 +97,7 @@ public class ResultsImpl implements Results
         }
     }
 
-    public ResultsImpl(ResultSet rs,  @NotNull Map<FieldKey, ColumnInfo> fieldMap)
+    public ResultsImpl(ResultSet rs, @NotNull Map<FieldKey, ColumnInfo> fieldMap)
     {
         _rs = rs;
         _fieldMap = null == fieldMap ? Collections.<FieldKey, ColumnInfo>emptyMap() : fieldMap;
