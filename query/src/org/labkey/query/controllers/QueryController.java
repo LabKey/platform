@@ -2754,6 +2754,8 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("Empty request");
             }
 
+            Map<String, Object> extraContext = json.optJSONObject("extraContext");
+
             boolean transacted = json.optBoolean("transacted", true);
             DbScope scope = null;
             if (transacted)
@@ -2783,6 +2785,17 @@ public class QueryController extends SpringActionController
                     JSONObject commandObject = commands.getJSONObject(i);
                     String commandName = commandObject.getString(PROP_COMMAND);
                     CommandType command = CommandType.valueOf(commandName);
+                    if (commandObject.has("extraContext"))
+                    {
+                        // Merge the top-level 'extraContext' into the command-level extraContext
+                        JSONObject commandExtraContext = commandObject.getJSONObject("extraContext");
+                        commandExtraContext.putAll(extraContext);
+                    }
+                    else
+                    {
+                        commandObject.put("extraContext", extraContext);
+                    }
+
                     JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors);
                     if (commandResponse == null || errors.hasErrors())
                         return null;
