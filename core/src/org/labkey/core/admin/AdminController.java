@@ -2946,7 +2946,7 @@ public class AdminController extends SpringActionController
 
     private static enum Location
     {
-        top("padding-top:3px;padding-bottom:10px;"),
+        top("padding-top:10px;padding-bottom:10px;"),
         bottom("padding-top:10px;");
 
         private String _style;

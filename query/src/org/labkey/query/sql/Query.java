@@ -788,6 +788,7 @@ public class Query
         void validate(QueryTestCase test)
         {
             CachedRowSetImpl rs = null;
+
             try
             {
                 rs = (CachedRowSetImpl)QueryService.get().select(test.lists, sql);
