@@ -115,7 +115,7 @@ public abstract class ExportScriptModel
             //two kinds of clauses can be used on URLs: CompareClause and InClause
             if (clause instanceof CompareType.CompareClause)
                 operator = ((CompareType.CompareClause)clause).getComparison();
-            else if(clause instanceof SimpleFilter.InClause)
+            else if (clause instanceof SimpleFilter.InClause)
                 operator = CompareType.IN;
             else
                 operator = CompareType.EQUAL;
@@ -128,20 +128,22 @@ public abstract class ExportScriptModel
 
     protected String getFilterValue(SimpleFilter.FilterClause clause, Object[] values)
     {
-        if(null == values || values.length == 0)
+        if (null == values || values.length == 0)
             return "";
 
         //in clause has multiple values, which are in semi-colon-delimited list on the URL
-        if(clause instanceof SimpleFilter.InClause)
+        if (clause instanceof SimpleFilter.InClause)
         {
             StringBuilder sb = new StringBuilder();
             String sep = "";
+
             for(Object val : values)
             {
                 sb.append(sep);
                 sb.append(val.toString());
                 sep = ";";
             }
+
             return sb.toString();
         }
         else
@@ -155,7 +157,8 @@ public abstract class ExportScriptModel
     public String getSort()
     {
         String sortParam = _view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() +  ".sort");
-        if(null == sortParam || sortParam.length() == 0)
+
+        if (null == sortParam || sortParam.length() == 0)
             return null;
         else
             return "\"" + sortParam + "\"";
@@ -179,6 +182,7 @@ public abstract class ExportScriptModel
     public ContainerFilter getContainerFilter()
     {
         String containerFilterName = _view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() +  ".containerFilterName");
+
         if (containerFilterName != null)
             return ContainerFilter.getContainerFilterByName(containerFilterName, _view.getUser());
         else

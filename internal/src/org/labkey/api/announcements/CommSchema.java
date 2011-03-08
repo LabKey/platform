@@ -78,11 +78,6 @@ public class CommSchema
         return getSchema().getTable("PageVersions");
     }
 
-    public TableInfo getTableInfoRenderers()
-    {
-        return getSchema().getTable("Renderers");
-    }
-
     public TableInfo getTableInfoEmailPrefs()
     {
         return getSchema().getTable("EmailPrefs");
