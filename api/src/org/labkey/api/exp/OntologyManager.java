@@ -2493,9 +2493,10 @@ public class OntologyManager
         }
 
         if (!errors.isEmpty())
-            return null;
+            return new PropertyDescriptor[0];
+
         //
-        //  Find any PropertyDescriptors exist already
+        //  Find any PropertyDescriptors that exist already
         //
         ArrayList<PropertyDescriptor> list = new ArrayList<PropertyDescriptor>(allProps.size());
 
