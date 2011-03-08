@@ -30,6 +30,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -535,9 +536,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             Path.TestCase.class,
             ModuleStaticResolverImpl.TestCase.class,
             PageFlowUtil.TestCase.class,
-            ResultSetUtil.TestCase.class
-            ,StorageProvisioner.TestCase.class
-            ,ArrayListMap.TestCase.class
+            ResultSetUtil.TestCase.class,
+            StorageProvisioner.TestCase.class,
+            ArrayListMap.TestCase.class,
+            DbScope.KeywordTestCase.class
             //,RateLimiter.TestCase.class
         ));
 

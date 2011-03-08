@@ -16,6 +16,7 @@
 package org.labkey.bigiron.sas;
 
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -42,11 +43,11 @@ import java.util.Set;
  */
 public abstract class SasDialect extends SimpleSqlDialect
 {
-    public SasDialect()
+    @Override
+    protected @NotNull String getReservedWords()
     {
-        _oldReservedWordSet.addAll(PageFlowUtil.set(
-            "LEFT", "RIGHT"
-        ));
+        // SAS doesn't seem to have a way to escape reserved words, so we'll just claim we don't have any.
+        return "";
     }
 
     protected String getProductName()
@@ -181,7 +182,13 @@ public abstract class SasDialect extends SimpleSqlDialect
         return new SasStatementWrapper(conn, stmt, sql);
     }
 
-    // SAS driver doesn't support setting java.sql.Timestamp parameters, so convert to java.sql.Date
+    @Override
+    public void testDialectKeywords(Connection conn)
+    {
+        // Don't test keywords on SAS
+    }
+
+// SAS driver doesn't support setting java.sql.Timestamp parameters, so convert to java.sql.Date
     private static class SasStatementWrapper extends StatementWrapper
     {
         protected SasStatementWrapper(ConnectionWrapper conn, Statement stmt)

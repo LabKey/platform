@@ -16,7 +16,6 @@
 
 package org.labkey.bigiron.mssql;
 
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.SQLFragment;
 
 /**
@@ -25,14 +24,6 @@ import org.labkey.api.data.SQLFragment;
  */
 public class MicrosoftSqlServer2005Dialect extends MicrosoftSqlServer2000Dialect
 {
-    public MicrosoftSqlServer2005Dialect()
-    {
-        _oldReservedWordSet.addAll(PageFlowUtil.set(
-           "EXTERNAL", "PIVOT", "REVERT", "SECURITYAUDIT", "TABLESAMPLE", "UNPIVOT"
-        ));
-    }
-
-
     @Override
     public boolean supportsOffset()
     {

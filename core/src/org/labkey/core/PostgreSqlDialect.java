@@ -18,6 +18,7 @@ package org.labkey.core;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
@@ -42,7 +43,6 @@ import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 
 import javax.servlet.ServletException;
@@ -74,19 +74,10 @@ class PostgreSqlDialect extends SqlDialect
 
     private final Map<String, Integer> _userDefinedTypeScales = new ConcurrentHashMap<String, Integer>();
 
-    PostgreSqlDialect()
+    @Override
+    protected @NotNull String getReservedWords()
     {
-        _oldReservedWordSet.addAll(PageFlowUtil.set(
-            "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BETWEEN",
-            "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "CONSTRAINT", "CREATE", "CROSS",
-            "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT",
-            "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FOR", "FOREIGN", "FREEZE",
-            "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS",
-            "ISNULL", "JOIN", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NEW",
-            "NOT", "NOTNULL", "NULL", "OFF", "OFFSET", "OLD", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS",
-            "PLACING", "PRIMARY", "REFERENCES", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC",
-            "TABLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VERBOSE", "WHEN", "WHERE"
-        ));
+        return "all, analyse, analyze, and, any, array, as, asc, asymmetric, authorization, binary, both, case, cast, check, collate, column, concurrently, constraint, create, cross, default, deferrable, desc, distinct, do, else, end, end-exec, except, fetch, for, foreign, freeze, from, full, grant, group, having, ilike, in, initially, inner, intersect, into, is, isnull, join, leading, left, like, limit, natural, not, notnull, null, offset, on, only, or, order, outer, over, overlaps, placing, primary, references, returning, right, select, similar, some, symmetric, table, then, to, trailing, union, unique, using, variadic, verbose, when, where, window, with";
     }
 
     @Override
@@ -449,8 +440,9 @@ class PostgreSqlDialect extends SqlDialect
 
     public String getCreateSchemaSql(String schemaName)
     {
-        if (!AliasManager.isLegalName(schemaName) || _reservedWordSet.contains(schemaName))
+        if (!AliasManager.isLegalName(schemaName) || isReserved(schemaName))
             throw new IllegalArgumentException("Not a legal schema name: " + schemaName);
+
         //Quoted schema names are bad news
         return "CREATE SCHEMA " + schemaName;
     }

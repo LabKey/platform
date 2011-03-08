@@ -18,6 +18,7 @@ package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -61,26 +62,10 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
 {
     private static final Logger _log = Logger.getLogger(MicrosoftSqlServer2000Dialect.class);
 
-    protected MicrosoftSqlServer2000Dialect()
+    @Override
+    protected @NotNull String getReservedWords()
     {
-        _oldReservedWordSet.addAll(PageFlowUtil.set(
-            "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK", "BROWSE", "BULK",
-            "BY", "CASCADE", "CASE", "CHECK", "CHECKPOINT", "CLOSE", "CLUSTERED", "COALESCE", "COLLATE", "COLUMN", "COMMIT", "COMPUTE",
-            "CONSTRAINT", "CONTAINS", "CONTAINSTABLE", "CONTINUE", "CONVERT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE",
-            "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATABASE", "DBCC", "DEALLOCATE", "DECLARE", "DEFAULT",
-            "DELETE", "DENY", "DESC", "DISK", "DISTINCT", "DISTRIBUTED", "DOUBLE", "DROP", "DUMMY", "DUMP", "ELSE", "END", "ERRLVL",
-            "ESCAPE", "EXCEPT", "EXEC", "EXECUTE", "EXISTS", "EXIT", "FETCH", "FILE", "FILLFACTOR", "FOR", "FOREIGN", "FREETEXT",
-            "FREETEXTTABLE", "FROM", "FULL", "FUNCTION", "GOTO", "GRANT", "GROUP", "HAVING", "HOLDLOCK", "IDENTITY", "IDENTITY_INSERT",
-            "IDENTITYCOL", "IF", "IN", "INDEX", "INNER", "INSERT", "INTERSECT", "INTO", "IS", "JOIN", "KEY", "KILL", "LEFT", "LIKE",
-            "LINENO", "LOAD", "NATIONAL", "NOCHECK", "NONCLUSTERED", "NOT", "NULL", "NULLIF", "OF", "OFF", "OFFSETS", "ON", "OPEN",
-            "OPENDATASOURCE", "OPENQUERY", "OPENROWSET", "OPENXML", "OPTION", "OR", "ORDER", "OUTER", "OVER", "PERCENT", "PLAN",
-            "PRECISION", "PRIMARY", "PRINT", "PROC", "PROCEDURE", "PUBLIC", "RAISERROR", "READ", "READTEXT", "RECONFIGURE",
-            "REFERENCES", "REPLICATION", "RESTORE", "RESTRICT", "RETURN", "REVOKE", "RIGHT", "ROLLBACK", "ROWCOUNT", "ROWGUIDCOL",
-            "RULE", "SAVE", "SCHEMA", "SELECT", "SESSION_USER", "SET", "SETUSER", "SHUTDOWN", "SOME", "STATISTICS", "SYSTEM_USER",
-            "TABLE", "TEXTSIZE", "THEN", "TO", "TOP", "TRAN", "TRANSACTION", "TRIGGER", "TRUNCATE", "TSEQUAL", "UNION", "UNIQUE",
-            "UPDATE", "UPDATETEXT", "USE", "USER", "VALUES", "VARYING", "VIEW", "WAITFOR", "WHEN", "WHERE", "WHILE", "WITH",
-            "WRITETEXT"
-        ));
+        return "add, all, alter, and, any, as, asc, authorization, backup, begin, between, break, browse, bulk, by, cascade, case, check, checkpoint, close, clustered, coalesce, collate, column, commit, compute, constraint, contains, containstable, continue, convert, create, cross, current, current_date, current_time, current_timestamp, current_user, cursor, database, dbcc, deallocate, declare, default, delete, deny, desc, distinct, distributed, double, drop, else, end, end-exec, errlvl, escape, except, exec, execute, exists, exit, external, fetch, file, fillfactor, for, foreign, freetext, freetexttable, from, full, function, goto, grant, group, having, holdlock, identity, identity_insert, identitycol, if, in, index, inner, insert, intersect, into, is, join, key, kill, left, like, lineno, merge, national, nocheck, nonclustered, not, null, nullif, of, off, offsets, on, open, opendatasource, openquery, openrowset, openxml, option, or, order, outer, over, percent, pivot, plan, primary, print, proc, procedure, public, raiserror, read, readtext, reconfigure, references, replication, restore, restrict, return, revert, revoke, right, rollback, rowcount, rowguidcol, rule, save, schema, select, session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, top, tran, transaction, trigger, truncate, tsequal, union, unique, unpivot, update, updatetext, use, user, values, varying, view, waitfor, when, where, while, with, writetext";
     }
 
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)

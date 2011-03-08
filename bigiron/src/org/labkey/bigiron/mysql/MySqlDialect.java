@@ -17,6 +17,7 @@ package org.labkey.bigiron.mysql;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
@@ -38,6 +39,12 @@ import java.util.Map;
 public class MySqlDialect extends SimpleSqlDialect
 {
     private static final Logger _log = Logger.getLogger(MySqlDialect.class);
+
+    @Override
+    protected @NotNull String getReservedWords()
+    {
+        return "accessible, add, all, alter, analyze, and, as, asc, asensitive, before, between, bigint, binary, blob, both, by, call, cascade, case, change, char, character, check, collate, column, condition, constraint, continue, convert, create, cross, current_date, current_time, current_timestamp, current_user, cursor, database, databases, day_hour, day_microsecond, day_minute, day_second, dec, decimal, declare, default, delayed, delete, desc, describe, deterministic, distinct, distinctrow, div, double, drop, dual, each, else, elseif, enclosed, end-exec, escaped, exists, exit, explain, false, fetch, float, float4, float8, for, force, foreign, from, fulltext, grant, group, having, high_priority, hour_microsecond, hour_minute, hour_second, if, ignore, in, index, infile, inner, inout, insensitive, insert, int, int1, int2, int3, int4, int8, integer, interval, into, is, iterate, join, key, keys, kill, leading, leave, left, like, limit, linear, lines, load, localtime, localtimestamp, lock, long, longblob, longtext, loop, low_priority, master_ssl_verify_server_cert, match, maxvalue, mediumblob, mediumint, mediumtext, middleint, minute_microsecond, minute_second, mod, modifies, natural, no_write_to_binlog, not, null, numeric, on, optimize, option, optionally, or, order, out, outer, outfile, precision, primary, procedure, purge, range, read, read_write, reads, real, references, regexp, release, rename, repeat, replace, require, resignal, restrict, return, revoke, right, rlike, schema, schemas, second_microsecond, select, sensitive, separator, set, show, signal, smallint, spatial, specific, sql, sql_big_result, sql_calc_found_rows, sql_small_result, sqlexception, sqlstate, sqlwarning, ssl, starting, straight_join, table, terminated, then, tinyblob, tinyint, tinytext, to, trailing, trigger, true, undo, union, unique, unlock, unsigned, update, usage, use, using, utc_date, utc_time, utc_timestamp, values, varbinary, varchar, varcharacter, varying, when, where, while, with, write, xor, year_month, zerofill";
+    }
 
     @Override
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
@@ -186,14 +193,10 @@ public class MySqlDialect extends SimpleSqlDialect
         return "INFORMATION_SCHEMA".equalsIgnoreCase(schemaName);
     }
 
-    // If necessary, escape quotes and quote the identifier -- standard MySQL quote character is back tick (`)
     @Override
-    public String makeLegalIdentifier(String id)
+    // Escape quotes and quote the identifier -- standard MySQL quote character is back tick (`)
+    protected String quoteIdentifier(String id)
     {
-        if (shouldQuoteIdentifier(id))
-            return "`" + id.replaceAll("`", "``") + "`";
-        else
-            return id;
+        return "`" + id.replaceAll("`", "``") + "`";
     }
-
 }
