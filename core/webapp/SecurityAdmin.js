@@ -1096,6 +1096,8 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
             store : config.cache.principalsStore,
             mode : 'local',
             minListWidth : 200,
+            // without width won't render correctly if PolicyEditor is not showing initially
+            width : 220,
             triggerAction : 'all',
             forceSelection : true,
             typeAhead : true,
@@ -1153,8 +1155,9 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
     onRender : function(ct,position)
     {
         PrincipalComboBox.superclass.onRender.call(this,ct,position);
+        // the input is shorter than the img, consider add custom combo class to the input el
+        this.el.setStyle('height', '20px'); // this.trigger.getStyle('height'));
     }
-
 });
 
 
