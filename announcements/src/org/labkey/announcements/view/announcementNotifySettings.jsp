@@ -82,6 +82,7 @@
             emptyText:'Choose a folder default...'
         });
 
+        var idBulkEditBtn = Ext.id();
         var emailCombo = new Ext.form.ComboBox({
             hiddenName:'emailOption',
             fieldLabel:'Configure Selected Users',
@@ -93,6 +94,9 @@
             displayField:'label',
             width: 275,
             emptyText:'Choose a notification setting...'
+        });
+        emailCombo.on('select', function(cmp, record, idx){
+            Ext.getCmp(idBulkEditBtn).setDisabled(!cmp.isValid(true));
         });
 
         // buttons
@@ -161,6 +165,8 @@
         };
 
         var bulkEditBtn = new Ext.Button({
+            disabled: true,
+            id: idBulkEditBtn,
             text:'Update Settings',
             tooltip: 'Sets the notification option for all selected users',
             handler: bulkEditHandler
@@ -175,7 +181,7 @@
             border: false,
             bodyStyle : 'padding:10px;',
             items:[emailDefaultCombo, emailCombo],
-            buttons:[bulkEditBtn, folderDefaultBtn]
+            buttons:[folderDefaultBtn, bulkEditBtn]
         });
     });
 

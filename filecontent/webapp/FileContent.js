@@ -677,11 +677,22 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (this.adminOptions.isCustomFileProperties())
             cm = cm.concat(this.adminOptions.createColumnModelColumns());
 
+        // Map the universe of available actions to the list of supported tbar actions
+        // for this web part. The FMT will only create buttons for actions that are
+        // supported so there is no need to offer anything outside of this set in the
+        // admin tool.
+        var availableActions = {};
+        for (var i=0; i < this.tbarItems.length; i++)
+        {
+            var a = this.tbarItems[i];
+            availableActions[a] = this.actions[a];
+        }
+
         var configDlg = new LABKEY.ActionsAdminPanel({
             path: this.currentDirectory.data.path,
             isPipelineRoot : this.isPipelineRoot,
             tbarItemsConfig: this.tbarItemsConfig,
-            actions: this.actions,
+            actions: availableActions,
             disableGeneralAdminSettings : this.disableGeneralAdminSettings,
             columnModel : cm, //this.grid.getColumnModel().config
             gridConfig : this.adminOptions.getGridConfig() 

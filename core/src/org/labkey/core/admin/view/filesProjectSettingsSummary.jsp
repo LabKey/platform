@@ -67,6 +67,9 @@
                 baseParams: {rootContainer: LABKEY.container.id}
             });
 
+        var idConfigBtn = Ext.id();
+        var idBrowseBtn = Ext.id();
+
         // show the file root browser
         var tree = new Ext.ux.tree.TreeGrid({
             rootVisible:false,
@@ -84,12 +87,18 @@
             tbar: [
                 {text:'Expand All', tooltip: {text:'Expands all containers', title:'Expand All'}, listeners:{click:function(button, event) {tree.expandAll();}}},
                 {text:'Collapse All', tooltip: {text:'Collapses all containers', title:'Collapse All'}, listeners:{click:function(button, event) {tree.collapseAll();}, scope:this}},
-                {text:'Configure Selected', tooltip: {text:'Configure settings for the selected web part', title:'Configure Selected'}, listeners:{click:function(button, event) {configSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
-                {text:'Browse Selected', tooltip: {text:'Browse files from the selected web part', title:'Browse Selected'}, listeners:{click:function(button, event) {browseSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
+                {text:'Configure Selected', id:idConfigBtn, tooltip: {text:'Configure settings for the selected web part', title:'Configure Selected'}, disabled: true, listeners:{click:function(button, event) {configSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
+                {text:'Browse Selected', id:idBrowseBtn, tooltip: {text:'Browse files from the selected web part', title:'Browse Selected'}, disabled: true, listeners:{click:function(button, event) {browseSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
             ],
             dataUrl: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container, {node: LABKEY.container.id}),
             listeners: {dblclick: function(node){browseSelected(node);}}
         });
+
+        tree.getSelectionModel().on('selectionchange', function(sm, node){
+            var enable = node.attributes.browseURL;
+            Ext.getCmp(idConfigBtn).setDisabled(!enable);
+            Ext.getCmp(idBrowseBtn).setDisabled(!enable);
+        }, this);
 
         var panel = new Ext.Panel({
             layout: 'fit',
