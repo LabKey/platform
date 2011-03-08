@@ -78,11 +78,6 @@ public class MvEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
                PropertyType.expMultiLine != t;
     }
 
-    private void updateEnabledState(FieldType field)
-    {
-        setEnabled(allowsMvEnabling(field.getRangeURI()));
-    }
-
     @Override
     public void propertyDescriptorChanged(FieldType field)
     {
@@ -94,6 +89,6 @@ public class MvEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     {
         allowsMvEnabling = allowsMvEnabling(field.getRangeURI());
         checkbox.setChecked(field.getMvEnabled() && allowsMvEnabling);
-        updateEnabledState(field);
+        setCanEnable(allowsMvEnabling);
     }
 }

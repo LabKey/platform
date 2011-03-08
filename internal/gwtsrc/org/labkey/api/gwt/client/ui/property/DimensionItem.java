@@ -73,7 +73,8 @@ public class DimensionItem<DomainType extends GWTDomain<FieldType>, FieldType ex
                                     type == PropertyType.xsdString);
         if (!isValidDimension && currentField.isDimension())
             setFieldValue(currentField, false);
-        setEnabled(isValidDimension);
+
+        setCanEnable(isValidDimension);
     }
 
     @Override

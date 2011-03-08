@@ -42,29 +42,35 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     private HelpPopup _helpPopup = new HelpPopup("Default Value Types", "");
     private GWTDomain _domain;
     private HTML _setDefaultValueLink;
-    private static final String SET_DEFAULT_DISABLED = "<span class='labkey-disabled'><i>Not supported for file/attachment fields.</i></span>";
-    private static final String SET_DEFAULT_ENABLED = "[<a href=\"javascript:void(0)\">set&nbsp;value</a>]";
+    private static final String SETVALUE_LINK_NOTSUPPORTED = "<span class='labkey-disabled'><i>Not supported for file/attachment fields.</i></span>";
+    private static final String SETVALUE_LINK_DISABLED = "[set&nbsp;value]";
+    private static final String SETVALUE_LINK_DEFAULT_ENABLED = "[<a href=\"javascript:void(0)\">set&nbsp;value</a>]";
     private FlexTable _defaultTypeTable;
     private FlexTable _defaultValueTable;
     private InlineHTML _defaultTypeLabel;
     private InlineHTML _defaultValueLabel;
 
+    private boolean _domainSupportsDefaultValues = true;
+    
     public DefaultValueItem(Saveable<GWTDomain> owner, PropertyPane<DomainType, FieldType> propertyPane)
     {
         super(propertyPane);
         _owner = owner;
     }
 
-    private boolean supportsDefaultValues()
+    private boolean supportsDefaultValues(GWTDomain d)
     {
-        return (_domain.getDefaultValueOptions() != null &&
-                _domain.getDefaultValueOptions().length > 0);
+        return (d.getDefaultValueOptions() != null &&
+                d.getDefaultValueOptions().length > 0);
     }
+
 
     private void updateEnabledState(FieldType field)
     {
-        if (!supportsDefaultValues())
+        if (!_domainSupportsDefaultValues)
             return;
+        setCanEnable(true);
+
         if (_defaultValueTypes.getItemCount() == 0)
         {
             for (DefaultValueType type : _domain.getDefaultValueOptions())
@@ -72,16 +78,10 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         }
         if (field.isFileType())
         {
-            addClass(_defaultValueLabel, "labkey-disabled");
-            _defaultValueTypes.setEnabled(false);
-            _setDefaultValueLink.setHTML(SET_DEFAULT_DISABLED);
+            setCanEnable(false);
+            setEnabled(false);
         }
-        else
-        {
-            removeClass(_defaultValueLabel, "labkey-disabled");
-            _defaultValueTypes.setEnabled(true);
-            _setDefaultValueLink.setHTML(SET_DEFAULT_ENABLED);
-        }
+
         DefaultValueType defaultType = field.getDefaultValueType();
         if (defaultType == null)
             defaultType = _domain.getDefaultDefaultValueType();
@@ -99,6 +99,39 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         _defaultValueTypes.setSelectedIndex(0);
     }
 
+    private class SetDefaultValue_ClickHandler implements ClickHandler
+    {
+        public void onClick(ClickEvent e)
+        {
+            if (!isEnabled())
+                return;
+
+            if (_owner.isDirty() && Window.confirm("You must save your changes before setting default values.  Save changes?"))
+            {
+                _owner.save(new Saveable.SaveListener<GWTDomain>()
+                {
+                    public void saveSuccessful(GWTDomain domain, String designerUrl)
+                    {
+                        String actionURL = domain.getDefaultValuesURL();
+                        String queryString = "returnUrl=" + URL.encodeComponent(designerUrl) + "&domainId=" + domain.getDomainId();
+                        boolean hasQueryString = actionURL.indexOf('?') > 0;
+                        final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
+                        WindowUtil.setLocation(url);
+                    }
+                });
+            }
+            else
+            {
+                String actionURL = _domain.getDefaultValuesURL();
+                String currentURL = PropertyUtil.getCurrentURL();
+                String queryString = "returnUrl=" + URL.encodeComponent(currentURL) + "&domainId=" +  _propertyPane.getDomainId();
+                boolean hasQueryString = actionURL.indexOf('?') > 0;
+                final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
+                WindowUtil.setLocation(url);
+            }
+        }
+    }
+
     public int addToTable(FlexTable flexTable, int row)
     {
         FlowPanel labelPanel = new FlowPanel();
@@ -107,39 +140,8 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         labelPanel.add(_helpPopup);
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
 
-        _setDefaultValueLink = new HTML(SET_DEFAULT_ENABLED);
-        _setDefaultValueLink.addClickHandler(new ClickHandler()
-        {
-            public void onClick(ClickEvent e)
-            {
-                if (!_defaultValueTypes.isEnabled())
-                    return;
-
-                if (_owner.isDirty() && Window.confirm("You must save your changes before setting default values.  Save changes?"))
-                {
-                    _owner.save(new Saveable.SaveListener<GWTDomain>()
-                    {
-                        public void saveSuccessful(GWTDomain domain, String designerUrl)
-                        {
-                            String actionURL = domain.getDefaultValuesURL();
-                            String queryString = "returnUrl=" + URL.encodeComponent(designerUrl) + "&domainId=" + domain.getDomainId();
-                            boolean hasQueryString = actionURL.indexOf('?') > 0;
-                            final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
-                            WindowUtil.setLocation(url);
-                        }
-                    });
-                }
-                else
-                {
-                    String actionURL = _domain.getDefaultValuesURL();
-                    String currentURL = PropertyUtil.getCurrentURL();
-                    String queryString = "returnUrl=" + URL.encodeComponent(currentURL) + "&domainId=" +  _propertyPane.getDomainId();
-                    boolean hasQueryString = actionURL.indexOf('?') > 0;
-                    final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
-                    WindowUtil.setLocation(url);
-                }
-            }
-        });
+        _setDefaultValueLink = new HTML(SETVALUE_LINK_DEFAULT_ENABLED);
+        _setDefaultValueLink.addClickHandler(new SetDefaultValue_ClickHandler());
 
         _defaultTypeTable = new FlexTable();
         _defaultTypeTable.setWidget(0, 0, _defaultValueTypes);
@@ -174,16 +176,34 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         return changed;
     }
 
+
     public void enabledChanged()
     {
-        _defaultValueTypes.setEnabled(isEnabled());
+        boolean enabled = isEnabled();
+        _defaultValueTypes.setEnabled(enabled);
+        _setDefaultValueLink.setHTML(enabled ? SETVALUE_LINK_DEFAULT_ENABLED : SETVALUE_LINK_DISABLED);
+
+        if (getCanEnable())
+        {
+            removeClass(_defaultValueLabel, "labkey-disabled");
+            removeClass(_defaultTypeLabel, "labkey-disabled");
+        }
+        else
+        {
+            _setDefaultValueLink.setHTML(SETVALUE_LINK_NOTSUPPORTED);
+            addClass(_defaultValueLabel, "labkey-disabled");
+            addClass(_defaultTypeLabel, "labkey-disabled");
+        }
     }
+
 
     public void showPropertyDescriptor(DomainType domain, FieldType field)
     {
         _domain = domain;
+        _domainSupportsDefaultValues = supportsDefaultValues(domain);
+    
         StringBuilder helpString = new StringBuilder();
-        if (supportsDefaultValues())
+        if (_domainSupportsDefaultValues)
         {
             DefaultValueType[] defaultTypes = _domain.getDefaultValueOptions();
             for (int i = 0; i < defaultTypes.length; i++)
@@ -199,6 +219,7 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         }
         else
         {
+            setCanEnable(false);
             String msg = "<span class='labkey-disabled'><i>Not supported for " +
                     StringUtils.filter(domain.getName()) + "</i></span>";
             _defaultTypeTable.clear();
@@ -214,5 +235,6 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     {
         updateEnabledState(field);
     }
+
 
 }

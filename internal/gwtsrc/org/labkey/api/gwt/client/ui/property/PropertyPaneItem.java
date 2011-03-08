@@ -29,6 +29,7 @@ public abstract class PropertyPaneItem<DomainType extends GWTDomain<FieldType>, 
 {
     protected PropertyPane _propertyPane;
     private boolean _enabled = true;
+    private boolean _canEnable = true;
     protected static final int LABEL_COLUMN = 0;
     protected static final int INPUT_COLUMN = 1;
 
@@ -60,8 +61,20 @@ public abstract class PropertyPaneItem<DomainType extends GWTDomain<FieldType>, 
      */
     public abstract boolean copyValuesToPropertyDescriptor(FieldType field);
 
+    protected void setCanEnable(boolean can)
+    {
+        _canEnable = can;
+    }
+
+    protected boolean getCanEnable()
+    {
+        return _canEnable;
+    }
+    
     public final void setEnabled(boolean enabled)
     {
+        if (!getCanEnable())
+            enabled = false;
         if (enabled != _enabled)
         {
             _enabled = enabled;
