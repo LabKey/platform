@@ -19,6 +19,7 @@ package org.labkey.api.data.dialect;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
@@ -55,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -76,11 +78,7 @@ public abstract class SqlDialect
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
 
-    protected final Set<String> _reservedWordSet = Sets.newCaseInsensitiveHashSet();
-
-    @Deprecated
-    protected final Set<String> _oldReservedWordSet = Sets.newCaseInsensitiveHashSet();
-
+    private final Set<String> _reservedWordSet;
     private final Map<String, Integer> _sqlTypeNameMap = new CaseInsensitiveHashMap<Integer>();
     private final Map<Integer, String> _sqlTypeIntMap = new HashMap<Integer, String>();
 
@@ -88,9 +86,13 @@ public abstract class SqlDialect
     {
         initializeSqlTypeNameMap();
         initializeSqlTypeIntMap();
+        _reservedWordSet = Sets.newCaseInsensitiveHashSet(new CsvSet(getReservedWords()));
+
         assert MemTracker.put(this);
     }
 
+
+    protected abstract @NotNull String getReservedWords();
 
     protected String getOtherDatabaseThreads()
     {
@@ -254,44 +256,20 @@ public abstract class SqlDialect
     // Do dialect-specific work after schema load
     public abstract void prepareNewDbSchema(DbSchema schema);
 
-    // Do dialect-specific work for this data source
+    // Do dialect-specific work for this data source (nothing by default)
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {
-        _reservedWordSet.addAll(getKeywords(scope));
-
-        Set<String> old = Sets.newCaseInsensitiveHashSet(_oldReservedWordSet);
-        old.removeAll(_reservedWordSet);
-        Set<String> new1 = Sets.newCaseInsensitiveHashSet(_reservedWordSet);
-        new1.removeAll(_oldReservedWordSet);
-
-        LOG.info("In old set, but not new: " + old);
-        LOG.info("In new set, but not old: " + new1);
-
-        assert KeywordCandidates.get().containsAll(_oldReservedWordSet, getProductName());
-        assert KeywordCandidates.get().containsAll(_reservedWordSet, getProductName());
     }
 
-    protected Set<String> getKeywords(DbScope scope) throws SQLException, IOException
+    // Set of keywords returned by DatabaseMetaData.getMetaData() plus the SQL 2003 keywords
+    protected Set<String> getJdbcKeywords(Connection conn) throws SQLException, IOException
     {
-        Connection conn = null;
+        Set<String> keywordSet = Sets.newCaseInsensitiveHashSet();
+        keywordSet.addAll(KeywordCandidates.get().getSql2003Keywords());
+        String keywords = conn.getMetaData().getSQLKeywords();
+        keywordSet.addAll(new CsvSet(keywords));
 
-        try
-        {
-            conn = scope.getConnection();
-            Set<String> keywordSet = Sets.newCaseInsensitiveHashSet();
-            keywordSet.addAll(KeywordCandidates.get().getSql2003Keywords());
-            String keywords = conn.getMetaData().getSQLKeywords();
-
-            if (!keywords.isEmpty())
-                keywordSet.addAll(new CsvSet(keywords));
-
-            return keywordSet;
-        }
-        finally
-        {
-            if (null != conn)
-                scope.releaseConnection(conn);
-        }
+        return keywordSet;
     }
 
     protected abstract String getProductName();
@@ -472,19 +450,88 @@ public abstract class SqlDialect
     }
 
 
-    // If necessary, escape quotes and quote the identifier
+    // If necessary, quote identifier
     public String makeLegalIdentifier(String id)
     {
         if (shouldQuoteIdentifier(id))
-            return "\"" + id.replaceAll("\"", "\"\"") + "\"";
+            return quoteIdentifier(id);
         else
             return id;
+    }
+
+
+    // Escape quotes and quote the identifier
+    protected String quoteIdentifier(String id)
+    {
+        return "\"" + id.replaceAll("\"", "\"\"") + "\"";
     }
 
 
     protected boolean shouldQuoteIdentifier(String id)
     {
         return isReserved(id) || !AliasManager.isLegalName(id);
+    }
+
+
+    public void testDialectKeywords(Connection conn)
+    {
+        Set<String> candidates = KeywordCandidates.get().getCandidates();
+        Set<String> shouldAdd = new TreeSet<String>();
+        Set<String> shouldRemove = new TreeSet<String>();
+
+        for (String candidate : candidates)
+        {
+            boolean reserved;
+            String sql = getIdentifierTestSql(candidate);
+
+            try
+            {
+                Table.execute(conn, sql, null);
+                reserved = false;
+            }
+            catch (SQLException e)
+            {
+                reserved = true;
+            }
+
+            if (isReserved(candidate) != reserved)
+            {
+                if (reserved)
+                {
+                    if (!_reservedWordSet.contains(candidate))
+                        shouldAdd.add(candidate);
+                }
+                else
+                {
+                    if (_reservedWordSet.contains(candidate))
+                        shouldRemove.add(candidate);
+                }
+            }
+        }
+
+        if (!shouldAdd.isEmpty())
+            throw new IllegalStateException("Need to add " + shouldAdd.size() + " keywords to " + getProductName() + " reserved word list: " + shouldAdd);
+
+        if (!shouldRemove.isEmpty())
+            throw new IllegalStateException("Need to remove " + shouldRemove.size() + " keywords from " + getProductName() + " reserved word list: " + shouldRemove);
+    }
+
+
+    public void testKeywordCandidates(Connection conn) throws IOException, SQLException
+    {
+        Set<String> jdbcKeywords = getJdbcKeywords(conn);
+
+        if (!KeywordCandidates.get().containsAll(jdbcKeywords, getProductName()))
+            throw new IllegalStateException("JDBC keywords from " + getProductName() + " are not all in the keyword candidate list (sqlKeywords.txt)");
+
+        if (!KeywordCandidates.get().containsAll(_reservedWordSet, getProductName()))
+            throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt)");
+    }
+
+
+    protected String getIdentifierTestSql(String id)
+    {
+        return "SELECT " + id + " FROM (SELECT 1 AS " + id + ") x ORDER BY " + id;
     }
 
 

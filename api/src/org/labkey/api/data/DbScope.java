@@ -17,6 +17,8 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
@@ -28,6 +30,7 @@ import org.labkey.api.util.MemTracker;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -948,6 +951,33 @@ public class DbScope
         {
             for (StringKeyCache<?> cache : _caches.values())
                 cache.close();
+        }
+    }
+
+
+    public static class KeywordTestCase extends Assert
+    {
+        @Test
+        public void test() throws SQLException, IOException
+        {
+            for (DbScope scope : getDbScopes())
+            {
+                SqlDialect dialect = scope.getSqlDialect();
+
+                Connection conn = null;
+
+                try
+                {
+                    conn = scope.getConnection();
+                    dialect.testDialectKeywords(conn);
+                    dialect.testKeywordCandidates(conn);
+                }
+                finally
+                {
+                    if (null != conn)
+                        scope.releaseConnection(conn);
+                }
+            }
         }
     }
 }

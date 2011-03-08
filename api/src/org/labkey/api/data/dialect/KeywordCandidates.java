@@ -59,9 +59,14 @@ public class KeywordCandidates
         return INSTANCE;
     }
 
-    public Set<String> getSql2003Keywords() throws IOException
+    public Set<String> getSql2003Keywords()
     {
         return SQL_2003_KEYWORDS;
+    }
+
+    public Set<String> getCandidates()
+    {
+        return CANDIDATES;
     }
 
     public boolean containsAll(Set<String> reservedWordSet, String productName)

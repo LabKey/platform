@@ -59,30 +59,6 @@ public class SqlDialectManager
 
     public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
-        // SAS/SHARE drivers throw when requesting database version, so catch and set to 0
-
-        int databaseMajorVersion;
-
-        try
-        {
-            databaseMajorVersion = md.getDatabaseMajorVersion();
-        }
-        catch (SQLException e)
-        {
-            databaseMajorVersion = 0;
-        }
-
-        int databaseMinorVersion;
-
-        try
-        {
-            databaseMinorVersion = md.getDatabaseMinorVersion();
-        }
-        catch (SQLException e)
-        {
-            databaseMinorVersion = 0;
-        }
-
         return getFromProductName(md.getDatabaseProductName(), new VersionNumber(md.getDatabaseProductVersion()), md.getDriverVersion(), true);
     }
 

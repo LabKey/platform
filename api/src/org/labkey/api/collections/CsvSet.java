@@ -15,13 +15,17 @@
  */
 package org.labkey.api.collections;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.util.HashSet;
 
 public class CsvSet extends HashSet<String>
 {
     public CsvSet(String str)
     {
-        for (String token : str.split(",\\s*"))
-            add(token);
+        // Empty string results in empty set
+        if (!StringUtils.isBlank(str))
+            for (String token : str.split(",\\s*"))
+                add(token);
     }
 } 
