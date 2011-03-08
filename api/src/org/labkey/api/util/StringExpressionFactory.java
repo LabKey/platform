@@ -430,8 +430,9 @@ public class StringExpressionFactory
 
             if (!map.containsKey(lookupKey))
             {
-                LOG.warn("No replacement value found for FieldKey " + lookupKey + ". Could be a FieldKey vs. alias/column name mismatch. Attemping lookup by string.");
                 lookupKey = key.getParent() == null ? key.getName() : key.encode();
+                if (map.containsKey(lookupKey))
+                    LOG.debug("No string substitution found for FieldKey '" + key.encode() + "', but found String '" + lookupKey + "'.");
             }
 
             Object value = map.get(lookupKey);
