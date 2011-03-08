@@ -314,6 +314,30 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
                     sortXml.setDescending(sort.getSortDirection() == Sort.SortDirection.DESC);
                 }
             }
+
+            if (!fas.getAggregates().isEmpty())
+            {
+                AggregatesType aggsXml = customViewXml.addNewAggregates();
+
+                for (Aggregate agg : fas.getAggregates())
+                {
+                    AggregateEnumType.Enum aggEnum = AggregateEnumType.Enum.forString(agg.getType().name());
+                    if (aggEnum != null)
+                    {
+                        AggregateType aggXml = aggsXml.addNewAggregate();
+                        aggXml.setColumn(agg.getColumnName());
+                        aggXml.setType(aggEnum);
+                    }
+                }
+            }
+
+            if (fas.getContainerFilterNames() != null && fas.getContainerFilterNames().length > 0)
+            {
+                String containerFilter = fas.getContainerFilterNames()[0];
+                ContainerFilterType.Enum containerFilterType = ContainerFilterType.Enum.forString(containerFilter);
+                if (containerFilterType != null)
+                    customViewXml.setContainerFilter(containerFilterType);
+            }
         }
         catch (URISyntaxException e)
         {

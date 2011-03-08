@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
@@ -57,6 +58,7 @@ public class CustomViewXmlReader
     private List<String> _sorts;
     private List<Pair<String, String>> _aggregates;
     private String _customIconUrl;
+    private ContainerFilter.Type _containerFilter;
 
     protected String _name;
 
@@ -100,6 +102,11 @@ public class CustomViewXmlReader
         return _aggregates;
     }
 
+    public ContainerFilter.Type getContainerFilter()
+    {
+        return _containerFilter;
+    }
+
     // TODO: There should be a common util for filter/sort url handling.  Should use a proper URL class to do this, not create/encode the query string manually
     public String getFilterAndSortString()
     {
@@ -117,7 +124,7 @@ public class CustomViewXmlReader
             for (Pair<String, String> filter : getFilters())
             {
                 ret.append(sep);
-                ret.append("filter.");
+                ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".");
                 ret.append(PageFlowUtil.encode(filter.first));
                 ret.append("=");
                 ret.append(PageFlowUtil.encode(filter.second));
@@ -128,7 +135,7 @@ public class CustomViewXmlReader
         if (null != sort)
         {
             ret.append(sep);
-            ret.append("filter.sort=");
+            ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".sort=");
             ret.append(PageFlowUtil.encode(sort));
             sep = "&";
         }
@@ -138,12 +145,19 @@ public class CustomViewXmlReader
             for (Pair<String, String> aggregate : getAggregates())
             {
                 ret.append(sep);
-                ret.append("filter.agg.");
+                ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".").append(CustomViewInfo.AGGREGATE_PARAM_PREFIX).append(".");
                 ret.append(PageFlowUtil.encode(aggregate.first));
                 ret.append("=");
                 ret.append(PageFlowUtil.encode(aggregate.second));
                 sep = "&";
             }
+        }
+
+        if (null != getContainerFilter())
+        {
+            ret.append(sep);
+            ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".").append(CustomViewInfo.CONTAINER_FILTER_NAME);
+            ret.append(getContainerFilter());
         }
 
         return ret.toString();
@@ -237,6 +251,7 @@ public class CustomViewXmlReader
             reader._filters = loadFilters(viewElement.getFilters());
             reader._sorts = loadSorts(viewElement.getSorts());
             reader._aggregates = loadAggregates(viewElement.getAggregates());
+            reader._containerFilter = loadContainerFilter(viewElement.getContainerFilter());
 
             return reader;
         }
@@ -342,5 +357,20 @@ public class CustomViewXmlReader
             ret.add(new Pair<String, String>(column, type));
         }
         return ret;
+    }
+
+    protected static ContainerFilter.Type loadContainerFilter(ContainerFilterType.Enum containerFilterEnum)
+    {
+        if (containerFilterEnum == null)
+            return null;
+
+        try
+        {
+            return ContainerFilter.Type.valueOf(containerFilterEnum.toString());
+        }
+        catch (IllegalArgumentException ex)
+        {
+            return null;
+        }
     }
 }

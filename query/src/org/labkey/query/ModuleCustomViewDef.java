@@ -119,4 +119,9 @@ public class ModuleCustomViewDef extends ResourceRef
         return _customView.getCustomIconUrl();
     }
 
+    public String getContainerFilterName()
+    {
+        return _customView.getContainerFilter() != null ? _customView.getContainerFilter().name() : null;
+    }
+
 }

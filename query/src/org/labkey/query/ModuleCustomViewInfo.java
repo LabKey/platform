@@ -150,6 +150,9 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     @Override
     public String getContainerFilterName()
     {
+        if (null != _customViewDef.getContainerFilterName())
+            return _customViewDef.getContainerFilterName();
+
         if (null == _customViewDef.getFilters())
             return null;
 
