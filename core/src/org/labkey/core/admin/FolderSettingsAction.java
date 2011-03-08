@@ -65,7 +65,6 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 17, 2011
  * Time: 10:36:02 AM
@@ -495,7 +494,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
 
             VBox view = new VBox();
 
-            view.addView(new JspView("/org/labkey/core/admin/view/folderSettingsHeader.jsp", Object.class, _errors));
+            view.addView(new JspView<Object>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", Object.class, _errors));
             view.addView(queryView);
 
             return view;
