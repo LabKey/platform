@@ -291,7 +291,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         col++;  // down button
         col++;  // decoration (e.g. PK)
         assert col == COLUMN_OF_NAMEFIELD;
-        _table.getFlexCellFormatter().setWidth(0, col, "120px");
+        _table.getFlexCellFormatter().setWidth(0, col, "200px");
         setBoldText(_table, 0, col++, "Name");
         _table.getFlexCellFormatter().setWidth(0, col, "120px");
         setBoldText(_table, 0, col++, "Label");
@@ -804,6 +804,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         if (readOnly || !isNameEditable(rowObject))
         {
             name = new Label(pd.getName());
+            ((Label)name).setWordWrap(false);
+            name.setWidth("200px");
             name.setHeight("20px");
         }
         else
@@ -977,12 +979,20 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
 
+    /**
+     *  true  : "type/concept/lookup" may be editable (except see isRangeEditable()) 
+     *  false : "type/concept/lookup" are not editable
+     **/
     protected boolean isTypeEditable(Row row)
     {
         return null == row.orig || !_domain.isMandatoryField(row.orig);
     }
 
 
+    /**
+     * true : the underlying storage type of the column may be changed.
+     * false : the underlying storage type may not be changed
+     */
     protected boolean isRangeEditable(Row row)
     {
         if (!isTypeEditable(row))
