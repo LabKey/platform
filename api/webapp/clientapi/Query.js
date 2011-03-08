@@ -516,7 +516,9 @@ LABKEY.Query = new function()
         * @param {String} config.commands[].command Name of the command to be performed. Must be one of "insert", "update", or "delete".
         * @param {Array} config.commands[].rows An array of data for each row to be changed. See {@link LABKEY.Query.insertRows},
         * {@link LABKEY.Query.updateRows}, or {@link LABKEY.Query.deleteRows} for requirements of what data must be included for each row.
+        * @param {Object} [config.commands[].extraContext] <b>Experimental:</b> Optional extra context object passed into the transformation/validation script environment.
         * @param {Object} [config.extraContext] <b>Experimental:</b> Optional extra context object passed into the transformation/validation script environment.
+        * The extraContext at the command-level will be merged with the extraContext at the top-level of the config.
         * @param {Function} config.success Function called when the "saveRows" function executes successfully.
         	    Will be called with arguments:
                 an object with a single "result" property - an array of parsed response data ({@link LABKEY.Query.ModifyRowsResults}) (one for each command in the request),
