@@ -322,6 +322,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 if (null != pd && r._type.matches(pd))
                 {
                     r.setValue(true);
+                    _selectedRadio = r;
                     r.focus();
                     pd = null;
                 }
@@ -336,7 +337,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             }
         }
 
-        
+
         // push from the EditorPanel to the TriggerField
         private void apply(final boolean hideOnSuccess)
         {
@@ -537,9 +538,11 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         @Override
         boolean matches(GWTPropertyDescriptor pd)
         {
-            return super.matches(pd) &&
-                    "core".equals(pd.getLookupSchema()) &&
-                    "users".equals(pd.getLookupQuery());
+            String schema = pd.getLookupSchema();
+            schema = null == schema ? "" : schema.toLowerCase();
+            String query = pd.getLookupQuery();
+            query = null == query ? "" : query.toLowerCase();
+            return super.matches(pd) && "core".equals(schema) && ("siteusers".equals(query) || "users".equals(query));
         }
 
         @Override
