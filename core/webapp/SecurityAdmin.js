@@ -1071,6 +1071,7 @@ function filterPrincipalsStore(store, type, container, excludedPrincipals)
         data.push(d);
     }
     store = new Ext.data.Store({data:data, reader:new Ext.data.JsonReader({id:'UserId'},store.reader.recordType)});
+    store.sort('sortOrder');
     return store;
 }
 
@@ -1122,7 +1123,14 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
 
     onDataChanged : function(store)
     {
-        // UNDONE: reload combo
+        if (store != this.unfilteredStore)
+        {
+            console.error("unexpected even: onDataChanged");
+            return;
+        }
+        var type = this.groupsOnly ? 'groups' : this.usersOnly ? 'users' : null;
+        store = filterPrincipalsStore(store, type, null, this.excludedPrincipals);
+        PrincipalComboBox.superclass.bindStore.call(this,store,false);
     },
 
     groupsOnly : false,
@@ -1132,16 +1140,21 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
     bindStore : function(store, initial)
     {
         if (this.unfilteredStore)
-            this.unfilteredStore.unwatch("datachanged", this.onDataChanged, this);
-
+        {
+            this.unfilteredStore.removeListener("add", this.onDataChanged, this);
+            this.unfilteredStore.removeListener("datachanged", this.onDataChanged, this);
+            this.unfilteredStore.removeListener("remove", this.onDataChanged, this);
+        }
         // UNDONE: ComboBox does not lend itself to filtering, but this is expensive!
         // UNDONE: would be nice to share a filtered DataView like object across the PrincipalComboBoxes
         // CONSIDER only store UserId and lookup record in XTemplate
         if (store)
         {
             this.unfilteredStore = store;
-            this.unfilteredStore.on("datachanged", this.onDataChanged, this);
-            type = this.groupsOnly ? 'groups' : this.usersOnly ? 'users' : null;
+            this.unfilteredStore.addListener("add", this.onDataChanged, this);
+            this.unfilteredStore.addListener("datachanged", this.onDataChanged, this);
+            this.unfilteredStore.addListener("remove", this.onDataChanged, this);
+            var type = this.groupsOnly ? 'groups' : this.usersOnly ? 'users' : null;
             store = filterPrincipalsStore(store, type, null, this.excludedPrincipals);
         }
         PrincipalComboBox.superclass.bindStore.call(this,store,initial);
