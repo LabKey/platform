@@ -233,6 +233,8 @@ LABKEY.Visualization = new function() {
          * @param {Boolean} [config.replace] Whether this 'save' call should replace an existing report with the same name.
          * If false, the call to 'save' will fail if another report with the same name exists.
          * @param {String} [config.description] A description of the saved report.
+         * @param {String} [config.shared] Optional boolean indicating whether this report is viewable by all users with read
+         * permissions to the visualization's folder.  If false, only the creating user can see the visualization.  Defaults to true.
          * @param {String} [config.schemaName] Optional, but required if config.queryName is provided.  Allows the visualization to
          * be scoped to a particular query.  If scoped, this visualization will appear in the 'views' menu for that query.
          * @param {String} [config.queryName] Optional, but required if config.schemaName is provided.  Allows the visualization to
@@ -260,6 +262,7 @@ LABKEY.Visualization = new function() {
                 description : config.description,
                 json : Ext.util.JSON.encode(config.visualizationConfig),
                 replace: config.replace,
+                shared: config.shared,
                 type : config.type,
                 schemaName: config.schemaName,
                 queryName: config.queryName

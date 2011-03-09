@@ -94,7 +94,9 @@ public class ResultsImpl implements Results
             }
             catch (SQLException x)
             {
-                throw new IllegalArgumentException("Column not found in resultset: [" + col.getParentTable().getName() + "." + col.getName() + ", " + col.getAlias() + ", " + col.getFieldKey() + "]");
+                TableInfo parentTable = col.getParentTable();
+                String parentTableName = parentTable != null ? parentTable.getName() : "[null parent table]";
+                throw new IllegalArgumentException("Column not found in resultset: [" + parentTableName + "." + col.getName() + ", " + col.getAlias() + ", " + col.getFieldKey() + "]", x);
             }
         }
     }

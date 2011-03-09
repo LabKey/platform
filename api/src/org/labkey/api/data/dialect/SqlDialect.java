@@ -512,8 +512,12 @@ public abstract class SqlDialect
         if (!shouldAdd.isEmpty())
             throw new IllegalStateException("Need to add " + shouldAdd.size() + " keywords to " + getProductName() + " reserved word list: " + shouldAdd);
 
-        if (!shouldRemove.isEmpty())
-            throw new IllegalStateException("Need to remove " + shouldRemove.size() + " keywords from " + getProductName() + " reserved word list: " + shouldRemove);
+        // Removing this check because reserved words differ between postgres versions.  For example, going from 8.4 to
+        // 9.0 adds 'concurrently' but removes 'between', 'new', 'off', and 'old'.  With this check removed, the test
+        // now checks to ensure that a superset of all required keywords is present, but no longer enforces that the
+        // sets are a perfect match.
+        //if (!shouldRemove.isEmpty())
+        //    throw new IllegalStateException("Need to remove " + shouldRemove.size() + " keywords from " + getProductName() + " reserved word list: " + shouldRemove);
     }
 
 

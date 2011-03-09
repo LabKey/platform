@@ -367,7 +367,7 @@ public class ReportUtil
 
                 record.put("name", descriptor.getReportName());
                 record.put("reportId", descriptor.getReportId().toString());
-                record.put("query", StringUtils.defaultIfEmpty(query, "None : (stand-alone views)"));
+                record.put("query", StringUtils.defaultIfEmpty(query, "Stand-alone views"));
                 record.put("schema", schema);
                 record.put("createdBy", createdBy != null ? createdBy.getDisplayName(user) : String.valueOf(descriptor.getCreatedBy()));
                 record.put("created", DateUtil.formatDate(descriptor.getCreated()));
