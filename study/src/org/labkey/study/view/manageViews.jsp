@@ -204,7 +204,7 @@
                             '<tr><td><b>permissions</b></td><td>{permissions}</td>',
                             '<tr><td></td><td>',
                                 '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">view</a>]</tpl>',
-                                '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">source</a>]</tpl>',
+                                '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">edit</a>]</tpl>',
                             <% if (context.hasPermission(AdminPermission.class)) { %>
                                 '<tpl if="!queryView && !inherited">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl>',
                             <% } %>

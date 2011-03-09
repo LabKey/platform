@@ -139,6 +139,8 @@ public class QueryTable extends QueryRelation
             return ret;
 
         ForeignKey qfk = AbstractTableInfo.makeForeignKey(_schema, fk);
+        if (null == qfk)
+            return null;
         ColumnInfo lk = qfk.createLookupColumn(parent._col, name);
         ret = new TableColumn(k,lk);
         _selectedColumns.put(k,ret);

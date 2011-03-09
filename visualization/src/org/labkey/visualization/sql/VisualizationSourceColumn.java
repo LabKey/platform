@@ -2,8 +2,10 @@ package org.labkey.visualization.sql;
 
 import org.json.JSONArray;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.exp.property.Type;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 
@@ -35,7 +37,7 @@ public class VisualizationSourceColumn
     private String _queryName;
     private UserSchema _schema;
     private String _name;
-    private Type _type;
+    private JdbcType _type = null;
     private Set<Object> _values = new LinkedHashSet<Object>();
 
     public VisualizationSourceColumn(UserSchema schema, String queryName, String name)
@@ -48,7 +50,6 @@ public class VisualizationSourceColumn
     public VisualizationSourceColumn(ViewContext context, Map<String, Object> properties)
     {
         this(getUserSchema(context, (String) properties.get("schemaName")), (String) properties.get("queryName"), (String) properties.get("name"));
-        _type = Type.getTypeBySqlTypeName((String) properties.get("type"));
         JSONArray values = (JSONArray) properties.get("values");
         if (values != null)
         {
@@ -97,8 +98,34 @@ public class VisualizationSourceColumn
         return selectName.toString();
     }
 
-    public Type getType()
+    public JdbcType getType() throws VisualizationSQLGenerator.GenerationException
     {
+        if (_type == null)
+        {
+            try
+            {
+                TableInfo tinfo = _schema.getTable(_queryName);
+                if (tinfo == null)
+                {
+                    throw new VisualizationSQLGenerator.GenerationException("Unable to find table " + _schema.getName() + "." + _queryName +
+                            ".  The table may not exist, or you may not have permissions to read the data.");
+                }
+
+                ColumnInfo column = tinfo.getColumn(_name);
+                if (column == null)
+                {
+                    throw new VisualizationSQLGenerator.GenerationException("Unable to find field " + _name + " in " + _schema.getName() + "." + _queryName +
+                            ".  The field may not exist, or you may not have permissions to read the data.");
+                }
+
+                _type = column.getJdbcType();
+            }
+            catch (QueryParseException e)
+            {
+                throw new VisualizationSQLGenerator.GenerationException("Unable to determine datatype for field " + _name + " in " + _schema.getName() + "." + _queryName + 
+                        ".  The data may not exist, or you may not have permissions to read the data.", e);
+            }
+        }
         return _type;
     }
 

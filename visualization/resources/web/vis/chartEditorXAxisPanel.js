@@ -107,9 +107,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             mode: 'local',
             store: new Ext.data.Store(),
             valueField: 'name',
-            displayField: 'label',
+            displayField: 'longlabel',
             forceSelection: true,
-            width: 175,
             listeners: {
                 scope: this,
                 'select': function(cmp, record, index) {
@@ -275,7 +274,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     root:'measures',
                     idProperty:'id'
                 },
-                [{name: 'id'}, {name:'name'},{name:'label'},{name:'description'}, {name:'isUserDefined'}, {name:'queryName'}, {name:'schemaName'}, {name:'type'}]
+                [{name: 'id'}, {name:'name'},{name:'label'},{name:'longlabel'},{name:'description'}, {name:'isUserDefined'}, {name:'queryName'}, {name:'schemaName'}, {name:'type'}]
             ),
             proxy: new Ext.data.HttpProxy({
                 method: 'GET',
@@ -335,7 +334,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     root:'measures',
                     idProperty:'id'
                 },
-                [{name: 'id'}, {name:'name'},{name:'label'},{name:'description'}, {name:'isUserDefined'}, {name:'queryName'}, {name:'schemaName'}, {name:'type'}]
+                [{name: 'id'}, {name:'name'},{name:'label'},{name:'longlabel'},{name:'description'}, {name:'isUserDefined'}, {name:'queryName'}, {name:'schemaName'}, {name:'type'}]
             ),
             proxy: new Ext.data.HttpProxy({
                 method: 'GET',

@@ -529,10 +529,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
     protected static SimpleFilter addNotPreviouslyRequestedClause(SimpleFilter filter, Container container, int siteId)
     {
         String sql = "SpecimenHash NOT IN (" +
-        "SELECT s.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
-                + "join study.Specimen s on rs.SpecimenGlobalUniqueId=s.GlobalUniqueId "
+        "SELECT v.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
+                + "join study.Vial v on rs.SpecimenGlobalUniqueId=v.GlobalUniqueId "
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
-                +  "where r.DestinationSiteId=? AND s.Container=? AND status.SpecimensLocked=?)";
+                +  "where r.DestinationSiteId=? AND v.Container=? AND status.SpecimensLocked=?)";
 
         filter.addWhereClause(sql, new Object[] {siteId, container.getId(), Boolean.TRUE}, "SpecimenHash");
 

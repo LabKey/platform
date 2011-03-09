@@ -706,6 +706,7 @@ public class DesignerController extends SpringActionController
             columnAliases.put(entry.getValue(), entry.getKey());
         //And a few more aliases
         columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
+        columnAliases.put("Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("Subject", SimpleSpecimenImporter.PARTICIPANT_ID);
 
         //Remember whether we used a different header so we can put up error messages that make sense
@@ -739,7 +740,7 @@ public class DesignerController extends SpringActionController
 
             for (String col : PageFlowUtil.set(SimpleSpecimenImporter.SAMPLE_ID, SimpleSpecimenImporter.DRAW_TIMESTAMP))
                 if (null == row.get(col))
-                    errors.add("Error, Row " + rowNum + " does not contain a value for field " + labels.get(col));
+                    errors.add("Error, Row " + rowNum + " does not contain a value for field " + (labels.containsKey(col) ? labels.get(col) : col));
 
             if (errors.size() >= 3)
                 break;

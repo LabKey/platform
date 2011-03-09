@@ -32,6 +32,19 @@ import java.util.*;
  */
 public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 {
+    public static class GenerationException extends Exception
+    {
+        public GenerationException(String message)
+        {
+            super(message);
+        }
+
+        public GenerationException(String message, Throwable cause)
+        {
+            super(message, cause);
+        }
+    }
+
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<String, VisualizationSourceQuery>();
     private List<VisualizationIntervalColumn> _intervals = new ArrayList<VisualizationIntervalColumn>();
     private ViewContext _viewContext;
@@ -163,7 +176,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         super();    //To change body of overridden methods use File | Settings | File Templates.
     }
 
-    public String getSQL()
+    public String getSQL() throws VisualizationSQLGenerator.GenerationException
     {
         // Now that we have the full list of columns we want to select, we can
         StringBuilder masterSelectList = new StringBuilder();
@@ -252,6 +265,18 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
             for (VisualizationSourceColumn select : query.getSelects())
                 colMap.put(select.getOriginalName(), select.getAlias());
+
+            for (VisualizationSourceColumn sort : query.getSorts())
+                colMap.put(sort.getOriginalName(), sort.getAlias());
+
+            if (query.getJoinConditions() != null)
+            {
+                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : query.getJoinConditions())
+                {
+                    colMap.put(join.getKey().getOriginalName(), join.getKey().getAlias());
+                    colMap.put(join.getValue().getOriginalName(), join.getValue().getAlias());
+                }
+            }
         }
 
         // Now that we have the full set of columns, we can take a pass through to eliminate the columns on the right

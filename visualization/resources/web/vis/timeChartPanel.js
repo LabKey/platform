@@ -63,8 +63,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         Ext.getCmp('chart-editor-tabpanel').activate(this.editorMeasurePanel.getId());
                         this.measureSelected(initMeasure, true);
                     },
-                    'saveChart': function(saveBtnType, replace, reportName, reportDescription){
-                        this.saveChart(saveBtnType, replace, reportName, reportDescription);
+                    'saveChart': function(saveBtnType, replace, reportName, reportDescription, reportShared){
+                        this.saveChart(saveBtnType, replace, reportName, reportDescription, reportShared);
                      }
                 }
             });
@@ -439,7 +439,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     subject: subject,
                     yAxisSeries: yAxisSeries,
                     caption: caption,
-                    data: this.chartSubjectData[subject][yAxisSeries],
+                    data: this.chartSubjectData[subject] ? this.chartSubjectData[subject][yAxisSeries] : [],
                     xProperty:"interval",
                     yProperty: "dataValue",
                     dotShape: 'circle'
@@ -639,7 +639,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         return index;
     },
 
-    saveChart: function(saveBtnName, replace, reportName, reportDescription) {
+    saveChart: function(saveBtnName, replace, reportName, reportDescription, reportShared) {
         // if queryName and schemaName are set on the URL then save them with the chart info
         var schema = LABKEY.ActionURL.getParameter("schemaName") || null;
         var query = LABKEY.ActionURL.getParameter("queryName") || null;
@@ -650,6 +650,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 replace: replace,
                 reportName: reportName,
                 reportDescription: reportDescription,
+                reportShared: reportShared,
                 query: query,
                 schema: schema
             };
@@ -687,18 +688,29 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     width: 300,
                     height: 70,
                     allowBlank: true
-                }],
+                },
+                new Ext.form.RadioGroup({
+                    name: 'reportShared',
+                    fieldLabel: 'Viewable by',
+                    anchor: '100%',
+                    items : [
+                            { name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', checked: reportShared },
+                            { name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', checked: !reportShared }
+                        ]
+                })],
                 buttons: [{
                     text: 'Save',
                     formBind: true,
                     handler: function(btn, evnt){
-                        var formValues = vizSaveForm.getForm().getFieldValues();
+                        var formValues = vizSaveForm.getForm().getValues();
+                        var shared = typeof formValues.reportShared == "string" ? 'true' == formValues.reportShared : new Boolean(formValues.reportShared);
 
                         // call fnctn to check if a report of that name already exists
                         this.checkSaveChart({
                             replace: replace,
                             reportName: formValues.reportName,
                             reportDescription: formValues.reportDescription,
+                            reportShared: shared,
                             query: query,
                             schema: schema
                         });
@@ -719,7 +731,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             var win = new Ext.Window({
                 layout:'fit',
                 width:475,
-                height:200,
+                height:230,
                 closeAction:'hide',
                 modal: true,
                 padding: 15,
@@ -772,19 +784,20 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         LABKEY.Visualization.save({
             name: config.reportName,
             description: config.reportDescription,
+            shared: config.reportShared,
             visualizationConfig: this.chartInfo,
             replace: config.replace,
             type: LABKEY.Visualization.Type.TimeChart,
-            success: this.saveChartSuccess(config.reportName, config.reportDescription),
+            success: this.saveChartSuccess(config.reportName, config.reportDescription, config.reportShared),
             schemaName: config.schema,
             queryName: config.query,
             scope: this
         });
     },
 
-    saveChartSuccess: function (reportName, reportDescription){
+    saveChartSuccess: function (reportName, reportDescription, reportShared){
         return function(result, request, options) {
-            this.editorOverviewPanel.updateOverview({name: reportName, description: reportDescription});
+            this.editorOverviewPanel.updateOverview({name: reportName, description: reportDescription, shared: reportShared});
             Ext.Msg.alert("Success", "The chart has been successfully saved.");
         }
     },

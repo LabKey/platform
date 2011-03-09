@@ -200,11 +200,12 @@ function requestSelected(requestRecord)
 
     var vialStore = new LABKEY.ext.Store({
         schemaName: 'study',
-        queryName: 'SpecimenDetail',
-        filterArray: [
-            LABKEY.Filter.create("RowId", requestData.vialRowIds, LABKEY.Filter.Types.IN)
-        ]
+        queryName: 'SpecimenDetail'
     });
+    
+    var filter = LABKEY.Filter.create("RowId", requestData.vialRowIds, LABKEY.Filter.Types.IN);
+    vialStore.baseParams[filter.getURLParameterName()] = filter.getURLParameterValue();
+
     if (!_vialGrid)
     {
         _vialGrid = new LABKEY.ext.EditorGridPanel({

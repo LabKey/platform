@@ -22,6 +22,7 @@ import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.fop.svg.PDFTranscoder;
+import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
@@ -37,6 +38,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
@@ -62,6 +64,7 @@ public class VisualizationController extends SpringActionController
 {
     public static final String NAME = "visualization";
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(VisualizationController.class);
+    private static final Logger _log = Logger.getLogger(VisualizationController.class);
 
     public static class VisualizationUrlsImpl implements VisualizationUrls
     {
@@ -261,6 +264,27 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    public class BeginAction extends RedirectAction
+    {
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(getContainer());
+        }
+
+        @Override
+        public boolean doAction(Object o, BindException errors) throws Exception
+        {
+            return true;
+        }
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetMeasuresAction<Form extends MeasuresForm> extends ApiAction<Form>
     {
         public ApiResponse execute(Form form, BindException errors) throws Exception
@@ -321,10 +345,9 @@ public class VisualizationController extends SpringActionController
             int count = 1;
             for (Map.Entry<ColumnInfo, QueryView> entry : cols.entrySet())
             {
-                // add measure properties
-                Map<String, Object> props = getColumnProps(entry.getKey());
-
                 QueryView queryView = entry.getValue();
+                // add measure properties
+                Map<String, Object> props = getColumnProps(entry.getKey(), queryView);
                 props.put("schemaName", queryView.getSchema().getName());
                 props.put("queryName", queryView.getQueryDef().getName());
                 props.put("isUserDefined", !queryView.getQueryDef().isTableQueryDefinition());
@@ -335,13 +358,14 @@ public class VisualizationController extends SpringActionController
             return measuresJSON;
         }
 
-        protected Map<String, Object> getColumnProps(ColumnInfo col)
+        protected Map<String, Object> getColumnProps(ColumnInfo col, QueryView view)
         {
             Map<String, Object> props = new HashMap<String, Object>();
 
             props.put("name", col.getName());
             props.put("label", col.getLabel());
-            props.put("type", col.getSqlTypeName());
+            props.put("longlabel", col.getLabel() + " (" + view.getQueryDef().getName() + ")");
+            props.put("type", col.getJdbcType().name());
             props.put("description", StringUtils.trimToEmpty(col.getDescription()));
 
             return props;
@@ -544,7 +568,19 @@ public class VisualizationController extends SpringActionController
         @Override
         public ApiResponse execute(VisualizationSQLGenerator sqlGenerator, BindException errors) throws Exception
         {
-            ApiQueryResponse response = getApiResponse(getViewContext(), sqlGenerator.getPrimarySchema(), sqlGenerator.getSQL(), errors);
+            String sql;
+            try
+            {
+                sql = sqlGenerator.getSQL();
+            }
+            catch (VisualizationSQLGenerator.GenerationException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                _log.warn("Unable to generate visualization SQL.", e);
+                return null;
+            }
+
+            ApiQueryResponse response = getApiResponse(getViewContext(), sqlGenerator.getPrimarySchema(), sql, errors);
             // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
             Map<String, Object> extraProperties = new HashMap<String, Object>();
             Map<String, String> measureNameToColumnName = sqlGenerator.getColumnMapping();
@@ -724,6 +760,7 @@ public class VisualizationController extends SpringActionController
         private String _json;
         private String _type;
         private boolean _replace;
+        private boolean _shared = true;
 
         public String getJson()
         {
@@ -763,6 +800,16 @@ public class VisualizationController extends SpringActionController
         public void setDescription(String description)
         {
             _description = description;
+        }
+
+        public boolean isShared()
+        {
+            return _shared;
+        }
+
+        public void setShared(boolean shared)
+        {
+            _shared = shared;
         }
     }
 
@@ -864,7 +911,7 @@ public class VisualizationController extends SpringActionController
             Report report = getReport(form);
             if (report == null || !report.getDescriptor().getContainerId().equals(getContainer().getId()))
             {
-                errors.reject(ERROR_MSG, "Visualization " + form.getName() + " does not exist in " + getContainer().getPath() + ".");
+                errors.reject(ERROR_MSG, "Visualization \"" + form.getName() + "\" does not exist in " + getContainer().getPath() + ".");
                 return null;
             }
 
@@ -883,6 +930,7 @@ public class VisualizationController extends SpringActionController
             resp.put("schemaName", vizDescriptor.getProperty(ReportDescriptor.Prop.schemaName));
             resp.put("queryName", vizDescriptor.getProperty(ReportDescriptor.Prop.queryName));
             resp.put("type", vizDescriptor.getReportType());
+            resp.put("shared", vizDescriptor.getOwner() == null);
             return resp;
         }
     }
@@ -939,6 +987,7 @@ public class VisualizationController extends SpringActionController
                 vizDescriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
             if (currentReport.getDescriptor().getReportId() != null)
                 vizDescriptor.setReportId(currentReport.getDescriptor().getReportId());
+            vizDescriptor.setOwner(form.isShared() ? null : getViewContext().getUser().getUserId());
             int reportId = ReportService.get().saveReport(getViewContext(), vizDescriptor.getReportKey(), currentReport);
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("visualizationId", reportId);

@@ -374,7 +374,7 @@ LABKEY.ViewsPanel.prototype = {
         return [
             //this.expander,
             //this.selModel,
-            {header:'Title', dataIndex:'name', width:200},
+            {header:'Title', dataIndex:'name', width:200, renderer:Ext.util.Format.htmlEncode},
             {header:'Type', dataIndex:'type', renderer:typeRenderer},
             {header:'Created By', dataIndex:'createdBy'},
             {header:'Created', dataIndex:'created', hidden:true},

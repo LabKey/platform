@@ -98,7 +98,7 @@ public abstract class VisualizationProvider
 
         // custom queries:
         QueryDefinition qdef = QueryService.get().getQueryDef(context.getUser(), context.getContainer(), _schemaName, queryName);
-        if (!qdef.isHidden())
+        if (qdef != null && !qdef.isHidden())
         {
             QueryView view = getView(context, schema, qdef.getName());
             if (isValid(view, matchType))
@@ -173,7 +173,10 @@ public abstract class VisualizationProvider
     protected Map<ColumnInfo, QueryView> getMatchingColumns(ViewContext context, ColumnMatchType matchType, String queryName)
     {
         QueryView view = getQueryView(context, matchType, queryName);
-        return getMatchingColumns(context.getContainer(), Collections.singleton(view), matchType);
+        if (view != null)
+            return getMatchingColumns(context.getContainer(), Collections.singleton(view), matchType);
+        else
+            return Collections.emptyMap();
     }
 
     protected Map<ColumnInfo, QueryView> getMatchingColumns(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)

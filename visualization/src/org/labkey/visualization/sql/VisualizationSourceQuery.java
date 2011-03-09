@@ -2,7 +2,7 @@ package org.labkey.visualization.sql;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.property.Type;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 
@@ -180,12 +180,8 @@ public class VisualizationSourceQuery
 
     public String getFromClause()
     {
-        String schemaName = getSchemaName();
-        if (schemaName.indexOf(' ') >= 0)
-            schemaName = "\"" + schemaName + "\"";
-        String queryName = _queryName;
-        if (queryName.indexOf(' ') >= 0)
-            queryName = "\"" + queryName + "\"";
+        String schemaName = "\"" + getSchemaName() + "\"";
+        String queryName = "\"" + _queryName + "\"";
         return "FROM " + schemaName + "." + queryName + "\n";
     }
 
@@ -210,16 +206,16 @@ public class VisualizationSourceQuery
             return "";
     }
 
-    private String appendValueList(StringBuilder sql, VisualizationSourceColumn col)
+    private String appendValueList(StringBuilder sql, VisualizationSourceColumn col) throws VisualizationSQLGenerator.GenerationException
     {
         if (col.getValues() != null && col.getValues().size() > 0)
         {
             sql.append(" IN (");
             String sep = "";
-            for (Object value : _pivot.getValues())
+            for (Object value : col.getValues())
             {
                 sql.append(sep);
-                if (_pivot.getType().isNumeric() || _pivot.getType() == Type.BooleanType)
+                if (col.getType().isNumeric() || col.getType() == JdbcType.BOOLEAN)
                     sql.append(value);
                 else
                     sql.append("'").append(value).append("'");
@@ -230,7 +226,7 @@ public class VisualizationSourceQuery
         return sql.toString();
     }
 
-    public String getPivotClause()
+    public String getPivotClause() throws VisualizationSQLGenerator.GenerationException
     {
         if (_pivot != null)
         {
@@ -246,7 +242,7 @@ public class VisualizationSourceQuery
             return "";
     }
 
-    public String getWhereClause()
+    public String getWhereClause() throws VisualizationSQLGenerator.GenerationException
     {
         StringBuilder where = new StringBuilder();
         String sep = "WHERE ";
@@ -255,8 +251,18 @@ public class VisualizationSourceQuery
             if (select.getValues() != null && !select.getValues().isEmpty())
             {
                 where.append(sep);
-                appendColumnNames(where, Collections.singleton(select), false, true, false);
+                appendColumnNames(where, Collections.singleton(select), false, false, false);
                 appendValueList(where, select);
+                sep = " AND ";
+            }
+        }
+        for (VisualizationSourceColumn sort : _sorts)
+        {
+            if (sort.getValues() != null && !sort.getValues().isEmpty())
+            {
+                where.append(sep);
+                appendColumnNames(where, Collections.singleton(sort), false, false, false);
+                appendValueList(where, sort);
                 sep = " AND ";
             }
         }
@@ -264,7 +270,7 @@ public class VisualizationSourceQuery
         return where.toString();
     }
 
-    public String getSQL()
+    public String getSQL() throws VisualizationSQLGenerator.GenerationException
     {
         StringBuilder sql = new StringBuilder();
         sql.append(getSelectClause()).append("\n");

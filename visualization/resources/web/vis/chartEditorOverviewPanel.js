@@ -113,7 +113,8 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
 
                 // the save button will not allow for replace if this is a new chart,
                 // but will force replace if this is a change to a saved chart
-                this.fireEvent('saveChart', 'Save', (typeof this.reportInfo == "object" ? true : false), formVals.reportName, formVals.reportDescription);
+                var shared = typeof formVals.reportShared == "string" ? 'true' == formVals.reportShared : new Boolean(formVals.reportShared);
+                this.fireEvent('saveChart', 'Save', (typeof this.reportInfo == "object" ? true : false), formVals.reportName, formVals.reportDescription, shared);
             },
             scope: this,
             formBind: true
@@ -127,7 +128,8 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                 var formVals = this.saveChartFormPanel.getForm().getValues();
 
                 // the save as button does not allow for replace initially
-                this.fireEvent('saveChart', 'Save As', false, formVals.reportName, formVals.reportDescription);
+                var shared = typeof formVals.reportShared == "string" ? 'true' == formVals.reportShared : new Boolean(formVals.reportShared);
+                this.fireEvent('saveChart', 'Save As', false, formVals.reportName, formVals.reportDescription, shared);
             },
             scope: this,
             formBind: true
@@ -155,7 +157,17 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                     fieldLabel: 'Report Description',
                     value: (typeof this.reportInfo == "object" ? this.reportInfo.description : null),
                     allowBlank: true,
-                    anchor: '100%'
+                    anchor: '100%',
+                    height: 40
+                }),
+                new Ext.form.RadioGroup({
+                    name: 'reportShared',
+                    fieldLabel: 'Viewable by',
+                    anchor: '100%',
+                    items : [
+                            { name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', checked: (typeof this.reportInfo == "object" ? this.reportInfo.shared : true) },
+                            { name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', checked: !(typeof this.reportInfo == "object" ? this.reportInfo.shared : true) }
+                        ]
                 })
             ],
             buttons: [
@@ -258,6 +270,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
             this.saveChartFormPanel.getComponent(0).setValue(this.reportInfo.name);
             this.saveChartFormPanel.getComponent(0).setReadOnly(true); // disabled for saved report
             this.saveChartFormPanel.getComponent(1).setValue(this.reportInfo.description);
+            this.saveChartFormPanel.getComponent(2).setValue(this.reportInfo.shared);
 
             // if the user can update, show save button (which is now for replacing the saved report)
             (LABKEY.Security.currentUser.canUpdate ? this.saveBtn.show() : this.saveBtn.hide());

@@ -28,10 +28,19 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         this.border = false;
         this.flex = 1;
 
+        var measureListPanel = this.createMeasuresListPanel();
         this.items = [
             this.createMeasuresFormPanel(),
-            this.createMeasuresListPanel()
+            measureListPanel
         ];
+
+        var loaded = false;
+
+        // Keep track of whether the store has been loaded so we know whether we need to
+        // mask the popup:
+        this.measuresStore.on('load', function(){
+            loaded = true;
+        });
 
         // load the store the first time after this component has rendered
         this.on('afterrender', function(cmp){
@@ -43,8 +52,14 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                         queryName: this.selectedMeasure.queryName})];
             }
             this.measuresStore.load({params:{filters: filter, dateMeasures: this.isDateAxis}});
-            this.getEl().mask("loading measures...", "x-mask-loading");
         }, this);
+
+        // Show the mask after the component size has been determined, as long as the
+        // data is still loading:
+        this.on('afterlayout', function() {
+            if (!loaded)
+                this.getEl().mask("loading measures...", "x-mask-loading");
+        });
 
         LABKEY.vis.MeasuresPanel.superclass.initComponent.call(this);
     },

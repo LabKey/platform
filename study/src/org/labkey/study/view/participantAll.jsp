@@ -118,7 +118,7 @@
     ResultSet rs;
 
     Map<Pair<String,Double>,Integer> visitRowIdMap = new HashMap<Pair<String,Double>,Integer>();
-    Map<Double, Date> visitDates = new TreeMap<Double, Date>();
+    Map<Double, Date> ptidVisitDates = new TreeMap<Double, Date>();
     rs = Table.executeQuery(dbSchema,
             "SELECT VisitRowId, ParticipantId, SequenceNum, VisitDate\n" +
             "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + "\n" +
@@ -131,7 +131,8 @@
         double sequenceNum = rs.getDouble(3);
         Date visitDate = rs.getDate(4);
         visitRowIdMap.put(new Pair(ptid,sequenceNum), visitRowId);
-        visitDates.put(sequenceNum, visitDate);
+        if (bean.getParticipantId().equals(ptid))
+            ptidVisitDates.put(sequenceNum, visitDate);
     }
     rs.close();
 
@@ -213,7 +214,7 @@
             Collection<Double> sequences = visitSequenceMap.get(visit.getRowId());
             for (Double seqNum : sequences)
             {
-                Date date = visitDates.get(seqNum);
+                Date date = ptidVisitDates.get(seqNum);
                 Integer keyCount = countKeysForSequence.get(seqNum);
                 if (null == keyCount)
                     keyCount = 1;
@@ -466,13 +467,13 @@ Map<FieldKey,ColumnInfo> getQueryColumns(TableInfo t)
         keys.add(c.getFieldKey());
     return QueryService.get().getColumns(t, keys);
 }
-    
+
 
 static CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet(
         "lsid","sourcelsid","sequencenum","qcstate","participantid",
         "visitrowid","dataset","participantsequencekey","created","modified");
 
-    
+
 ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext context)
 {
     final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
@@ -484,7 +485,7 @@ ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext c
             if (sortMap.containsKey(col.getName()))
                 ret[sortMap.get(col.getName())] = col;
         }
-        for (ColumnInfo col : ret) 
+        for (ColumnInfo col : ret)
             assert col != null;
         return ret;
     }
@@ -517,6 +518,6 @@ public static class VisitMultiMap extends MultiValueMap<Integer, Double>
         return new TreeSet<Double>();
     }
 }
-    
+
 %>
 

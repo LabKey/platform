@@ -6009,7 +6009,7 @@ public class StudyController extends BaseStudyController
             {
                 ActionURL search = new ActionURL("search", "search", container);
                 search.addParameter("q", "+" + ss.escapeTerm(_currentParticipantId));
-                out.print(PageFlowUtil.textLink(PageFlowUtil.filter("Search for '" + _currentParticipantId + "'"), search));
+                out.print(PageFlowUtil.textLink("Search for '" + PageFlowUtil.filter(_currentParticipantId) + "'", search));
                 out.print("&nbsp;");
             }
 

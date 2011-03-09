@@ -77,7 +77,7 @@ class PostgreSqlDialect extends SqlDialect
     @Override
     protected @NotNull String getReservedWords()
     {
-        return "all, analyse, analyze, and, any, array, as, asc, asymmetric, authorization, binary, both, case, cast, check, collate, column, concurrently, constraint, create, cross, default, deferrable, desc, distinct, do, else, end, end-exec, except, fetch, for, foreign, freeze, from, full, grant, group, having, ilike, in, initially, inner, intersect, into, is, isnull, join, leading, left, like, limit, natural, not, notnull, null, offset, on, only, or, order, outer, over, overlaps, placing, primary, references, returning, right, select, similar, some, symmetric, table, then, to, trailing, union, unique, using, variadic, verbose, when, where, window, with";
+        return "all, analyse, analyze, and, any, array, as, asc, asymmetric, authorization, binary, both, case, cast, check, collate, column, concurrently, constraint, create, cross, default, deferrable, desc, distinct, do, else, end, end-exec, except, fetch, for, foreign, freeze, from, full, grant, group, having, ilike, in, initially, inner, intersect, into, is, isnull, join, leading, left, like, limit, natural, not, notnull, null, offset, on, only, or, order, outer, over, overlaps, placing, primary, references, returning, right, select, similar, some, symmetric, table, then, to, trailing, union, unique, using, variadic, verbose, when, where, window, with, between, new, off, old";
     }
 
     @Override
