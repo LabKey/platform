@@ -140,6 +140,10 @@ public class ListImporter
         list.setKeyName(keyName);
         list.setKeyType(pkType);
         list.setDescription(listXml.getDescription());
+
+        if (listXml.isSetTitleColumn())
+            list.setTitleColumn(listXml.getTitleColumn());
+
         list.save(user);
 
         // TODO: This code is largely the same as SchemaXmlReader -- should consolidate

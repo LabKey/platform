@@ -139,7 +139,8 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 
         setDefaultVisibleColumns(defaultVisible);
 
-        setTitleColumn(findTitleColumn(listDef, colKey));
+        boolean auto = (null == listDef.getTitleColumn());
+        setTitleColumn(findTitleColumn(listDef, colKey), auto);
 
         // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
         // Do this last so the column doesn't get selected as title column, etc.

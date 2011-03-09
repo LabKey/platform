@@ -1040,7 +1040,7 @@ public class Query
             S.save(user);
             S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
 
-            if (1==1)
+            if (0==1)
             {
                 try{
                     ListDefinition RHOME = s.createList(ContainerManager.getForPath("/home"), "R");
