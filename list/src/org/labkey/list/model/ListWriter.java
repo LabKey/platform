@@ -25,6 +25,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
@@ -104,7 +105,10 @@ public class ListWriter
                     for (ColumnInfo col : columns)
                         displayColumns.add(new ListExportDataColumn(col));
 
-                    Results rs = QueryService.get().select(ti, columns, null, null);
+                    // Sort the data rows by PK, #11261
+                    Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
+
+                    Results rs = QueryService.get().select(ti, columns, null, sort);
                     TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
                     tsvWriter.setApplyFormats(false);
                     tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);

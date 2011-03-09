@@ -18,12 +18,14 @@ package org.labkey.study.writer;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -35,9 +37,13 @@ import org.labkey.study.xml.StudyDocument.Study.Datasets;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -161,7 +167,9 @@ class DatasetWriter implements InternalStudyWriter
         {
             TableInfo ti = def.getTableInfo(ctx.getUser());
             Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false);
-            Results rs = QueryService.get().select(ti, columns, null, null);
+            // Sort the data rows by PTID & sequence, #11261
+            Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
+            Results rs = QueryService.get().select(ti, columns, null, sort);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);       // TODO: Add columns?
             tsvWriter.setApplyFormats(false);
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
