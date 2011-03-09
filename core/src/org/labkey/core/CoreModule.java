@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.Container;
@@ -411,6 +412,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuditLogService.get().addAuditViewFactory(AttachmentAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(ContainerAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(FileSystemAuditViewFactory.getInstance());
+        AuditLogService.get().addAuditViewFactory(ClientAPIAuditViewFactory.getInstance());
 
         TempTableTracker.init();
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());

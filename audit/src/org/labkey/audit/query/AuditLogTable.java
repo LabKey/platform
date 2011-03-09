@@ -35,8 +35,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -163,6 +168,20 @@ public class AuditLogTable extends FilteredTable
                 addCondition(new SimpleFilter(new SimpleFilter.InClause("ContainerId", ids)));
             }
         }
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return new AuditLogUpdateService(this);
+    }
+
+    @Override
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    {
+        // Don't allow deletes or updates for audit events, and don't let guests insert
+        return ((perm.equals(InsertPermission.class) && !user.isGuest()) || perm.equals(ReadPermission.class)) &&
+            getContainer().hasPermission(user, perm);
     }
 
     private List<FieldKey> getDefaultColumns()
