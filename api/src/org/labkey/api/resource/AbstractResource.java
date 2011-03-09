@@ -28,13 +28,15 @@ import java.util.Collections;
  */
 abstract public class AbstractResource implements Resource
 {
-    private Path _path;
-    Resolver _resolver;
+    private final Path _path;
+    final Resolver _resolver;
+    protected final StackTraceElement[] _creationStackTrace;
 
     protected AbstractResource(Path path, Resolver resolver)
     {
         _path = path;
         _resolver = resolver;
+        _creationStackTrace = Thread.currentThread().getStackTrace();
     }
 
     protected AbstractResource(Path folder, String name, Resolver resolver)

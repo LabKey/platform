@@ -15,12 +15,10 @@
  */
 package org.labkey.api.webdav;
 
-import org.labkey.api.webdav.AbstractWebdavResource;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * User: matthewb

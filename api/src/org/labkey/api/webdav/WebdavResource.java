@@ -159,4 +159,6 @@ public interface WebdavResource extends Resource
     Map<String, String> getCustomProperties(User user);
 
     void notify(ContainerUser context, String message);
+
+    StackTraceElement[] getCreationStackTrace();
 }

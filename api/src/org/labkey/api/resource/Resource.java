@@ -66,7 +66,7 @@ public interface Resource
     InputStream getInputStream() throws IOException;
 
     /**
-     * The String returned can be used as a cache key in TTLCaches and,
+     * The String returned can be used as a cache key and,
      * unlike getPath(), will be unique across all resolvers.
      */
     String toString();
