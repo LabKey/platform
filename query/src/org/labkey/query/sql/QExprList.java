@@ -74,4 +74,10 @@ public class QExprList extends QExpr
         ret.append(")");
         return ret.toString();
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return QOperator.hasConstantChildren(this);
+    }
 }

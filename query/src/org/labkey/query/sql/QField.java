@@ -168,4 +168,10 @@ public class QField extends QInternalExpr
         }
         return null;
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return false;
+    }
 }

@@ -60,4 +60,10 @@ public class QCase extends QExpr
         list.remove(0);
         return getChildrenSqlType(list);
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return QOperator.hasConstantChildren(this);
+    }
 }

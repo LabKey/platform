@@ -160,4 +160,10 @@ public class QAggregate extends QExpr
                 ((QAggregate) other).getType() == getType() &&
                 _distinct == ((QAggregate)other)._distinct;
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return false;
+    }
 }

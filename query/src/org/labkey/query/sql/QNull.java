@@ -52,4 +52,10 @@ public class QNull extends QExpr implements IConstant
     {
         return null;
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return true;
+    }
 }

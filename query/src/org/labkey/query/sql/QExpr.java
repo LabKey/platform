@@ -71,6 +71,10 @@ abstract public class QExpr extends QNode
         return JdbcType.OTHER;
     }
 
+
+    public abstract boolean isConstant();
+
+    
     public boolean isAggregate()
     {
         // avoid ClassCastException org.labkey.query.sql.QSelectFrom cannot be cast to org.labkey.query.sql.QExpr  

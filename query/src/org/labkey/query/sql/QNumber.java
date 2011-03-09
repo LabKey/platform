@@ -150,4 +150,10 @@ public class QNumber extends QExpr implements IConstant
     {
         return other instanceof QNumber && getValue().equals(((QNumber) other).getValue());
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return true;
+    }
 }

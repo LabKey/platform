@@ -79,4 +79,10 @@ public class QString extends QExpr implements IConstant
     {
         return other instanceof QString && getValue().equals(((QString) other).getValue());
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return true;
+    }
 }

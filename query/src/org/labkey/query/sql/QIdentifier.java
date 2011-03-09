@@ -82,4 +82,10 @@ public class QIdentifier extends QFieldKey
     {
         return other instanceof QIdentifier && getIdentifier().equalsIgnoreCase(((QIdentifier) other).getIdentifier());
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return false;
+    }
 }

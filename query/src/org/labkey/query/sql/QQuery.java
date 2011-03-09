@@ -122,4 +122,11 @@ public class QQuery extends QExpr
         builder.append(f);
         builder.append(")");
     }
+
+
+    @Override
+    public boolean isConstant()
+    {
+        return false;
+    }
 }

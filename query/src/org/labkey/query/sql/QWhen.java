@@ -48,4 +48,10 @@ public class QWhen extends QExpr
         }
         return super.getSqlType();
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return QOperator.hasConstantChildren(this);
+    }
 }

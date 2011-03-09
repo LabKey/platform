@@ -120,4 +120,23 @@ final public class QOperator extends QExpr
         return other instanceof QOperator &&
             _op == ((QOperator) other)._op;
     }
+
+
+    @Override
+    public boolean isConstant()
+    {
+        return hasConstantChildren(this);
+    }
+
+    public static boolean hasConstantChildren(QNode n)
+    {
+        for (QNode c : n.children())
+        {
+            if (!(c instanceof QExpr))
+                return false;
+            if (!((QExpr)c).isConstant())
+                return false;
+        }
+        return true;
+    }
 }

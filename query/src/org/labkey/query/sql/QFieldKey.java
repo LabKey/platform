@@ -52,4 +52,10 @@ abstract public class QFieldKey extends QExpr
     {
         throw new IllegalStateException("Fields should have been resolved.");
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return false;
+    }
 }

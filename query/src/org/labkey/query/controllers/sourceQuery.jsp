@@ -68,8 +68,10 @@ if (!form.getQueryDef().isTableQueryDefinition())
     <labkey:button text="View Data" onclick="submit_onclick('executeQuery')" />&nbsp;
     <labkey:button text="SQL Help" href="<%=new HelpTopic(topic)%>" target="_blank" />
 <br/><br/>
-    <p>Metadata XML<%=PageFlowUtil.helpPopup("Metadata XML", "This XML lets you configure how your columns are displayed and other query-level attributes. See the <a target='_blank' href='https://www.labkey.org/download/schema-docs/xml-schemas/schemas/tableInfo_xsd/schema-summary.html'>XSD documentation</a> to learn more.", true)%>:<br>
-    <textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="metadataText" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
+    <p>Metadata XML<%=PageFlowUtil.helpPopup("Metadata XML", "This XML lets you configure how your columns are displayed and other query-level attributes. See the <a target='_blank' href='https://www.labkey.org/download/schema-docs/xml-schemas/schemas/tableInfo_xsd/schema-summary.html'>XSD documentation</a> to learn more.", true)%>:<br><%
+if (canEdit)
+{
+    %><textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="metadataText" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
     <script type="text/javascript">
          Ext.EventManager.on('metadataText', 'keydown', handleTabsInTextArea);
          editAreaLoader.init({
@@ -77,9 +79,14 @@ if (!form.getQueryDef().isTableQueryDefinition())
              syntax: "xml",
              start_highlight: true
          });
-     </script>
- </p>
-
+     </script><%
+}
+else
+{
+    %><input type="hidden" name="ff_metadataText" value="<%=h(form.ff_metadataText)%>" />
+    <pre><%=h(form.ff_metadataText)%></pre><%
+}
+%></p>
 </form>
 </div>
 

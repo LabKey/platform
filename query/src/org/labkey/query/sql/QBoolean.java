@@ -64,4 +64,10 @@ public class QBoolean extends QExpr implements IConstant
     {
         return other instanceof QBoolean & getValue() == getValue();
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return true;
+    }
 }

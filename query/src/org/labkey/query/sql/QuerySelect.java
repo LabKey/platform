@@ -837,9 +837,25 @@ groupByLoop:
                 declareFields(expr);
             }
         }
+
+        // move validation step into Query interface
+        validateAfterParse();
     }
 
 
+    void validateAfterParse()
+    {
+        if (null != _groupBy)
+        {
+            for (QNode expr : _groupBy.children())
+            {
+                if (expr instanceof QExpr && ((QExpr)expr).isConstant())
+                    parseError("Expression in Group By clause must not be a constant", expr);
+            }
+        }
+    }
+
+    
     /*
      * Return the result of replacing field names in the expression with QField objects.
      */
@@ -985,6 +1001,12 @@ groupByLoop:
     }
 
 
+    /**
+     * TODO It would be nice to do resolveFields() in a separate pass.
+     * Some errors could be caught before _getSql() is called.
+     * @param selectAll
+     * @return
+     */
     public SQLFragment _getSql(boolean selectAll)
     {
         if (getParseErrors().size() != 0)
@@ -1067,7 +1089,11 @@ groupByLoop:
             for (QNode expr : _groupBy.children())
             {
                 sql.append("(");
-                resolveFields((QExpr)expr, _groupBy).appendSql(sql);
+                QExpr gbExpr = resolveFields((QExpr)expr, _groupBy);
+                // check here again for constants, after resolveFields()
+                if (gbExpr.isConstant())
+                    parseError("Expression in Group By clause must not be a constant", expr);
+                gbExpr.appendSql(sql);
                 sql.append(")");
                 sql.nextPrefix(",");
             }

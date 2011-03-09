@@ -45,4 +45,10 @@ public class QElse extends QExpr
     {
         return getChildrenSqlType();
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return QOperator.hasConstantChildren(this);
+    }
 }

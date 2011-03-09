@@ -109,4 +109,11 @@ public class QMethodCall extends QExpr
         }
         return null;
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        // UNDONE MethodInfo.isPure()
+        return false;
+    }
 }

@@ -176,9 +176,6 @@ public class Query
 
         _parse(_querySource);
         
-        if (_parseErrors.isEmpty() && null != _queryRoot)
-            _queryRoot.declareFields();
-
         for (QueryException e : _parseErrors)
         {
             ExceptionUtil.decorateException(e, LabkeySQL, _querySource, false);
@@ -216,6 +213,9 @@ public class Query
 
             if (_queryRoot._savedName == null && _name != null)
                 _queryRoot.setSavedName(_name);
+
+            if (_parseErrors.isEmpty() && null != _queryRoot)
+                _queryRoot.declareFields();
 		}
         catch (UnauthorizedException ex)
         {

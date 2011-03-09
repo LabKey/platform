@@ -62,4 +62,10 @@ public class QUnion extends QExpr
         builder.append(_union.getSql());
         builder.append(")");
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return false;
+    }
 }

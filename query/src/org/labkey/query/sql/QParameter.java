@@ -100,4 +100,10 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
         return other instanceof QParameter &&
                 _name.equals(((QParameter)other)._name);
     }
+
+    @Override
+    public boolean isConstant()
+    {
+        return true;
+    }
 }
