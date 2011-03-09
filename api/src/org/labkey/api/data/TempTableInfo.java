@@ -52,7 +52,7 @@ public class TempTableInfo extends SchemaTableInfo
         _tempTableName = parentSchema.getSqlDialect().getGlobalTempTablePrefix() + name + "$" + _unique;
 
         // overwrite selectName to not use schema/owner name
-        this.name = name;
+        _name = name;
         selectName = new SQLFragment(_tempTableName);
         for (ColumnInfo col : cols)
             col.setParentTable(this);

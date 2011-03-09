@@ -57,7 +57,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _description = _rootTable.getDescription();
         // UNDONE: lazy load button bar config????
         _buttonBarConfig = _rootTable.getButtonBarConfig();
-        setTitleColumn(table.getTitleColumn());
+        setTitleColumn(table.getTitleColumn(), table.hasDefaultTitleColumn());
     }
 
     public FilteredTable(TableInfo table, Container container)

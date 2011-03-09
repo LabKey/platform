@@ -16,8 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
@@ -57,9 +55,6 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
 import javax.script.ScriptException;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -78,6 +73,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     protected Iterable<FieldKey> _defaultVisibleColumns;
     protected DbSchema _schema;
     private String _titleColumn;
+    private boolean _hasDefaultTitleColumn = true;
     private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
 
     protected final Map<String, ColumnInfo> _columnMap;
@@ -286,6 +282,13 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
+    @Override
+    public boolean hasDefaultTitleColumn()
+    {
+        return _hasDefaultTitleColumn;
+    }
+
+    @Override
     public String getTitleColumn()
     {
         if (null == _titleColumn)
@@ -307,7 +310,14 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void setTitleColumn(String titleColumn)
     {
+        setTitleColumn(titleColumn, null == titleColumn);
+    }
+
+    // Passing in defaultTitleColumn helps with export & serialization
+    public void setTitleColumn(String titleColumn, boolean defaultTitleColumn)
+    {
         _titleColumn = titleColumn;
+        _hasDefaultTitleColumn = defaultTitleColumn;
     }
 
     public ColumnInfo getColumn(String name)

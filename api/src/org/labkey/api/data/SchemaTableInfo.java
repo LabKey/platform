@@ -50,9 +50,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 {
     private static final Logger _log = Logger.getLogger(SchemaTableInfo.class);
 
-    String name;
-    String title = null;
-    String titleColumn = null;
+    String _name;
+    String _title = null;
+    String _titleColumn = null;
+    boolean _hasDefaultTitleColumn = true;
     protected List<String> _pkColumnNames = new ArrayList<String>();
     List<ColumnInfo> _pkColumns;
     protected ArrayList<ColumnInfo> columns = new ArrayList<ColumnInfo>();
@@ -85,7 +86,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         this(parentSchema);
 
-        this.name = tableName;
+        _name = tableName;
         String selectName = getSqlDialect().makeLegalIdentifier(parentSchema.getName())
                 + "." + getSqlDialect().makeLegalIdentifier(tableName);
         this.selectName = new SQLFragment(selectName);
@@ -96,14 +97,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         this(parentSchema);
 
-        this.name = tableName;
+        _name = tableName;
         this.selectName = new SQLFragment(selectName);
     }
 
 
     public String getName()
     {
-        return name;
+        return _name;
     }
 
     public String getMetaDataName()
@@ -230,23 +231,29 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         _versionColumnName = colName;
     }
 
+    @Override
+    public boolean hasDefaultTitleColumn()
+    {
+        return _hasDefaultTitleColumn;
+    }
+
     public String getTitleColumn()
     {
-        if (null == titleColumn && !columns.isEmpty())
+        if (null == _titleColumn && !columns.isEmpty())
         {
             for (ColumnInfo column : columns)
             {
                 if (column.isStringType() && !column.getSqlTypeName().equalsIgnoreCase("entityid"))
                 {
-                    titleColumn = column.getName();
+                    _titleColumn = column.getName();
                     break;
                 }
             }
-            if (null == titleColumn)
-                titleColumn = columns.get(0).getName();
+            if (null == _titleColumn)
+                _titleColumn = columns.get(0).getName();
         }
 
-        return titleColumn;
+        return _titleColumn;
     }
 
     public int getTableType()
@@ -500,7 +507,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     void copyToXml(TableType xmlTable, boolean bFull)
     {
-        xmlTable.setTableName(name);
+        xmlTable.setTableName(_name);
         if (_tableType == TABLE_TYPE_TABLE)
             xmlTable.setTableDbType("TABLE");
         else if (_tableType == TABLE_TYPE_VIEW)
@@ -513,12 +520,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         {
             // changed to write out the value of property directly, without the
             // default calculation applied by the getter
-            if (null != title)
-                xmlTable.setTableTitle(title);
+            if (null != _title)
+                xmlTable.setTableTitle(_title);
             if (null != _pkColumnNames && _pkColumnNames.size() > 0)
                 xmlTable.setPkColumnName(StringUtils.join(_pkColumnNames, ','));
-            if (null != titleColumn)
-                xmlTable.setTitleColumn(titleColumn);
+            if (null != _titleColumn)
+                xmlTable.setTitleColumn(_titleColumn);
             if (null != _versionColumnName)
                 xmlTable.setVersionColumnName(_versionColumnName);
             if (_hidden)
@@ -552,11 +559,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         }
 
         //Override with the table name from the schema so casing is nice...
-        name = xmlTable.getTableName();
+        _name = xmlTable.getTableName();
         _description = xmlTable.getDescription();
         _hidden = xmlTable.getHidden();
-        title = xmlTable.getTableTitle();
-        titleColumn = xmlTable.getTitleColumn();
+        _title = xmlTable.getTableTitle();
+        _titleColumn = xmlTable.getTitleColumn();
+        if (null != _titleColumn)
+            _hasDefaultTitleColumn = false;
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
 
@@ -630,7 +639,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public void writeCreateTableSql(Writer out) throws IOException
     {
         out.write("CREATE TABLE ");
-        out.write(name);
+        out.write(_name);
         out.write(" (\n");
         ColumnInfo[] columns = this.columns.toArray(new ColumnInfo[this.columns.size()]);
         for (int i = 0; i < columns.length; i++)
@@ -659,10 +668,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             ColumnInfo.SchemaForeignKey fk = (ColumnInfo.SchemaForeignKey) col.getFk();
             if (fk != null) {
                 out.write("ALTER TABLE ");
-                out.write(name);
+                out.write(_name);
                 out.write(" ADD CONSTRAINT ");
                 out.write("fk_");
-                out.write(name);
+                out.write(_name);
                 out.write("_");
                 out.write(col.getName());
                 out.write(" FOREIGN KEY (");

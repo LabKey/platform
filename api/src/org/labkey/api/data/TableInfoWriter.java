@@ -57,6 +57,9 @@ public class TableInfoWriter
         if (null != _ti.getDescription())
             tableXml.setDescription(_ti.getDescription());
 
+        if (!_ti.hasDefaultTitleColumn())
+            tableXml.setTitleColumn(_ti.getTitleColumn());
+
         TableType.Columns columnsXml = tableXml.addNewColumns();
 
         for (ColumnInfo column : _columns)

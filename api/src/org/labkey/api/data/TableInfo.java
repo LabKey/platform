@@ -95,6 +95,8 @@ public interface TableInfo
     /** @return the default display value for this table if it's the target of a foreign key */
     String getTitleColumn();
 
+    boolean hasDefaultTitleColumn();
+
     int getTableType();
 
     /** Get select list for primary column to title column. */
