@@ -393,37 +393,10 @@ LABKEY.showNavTrail = function()
 
 LABKEY.requiresVisualization = function ()
 {
-    /** Determines whether this browser supports native SVG. */
-    function hasNativeSVG () {
-        if (document.implementation && document.implementation.hasFeature)
-        {
-          return document.implementation.hasFeature(
-                'http://www.w3.org/TR/SVG11/feature#BasicStructure', '1.1');
-        }
-        else
-        {
-          return false;
-        }
-    }
-
-    if (!hasNativeSVG())
-    {
-        //SVGWeb requires some meta tags to load correctly.
-        var meta = document.createElement('meta');
-        meta.name = 'svg.config.data-path';
-        meta.content = LABKEY.contextPath + '/protovis/3rdparty/';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        meta = document.createElement('meta');
-        meta.name = 'svg.render.forceflash';
-        meta.content = 'true';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        LABKEY.requiresScript("protovis/3rdparty/svg.js");
-    }
-
     if (LABKEY.devMode)
-        LABKEY.requiresScript("protovis/protovis-d3.3.js");
+        LABKEY.requiresScript("protovis/protovis-d3.2.js");
     else
-        LABKEY.requiresScript("protovis/protovis-r3.3.js");
+        LABKEY.requiresScript("protovis/protovis-r3.2.js");
 
     LABKEY.requiresScript("vis/ChartComponent.js");
 };
