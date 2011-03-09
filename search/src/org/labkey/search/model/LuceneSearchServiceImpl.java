@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 LabKey Corporation
+ * Copyright (c) 2009-2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error: Unable to initialize search index.  Documents will not be indexed for searching until this is corrected and the server is restarted.", e);
         }
     }
 
@@ -215,8 +215,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            assert null != r.getDocumentId();
-            assert null != r.getContainerId();
+            if (null == r.getDocumentId())
+                logBadDocument("Null document id", r);
+
+            if (null == r.getContainerId())
+                logBadDocument("Null container id", r);
 
             Container c = ContainerManager.getForId(r.getContainerId());
 
@@ -241,14 +244,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String displayTitle = (String)props.get(PROPERTY.displayTitle.toString());
             String searchTitle = (String)props.get(PROPERTY.searchTitle.toString());
 
+            // Search title can be null
+            if (null == searchTitle)
+                searchTitle = "";
+
             try
             {
                 Map<String, String> customProperties = r.getCustomProperties(User.getSearchUser());
 
                 if (null != customProperties && !customProperties.isEmpty())
                 {
-                    assert searchTitle != null;
-
                     for (String value : customProperties.values())
                         searchTitle += " " + value;
                 }
@@ -309,11 +314,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
                     }
 
-                    // Display title is sometimes null on production systems; if this happens, log the first 1,000 chars of HTML
                     if (null == displayTitle)
-                    {
-                        throw new NullPointerException("Extracted title of " + r.getClass().getName() + " is null. HTML: " + html.substring(0, Math.min(html.length(), 1000)).trim());
-                    }
+                        logBadDocument("Null display title", r);
                 }
                 else if (type.startsWith("text/") && !type.contains("xml"))
                 {
@@ -345,8 +347,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             fs = null;
 
             String url = r.getExecuteHref(null);
-            assert null != url;
-            assert null != displayTitle;
+
+            if (null == url)
+                logBadDocument("Null url", r);
+
+            if (null == displayTitle)
+                logBadDocument("Null display title", r);
 
             _log.debug("parsed " + url);
 
@@ -517,6 +523,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         return null;
+    }
+
+
+    private void logBadDocument(String problem, WebdavResource r)
+    {
+        String message = problem + ". Document creation stack trace:" + ExceptionUtil.renderStackTrace(r.getCreationStackTrace());
+        _log.error(message);
+        throw new IllegalStateException(problem);
     }
 
 
