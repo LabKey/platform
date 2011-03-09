@@ -35,7 +35,7 @@ public class AliasManager
 
     public AliasManager(DbSchema schema)
     {
-        _dialect = schema.getSqlDialect();
+        _dialect = null==schema ? null :  schema.getSqlDialect();
     }
 
 
