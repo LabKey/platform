@@ -3030,12 +3030,8 @@ visualization/resources/readme.txt -text
 visualization/resources/views/Time[!!-~]Chart.webpart.xml -text
 visualization/resources/views/timeChartWizard.html -text
 visualization/resources/views/visualizationWizard.html -text
-visualization/resources/web/protovis/3rdparty/LiberationSans-Regular.svg -text
-visualization/resources/web/protovis/3rdparty/svg.htc -text
-visualization/resources/web/protovis/3rdparty/svg.js -text
-visualization/resources/web/protovis/3rdparty/svg.swf -text
-visualization/resources/web/protovis/protovis-d3.3.js -text
-visualization/resources/web/protovis/protovis-r3.3.js -text
+visualization/resources/web/protovis/protovis-d3.2.js -text
+visualization/resources/web/protovis/protovis-r3.2.js -text
 visualization/resources/web/vis/ChartComponent.js -text
 visualization/resources/web/vis/chartEditorChartsPanel.js -text
 visualization/resources/web/vis/chartEditorMeasurePanel.js -text

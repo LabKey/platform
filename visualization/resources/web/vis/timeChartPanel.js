@@ -539,18 +539,17 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             title: mainTitle
         });
 
-    	var chartPanel = new Ext.Panel({
-            items: [
-                chartComponent,
-                new Ext.Button({
-                    text:"Export PDF",
-                    handler:function(btn) {chartComponent.exportImage("pdf");},
-                    scope:this
-                })
-            ]
+        var chartItems = [chartComponent];
+        if (chartComponent.canExport())
+            chartItems.push(new Ext.Button({
+                text:"Export PDF",
+                handler:function(btn) {chartComponent.exportImage("pdf");},
+                scope:this
+            }));
+        
+        return new Ext.Panel({
+            items: chartItems
         });
-
-        return chartPanel;
     },
 
     viewDataGrid: function() {

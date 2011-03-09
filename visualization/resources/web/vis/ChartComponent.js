@@ -69,46 +69,23 @@ LABKEY.vis.SVGConverter = {
 
     /** Transforms the given svg root node and all of its children into an XML string,
      *
-     * @param node Either a real DOM node to turn into a string or an svgweb created flash node
+     * @param node DOM node to turn into a string
      * @returns legal SVG string.
      */
     svgToStr: function(node)
     {
-        //ENORMOUS HACK. When using svgweb on IE (but not on FF), the actual XML DOM is hidden in an svgweb implementation
-        //dependent place. Walking the top-level DOM tree as exposed by svgweb does not yield correct svg
-        //So we grab what appears to be the privately maintained copy of the tree and use that
-        //On ff+svgweb the actual XML root may be in node._nodeXML
-        var nodeXML = (node._nodeXML || node);
-        if (pv.renderer() == "svgweb" && Ext.isIE && !nodeXML.xml)
-        {
-            if (!node._handler || !node._handler._xml)
-                return null; //Something wrong, perhaps different implementation of SVGWeb
-            else
-                nodeXML = node._handler._xml;
-        }
 
-        //The following code is copied & slightly modified from the Apache Licensed svgweb xmlToStr code. It should work
-        //correctly either for a native svg impl or the svgweb flash-based one..
         var xml;
         var svgns = 'http://www.w3.org/2000/svg';
 
         if (typeof XMLSerializer != 'undefined')
         { // non-IE browsers
-            xml = (new XMLSerializer().serializeToString(nodeXML));
+            xml = (new XMLSerializer().serializeToString(node));
         }
         else
         {
-            xml = nodeXML.xml;
+            xml = node.xml;
         }
-        if (pv.renderer() != "svgweb")
-            return xml;
-
-        // Firefox and Safari will incorrectly turn our internal parsed XML
-        // for the Flash Handler into actual SVG nodes, causing issues. We added
-        // a fake SVG namespace earlier to prevent this from happening; remove that
-        // now
-        xml = xml.replace(/urn\:__fake__internal__namespace/g, svgns);
-
         // add our namespace declarations
         var nsString = '';
         if (xml.indexOf('xmlns=') == -1)
@@ -117,17 +94,6 @@ LABKEY.vis.SVGConverter = {
         }
 
         xml = xml.replace(/<([^ ]+)/, '<$1 ' + nsString + ' ');
-
-        // remove svg web artifacts (taken from svgweb impl)
-        xml = xml.replace(/<svg:([^ ]+) /g, '<$1 ');
-        xml = xml.replace(/<\/svg:([^>]+)>/g, '<\/$1>');
-        xml = xml.replace(/\n\s*<__text[^\/]*\/>/gm, '');
-        xml = xml.replace(/<__text[^>]*>([^<]*)<\/__text>/gm, '$1');
-        xml = xml.replace(/<__text[^>]*>/g, '');
-        xml = xml.replace(/<\/__text>/g, '');
-        xml = xml.replace(/\s*__guid="[^"]*"/g, '');
-        xml = xml.replace(/ id="__svg__random__[^"]*"/g, '');
-        xml = xml.replace(/>\n\n/g, '>\n');
 
         return xml;
     }
@@ -155,6 +121,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
       firstStrokeColor : "#000",
       outerMargin: 60,
       smallMargin: 10,
+      leftMargin: 90, //Enough for long numbers.
       titleFont: "bold 18px Arial, sans-serif",
       titleHeight:50,
       axisLabelFont: "bold 14px Arial, sans-serif",
@@ -194,7 +161,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         }
 
        //Chart width is outer width - left margin - legendWidth - 2 * (margin around legend)
-       this.chartWidth = this.width - this.style.outerMargin - this.style.legendWidth - 2 * this.style.smallMargin;
+       this.chartWidth = this.width - this.style.leftMargin - this.style.legendWidth - 2 * this.style.smallMargin;
        this.chartHeight = this.height - 2 * this.style.outerMargin;
     },
 
@@ -204,6 +171,13 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
      */
     exportImage: function(format) {
         LABKEY.vis.SVGConverter.convert(this.rootVisPanel.scene.$g, format)
+    },
+
+    /**
+     * Return true if the chart can be exported. This depends on whether we are using SVG to render
+     */
+    canExport: function() {
+        return pv.Scene == pv.SvgScene;
     },
 
     //private -- for testing purposes
@@ -289,7 +263,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                 .strokeStyle(function (d) {return d.style.markColor})
                 .top(function() {return this.index * 25;})
                 .left(5)
-                .shapeSize(function (d) {return d.style.shape.markSize})
+                .size(function (d) {return d.style.shape.markSize})
                 .lineWidth(function (d) {return d.style.shape.lineWidth})
                 .shape(function (d) {return d.style.shape.name})
                 .anchor("right")
@@ -301,7 +275,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
     addChartPanel : function () {
         this.chartPanel = this.rootVisPanel.add(pv.Panel)
                 .top(this.style.outerMargin)
-                .left(this.style.outerMargin)
+                .left(this.style.leftMargin)
                 .width(this.chartWidth)
                 .height(this.chartHeight);
 
@@ -455,7 +429,7 @@ LABKEY.vis.ScatterChart = Ext.extend(LABKEY.vis.XYChartComponent, {
             .bottom(function (d) {return y(s.getY(d))})
             .strokeStyle(color)
             .fillStyle(color)
-            .shapeSize(style.markSize);
+            .size(style.markSize);
        });
 
        this.drawLegend();
@@ -485,13 +459,9 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
 
    render : function (container, position) {
        LABKEY.vis.LineChart.superclass.render.call(this, container, position);
-
        var x = this.getScale(this.axes["x"], this.chartWidth, this.series, "getX");
        var y = this.getScale(this.axes["y"], this.chartHeight, this.series, "getY");
        var chartPanel = this.addChartPanel();
-        //svgweb does not support default "show title on hover" behavior so we do something quick & dirty to get it...
-       if (pv.renderer() == "svgweb")
-           this.rootVisPanel.event("mousemove", pv.Behavior.point());
 
        this.drawRule(x, "bottom", this.axes["x"]);
        this.drawRule(y, "left", this.axes["y"]);
@@ -503,9 +473,9 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        //scale._min gets stashed by getScale if we need to pin
        function pinMin(scale, value) {
            if ("_min" in scale && value < scale._min)
-            return scale._min;
+            return 0;
            else
-            return value;
+            return scale(value);
        }
 
        var seriesIndex;
@@ -515,26 +485,16 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
            var lines = dataPanel.add(pv.Line)
              .data(s.data)
             .left(function (d) { return x(s.getX(d))})
-            .bottom(function (d) { return y(pinMin(y, s.getY(d)))})
+            .bottom(function (d) { return pinMin(y, s.getY(d))})
             .strokeStyle(color)
             .lineWidth(style.lineWidth);
            var dots = lines.add(pv.Dot)
-                .shapeSize(style.shape.markSize)
+                .size(style.shape.markSize)
                 .fillStyle(color)
                 .title(s.getTitle)
                 .lineWidth(style.shape.lineWidth)
                 .shape(style.shape.name);
-           
-           //Add mouse-over behavior for svgweb
-           if (pv.renderer() == "svgweb") {
-               dots.def('active', -1);
-               dots.event("point", function() {return this.active(this.index).parent})
-                       .event("unpoint", function() {return this.active(-1).parent})
-                       .anchor("right").add(pv.Label)
-                       .visible(function() {return this.anchorTarget().active() == this.index})
-                       .font("bold 12px Arial, sans-serif")
-                       .text(s.getTitle)
-           }
+
            seriesIndex++;
        }, this);
 

@@ -40,7 +40,16 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         // mask the popup:
         this.measuresStore.on('load', function(){
             loaded = true;
-        });
+            //Prefilter list
+            var datasetName = LABKEY.ActionURL.getParameter("queryName");
+            if (datasetName)
+            {
+                this.searchBox.setValue(LABKEY.ActionURL.getParameter("queryName"));
+                this.searchBox.focus(true, 100);
+                this.filterMeasures(datasetName);
+            }
+
+        }, this);
 
         // load the store the first time after this component has rendered
         this.on('afterrender', function(cmp){
@@ -114,17 +123,9 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         // filter the listview using both the label and category names
         searchBox.on('keyup', function(cmp, e){
             var txt = cmp.getValue();
-            if (txt) {
-                this.measuresStore.filter([{
-                    fn: function(record){
-                            var tester = new RegExp(Ext.escapeRe(txt), 'i');
-                            return tester.test(record.data.label + record.data.queryName + record.data.description);
-                    }
-                }]);
-            }
-            else
-                this.measuresStore.clearFilter();
+            this.filterMeasures(txt);
         }, this);
+        this.searchBox = searchBox;
 
         var tbarItems = [{xtype:'tbspacer'}];
 
@@ -168,6 +169,19 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         });
 
         return panel;
+    },
+
+    filterMeasures : function (txt) {
+        if (txt) {
+            this.measuresStore.filter([{
+                fn: function(record){
+                        var tester = new RegExp(Ext.escapeRe(txt), 'i');
+                        return tester.test(record.data.label + record.data.queryName + record.data.description);
+                }
+            }]);
+        }
+        else
+            this.measuresStore.clearFilter();
     },
 
     onListViewSelectionChanged : function(cmp, selections) {
