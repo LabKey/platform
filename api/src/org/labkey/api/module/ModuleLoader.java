@@ -1144,8 +1144,8 @@ public class ModuleLoader implements Filter
             {
                 Properties p = new Properties();
                 p.load(ModuleLoader.class.getClassLoader().getResourceAsStream("version.properties"));
-                Object v = p.get("svn.product.version");
-                labkeyVersion = System.getProperty("teamcity.product.version", v == null ? null : String.valueOf(v));
+                Object v = p.get("product.version");
+                labkeyVersion = v == null ? null : String.valueOf(v);
             }
             catch (Exception x)
             {
