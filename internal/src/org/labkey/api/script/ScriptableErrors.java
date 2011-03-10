@@ -8,7 +8,7 @@ import org.mozilla.javascript.ScriptRuntime;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Wrapper;
-import sun.org.mozilla.javascript.internal.EvaluatorException;
+import org.mozilla.javascript.EvaluatorException;
 
 import java.util.List;
 import java.util.Map;
