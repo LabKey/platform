@@ -72,6 +72,8 @@ public class ViewServlet extends HttpServlet
     public static final String REQUEST_CONTROLLER = "LABKEY.controller";
     public static final String REQUEST_CONTAINER = "LABKEY.container";
 
+    public static final String MOCK_REQUEST_HEADER = "X-Mock-Request";
+
     private static ServletContext _servletContext = null;
     private static String _serverHeader = null;
 
@@ -365,6 +367,7 @@ public class ViewServlet extends HttpServlet
         request.setServerPort(props.getServerPort());
         request.setServerName(props.getServerName());
         request.setScheme(props.getScheme());
+        request.addHeader(MOCK_REQUEST_HEADER, true);
 
         if (user != null)
             request.setUserPrincipal(user);
