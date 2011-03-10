@@ -160,6 +160,9 @@ public class StudyUpgradeCode implements UpgradeCode
     @SuppressWarnings({"UnusedDeclaration"})
     public void materializeDatasets(ModuleContext moduleContext)
     {
+        if (moduleContext.isNewInstall())
+            return;
+
         try
         {
             DataSetDefinition.upgradeAll();
@@ -174,6 +177,9 @@ public class StudyUpgradeCode implements UpgradeCode
     @SuppressWarnings({"UnusedDeclaration"})
     public void materializeAssayResults(final ModuleContext moduleContext)
     {
+        if (moduleContext.isNewInstall())
+            return;
+
         // This needs to happen later, after all of the AssayProviders have been registered
         ContextListener.addStartupListener(new StartupListener()
         {
@@ -219,6 +225,9 @@ public class StudyUpgradeCode implements UpgradeCode
     @SuppressWarnings({"UnusedDeclaration"})
     public void deleteDuplicateAssayDatasetFields(ModuleContext context)
     {
+        if (context.isNewInstall())
+            return;
+
         deleteDuplicateAssayDatasetFields(context.getUpgradeUser(), ContainerManager.getRoot());
     }
 
@@ -258,5 +267,4 @@ public class StudyUpgradeCode implements UpgradeCode
             throw new UnexpectedException(e);
         }
     }
-
 }

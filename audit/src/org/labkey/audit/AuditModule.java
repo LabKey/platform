@@ -35,7 +35,6 @@ import java.util.*;
 
 public class AuditModule extends DefaultModule
 {
-    public static final String NAME = "Audit";
     private static final Logger _log = Logger.getLogger(AuditModule.class);
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -55,7 +54,7 @@ public class AuditModule extends DefaultModule
 
     public double getVersion()
     {
-        return 10.30;
+        return 10.39;
     }
 
     protected void init()
