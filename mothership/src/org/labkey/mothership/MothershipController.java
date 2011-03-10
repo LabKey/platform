@@ -616,7 +616,7 @@ public class MothershipController extends SpringActionController
 
         public ActionURL getSuccessURL(ServerInstallationForm form)
         {
-            return new ActionURL(ShowInstallationDetailAction.class, getContainer()).addParameter("serverInstallationId", form.getBean().getServerInstallationId());
+            return new ActionURL(ShowInstallationDetailAction.class, getContainer()).addParameter("serverInstallationId", form.getPkVal().toString());
         }
     }
 
@@ -1304,7 +1304,9 @@ public class MothershipController extends SpringActionController
 
             getDataRegion().setTable(MothershipManager.get().getTableInfoServerInstallation());
             getDataRegion().addColumns(MothershipManager.get().getTableInfoServerInstallation(), "ServerInstallationId,ServerInstallationGUID,Note,OrganizationName,ServerHostName,ServerIP,LogoLink,SystemDescription,SystemShortName");
+            getDataRegion().addHiddenFormField("ServerInstallationId", form.getPkVal().toString());
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
             ActionButton b = new ActionButton(new ActionURL(UpdateInstallationAction.class, getViewContext().getContainer()), "Save");
             b.setDisplayPermission(UpdatePermission.class);
             bb.add(b);
