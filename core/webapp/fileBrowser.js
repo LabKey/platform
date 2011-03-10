@@ -3410,18 +3410,18 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 buttonAlign: 'left',
                 items: [{
                     xtype: 'radiogroup',
-                    width: 200,
+                    width: 240,
                     columns:2,
                     fieldLabel: 'File Upload Type',
                     items: [
-                        {boxLabel: 'Single file', id: this.singleFileId, name: 'rb-file-upload-type', checked: true, handler: function(cmp, checked){
+                        {boxLabel: 'Single&nbsp;file', id: this.singleFileId, name: 'rb-file-upload-type', checked: true, handler: function(cmp, checked){
                             if (checked)
                             {
                                 this.applet.setEnabled(false);
                                 uploadPanel.getLayout().setActiveItem(this.uploadPanel.getId());
                             }
                         }, scope:this},
-                        {boxLabel: 'Multiple files', name: 'rb-file-upload-type', handler: function(cmp, checked){
+                        {boxLabel: 'Multiple&nbsp;files', name: 'rb-file-upload-type', handler: function(cmp, checked){
                             if (checked)
                             {
                                 uploadPanel.getLayout().setActiveItem(this.uploadMultiPanel.getId());
