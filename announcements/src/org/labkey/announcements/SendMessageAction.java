@@ -18,13 +18,20 @@ package org.labkey.announcements;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.security.*;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MailHelper;
 import org.springframework.validation.BindException;
@@ -32,6 +39,11 @@ import org.springframework.validation.BindException;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,6 +54,7 @@ import javax.mail.MessagingException;
 public class SendMessageAction extends MutatingApiAction<SendMessageAction.MessageForm>
 {
     private boolean _allowUnregisteredUser;
+    private Map<String, Set<String>> _recipientMap = new HashMap<String, Set<String>>();
 
     enum Props
     {
@@ -62,6 +75,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
     {
         type,
         address,
+        principalId,
     }
 
     public ApiResponse execute(MessageForm form, BindException errors) throws Exception
@@ -131,6 +145,48 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         }
     }
 
+    private String[] resolveEmailAddress(JSONObject recipient)
+    {
+        String address = recipient.getString(MsgRecipient.address.name());
+        int principalId = NumberUtils.toInt(recipient.getString(MsgRecipient.principalId.name()), -100);
+
+        try {
+            if (address != null)
+            {
+                return new String[]{address};
+            }
+            else if (principalId != -100)
+            {
+                if (!isServerSideRequest())
+                    throw new IllegalArgumentException("Use of principalId is allowed only for server side scripts");
+
+                // specifies a user or group id
+                User user = UserManager.getUser(principalId);
+                if (user != null)
+                    return new String[]{user.getEmail()};
+                else
+                {
+                    Group group = SecurityManager.getGroup(principalId);
+                    if (group != null)
+                    {
+                        if (group.isSystemGroup())
+                            throw new IllegalArgumentException("Invalid group ID: site groups are not allowed");
+
+                        return SecurityManager.getGroupMemberNames(principalId);
+                    }
+                    else
+                        throw new IllegalArgumentException("Unable to resolve principalId");
+                }
+            }
+            else
+                throw new IllegalArgumentException("Invalid group or user ID format (must be: id:<user or group id>");
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void addMsgRecipients(MailHelper.MultipartMessage msg, JSONArray recipients) throws IllegalArgumentException
     {
         try
@@ -138,16 +194,32 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
             for (int i=0; i < recipients.length(); i++)
             {
                 JSONObject recipient = recipients.getJSONObject(i);
-
                 String type = recipient.getString(MsgRecipient.type.name());
-                Address address = getEmail(recipient.getString(MsgRecipient.address.name()));
+                Message.RecipientType rtype = Message.RecipientType.TO;
 
+                if (!_recipientMap.containsKey(type))
+                    _recipientMap.put(type, new HashSet<String>());
+                
                 if (StringUtils.equalsIgnoreCase(type, "TO"))
-                    msg.addRecipient(Message.RecipientType.TO, address);
+                    rtype = Message.RecipientType.TO;
                 else if (StringUtils.equalsIgnoreCase(type, "CC"))
-                    msg.addRecipient(Message.RecipientType.CC, address);
+                    rtype = Message.RecipientType.CC;
                 else if (StringUtils.equalsIgnoreCase(type, "BCC"))
-                    msg.addRecipient(Message.RecipientType.BCC, address);
+                    rtype = Message.RecipientType.BCC;
+
+                for (String email : resolveEmailAddress(recipient))
+                {
+                    Set<String> emails = _recipientMap.get(type);
+
+                    // avoid duplicate emails per type
+                    if (!emails.contains(email))
+                    {
+                        Address address = getEmail(email);
+                        msg.addRecipient(rtype, address);
+
+                        emails.add(email);
+                    }
+                }
             }
         }
         catch (MessagingException me)

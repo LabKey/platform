@@ -19,8 +19,10 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
@@ -34,7 +36,11 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RoleAssignment;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -458,11 +464,39 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
                 }
 
                 @Override
+                public List<DisplayColumn> getDisplayColumns()
+                {
+                    List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
+                    SecurityPolicy policy = getContainer().getPolicy();
+                    Set<String> assignmentSet = new HashSet<String>();
+
+                    assignmentSet.add(SecurityManager.getGroup(Group.groupAdministrators).getName());
+                    assignmentSet.add(SecurityManager.getGroup(Group.groupDevelopers).getName());
+                            
+                    for (RoleAssignment assignment : policy.getAssignments())
+                    {
+                        Group g = SecurityManager.getGroup(assignment.getUserId());
+                        if (g != null)
+                            assignmentSet.add(g.getName());
+                    }
+
+                    for (DisplayColumn col : super.getDisplayColumns())
+                    {
+                        if (col.getName().equalsIgnoreCase("Groups"))
+                            columns.add(new FolderGroupColumn(assignmentSet, col.getColumnInfo()));
+                        else
+                            columns.add(col);
+                    }
+                    return columns;
+                }
+
+                @Override
                 protected void populateButtonBar(DataView dataView, ButtonBar bar)
                 {
                     try {
                         // add the provider configuration views to the admin panel button
-                        PanelButton adminButton = new PanelButton("Settings", getDataRegionName());
+                        PanelButton adminButton = new PanelButton("Update Settings", getDataRegionName());
+                        adminButton.setRequiresSelection(true);
                         PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
                         for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
                         {
@@ -498,6 +532,40 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
             view.addView(queryView);
 
             return view;
+        }
+    }
+
+    private static class FolderGroupColumn extends DataColumn
+    {
+        Set<String> _assignmentSet;
+        public FolderGroupColumn(Set<String> assignmentSet, ColumnInfo col)
+        {
+            super(col);
+            _assignmentSet = assignmentSet;
+        }
+
+        @Override
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            String value = (String)ctx.get(getBoundColumn().getDisplayField().getFieldKey());
+
+            if (value != null)
+            {
+                StringBuilder sb = new StringBuilder();
+                String delim = "";
+
+                for (String name : value.split(","))
+                {
+                    if (_assignmentSet.contains(name))
+                    {
+                        sb.append(delim);
+                        sb.append(name);
+                        delim = ",<br>";
+                    }
+                }
+                out.write(sb.toString());
+            }
+            //super.renderGridCellContents(ctx, out);  
         }
     }
 
