@@ -61,8 +61,7 @@ abstract class SearchableIndex
         return _analyzer;
     }
 
-    @NotNull
-    LabKeyIndexSearcher getSearcher() throws IOException
+    public @NotNull LabKeyIndexSearcher getSearcher() throws IOException
     {
         synchronized (_searcherLock)
         {
@@ -73,7 +72,7 @@ abstract class SearchableIndex
         }
     }
 
-    void releaseSearcher(LabKeyIndexSearcher searcher) throws IOException
+    public void releaseSearcher(LabKeyIndexSearcher searcher) throws IOException
     {
         synchronized (_searcherLock)
         {
@@ -82,7 +81,7 @@ abstract class SearchableIndex
         }
     }
 
-    void close() throws IOException, InterruptedException
+    public void close() throws IOException, InterruptedException
     {
         _directory.close();
     }

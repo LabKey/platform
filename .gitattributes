@@ -2049,12 +2049,14 @@ search/src/org/labkey/search/model/ExternalIndexProperties.java -text
 search/src/org/labkey/search/model/HTMLContentExtractor.java -text
 search/src/org/labkey/search/model/LabKeyIndexSearcher.java -text
 search/src/org/labkey/search/model/LuceneSearchServiceImpl.java -text
+search/src/org/labkey/search/model/NoopWritableIndex.java -text
 search/src/org/labkey/search/model/SavePaths.java -text
 search/src/org/labkey/search/model/SearchPropertyManager.java -text
 search/src/org/labkey/search/model/SearchableIndex.java -text
 search/src/org/labkey/search/model/SecurityFilter.java -text
 search/src/org/labkey/search/model/SolrSearchServiceImpl.java -text
 search/src/org/labkey/search/model/WritableIndex.java -text
+search/src/org/labkey/search/model/WritableIndexImpl.java -text
 search/src/org/labkey/search/synonyms.txt -text
 search/src/org/labkey/search/umls/ConceptName.java -text
 search/src/org/labkey/search/umls/Definition.java -text

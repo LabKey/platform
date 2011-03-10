@@ -32,6 +32,7 @@
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.search.SearchMisconfiguredException" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -114,11 +115,11 @@
         }
         catch (HtmlParseException html)
         {
-            SearchUtils.renderError(out, html.getMessage(), html.includesSpecialSymbol(), html.includesBooleanOperator());
+            SearchUtils.renderError(out, html.getMessage(), html.includesSpecialSymbol(), html.includesBooleanOperator(), true);
         }
-        catch (IOException e)
+        catch (SearchMisconfiguredException e)
         {
-            SearchUtils.renderError(out, h(e.getMessage()), true, false);  // Assume it's special characters
+            SearchUtils.renderError(out, "Search is disabled because the search index is misconfigured. Contact the system administrator of this server.", false, false, false);
         }
     }
 %>

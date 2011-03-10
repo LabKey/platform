@@ -44,11 +44,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -231,21 +234,50 @@ public class SearchController extends SpringActionController
 
         public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
         {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            if (null == ss)
+                throw new ConfigurationException("Search is misconfigured");
+
+            @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
+            Throwable t = ss.getConfigurationError();
+
             ExternalIndexProperties props = SearchPropertyManager.getExternalIndexProperties();
 
+            VBox vbox = new VBox();
+
+            if (null != t)
+            {
+                String html = "<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>";
+                html += ExceptionUtil.renderException(t);
+                WebPartView configuErrorView = new HtmlView(html);
+                configuErrorView.setTitle("Search Configuration Error");
+                configuErrorView.setFrame(WebPartView.FrameType.PORTAL);
+                vbox.addView(configuErrorView);
+            }
+
+            // Spring errors get displayed in the "Primary Index Configuration" pane
             WebPartView indexerView = new JspView<AdminForm>(SearchController.class, "view/indexerAdmin.jsp", form, errors);
             indexerView.setTitle("Primary Index Configuration");
+            vbox.addView(indexerView);
 
-            WebPartView externalIndexView = new JspView<ExternalIndexProperties>(SearchController.class, "view/externalIndex.jsp", props, errors);
+            WebPartView externalIndexView = new JspView<ExternalIndexProperties>(SearchController.class, "view/externalIndex.jsp", props);
             externalIndexView.setTitle("External Index Configuration");
+            vbox.addView(externalIndexView);
 
-            WebPartView indexerStatsView = new JspView<AdminForm>(SearchController.class, "view/indexerStats.jsp", form, errors);
-            indexerStatsView.setTitle("Primary Index Statistics");
-            
-            WebPartView searchStatsView = new JspView<AdminForm>(SearchController.class, "view/searchStats.jsp", form, errors);
+            // Won't be able to gather statistics if the search index is misconfigured
+            if (null == t)
+            {
+                WebPartView indexerStatsView = new JspView<AdminForm>(SearchController.class, "view/indexerStats.jsp", form);
+                indexerStatsView.setTitle("Primary Index Statistics");
+                vbox.addView(indexerStatsView);
+            }
+
+            WebPartView searchStatsView = new JspView<AdminForm>(SearchController.class, "view/searchStats.jsp", form);
             searchStatsView.setTitle("Search Statistics");
+            vbox.addView(searchStatsView);
 
-            return new VBox(indexerView, externalIndexView, indexerStatsView, searchStatsView);
+            return vbox;
         }
 
         public boolean handlePost(AdminForm form, BindException errors) throws Exception

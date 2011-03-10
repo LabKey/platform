@@ -40,18 +40,11 @@ class LabKeyIndexSearcher extends IndexSearcher
 
     // IndexSearcher() will throw if the directory is empty or non-existent... opening an IndexWriter first ensures
     // that the directory is ready.
-    private static Directory ensureIndexCreated(Directory directory)
+    private static Directory ensureIndexCreated(Directory directory) throws IOException
     {
-        try
-        {
-            IndexWriter iw = new IndexWriter(directory, new SimpleAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
-            iw.close();
-            return directory;
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Couldn't open an IndexWriter on " + directory, e);
-        }
+        IndexWriter iw = new IndexWriter(directory, new SimpleAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+        iw.close();
+        return directory;
     }
 
     synchronized void increment()

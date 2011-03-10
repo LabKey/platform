@@ -104,6 +104,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     final _IndexTask _defaultTask = new _IndexTask("default");
 
+    private Throwable _configurationError = null;
+
     enum OPERATION
     {
         add, delete
@@ -261,7 +263,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         long _start = 0;    // used by setLastIndexed
         long _complete = 0; // really just for debugging
 
-        Map<?,?> _preprocessMap = null;
+        Map<?, ?> _preprocessMap = null;
         
         Item(IndexTask task, OPERATION op, String id, WebdavResource r, PRIORITY pri)
         {
@@ -620,6 +622,17 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public boolean hasExternalIndexPermission(User user)
     {
         return false;
+    }
+
+    @Override
+    public Throwable getConfigurationError()
+    {
+        return _configurationError;
+    }
+
+    void setConfigurationError(Throwable t)
+    {
+        _configurationError = t;
     }
 
     public boolean isRunning()

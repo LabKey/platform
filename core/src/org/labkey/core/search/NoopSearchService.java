@@ -292,6 +292,12 @@ public class NoopSearchService implements SearchService
     {
     }
 
+    @Override
+    public @Nullable Throwable getConfigurationError()
+    {
+        return null;
+    }
+
     public boolean isRunning()
     {
         return false;

@@ -116,11 +116,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             File indexDir = SearchPropertyManager.getPrimaryIndexDirectory();
-            _index = new WritableIndex(indexDir, _analyzer);
+            _index = new WritableIndexImpl(indexDir, _analyzer);
+            setConfigurationError(null);
         }
-        catch (IOException e)
+        catch (Throwable t)
         {
-            throw new RuntimeException("Error: Unable to initialize search index.  Documents will not be indexed for searching until this is corrected and the server is restarted.", e);
+            _log.error("Error: Unable to initialize search index. Search will be disabled and new documents will not be indexed for searching until this is corrected and the server is restarted. See below for details about the cause.");
+            setConfigurationError(t);
+            _index = new NoopWritableIndex(_log);
+            throw new RuntimeException("Error: Unable to initialize search index", t);
         }
     }
 
@@ -258,17 +262,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         searchTitle += " " + value;
                 }
             }
-            catch (RuntimeException e)
+            catch (UnauthorizedException ue)
             {
-                try
-                {
-                    throw e.getCause();
-                }
-                catch (UnauthorizedException ue)
-                {
-                    // Some QueryUpdateService implementation don't special case the search user.  Continue indexing in this
-                    // case, but skip the custom properties.
-                }
+                // Some QueryUpdateService implementation don't special case the search user.  Continue indexing in this
+                // case, but skip the custom properties.
             }
 
             String type = r.getContentType();

@@ -53,9 +53,8 @@ public class ExternalIndex extends SearchableIndex implements SecurableResource
         _indexRoot = indexRoot;
     }
 
-    @NotNull
     @Override
-    LabKeyIndexSearcher getSearcher() throws IOException
+    public @NotNull LabKeyIndexSearcher getSearcher() throws IOException
     {
         // Must get the swap lock as well -- swapping operation needs to block searcher gets, but not releases.
         synchronized (_swapLock)
@@ -76,7 +75,7 @@ public class ExternalIndex extends SearchableIndex implements SecurableResource
     }
 
 
-    void close() throws IOException, InterruptedException
+    public void close() throws IOException, InterruptedException
     {
         synchronized (_swapLock)
         {

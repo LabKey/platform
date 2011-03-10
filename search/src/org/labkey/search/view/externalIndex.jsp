@@ -36,8 +36,6 @@ ExternalIndexProperties props = me.getModelBean();
 SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 String message = me.getViewContext().getActionURL().getParameter("externalMessage");
 
-%><labkey:errors /><%
-
 if (null != ss)
 {
     %><p><form method="POST" action="setExternalIndex.post">
