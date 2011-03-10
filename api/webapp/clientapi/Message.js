@@ -180,6 +180,20 @@ LABKEY.Message = new function()
                 type : type,
                 address : email
             }
+        },
+
+        /**
+         * A utility fuction to create a recipient object (based on a user ID or group ID) used in LABKEY.Message.sendMessage.
+         * Note: only server side validation or transformation scripts can specify a user or group ID.
+         * @param {LABKEY.Message.recipientType} type Determines where the recipient email address will appear in the message.
+         * @param {Integer} id The user or group id of the recipient.
+         */
+        createPrincipalIdRecipient : function(type, id)
+        {
+            return {
+                type : type,
+                principalId : id
+            }
         }
     };
 };
