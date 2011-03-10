@@ -496,7 +496,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
                     try {
                         // add the provider configuration views to the admin panel button
                         PanelButton adminButton = new PanelButton("Update Settings", getDataRegionName());
-                        adminButton.setRequiresSelection(true);
                         PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
                         for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
                         {
