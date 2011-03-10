@@ -207,7 +207,7 @@ LABKEY.Query = new function()
                          Count("Reagent Requests".UserID) AS TotalRequests, \
                          Sum("Reagent Requests".Quantity) AS TotalQuantity \
                          FROM "Reagent Requests" Group BY "Reagent Requests".UserID',
-                     successCallback: writeTotals
+                     success: writeTotals
              });  </pre>
          */
         executeSql : function(config)

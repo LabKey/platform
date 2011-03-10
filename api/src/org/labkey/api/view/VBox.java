@@ -61,10 +61,13 @@ public class VBox extends WebPartView
     {
         PrintWriter out = response.getWriter();
 
+        String sep = "";
         for (ModelAndView view : _views)
         {
             if (null == view)
                 continue;
+            out.println(sep);
+            sep = "<br/>";
             include(view);
         }
     }
