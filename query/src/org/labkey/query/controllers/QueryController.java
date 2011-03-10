@@ -2807,8 +2807,10 @@ public class QueryController extends SpringActionController
                     String commandName = commandObject.getString(PROP_COMMAND);
                     CommandType command = CommandType.valueOf(commandName);
 
-                    // Merge the top-level 'extraContext' into the command-level extraContext
-                    Map<String, Object> commandExtraContext = new HashMap<String, Object>(extraContext);
+                    // Copy the top-level 'extraContext' and merge in the command-level extraContext.
+                    Map<String, Object> commandExtraContext = new HashMap<String, Object>();
+                    if (extraContext != null)
+                        commandExtraContext.putAll(extraContext);
                     if (commandObject.has("extraContext"))
                     {
                         commandExtraContext.putAll(commandObject.getJSONObject("extraContext"));
