@@ -23,6 +23,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
@@ -435,7 +437,8 @@ class RhinoEngine extends RhinoScriptEngine
         {
             ScriptableList.init(scope);
             ScriptableMap.init(scope);
-//            ScriptableObject.defineClass(scope, ScriptableValidationException.class, true);
+            ScriptableErrors.init(scope);
+            ScriptableErrorsList.init(scope);
         }
         catch (Exception e)
         {
@@ -735,8 +738,10 @@ class SandboxContextFactory extends ContextFactory
                 return new ScriptableMap(scope, (Map)obj);
             else if (obj instanceof List)
                 return new ScriptableList(scope, (List)obj);
-//            else if (obj instanceof ValidationException)
-//                return cx.newObject(scope, ScriptableValidationException.CLASSNAME, new Object[] { obj });
+            else if (obj instanceof ValidationException)
+                return cx.newObject(scope, ScriptableErrors.CLASSNAME, new Object[] { obj });
+            else if (obj instanceof BatchValidationException)
+                return cx.newObject(scope, ScriptableErrorsList.CLASSNAME, new Object[] { obj });
             else if (obj instanceof char[])
                 return new String((char[])obj);
             else if (obj instanceof Object[])

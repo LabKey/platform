@@ -25,6 +25,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
@@ -33,7 +34,6 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
@@ -837,21 +837,18 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     private Object[] EMPTY_ARGS = new Object[0];
 
     @Override
-    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors, Map<String, Object> extraContext)
-            throws ValidationException
+    public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
+            throws BatchValidationException
     {
-        assert errors != null;
-        List<Map<String, Object>> list = errors.toList();
+        assert batchErrors != null;
 
         String triggerMethod = (before ? "init" : "complete");
-        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, extraContext, type.name().toLowerCase(), list);
-
-        errors = ValidationException.fromList(list);
+        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, extraContext, type.name().toLowerCase(), batchErrors);
         if (success != null && !success.booleanValue())
-            errors.addError(new SimpleValidationError(triggerMethod + " validation failed"));
+            batchErrors.addRowError(new ValidationException(triggerMethod + " validation failed"));
 
-        if (errors.hasErrors())
-            throw errors;
+        if (batchErrors.hasErrors())
+            throw batchErrors;
     }
 
     @Override
@@ -859,7 +856,12 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                                   Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException
     {
-        Map<String, Object> errors = new LinkedHashMap<String, Object>();
+        ValidationException errors = new ValidationException();
+        errors.setSchemaName(getPublicSchemaName());
+        errors.setQueryName(getName());
+        errors.setRow(newRow);
+        errors.setRowNumber(rowNumber);
+
         String triggerMethod = (before ? "before" : "after") + type.getMethodName();
 
         Object[] args = EMPTY_ARGS;
@@ -885,10 +887,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         }
         Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, extraContext, args);
         if (success != null && !success.booleanValue())
-            errors.put(null, triggerMethod + " validation failed");
+            errors.addGlobalError(triggerMethod + " validation failed");
 
-        if (!errors.isEmpty())
-            throw new ValidationException(errors, rowNumber);
+        if (errors.hasErrors())
+            throw errors;
     }
 
 }

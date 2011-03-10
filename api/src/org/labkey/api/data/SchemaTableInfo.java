@@ -930,7 +930,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
-    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+    public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext) throws BatchValidationException
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }

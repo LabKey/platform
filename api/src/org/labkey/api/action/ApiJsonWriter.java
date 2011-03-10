@@ -17,6 +17,7 @@ package org.labkey.api.action;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -116,44 +117,62 @@ public class ApiJsonWriter extends ApiResponseWriter
         writeJsonObj(jsonObj);
     }
 
-    public void write(ValidationException e) throws IOException
+    public void write(BatchValidationException e) throws IOException
     {
         //set the status to 400 to indicate that it was a bad request
         if (null != getResponse())
             getResponse().setStatus(400);
 
         JSONObject obj = new JSONObject();
-        obj.put("exception", e.getMessage());
-        toJSON(obj, e);
+        JSONArray arr = new JSONArray();
+        String message = null;
+        for (ValidationException vex : e.getRowErrors())
+        {
+            JSONObject child = toJSON(vex);
+            if (message == null)
+                message = child.optString("exception", "(No error message)");
+            arr.put(child);
+        }
+        obj.put("errors", arr);
+        obj.put("exception", message);
+
         writeJsonObj(obj);
     }
 
-    public void toJSON(JSONObject parent, ValidationException e)
+    public void write(ValidationException e) throws IOException
     {
-        if (e.getErrors().size() == 0 && e.getNested().size() == 1)
-        {
-            // move errors up a level if e has no error messages of it's own
-            toJSON(parent, e.getNested().get(0));
-        }
-        else
-        {
-            JSONArray jsonErrors = new JSONArray();
-            for (ValidationError error : e.getErrors())
-            {
-                toJSON(jsonErrors, error);
-            }
+        //set the status to 400 to indicate that it was a bad request
+        if (null != getResponse())
+            getResponse().setStatus(400);
 
-            for (ValidationException nested : e.getNested())
-            {
-                JSONObject obj = new JSONObject();
-                toJSON(obj, nested);
-                jsonErrors.put(obj);
-            }
+        JSONObject obj = toJSON(e);
+        writeJsonObj(obj);
+    }
 
-            parent.put("errors", jsonErrors);
-            if (e.getRowNumber() > -1)
-                parent.put("rowNumber", e.getRowNumber());
+    public JSONObject toJSON(ValidationException e)
+    {
+        JSONObject obj = new JSONObject();
+        String message = null;
+        JSONArray jsonErrors = new JSONArray();
+        for (ValidationError error : e.getErrors())
+        {
+            if (message == null)
+                message = error.getMessage();
+            toJSON(jsonErrors, error);
         }
+
+        obj.put("errors", jsonErrors);
+        obj.put("exception", message == null ? "(No error message)" : message);
+        if (e.getSchemaName() != null)
+            obj.put("schemaName", e.getSchemaName());
+        if (e.getQueryName() != null)
+            obj.put("queryName", e.getQueryName());
+        if (e.getRow() != null)
+            obj.put("row", e.getRow());
+        if (e.getRowNumber() > -1)
+            obj.put("rowNumber", e.getRowNumber());
+
+        return obj;
     }
 
     public void toJSON(JSONArray parent, ValidationError error)
@@ -195,6 +214,10 @@ public class ApiJsonWriter extends ApiResponseWriter
             }
 
             JSONObject jsonError = new JSONObject();
+            // these are the Ext expected property names
+            jsonError.putOpt("id", key);
+            jsonError.put("msg", msg);
+            // TODO deprecate these with a new API version
             jsonError.put("field", key);
             jsonError.put("message", msg);
 

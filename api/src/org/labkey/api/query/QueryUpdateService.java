@@ -73,7 +73,7 @@ public interface QueryUpdateService
      * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
      */
     public List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+            throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
      * Updates a set of rows in the source table for this query.
@@ -94,7 +94,7 @@ public interface QueryUpdateService
      */
     public List<Map<String,Object>> updateRows(User user, Container container, List<Map<String, Object>> rows,
                                                List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
      * Deletes a set of rows from the source table for this query.
@@ -108,7 +108,7 @@ public interface QueryUpdateService
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
     public List<Map<String,Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException;
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
      * If true, disables expensive optional activity for this updater.

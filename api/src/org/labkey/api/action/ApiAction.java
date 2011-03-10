@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.NotFoundException;
@@ -148,6 +149,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 else if (null != errors && errors.hasErrors())
                     createResponseWriter().write((Errors)errors);
             }
+        }
+        catch (BatchValidationException e)
+        {
+            createResponseWriter().write(e);
         }
         catch (ValidationException e)
         {

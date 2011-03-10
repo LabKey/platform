@@ -22,6 +22,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
@@ -293,8 +294,8 @@ public interface TableInfo
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    public void fireBatchTrigger(Container c, TriggerType type, boolean before, ValidationException errors, Map<String, Object> extraContext)
-            throws ValidationException;
+    public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
+            throws BatchValidationException;
 
     /**
      * Fire trigger for a single row.

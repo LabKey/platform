@@ -476,18 +476,39 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     }
 
     /**
-     * Get case-insensitive map of typed values for each of the columns in the table if available.
+     * Get case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
+     * @param includeUntyped The result map will include the String value that wasn't converted.
      * @return CaseInsensitiveHashMap of typed values.
      */
-    public Map<String,Object> getTypedColumns()
+    public Map<String,Object> getTypedColumns(boolean includeUntyped)
     {
         Map<String, Object> values = new CaseInsensitiveHashMap<Object>();
         for (ColumnInfo column : getTable().getColumns())
         {
             if (hasTypedValue(column))
                 values.put(column.getName(), getTypedValue(column));
+            else if (includeUntyped && contains(column))
+                values.put(column.getName(), get(column));
+
+            if (column.isMvEnabled())
+            {
+                ColumnInfo mvColumn = getTable().getColumn(column.getMvColumnName());
+                if (hasTypedValue(mvColumn))
+                    values.put(mvColumn.getName(), getTypedValue(column));
+                else if (includeUntyped && contains(column))
+                    values.put(mvColumn.getName(), get(mvColumn));
+            }
         }
         return values;
+    }
+
+    /**
+     * Get case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
+     * @return CaseInsensitiveHashMap of typed values.
+     */
+    public Map<String,Object> getTypedColumns()
+    {
+        return getTypedColumns(false);
     }
 
 
@@ -538,6 +559,11 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public Object get(String arg0)
     {
         return _stringValues.get(arg0);
+    }
+
+    public Object get(ColumnInfo col)
+    {
+        return _stringValues.get(getFormFieldName(col));
     }
 
     public void set(String arg0, Object arg1)

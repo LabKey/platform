@@ -74,21 +74,25 @@ public class ExtFormResponseWriter extends ApiJsonWriter
 
     public JSONObject toJSON(ValidationException e)
     {
-        String exception = null;
+        String message = null;
         JSONObject jsonErrors = new JSONObject();
 
         for (ValidationError error : e.getErrors())
-            toJSON(jsonErrors, error);
-
-        for (ValidationException nested : e.getNested())
         {
-            for (ValidationError error : nested.getErrors())
-                toJSON(jsonErrors, error);
+            if (message == null)
+                message = error.getMessage();
+            toJSON(jsonErrors, error);
         }
 
         JSONObject obj = new JSONObject();
-        obj.put("exception", exception);
+        obj.put("exception", message == null ? "(No error message)" : message);
         obj.put("errors", jsonErrors);
+        if (e.getSchemaName() != null)
+            obj.put("schemaName", e.getSchemaName());
+        if (e.getQueryName() != null)
+            obj.put("queryName", e.getQueryName());
+        if (e.getRowNumber() > -1)
+            obj.put("rowNumber", e.getRowNumber());
         return obj;
     }
 

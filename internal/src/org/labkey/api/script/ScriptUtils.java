@@ -16,9 +16,12 @@
 
 package org.labkey.api.script;
 
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ValidationException;
 import org.mozilla.javascript.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +50,10 @@ public class ScriptUtils {
             return new ScriptableList(scope, (List) obj);
         } else if (obj instanceof Map) {
             return new ScriptableMap(scope, (Map) obj);
+        } else if (obj instanceof ValidationException) {
+            return new ScriptableErrors(scope, (ValidationException) obj);
+        } else if (obj instanceof BatchValidationException) {
+            return new ScriptableErrorsList(scope, (BatchValidationException) obj);
 //        } else if (obj instanceof Object[]) {
 //            Object[] arr = (Object[])obj;
 //            int len = arr.length;
@@ -67,14 +74,14 @@ public class ScriptUtils {
 
     public static Object jsToJava(Object jsObj, Class<?> desiredType) {
         Object convertedValue = Context.jsToJava(jsObj, desiredType);
-        if (convertedValue instanceof ScriptableObject)
+        if (convertedValue instanceof Scriptable)
         {
-            return scriptableToJava((ScriptableObject)convertedValue);
+            return scriptableToJava((Scriptable)convertedValue);
         }
         return convertedValue;
     }
 
-    public static Object scriptableToJava(ScriptableObject jsObj)
+    public static Object scriptableToJava(Scriptable jsObj)
     {
         if (ScriptRuntime.isArrayObject(jsObj))
         {
@@ -113,19 +120,29 @@ public class ScriptUtils {
             // Plain 'ol JavaScript Object.  Convert to a map.
             if ("Object".equals(jsClass))
             {
-                final Object[] ids = jsObj.getIds();
-                Map<String, Object> map = new LinkedHashMap<String, Object>();
-                for (Object id : ids)
-                {
-                    String key = id.toString();
-                    Object value = jsObj.get(key, jsObj);
-                    map.put(key, jsToJava(value, ScriptRuntime.ObjectClass));
-                }
-                return map;
+                return scriptableToMap(jsObj);
+            }
+            else if ("Date".equals(jsClass))
+            {
+                // Issue 10615: Context.jsToJava doesn't convert NativeDate to j.u.Date when desired type is Object.class as is requested by ScriptableMap and ScriptableList.
+                return Context.jsToJava(jsObj, Date.class);
             }
         }
 
         return jsObj;
+    }
+
+    public static Map<String, Object> scriptableToMap(Scriptable jsObj)
+    {
+        final Object[] ids = jsObj.getIds();
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        for (Object id : ids)
+        {
+            String key = id.toString();
+            Object value = jsObj.get(key, jsObj);
+            map.put(key, jsToJava(value, ScriptRuntime.ObjectClass));
+        }
+        return map;
     }
 
     /**

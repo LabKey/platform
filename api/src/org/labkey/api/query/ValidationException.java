@@ -19,7 +19,17 @@ import org.labkey.api.action.SpringActionController;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /*
  * User: Dave
  * Date: Jun 9, 2008
@@ -34,73 +44,138 @@ import java.util.*;
  * method will simply concatenate all the error messages together,
  * separated by semi-colons.
  */
-public class ValidationException extends Exception
+public class ValidationException extends Exception implements Iterable<ValidationError>
 {
     public static final String ERROR_ROW_NUMBER_KEY = "_rowNumber";
+    public static final String ERROR_SCHEMA_KEY = "_schemaName";
+    public static final String ERROR_QUERY_KEY = "_queryName";
+    public static final String ERROR_ROW_KEY = "_row";
 
-    private List<ValidationException> _nested = new ArrayList<ValidationException>();
-    private List<ValidationError> _errors = new ArrayList<ValidationError>();
+    private Map<String, List<PropertyValidationError>> _fieldErrors = new LinkedHashMap<String, List<PropertyValidationError>>();
+    private List<SimpleValidationError> _globalErrors = new ArrayList<SimpleValidationError>();
+
+    private String _schemaName;
+    private String _queryName;
+    private Map<String, Object> _row;
     private int _rowNumber = -1;
 
     public ValidationException()
     {
     }
 
-    public ValidationException(int rowNumber)
+    public ValidationException(ValidationException errors)
     {
-        _rowNumber = rowNumber;
-    }
-
-    public ValidationException(List<ValidationError> errors)
-    {
-        _errors = errors;
-        _rowNumber = -1;
-    }
-
-    public ValidationException(List<ValidationError> errors, int rowNumber)
-    {
-        _errors = errors;
-        _rowNumber = rowNumber;
-    }
-
-    public ValidationException(ValidationError error, int rowNumber)
-    {
-        _errors.add(error);
-        _rowNumber = rowNumber;
+        addErrors(errors);
     }
 
     public ValidationException(String message)
     {
-        this(new SimpleValidationError(message), -1);
-    }
-
-    public ValidationException(String message, int rowNumber)
-    {
-        this(new SimpleValidationError(message), rowNumber);
+        addError(new SimpleValidationError(message));
     }
 
     public ValidationException(String message, String property)
     {
-        this(new PropertyValidationError(message, property), -1);
+        addError(new PropertyValidationError(message, property));
     }
 
-    public ValidationException(String message, String property, int rowNumber)
+    public ValidationException(Collection<ValidationError> errors)
     {
-        this(new PropertyValidationError(message, property), rowNumber);
+        addErrors(errors);
     }
 
-    public ValidationException(Map<String, Object> errors)
+    public ValidationException(Map<String, Object> map)
     {
-        this(errors, -1);
+        this(map, null, null, null, -1);
     }
 
-    public ValidationException(Map<String, Object> errors, int rowNumber)
+    public ValidationException(Map<String, Object> map, String schemaName, String queryName, Map<String, Object> row, int rowNumber)
     {
-        _rowNumber = rowNumber > -1 ? rowNumber : getRowNum(errors);
-        for (Map.Entry<String, Object> fields : errors.entrySet())
+        _schemaName = schemaName != null ? schemaName : _getSchemaName(map);
+        _queryName = queryName != null ? queryName : _getQueryName(map);
+        _row = row != null ? row : _getRow(map);
+        _rowNumber = rowNumber > -1 ? rowNumber : _getRowNum(map);
+        addErrors(map);
+    }
+
+    public void setSchemaName(String schemaName)
+    {
+        _schemaName = schemaName;
+    }
+
+    public String getSchemaName()
+    {
+        return _schemaName;
+    }
+
+    public void setQueryName(String queryName)
+    {
+        _queryName = queryName;
+    }
+
+    public String getQueryName()
+    {
+        return _queryName;
+    }
+
+    public Map<String, Object> getRow()
+    {
+        return _row;
+    }
+
+    public void setRow(Map<String, Object> row)
+    {
+        _row = row;
+    }
+    
+    public int getRowNumber()
+    {
+        return _rowNumber;
+    }
+
+    public void setRowNumber(int rowNumber)
+    {
+        _rowNumber = rowNumber;
+    }
+
+    public ValidationException fillIn(String schemaName, String queryName, Map<String, Object> row, int rowNumber)
+    {
+        if (getSchemaName() == null)
+            setSchemaName(schemaName);
+        if (getQueryName() == null)
+            setQueryName(queryName);
+        if (getRowNumber() == -1)
+            setRowNumber(rowNumber);
+        if (getRow() == null)
+            setRow(row);
+        return this;
+    }
+
+    public ValidationException addErrors(ValidationException errors)
+    {
+        if (errors.getSchemaName() != null && !errors.getSchemaName().equals(getSchemaName()))
+            throw new IllegalArgumentException("schemaName doesn't match");
+
+        if (errors.getQueryName() != null && !errors.getQueryName().equals(getQueryName()))
+            throw new IllegalArgumentException("queryName doesn't match");
+
+        addErrors(errors.getErrors());
+        return this;
+    }
+
+    public ValidationException addErrors(Collection<ValidationError> errors)
+    {
+        for (ValidationError error : errors)
+            addError(error);
+
+        return this;
+    }
+
+    public ValidationException addErrors(Map<String, Object> map)
+    {
+        for (Map.Entry<String, Object> fields : map.entrySet())
         {
-            String property = fields.getKey();
-            if (ERROR_ROW_NUMBER_KEY.equals(property))
+            String field = fields.getKey();
+            if (ERROR_ROW_NUMBER_KEY.equals(field) || ERROR_SCHEMA_KEY.equals(field) || ERROR_QUERY_KEY.equals(field) || ERROR_ROW_KEY.equals(field))
                 continue;
 
             Object value = fields.getValue();
@@ -122,177 +197,363 @@ public class ValidationException extends Exception
 
             for (String message : messages)
             {
-                if (property != null)
-                    addError(new PropertyValidationError(message, property));
+                if (field != null)
+                    addFieldError(field, message);
                 else
-                    addError(new SimpleValidationError(message));
+                    addGlobalError(message);
             }
         }
+
+        return this;
     }
 
-    public int getRowNumber()
+    public ValidationException addError(ValidationError error)
     {
-        return _rowNumber;
+        if (error instanceof PropertyValidationError)
+            addFieldError((PropertyValidationError)error);
+        else if (error instanceof SimpleValidationError)
+            addGlobalError((SimpleValidationError)error);
+        else
+            throw new IllegalArgumentException();
+
+        return this;
     }
-    
-    public void addError(ValidationError error)
+
+    private ValidationException addFieldError(PropertyValidationError error)
     {
-        _errors.add(error);
+        String field = error.getProperty();
+        if (field == null)
+            throw new IllegalArgumentException();
+
+        List<PropertyValidationError> list = _fieldErrors.get(field);
+        if (list == null)
+            _fieldErrors.put(field, list = new ArrayList<PropertyValidationError>());
+        list.add(error);
+
+        return this;
+    }
+
+    public ValidationException addFieldError(String field, String message)
+    {
+        addFieldError(new PropertyValidationError(message, field));
+        return this;
+    }
+
+    public ValidationException removeFieldErrors(String field)
+    {
+        _fieldErrors.remove(field);
+        return this;
+    }
+
+    public ValidationException addGlobalError(SimpleValidationError error)
+    {
+        _globalErrors.add(error);
+        return this;
+    }
+
+    public ValidationException addGlobalError(String message)
+    {
+        _globalErrors.add(new SimpleValidationError(message));
+        return this;
+    }
+
+    /**
+     * Returns a live view over the field errors.
+     * @param name The field name.
+     * @return A live view over the field errors.
+     */
+    public List<String> getFieldErrors(final String name)
+    {
+        if (name == null)
+            throw new IllegalArgumentException();
+
+        // For convenience in the script environment, create an empty list.
+        List<PropertyValidationError> list = _fieldErrors.get(name);
+        if (list == null)
+            _fieldErrors.put(name, list = new ArrayList<PropertyValidationError>());
+
+        final List<PropertyValidationError> wrapped = list;
+        return new AbstractList<String>()
+        {
+            @Override
+            public String get(int i)
+            {
+                PropertyValidationError error = wrapped.get(i);
+                if (error != null)
+                    return error.getMessage();
+                return null;
+            }
+
+            @Override
+            public int size()
+            {
+                return wrapped.size();
+            }
+
+            @Override
+            public boolean add(String message)
+            {
+                return wrapped.add(new PropertyValidationError(message, name));
+            }
+
+            @Override
+            public String set(int i, String message)
+            {
+                PropertyValidationError previous = wrapped.get(i);
+                wrapped.set(i, new PropertyValidationError(message, name));
+                if (previous != null)
+                    return previous.getMessage();
+                return null;
+            }
+
+            @Override
+            public void add(int i, String message)
+            {
+                wrapped.add(i, new PropertyValidationError(message, name));
+            }
+
+            @Override
+            public String remove(int i)
+            {
+                PropertyValidationError existing = wrapped.remove(i);
+                if (existing != null)
+                    return existing.getMessage();
+                return null;
+            }
+        };
+    }
+
+    /**
+     * Returns a live view over the global errors.
+     * @return A live view over the global errors.
+     */
+    public List<String> getGlobalErrors()
+    {
+        return new AbstractList<String>()
+        {
+            @Override
+            public String get(int i)
+            {
+                SimpleValidationError error = _globalErrors.get(i);
+                if (error != null)
+                    return error.getMessage();
+                return null;
+            }
+
+            @Override
+            public int size()
+            {
+                return _globalErrors.size();
+            }
+
+            @Override
+            public boolean add(String message)
+            {
+                return _globalErrors.add(new SimpleValidationError(message));
+            }
+
+            @Override
+            public String set(int i, String message)
+            {
+                SimpleValidationError previous = _globalErrors.get(i);
+                _globalErrors.set(i, new SimpleValidationError(message));
+                if (previous != null)
+                    return previous.getMessage();
+                return null;
+            }
+
+            @Override
+            public void add(int i, String message)
+            {
+                _globalErrors.add(i, new SimpleValidationError(message));
+            }
+
+            @Override
+            public String remove(int i)
+            {
+                SimpleValidationError existing = _globalErrors.remove(i);
+                if (existing != null)
+                    return existing.getMessage();
+                return null;
+            }
+        };
+    }
+
+    public boolean hasGlobalErrors()
+    {
+        return _globalErrors.size() > 0;
+    }
+
+    public boolean hasFieldErrors()
+    {
+        for (List<PropertyValidationError> list : _fieldErrors.values())
+            if (list.size() > 0)
+                return true;
+
+        return false;
+    }
+
+    public boolean hasFieldErrors(String name)
+    {
+        if (_fieldErrors.containsKey(name) && _fieldErrors.get(name).size() > 0)
+            return true;
+
+        return false;
     }
 
     public boolean hasErrors()
     {
-        if (_errors.size() > 0)
+        if (hasGlobalErrors() || hasFieldErrors())
             return true;
-        for (ValidationException nested : getNested())
-            if (nested.hasErrors())
-                return true;
+
         return false;
     }
 
+    public Set<String> getFields()
+    {
+        return _fieldErrors.keySet();
+    }
+
+    /**
+     * Returns all errors in this ValidationException.
+     * @return
+     */
     public List<ValidationError> getErrors()
     {
-        return _errors;
+        List<ValidationError> errors = new ArrayList<ValidationError>(_globalErrors);
+
+        for (List<PropertyValidationError> list : _fieldErrors.values())
+            for (ValidationError error : list)
+                errors.add(error);
+
+        return errors;
     }
 
-    public void addNested(ValidationException nested)
+    @Override
+    public Iterator<ValidationError> iterator()
     {
-        _nested.add(nested);
+        return getErrors().iterator();
     }
 
-    public List<ValidationException> getNested()
-    {
-        return _nested;
-    }
-
-    public String toString(String separator, String nestedSeparator)
+    /**
+     * Returns a formatted string of error messages:
+     * <pre>
+     * [schema:query:Row #:] global errors
+     * field1: field errors
+     * field2: field errors
+     *
+     * </pre>
+     * @param separator
+     * @param fieldErrorsSeparator
+     * @return
+     */
+    public String toString(String separator, String fieldErrorsSeparator)
     {
         StringBuilder msg = new StringBuilder();
-        if (_rowNumber > 0)
-            msg.append("Row ").append(_rowNumber).append(": ");
+
+        if (_schemaName != null && _queryName != null)
+            msg.append(_schemaName).append(":").append(_queryName).append(":");
+
+        if (msg.length() > 0)
+            msg.append(" ");
+
+        int prefixLen = msg.length();
 
         String sep = "";
-        for (ValidationError err : getErrors())
+        for (SimpleValidationError err : _globalErrors)
         {
             msg.append(sep);
             msg.append(err.getMessage());
             sep = separator;
         }
 
-        sep = msg.length() > 0 ? nestedSeparator : "";
-        for (ValidationException vex : getNested())
+        String fieldSep = "";
+        for (Map.Entry<String, List<PropertyValidationError>> entry : _fieldErrors.entrySet())
         {
-            msg.append(sep);
-            msg.append(vex.toString(separator, nestedSeparator));
-            sep = nestedSeparator;
+            sep = "";
+            msg.append(fieldSep);
+            msg.append(entry.getKey()).append(": ");
+            for (PropertyValidationError error : entry.getValue())
+            {
+                msg.append(sep);
+                msg.append(error.getMessage());
+                sep = separator;
+            }
+            fieldSep = fieldErrorsSeparator;
         }
-        
-        if (msg.length() == 0)
+
+        if (msg.length() == prefixLen)
             msg.append("(No errors specified)");
 
         return msg.toString();
     }
 
+    @Override
     public String toString()
     {
         return toString("; ", "\n");
     }
 
-    public String getMessage()
-    {
-        return toString();
-    }
-
     /**
-     * Flatten into an Errors object suitable for display in an html form.
+     * Add all errors into an Errors object suitable for display in an html form.
      */
-    public Errors toErrors(String objectName)
+    public void addToErrors(Errors errors)
     {
-        MapBindingResult errors = new MapBindingResult(new HashMap(), objectName);
-        addToErrors(errors, this);
-        return errors;
-    }
+        MapBindingResult mapErrors = new MapBindingResult(new HashMap(), errors.getObjectName());
 
-    private static void addToErrors(Errors errors, ValidationException ex)
-    {
-        for (ValidationError validationError : ex.getErrors())
+        for (SimpleValidationError validationError : _globalErrors)
         {
             String message = validationError.getMessage();
             if (message == null)
                 message = "An error occurred";
 
-            String property = null;
-            if (validationError instanceof PropertyValidationError)
-                property = ((PropertyValidationError)validationError).getProperty();
-
-            if (property != null)
-                errors.rejectValue(property, SpringActionController.ERROR_MSG, message);
-            else
-                errors.reject(SpringActionController.ERROR_MSG, message);
+            mapErrors.reject(SpringActionController.ERROR_MSG, message);
         }
 
-        for (ValidationException nested : ex.getNested())
-            addToErrors(errors, nested);
+        for (Map.Entry<String, List<PropertyValidationError>> entry : _fieldErrors.entrySet())
+            for (PropertyValidationError error : entry.getValue())
+                mapErrors.rejectValue(error.getProperty(), SpringActionController.ERROR_MSG, error.getMessage());
+
+        errors.addAllErrors(mapErrors);
     }
 
-    /**
-     * Flatten into a List of error Maps.
-     * Top-level errors will not be converted.
-     */
-    public List<Map<String, Object>> toList()
+    private static String _getSchemaName(Map<String, Object> rowErrors)
     {
-        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-        for (ValidationException nested : getNested())
-        {
-            Map<String, Object> map = new LinkedHashMap<String, Object>();
-            for (ValidationError validationError : nested.getErrors())
-            {
-                String message = validationError.getMessage();
-                String property = null;
-                if (validationError instanceof PropertyValidationError)
-                    property = ((PropertyValidationError)validationError).getProperty();
+        Object o = rowErrors.get(ERROR_SCHEMA_KEY);
+        if (o == null)
+            return null;
 
-                Object value = map.get(property);
-                if (value == null)
-                    map.put(property, message);
-                else if (value instanceof String)
-                {
-                    List<String> messages = new ArrayList<String>();
-                    messages.add((String)value);
-                    messages.add(message);
-                    map.put(property, messages);
-                }
-                else if (value instanceof List)
-                {
-                    ((List<String>)value).add(message);
-                }
-            }
-
-            if (!map.isEmpty())
-            {
-                if (nested.getRowNumber() > -1)
-                    map.put(ERROR_ROW_NUMBER_KEY, nested.getRowNumber());
-                list.add(map);
-            }
-        }
-        return list;
+        return o.toString();
     }
 
-    public static ValidationException fromList(List<Map<String, Object>> errors)
+    private static String _getQueryName(Map<String, Object> rowErrors)
     {
-        ValidationException result = new ValidationException();
-        for (Map<String, Object> rowError : errors)
-            result.addNested(new ValidationException(rowError));
-        return result;
+        Object o = rowErrors.get(ERROR_QUERY_KEY);
+        if (o == null)
+            return null;
+
+        return o.toString();
     }
 
-    public static int getRowNum(Map rowErrors)
+    private static Map<String, Object> _getRow(Map<String, Object> rowErrors)
+    {
+        Object o = rowErrors.get(ERROR_ROW_KEY);
+        if (o == null)
+            return null;
+
+        if (o instanceof Map)
+            return (Map<String, Object>)o;
+
+        return null;
+    }
+
+    private static int _getRowNum(Map<String, Object> rowErrors)
     {
         if (rowErrors.containsKey(ERROR_ROW_NUMBER_KEY))
         {
             Object _rowNumber = rowErrors.get(ERROR_ROW_NUMBER_KEY);
             if (_rowNumber instanceof Integer)
-                return ((Integer)_rowNumber).intValue();
+                return (Integer)_rowNumber;
             try
             {
                 return Integer.parseInt(String.valueOf(_rowNumber));

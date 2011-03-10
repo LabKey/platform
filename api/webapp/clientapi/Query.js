@@ -537,7 +537,7 @@ LABKEY.Query = new function()
         */
         saveRows : function(config)
         {
-            if (config.length > 1)
+            if (arguments.length > 1)
                 config = configFromArgs(arguments);
             if (config.timeout)
                 Ext.Ajax.timeout = config.timeout;

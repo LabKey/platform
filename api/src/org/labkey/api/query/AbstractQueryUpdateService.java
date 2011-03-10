@@ -80,20 +80,20 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-        ValidationException errors = new ValidationException();
+        BatchValidationException errors = new BatchValidationException();
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
+            Map<String, Object> row = rows.get(i);
             try
             {
-                Map<String, Object> row = rows.get(i);
                 row = coerceTypes(row);
                 getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, true, i, row, null, extraScriptContext);
                 row = insertRow(user, container, row);
@@ -105,7 +105,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
             catch (ValidationException vex)
             {
-                errors.addNested(vex);
+                errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i));
             }
         }
 
@@ -144,7 +144,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, UpdatePermission.class))
             throw new UnauthorizedException("You do not have permission to update data in this table.");
@@ -152,16 +152,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (oldKeys != null && rows.size() != oldKeys.size())
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
 
-        ValidationException errors = new ValidationException();
+        BatchValidationException errors = new BatchValidationException();
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
+            Map<String, Object> row = rows.get(i);
+            row = coerceTypes(row);
             try
             {
-                Map<String, Object> row = rows.get(i);
-                row = coerceTypes(row);
                 Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
                 Map<String, Object> oldRow = getRow(user, container, oldKey);
                 if (oldRow == null)
@@ -177,7 +177,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
             catch (ValidationException vex)
             {
-                errors.addNested(vex);
+                errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i));
             }
         }
 
@@ -187,23 +187,23 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     protected abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException;
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
     
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, DeletePermission.class))
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
 
-        ValidationException errors = new ValidationException();
+        BatchValidationException errors = new BatchValidationException();
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
         for (int i = 0; i < keys.size(); i++)
         {
+            Map<String, Object> key = keys.get(i);
             try
             {
-                Map<String, Object> key = keys.get(i);
                 Map<String, Object> oldRow = getRow(user, container, key);
                 // if row doesn't exist, bail early
                 if (oldRow == null)
@@ -219,7 +219,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
             catch (ValidationException vex)
             {
-                errors.addNested(vex);
+                errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), key, i));
             }
         }
 

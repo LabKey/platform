@@ -751,6 +751,10 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     this.onSelectChange(this.hasSelected());
                 }
             }
+            else
+            {
+                this.updateRequiresSelectionButtons(false);
+            }
         }
 
         this._resizeContainer(true);
@@ -897,7 +901,8 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     },
 
-    onSelectChange : function (hasSelected)
+    // private
+    updateRequiresSelectionButtons : function (hasSelected)
     {
         var fn = hasSelected ? LABKEY.Utils.enableButton : LABKEY.Utils.disableButton;
 
@@ -910,6 +915,12 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         }
         Ext.each(this._requiresSelectionButtons, fn);
 
+    },
+
+    // private
+    onSelectChange : function (hasSelected)
+    {
+        this.updateRequiresSelectionButtons(hasSelected);
         this.fireEvent('selectchange', this, hasSelected);
     },
 
