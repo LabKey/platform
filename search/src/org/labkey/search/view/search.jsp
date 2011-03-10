@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>                 
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.search.SearchMisconfiguredException" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
@@ -46,7 +47,6 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.search.SearchMisconfiguredException" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -321,7 +321,7 @@
             SearchUtils.renderError(out, h(e.getMessage()), true, false, true);  // Assume it's special characters
             out.write("</td>");
         }
-        catch (org.labkey.api.search.SearchMisconfiguredException e)
+        catch (SearchMisconfiguredException e)
         {
             out.write("</div>");
             SearchUtils.renderError(out, "Search is disabled because the search index is misconfigured. Contact the system administrator of this server.", false, false, false);

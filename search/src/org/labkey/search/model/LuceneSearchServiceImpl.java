@@ -117,7 +117,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             File indexDir = SearchPropertyManager.getPrimaryIndexDirectory();
             _index = new WritableIndexImpl(indexDir, _analyzer);
-            setConfigurationError(null);
+            setConfigurationError(null);  // Clear out any previous error
         }
         catch (Throwable t)
         {
@@ -264,7 +264,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
             catch (UnauthorizedException ue)
             {
-                // Some QueryUpdateService implementation don't special case the search user.  Continue indexing in this
+                // Some QueryUpdateService implementations don't special case the search user.  Continue indexing in this
                 // case, but skip the custom properties.
             }
 
