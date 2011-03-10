@@ -20,6 +20,8 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TSVGridWriter;
@@ -392,30 +394,48 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter("redirectURL", PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
+    private static boolean isContainerValid(Container c)
+    {
+        if (c != null)
+        {
+            return ContainerManager.getForId(c.getId()) != null;
+        }
+        return false;
+    }
+
     private static List<QuerySnapshotDefinition> getDependencies(DataSet dsDef)
     {
+        // check if container is still valid
         Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<Integer, QuerySnapshotDefinition>();
-        Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
-        if (d != null)
+        if (isContainerValid(dsDef.getContainer()))
         {
-            try {
-                List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudyManager.getSchemaName());
-                for (DomainProperty prop : d.getProperties())
+            List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudyManager.getSchemaName());
+            if (!snapshots.isEmpty())
+            {
+                Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
+                if (d != null)
                 {
-                    for (QuerySnapshotDefinition snapshot : snapshots)
-                    {
-                        if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, prop.getPropertyURI()))
+                    try {
+                        for (DomainProperty prop : d.getProperties())
                         {
-                            dependencies.put(snapshot.getId(), snapshot);
+                            for (QuerySnapshotDefinition snapshot : snapshots)
+                            {
+                                if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, prop.getPropertyURI()))
+                                {
+                                    dependencies.put(snapshot.getId(), snapshot);
+                                }
+                            }
                         }
+                    }
+                    catch (ServletException e)
+                    {
+                        throw new RuntimeException(e);
                     }
                 }
             }
-            catch (ServletException e)
-            {
-                throw new RuntimeException(e);
-            }
         }
+        else
+            _log.info("Failed checking dependecies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
         return new ArrayList<QuerySnapshotDefinition>(dependencies.values());
     }
 
