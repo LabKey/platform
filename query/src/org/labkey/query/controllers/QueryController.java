@@ -2806,16 +2806,14 @@ public class QueryController extends SpringActionController
                     JSONObject commandObject = commands.getJSONObject(i);
                     String commandName = commandObject.getString(PROP_COMMAND);
                     CommandType command = CommandType.valueOf(commandName);
+
+                    // Merge the top-level 'extraContext' into the command-level extraContext
+                    Map<String, Object> commandExtraContext = new HashMap<String, Object>(extraContext);
                     if (commandObject.has("extraContext"))
                     {
-                        // Merge the top-level 'extraContext' into the command-level extraContext
-                        JSONObject commandExtraContext = commandObject.getJSONObject("extraContext");
-                        commandExtraContext.putAll(extraContext);
+                        commandExtraContext.putAll(commandObject.getJSONObject("extraContext"));
                     }
-                    else
-                    {
-                        commandObject.put("extraContext", extraContext);
-                    }
+                    commandObject.put("extraContext", commandExtraContext);
 
                     JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors);
                     if (commandResponse == null || errors.hasErrors())
