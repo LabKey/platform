@@ -217,7 +217,7 @@ public class FileContentController extends SpringActionController
                     throw new NotFoundException();
             }
 
-            Path filePath = Path.decode(form.getFileName());
+            Path filePath = Path.parse(form.getFileName());
             Path path;
 
             // support both legacy and newer formats, new URLs looks like webdav URLs, while older formats assume files
