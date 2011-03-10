@@ -726,6 +726,7 @@ api/src/org/labkey/api/script/ScriptReference.java -text
 api/src/org/labkey/api/script/ScriptService.java -text
 api/src/org/labkey/api/search/AbstractDocumentParser.java -text
 api/src/org/labkey/api/search/AbstractXMLDocumentParser.java -text
+api/src/org/labkey/api/search/SearchMisconfiguredException.java -text
 api/src/org/labkey/api/search/SearchService.java -text
 api/src/org/labkey/api/search/SearchUrls.java -text
 api/src/org/labkey/api/search/SearchUtils.java -text

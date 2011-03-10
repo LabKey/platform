@@ -232,6 +232,7 @@ public interface SearchService
     void startCrawler();
     void pauseCrawler();
     void updatePrimaryIndex();
+    @Nullable Throwable getConfigurationError();
     boolean isRunning();
     boolean hasExternalIndexPermission(User user);
 

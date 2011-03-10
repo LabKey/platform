@@ -36,7 +36,7 @@ public class SearchUtils
         return new HelpTopic("luceneSearch").getHelpTopicLink();
     }
 
-    public static void renderError(JspWriter out, String htmlMessage, boolean includeSpecialSymbolsMessage, boolean includeBooleanOperatorMessage) throws IOException
+    public static void renderError(JspWriter out, String htmlMessage, boolean includeSpecialSymbolsMessage, boolean includeBooleanOperatorMessage, boolean includeMoreInformationMessage) throws IOException
     {
         out.write("<table>\n");
         out.write("  <tr><td><span class=\"labkey-error\">Error: " + htmlMessage + "</span></td></tr>\n");
@@ -56,7 +56,11 @@ public class SearchUtils
             out.write("  <tr><td>&nbsp;</td></tr>\n");
         }
 
-        out.write("  <tr><td>For more information, visit the <a href=\"" + PageFlowUtil.filter(getHelpURL()) + "\">search syntax documentation.</a></td></tr>\n");
+        if (includeMoreInformationMessage)
+        {
+            out.write("  <tr><td>For more information, visit the <a href=\"" + PageFlowUtil.filter(getHelpURL()) + "\">search syntax documentation.</a></td></tr>\n");
+        }
+
         out.write("</table>\n");
     }
 
