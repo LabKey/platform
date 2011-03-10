@@ -135,6 +135,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         }
         obj.put("errors", arr);
         obj.put("exception", message);
+        obj.put("extraContext", e.getExtraContext());
 
         writeJsonObj(obj);
     }

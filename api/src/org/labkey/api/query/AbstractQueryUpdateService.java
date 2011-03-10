@@ -86,6 +86,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
         BatchValidationException errors = new BatchValidationException();
+        errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
@@ -153,6 +154,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
 
         BatchValidationException errors = new BatchValidationException();
+        errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
@@ -196,6 +198,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
 
         BatchValidationException errors = new BatchValidationException();
+        errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());

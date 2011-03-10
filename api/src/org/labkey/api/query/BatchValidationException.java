@@ -4,6 +4,7 @@ import org.springframework.validation.Errors;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A collection of ValidationExceptions, one for each row.
@@ -14,6 +15,7 @@ import java.util.List;
  */
 public class BatchValidationException extends Exception
 {
+    Map<String, Object> extraContext;
     List<ValidationException> rowErrors;
 
     public BatchValidationException()
@@ -22,10 +24,11 @@ public class BatchValidationException extends Exception
         this.rowErrors = new ArrayList<ValidationException>();
     }
 
-    public BatchValidationException(List<ValidationException> rowErrors)
+    public BatchValidationException(List<ValidationException> rowErrors, Map<String, Object> extraContext)
     {
         super();
         this.rowErrors = rowErrors;
+        this.extraContext = extraContext;
     }
 
     public void addRowError(ValidationException vex)
@@ -47,5 +50,15 @@ public class BatchValidationException extends Exception
     {
         for (ValidationException vex : getRowErrors())
             vex.addToErrors(errors);
+    }
+
+    public void setExtraContext(Map<String, Object> extraContext)
+    {
+        this.extraContext = extraContext;
+    }
+    
+    public Map<String, Object> getExtraContext()
+    {
+        return extraContext;
     }
 }

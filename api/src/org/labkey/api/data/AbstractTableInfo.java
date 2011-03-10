@@ -809,8 +809,9 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             if (!script.evaluated())
             {
                 Map<String, Object> bindings = new HashMap<String, Object>();
-                if (extraContext != null && !extraContext.isEmpty())
-                    bindings.put("extraContext", extraContext);
+                if (extraContext == null)
+                    extraContext = new HashMap<String, Object>();
+                bindings.put("extraContext", extraContext);
                 bindings.put("schemaName", getPublicSchemaName());
                 bindings.put("tableName", getPublicName());
 
