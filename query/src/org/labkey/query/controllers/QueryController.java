@@ -1762,9 +1762,7 @@ public class QueryController extends SpringActionController
 
             QueryUpdateService updateService = table.getUpdateService();
             if (updateService == null)
-            {
                 throw new UnsupportedOperationException("Unable to delete - no QueryUpdateService registered for " + form.getSchemaName() + "." + form.getQueryName());
-            }
 
             Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
             List<ColumnInfo> pks = table.getPkColumns();
@@ -1794,9 +1792,21 @@ public class QueryController extends SpringActionController
                 keyValues.add(rowKeyValues);
             }
 
+            DbSchema dbSchema = table.getSchema();
+            boolean ownTransaction = !dbSchema.getScope().isTransactionActive();
             try
             {
+                if (ownTransaction)
+                    dbSchema.getScope().beginTransaction();
+
                 updateService.deleteRows(getUser(), getContainer(), keyValues, Collections.<String, Object>emptyMap());
+
+                if (ownTransaction)
+                {
+                    dbSchema.getScope().commitTransaction();
+                    ownTransaction = false;
+                }
+
                 _url = forward;
             }
             catch (SQLException x)
@@ -1806,6 +1816,21 @@ public class QueryController extends SpringActionController
                 errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
                 return false;
             }
+            catch (BatchValidationException x)
+            {
+                x.addToErrors(errors);
+            }
+            catch (Exception x)
+            {
+                errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
+            }
+            finally
+            {
+                if (ownTransaction)
+                    dbSchema.getScope().closeConnection();
+            }
+            
             return true;
         }
 
@@ -1930,9 +1955,9 @@ public class QueryController extends SpringActionController
                     throw x;
                 errors.reject(ERROR_MSG, x.getMessage());
             }
-            catch (ValidationException x)
+            catch (BatchValidationException x)
             {
-                errors.addAllErrors(x.toErrors(errors.getObjectName()));
+                x.addToErrors(errors);
             }
             catch (Exception x)
             {
@@ -2495,7 +2520,7 @@ public class QueryController extends SpringActionController
         insert(InsertPermission.class)
         {
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, extraContext);
                 return qus.getRows(user, container, insertedRows);
@@ -2504,7 +2529,7 @@ public class QueryController extends SpringActionController
         insertWithKeys(InsertPermission.class)
         {
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
                 List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
                 List<Map<String, Object>> oldKeys = new ArrayList<Map<String, Object>>();
@@ -2529,7 +2554,7 @@ public class QueryController extends SpringActionController
         update(UpdatePermission.class)
         {
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, rows, extraContext);
                 return qus.getRows(user, container, updatedRows);
@@ -2538,7 +2563,7 @@ public class QueryController extends SpringActionController
         updateChangingKeys(UpdatePermission.class)
         {
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
                 List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
                 List<Map<String, Object>> oldKeys = new ArrayList<Map<String, Object>>();
@@ -2564,7 +2589,7 @@ public class QueryController extends SpringActionController
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
                 return qus.deleteRows(user, container, rows, extraContext);
             }
@@ -2583,7 +2608,7 @@ public class QueryController extends SpringActionController
         }
 
         public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException;
+                throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException;
     }
 
     /**

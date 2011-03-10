@@ -34,6 +34,7 @@ import org.labkey.experiment.samples.UploadSamplesHelper;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -138,28 +139,42 @@ class SampleSetUpdateService implements QueryUpdateService
 
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.insertOnly, user, container, rows);
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
-        for (ExpMaterial material : materials)
+        try
         {
-            result.add(getMaterialMap(material.getRowId(), material.getLSID()));
+            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.insertOnly, user, container, rows);
+            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
+            for (ExpMaterial material : materials)
+            {
+                result.add(getMaterialMap(material.getRowId(), material.getLSID()));
+            }
+            return result;
         }
-        return result;
+        catch (ValidationException vex)
+        {
+            throw new BatchValidationException(Arrays.asList(vex));
+        }
     }
 
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.updateOnly, user, container, rows);
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
-        for (ExpMaterial material : materials)
+        try
         {
-            result.add(getMaterialMap(material.getRowId(), material.getLSID()));
+            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.updateOnly, user, container, rows);
+            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
+            for (ExpMaterial material : materials)
+            {
+                result.add(getMaterialMap(material.getRowId(), material.getLSID()));
+            }
+            return result;
         }
-        return result;
+        catch (ValidationException vex)
+        {
+            throw new BatchValidationException(Arrays.asList(vex));
+        }
     }
 
     @Override

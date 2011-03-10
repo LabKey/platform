@@ -61,7 +61,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext)
+            throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.insertRows(user, container, rows, extraScriptContext);
         resyncStudy(user, container);
@@ -105,7 +106,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, extraScriptContext);
         resyncStudy(user, container);
@@ -153,7 +154,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.deleteRows(user, container, keys, extraScriptContext);
         resyncStudy(user, container);

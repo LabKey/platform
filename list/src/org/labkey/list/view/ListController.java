@@ -16,6 +16,7 @@
 
 package org.labkey.list.view;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -59,8 +60,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -96,6 +97,7 @@ import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListQueryUpdateService;
+import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListWriter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -354,8 +356,9 @@ public class ListController extends SpringActionController
                 }
             }
 
-            if (errors.hasErrors())
-                return false;
+            // Issue 10792: Validation scripts should run before errors are generated for list import
+            //if (errors.hasErrors())
+            //    return false;
 
             boolean transaction = false;
             ListItem item = null;
@@ -368,8 +371,10 @@ public class ListController extends SpringActionController
                     transaction = true;
                 }
 
-                ValidationException validationErrors = new ValidationException();
+                BatchValidationException batchErrors = new BatchValidationException();
+
                 TableInfo.TriggerType triggerType;
+                Map<String, Object> newValues = tableForm.getTypedColumns(true);
                 Map<String, Object> oldValues = null;
                 if (isInsert())
                 {
@@ -384,46 +389,69 @@ public class ListController extends SpringActionController
                 }
                 Object oldKey = item.getKey();
 
-                table.fireBatchTrigger(getContainer(), triggerType, true, validationErrors, null);
-                table.fireRowTrigger(getContainer(), triggerType, true, 0, tableForm.getTypedColumns(), oldValues, null);
-
                 Domain domain = list.getDomain();
-                for (ColumnInfo column : tableForm.getTable().getColumns())
+                table.fireBatchTrigger(getContainer(), triggerType, true, batchErrors, null);
+                try
                 {
-                    if (!tableForm.hasTypedValue(column))
-                        continue;
-                    Object formValue = tableForm.getTypedValue(column);
-                    String mvIndicator = null;
-                    if (column.isMvEnabled())
-                    {
-                        ColumnInfo mvColumn = tableForm.getTable().getColumn(column.getMvColumnName());
-                        mvIndicator = (String)tableForm.getTypedValue(mvColumn);
-                    }
-                    DomainProperty property = domain.getPropertyByName(column.getName());
-                    if (column.getName().equals(list.getKeyName()))
-                    {
-                        item.setKey(formValue);
-                    }
+                    table.fireRowTrigger(getContainer(), triggerType, true, 0, tableForm.getTypedColumns(), newValues, oldValues);
 
-                    if (mvIndicator == null)
+                    for (ColumnInfo column : tableForm.getTable().getColumns())
                     {
-                        if (property != null)
+                        if (!newValues.containsKey(column.getName()))
+                            continue;
+
+                        try
                         {
-                            item.setProperty(property, formValue);
+                            Object formValue = newValues.get(column.getName());
+                            String mvIndicator = null;
+                            if (column.isMvEnabled())
+                            {
+                                ColumnInfo mvColumn = tableForm.getTable().getColumn(column.getMvColumnName());
+                                mvIndicator = (String)newValues.get(mvColumn.getPropertyName());
+                            }
+                            DomainProperty property = domain.getPropertyByName(column.getName());
+                            if (column.getName().equals(list.getKeyName()))
+                            {
+                                item.setKey(formValue);
+                            }
+
+                            if (mvIndicator == null)
+                            {
+                                if (property != null)
+                                {
+                                    item.setProperty(property, formValue);
+                                }
+                            }
+                            else
+                            {
+                                MvFieldWrapper mvWrapper = new MvFieldWrapper(formValue, mvIndicator);
+                                item.setProperty(property, mvWrapper);
+                            }
+                        }
+                        catch (ConversionException cex)
+                        {
+                            ValidationException vex = new ValidationException(cex.getMessage(), column.getName());
+                            vex.setSchemaName(ListSchema.NAME);
+                            vex.setQueryName(list.getName());
+                            vex.setRow(newValues);
+                            vex.setRowNumber(0);
                         }
                     }
-                    else
-                    {
-                        MvFieldWrapper mvWrapper = new MvFieldWrapper(formValue, mvIndicator);
-                        item.setProperty(property, mvWrapper);
-                    }
+
+                    if (!errors.hasErrors() && !batchErrors.hasErrors())
+                        item.save(getUser());
+
+                    table.fireRowTrigger(getContainer(), triggerType, false, 0, ListQueryUpdateService.toMap(list, item), oldValues, null);
                 }
+                catch (ValidationException vex)
+                {
+                    batchErrors.addRowError(vex.fillIn(ListSchema.NAME, list.getName(), newValues, 0));
+                }
+                
+                table.fireBatchTrigger(getContainer(), triggerType, false, batchErrors, null);
+
                 if (errors.hasErrors())
                     return false;
-                item.save(getUser());
-
-                table.fireRowTrigger(getContainer(), triggerType, false, 0, ListQueryUpdateService.toMap(list, item), oldValues, null);
-                table.fireBatchTrigger(getContainer(), triggerType, false, validationErrors, null);
 
                 if (transaction)
                 {
@@ -452,10 +480,9 @@ public class ListController extends SpringActionController
 
                 return true;
             }
-            catch (ValidationException ve)
+            catch (BatchValidationException bvex)
             {
-                for (ValidationError error : ve.getErrors())
-                    errors.reject(ERROR_MSG, error.getMessage());
+                bvex.addToErrors(errors);
             }
             catch (SQLException e)
             {
