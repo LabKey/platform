@@ -1170,11 +1170,13 @@ public class PageFlowUtil
         String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
         String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
 
-        return "<a class=\"labkey-menu-button\" href=\"" + filter(href) + "\"" +
+        String myReturn = "<a class=\"labkey-menu-button\" href=\"" + filter(href) + "\"" +
                 " onClick=" + script +
                 (attributes != null ? " " + attributes : "") +
-                "><span>" + filter(text) + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
-                "/_images/button_arrow.gif\" class=\"labkey-button-arrow\"></a>";
+                "><span>" + filter(text) + "</span>&nbsp;<span class=\"css-arrow-down\"></span></a>";
+        /*<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
+                "/_images/button_arrow.gif\" class=\"labkey-button-arrow\"> */
+        return myReturn;
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
