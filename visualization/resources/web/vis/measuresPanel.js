@@ -107,7 +107,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             columns: [
                 {header:'name', dataIndex:'label', width:.25},
                 {header:'dataset', dataIndex:'queryName', width: .4},
-                {header:'description', dataIndex:'description'}
+                {header:'description', dataIndex:'description', cls : 'normal-wrap'}
             ]
         });
 

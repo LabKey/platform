@@ -85,7 +85,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.getChartData();
                         }
                         else{
-                            this.renderLineChart();
+                            this.loader();
                         }
                     },
                     'measureMetadataRequestPending': this.measureMetadataRequestPending,
@@ -105,7 +105,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.getChartData();
                         }
                         else{
-                            this.renderLineChart();
+                            this.loader();
                         }
                     },
                     'measureMetadataRequestPending': this.measureMetadataRequestPending,
@@ -123,7 +123,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.getChartData();
                         }
                         else{
-                            this.renderLineChart();
+                            this.loader();
                         }
                     }
                 }
@@ -141,7 +141,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.getChartData();
                         }
                         else{
-                            this.renderLineChart();
+                            this.loader();
                         }
                     }
                 }
@@ -200,7 +200,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.getChartData();
                         }
                         else{
-                            this.renderLineChart();
+                            this.loader();
                         }
                     },
                     'measureMetadataRequestPending': this.measureMetadataRequestPending,
@@ -245,6 +245,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             });
             items.push(this.seriesSelector);
 
+            this.loader = this.renderLineChart;  // default is to show the chart
             this.viewGridBtn = new Ext.Button({text: "View Data", handler: this.viewDataGrid, scope: this, disabled: true});
             this.viewChartBtn = new Ext.Button({text: "View Chart(s)", handler: this.renderLineChart, scope: this, hidden: true});
             this.chart = new Ext.Panel({
@@ -274,7 +275,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         this.items = items;
 
-        LABKEY.vis.TimeChartPanel.superclass.initComponent.call(this);
+        window.onbeforeunload = LABKEY.beforeunload(this.isDirty, this);
+
+        LABKEY.vis.TimeChartPanel.superclass.initComponent.apply(this, arguments);
     },
 
     measureSelected: function(measure, userSelectedMeasure) {
@@ -314,6 +317,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
     },
 
+    isDirty : function() {
+        return this.dirty;
+    },
+
     measureMetadataRequestPending:  function() {
         // mask panel and remove the chart(s)
         this.maskChartPanel();
@@ -345,9 +352,18 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
 
         LABKEY.Visualization.getData({
-            successCallback: function(data){
+            success: function(data){
                 // store the data in an object by subject for use later when it comes time to render the line chart
                 this.chartSubjectData = new Object();
+                this.dirty = true;
+                console.info("Were dirty. " + this.isDirty() + ", " + this.dirty);
+
+                // make sure each measure has at least some data
+                this.hasData = {};
+                Ext.iterate(data.measureToColumn, function(key, value, obj){
+                    this.hasData[key] = false;
+                }, this);
+                
                 Ext.each(data.rows, function(row){
                     // get the subject id from the data row
                     var rowSubject = row[data.measureToColumn[this.viewInfo.subjectColumn]];
@@ -370,6 +386,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             dataValue = {value: dataValue};
                         }
 
+                        // This measure has data
+                        if (dataValue.value) this.hasData[key] = true;
+
                         this.chartSubjectData[rowSubject][key].push({
                             interval: row[this.chartInfo.measures[xAxisMeasureIndex].dateOptions.interval],
                             dataValue: dataValue
@@ -386,9 +405,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 this.viewChartBtn.hide();
 
                 // ready to render the chart
-                this.renderLineChart();
+                this.loader();              
             },
-            failureCallback : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
+            failure : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
             measures: this.chartInfo.measures,
             viewInfo: this.viewInfo,
             sorts: [this.chartInfo.subject, this.chartInfo.measures[xAxisMeasureIndex].measure],
@@ -396,7 +415,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         });
     },
 
-    renderLineChart: function()
+    renderLineChart: function(force)
     {
         // mask panel and remove the chart(s)
         this.maskChartPanel();
@@ -404,14 +423,35 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
         var yAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
+        var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
         if(yAxisMeasureIndex == -1){
            Ext.Msg.alert("Error", "Could not find y-axis in chart measure information.");
+           return;
+        }
+        else if(yAxisMeasureIndex == -1){
+           Ext.Msg.alert("Error", "Could not find x-axis in chart measure information.");
            return;
         }
 
         // show the viewGrid button and hide the viewCharts button
         this.viewChartBtn.hide();
         this.viewGridBtn.show();
+        this.loader = this.renderLineChart;
+
+        if (force !== true) {
+            var msg = ""; var sep = "";
+            Ext.iterate(this.hasData, function(key, value, obj){
+                if (!value && key == this.chartInfo.measures[yAxisMeasureIndex].measure.name) {
+                    msg += sep + this.chartInfo.measures[yAxisMeasureIndex].measure.label + " (Y-Axis)";
+                    sep = ", ";
+                }
+                else if (!value && key == this.chartInfo.measures[xAxisMeasureIndex].measure.name) {
+                    msg += sep + this.chartInfo.measures[xAxisMeasureIndex].measure.label + " (X-Axis)";
+                    sep = ", ";
+                }
+            }, this);
+            if (msg.length > 0) { this.maskChartPanel("No data found in: " + msg + " for the selected " + this.viewInfo.subjectNounPlural + "."); return; }
+        }
 
 	    // one series per subject/measure/dimensionvalue combination
 	    var seriesList = [];
@@ -494,7 +534,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 style: "font-style:italic;width:100%;padding:5px;text-align:center;"
             }));
         };
-
+        
         this.chart.add(charts);
         this.chart.doLayout();
     },
@@ -557,6 +597,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         if(typeof this.tempGridInfo == "object") {
             // mask panel and remove the chart(s)
             this.maskChartPanel();
+            this.loader = this.viewDataGrid;
 
             // hide the viewGrid button and show the viewCharts button
             this.viewChartBtn.show();
@@ -677,7 +718,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     name: 'reportName',
                     value: reportName || null,
                     width: 300,
-                    allowBlank: false
+                    allowBlank: false,
+                    maxLength: 50
                 },
                 {
                     xtype: 'textarea',
@@ -796,6 +838,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     saveChartSuccess: function (reportName, reportDescription, reportShared){
         return function(result, request, options) {
+            this.dirty = false;
             this.editorOverviewPanel.updateOverview({name: reportName, description: reportDescription, shared: reportShared});
             Ext.Msg.alert("Success", "The chart has been successfully saved.");
         }
@@ -803,12 +846,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     // WORKAROUND: this is a workaround way of masking the chart panel since the ExtJS mask/unmask
     // results in the chart image being masked in IE (even after unmask is called)
-    maskChartPanel: function(){
+    maskChartPanel: function(message){
         if(!this.isMasked){
+            var msg = message || "Loading...";
             this.chart.removeAll();
             this.chart.add(new Ext.Panel({
                 padding: 10,
-                html: "<table width='100%'><tr><td align='center' style='font-style:italic'>Loading...</td></tr></table>"
+                html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + msg + "</td></tr></table>"
             }));
             this.chart.doLayout();
         }

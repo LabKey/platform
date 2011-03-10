@@ -1684,8 +1684,6 @@ table.labkey-wp
 	border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-
-    margin-bottom: 20px;
 }
 
 /* This is the body of the web part */
@@ -3519,4 +3517,10 @@ ul.x-tab-strip-top li {
     border: 1px solid #DEE0E1;
     padding: 0 20px 0 20px;
     margin: 0 25px 0 25px;
+}
+
+/* Generic selector to add for normal wrap element */
+.normal-wrap {
+    white-space: normal;
+    word-wrap: normal;
 }

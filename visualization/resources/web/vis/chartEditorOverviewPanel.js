@@ -150,7 +150,8 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                     value: (typeof this.reportInfo == "object" ? this.reportInfo.name : null),
                     allowBlank: false,
                     preventMark: true,
-                    anchor: '100%'
+                    anchor: '100%',
+                    maxLength: 50
                 }),
                 new Ext.form.TextArea({
                     name: 'reportDescription',
