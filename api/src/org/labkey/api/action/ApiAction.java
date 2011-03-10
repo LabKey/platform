@@ -24,6 +24,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewServlet;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -327,6 +328,15 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     public void setContentTypeOverride(String contentTypeOverride)
     {
         _contentTypeOverride = contentTypeOverride;
+    }
+
+    /**
+     * Used to determine if the request originated from the client or server. Server-side scripts
+     * use a mock request to invoke the action...
+     */
+    public boolean isServerSideRequest()
+    {
+        return getViewContext().getRequest().getHeader(ViewServlet.MOCK_REQUEST_HEADER) != null;
     }
 
     public abstract ApiResponse execute(FORM form, BindException errors) throws Exception;

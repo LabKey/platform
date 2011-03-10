@@ -150,7 +150,7 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
     var fileBrowser = new LABKEY.FilesWebPartPanel({
         fileSystem: fileSystem,
         helpEl:null,
-        resizable: !Ext.isIE,
+        resizable: false, //!Ext.isIE,
         showAddressBar: <%=bean.isShowAddressBar()%>,
         showFolderTree: <%=bean.isShowFolderTree()%>,
         folderTreeCollapsed: isFolderTreeCollapsed,
