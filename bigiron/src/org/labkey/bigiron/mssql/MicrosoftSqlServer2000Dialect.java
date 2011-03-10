@@ -65,7 +65,23 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
     @Override
     protected @NotNull String getReservedWords()
     {
-        return "add, all, alter, and, any, as, asc, authorization, backup, begin, between, break, browse, bulk, by, cascade, case, check, checkpoint, close, clustered, coalesce, collate, column, commit, compute, constraint, contains, containstable, continue, convert, create, cross, current, current_date, current_time, current_timestamp, current_user, cursor, database, dbcc, deallocate, declare, default, delete, deny, desc, distinct, distributed, double, drop, else, end, end-exec, errlvl, escape, except, exec, execute, exists, exit, external, fetch, file, fillfactor, for, foreign, freetext, freetexttable, from, full, function, goto, grant, group, having, holdlock, identity, identity_insert, identitycol, if, in, index, inner, insert, intersect, into, is, join, key, kill, left, like, lineno, merge, national, nocheck, nonclustered, not, null, nullif, of, off, offsets, on, open, opendatasource, openquery, openrowset, openxml, option, or, order, outer, over, percent, pivot, plan, primary, print, proc, procedure, public, raiserror, read, readtext, reconfigure, references, replication, restore, restrict, return, revert, revoke, right, rollback, rowcount, rowguidcol, rule, save, schema, select, session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, top, tran, transaction, trigger, truncate, tsequal, union, unique, unpivot, update, updatetext, use, user, values, varying, view, waitfor, when, where, while, with, writetext";
+        return  "add, all, alter, and, any, as, asc, authorization, backup, begin, between, break, browse, bulk, by, cascade, " +
+                "case, check, checkpoint, close, clustered, coalesce, collate, column, commit, compute, constraint, contains, " +
+                "containstable, continue, convert, create, cross, current, current_date, current_time, current_timestamp, " +
+                "current_user, cursor, database, dbcc, deallocate, declare, default, delete, deny, desc, distinct, distributed, " +
+                "double, drop, else, end, end-exec, errlvl, escape, except, exec, execute, exists, exit, external, fetch, file, " +
+                "fillfactor, for, foreign, freetext, freetexttable, from, full, function, goto, grant, group, having, holdlock, " +
+                "identity, identity_insert, identitycol, if, in, index, inner, insert, intersect, into, is, join, key, kill, " +
+                "left, like, lineno, merge, national, nocheck, nonclustered, not, null, nullif, of, off, offsets, on, open, " +
+                "opendatasource, openquery, openrowset, openxml, option, or, order, outer, over, percent, pivot, plan, primary, " +
+                "print, proc, procedure, public, raiserror, read, readtext, reconfigure, references, replication, restore, " +
+                "restrict, return, revert, revoke, right, rollback, rowcount, rowguidcol, rule, save, schema, select, " +
+                "session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, " +
+                "top, tran, transaction, trigger, truncate, tsequal, union, unique, unpivot, update, updatetext, use, user, " +
+                "values, varying, view, waitfor, when, where, while, with, writetext" +
+
+                // SQL Server 2000 only
+                ", disk, dump, load, precision";
     }
 
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
