@@ -153,7 +153,7 @@ class SampleSetUpdateService implements QueryUpdateService
         }
         catch (ValidationException vex)
         {
-            throw new BatchValidationException(Arrays.asList(vex));
+            throw new BatchValidationException(Arrays.asList(vex), extraScriptContext);
         }
     }
 
@@ -173,7 +173,7 @@ class SampleSetUpdateService implements QueryUpdateService
         }
         catch (ValidationException vex)
         {
-            throw new BatchValidationException(Arrays.asList(vex));
+            throw new BatchValidationException(Arrays.asList(vex), extraScriptContext);
         }
     }
 
