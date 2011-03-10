@@ -212,6 +212,11 @@ span.css-arrow-right
     border-left: 6px solid #<%= link %>;
 }
 
+span.css-arrow-down
+{
+    border-top: 6px solid #<%= link %>;
+}
+
 /* This is used in simple cases to give an area the same background as the
  side panel */
 .labkey-frame

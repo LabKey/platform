@@ -493,37 +493,29 @@ a.labkey-button:hover
 .labkey-disabled-button,
 .labkey-disabled-button:visited,
 a.labkey-disabled-button,
-a.labkey-disabled-button:hover {
-    padding: 3px 5px;
-	margin-right: 5px;
-    border: 1px solid transparent;
-    color: #b4b4b4;
-    text-transform: uppercase;
-    font-size: 10px;
-    font-family: Verdana, Arial, Helvetica, sans serif;
-    font-weight: bold;
-    white-space: nowrap;
-    cursor: default;
+a.labkey-disabled-button:hover,
+.labkey-button-bar a.labkey-menu-button .labkey-disabled-button,
+.labkey-button-bar a.labkey-menu-button .labkey-disabled-button:visited,
+.labkey-button-bar a.labkey-menu-button .labkey-disabled-button:hover {
+    padding: 3px 5px !important;
+	margin-right: 5px !important;
+    border: 1px solid transparent !important;
+    color: #b4b4b4 !important;
+    text-transform: uppercase !important;
+    font-size: 10px !important;
+    font-family: Verdana, Arial, Helvetica, sans serif !important;
+    font-weight: bold !important;
+    white-space: nowrap !important;
+    cursor: default !important;
+    background: transparent !important;
+    background-color: transparent !important;
 
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
-    border-radius: 5px;
+    -moz-border-radius: 5px !important;
+    -webkit-border-radius: 5px !important;
+    border-radius: 5px !important;
 
-    /* *padding: 1px 5px 0px 5px; */
-	*padding: 3px 5px;
-	*margin-bottom: 2px;
-}
-
-.labkey-button-bar .labkey-disabled-button,
-.labkey-button-bar .labkey-disabled-button:visited,
-.labkey-button-bar .labkey-disabled-button:hover
-.labkey-menu-button .labkey-disabled-button,
-.labkey-menu-button .labkey-disabled-button:visited,
-.labkey-menu-button .labkey-disabled-button:hover
-.labkey-disabled-menu-button,
-.labkey-disabled-menu-button:visited,
-.labkey-disabled-menu-button:hover {
-    background: transparent;
+	*padding: 3px 5px !important;
+	*margin-bottom: 2px !important;
 }
 
 a.labkey-button:active
@@ -1709,7 +1701,6 @@ tr.labkey-wp-header
     padding-left: 0;
     padding-right: 0;
     padding-top: 0;
-    /* padding-bottom: 5px; */
 	padding-bottom: 0;
     text-align: left;
     white-space:nowrap;
@@ -1909,12 +1900,27 @@ a.labkey-text-link:hover .css-arrow-right {
 }
 
 .css-arrow-down {
-	display: inline;
+	position: absolute;
+	top: 7px;
+	right: 6px;
 	font-size: 0px; line-height: 0%; width: 0px;
 	border-top: 6px solid #126495;
 	border-left: 4px solid #fff;
 	border-right: 4px solid #fff;
 	opacity: 0.4;
+    filter: alpha(opacity=40);
+    -moz-opacity: 0.4;
+}
+
+a.labkey-disabled-button .css-arrow-down {
+    position: absolute;
+	top: 7px;
+	right: 6px;
+    font-size: 0px; line-height: 0%; width: 0px;
+    border-top: 6px solid gray;
+    border-left: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    opacity: 0.4;
     filter: alpha(opacity=40);
     -moz-opacity: 0.4;
 }
