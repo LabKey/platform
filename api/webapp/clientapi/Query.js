@@ -71,9 +71,6 @@ LABKEY.Query = new function()
 
     function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope)
     {
-        if (!callbackFn)
-            alert("Programming Error: You must supply a success function in your configuration object!");
-
         return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
             if (data && data.rows && stripHiddenCols)
                 stripHiddenColData(data);
@@ -193,7 +190,10 @@ LABKEY.Query = new function()
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
-         * @returns {Number} transactionId The id of the request. This may be used to cancel the request.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          * @example Example, from the Reagent Request Confirmation <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestConfirmation">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=Confirmation">Demo</a>: <pre name="code" class="xml">
          // This snippet extracts a table of UserID, TotalRequests and
          // TotalQuantity from the "Reagent Requests" list.
@@ -358,6 +358,10 @@ LABKEY.Query = new function()
                   will be another object (not just a scalar value) with a "value" property as well as other
                   related properties (url, mvValue, mvIndicator, etc.)
         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
         * @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
 	function onFailure(errorInfo, options, responseObj)
@@ -491,6 +495,10 @@ LABKEY.Query = new function()
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the updates should be done in a single transaction, so they all succeed or all fail. Defaults to true
         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
@@ -499,7 +507,7 @@ LABKEY.Query = new function()
             if (arguments.length > 1)
                 config = configFromArgs(arguments);
             config.action = "updateRows";
-            sendJsonQueryRequest(config);
+            return sendJsonQueryRequest(config);
         },
 
         /**
@@ -532,6 +540,10 @@ LABKEY.Query = new function()
         * @param {boolean} [config.transacted] Whether all of the row changes for all of the tables
         * should be done in a single transaction, so they all succeed or all fail. Defaults to true
         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
@@ -580,6 +592,10 @@ LABKEY.Query = new function()
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the inserts should be done in a single transaction, so they all succeed or all fail. Defaults to true
         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
         * @example Example, from the Reagent Request <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestForm">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a>: <pre name="code" class="xml">
          // This snippet inserts data from the ReagentReqForm into a list.
          // Upon success, it moves the user to the confirmation page and
@@ -611,7 +627,7 @@ LABKEY.Query = new function()
             if (arguments.length > 1)
                 config = configFromArgs(arguments);
             config.action = "insertRows";
-            sendJsonQueryRequest(config);
+            return sendJsonQueryRequest(config);
         },
 
         /**
@@ -638,6 +654,10 @@ LABKEY.Query = new function()
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the deletes should be done in a single transaction, so they all succeed or all fail. Defaults to true
         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
@@ -646,7 +666,7 @@ LABKEY.Query = new function()
             if (arguments.length > 1)
                 config = configFromArgs(arguments);
             config.action = "deleteRows";
-            sendJsonQueryRequest(config);
+            return sendJsonQueryRequest(config);
         },
 
         /**
@@ -696,6 +716,10 @@ LABKEY.Query = new function()
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getSchemas : function(config)
         {
@@ -752,6 +776,10 @@ LABKEY.Query = new function()
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getQueries : function(config)
         {
@@ -817,6 +845,10 @@ LABKEY.Query = new function()
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getQueryViews : function(config)
         {
@@ -856,6 +888,10 @@ LABKEY.Query = new function()
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         saveQueryViews : function (config)
         {
@@ -914,6 +950,10 @@ LABKEY.Query = new function()
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getQueryDetails : function(config)
         {
@@ -959,6 +999,10 @@ LABKEY.Query = new function()
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         validateQuery : function(config)
         {
@@ -989,6 +1033,10 @@ LABKEY.Query = new function()
          * <ul>
          * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
          * </ul>
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getServerDate : function(config)
         {

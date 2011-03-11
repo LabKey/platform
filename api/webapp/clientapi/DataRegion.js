@@ -58,6 +58,7 @@ LABKEY.DataRegion = function (config)
 
     this.showRecordSelectors = config.showRecordSelectors;
     this.showInitialSelectMessage = config.showSelectMessage;
+    /** Unique string used to associate the selected items with this DataRegion, schema, query, and view. */
     this.selectionKey = config.selectionKey;
     this.selectorCols = config.selectorCols;
     this.requestURL = config.requestURL;
@@ -182,7 +183,7 @@ LABKEY.DataRegion = function (config)
 
     this.selectRow = function (el)
     {
-        this._setSelected([el.value], el.checked);
+        this.setSelected({ids: [el.value], checked: el.checked});
         var toggle = this.form[".toggle"];
         if (el.checked)
         {
@@ -200,8 +201,8 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
-     * Get selected items on the current page.
-     * @see LABKEY.DataRegion.getSelected
+     * Get selected items on the current page of the DataRegion.  Selected items may exist on other pages.
+     * @see LABKEY.DataRegion#getSelected
      */
     this.getChecked = function ()
     {
@@ -209,7 +210,7 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
-     * Get all selected items.
+     * Get all selected items for this DataRegion.
      *
      * @param config A configuration object with the following properties:
      * @param {Function} config.success The function to be called upon success of the request.
@@ -226,6 +227,8 @@ LABKEY.DataRegion = function (config)
      * </ul>
      * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
      * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+     *
+     * @see LABKEY.DataRegion.getSelected static method.
      */
     this.getSelected = function (config)
     {
@@ -238,8 +241,63 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
-     * Set the selection state for all checkboxes on the current page of the data region.
+     * Add or remove items from the selection associated with the this DataRegion.
+     *
+     * @param config A configuration object with the following properties:
+     * @param {Array} config.ids Array of primary key ids for each row to select/unselect.
+     * @param {Boolean} config.checked If true, the ids will be selected, otherwise unselected.
+     * @param {Function} config.success The function to be called upon success of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>data:</b> an object with the property 'count' to indicate the updated selection count.
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Function} [config.failure] The function to call upon error of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+     * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+     *
+     * @see LABKEY.DataRegion#getSelected to get the selected items for this DataRegion.
+     * @see LABKEY.DataRegion#clearSelected to clear all selected items for this DataRegion.
+     */
+    this.setSelected = function (config)
+    {
+        if (!this.selectionKey)
+            return;
+
+        if (arguments.length > 1)
+        {
+            config = {
+                ids: arguments[0],
+                checked: arguments[1],
+                success: arguments[2]
+            };
+        }
+
+        config = config || {};
+        if (!config.ids || config.ids.length == 0)
+            return;
+
+        config.selectionKey = this.selectionKey;
+
+        function failureCb(response, options) { this.showMessage("Error sending selection."); }
+        config.failure = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || failureCb, this, true);
+
+        this.selectionModified = true;
+        LABKEY.DataRegion.setSelected(config);
+    };
+
+    /**
+     * Set the selection state for all checkboxes on the current page of the DataRegion.
      * @param checked whether all of the rows on the current page should be selected or unselected
+     * @returns Array Array of ids that were selected or unselected.
+     *
+     * @see LABKEY.DataRegion#setSelected to set selected items on the current page of the DataRegion.
+     * @see LABKEY.DataRegion#clearSelected to clear all selected.
      */
     this.selectPage = function (checked)
     {
@@ -250,7 +308,7 @@ LABKEY.DataRegion = function (config)
             if (toggle)
                 toggle.checked = checked;
             this.onSelectChange(checked);
-            this._setSelected(ids, checked, function (response, options) {
+            this.setSelected({ids: ids, checked: checked, success: function (response, options) {
                 var count = 0;
                 try {
                     var json = Ext.util.JSON.decode(response.responseText);
@@ -273,12 +331,16 @@ LABKEY.DataRegion = function (config)
                 {
                     this.hideMessage();
                 }
-            });
+            }});
         }
         return ids;
     };
 
-    /** Returns true if any row is checked on this page. */
+    /**
+     * Returns true if any row is checked on the current page of the DataRegion. Selected items may exist on other pages.
+     * @returns Boolean true if any row is checked on the current page of the DataRegion.
+     * @see LABKEY.DataRegion#getSelected to get all selected rows.
+     */
     this.hasSelected = function ()
     {
         if (!this.form)
@@ -296,7 +358,11 @@ LABKEY.DataRegion = function (config)
         return false;
     };
 
-    /** Returns true if all rows are checked on this page and at least one row is present on the page. */
+    /**
+     * Returns true if all rows are checked on the current page of the DataRegion and at least one row is present.
+     * @returns Boolean true if all rows are checked on the current page of the DataRegion and at least one row is present.
+     * @see LABKEY.DataRegion#getSelected to get all selected rows.
+     */
     this.isPageSelected = function ()
     {
         if (!this.form)
@@ -322,7 +388,7 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
-     * Clear all selected items.
+     * Clear all selected items for the current DataRegion.
      *
      * @param config A configuration object with the following properties:
      * @param {Function} config.success The function to be called upon success of the request.
@@ -339,6 +405,9 @@ LABKEY.DataRegion = function (config)
      * </ul>
      * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
      * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+     *
+     * @see LABKEY.DataRegion#selectPage
+     * @see LABKEY.DataRegion.clearSelected static method.
      */
     this.clearSelected = function (config)
     {
@@ -458,7 +527,7 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
-     * Returns the user containerFilter from the URL.
+     * Returns the user {@link LABKEY.Query.containerFilter} parameter from the URL.
      * Supported values include:
      * <ul>
      *   <li>"Current": Include the current folder only</li>
@@ -468,6 +537,8 @@ LABKEY.DataRegion = function (config)
      *   <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
      *   <li>"AllFolders": Include all folders for which the user has read permission</li>
      * </ul>
+     *
+     * @see LABKEY.Query.containerFilter
      */
     this.getUserContainerFilter = function ()
     {
@@ -846,24 +917,6 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             }
         }
         return ids;
-    },
-
-    // private
-    _setSelected : function (ids, checked, success)
-    {
-        if (!this.selectionKey || ids.length == 0)
-            return;
-
-        this.selectionModified = true;
-
-        LABKEY.DataRegion.setSelected({
-            selectionKey: this.selectionKey,
-            ids: ids,
-            checked: checked,
-            scope: this,
-            success: success,
-            failure: function (response, options) { this.showMessage("Error sending selection."); }
-        });
     },
 
     // private
@@ -1310,11 +1363,11 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
 
 /**
- * Add or remove items from the current selection.
+ * Static method to add or remove items from the selection for a given {@link #selectionKey}.
  *
  * @param config A configuration object with the following properties:
- * @param {String} config.selectionKey Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
- * @param {Array} config.id Array of primary key ids for each row to select/unselect.
+ * @param {String} config.selectionKey See {@link #selectionKey}.
+ * @param {Array} config.ids Array of primary key ids for each row to select/unselect.
  * @param {Boolean} config.checked If true, the ids will be selected, otherwise unselected.
  * @param {Function} config.success The function to be called upon success of the request.
  * The callback will be passed the following parameters:
@@ -1330,12 +1383,15 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
  * </ul>
  * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
  * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+ *
+ * @see LABKEY.DataRegion#getSelected
+ * @see LABKEY.DataRegion#clearSelected
  */
 LABKEY.DataRegion.setSelected = function (config)
 {
     var url = LABKEY.ActionURL.buildURL("query", "setSelected.api", config.containerPath,
         { 'key' : config.selectionKey, 'checked' : config.checked });
-    var params = { id: config.ids };
+    var params = { id: config.ids || config.id };
 
     Ext.Ajax.request({
         url: url,
@@ -1348,10 +1404,10 @@ LABKEY.DataRegion.setSelected = function (config)
 };
 
 /**
- * Clear all selected items.
+ * Static method to clear all selected items for a given {@link #selectionKey}.
  *
  * @param config A configuration object with the following properties:
- * @param {String} config.selectionKey Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
+ * @param {String} config.selectionKey See {@link #selectionKey}.
  * @param {Function} config.success The function to be called upon success of the request.
  * The callback will be passed the following parameters:
  * <ul>
@@ -1366,6 +1422,9 @@ LABKEY.DataRegion.setSelected = function (config)
  * </ul>
  * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
  * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+ *
+ * @see LABKEY.DataRegion#setSelected
+ * @see LABKEY.DataRegion#getSelected
  */
 LABKEY.DataRegion.clearSelected = function (config)
 {
@@ -1376,10 +1435,10 @@ LABKEY.DataRegion.clearSelected = function (config)
 };
 
 /**
- * Get all selected items.
+ * Static method to get all selected items for a given {@link #selectionKey}.
  *
  * @param config A configuration object with the following properties:
- * @param {String} config.selectionKey Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
+ * @param {String} config.selectionKey See {@link #selectionKey}.
  * @param {Function} config.success The function to be called upon success of the request.
  * The callback will be passed the following parameters:
  * <ul>
@@ -1394,6 +1453,9 @@ LABKEY.DataRegion.clearSelected = function (config)
  * </ul>
  * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
  * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+ *
+ * @see LABKEY.DataRegion#setSelected
+ * @see LABKEY.DataRegion#clearSelected
  */
 LABKEY.DataRegion.getSelected = function (config)
 {
@@ -1407,6 +1469,7 @@ LABKEY.DataRegion.getSelected = function (config)
     });
 };
 
+// private
 LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
     {
         var success = config.success;

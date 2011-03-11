@@ -17,14 +17,29 @@
  * <p/>
  */
 
+/**
+ * @namespace
+ * Adapter for <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a>.
+ */
 LABKEY.Ajax = new function ()
 {
+    /** @scope LABKEY.Ajax */
     return {
+        /**
+         * Adapter for
+         * <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=request" target="_blank">Ext.Ajax.request</a>.
+         *
+         * @param config See the config object documented in
+         * <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=request" target="_blank">Ext.Ajax.request</a>.
+         * 
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the response JSON (for "application/json" responses),
+         * responseXML (for "text/xml" responses), or the responseText.
+         */
         request : function (config)
         {
-            // NOTE: in client-side scripts, Ext.Ajax.request will return a transaction id
-            // for the async request.  In a server-side script, Ext.Ajax.request will return
-            // the response object.  In addition, responseJSON will be a JSON object for "application/json" responses.
             var o = Ext.Ajax.request(config);
             if (Ext.isObject(o))
                 return o.responseJSON || o.responseXML || o.responseText;

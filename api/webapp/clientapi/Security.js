@@ -159,6 +159,10 @@ LABKEY.Security = new function()
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getGroupPermissions : function(config)
         {
@@ -275,6 +279,10 @@ LABKEY.Security = new function()
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getUserPermissions : function(config)
         {
@@ -333,6 +341,10 @@ LABKEY.Security = new function()
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getUsers : function(config)
         {
@@ -391,6 +403,10 @@ LABKEY.Security = new function()
          * @param {string} [config.containerPath] An alternate container in which to create a new container. If not specified,
          * the current container path will be used.
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         createContainer : function(config)
         {
@@ -428,6 +444,10 @@ LABKEY.Security = new function()
          * @param {string} [config.containerPath] An alternate container in which to create a new container. If not specified,
          * the current container path will be used.
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         deleteContainer : function(config)
         {
@@ -472,6 +492,10 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getFolderTypes : function(config)
         {
@@ -522,6 +546,10 @@ LABKEY.Security = new function()
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getContainers : function(config)
         {
@@ -590,6 +618,10 @@ LABKEY.Security = new function()
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getGroupsForCurrentUser : function(config)
         {
@@ -633,6 +665,10 @@ LABKEY.Security = new function()
          * @param {boolean} [config.force] Set to true to force a login even if the user is already logged in.
          * This is useful for keeping a session alive during a long-lived page. To do so, call this function
          * with config.force set to true, and config.useSiteLoginPage to false (or omit).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         ensureLogin : function(config)
         {
@@ -701,6 +737,10 @@ LABKEY.Security = new function()
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getSecurableResources : function(config)
         {
@@ -756,6 +796,10 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getSchemaPermissions: function(config) {
             if (config.schemaName && config.schemaName != "study")
@@ -795,7 +839,7 @@ LABKEY.Security = new function()
             var myConfig = Ext.apply({}, config);
             myConfig.includeEffectivePermissions = true;
             myConfig.success = successCallback;
-            LABKEY.Security.getSecurableResources(myConfig);
+            return LABKEY.Security.getSecurableResources(myConfig);
         },
 
         /**
@@ -829,6 +873,10 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getRoles : function(config)
         {
@@ -889,6 +937,10 @@ LABKEY.Security = new function()
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         getPolicy : function(config)
         {
@@ -926,6 +978,10 @@ LABKEY.Security = new function()
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         deletePolicy : function(config)
         {
@@ -965,6 +1021,10 @@ LABKEY.Security = new function()
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         savePolicy : function(config)
         {
@@ -1001,6 +1061,10 @@ LABKEY.Security = new function()
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         createGroup : function(config)
         {
@@ -1036,6 +1100,10 @@ LABKEY.Security = new function()
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         deleteGroup : function(config)
         {
@@ -1072,6 +1140,10 @@ LABKEY.Security = new function()
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         renameGroup : function(config) {
             var params = {id: config.groupId, newName: config.newName};
@@ -1108,6 +1180,10 @@ LABKEY.Security = new function()
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         addGroupMembers : function(config)
         {
@@ -1148,6 +1224,10 @@ LABKEY.Security = new function()
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         removeGroupMembers : function(config)
         {
@@ -1187,6 +1267,10 @@ LABKEY.Security = new function()
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
+         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         createNewUser : function(config)
         {

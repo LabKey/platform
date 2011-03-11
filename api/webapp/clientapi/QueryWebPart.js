@@ -434,9 +434,9 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                             // error message.  Should failure be called?  Or should we add a new failure/success callback pair
                             // for the webpart itself (as opposed to the webpart's contents)?
                         }
-                    }, this, {delay: 100});
 
-                    this.fireEvent("render");
+                        this.fireEvent("render");
+                    }, this, {delay: 100});
                 }
                 else
                 {
