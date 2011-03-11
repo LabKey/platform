@@ -17,21 +17,20 @@ package org.labkey.api.webdav;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.search.SearchService;
+import org.labkey.api.view.ViewServlet;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.ByteArrayInputStream;
-import java.security.Principal;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 

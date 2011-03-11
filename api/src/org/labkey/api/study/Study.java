@@ -49,5 +49,9 @@ public interface Study extends StudyEntity
 
     String getSubjectColumnName();
 
+    String getSearchDisplayTitle();
+
     String getSearchKeywords();
+
+    String getSearchBody();
 }
