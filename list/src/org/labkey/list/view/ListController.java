@@ -42,7 +42,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -112,6 +111,7 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -1103,9 +1103,14 @@ public class ListController extends SpringActionController
 
                     ListImporter li = new ListImporter();
 
+                    List<String> errorList = new LinkedList<String>();
+
                     try
                     {
-                        li.process(dir, dir, getContainer(), getUser(), Logger.getLogger(ListController.class));
+                        li.process(dir, dir, getContainer(), getUser(), errorList, Logger.getLogger(ListController.class));
+
+                        for (String error : errorList)
+                            errors.reject(ERROR_MSG, error);
                     }
                     catch (InvalidFileException e)
                     {

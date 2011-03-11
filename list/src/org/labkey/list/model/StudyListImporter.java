@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.study.ExternalStudyImporter;
 import org.labkey.api.study.ExternalStudyImporterFactory;
@@ -24,6 +25,8 @@ import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 /*
 * User: adam
@@ -45,7 +48,12 @@ public class StudyListImporter implements ExternalStudyImporter
         {
             File listsDir = ctx.getStudyDir(root, listsXml.getDir());
             ListImporter importer = new ListImporter();
-            importer.process(root, listsDir, ctx.getContainer(), ctx.getUser(), ctx.getLogger());
+            Logger log = ctx.getLogger();
+            List<String> errors = new LinkedList<String>();
+            importer.process(root, listsDir, ctx.getContainer(), ctx.getUser(), errors, log);
+
+            for (String error : errors)
+                log.error(error);
         }
     }
 

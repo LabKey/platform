@@ -41,7 +41,13 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /*
 * User: adam
@@ -52,7 +58,7 @@ public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
 
-    public void process(File root, File listsDir, Container c, User user, Logger log) throws Exception
+    public void process(File root, File listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
     {
         File schemaFile = new File(listsDir, "lists.xml");
 
@@ -90,7 +96,7 @@ public class ListImporter
 
             try
             {
-                createNewList(c, user, name, tableType, log);
+                createNewList(c, user, name, tableType, errors);
             }
             catch (ImportException e)
             {
@@ -111,10 +117,7 @@ public class ListImporter
 
                 if (tsv.exists())
                 {
-                    List<String> errors = def.insertListItems(user, DataLoader.getDataLoaderForFile(tsv), new File(listsDir, legalName), null);
-
-                    for (String error : errors)
-                        log.error(name + ": " + error);
+                    errors.addAll(def.insertListItems(user, DataLoader.getDataLoaderForFile(tsv), new File(listsDir, legalName), null));
 
                     // TODO: Error the entire job on import error?
                 }
@@ -124,14 +127,13 @@ public class ListImporter
         log.info(names.size() + " list" + (1 == names.size() ? "" : "s") + " imported");
     }
 
-    private void createNewList(Container c, User user, String listName, TableType listXml, Logger log) throws Exception
+    private void createNewList(Container c, User user, String listName, TableType listXml, List<String> errors) throws Exception
     {
         String keyName = listXml.getPkColumnName();
 
         if (null == keyName)
         {
-            log.error("List \"" + listName + "\": no pkColumnName set.");
-            return;
+            errors.add("List \"" + listName + "\": no pkColumnName set.");
         }
 
         KeyType pkType = getKeyType(listXml, keyName);
@@ -236,21 +238,22 @@ public class ListImporter
             }
         };
 
-        List<String> importErrors = new LinkedList<String>();
-        PropertyDescriptor[] pds = OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, importErrors, c, true);
+        PropertyDescriptor[] pds = OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, errors, c, true);
+
+        if (!errors.isEmpty())
+            return;
 
         assert pds.length == formats.size();
+
         for (int i = 0; i < pds.length; i++)
         {
             List<ConditionalFormat> pdFormats = formats.get(i);
+
             if (!pdFormats.isEmpty())
             {
                 PropertyService.get().saveConditionalFormats(user, pds[i], pdFormats);
             }
         }
-
-        for (String error : importErrors)
-            log.error(error);
     }
 
     private KeyType getKeyType(TableType listXml, String keyName) throws ImportException
