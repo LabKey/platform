@@ -2640,10 +2640,10 @@ public class DavController extends SpringActionController
 
         Container srcContainer = src.getContainerId() == null ? null : ContainerManager.getForId(src.getContainerId());
         Container destContainer = dest.getContainerId() == null ? null : ContainerManager.getForId(dest.getContainerId());
-        if (PageFlowUtil.nullSafeEquals(srcContainer, destContainer))
+        if (PageFlowUtil.nullSafeEquals(srcContainer, destContainer) && src.getFile() != null)
         {
             ExpData data = ExperimentService.get().getExpDataByURL(src.getFile(), srcContainer);
-            if (data == null)
+            if (data == null && dest.getFile() != null)
             {
                 data = ExperimentService.get().getExpDataByURL(dest.getFile(), srcContainer);
             }

@@ -2798,13 +2798,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                     for (ExpData outputData : outputDatas.keySet())
                     {
-                        if (outputData.getSourceApplication() != null)
-                        {
-                            throw new IllegalArgumentException("Output data " + outputData.getName() + "  with rowId " + outputData.getRowId() + " is already marked as being created by another protocol application");
-                        }
                         if (outputData.getRun() != null)
                         {
-                            throw new IllegalArgumentException("Output data " + outputData.getName() + "  with rowId " + outputData.getRowId() + " is already marked as being created by another run");
+                            throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another run '" + outputData.getRun().getName() + "' (RowId " + outputData.getRunId() + ")");
+                        }
+                        if (outputData.getSourceApplication() != null)
+                        {
+                            throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
                         }
                         outputData.setSourceApplication(new ExpProtocolApplicationImpl(protApp2));
                         outputData.setRun(run);

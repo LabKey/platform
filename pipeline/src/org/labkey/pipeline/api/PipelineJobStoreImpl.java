@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Container;
 import com.thoughtworks.xstream.converters.ConversionException;
+import org.labkey.api.util.PageFlowUtil;
 
 /**
  * Implements serialization of a <code>PipelineJob</code> to and from XML,
@@ -69,7 +70,11 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             if (PipelineJob.ERROR_STATUS.equals(sf.getStatus()))
                 job.retryUpdate();
 
+            String oldJobId = sf.getJobId();
             PipelineService.get().getPipelineQueue().addJob(job);
+
+            job.getLogger().info("Retrying job. Old Job ID: " + oldJobId +
+                    (PageFlowUtil.nullSafeEquals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
         }
         catch (ConversionException e)
         {
