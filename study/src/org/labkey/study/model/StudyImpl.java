@@ -490,9 +490,33 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    public String getSearchDisplayTitle()
+    {
+        return "Study -- " + getLabel();
+    }
+
+    @Override
     public String getSearchKeywords()
     {
         StringBuilder sb = new StringBuilder();
+
+        appendKeyword(sb, getLabel());
+        appendKeyword(sb, getSubjectNounSingular());
+        appendKeyword(sb, getContainer().getName());
+
+        return sb.toString();
+    }
+
+    @Override
+    public String getSearchBody()
+    {
+        Container c = getContainer();
+        StringBuilder sb = new StringBuilder();
+
+        if (c.isProject())
+            appendKeyword(sb, "Study Project " + c.getName());
+        else
+            appendKeyword(sb, "Study Folder " + c.getName() + " in Project " + c.getProject().getName());
 
         appendKeyword(sb, getLabel());
         appendKeyword(sb, getSubjectNounSingular());

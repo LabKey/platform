@@ -106,7 +106,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
-import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -635,44 +634,42 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             return;
         Container p = c.getProject();
         String displayTitle;
-        String searchTitle = null;
+        String searchTitle;
         String body;
 
         // UNDONE: generalize to other folder types
         Study study = StudyService.get().getStudy(c);
+
         if (null != study)
         {
-            displayTitle = "Study -- " + study.getLabel();
-
-            if (p.equals(c))
-                body = "Study Project " + p.getName();
-            else
-                body = "Study Folder " + c.getName() + " in Project " + p.getName();
-
+            displayTitle = study.getSearchDisplayTitle();
             searchTitle = study.getSearchKeywords();
+            body = study.getSearchBody();
         }
         else if (c.isProject())
         {
             displayTitle = "Project -- " + c.getName();
-            body = "";
-            body += "\n" + StringUtils.trimToEmpty(c.getDescription());
+            searchTitle = c.getName() + " " + c.getDescription() + " project";
+            body = StringUtils.trimToEmpty(c.getDescription());
         }
         else if (c.isWorkbook())
         {
             displayTitle = "Workbook -- " + c.getName();
+            searchTitle = c.getName() + " " + c.getDescription() + " workbook";
             body = "Workbook " + c.getName() + " in Project " + p.getName();
         }
         else
         {
             displayTitle = "Folder -- " + c.getName();
+            searchTitle = c.getName() + " " + c.getDescription() + " folder";
             body = "Folder " + c.getName() + " in Project " + p.getName();
             body += "\n" + StringUtils.trimToEmpty(c.getDescription());
         }
 
         Map<String, Object> properties = new HashMap<String, Object>();
 
-        if (null != searchTitle)
-            properties.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+        assert (null != searchTitle);
+        properties.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
         properties.put(SearchService.PROPERTY.displayTitle.toString(), displayTitle);
         properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
@@ -688,41 +685,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     
-    private void containerPortal(SearchService.IndexTask task, Container c)
-    {
-        if (null == c || c.isRoot())
-            return;
-        String title;
-        Study study = StudyService.get().getStudy(c);
-        if (c.isProject())
-        {
-            title = "Project -- " + c.getName();
-        }
-        else if (c.isWorkbook())
-        {
-            title = "Workbook -- " + c.getName();
-        }
-        else if (null != study)
-        {
-            title = "Study -- " + study.getLabel();
-        }
-        else
-        {
-            title = "Folder -- " + c.getName();
-        }
-
-        ViewContext v = new ViewContext();
-        v.setUser(User.getSearchUser());
-        ActionURL url = c.getStartURL(v.getUser());
-        final String docid = "container:" + c.getId();
-        HashMap<String,Object> map = new HashMap<String,Object>();
-        map.put(SearchService.PROPERTY.displayTitle.toString(), title);
-        map.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
-        ActionResource r = new ActionResource(SearchService.navigationCategory, docid, url, url, map);
-        task.addResource(r, SearchService.PRIORITY.item);
-    }
-
-
     public void indexDeleted() throws SQLException
     {
         Table.execute(CoreSchema.getInstance().getSchema(), new SQLFragment(
