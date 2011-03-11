@@ -90,7 +90,10 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
                             public TableInfo getLookupTableInfo()
                             {
                                 ExpMaterialTable materials = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), schema);
-                                materials.setSampleSet(sampleSet, true);
+                                if (sampleSet != null)
+                                {
+                                    materials.setSampleSet(sampleSet, true);
+                                }
                                 ColumnInfo propertyCol = materials.addColumn(ExpMaterialTable.Column.Property);
                                 if (propertyCol.getFk() instanceof PropertyForeignKey)
                                 {

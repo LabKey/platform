@@ -584,9 +584,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 {
                     if (error instanceof PropertyValidationError)
                         errors.addError(new FieldError("AssayUploadForm", ((PropertyValidationError)error).getProperty(), null, false,
-                                new String[]{SpringActionController.ERROR_MSG}, new Object[0], error.getMessage()));
+                                new String[]{SpringActionController.ERROR_MSG}, new Object[0], error.getMessage() == null ? error.toString() : error.getMessage()));
                     else
-                        errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+                        errors.reject(SpringActionController.ERROR_MSG, error.getMessage() == null ? error.toString() : error.getMessage());
                 }
                 return getRunPropertiesView(form, true, false, errors);
             }

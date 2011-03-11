@@ -406,7 +406,7 @@ LABKEY.Query = new function()
             if (!config.queryName)
                 throw "You must specify a queryName!";
 
-            var dataObject = this.buildQueryParams(
+            var dataObject = LABKEY.Query.buildQueryParams(
                     config.schemaName,
                     config.queryName,
                     config.filterArray,
