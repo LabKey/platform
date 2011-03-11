@@ -63,7 +63,7 @@ LABKEY.Specimen = new function()
          */
         getRepositories : function(config)
         {
-            if (arguments.length > 1) {
+            if (config && (Ext.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     failure : arguments[1],
@@ -93,7 +93,7 @@ LABKEY.Specimen = new function()
          */
         getVialsByRowId : function(config)
         {
-            if (arguments.length > 1) {
+            if (config && (Ext.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     vialRowIdArray : arguments[1],
@@ -128,7 +128,7 @@ LABKEY.Specimen = new function()
          */
         getOpenRequests : function(config)
         {
-            if (arguments.length > 1) {
+            if (config && (Ext.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     allUsers: arguments[1],
@@ -136,6 +136,14 @@ LABKEY.Specimen = new function()
                     containerPath : arguments[3]
                 };
             }
+            /*if (arguments.length > 1) {
+                config = {
+                    success : arguments[0],
+                    allUsers: arguments[1],
+                    failure : arguments[2],
+                    containerPath : arguments[3]
+                };
+            }*/
 
             // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
             // default callback and callback wrapper functions:
@@ -164,7 +172,7 @@ LABKEY.Specimen = new function()
          */
         getProvidingLocations : function(config)
         {
-            if (arguments.length > 1) {
+            if (config && (Ext.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     specimenHashArray : arguments[1],
@@ -200,7 +208,7 @@ LABKEY.Specimen = new function()
          */
         getRequest : function(config)
         {
-            if (arguments.length > 1) {
+            if (config && Ext.isFunction(config) || arguments.length > 1){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],
@@ -238,7 +246,7 @@ LABKEY.Specimen = new function()
          */
         cancelRequest : function(config)
         {
-            if (arguments.length > 1) {
+            if (config && (Ext.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],
@@ -279,7 +287,7 @@ LABKEY.Specimen = new function()
          */
         addVialsToRequest : function(config)
         {
-            if (arguments.length > 1) {
+            if (config && (Ext.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],
@@ -326,7 +334,7 @@ LABKEY.Specimen = new function()
          */
         addSamplesToRequest : function(config)
         {
-            if (arguments.length > 1) {
+            if (config && (Ext.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],
@@ -374,7 +382,7 @@ LABKEY.Specimen = new function()
          */
         removeVialsFromRequest : function(config)
         {
-            if (arguments.length > 1) {
+            if (config && (Ext.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],
