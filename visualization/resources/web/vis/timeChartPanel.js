@@ -275,6 +275,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         this.items = items;
 
+        this.markDirty(false);
         window.onbeforeunload = LABKEY.beforeunload(this.isDirty, this);
 
         LABKEY.vis.TimeChartPanel.superclass.initComponent.apply(this, arguments);
@@ -321,6 +322,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         return this.dirty;
     },
 
+    markDirty : function(value) {
+        this.dirty = value;
+    },
+
     measureMetadataRequestPending:  function() {
         // mask panel and remove the chart(s)
         this.maskChartPanel();
@@ -355,8 +360,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             success: function(data){
                 // store the data in an object by subject for use later when it comes time to render the line chart
                 this.chartSubjectData = new Object();
-                this.dirty = true;
-                console.info("Were dirty. " + this.isDirty() + ", " + this.dirty);
+                this.markDirty(true);
 
                 // make sure each measure has at least some data
                 this.hasData = {};
@@ -838,7 +842,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     saveChartSuccess: function (reportName, reportDescription, reportShared){
         return function(result, request, options) {
-            this.dirty = false;
+            this.markDirty(false);
             this.editorOverviewPanel.updateOverview({name: reportName, description: reportDescription, shared: reportShared});
             Ext.Msg.alert("Success", "The chart has been successfully saved.");
         }

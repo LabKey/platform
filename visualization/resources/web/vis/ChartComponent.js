@@ -61,7 +61,7 @@ LABKEY.vis.SVGConverter = {
             throw "Unknown format: " + format;
 
         var newForm = Ext.DomHelper.append(document.getElementsByTagName('body')[0],
-        {tag:"form", method:"POST", action:LABKEY.ActionURL.buildURL("visualization", action),
+        {tag:"form", method:"POST", action:LABKEY.ActionURL.buildURL("visualization", action), target:'_blank',
             children:[{tag:"input", type:"hidden", name:"svg"}]});
         newForm.svg.value = svg;
         newForm.submit();

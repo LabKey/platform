@@ -503,18 +503,26 @@ a.labkey-disabled-button:hover,
     color: #b4b4b4 !important;
     text-transform: uppercase !important;
     font-size: 10px !important;
+    position: relative;
     font-family: Verdana, Arial, Helvetica, sans serif !important;
     font-weight: bold !important;
     white-space: nowrap !important;
     cursor: default !important;
     background: transparent !important;
     background-color: transparent !important;
+    vertical-align : middle !important;
 
     -moz-border-radius: 5px !important;
     -webkit-border-radius: 5px !important;
     border-radius: 5px !important;
 
-	*padding: 3px 5px !important;
+    line-height: 2.3em !important;
+    *line-height: 1.9em !important;
+    *height: 1% !important; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
+                    is required for IE to recognize its position attribute, which in
+                    turn enables relative positioning of our menu button arrow gif. */
+
+    *padding: 3px 5px !important;
 	*margin-bottom: 2px !important;
 }
 
