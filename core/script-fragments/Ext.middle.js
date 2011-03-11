@@ -10,7 +10,7 @@ Ext.data = {};
 
 Ext.Msg = {
     alert : function (title, msg) {
-        throw new Error(msg);
+        require("console").warn(msg);
     }
 };
 

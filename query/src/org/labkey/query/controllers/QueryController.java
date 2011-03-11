@@ -2665,7 +2665,9 @@ public class QueryController extends SpringActionController
 
             //we will transact operations by default, but the user may
             //override this by sending a "transacted" property set to false
-            boolean transacted = allowTransaction && json.optBoolean("transacted", true);
+            // 11741: A transaction may already be active if we're trying to
+            // insert/update/delete from within a transformation/validation script.
+            boolean transacted = allowTransaction && json.optBoolean("transacted", true) && !table.getSchema().getScope().isTransactionActive();
             if (transacted)
                 table.getSchema().getScope().beginTransaction();
 
@@ -2796,7 +2798,12 @@ public class QueryController extends SpringActionController
                         throw new IllegalArgumentException("All queries must be from the same source database");
                     }
                 }
-                scope.beginTransaction();
+
+                // 11741: A transaction may already be active if we're trying to
+                // insert/update/delete from within a transformation/validation script.
+                transacted = !scope.isTransactionActive();
+                if (transacted)
+                    scope.beginTransaction();
             }
 
             try
