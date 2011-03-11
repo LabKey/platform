@@ -612,9 +612,8 @@ public class StudyServiceImpl implements StudyService.Service
     public List<SecurableResource> getSecurableResources(Container container, User user)
     {
         Study study = StudyManager.getInstance().getStudy(container);
-        SecurityPolicy policy = (null != study) ? SecurityManager.getPolicy(study) : null;
 
-        if(null == study || !policy.hasPermission(user, AdminPermission.class))
+        if(null == study || !SecurityManager.getPolicy(container).hasPermission(user, ReadPermission.class))
             return Collections.emptyList();
         else
             return Collections.singletonList((SecurableResource)study);

@@ -27,10 +27,12 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.*;
 import org.labkey.api.util.GUID;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.study.samples.settings.RepositorySettings;
 
 import java.sql.SQLException;
@@ -101,7 +103,13 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
-        return new ArrayList<SecurableResource>(getDataSets());
+        List<DataSetDefinition> datasets = getDataSets();
+        ArrayList<SecurableResource> readableDatasets = new ArrayList<SecurableResource>(datasets.size());
+        for (DataSetDefinition ds: datasets)
+            if (ds.canRead(user))
+                readableDatasets.add(ds);
+        
+        return readableDatasets;
     }
 
     @NotNull
