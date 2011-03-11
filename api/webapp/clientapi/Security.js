@@ -719,6 +719,85 @@ LABKEY.Security = new function()
             });
         },
 
+        /*
+         * EXPERIMENTAL! gets permissions for a set of tables within a schema.
+         * Currently only study tables have individual permissions so only works on the study schema
+         * @param config A configuration object with the following properties:
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.schemaName] Name of the schema to retrieve information on.
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
+         * @param {Function} config.success A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> an object with a property named "schemas" which contains a queries object.
+         * The queries object property with the name of each table/queries. So
+         * schemas.study.queries.Demographics would yield the following results
+         *  <ul>
+         *      <li>id: The unique id of the resource (String, typically a GUID).</li>
+         *      <li>name: The name of the resource suitable for showing to a user.</li>
+         *      <li>description: The description of the reosurce.</li>
+         *      <li>resourceClass: The fully-qualified Java class name of the resource.</li>
+         *      <li>sourceModule: The name of the module in which the resource is defined and managed</li>
+         *      <li>parentId: The parent resource's id (may be omitted if no parent)</li>
+         *      <li>parentContainerPath: The parent resource's container path (may be omitted if no parent)</li>
+         *      <li>children: An array of child resource objects.</li>
+         *      <li>effectivePermissions: An array of permission unique names the current user has on the resource. This will be
+         *          present only if the includeEffectivePermissions property was set to true on the config object.</li>
+         *      <li>permissionMap: An object with one property per effectivePermission allowed the user. This restates
+         *          effectivePermissions in a slightly more convenient way
+         *  </ul>
+         * </li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         */
+        getSchemaPermissions: function(config) {
+            if (config.schemaName && config.schemaName != "study")
+                throw "Method only works for the study schema";
+
+            function successCallback(json, response) {
+
+                //First lets make sure there is a study in here.
+                var studyResource = null;
+                for (var i = 0; i < json.resources.children.length; i++)
+                {
+                    var resource = json.resources.children[i];
+                    if (resource.resourceClass == "org.labkey.study.model.StudyImpl"){
+                        studyResource = resource;
+                        break;
+                    }
+                }
+
+                if (null == studyResource)
+                {
+                    config.failure.apply(config.scope || this, [{description:"No study found in container."}, response]);
+                    return;
+                }
+
+                var result = {queries:{}};
+                Ext.each(studyResource.children, function (dataset) {
+                    result.queries[dataset.name] = dataset;
+                    dataset.permissionMap = {};
+                    Ext.each(dataset.effectivePermissions, function (perm) {
+                        dataset.permissionMap[perm] = true;
+                    })
+                });
+
+                config.success.apply(config.scope || this, [{schemas:{study:result}}, response]);
+            }
+
+            var myConfig = Ext.apply({}, config);
+            myConfig.includeEffectivePermissions = true;
+            myConfig.success = successCallback;
+            LABKEY.Security.getSecurableResources(myConfig);
+        },
+
         /**
          * Returns the complete set of roles defined on the server, along with the permissions each role grants.
          * @param config A configuration object with the following properties:
