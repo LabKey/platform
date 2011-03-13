@@ -283,6 +283,7 @@ LABKEY.DataRegion = function (config)
             return;
 
         config.selectionKey = this.selectionKey;
+        config.scope = config.scope || this;
 
         function failureCb(response, options) { this.showMessage("Error sending selection."); }
         config.failure = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || failureCb, this, true);
