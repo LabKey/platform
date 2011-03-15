@@ -59,10 +59,9 @@ public class TSVGridWriter extends TSVWriter
     }
 
 
-    @Deprecated
-    public TSVGridWriter(ResultSet rs) throws SQLException
+    public TSVGridWriter(Results results) throws SQLException
     {
-        init(rs);
+        init(results, results.getFieldMap().values());
     }
 
     /**
@@ -106,7 +105,7 @@ public class TSVGridWriter extends TSVWriter
         List<DisplayColumn> dataColumns = new LinkedList<DisplayColumn>();
 
         for (ColumnInfo col : cols)
-            dataColumns.add(new DataColumn(col));
+            dataColumns.add(col.getDisplayColumnFactory().createRenderer(col));
 
         init(rs, dataColumns);
     }
