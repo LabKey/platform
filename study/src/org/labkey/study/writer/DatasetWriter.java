@@ -170,7 +170,7 @@ class DatasetWriter implements InternalStudyWriter
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
             Results rs = QueryService.get().select(ti, columns, null, sort);
-            TSVGridWriter tsvWriter = new TSVGridWriter(rs);       // TODO: Add columns?
+            TSVGridWriter tsvWriter = new TSVGridWriter(rs);
             tsvWriter.setApplyFormats(false);
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
             PrintWriter out = vf.getPrintWriter(def.getFileName());
