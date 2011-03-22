@@ -76,6 +76,7 @@ public class DbScope
     private String _driverVersion;
 
     private final HashMap<String, DbSchema> _loadedSchemas = new HashMap<String, DbSchema>();
+    private final DbSchemaCache _schemaCache = new DbSchemaCache(this);
 
     private static final ThreadLocal<Transaction> _transaction = new ThreadLocal<Transaction>();
 
@@ -460,6 +461,12 @@ public class DbScope
 
     public DbSchema getSchema(String schemaName)
     {
+        return _schemaCache.get(schemaName);
+    }
+
+
+    public DbSchema getSchemaOld(String schemaName)
+    {
         // synchronized ensures one thread at a time.  This assert detects same-thread re-entrancy (e.g., the schema
         // load process directly or indirectly causing another call to this method.)
         assert !Thread.holdsLock(_loadedSchemas) : "Schema load re-entrancy detected";
@@ -471,7 +478,7 @@ public class DbScope
             try
             {
                 // This approach allows checking for stale schema, not just null schema.
-                schema = loadSchema(schema, schemaName);
+                schema = loadSchema(schemaName);
 
                 if (null != schema)
                     _loadedSchemas.put(schema.getName(), schema);
@@ -487,17 +494,18 @@ public class DbScope
 
 
     // External data source case: no schema.xml file to check, no isStale() check (for now)
-    protected DbSchema loadSchema(DbSchema schema, String schemaName) throws Exception
+    protected DbSchema loadSchema(String schemaName) throws Exception
     {
-        if (null == schema)
-            schema = DbSchema.createFromMetaData(schemaName, this);
-
-        return schema;
+        return DbSchema.createFromMetaData(schemaName, this);
     }
 
 
     public void invalidateSchema(String schemaName)
     {
+        // TODO: Invalidate all tables & columns as well (once they're cached)
+        _schemaCache.remove(schemaName);
+
+        // TODO: Delete this
         synchronized (_loadedSchemas)
         {
             _loadedSchemas.remove(schemaName);
@@ -508,6 +516,9 @@ public class DbScope
     // Invalidates all incomplete schemas in this scope (see below for details).
     public void invalidateIncompleteSchemas()
     {
+        _schemaCache.removeIncomplete();
+
+        // TODO: Delete this
         synchronized (_loadedSchemas)
         {
             List<String> schemaNames = new ArrayList<String>(_loadedSchemas.keySet());
@@ -750,9 +761,9 @@ public class DbScope
     }
 
 
-    public static boolean isLabKeyScope(DbScope scope)
+    public boolean isLabKeyScope()
     {
-        return scope == getLabkeyScope();
+        return this == getLabkeyScope();
     }
 
 

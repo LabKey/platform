@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Path;
 import org.labkey.data.xml.TablesDocument;
 
@@ -42,40 +41,25 @@ public class LabKeyScope extends DbScope
     }
 
     @Override
-    // LabKey data source case.  Load schema.xml, reload schema if it's stale.
-    protected DbSchema loadSchema(DbSchema schema, String schemaName) throws Exception
+    // LabKey data source case.  Load meta data from database and overlay schema.xml.
+    protected DbSchema loadSchema(String schemaName) throws Exception
     {
-        InputStream xmlStream = null;
+        // Load from database meta data
+        DbSchema schema  = super.loadSchema(schemaName);
 
-        try
+        if (null != schema)
         {
-            Resource resource;
+            Resource resource = DbSchema.getSchemaResource(schemaName);
 
-            if (null == schema)
+            if (resource == null)
+                resource = new DbSchemaResource(schema);
+
+            schema.setResource(resource);
+
+            InputStream xmlStream = null;
+
+            try
             {
-                resource = DbSchema.getSchemaResource(schemaName);
-            }
-            else
-            {
-                if (AppProps.getInstance().isDevMode() && schema.isStale())
-                {
-                    resource = schema.getResource();
-                }
-                else
-                {
-                    return schema;
-                }
-            }
-
-            // Force a reload from meta data
-            schema = super.loadSchema(null, schemaName);
-
-            if (null != schema)
-            {
-                if (resource == null)
-                    resource = new DbSchemaResource(schema);
-
-                schema.setResource(resource);
                 xmlStream = resource.getInputStream();
 
                 if (null != xmlStream)
@@ -84,16 +68,16 @@ public class LabKeyScope extends DbScope
                     schema.loadXml(tablesDoc, true);
                 }
             }
-        }
-        finally
-        {
-            try
+            finally
             {
-                if (null != xmlStream) xmlStream.close();
-            }
-            catch (Exception x)
-            {
-                LOG.error("LabKeyScope", x);
+                try
+                {
+                    if (null != xmlStream) xmlStream.close();
+                }
+                catch (Exception x)
+                {
+                    LOG.error("LabKeyScope", x);
+                }
             }
         }
 

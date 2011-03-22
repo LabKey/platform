@@ -46,7 +46,7 @@ public class BlockingCache<K, V> implements BasicCache<K, V>
             value = v;
         }
 
-        V getValue()
+        public V getValue()
         {
             return value == UNINITIALIZED ? null : value;
         }
@@ -144,9 +144,9 @@ public class BlockingCache<K, V> implements BasicCache<K, V>
     }
 
     @Override
-    public int removeUsingFilter(Filter<K> kFilter)
+    public int removeUsingFilter(Filter<K> filter)
     {
-        return _cache.removeUsingFilter(kFilter);
+        return _cache.removeUsingFilter(filter);
     }
 
     @Override

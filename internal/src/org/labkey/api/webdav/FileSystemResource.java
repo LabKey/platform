@@ -58,7 +58,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -97,7 +96,6 @@ public class FileSystemResource extends AbstractWebdavResource
     WebdavResource _folder;   // containing controller used for canList()
     protected Boolean _shouldIndex = null; // null means ask parent
 
-    private FileType _type;
     private long _length = UNKNOWN;
     private long _lastModified = UNKNOWN;
 
