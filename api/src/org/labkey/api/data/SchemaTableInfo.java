@@ -542,6 +542,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
+    // TODO: Remove merge param?  Always true...
     void loadFromXml(TableType xmlTable, boolean merge)
     {
         //If merging with DB MetaData, don't overwrite pk

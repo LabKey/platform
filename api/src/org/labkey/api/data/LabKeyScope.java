@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.data.xml.TablesDocument;
 
@@ -25,6 +26,7 @@ import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * User: adam
@@ -34,6 +36,7 @@ import java.sql.SQLException;
 public class LabKeyScope extends DbScope
 {
     private static final Logger LOG = Logger.getLogger(LabKeyScope.class);
+    private static final AtomicLong _schemaLoadTime = new AtomicLong(0);
 
     public LabKeyScope(String dsName, DataSource dataSource) throws SQLException, ServletException
     {
@@ -45,7 +48,12 @@ public class LabKeyScope extends DbScope
     protected DbSchema loadSchema(String schemaName) throws Exception
     {
         // Load from database meta data
-        DbSchema schema  = super.loadSchema(schemaName);
+// TODO:        DbSchema schema  = super.loadSchema(schemaName);
+        long startLoad = System.currentTimeMillis();
+
+        LOG.info("Loading DbSchema \"" + this.getDisplayName() + "." + schemaName + "\"");
+
+        DbSchema schema = DbSchema.createFromMetaData(schemaName, DbScope.getLabkeyScope());
 
         if (null != schema)
         {
@@ -65,7 +73,7 @@ public class LabKeyScope extends DbScope
                 if (null != xmlStream)
                 {
                     TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
-                    schema.loadXml(tablesDoc, true);
+                    schema.setTablesDocument(tablesDoc);
                 }
             }
             finally
@@ -79,6 +87,17 @@ public class LabKeyScope extends DbScope
                     LOG.error("LabKeyScope", x);
                 }
             }
+
+            // Pre-emptively load all table meta data  TODO: Load them on demand
+            schema.forceLoadAllTables();
+
+            long elapsed = System.currentTimeMillis() - startLoad;
+
+            _schemaLoadTime.addAndGet(elapsed);
+
+            // Seems impossible, but we've seen a negative elapsed time (clock change in the middle of a schema load?).  See #11739.
+            if (elapsed >= 0)
+                LOG.info("" + schema.getTables().size() + " tables loaded in " + DateUtil.formatDuration(elapsed) + "; total: " + DateUtil.formatDuration(_schemaLoadTime.longValue()));
         }
 
         return schema;

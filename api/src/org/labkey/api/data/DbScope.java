@@ -22,9 +22,6 @@ import org.junit.Test;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MemTracker;
 
@@ -47,7 +44,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -75,7 +71,6 @@ public class DbScope
     private String _driverName;
     private String _driverVersion;
 
-    private final HashMap<String, DbSchema> _loadedSchemas = new HashMap<String, DbSchema>();
     private final DbSchemaCache _schemaCache = new DbSchemaCache(this);
 
     private static final ThreadLocal<Transaction> _transaction = new ThreadLocal<Transaction>();
@@ -465,38 +460,10 @@ public class DbScope
     }
 
 
-    public DbSchema getSchemaOld(String schemaName)
-    {
-        // synchronized ensures one thread at a time.  This assert detects same-thread re-entrancy (e.g., the schema
-        // load process directly or indirectly causing another call to this method.)
-        assert !Thread.holdsLock(_loadedSchemas) : "Schema load re-entrancy detected";
-
-        synchronized (_loadedSchemas)
-        {
-            DbSchema schema = _loadedSchemas.get(schemaName);
-
-            try
-            {
-                // This approach allows checking for stale schema, not just null schema.
-                schema = loadSchema(schemaName);
-
-                if (null != schema)
-                    _loadedSchemas.put(schema.getName(), schema);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);  // Changed from "return null" to "throw runtimeexception" so admin is made aware of the cause of the problem
-            }
-
-            return schema;
-        }
-    }
-
-
     // External data source case: no schema.xml file to check, no isStale() check (for now)
     protected DbSchema loadSchema(String schemaName) throws Exception
     {
-        return DbSchema.createFromMetaData(schemaName, this);
+        return DbSchema.oldCreateFromMetaData(schemaName, this);
     }
 
 
@@ -504,12 +471,6 @@ public class DbScope
     {
         // TODO: Invalidate all tables & columns as well (once they're cached)
         _schemaCache.remove(schemaName);
-
-        // TODO: Delete this
-        synchronized (_loadedSchemas)
-        {
-            _loadedSchemas.remove(schemaName);
-        }
     }
 
 
@@ -517,26 +478,6 @@ public class DbScope
     public void invalidateIncompleteSchemas()
     {
         _schemaCache.removeIncomplete();
-
-        // TODO: Delete this
-        synchronized (_loadedSchemas)
-        {
-            List<String> schemaNames = new ArrayList<String>(_loadedSchemas.keySet());
-
-            for (String schemaName : schemaNames)
-            {
-                Module module = ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
-
-                // We only care about schemas associated with a module (not external schemas)
-                if (null != module)
-                {
-                    ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
-
-                    if (!context.isInstallComplete())
-                        invalidateSchema(schemaName);
-                }
-            }
-        }
     }
 
 

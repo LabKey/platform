@@ -59,11 +59,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     {
     }
 
-    @Override
-    public void prepareNewDbSchema(DbSchema schema)
-    {
-    }
-
     public boolean isSortableDataType(String sqlDataTypeName)
     {
         return true;

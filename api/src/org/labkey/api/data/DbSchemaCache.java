@@ -31,11 +31,11 @@ import org.labkey.api.settings.AppProps;
 * Time: 2:53:51 PM
 */
 
-// Every scope has its own cache of DbSchemas... 
+// Every scope has its own cache of DbSchemas... TODO: Switch to single cache for all scopes?
 public class DbSchemaCache
 {
     private final DbScope _scope;
-    private final BlockingCache<String, DbSchema> _blockingCache = new DbSchemaBlockingCache();  // TODO: BlockingStringKeyCache?  Need removeUsingPrefix().
+    private final BlockingCache<String, DbSchema> _blockingCache = new DbSchemaBlockingCache();  // TODO: BlockingStringKeyCache?
     private final IncompleteSchemaFilter _incompleteFilter = new IncompleteSchemaFilter();
 
     public DbSchemaCache(DbScope scope)

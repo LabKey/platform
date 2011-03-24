@@ -254,7 +254,10 @@ public abstract class SqlDialect
     }
 
     // Do dialect-specific work after schema load
-    public abstract void prepareNewDbSchema(DbSchema schema);
+    public void prepareNewDbSchema(DbSchema schema)
+    {
+    }
+
 
     // Do dialect-specific work for this data source (nothing by default)
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException

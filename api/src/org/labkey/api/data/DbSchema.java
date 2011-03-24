@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -48,6 +49,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -60,6 +62,8 @@ public class DbSchema
     private final Map<String, SchemaTableInfo> _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
     private final DbScope _scope;
     private final String _name;
+    private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<TableType>();
+    private final List<String> _tableNames = new LinkedList<String>();  // Union of all table names from database and schema.xml
 
     private ResourceRef _resourceRef = null;
 
@@ -79,13 +83,173 @@ public class DbSchema
         return module.getModuleResource("/schemas/" + schemaName + ".xml");
     }
 
+    // This method uses the old code path; method below uses the new code path  TODO: test and migrate everything to new code path
     public static DbSchema createFromMetaData(String dbSchemaName) throws SQLException, NamingException, ServletException
     {
-        return createFromMetaData(dbSchemaName, DbScope.getLabkeyScope());
+        return oldCreateFromMetaData(dbSchemaName, DbScope.getLabkeyScope());
     }
 
 
     public static DbSchema createFromMetaData(String schemaName, DbScope scope) throws SQLException
+    {
+        DbSchema schema = new DbSchema(schemaName, scope);
+        schema.loadMetaData();
+        return schema;
+    }
+
+
+    private void loadMetaData() throws SQLException
+    {
+        TableMetaDataLoader loader = new TableMetaDataLoader("%") {
+            @Override
+            protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
+            {
+                _tableNames.add(name);
+            }
+        };
+
+        loader.load();
+    }
+
+    private abstract class TableMetaDataLoader
+    {
+        private final String _tableNamePattern;
+
+        private TableMetaDataLoader(String tableNamePattern)
+        {
+            _tableNamePattern = tableNamePattern;
+        }
+
+        protected abstract void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException;
+
+        private void load() throws SQLException
+        {
+            DbScope scope = getScope();
+            String dbName = scope.getDatabaseName();
+
+            // Remember if we're using a connection that somebody lower on the call stack checked out,
+            // and therefore shouldn't close it out from under them
+            boolean inTransaction = scope.isTransactionActive();
+            Connection conn = null;
+
+            try
+            {
+                conn = scope.getConnection();
+                DatabaseMetaData dbmd = conn.getMetaData();
+
+                String[] types = {"TABLE", "VIEW",};
+
+                ResultSet rs;
+
+                if (getSqlDialect().treatCatalogsAsSchemas())
+                    rs = dbmd.getTables(getName(), null, _tableNamePattern, types);
+                else
+                    rs = dbmd.getTables(dbName, getName(), _tableNamePattern, types);
+
+                try
+                {
+                    while (rs.next())
+                    {
+                        String tableName = rs.getString("TABLE_NAME").trim();
+
+                        // Ignore system tables
+                        if (getSqlDialect().isSystemTable(tableName))
+                            continue;
+
+                        // skip if it looks like one of our temp table names: name$<32hexchars>
+                        if (tableName.length() > 33 && tableName.charAt(tableName.length()-33) == '$')
+                            continue;
+
+                        handleTable(tableName, rs, dbmd);
+                    }
+                }
+                finally
+                {
+                    ResultSetUtil.close(rs);
+                }
+            }
+            catch (SQLException e)
+            {
+                _log.error("Exception loading schema \"" + getName() + "\" from database metadata", e);
+                throw e;
+            }
+            finally
+            {
+                try
+                {
+                    if (!inTransaction && null != conn) scope.releaseConnection(conn);
+                }
+                catch (Exception x)
+                {
+                    _log.error("DbSchema.createFromMetaData()", x);
+                }
+            }
+        }
+    }
+
+
+    // Force load all tables upfront; this completes the separation between schema loading (where we load just the table
+    // names) and table loading  TODO: Next step is to load each table on demand.
+    public void forceLoadAllTables() throws SQLException
+    {
+        // Load all the tables in the database and in schema.xml
+        for (String tableName : _tableNames)
+        {
+            SchemaTableInfo ti = loadTable(tableName);
+            addTable(ti.getName(), ti);
+        }
+
+        // TODO: Migrate to "prepareNewTableInfo(this)"
+        getSqlDialect().prepareNewDbSchema(this);
+    }
+
+
+    private SchemaTableInfo loadTable(String tableName) throws SQLException
+    {
+        SchemaTableInfo ti = createTableFromDatabaseMetaData(tableName);
+        TableType xmlTable = _tableXmlMap.get(tableName);
+
+        if (null != xmlTable)
+        {
+            if (null == ti)
+            {
+                ti = new SchemaTableInfo(xmlTable.getTableName(), this);
+                ti.setTableType(TableInfo.TABLE_TYPE_NOT_IN_DB);
+            }
+
+            ti.loadFromXml(xmlTable, true);
+        }
+
+        return ti;
+    }
+
+
+    private SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
+    {
+        final SchemaTableInfo ti = new SchemaTableInfo(tableName, DbSchema.this);
+
+        TableMetaDataLoader loader = new TableMetaDataLoader(tableName) {
+            @Override
+            protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
+            {
+                assert tableName.equals(name);
+                ti.setMetaDataName(tableName);
+                ti.setTableType(rs.getString("TABLE_TYPE"));
+                String description = rs.getString("REMARKS");
+                if (null != description && !"No comments".equals(description))  // Consider: Move "No comments" exclusion to SAS dialect?
+                    ti.setDescription(description);
+
+                ti.loadFromMetaData(dbmd, getScope().getDatabaseName(), getName());
+            }
+        };
+
+        loader.load();
+
+        return ti;
+    }
+
+
+    public static DbSchema oldCreateFromMetaData(String schemaName, DbScope scope) throws SQLException
     {
         Connection conn = null;
         DbSchema schema = new DbSchema(schemaName, scope);
@@ -203,7 +367,7 @@ public class DbSchema
     }
 
 
-    protected DbSchema(String name, DbScope scope)
+    private DbSchema(String name, DbScope scope)
     {
         _name = name;
         _scope = scope;
@@ -238,38 +402,27 @@ public class DbSchema
             _resourceRef.updateVersionStamp();
     }
 
-    public void loadXml(TablesDocument tablesDoc, boolean merge) throws Exception
+    void setTablesDocument(TablesDocument tablesDoc)
     {
+        Set<String> databaseTableNames = new CaseInsensitiveHashSet(_tableNames);
         TableType[] xmlTables = tablesDoc.getTables().getTableArray();
 
         for (TableType xmlTable : xmlTables)
         {
-            SchemaTableInfo tableInfo;
+            String xmlTableName = xmlTable.getTableName();
+            _tableXmlMap.put(xmlTable.getTableName(), xmlTable);
 
-            if (merge)
+            // Tables in schema.xml but not in the database need to be added to _tableNames
+            if (!databaseTableNames.contains(xmlTableName))
             {
-                tableInfo = getTable(xmlTable.getTableName());
-
-                if (null == tableInfo)
-                {
-                    tableInfo = new SchemaTableInfo(xmlTable.getTableName(), this);
-                    tableInfo.setTableType(TableInfo.TABLE_TYPE_NOT_IN_DB);
-
-                    /*              We now allow this. Admin tools can create if necessary
-                                    _log.warn("Table " + xmlTables[i].getTableName() + " not found in database.");
-                                    continue;
-                    */
-                }
+                _tableNames.add(xmlTableName);
+                databaseTableNames.add(xmlTableName);
             }
-            else
-                tableInfo = new SchemaTableInfo(xmlTable.getTableName(), this);
-
-            tableInfo.loadFromXml(xmlTable, merge);
-            addTable(tableInfo.getName(), tableInfo);
         }
     }
 
 
+    // Note: TableInfos are fetched on-demand, so this is a very expensive method to call!
     public Collection<SchemaTableInfo> getTables()
     {
         return Collections.unmodifiableCollection(_tables.values());
