@@ -381,10 +381,6 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
 
     // Do nothing
 
-    public void prepareNewDbSchema(DbSchema schema)
-    {
-    }
-
     public String getCreateSchemaSql(String schemaName)
     {
         return "EXEC sp_addapprole '" + schemaName + "', 'password'";

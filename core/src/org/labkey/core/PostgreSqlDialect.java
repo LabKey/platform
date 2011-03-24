@@ -614,6 +614,7 @@ class PostgreSqlDialect extends SqlDialect
 
     // Do dialect-specific work after schema load, if necessary
 
+    // TODO: Shift to single table
     public void prepareNewDbSchema(DbSchema schema)
     {
         ResultSet rsSeq = null;
