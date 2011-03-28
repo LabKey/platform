@@ -275,7 +275,7 @@ public class ModuleLoader implements Filter
                 context = new ModuleContext(module);
                 contextMap.put(context.getName(), context);
             }
-            if (context.getInstalledVersion() != module.getVersion())
+            if (context.getInstalledVersion() < module.getVersion())
                 context.setModuleState(ModuleState.InstallRequired);
             else
                 context.setModuleState(ModuleState.ReadyToRun);
@@ -294,7 +294,7 @@ public class ModuleLoader implements Filter
         for (Module m : _modules)
         {
             ModuleContext ctx = getModuleContext(m);
-            if (ctx.getInstalledVersion() != m.getVersion())
+            if (ctx.getInstalledVersion() < m.getVersion())
             {
                 upgradeRequired = true;
                 break;
@@ -522,7 +522,7 @@ public class ModuleLoader implements Filter
             coreContext = getModuleContext("Core");
 
         // Does the core module need to be upgraded?
-        if (coreContext.getInstalledVersion() == coreModule.getVersion())
+        if (coreContext.getInstalledVersion() >= coreModule.getVersion())
             return;
 
         if (coreContext.isNewInstall())
