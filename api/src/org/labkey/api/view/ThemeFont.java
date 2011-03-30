@@ -107,6 +107,11 @@ public class ThemeFont
         return _friendlyName;
     }
 
+    public String getClassName()
+    {
+        return "labkey-theme-font-" + _friendlyName.toLowerCase();
+    }
+
     public String toString()
     {
         return _friendlyName;

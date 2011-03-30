@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %><%
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
@@ -39,9 +40,20 @@
     Set<String> gwtModules = GWTView.getModulesForRootContext();
     Container c = me.getViewContext().getContainer();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+    ThemeFont themeFont = ThemeFont.getThemeFont(c);
 
     if (bean.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", bean.getFrameOption().name());
+
+    String onLoad = "";
+    if (null != bean.getFocus())
+    {
+        onLoad += "document." + bean.getFocus() + ".focus(); ";
+    }
+    if (bean.getShowPrintDialog())
+    {
+        onLoad += "window.print(); ";
+    }
 %>
 <!DOCTYPE html>
 <html>
@@ -73,19 +85,14 @@ if (null != bean.getStyles())
 %>
 </head>
 
-<body id="bodyElement" <%
-    if (null != bean.getFocus() || bean.getShowPrintDialog())
-    {%>onload="<%
-        if (null != bean.getFocus()) {%>document.<%=bean.getFocus()%>.focus();<%}
-        if (bean.getShowPrintDialog()) {%>window.print();<%}
-    %>"<%}%>><%
-
+<body id="bodyElement" onload="<%=h(onLoad)%>">
+<%
 if (null != gwtModules && gwtModules.size() > 0)
 {   //Only include first js file?? %>
     <iframe id="__gwt_historyFrame" style="width:0;height:0;border:0"></iframe><%
 }
 %>
-    <table class="labkey-main"><%
+    <table class="labkey-main <%=themeFont.getClassName()%>"><%
 
 if (bean.showHeader() != PageConfig.TrueFalse.False)
 {
