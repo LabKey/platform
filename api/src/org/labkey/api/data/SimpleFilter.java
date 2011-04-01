@@ -112,6 +112,49 @@ public class SimpleFilter implements Filter
             return false;
         }
 
+        protected String escapeLabKeySqlValue(Object value, JdbcType type)
+        {
+            return escapeLabKeySqlValue(value, type, false);
+        }
+
+        protected String escapeLabKeySqlValue(Object value, JdbcType type, boolean suppressQuotes)
+        {
+            if (type == null)
+                throw new IllegalArgumentException("Column type must be provided.");
+            StringBuilder sql = new StringBuilder();
+            if (type.isNumeric() || type == JdbcType.BOOLEAN)
+                sql.append(value);
+            else if (type.isDateOrTime())
+                sql.append("CAST('").append(value).append("' AS TIMESTAMP)");
+            else
+            {
+                if (!suppressQuotes)
+                    sql.append("'");
+                if (value instanceof String)
+                    value = ((String) value).replace("'", "''");
+                sql.append(value);
+                if (!suppressQuotes)
+                    sql.append("'");
+            }
+            return sql.toString();
+        }
+
+        protected static String getLabKeySQLColName(String simpleFilterColName)
+        {
+            FieldKey key = FieldKey.fromString(simpleFilterColName);
+            List<String> parts = key.getParts();
+            StringBuilder escapedColName = new StringBuilder();
+            String sep = "";
+            for (String part : parts)
+            {
+                escapedColName.append(sep).append("\"").append(part).append("\"");
+                sep = ".";
+            }
+            return escapedColName.toString();
+        }
+
+        public abstract String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap);
+
         public abstract SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect);
     }
 
@@ -141,6 +184,12 @@ public class SimpleFilter implements Filter
         public List<String> getColumnNames()
         {
             return _colNames;
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -194,6 +243,23 @@ public class SimpleFilter implements Filter
             }
             
             return sqlFragment;
+        }
+
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            SQLFragment labKeySql = new SQLFragment();
+            String separator = "";
+            for (FilterClause clause : _clauses)
+            {
+                labKeySql.append(separator);
+                separator = _operation;
+                labKeySql.append("(");
+                labKeySql.append(clause.getLabKeySQLWhereClause(columnMap));
+                labKeySql.append(")");
+            }
+            return labKeySql.toString();
         }
 
         protected List<FilterClause> getClauses()
@@ -273,6 +339,16 @@ public class SimpleFilter implements Filter
         }
 
         @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            SQLFragment sqlFragment = new SQLFragment();
+            sqlFragment.append(" NOT (");
+            sqlFragment.append(_clause.getLabKeySQLWhereClause(columnMap));
+            sqlFragment.append(")");
+            return sqlFragment.toString();
+        }
+
+        @Override
         public boolean meetsCriteria(Object value)
         {
             return !_clause.meetsCriteria(value);
@@ -316,6 +392,34 @@ public class SimpleFilter implements Filter
             }
             sb.append(")");
         }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            String selectName = getLabKeySQLColName(_colName);
+            ColumnInfo col = columnMap.get(FieldKey.fromString(_colName));
+            StringBuilder in =  new StringBuilder(selectName);
+            in.append(" IN (");
+
+            Object[] params = getParamVals();
+            if (params.length > 0)
+            {
+                String sep = "";
+                for (Object param : params)
+                {
+                    in.append(sep).append(escapeLabKeySqlValue(param, col.getJdbcType()));
+                    sep = ", ";
+                }
+            }
+            else
+            {
+                in.append("NULL");  // Empty list case; "WHERE column IN (NULL)" should always be false
+            }
+
+            in.append(")");
+            return in.toString();
+        }
+
 
         public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {

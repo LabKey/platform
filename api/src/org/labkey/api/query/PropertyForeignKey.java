@@ -184,6 +184,13 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
      */
     protected PropertyDescriptor resolvePropertyDescriptor(String name)
     {
+        for (PropertyDescriptor propertyDescriptor : _pdMap.values())
+        {
+            if (propertyDescriptor.getName().replace(" ", "").equalsIgnoreCase(name.replace(" ", "")))
+            {
+                return propertyDescriptor;
+            }
+        }
         return null;
     }
 

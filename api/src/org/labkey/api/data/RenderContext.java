@@ -249,7 +249,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     /** valid after call to getResultSet() */
     public Map<FieldKey, ColumnInfo> getFieldMap()
     {
-        return _rs.getFieldMap();
+        return null==_rs ? null : _rs.getFieldMap();
     }
 
     public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, Map<String,Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException

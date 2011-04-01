@@ -299,6 +299,11 @@ public class ActionButton extends DisplayElement implements Cloneable
         _encodedSubmitForm = encodedSubmitForm;
     }
 
+    public boolean hasRequiresSelection()
+    {
+        return _requiresSelection;
+    }
+
     private String renderDefaultScript(RenderContext ctx) throws IOException
     {
         if (_requiresSelection)

@@ -876,20 +876,8 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
             if (treeNode)
                 treeNode.getUI().toggleCheck(false);
         }
-    },
-
-    onAddClick : function (btn, e) {
-        var fieldKey;
-        var list = this.getList();
-        var selected = list.getSelectedIndexes();
-        if (selected && selected.length > 0)
-        {
-            var record = list.store.getAt(selected[0]);
-            fieldKey = record.data.fieldKey;
-        }
-
-        this.addRecord(fieldKey);
     }
+
 });
 
 LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
@@ -1233,6 +1221,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             '  <tr>',
                             '    <td colspan="3">',
                             '      <span style="float:right;">',
+                            // NOTE: The click event for the 'Add' text link is handled in onListBeforeClick.
                             LABKEY.Utils.textLink({text: "Add", onClick: "return false;", add: true}),
                             '      </span>',
                             '    </td>',
@@ -1281,8 +1270,8 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         xtype: 'paperclip-button',
                         renderTarget: 'div.item-paperclip',
                         indexedProperty: true,
-                        tooltip: "Clipped filters are included with the saved view.",
-                        tooltipType: "title"
+                        tooltipType: "title",
+                        itemType: "filter"
                     }]
                 }],
                 bbar: {
@@ -1317,9 +1306,9 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         xtype: "paperclip-button",
                         cls: "labkey-folder-filter-paperclip",
                         pressed: !this.designer.userContainerFilter,
-                        tooltip: "Clipped folder filter is included with the saved view.",
                         tooltipType: "title",
-                        disabled: !this.customView.containerFilter
+                        disabled: !this.customView.containerFilter,
+                        itemType: "container filter"
                     }]
                 }
             }]
@@ -1349,7 +1338,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             return false;
 
         var target = Ext.fly(e.getTarget());
-        if (target.is("a.labkey-text-link") && target.dom.innerHTML == "Add")
+        if (target.is("a.labkey-text-link[add='true']"))
         {
             this.addClause(index);
         }
@@ -1666,8 +1655,8 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         xtype: 'paperclip-button',
                         renderTarget: 'div.item-paperclip',
                         applyValue: 'urlParameter',
-                        tooltip: "Clipped sorts are included with the saved view.",
-                        tooltipType: "title"
+                        tooltipType: "title",
+                        itemType: "sort"
                     }]
                 }]
             }]
@@ -1863,10 +1852,16 @@ LABKEY.DataRegion.PaperclipButton = Ext.extend(Ext.Button, {
         LABKEY.DataRegion.PaperclipButton.superclass.initComponent.call(this);
     },
 
+    afterRender : function () {
+        LABKEY.DataRegion.PaperclipButton.superclass.afterRender.call(this);
+        this.updateToolTip();
+    },
+
     // Called by ComponentDataView.renderItem when indexedProperty is false
     // When the record.urlParameter is true, the button is not pressed.
     setValue : function (value) {
         this.toggle(!value, true);
+        this.updateToolTip();
     },
 
     // Called by ComponentDataView.renderItem when indexedProperty is false
@@ -1877,6 +1872,7 @@ LABKEY.DataRegion.PaperclipButton = Ext.extend(Ext.Button, {
     // 'blur' event needed by ComponentDataView to set the value after changing
     toggleHandler : function (btn, state) {
         this.fireEvent('blur', this);
+        this.updateToolTip();
     },
 
     // Called by ComponentDataView.renderItem when indexedProperty is true
@@ -1899,7 +1895,20 @@ LABKEY.DataRegion.PaperclipButton = Ext.extend(Ext.Button, {
     },
 
     setRecordValue : function (value) {
-        return this.record.get("items")[this.clauseIndex].urlParameter = value;
+        this.record.get("items")[this.clauseIndex].urlParameter = value;
+    },
+
+    getToolTipText : function () {
+        if (this.pressed)
+            return "This " + this.itemType + " will be saved with the view";
+        else
+            return "This " + this.itemType + " will NOT be saved as part of the view";
+    },
+
+    updateToolTip : function () {
+        var el = this.btnEl;
+        var msg = this.getToolTipText();
+        el.set({title: msg});
     }
 });
 Ext.reg('paperclip-button', LABKEY.DataRegion.PaperclipButton);

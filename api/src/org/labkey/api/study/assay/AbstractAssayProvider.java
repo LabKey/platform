@@ -140,7 +140,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             ColumnInfo rowIdColumn = columns.get(objectIdFK);
             ColumnInfo runLSIDColumn = columns.get(runLSIDFK);
 
-            SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns.values(), filter, null, Table.ALL_ROWS, 0);
+            SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns.values(), filter, null, Table.ALL_ROWS, 0, false);
 
             List<Map<String, Object>> dataMaps = new ArrayList<Map<String, Object>>();
 

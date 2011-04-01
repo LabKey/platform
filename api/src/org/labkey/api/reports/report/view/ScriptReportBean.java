@@ -112,7 +112,8 @@ public class ScriptReportBean extends ReportDesignBean
             if (getScript() != null)
                 descriptor.setProperty(ScriptReportDescriptor.Prop.script, getScript());
 
-            descriptor.setProperty(ScriptReportDescriptor.Prop.scriptExtension, _scriptExtension);
+            if (getScriptExtension() != null)
+                descriptor.setProperty(ScriptReportDescriptor.Prop.scriptExtension, getScriptExtension());
 
             if (!isShareReport())
                 descriptor.setOwner(getUser().getUserId());

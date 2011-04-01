@@ -201,8 +201,9 @@ public class PopupMenu extends DisplayElement
                 sb.append(", icon:").append(PageFlowUtil.qh(tree.getImageSrc()));
             if (tree.isDisabled())
                 sb.append(", disabled:true");
-            if (null != tree.getValue())
-                sb.append(",").append("href:").append(PageFlowUtil.qh(tree.getValue()));
+            // If we don't have a URL, use 'javascript: void(0) or Ext will fill in '#', which causes the browser
+            // to scroll to the top of the page.
+            sb.append(",").append("href:").append(null != tree.getValue() ? PageFlowUtil.qh(tree.getValue()) : "'javascript: void(0)'");
             if (null != tree.getScript())
                 sb.append(", handler:function(){").append(tree.getScript()).append("}");
             if (null != tree.getChildren() && tree.getChildren().length > 0)

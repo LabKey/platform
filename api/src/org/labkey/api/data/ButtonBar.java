@@ -35,7 +35,7 @@ public class ButtonBar extends DisplayElement
     private List<DisplayElement> _elementList = new ArrayList<DisplayElement>();
     private Style _style = Style.toolbar;
     // It's possible to have multiple button bar configs, as in the case of a tableinfo-level config
-    // that's partially overridden by a 
+    // that's partially overridden by a
     private List<ButtonBarConfig> _configs = null;
     private boolean _renderedIncludes = false;
 
@@ -119,7 +119,7 @@ public class ButtonBar extends DisplayElement
         if (!shouldRender(ctx))
             return;
 
-        renderIncludes(ctx, out);
+        renderIncludes(out);
 
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
@@ -129,7 +129,7 @@ public class ButtonBar extends DisplayElement
         out.write(">");
         for (DisplayElement el : getList())
         {
-            if (ctx.getMode() != 0 && (ctx.getMode() & el.getDisplayModes()) == 0)
+            if (ctx.getMode() != DataRegion.MODE_NONE && (ctx.getMode() & el.getDisplayModes()) == 0)
                 continue;
 
             // This is redundant with shouldRender check in ActionButton.render, but we don't want to output <td></td> if button is not visible
@@ -143,13 +143,10 @@ public class ButtonBar extends DisplayElement
         out.write("</div>");
     }
 
-    private void renderIncludes(RenderContext ctx, Writer out) throws IOException
+    private void renderIncludes(Writer out) throws IOException
     {
         if (_configs != null && !_configs.isEmpty() && !_renderedIncludes)
         {
-            for (ButtonBarConfig config : _configs)
-                applyConfig(ctx, config);
-
             Set<String> allScriptIncludes = new HashSet<String>();
             for (ButtonBarConfig config : _configs)
             {
@@ -177,6 +174,30 @@ public class ButtonBar extends DisplayElement
         }
     }
 
+    /**
+     * Checks if any of the configured buttons with permission to render has requires selection.
+     * This method should be called after the ButtonBar has been configured by {@link #setConfigs(RenderContext, List<ButtonBarConfig>)}.
+     *
+     * @param ctx RenderContext used to check if button should render (has permission)
+     * @return true if any of the configured buttons requires selection.
+     */
+    public boolean hasRequiresSelectionButton(RenderContext ctx)
+    {
+        if (!shouldRender(ctx))
+            return false;
+
+        for (DisplayElement el : getList())
+        {
+            if (ctx.getMode() != DataRegion.MODE_NONE && (ctx.getMode() & el.getDisplayModes()) == 0)
+                continue;
+
+            if (el.shouldRender(ctx) && el instanceof ActionButton && ((ActionButton)el).hasRequiresSelection())
+                return true;
+        }
+
+        return false;
+    }
+
     public DataRegion.ButtonBarPosition getConfiguredPosition()
     {
         if (_configs.size() > 0)
@@ -196,9 +217,24 @@ public class ButtonBar extends DisplayElement
         _style = style;
     }
 
-    public void setConfigs(List<ButtonBarConfig> configs)
+    /**
+     * Apply the list of ButtonBarConfigs to this ButtonBar and populate the list of buttons.
+     * After the configs are set the ButtonBar is locked and no new buttons may be added.
+     * We may remove this restriction in later releases.
+     *
+     * @param ctx
+     * @param configs
+     */
+    public void setConfigs(RenderContext ctx, List<ButtonBarConfig> configs)
     {
+        checkLocked();
         _configs = configs;
+        if (_configs != null && !_configs.isEmpty())
+        {
+            for (ButtonBarConfig config : _configs)
+                applyConfig(ctx, config);
+        }
+        lock();
     }
 
     private void applyConfig(RenderContext ctx, ButtonBarConfig config)

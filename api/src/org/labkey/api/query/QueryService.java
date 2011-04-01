@@ -106,7 +106,13 @@ abstract public class QueryService
         return select(table,columns,filter,sort,Collections.EMPTY_MAP);
     }
 	abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Map<String,Object> parameters) throws SQLException;
-    abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset);
+
+    /**
+     * @param forceSort always add a sort, even if the Sort parameter is null or empty. Do not pass true if the SQL will
+     * be used as a subselect, as some databases don't allow you to do ORDER BY on a subselect if there is no LIMIT/TOP
+     * clause 
+     */
+    abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset, boolean forceSort);
     abstract public Parameter.ParameterMap insertStatement(Connection conn, User user, TableInfo tableInsert) throws SQLException;
 
 

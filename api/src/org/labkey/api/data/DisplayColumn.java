@@ -597,6 +597,8 @@ public abstract class DisplayColumn extends RenderColumn
                 if (navtree.hasChildren())
                     navtree.addSeparator();
 
+                // Give a harmless URL to prevent an Ext event handling problem that causes the page to navigate to Ext's
+                // default URL, #. See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=11925
                 NavTree filterItem = new NavTree("Filter...");
                 filterItem.setId(baseId + ":filter");//PageFlowUtil.filter(baseId + ":filter"));
                 filterItem.setScript(getFilterOnClick(ctx));

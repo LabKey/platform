@@ -282,7 +282,9 @@ public class DataColumn extends DisplayColumn
     @Override
     public String getClearSortScript(RenderContext ctx)
     {
-        return "clearSort(" + PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + ", " + PageFlowUtil.jsString(_sortColumn.getName()) + ");";
+        String tableName = PageFlowUtil.jsString(ctx.getCurrentRegion().getName());
+        String columnName = PageFlowUtil.jsString(_sortColumn.getName());
+        return "LABKEY.DataRegions[" + tableName + "].clearSort(" + columnName + ");";
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException

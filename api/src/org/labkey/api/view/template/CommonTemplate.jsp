@@ -54,16 +54,23 @@
     {
         onLoad += "window.print(); ";
     }
+
+    String userAgent = StringUtils.defaultString(request.getHeader("User-Agent"),"Mozilla");
 %>
 <!DOCTYPE html>
 <html>
 <head>
+    <% if (null != gwtModules && gwtModules.size() > 0 && -1 != userAgent.indexOf("MSIE 9."))
+        {
+        %><meta http-equiv="X-UA-Compatible" content="IE=8" /><%
+        }
+    %>
     <%if (bean.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%= h(bean.getTitle()) %></title>
     <!-- <%=h(url.getURIString())%> -->
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags() %>
-<%= PageFlowUtil.getStandardIncludes(c,request.getHeader("User-Agent")) %>
+<%= PageFlowUtil.getStandardIncludes(c,userAgent) %>
     <%
 if (null != bean.getStyleSheet())
     {

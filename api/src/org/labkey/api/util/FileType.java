@@ -56,6 +56,13 @@ public class FileType implements Serializable
     private Boolean _supportGZ;
 
     /**
+     * true if the different file extensions are just transformed versions of the same data (such as .raw and .mzXML)
+     * and therefore if multiple are present only the first should be considered for actions in the UI.
+     * false if they are independent and should all be considered actionable
+     */
+    private boolean _extensionsMutuallyExclusive = true;
+
+    /**
      * Constructor to use when type is assumed to be a file, but a call to isDirectory()
      * is not necessary.
      *
@@ -446,6 +453,27 @@ public class FileType implements Serializable
             }
         }
         return foundTypes;
+    }
+
+    /**
+     * true if the different file extensions are just transformed versions of the same data (such as .raw and .mzXML)
+     * and therefore if multiple are present only the first should be considered for actions in the UI.
+     * false if they are independent and should all be considered actionable
+     */
+    public boolean isExtensionsMutuallyExclusive()
+    {
+        return _extensionsMutuallyExclusive;
+    }
+
+    /**
+     * @param extensionsMutuallyExclusive true if the different file extensions are just transformed versions of the
+     * same data (such as .raw and .mzXML) and therefore if multiple are present only the first should be
+     * considered for actions in the UI.
+     * false if they are independent and should all be considered actionable
+     */
+    public void setExtensionsMutuallyExclusive(boolean extensionsMutuallyExclusive)
+    {
+        _extensionsMutuallyExclusive = extensionsMutuallyExclusive;
     }
 
     /**

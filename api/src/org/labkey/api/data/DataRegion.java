@@ -62,7 +62,7 @@ public class DataRegion extends DisplayElement
     private boolean _aggregateRowFirst = false;
     private boolean _aggregateRowLast = true;
     private TableInfo _table = null;
-    protected boolean _showRecordSelectors = false;
+    private boolean _showRecordSelectors = false;
     protected boolean _showSelectMessage = true;
     private boolean _showFilters = true;
     private boolean _sortable = true;
@@ -326,10 +326,11 @@ public class DataRegion extends DisplayElement
         _showRecordSelectors = show;
     }
 
-
-    public boolean getShowRecordSelectors()
+    /** Called after configuring the button bar, check if any buttons require selection (e.g., "Delete"). */
+    public boolean getShowRecordSelectors(RenderContext ctx)
     {
-        return _showRecordSelectors;
+        // Issue 11569: QueryView.showRecordSelectors should take metadata override buttons into account
+        return _showRecordSelectors || _gridButtonBar.hasRequiresSelectionButton(ctx);
     }
 
     public boolean getShowSelectMessage()
@@ -767,6 +768,12 @@ public class DataRegion extends DisplayElement
             return;
         }
 
+        boolean renderButtons = _gridButtonBar.shouldRender(ctx);
+        if (renderButtons)
+            _gridButtonBar.setConfigs(ctx, _buttonBarConfigs);
+
+        boolean showRecordSelectors = getShowRecordSelectors(ctx);
+
         ResultSet rs = null;
         try
         {
@@ -812,17 +819,18 @@ public class DataRegion extends DisplayElement
             }
 
             List<DisplayColumn> renderers = getDisplayColumns();
-
+            Map<FieldKey,ColumnInfo> fieldMap = ctx.getFieldMap();
+            Set<FieldKey> fieldKeys = null==fieldMap ? null : fieldMap.keySet();
+                    
             //determine number of HTML table columns...watch out for hidden display columns
             //and include one extra if showing record selectors
             int colCount = 0;
             for (DisplayColumn col : renderers)
             {
                 // check that detail columns have valid urls
-                if (col instanceof DetailsColumn)
+                if (null != fieldKeys && col instanceof DetailsColumn)
                 {
                     DetailsColumn details = (DetailsColumn)col;
-                    Set<FieldKey> fieldKeys = ctx.getFieldMap().keySet();
                     Container c = ctx.getContainer();
                     if (!details.isValid(fieldKeys, c))
                         details.setVisible(false);
@@ -830,7 +838,7 @@ public class DataRegion extends DisplayElement
                 if (col.isVisible(ctx))
                     colCount++;
             }
-            if (_showRecordSelectors)
+            if (showRecordSelectors)
                 colCount++;
 
 
@@ -843,9 +851,6 @@ public class DataRegion extends DisplayElement
 
             // If button bar is not visible, don't render form.  Important for nested regions (forms can't be nested)
             //TODO: Fix this so form is rendered AFTER all rows. (Does this change layout?)
-            boolean renderButtons = _gridButtonBar.shouldRender(ctx);
-            if (renderButtons)
-                _gridButtonBar.setConfigs(_buttonBarConfigs);
             String filterErrorMsg = getFilterErrorMessage(ctx);
             String filterDescription = isShowFilterDescription() ? getFilterDescription(ctx) : null;
             if (filterErrorMsg != null && filterErrorMsg.length() > 0)
@@ -861,7 +866,7 @@ public class DataRegion extends DisplayElement
                 headerMessage.append("'].clearAllFilters(); return false;\">Clear all filters</a>");
             }
 
-            renderHeaderScript(ctx, out, headerMessage.toString());
+            renderHeaderScript(ctx, out, headerMessage.toString(), showRecordSelectors);
 
             if (!_showPagination && rs instanceof Table.TableResultSet)
             {
@@ -874,18 +879,18 @@ public class DataRegion extends DisplayElement
                 }
             }
             
-            renderRegionStart(ctx, out, renderButtons, renderers);
+            renderRegionStart(ctx, out, renderButtons, showRecordSelectors, renderers);
 
             renderHeader(ctx, out, renderButtons, colCount);
 
             if (null == sqlx)
             {
-                renderGridHeaderColumns(ctx, out, renderers);
+                renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
 
                 if (_aggregateRowFirst)
-                    renderAggregatesTableRow(ctx, out, renderers, false, true);
+                    renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
 
-                int rows = renderTableContents(ctx, out, renderers);
+                int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
                 //assert _rowCount != null && rows == _rowCount : "Row size mismatch: NYI";
                 if (rows == 0)
                 {
@@ -893,7 +898,7 @@ public class DataRegion extends DisplayElement
                 }
 
                 if (_aggregateRowLast)
-                    renderAggregatesTableRow(ctx, out, renderers, true, false);
+                    renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
 
             }
 
@@ -907,7 +912,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, List<DisplayColumn> renderers) throws IOException
+    protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
         if(renderButtons)
             renderFormHeader(ctx, out, MODE_GRID);
@@ -930,7 +935,7 @@ public class DataRegion extends DisplayElement
 
         //colgroup
         out.write("\n<colgroup>");
-        if (_showRecordSelectors)
+        if (showRecordSelectors)
             out.write("\n<col class=\"labkey-selectors\" width=\"35\"/>");
         Iterator<DisplayColumn> itr = renderers.iterator();
         DisplayColumn renderer;
@@ -1001,7 +1006,7 @@ public class DataRegion extends DisplayElement
     }
 
 
-    protected void renderHeaderScript(RenderContext ctx, Writer out, String headerMessage) throws IOException
+    protected void renderHeaderScript(RenderContext ctx, Writer out, String headerMessage, boolean showRecordSelectors) throws IOException
     {
         out.write("<script type=\"text/javascript\">\n");
         out.write("Ext.onReady(\n");
@@ -1040,7 +1045,7 @@ public class DataRegion extends DisplayElement
         out.write(",'totalRows' : " + _totalRows + "\n");
         out.write(",'rowCount' : " + _rowCount + "\n");
         out.write(",'showRows' : '" + getShowRows().toString().toLowerCase() + "'\n");
-        out.write(",'showRecordSelectors' : " + _showRecordSelectors + "\n");
+        out.write(",'showRecordSelectors' : " + showRecordSelectors + "\n");
         out.write(",'showSelectMessage' : " + _showSelectMessage + "\n");
         out.write(",'selectionKey' : " + PageFlowUtil.jsString(getSelectionKey()) + "\n");
         out.write(",'requestURL' : " + PageFlowUtil.jsString(ctx.getViewContext().getActionURL().toString()) + "\n");
@@ -1286,12 +1291,12 @@ public class DataRegion extends DisplayElement
         return null;
     }
 
-    protected void renderGridHeaderColumns(RenderContext ctx, Writer out, List<DisplayColumn> renderers)
+    protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
         out.write("\n<tr>");
 
-        if (_showRecordSelectors)
+        if (showRecordSelectors)
         {
             out.write("<td valign=\"top\" class=\"labkey-column-header labkey-selectors");
             out.write("\">");
@@ -1313,7 +1318,7 @@ public class DataRegion extends DisplayElement
         out.write("</tr>\n");
     }
 
-    protected void renderAggregatesTableRow(RenderContext ctx, Writer out, List<DisplayColumn> renderers, boolean borderTop, boolean borderBottom) throws IOException
+    protected void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
         if (_aggregateResults != null && !_aggregateResults.isEmpty())
         {
@@ -1329,7 +1334,7 @@ public class DataRegion extends DisplayElement
             }
 
             out.write("<tr class=\"labkey-col-total\">");
-            if (_showRecordSelectors)
+            if (showRecordSelectors)
             {
                 out.write("<td class='labkey-selectors'>");
                 if (singleAggregateType != null)
@@ -1353,7 +1358,7 @@ public class DataRegion extends DisplayElement
                     // an aggregate col itself.  This way, the agg type always shows up far-left.
                     if (first)
                     {
-                        if (!_showRecordSelectors && singleAggregateType != null)
+                        if (!showRecordSelectors && singleAggregateType != null)
                         {
                             out.write(singleAggregateType.getFriendlyName());
                             out.write(":&nbsp;");
@@ -1401,7 +1406,7 @@ public class DataRegion extends DisplayElement
     /**
      * @return number of rows rendered
      */
-    protected int renderTableContents(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
+    protected int renderTableContents(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
     {
         Results results = ctx.getResults();
         // unwrap for efficient use of ResultSetRowMapFactory
@@ -1412,7 +1417,7 @@ public class DataRegion extends DisplayElement
         while (rs.next())
         {
             ctx.setRow(factory.getRowMap(rs));
-            renderTableRow(ctx, out, renderers, rowIndex++);
+            renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex++);
         }
 
         rs.close();
@@ -1435,7 +1440,7 @@ public class DataRegion extends DisplayElement
 
     // Allows subclasses to do pre-row and post-row processing
     // CONSIDER: Separate as renderTableRow and renderTableRowContents?
-    protected void renderTableRow(RenderContext ctx, Writer out, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+    protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
     {
         out.write("<tr");
         String rowClass = getRowClass(ctx, rowIndex);
@@ -1443,7 +1448,7 @@ public class DataRegion extends DisplayElement
             out.write(" class=\"" + rowClass + "\"");
         out.write(">");
 
-        if (_showRecordSelectors)
+        if (showRecordSelectors)
             renderRecordSelector(ctx, out);
 
         for (DisplayColumn renderer : renderers)

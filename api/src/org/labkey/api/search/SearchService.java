@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -387,6 +388,12 @@ public interface SearchService
                 _sqlf.insert(0, "(");
                 _sqlf.append(")");
             }
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            throw new UnsupportedOperationException();
         }
 
         public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)

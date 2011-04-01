@@ -34,6 +34,8 @@ public class WebTheme
     private final String _borderTitleColor;
     private final String _webpartColor;
 
+    private boolean _editable = false;
+
     WebTheme(String friendlyName, String textColor, String linkColor, String gridColor, String primaryBackgroundColor,
              String secondaryBackgroundColor, String borderTitleColor, String webPartColor)
     {
@@ -46,7 +48,7 @@ public class WebTheme
         parseColor(secondaryBackgroundColor);
         parseColor(borderTitleColor);
         parseColor(webPartColor);
-        
+
         _textColor = textColor;
         _linkColor = linkColor;
         _gridColor = gridColor;
@@ -54,8 +56,15 @@ public class WebTheme
         _secondBGColor = secondaryBackgroundColor;
         _borderTitleColor = borderTitleColor;
         _webpartColor = webPartColor;
-        
+
         _stylesheet = "stylesheet.css";
+    }
+
+    WebTheme(String friendlyName, String textColor, String linkColor, String gridColor, String primaryBackgroundColor,
+             String secondaryBackgroundColor, String borderTitleColor, String webPartColor, boolean editable)
+    {
+        this(friendlyName, textColor, linkColor, gridColor, primaryBackgroundColor, secondaryBackgroundColor, borderTitleColor, webPartColor);
+        _editable = editable;
     }
 
     private Color parseColor(String s)
@@ -128,6 +137,11 @@ public class WebTheme
     public String getWebPartColor()
     {
         return _webpartColor;
+    }
+
+    public boolean isEditable()
+    {
+        return _editable;
     }
 }
 

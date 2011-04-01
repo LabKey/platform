@@ -21,8 +21,6 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
-import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
@@ -31,7 +29,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
@@ -223,18 +220,6 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         }
 
         return false;
-    }
-
-    public HttpView getRunReportView(ViewContext context) throws Exception
-    {
-        // TODO: Move to ScriptReport?
-        String tabId = (String)context.get("tabId");
-
-        if (null == tabId)
-            tabId = context.getActionURL().getParameter("tabId");
-
-        Mode mode = ("Source".equals(tabId) ? Mode.update : Mode.view);
-        return new AjaxRunScriptReportView(this, mode);
     }
 
     public ActionURL getEditReportURL(ViewContext context)

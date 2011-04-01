@@ -118,7 +118,7 @@ abstract public class PipelineProvider
                         }
 
                         int indexMatch = ft.getIndexMatch(f);
-                        if (checkSiblings && indexMatch > 0)
+                        if (checkSiblings && indexMatch > 0 && ft.isExtensionsMutuallyExclusive())
                         {
                             File[] siblings = dir.listFiles();
                             if (siblings != null)

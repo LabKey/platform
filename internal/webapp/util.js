@@ -297,7 +297,7 @@ function showHelpDiv(elem, titleText, bodyText, width)
 
     div.style.top = posTop + "px";
     div.style.display = "block";
-    div.style.zIndex = "25";
+    div.style.zIndex = "1050";
 
     var table = document.getElementById("helpDivTable");
 

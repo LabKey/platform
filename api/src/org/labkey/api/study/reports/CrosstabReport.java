@@ -31,6 +31,7 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -89,7 +90,6 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
 
     public HttpView renderReport(ViewContext context)
     {
-        String errorMessage = null;
         ReportDescriptor reportDescriptor = getDescriptor();
         ResultSet rs = null;
 
@@ -111,24 +111,16 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
             }
             catch (Exception e)
             {
-                errorMessage = e.getMessage();
-                if (errorMessage == null)
-                    errorMessage = e.toString();
-                Logger.getLogger(CrosstabReport.class).error("unexpected error in renderReport()", e);
+                throw new RuntimeException(e);
             }
             finally
             {
-                if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
+                ResultSetUtil.close(rs);
             }
         }
         else
         {
-            errorMessage = "Invalid report params: The ReportDescriptor must be an instance of CrosstabReportDescriptor";
-        }
-
-        if (errorMessage != null)
-        {
-            return new VBox(ExceptionUtil.getErrorView(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage, null, context.getRequest(), false));
+            throw new IllegalArgumentException("Invalid report params: The ReportDescriptor must be an instance of CrosstabReportDescriptor");
         }
         return null;
     }

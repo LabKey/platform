@@ -68,10 +68,10 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
 
     // Unfortunate query hackery that orders display columns based on default view
-    protected DomainProperty[] reorderDomainColumns(DomainProperty[] unorderedColumns, ViewContext context, ExpProtocol protocol)
+    protected DomainProperty[] reorderDomainColumns(DomainProperty[] domainOrderedColumns, ViewContext context, ExpProtocol protocol)
     {
-        Map<String, DomainProperty> uriToCol = new HashMap<String, DomainProperty>();
-        for (DomainProperty pd : unorderedColumns)
+        Map<String, DomainProperty> uriToCol = new LinkedHashMap<String, DomainProperty>();
+        for (DomainProperty pd : domainOrderedColumns)
             uriToCol.put(pd.getPropertyDescriptor().getPropertyURI(), pd);
 
         List<DomainProperty> orderedColumns = new ArrayList<DomainProperty>();

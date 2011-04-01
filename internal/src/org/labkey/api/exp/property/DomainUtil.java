@@ -487,7 +487,7 @@ public class DomainUtil
         else
         {
             Type type = Type.getTypeByXsdType(from.getRangeURI());
-            to.setMeasure(ColumnRenderProperties.inferIsMeasure(from.getName(), type != null && type.isNumeric(),
+            to.setMeasure(ColumnRenderProperties.inferIsMeasure(from.getName(), from.getLabel(), type != null && type.isNumeric(),
                                                                 false, from.getLookupQuery() != null, from.isHidden()));
         }
     }

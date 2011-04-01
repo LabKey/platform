@@ -142,7 +142,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             colMap.put(c.getName(), c);
         }
 
-        SQLFragment fromSQL = QueryService.get().getSelectSQL(fromTable, fromColumns.values(), null, null, Table.ALL_ROWS, 0);
+        SQLFragment fromSQL = QueryService.get().getSelectSQL(fromTable, fromColumns.values(), null, null, Table.ALL_ROWS, 0, false);
 
         // 
         SQLFragment insertInto = new SQLFragment("INSERT INTO " + toTable.getSelectName() + " (" + objectIdSpec.getName());

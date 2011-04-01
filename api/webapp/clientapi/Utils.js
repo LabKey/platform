@@ -559,16 +559,16 @@ LABKEY.Utils.convertToExcel(
         //use the file upload field...
     }
 
-    function onError(msg)
+    function onFailure(msg)
     {
         alert("ERROR: " + msg);
     }
 
     LABKEY.Utils.onTrue({
         testCallback: tester,
-        successCallback: onTrue,
+        success: onTrue,
         successArguments: ['FileUploadField is ready to use!'],
-        errorCallback: onError,
+        failure: onFailure,
         maxTests: 100
     });
 &lt;/script&gt;

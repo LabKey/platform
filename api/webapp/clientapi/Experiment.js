@@ -225,7 +225,7 @@ LABKEY.Experiment = new function()
             LABKEY.Query.insertRows({
                 schemaName: 'Samples',
                 queryName: config.name,
-                rowDataArray: config.materials,
+                rows: config.materials,
                 success: LABKEY.Utils.getOnSuccess(config),
                 failure: LABKEY.Utils.getOnFailure(config),
                 scope: config.scope

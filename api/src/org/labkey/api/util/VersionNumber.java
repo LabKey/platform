@@ -139,6 +139,9 @@ public class VersionNumber
     //
     public int getVersionInt()
     {
+        // Temporary fix for SQL Server 2008 R2 (10.50.1600.1).  TODO: Support two-digit version ints (MMmm) 
+        if (_minor > 9)
+            _minor = _minor / 10;
         if (_minor > 9 || _minor < 0)
             throw new IllegalStateException("Bad minor version: " + _minor);
 

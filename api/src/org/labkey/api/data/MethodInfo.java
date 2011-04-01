@@ -34,4 +34,6 @@ public interface MethodInfo
 
     // for table methods
     SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments);
+
+    JdbcType getJdbcType(JdbcType[] args);
 }

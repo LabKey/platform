@@ -173,6 +173,24 @@ public class SetupForm
         return null;
     }
 
+    /**
+     * Returns whether there is an inherited pipeline override in the hierarchy of this container.
+     * @param c
+     * @return
+     */
+    public static boolean hasInheritedOverride(Container c)
+    {
+        // start with the parent container because we aren't interested in any override on this container
+        Container parent = c.getParent();
+
+        if (parent != null)
+        {
+            PipeRoot root = PipelineService.get().findPipelineRoot(parent);
+            return root != null && !root.isDefault();
+        }
+        return false;
+    }
+
     public boolean isShowAdditionalOptionsLink()
     {
         return _showAdditionalOptionsLink;

@@ -246,7 +246,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                     sort = new Sort(objectIdCol.getName());
                 }
                 // Select all the assay-side specimen columns that we'll need to do the comparison
-                SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, sort, Table.ALL_ROWS, 0);
+                SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, sort, Table.ALL_ROWS, 0, false);
                 SQLFragment sql = new SQLFragment(" LEFT OUTER JOIN (");
                 sql.append(targetStudySQL);
                 String assaySubqueryAlias = parentAlias + ASSAY_SUBQUERY_SUFFIX;

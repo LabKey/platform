@@ -45,7 +45,7 @@ public class FormattedHtml
 
     public FormattedHtml(String html, boolean isVolatile, Set<String> dependencies)
     {
-        _html = html;
+        _html = "<div class=\"labkey-wiki\">" + html + "</div>";
         _volatile = isVolatile;
         _dependencies = dependencies;
     }

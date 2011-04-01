@@ -901,10 +901,19 @@ LABKEY.ext.ComboPlugin = function () {
             }
 
             var w = this.combo.el ? this.combo.el.getWidth(true) : 0;
+            var tpl = null;
+            if (this.combo.rendered)
+            {
+                if (this.combo.view && this.combo.view.tpl instanceof Ext.Template)
+                    tpl = this.combo.view.tpl;
+                else if (this.combo.tpl instanceof Ext.Template)
+                    tpl = this.combo.tpl;
+            }
+
             this.combo.store.each(function (r) {
                 var html;
-                if (this.combo.view && this.combo.view.tpl && this.combo.rendered)
-                    html = this.combo.view.tpl.apply(r.data);
+                if (tpl)
+                    html = tpl.apply(r.data);
                 else
                     html = r.get(this.combo.displayField);
                 w = Math.max(w, Math.ceil(this.tm.getWidth(html)));
@@ -950,6 +959,8 @@ Ext.override(Ext.layout.FormLayout,
 
     _toQtip : function(o)
     {
+        if (typeof o == 'string')
+            o = {html: o};
         if (!o || !o.html) return false;
         var qtip = 'ext:qtip="' + o.html + '"';
         if ('title' in o && o.title)

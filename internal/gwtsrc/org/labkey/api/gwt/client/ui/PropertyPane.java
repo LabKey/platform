@@ -105,8 +105,6 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 
         _currentPD = newPD;
 
-        setEnabled(editable);
-
         if (_currentPD != null)
         {
             DOM.setStyleAttribute(getElement(), "display", "block");
@@ -122,6 +120,9 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
             DOM.setStyleAttribute(getElement(), "display", "none");
             DOM.setStyleAttribute(getElement(), "backgroundColor", "#ffffff");
         }
+
+        // note item.showProperty() may set/reset canEdit, so call setEnabled() after 
+        setEnabled(editable);
     }
 
     public FieldType getField()

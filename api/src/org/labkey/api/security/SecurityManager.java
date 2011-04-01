@@ -1420,7 +1420,7 @@ public class SecurityManager
                     continue;
 
                 // Only groups in this project
-                if (g.getContainer().equals(proj.getId()))
+                if (g.isProjectGroup() && g.getContainer().equals(proj.getId()))
                 {
                     groupList.append(sep);
                     groupList.append(g.getName());
@@ -1656,16 +1656,28 @@ public class SecurityManager
         ResultSet rs = null;
         try
         {
-             rs = Table.executeQuery(
-                    core.getSchema(),
-                    "SELECT Users.UserId, Users.Name\n" +
-                            "FROM " + core.getTableInfoMembers() + " JOIN " + core.getTableInfoPrincipals() + " Users ON " + core.getTableInfoMembers() + ".UserId = Users.UserId\n" +
-                            "WHERE GroupId = ? AND Active=?\n" +
-                            "ORDER BY Users.Name",
-                    new Object[]{groupId, true});
             List<Pair<Integer,String>> members = new ArrayList<Pair<Integer, String>>();
-            while (rs.next())
-                members.add(new Pair<Integer,String>(rs.getInt(1), rs.getString(2)));
+
+            if (groupId != null && groupId.intValue() == Group.groupUsers)
+            {
+                // Special-case site users group, which isn't maintained in the database
+                for (User user : UserManager.getActiveUsers())
+                {
+                    members.add(new Pair<Integer, String>(user.getUserId(), user.getEmail()));
+                }
+            }
+            else
+            {
+                rs = Table.executeQuery(
+                        core.getSchema(),
+                        "SELECT Users.UserId, Users.Name\n" +
+                                "FROM " + core.getTableInfoMembers() + " JOIN " + core.getTableInfoPrincipals() + " Users ON " + core.getTableInfoMembers() + ".UserId = Users.UserId\n" +
+                                "WHERE GroupId = ? AND Active=?\n" +
+                                "ORDER BY Users.Name",
+                        new Object[]{groupId, true});
+                while (rs.next())
+                    members.add(new Pair<Integer,String>(rs.getInt(1), rs.getString(2)));
+            }
             return members;
         }
         catch (SQLException e)

@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerFilter;
 
 import java.util.List;
 
@@ -71,5 +72,14 @@ public class RExportScriptModel extends ExportScriptModel
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         return "c(\"" + name + "\",\"" + operator.getScriptName() + "\",\"" + value + "\")";
+    }
+
+    public String getContainerFilterString()
+    {
+        ContainerFilter containerFilter = super.getContainerFilter();
+        if (null == containerFilter)
+            return "NULL";
+        else
+            return (" \"" + (containerFilter.getType().name()) + "\" " );                           
     }
 }

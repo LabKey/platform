@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.util.Set;
@@ -67,6 +68,8 @@ public interface DataSet extends StudyEntity
     public boolean canRead(User user);
 
     public boolean canWrite(User user);
+
+    public Set<Class<? extends Permission>> getPermissions(User user);
 
     KeyType getKeyType();
 

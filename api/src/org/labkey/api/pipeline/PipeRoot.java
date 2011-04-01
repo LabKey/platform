@@ -79,4 +79,7 @@ public interface PipeRoot extends SecurableResource
     boolean isValid();
 
     void configureForm(SetupForm form);
+
+    /** @return true if this root is based on the site leve root */
+    boolean isDefault();
 }

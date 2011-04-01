@@ -20,14 +20,11 @@ import com.extjs.gxt.ui.client.event.FieldEvent;
 import com.extjs.gxt.ui.client.event.IconButtonEvent;
 import com.extjs.gxt.ui.client.event.Listener;
 import com.extjs.gxt.ui.client.event.SelectionListener;
-import com.extjs.gxt.ui.client.util.Point;
-import com.extjs.gxt.ui.client.widget.ContentPanel;
 import com.extjs.gxt.ui.client.widget.Dialog;
 import com.extjs.gxt.ui.client.widget.HorizontalPanel;
 import com.extjs.gxt.ui.client.widget.TabItem;
 import com.extjs.gxt.ui.client.widget.TabPanel;
 import com.extjs.gxt.ui.client.widget.VerticalPanel;
-import com.extjs.gxt.ui.client.widget.button.ToggleButton;
 import com.extjs.gxt.ui.client.widget.button.ToolButton;
 import com.extjs.gxt.ui.client.widget.form.ComboBox;
 import com.extjs.gxt.ui.client.widget.form.FormPanel;
@@ -35,15 +32,10 @@ import com.extjs.gxt.ui.client.widget.form.LabelField;
 import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
 import com.extjs.gxt.ui.client.widget.form.SimpleComboValue;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
-import com.extjs.gxt.ui.client.widget.layout.FormLayout;
-import com.extjs.gxt.ui.client.widget.layout.TableLayout;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.DockPanel;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.InlineHTML;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.ListBox;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.BoundCheckBox;
@@ -60,7 +52,6 @@ import org.labkey.api.gwt.client.ui.property.MeasureItem;
 import org.labkey.api.gwt.client.ui.property.MvEnabledItem;
 import org.labkey.api.gwt.client.ui.property.RequiredItem;
 import org.labkey.api.gwt.client.ui.property.URLItem;
-import org.labkey.api.gwt.client.ui.property.ValidatorItem;
 import org.labkey.api.gwt.client.ui.property.VisibilityItem;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -68,6 +59,7 @@ import org.labkey.api.gwt.client.util.StringUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -114,9 +106,9 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
-    public void addColumnMapper(List<String> columnsToMap)
+    public void addColumnMapper(List<String> columnsToMap, List<GWTPropertyDescriptor> columnsToMapInfo)
     {
-        _mapper = new ColumnMapper(_inferredColumns, columnsToMap, this);
+        _mapper = new ColumnMapper(_inferredColumns, columnsToMap, columnsToMapInfo, this);
 
         // initialized auto mapped columns in the grid
         for (String mappedColumn : _mapper.getMappedColumnNames())
@@ -185,7 +177,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             
             if (_showPropertiesPanel)
             {
-                ToolButton btn = new ToolButton("x-tool-right", new SelectionListener<IconButtonEvent>()
+                ToolButton btn = new ToolButton("x-tbar-page-next", new SelectionListener<IconButtonEvent>()
                 {
                     public void componentSelected(IconButtonEvent event)
                     {
@@ -327,7 +319,8 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         List<SimpleComboBox<String>> _columnSelectors = new ArrayList<SimpleComboBox<String>>();
         private List<String> _columnsToMap;
 
-        public ColumnMapper(List<InferencedColumn> inferredColumns, List<String> columnsToMap, Listener<FieldEvent> changeListener)
+        public ColumnMapper(List<InferencedColumn> inferredColumns, List<String> columnsToMap,
+                            List<GWTPropertyDescriptor> columnsToMapInfo, Listener<FieldEvent> changeListener)
         {
             //setFieldWidth(350);
             setLabelWidth(150);
@@ -347,10 +340,19 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             title.addStyleName("labkey-strong");
             title.setFieldLabel("<span class='labkey-strong'>Server&nbsp;Column</span>");
             add(title);
-            
+
+            Map<String, GWTPropertyDescriptor> extraInfoMap = new HashMap<String, GWTPropertyDescriptor>();
+            for (GWTPropertyDescriptor prop : columnsToMapInfo)
+                extraInfoMap.put(prop.getName(), prop);
+
             for (String destinationColumn : columnsToMap)
             {
                 SimpleComboBox selector = new SimpleComboBox<String>();
+                Set<String> aliases = null;
+
+                GWTPropertyDescriptor prop = extraInfoMap.get(destinationColumn);
+                if (prop != null)
+                    aliases = convertAliasToSet(prop.getImportAliases());
 
                 selector.setEmptyText("No mapping");
                 selector.setWidth(250);
@@ -358,7 +360,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
 
                 if (changeListener != null)
                     selector.addListener(Events.Change, changeListener);
-
+                
                 selector.addListener(Events.Change, changeListener);
                 selector.setName(destinationColumn);
 
@@ -366,9 +368,26 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                 {
                     String name = column.getPropertyDescriptor().getName();
                     selector.add(name);
-                    if (areColumnNamesEquivalent(name, destinationColumn))
+
+                    // look to pre-initialize the selection with matching values
+                    if (StringUtils.isEmpty(String.valueOf(selector.getSimpleValue())))
                     {
-                        selector.setSimpleValue(name);
+                        if (areColumnNamesEquivalent(name, destinationColumn))
+                        {
+                            selector.setSimpleValue(name);
+                        }
+                        else if (aliases != null)
+                        {
+                            // if the column has import aliases, try to use those as an additional match criteria
+                            for (String alias : aliases)
+                            {
+                                if (areColumnNamesEquivalent(name, alias))
+                                {
+                                    selector.setSimpleValue(name);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
                 _columnSelectors.add(selector);
@@ -427,5 +446,46 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                 return true;
             return false;
         }
+
+        private Set<String> convertAliasToSet(String s)
+        {
+            Set<String> result = new LinkedHashSet<String>();
+            String arrayString = convertAliasStringToArray(s);
+
+            if (!StringUtils.isEmpty(arrayString))
+            {
+                String[] aliases = arrayString.split(",");
+                for (String alias : aliases)
+                {
+                    if (!StringUtils.isEmpty(alias))
+                    {
+                        if (alias.startsWith("\"") && alias.endsWith("\""))
+                        {
+                            // Strip off the leading and trailing quotes
+                            alias = alias.substring(1, alias.length() - 1);
+                        }
+                        result.add(alias);
+                    }
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Breaks apart an import alias string into it's individual aliases.
+         */
+        public native String convertAliasStringToArray(String s) /*-{
+
+            var pattern = '[^,; \\t\\n\\f\"]+|\"[^\"]*\"';
+            var r = new RegExp(pattern, 'g');
+            var result = [];
+            var alias;
+
+            while ((alias = r.exec(s)) != null)
+            {
+                result.push(alias);
+            }
+            return result.join(',');
+        }-*/;
     }
 }

@@ -20,6 +20,7 @@ import jxl.Sheet;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
+import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -167,35 +169,42 @@ public class ExcelLoader extends DataLoader
         }
 
         @Override
-        protected Object[] readFields()
+        protected Object[] readFields() throws IOException
         {
             if (lineNum() >= numRows)
                 return null;
 
+            ColumnDescriptor[] allColumns = getColumns();
+            Iterator<ColumnDescriptor> columnIter = new ArrayIterator<ColumnDescriptor>(allColumns);
             Object[] fields = new Object[_activeColumns.length];
-            for (int columnIndex = 0; columnIndex < _activeColumns.length; columnIndex++)
-            {
-                ColumnDescriptor column = _activeColumns[columnIndex];
-                Object contents;
 
-                if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist
+            for (int columnIndex = 0, fieldIndex = 0; columnIndex < allColumns.length; columnIndex++)
+            {
+                boolean loadThisColumn = ((columnIter.hasNext() && columnIter.next().load));
+
+                if (loadThisColumn)
                 {
-                    Cell cell = sheet.getCell(columnIndex, lineNum());
-                    if (column.clazz.equals(String.class))
+                    ColumnDescriptor column = _activeColumns[fieldIndex];
+                    Object contents;
+
+                    if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist
                     {
-                        contents = cell.getContents();
+                        Cell cell = sheet.getCell(columnIndex, lineNum());
+                        if (column.clazz.equals(String.class))
+                        {
+                            contents = cell.getContents();
+                        }
+                        else
+                        {
+                            contents = PropertyType.getFromExcelCell(cell);
+                        }
                     }
                     else
                     {
-                        contents = PropertyType.getFromExcelCell(cell);
+                        contents = "";
                     }
+                    fields[fieldIndex++] = contents;
                 }
-                else
-                {
-                    contents = "";
-                }
-
-                fields[columnIndex] = contents;
             }
             return fields;
         }

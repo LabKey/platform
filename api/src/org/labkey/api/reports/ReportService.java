@@ -122,7 +122,7 @@ public class ReportService
 
     public interface ViewFactory
     {
-        @Deprecated // This will be removed, in favor of getExtraFormHtml(), which allows us to generated well formed HTML
+        @Deprecated // TODO: Remove in 11.2, in favor of getExtraFormHtml(), which allows us to generated well formed HTML
         public HttpView createView(ViewContext context, RReportBean bean);
 
         public String getExtraFormHtml(ViewContext ctx, ScriptReportBean bean);

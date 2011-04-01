@@ -71,6 +71,7 @@ public class DomainImporter
      * and thus do not need ontology manager columns created.
      */
     private List<String> columnsToMap;
+    private List<GWTPropertyDescriptor> columnsToMapInfo = new ArrayList<GWTPropertyDescriptor>();
 
     private final boolean needToMapColumns;
 
@@ -143,6 +144,16 @@ public class DomainImporter
 
         mainPanel = new VerticalPanel();
         mainPanel.add(form);
+    }
+
+    /**
+     * @deprecated temporary method to push in extra metadata for the mapped columns, in the next
+     * release we need to remove this method and make it so mapped columns come in as
+     * GWTPropertyDescriptors not just names.
+     */
+    public void setColumnsToMap(List<GWTPropertyDescriptor> extraInfo)
+    {
+        columnsToMapInfo = extraInfo;
     }
 
     public Panel getMainPanel()
@@ -358,7 +369,7 @@ public class DomainImporter
         }
         if (needToMapColumns)
         {
-            grid.addColumnMapper(columnsToMap);
+            grid.addColumnMapper(columnsToMap, columnsToMapInfo);
         }
 
         if (needGridAndButtons && !_hideButtons)

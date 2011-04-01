@@ -50,10 +50,17 @@
  * to let the user choose a different query.
  * @param {boolean} [config.allowChooseView] If the button bar is showing, whether or not it should be include a button
  * to let the user choose a different view.
+ * @param {String} [config.detailsURL] Specify or override the default details URL for the table with one of the form
+ * "/controller/action.view?id=${RowId}" or "org.labkey.package.MyController$ActionAction.class?id=${RowId}"
  * @param {boolean} [config.showDetailsColumn] If the underlying table has a details URL, show a column that renders a [details] link (default true).  If true, the record selectors will be included regardless of the 'showRecordSelectors' config option.
+ * @param {String} [config.updateURL] Specify or override the default updateURL for the table with one of the form
+ * "/controller/action.view?id=${RowId}" or "org.labkey.package.MyController$ActionAction.class?id=${RowId}"
  * @param {boolean} [config.showUpdateColumn] If the underlying table has an update URL, show a column that renders an [edit] link (default true).
- * @param {boolean} [config.showInsertNewButton] If the underlying table has an insert URL, show a "Insert New" button in the button bar (default true).
+ * @param {String} [config.insertURL] Specify or override the default insert URL for the table with one of the form
+ * "/controller/action.view?id=${RowId}" or "org.labkey.package.MyController$ActionAction.class?id=${RowId}"
+ * @param {boolean} [config.showInsertNewButton] If the underlying table has an insert URL, show an "Insert New" button in the button bar (default true).
  * @param {boolean} [config.showDeleteButton] Show a "Delete" button in the button bar (default true).
+ * @param {boolean} [config.showReports] If true, show reports on the Views menu (default true).
  * @param {boolean} [config.showExportButtons] Show the export button menu in the button bar (default true).
  * @param {boolean} [config.showBorders] Render the table with borders (default true).
  * @param {boolean} [config.showSurroundingBorder] Render the table with a surrounding border (default true).

@@ -206,7 +206,9 @@ LABKEY.Visualization = new function() {
 
             var params = {
                 measures : config.measures,
-                sorts : config.sorts
+                sorts : config.sorts,
+                filterUrl: config.filterUrl,
+                filterQuery: config.filterQuery
             };
 
             Ext.Ajax.request(
@@ -379,8 +381,13 @@ LABKEY.Visualization = new function() {
             if (valid)
                 LABKEY.Visualization.get(params);
             return valid;
-        }
+        },
 
+        getDataFilterFromURL : function()
+        {
+            var urlParams = LABKEY.ActionURL.getParameters();
+            return urlParams['filterUrl'];
+        }
     };
 };
 

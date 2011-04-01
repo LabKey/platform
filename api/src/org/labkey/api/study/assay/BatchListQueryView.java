@@ -42,7 +42,6 @@ public class BatchListQueryView extends QueryView
         _protocol = protocol;
         setShadeAlternatingRows(true);
         setShowBorders(true);
-        setShowRecordSelectors(true);
         setShowDetailsColumn(false);
         setShowExportButtons(false);
     }

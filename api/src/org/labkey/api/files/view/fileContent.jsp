@@ -187,7 +187,7 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
     {
         if (!panel.rendered)
             return;
-        var padding = [20,20];
+        var padding = [32,20];
         var xy = panel.el.getXY();
         var size = {
             width : Math.max(100,w-xy[0]-padding[0]),

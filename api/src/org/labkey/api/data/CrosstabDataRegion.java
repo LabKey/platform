@@ -47,12 +47,13 @@ public class CrosstabDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderGridHeaderColumns(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
+    protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
+            throws IOException, SQLException
     {
         //add a row for the column axis label if there is one
         out.write("<tr>\n");
-        renderColumnGroupHeader(_numRowAxisCols + (getShowRecordSelectors() ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2);
-        renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (getShowRecordSelectors() ? 1 : 0),
+        renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2);
+        renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (showRecordSelectors ? 1 : 0),
                 _settings.getColumnAxis().getCaption(), out);
         out.write("</tr>\n");
 
@@ -60,7 +61,7 @@ public class CrosstabDataRegion extends DataRegion
         out.write("<tr>\n");
 
         //if record selectors are enabled, add a blank column
-        if(getShowRecordSelectors())
+        if (showRecordSelectors)
             out.write("<td></td>\n");
 
         //for each col dimension member, add a group header
@@ -87,7 +88,7 @@ public class CrosstabDataRegion extends DataRegion
         out.write("</tr>\n");
 
         //call the base class to finish rendering the headers
-        super.renderGridHeaderColumns(ctx, out, renderers);
+        super.renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
     } //renderGridHeaders()
 
     protected String getMemberCaptionWithUrl(CrosstabDimension dimension, CrosstabMember member)

@@ -32,6 +32,15 @@ abstract public class AbstractMethodInfo implements MethodInfo
 
     protected JdbcType getSqlType(ColumnInfo[] arguments)
     {
+        JdbcType[] types = null==arguments ? new JdbcType[0] : new JdbcType[arguments.length];
+        for (int i=0 ; i<types.length ; i++)
+            types[i] = arguments[i].getJdbcType();
+        return getJdbcType(types);
+    }
+
+    @Override
+    public JdbcType getJdbcType(JdbcType[] args)
+    {
         return _jdbcType;
     }
 

@@ -296,6 +296,10 @@ public class PageConfig
 
     public String getMetaTags()
     {
+        // We want search engines to index our regular pages (with navigation) not the print versions
+        if (_template == Template.Print)
+            setNoIndex();
+
         if (_meta.isEmpty())
             return "";
         StringBuilder sb = new StringBuilder();

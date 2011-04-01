@@ -78,26 +78,28 @@ public class Crosstab
         int statFieldIndex = 0;
         String statCol = null;
 
-        // map the row, column and stat FieldKey names to result set aliases
-        Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
+        try {
+            // map the row, column and stat FieldKey names to result set aliases
+            Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
 
-        if (fieldMap.containsKey(rowFieldKey))
-            rowFieldIndex = _results.findColumn(_rowFieldKey);
-        if (fieldMap.containsKey(colFieldKey))
-            colFieldIndex = _results.findColumn(_colFieldKey);
-        if (fieldMap.containsKey(statFieldKey))
-        {
-            statFieldIndex = _results.findColumn(_statFieldKey);
-            ColumnInfo col = fieldMap.get(statFieldKey);
-            if (Number.class.isAssignableFrom(col.getJavaClass()) || col.getJavaClass().isPrimitive())
-                _statType = StatType.numeric;
-            else if (String.class.isAssignableFrom(col.getJavaClass()))
-                _statType = StatType.string;
-        }
+            if (fieldMap.containsKey(rowFieldKey))
+                rowFieldIndex = _results.findColumn(_rowFieldKey);
+            if (fieldMap.containsKey(colFieldKey))
+                colFieldIndex = _results.findColumn(_colFieldKey);
+            if (fieldMap.containsKey(statFieldKey))
+            {
+                statFieldIndex = _results.findColumn(_statFieldKey);
+                ColumnInfo col = fieldMap.get(statFieldKey);
+                if (Number.class.isAssignableFrom(col.getJavaClass()) || col.getJavaClass().isPrimitive())
+                    _statType = StatType.numeric;
+                else if (String.class.isAssignableFrom(col.getJavaClass()))
+                    _statType = StatType.string;
+            }
+            else
+                throw new IllegalArgumentException("The specified statistics column: " + _statFieldKey + " is not available in this view");
 
 //        ResultSet rs = _results.getResultSet();
 
-        try {
             //TODO: Use DisplayField for display & value extraction. Support Grouping fields with custom groupings
             while (_results.next())
             {

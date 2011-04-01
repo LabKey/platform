@@ -28,6 +28,7 @@ import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
@@ -525,6 +526,42 @@ public enum CompareType
             return dialect.getColumnSelectName(alias) + _comparison.getSql();
         }
 
+        protected String substutiteLabKeySqlParams(String sql, Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            JdbcType type = getColumnType(columnMap);
+            if (type == null)
+                throw new IllegalArgumentException("Column " + _colName + " not found in column map.");
+            Object[] params = getParamVals();
+            if (params == null || params.length == 0)
+                return sql;
+            String[] parts = sql.split("\\?");
+            StringBuilder substituted = new StringBuilder(parts[0]);
+            int i;
+            for (i = 0; i < params.length; i++)
+            {
+                substituted.append(escapeLabKeySqlValue(params[i], type));
+                if (parts.length > i + 1)
+                    substituted.append(parts[i + 1]);
+            }
+            return substituted.toString();
+        }
+
+        protected JdbcType getColumnType(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            FieldKey key = FieldKey.fromString(_colName);
+            ColumnInfo col = columnMap.get(key);
+            return col != null ? col.getJdbcType() : null;
+        }
+
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            String comparisonSql = _comparison.getSql();
+            if (comparisonSql == null)
+                throw new IllegalStateException("This compare type must override getLabKeySQLWhereClause.");
+            String sql = getLabKeySQLColName(_colName) + _comparison.getSql();
+            return substutiteLabKeySqlParams(sql, columnMap);
+        }
+
         @Override
         protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
         {
@@ -770,6 +807,14 @@ public enum CompareType
         }
 
         @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            String selectName = getLabKeySQLColName(_colName);
+            String sql = selectName + " >= ? AND " + selectName + " < ?";
+            return substutiteLabKeySqlParams(sql, columnMap);
+        }
+
+        @Override
         public boolean meetsCriteria(Object value)
         {
             if (value == null)
@@ -794,6 +839,14 @@ public enum CompareType
         {
             String selectName = dialect.getColumnSelectName(alias);
             return selectName + " < ? OR " + selectName + " >= ?";
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            String selectName = getLabKeySQLColName(_colName);
+            String sql = selectName + " < ? OR " + selectName + " >= ?";
+            return substutiteLabKeySqlParams(sql, columnMap);
         }
 
         @Override
@@ -885,17 +938,17 @@ public enum CompareType
     }
 
 
-
-
-
-
     abstract private static class LikeClause extends CompareClause
     {
         static final private char[] charsToBeEscaped = new char[] { '%', '_', '[' };
         static final private char escapeChar = '!';
+
+        private final String _unescapedValue;
+
         protected LikeClause(String colName, CompareType compareType, Object value)
         {
             super(colName, compareType, escapeLikePattern(ObjectUtils.toString(value)));
+            _unescapedValue = ObjectUtils.toString(value);
         }
 
         static private String escapeLikePattern(String value)
@@ -925,6 +978,14 @@ public enum CompareType
             sb.append(" LIKE ?");
         }
 
+        @Override
+        // Value has been escaped for LIKE SQL; use stashed unescaped value for display text instead
+        protected void replaceParamValues(StringBuilder sb, int fromIndex)
+        {
+            int i = sb.indexOf("?", fromIndex);
+            sb.replace(i, i + 1, _unescapedValue);
+        }
+
         abstract String toWhereClause(SqlDialect dialect, String alias);
     }
 
@@ -938,6 +999,13 @@ public enum CompareType
         String toWhereClause(SqlDialect dialect, String alias)
         {
             return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape();
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            Object value = getParamVals()[0];
+            return  getLabKeySQLColName(_colName) + " LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'";
         }
 
         @Override
@@ -958,6 +1026,13 @@ public enum CompareType
         String toWhereClause(SqlDialect dialect, String alias)
         {
             return dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape();
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            Object value = getParamVals()[0];
+            return  getLabKeySQLColName(_colName) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'";
         }
 
         @Override
@@ -1029,6 +1104,13 @@ public enum CompareType
         }
 
         @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            String colName = getLabKeySQLColName(_colName);
+            return "LOWER(" + colName + ") LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap), true) + "%')";
+        }
+
+        @Override
         protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
@@ -1045,6 +1127,13 @@ public enum CompareType
         String toWhereClause(SqlDialect dialect, String alias)
         {
             return dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape(); 
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            String colName = getLabKeySQLColName(_colName);
+            return "LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap), true) + "%')";
         }
 
         @Override

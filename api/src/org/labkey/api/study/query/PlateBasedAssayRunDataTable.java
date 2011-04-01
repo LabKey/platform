@@ -24,12 +24,12 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.study.assay.*;
 
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.*;
 
 /**
@@ -90,6 +90,8 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
                             public TableInfo getLookupTableInfo()
                             {
                                 ExpMaterialTable materials = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), schema);
+                                // Make sure we are filtering to the same set of containers
+                                materials.setContainerFilter(getContainerFilter());
                                 if (sampleSet != null)
                                 {
                                     materials.setSampleSet(sampleSet, true);
@@ -135,17 +137,19 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%" + getDataRowLsidPrefix() + "%'");
         addCondition(dataRowClause, "ObjectURI");
 
-        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), Types.INTEGER);
+        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), JdbcType.INTEGER);
         runColumn.setFk(new LookupForeignKey("RowID")
         {
             public TableInfo getLookupTableInfo()
             {
-                return AssayService.get().createRunTable(protocol, provider, schema.getUser(), schema.getContainer());
+                ExpRunTable expRunTable = AssayService.get().createRunTable(protocol, provider, schema.getUser(), schema.getContainer());
+                expRunTable.setContainerFilter(getContainerFilter());
+                return expRunTable;
             }
         });
         addColumn(runColumn);
 
-        ExprColumn runIdColumn = new ExprColumn(this, RUN_ID_COLUMN_NAME, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), Types.INTEGER);
+        ExprColumn runIdColumn = new ExprColumn(this, RUN_ID_COLUMN_NAME, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), JdbcType.INTEGER);
         ColumnInfo addedRunIdColumn = addColumn(runIdColumn);
         addedRunIdColumn.setHidden(true);
 

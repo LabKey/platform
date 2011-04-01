@@ -25,15 +25,15 @@
 <%@ page import="org.labkey.api.reports.report.ScriptReport" %>
 <%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.AjaxScriptReportView.Mode" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportDesignerSessionCache" %>
 <%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
-<%@ page import="org.labkey.api.reports.report.view.*" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
@@ -47,30 +47,47 @@
     boolean readOnly = bean.isReadOnly();
     Mode mode = bean.getMode();
     boolean isAdmin = c.hasPermission(ctx.getUser(), AdminPermission.class);
+    boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser());
 
-    // Use simple element ids for create/update (easier for saving & testing), but tack on a unique integer to every id
-    // when viewing a report, since the element ids are global and multiple reports could be rendered on the same page.
-    String uid = (mode.allowsMultiplePerPage() ? "_" + UniqueID.getServerSessionScopedUID() : "");
+    // Mode determines whether we need unique IDs on all the HTML elements
+    String uid = mode.getUniqueID();
     String scriptId = "script" + uid;
     String viewDivId = "viewDiv" + uid;
 
-    // We might be rendering within a data region or on a page with multiple reports... so we need a different data region
-    // name for the data tab.
+    // We might be rendering within a data region or on a page with multiple reports... so we need a different
+    // data region name for the data tab.
     String dataTabRegionName = "reportRegion" + uid;
 
-    ActionURL viewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
-    viewURL.addParameters(ctx.getActionURL().getParameters());
+    ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
+    ActionURL baseViewURL = initialViewURL.clone();
+    Pair<String, String>[] params = ctx.getActionURL().getParameters();
 
-    //replaceParameter(RunReportView.CACHE_PARAM, String.valueOf(bean.getReportId())); ??
+    // Initial view URL uses all parameters
+    initialViewURL.addParameters(params);
 
-    viewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
+    // Base view URL strips off sort and filter parameters (we'll get them from the data tab)
+    for (Pair<String, String> pair : params)
+    {
+        String name = pair.getKey();
+
+        if (name.equals(bean.getDataRegionName() + ".sort"))
+            continue;
+
+        if (name.startsWith(bean.getDataRegionName() + ".") && name.contains("~"))
+            continue;
+
+        baseViewURL.addParameter(name, pair.getValue());
+    }
+
+    initialViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
+    baseViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 %>
 <script type="text/javascript">LABKEY.requiresScript("/editarea/edit_area_full.js");</script>
 <script type="text/javascript">
 
 // Since multiple reports could be rendered on the same page, use an anonymous function to provide a separate namespace
 // for all the properties and methods.  The Save button needs to call saveReport(), so new up a class and return an
-// object that provides outside access the save method.
+// object that provides outside access to saveReport().
 var f_scope<%=uid%> = new (function() {
     var previousScript = null;
     var previousViewURL = null;
@@ -78,52 +95,48 @@ var f_scope<%=uid%> = new (function() {
     var viewDivExtElement;
     var dataDivExtElement = null;
     var tabsDivExtElement;
-    var baseViewURL = <%=q(viewURL.toString())%>;
+    var initialViewURL = <%=q(initialViewURL.toString())%>;   // Use original URL filter/sort params if data tab hasn't been used
+    var baseViewURL = <%=q(baseViewURL.toString())%>;     // URL with filter and sort stripped out; we'll use filter/sort from data tab instead
     var dataFirstLoad = true;
     var dataRegion = null;
+    var readOnly = <%=readOnly%>;
 
     Ext.onReady(function(){
         scriptText = document.getElementById("<%=scriptId%>");
         viewDivExtElement = Ext.get("<%=viewDivId%>");
         tabsDivExtElement = Ext.get("tabsDiv<%=uid%>");
 
+        var activeTab = 0;
+        var items = new Array();
+
+        items.push({title: 'View', autoHeight: true, contentEl: '<%=viewDivId%>', listeners: {activate: activateViewTab}});
+        items.push({title: 'Data', autoHeight: true, contentEl: 'dataDiv<%=uid%>', listeners: {activate: activateDataTab}});
+
+        var sourceAndHelp = <%=sourceAndHelp%>;
+        var help = <%=null != helpHtml%>;
+        var preferSourceTab = <%=mode.preferSourceTab()%>;
+
+        if (sourceAndHelp)
+        {
+            items.push({title: 'Source', autoHeight: true, contentEl: 'scriptDiv<%=uid%>', listeners: {render: activateSourceTab}});
+
+            if (preferSourceTab)
+                activeTab = 2;
+
+            if (help)
+                items.push({title: 'Help', autoHeight: true, contentEl: 'reportHelpDiv<%=uid%>'});
+        }
+
         var tabs = new Ext.TabPanel({
             renderTo: 'tabsDiv<%=uid%>',
+            autoHeight: true,
             width: 1000,
-            height: 600,
-            activeTab: 0,
+            activeTab: activeTab,
             frame: true,
             plain: true,
             defaults: {autoScroll: true},
             listeners: {beforetabchange: beforeTabChange},
-            items: [<%
-
-                if (mode.showSource())
-                {
-                %>{
-                    title: 'Source',
-                    contentEl: 'scriptDiv<%=uid%>'
-                },<%
-                }
-                %>{
-                    title: 'View',
-                    contentEl: '<%=viewDivId%>',
-                    listeners: {activate: activateViewTab}
-                },{
-                    title: 'Data',
-                    contentEl: 'dataDiv<%=uid%>',
-                    listeners: {activate: activateDataTab}
-                }<%
-
-                if (mode.showHelp() && null != helpHtml)
-                {
-                %>,{
-                    title: 'Help',
-                    contentEl: 'reportHelpDiv<%=uid%>'
-                }<%
-                }
-                %>
-            ]
+            items: items
         });
 
         tabs.strip.applyStyles({'background':'#ffffff'});
@@ -135,6 +148,24 @@ var f_scope<%=uid%> = new (function() {
         // Do this only on Firefox, since it steals focus from the editarea. 
         if (Ext.isGecko)
             Ext.get("bogusTextArea").focus();
+    }
+
+    function activateSourceTab(tab)
+    {
+        if (!readOnly)
+        {
+            Ext.EventManager.on('<%=scriptId%>', 'keydown', handleTabsInTextArea);
+            editAreaLoader.init({
+                id: "<%=scriptId%>",
+                toolbar: "search, go_to_line, |, undo, redo, |, select_font,|, change_smooth_selection, highlight, reset_highlight, word_wrap, |, help",<%
+            if (null != report.getEditAreaSyntax())
+            { %>
+                syntax: "<%=report.getEditAreaSyntax()%>",<%
+            } %>
+                start_highlight: true,
+                change_callback: "LABKEY.setDirty(true);"  // JavaScript string to eval, NOT a function
+            });
+        }
     }
 
     function activateViewTab(tab)
@@ -172,7 +203,7 @@ var f_scope<%=uid%> = new (function() {
     // CONSIDER: AJAX post the form and track dirty on the form, data filters, data sorts, etc.
     function getViewURL()
     {
-        var url = dataRegion ? addFilterAndSort(baseViewURL, dataRegion) : baseViewURL;
+        var url = dataRegion ? addFilterAndSort(baseViewURL, dataRegion) : initialViewURL;
 
         url = addIncludeScripts(url);
         url = addRunInBackground(url);
@@ -239,10 +270,14 @@ var f_scope<%=uid%> = new (function() {
 
     function activateDataTab(tab)
     {
-        // Load the data grid on demand, since it's not usually needed.
+        // Load the data grid on demand, since it may not be needed.
         if (null == dataDivExtElement)
         {
             dataDivExtElement = Ext.get('dataDiv<%=uid%>');
+            var url = <%=q(initialViewURL.toString())%>;
+            var dataRegionName = <%=q(bean.getDataRegionName())%>;
+            var removeableFilters = getFilterArray(url, dataRegionName);
+            var sort = getSort(url, dataRegionName);
 
             new LABKEY.QueryWebPart({
                 schemaName: <%=q(bean.getSchemaName())%>,
@@ -254,16 +289,60 @@ var f_scope<%=uid%> = new (function() {
                 }
                 %>
                 dataRegionName: <%=q(dataTabRegionName)%>,
+                removeableFilters: removeableFilters,
+                removeableSort: sort,
                 buttonBarPosition: 'none',
                 frame: 'none',
                 showDetailsColumn: false,
                 showUpdateColumn: false,
+                showRecordSelectors: false,
+                showDeleteButton: false,    // TODO: Remove when #11998 is fixed
                 renderTo: dataDivExtElement,
                 maskEl: tabsDivExtElement,
                 success: dataSuccess,
                 failure: dataFailure
             });
         }
+    }
+
+    // Create an array of LABKEY.Filter objects from the filter parameters on the URL
+    // TODO: Move this to Filter.js?
+    function getFilterArray(url, dataRegionName)
+    {
+        var params = LABKEY.ActionURL.getParameters(url);
+        var filterArray = new Array();
+
+        for (var paramName in params)
+        {
+            // Look for parameters that have the right prefix
+            if (paramName.indexOf(dataRegionName + ".") == 0)
+            {
+                var tilde = paramName.indexOf("~");
+
+                if (tilde != -1)
+                {
+                    var columnName = paramName.substring(dataRegionName.length + 1, tilde);
+                    var filterName = paramName.substring(tilde + 1);
+                    var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterName);
+                    var values = params[paramName];
+                    if (!Ext.isArray(values))
+                    {
+                        values = [values];
+                    }
+
+                    filterArray.push(LABKEY.Filter.create(columnName, values, filterType));
+                }
+            }
+        }
+
+        return filterArray;
+    }
+
+    // Pull the sort parameter off the URL
+    function getSort(url, dataRegionName)
+    {
+        var params = LABKEY.ActionURL.getParameters(url);
+        return params[dataRegionName + "." + "sort"];
     }
 
     function dataSuccess(dr)
@@ -304,11 +383,15 @@ var f_scope<%=uid%> = new (function() {
             reportName.value = name;
             submit();
         }
+        else
+        {
+            // If they hit cancel then clear the submit bit (which will re-instate the dirty bit)
+            LABKEY.setSubmit(false);
+        }
     }
 
     function submit()
     {
-        // TODO: LABKEY.setSubmit(true);
         document.getElementById('renderReport').submit();
     }
 
@@ -317,6 +400,7 @@ var f_scope<%=uid%> = new (function() {
         saveReport: function() {
             updateScript();
 
+            LABKEY.setSubmit(true);
             document.getElementById('renderReport').action = '<%=urlProvider(ReportUrls.class).urlSaveScriptReport(c)%>';
             var reportName = document.getElementById('reportName');
 
@@ -350,11 +434,13 @@ var f_scope<%=uid%> = new (function() {
 <div id="tabsDiv<%=uid%>" class="extContainer">
     <div id="<%=viewDivId%>" class="x-hide-display">
     </div>
+    <div id="dataDiv<%=uid%>" class="x-hide-display">
+    </div>
     <div id="scriptDiv<%=uid%>" class="x-hide-display">
         <form id="renderReport" method="post">
         <table width="100%">
             <tr><td width="100%">
-                <textarea id="<%=scriptId%>"
+                <textarea id="<%=scriptId%>" onchange="LABKEY.setDirty(true);return true;"
                     name="<%=scriptId%>"<%
                     if (readOnly)
                     { %>
@@ -362,36 +448,24 @@ var f_scope<%=uid%> = new (function() {
                     style="width:100%;margin:0;padding:0;"
                     cols="120"
                     wrap="on"
-                    rows="25"><%=h(StringUtils.trimToEmpty(bean.getScript()))%></textarea><%
-
-            if (!readOnly)
-            {
-            %>
-                <script type="text/javascript">
-                    Ext.EventManager.on('<%=scriptId%>', 'keydown', handleTabsInTextArea);
-                    editAreaLoader.init({
-                        id: "<%=scriptId%>",<%
-                    if (null != report.getEditAreaSyntax())
-                    { %>
-                        syntax: "<%=report.getEditAreaSyntax()%>",<%
-                    } %>
-                        start_highlight: true
-                    });
-                </script><%
-            }
-            %>
+                    rows="25"><%=h(StringUtils.trimToEmpty(bean.getScript()))
+                %></textarea>
             </td></tr><%
 
             if (!readOnly)
-            {
+            { %>
+            <script type="text/javascript">
+                window.onbeforeunload = LABKEY.beforeunload();
+            </script><%
+
                 if (isAdmin)
                 {
             %>
             <tr><td>
-                <input type="checkbox" name="shareReport"<%=bean.isShareReport() ? " checked" : ""%>> Make this view available to all users
+                <input type="checkbox" name="shareReport"<%=bean.isShareReport() ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view available to all users
             </td></tr>
             <tr><td>
-                <input type="checkbox" name="inheritable"<%=bean.isInheritable() ? " checked" : ""%>> Make this view available in child folders
+                <input type="checkbox" name="inheritable"<%=bean.isInheritable() ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view available in child folders
                     <%=helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
                 "where the schema and table are the same as this data grid.")%>
             </td></tr><%
@@ -402,7 +476,8 @@ var f_scope<%=uid%> = new (function() {
                 {
             %>
             <tr><td>
-                <input type="checkbox" id="runInBackground" name="<%=ScriptReportDescriptor.Prop.runInBackground.name()%>"<%=bean.isRunInBackground() ? " checked" : ""%>> Run this view in the background as a pipeline job
+                <input type="checkbox" id="runInBackground" name="<%=ScriptReportDescriptor.Prop.runInBackground.name()%>"<%=bean.isRunInBackground() ? " checked" : ""
+                    %> onchange="LABKEY.setDirty(true);return true;"> Run this view in the background as a pipeline job
             </td></tr><%
                 }
 
@@ -418,10 +493,9 @@ var f_scope<%=uid%> = new (function() {
             <tr><td colspan="2"><i>You can execute any of the following scripts as part of your current script by calling: source('&lt;Script Name&gt;.r') after checking the box next to the &lt;Script Name&gt; you plan to use.</i></td></tr><%
                     for (Report sharedReport : sharedReports)
                     { %>
-            <tr><td><input type="checkbox" name="<%=ScriptReportDescriptor.Prop.includedReports%>"<%
-                // TODO: Check dirty: onchange="LABKEY.setDirty(true);return true;" %> value="<%=sharedReport.getDescriptor().getReportId()
+            <tr><td><input type="checkbox" name="<%=ScriptReportDescriptor.Prop.includedReports%>" value="<%=sharedReport.getDescriptor().getReportId()
                 %>"<%=isScriptIncluded(sharedReport.getDescriptor().getReportId(), includedReports) ? " checked" : ""
-                %>> <%=sharedReport.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)%></td></tr><%
+                %> onchange="LABKEY.setDirty(true);return true;"> <%=sharedReport.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)%></td></tr><%
                     } %>
             <tr><td>&nbsp;</td></tr><%
 
@@ -452,15 +526,14 @@ var f_scope<%=uid%> = new (function() {
                 <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
                 <input type="hidden" name="reportName" id="reportName" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>">
                 <%=generateButton("Save", "javascript:void(0)", "javascript:f_scope" + uid + ".saveReport()")%>
-            </td></tr><%
+            </td></tr>
+            <tr><td>&nbsp;</td></tr><%
                 }
     %>
         </table>
         </form>
-    </div>
-    <div id="dataDiv<%=uid%>" class="x-hide-display">
     </div><%
-    if (mode.showHelp() && null != helpHtml)
+    if (sourceAndHelp && null != helpHtml)
     {
     %>
     <div id="reportHelpDiv<%=uid%>" class="x-hide-display">

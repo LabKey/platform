@@ -266,7 +266,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             schemaName: this.schemaName,
             queryName: this.queryName,
             containerPath: this.containerPath,
-            rowDataArray: deleteRowsKeys,
+            rows: deleteRowsKeys,
             successCallback: this.getDeleteSuccessHandler(),
             action: "deleteRows" //hack for Query.js bug
         });

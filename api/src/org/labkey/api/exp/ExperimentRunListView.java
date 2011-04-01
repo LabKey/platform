@@ -50,7 +50,6 @@ public class ExperimentRunListView extends QueryView
         _selectedType = selectedType;
         setShowDetailsColumn(false);
         setShowExportButtons(true);
-        setShowRecordSelectors(true);
     }
 
     public static QuerySettings getRunListQuerySettings(UserSchema schema, ViewContext model, String tableName, boolean allowCustomizations)

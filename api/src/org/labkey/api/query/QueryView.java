@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.ApiQueryResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.RawValueColumn;
@@ -46,6 +47,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -62,6 +64,11 @@ public class QueryView extends WebPartView<Object>
 
     private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<String, ExportScriptFactory>();
     private String _linkTarget;
+    
+    // Overrides for any URLs that might already be set on the TableInfo
+    private String _updateURL;
+    private String _detailsURL;
+    private String _insertURL;
 
     public static void register(ExportScriptFactory factory)
     {
@@ -117,6 +124,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _exportView = false;
     private boolean _showPagination = true;
     private boolean _showPaginationCount = true;
+    private boolean _showReports = true;
     private ReportService.ItemFilter _itemFilter = DEFAULT_ITEM_FILTER;
 
     public static ReportService.ItemFilter DEFAULT_ITEM_FILTER = new ReportService.ItemFilter()
@@ -362,12 +370,17 @@ public class QueryView extends WebPartView<Object>
     {
         ActionURL ret = _schema.urlFor(action, _queryDef);
 
+        if (ret == null)
+        {
+            return null;
+        }
+
         // Applying the base sort/filter to the url is lossy in that anyone consuming the url can't
         // determine if the sort/filter originated from QuerySettings or from a user applied sort/filter.
         if (getSettings().getBaseFilter() != null)
             (getSettings().getBaseFilter()).applyToURL(ret, DATAREGIONNAME_DEFAULT);
 
-        if (getSettings().getBaseSort() != null)
+        if (getSettings().getBaseSort() != null && getSettings().getBaseSort().getSortList().size()>0)
             getSettings().getBaseSort().applyToURL(ret, DATAREGIONNAME_DEFAULT);
 
         switch (action)
@@ -500,6 +513,17 @@ public class QueryView extends WebPartView<Object>
         URLHelper ret = getSettings().getReturnURL();
         if (null == ret)
             ret = getSettings().getSortFilterURL();
+        else
+        {
+            // if we are using a returnUrl for this QV, make sure we apply any sort and filter
+            // parameters so that reports stay in sync with the data region.
+            URLHelper url = getSettings().getSortFilterURL();
+            for (String param : url.getKeysByPrefix(getSettings().getDataRegionName()))
+            {
+                ret.replaceParameter(param, url.getParameter(param));
+            }
+        }
+
         ret.deleteParameter(param(QueryParam.viewName));
         ret.deleteParameter(param(QueryParam.reportId));
         ret.deleteParameter("x");
@@ -561,9 +585,14 @@ public class QueryView extends WebPartView<Object>
 
     public boolean showRecordSelectors()
     {
-        return _showRecordSelectors || (_buttonBarPosition != DataRegion.ButtonBarPosition.NONE && showDeleteButton() && canDelete());
+        return _showRecordSelectors;// || (_buttonBarPosition != DataRegion.ButtonBarPosition.NONE && showDeleteButton() && canDelete());
     }
 
+    /**
+     * Show record selectors usually doesn't need to be explicitly set.  If the ButtonBar contains
+     * a button that requires selection, the record selectors will be added.
+     * @param showRecordSelectors
+     */
     public void setShowRecordSelectors(boolean showRecordSelectors)
     {
         _showRecordSelectors = showRecordSelectors;
@@ -744,7 +773,34 @@ public class QueryView extends WebPartView<Object>
         final boolean showingSelected = getShowRows() == ShowRows.SELECTED;
         final boolean showingUnselected = getShowRows() == ShowRows.UNSELECTED;
 
-        MenuButton pageSizeMenu = new MenuButton("Page Size", getDataRegionName() + ".Menu.PageSize") {
+        MenuButton pageSizeMenu = new MenuButton("Page Size", getDataRegionName() + ".Menu.PageSize")
+        {
+            @Override
+            public void render(RenderContext ctx, Writer out) throws IOException
+            {
+                addSeparator();
+                
+                // We don't know if record selectors are showing until render time so we
+                // need to add in the Show Selected/Unselected menu items at this time.
+                DataRegion rgn = ctx.getCurrentRegion();
+                if (rgn.getShowRecordSelectors(ctx) || showingSelected || showingUnselected)
+                {
+                    NavTree item = addMenuItem("Show Selected", "#",
+                            "LABKEY.DataRegions[" + PageFlowUtil.jsString(rgn.getName()) + "].showSelected()", showingSelected);
+                    item.setId("Page Size:Selected");
+                    item = addMenuItem("Show Unselected", "#",
+                            "LABKEY.DataRegions[" + PageFlowUtil.jsString(rgn.getName()) + "].showUnselected()", showingUnselected);
+                    item.setId("Page Size:Unselected");
+                }
+
+                NavTree item = addMenuItem("Show All", "#",
+                        "LABKEY.DataRegions[" + PageFlowUtil.jsString(rgn.getName()) + "].showAll()", showingAll);
+                item.setId("Page Size:All");
+
+                super.render(ctx, out);
+            }
+
+            @Override
             public boolean shouldRender(RenderContext ctx)
             {
                 ResultSet rs = ctx.getResultSet();
@@ -777,19 +833,6 @@ public class QueryView extends WebPartView<Object>
                     "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].setMaxRows(" + String.valueOf(pageSize) + ")", checked);
             item.setId("Page Size:" + pageSize);
         }
-        pageSizeMenu.addSeparator();
-        if (showRecordSelectors() || showingSelected || showingUnselected)
-        {
-            NavTree item = pageSizeMenu.addMenuItem("Show Selected", "#",
-                    "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showSelected()", showingSelected);
-            item.setId("Page Size:Selected");
-            item = pageSizeMenu.addMenuItem("Show Unselected", "#",
-                    "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showUnselected()", showingUnselected);
-            item.setId("Page Size:Unselected");
-        }
-        NavTree item = pageSizeMenu.addMenuItem("Show All", "#",
-                "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showAll()", showingAll);
-        item.setId("Page Size:All");
 
         return pageSizeMenu;
     }
@@ -810,9 +853,9 @@ public class QueryView extends WebPartView<Object>
         setViewItemFilter(filter);
         String current = null;
 
-        // if we are not rendering a report we use the current view name to set the menu item selection, an empty
-        // string denotes the default view, a customized default view will have a null name.
-        if (_report == null)
+        // if we are not rendering a report or not showing reports, we use the current view name to set the menu item
+        // selection, an empty string denotes the default view, a customized default view will have a null name.
+        if (_report == null || !_showReports)
             current = (_customView != null) ? StringUtils.defaultString(_customView.getName(), "") : "";
 
         URLHelper target = urlChangeView();
@@ -824,7 +867,10 @@ public class QueryView extends WebPartView<Object>
         if (!getQueryDef().isTemporary())
         {
             addGridViews(button, target, current);
-            addReportViews(button, target);
+
+            if (_showReports)
+                addReportViews(button, target);
+
             button.addSeparator();
         }
         StringBuilder baseFilterItems = new StringBuilder();
@@ -990,7 +1036,7 @@ public class QueryView extends WebPartView<Object>
 
         // default grid view stays at the top level
         //reports don't render a DataRegion JavaScript object, so we need to use an explicit href when this is a report
-        NavTree item = new NavTree("default", (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), "").getLocalURIString() : "#"));
+        NavTree item = new NavTree("default", (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), "").getLocalURIString() : null));
         if (!isReport)
             item.setScript(getChangeViewScript(""));
 
@@ -1039,7 +1085,7 @@ public class QueryView extends WebPartView<Object>
             if (label == null)
                 continue;
 
-            item = new NavTree(label, (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString(): "#"));
+            item = new NavTree(label, (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString(): null));
             if (!isReport)
                 item.setScript(getChangeViewScript(label));
             item.setId(getDataRegionName() + ":Views:" + label);
@@ -1704,6 +1750,33 @@ public class QueryView extends WebPartView<Object>
             return _table;
         _table = createTable();
 
+        if (_table instanceof AbstractTableInfo)
+        {
+            // Setting URLs is not supported on SchemaTableInfos, which are singletons anyway and therefore
+            // shouldn't be mutated by a request
+            AbstractTableInfo urlTableInfo = (AbstractTableInfo)_table;
+            try
+            {
+                if (_updateURL != null)
+                {
+                    urlTableInfo.setUpdateURL(DetailsURL.fromString(_updateURL));
+                }
+                if (_detailsURL != null)
+                {
+                    urlTableInfo.setDetailsURL(DetailsURL.fromString(_detailsURL));
+                }
+                if (_insertURL != null)
+                {
+                    urlTableInfo.setInsertURL(DetailsURL.fromString(_insertURL));
+                }
+            }
+            catch (IllegalArgumentException e)
+            {
+                // Don't report bad client API URLs to the mothership
+                throw new ApiUsageException(e);
+            }
+        }
+
         if (_table instanceof ContainerFilterable)
         {
             ContainerFilter filter = getContainerFilter();
@@ -1739,16 +1812,19 @@ public class QueryView extends WebPartView<Object>
         {
             StringExpression urlDetails = table.getDetailsURL(Table.createFieldKeyMap(table).keySet(), getContainer());
 
-            if (urlDetails != null)
+            if (urlDetails != AbstractTableInfo.LINK_DISABLER)
             {
-                ret.add(new DetailsColumn(urlDetails));
-            }
-            else
-            {
-                // We resolve lookups later.  Assume this will table will have a valid details url.
-                // this is messy because for most columns we just omit the link if the url is not valid
-                // for details url we want to be sure to omit the column in the grid altogether
-                ret.add(new DetailsColumn(table));
+                if (urlDetails != null)
+                {
+                    ret.add(new DetailsColumn(urlDetails));
+                }
+                else
+                {
+                    // We resolve lookups later.  Assume this will table will have a valid details url.
+                    // this is messy because for most columns we just omit the link if the url is not valid
+                    // for details url we want to be sure to omit the column in the grid altogether
+                    ret.add(new DetailsColumn(table));
+                }
             }
         }
 
@@ -1805,6 +1881,21 @@ public class QueryView extends WebPartView<Object>
     public void setShowUpdateColumn(boolean showUpdateColumn)
     {
         _showUpdateColumn = showUpdateColumn;
+    }
+
+    public void setUpdateURL(String updateURL)
+    {
+        _updateURL = updateURL;
+    }
+
+    public void setDetailsURL(String detailsURL)
+    {
+        _detailsURL = detailsURL;
+    }
+
+    public void setInsertURL(String insertURL)
+    {
+        _insertURL = insertURL;
     }
 
     public void setPrintView(boolean b)
@@ -1900,6 +1991,16 @@ public class QueryView extends WebPartView<Object>
     public void setShowPaginationCount(boolean showPaginationCount)
     {
         _showPaginationCount = showPaginationCount;
+    }
+
+    public boolean isShowReports()
+    {
+        return _showReports;
+    }
+
+    public void setShowReports(boolean showReports)
+    {
+        _showReports = showReports;
     }
 
     public boolean isShowConfiguredButtons()

@@ -17,17 +17,21 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
+import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
 
@@ -109,5 +113,24 @@ public abstract class ScriptReport extends AbstractReport
             return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
         }
         return null;
+    }
+
+    @Override
+    public HttpView getRunReportView(ViewContext context) throws Exception
+    {
+        String tabId = (String)context.get("tabId");
+
+        if (null == tabId)
+            tabId = context.getActionURL().getParameter("tabId");
+
+        String webpartString = (String)context.get(Report.renderParam.reportWebPart.name());
+        boolean webpart = (null != webpartString && BooleanFormat.getInstance().parseObject(webpartString));
+
+        // if tab == "Source" then use update mode, which lets developers edit the source
+        // otherwise, if we're a webpart then use view mode
+        // otherwise, use viewAndUpdate, which means show the view tab first, but let developers edit the source 
+        Mode mode = ("Source".equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
+
+        return new AjaxRunScriptReportView(this, mode);
     }
 }

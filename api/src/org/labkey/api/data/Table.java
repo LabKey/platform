@@ -1249,22 +1249,13 @@ public class Table
     public static SQLFragment getFullSelectSQL(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort)
     {
         List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(select);
-        return getSelectSQL(table, allColumns, filter, sort, 0, 0);
+        return QueryService.get().getSelectSQL(table, allColumns, filter, sort, 0, 0, false);
     }
 
 
     public static SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort)
     {
-        return getSelectSQL(table, columns, filter, sort, 0, 0);
-    }
-
-
-    /**
-     * Returns the sql for a select.
-     */
-    public static SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
-    {
-		return QueryService.get().getSelectSQL(table, columns, filter, sort, rowCount, offset);
+        return QueryService.get().getSelectSQL(table, columns, filter, sort, 0, 0, false);
     }
 
 
@@ -1318,7 +1309,8 @@ public class Table
             queryRowCount = rowCount + (int)offset;
         }
 
-        SQLFragment sql = getSelectSQL(table, columns, filter, sort, queryRowCount, queryOffset);   // TODO: Use decideRowCount() here?
+        // TODO: Use decideRowCount() here?
+        SQLFragment sql = QueryService.get().getSelectSQL(table, columns, filter, sort, queryRowCount, queryOffset, true);
         return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, scrollOffset);
     }
 
@@ -1348,7 +1340,7 @@ public class Table
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, null, aggregates);
-        SQLFragment innerSql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, 0, 0);
+        SQLFragment innerSql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, 0, 0, false);
         QueryService.get().bindNamedParameters(innerSql, parameters);
         QueryService.get().validateNamedParameters(innerSql);
 
@@ -1430,7 +1422,7 @@ public class Table
         }
 
         int decideRowCount = decideRowCount(queryRowCount, null);
-        SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount, queryOffset);
+        SQLFragment sql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount, queryOffset, true);
         QueryService.get().bindNamedParameters(sql, parameters);
         QueryService.get().validateNamedParameters(sql);
         Integer statementRowCount = (table.getSqlDialect().requiresStatementMaxRows() ? decideRowCount : null);  // TODO: clean this all up
@@ -1469,7 +1461,7 @@ public class Table
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, sort, null);
-        SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, 0, 0);
+        SQLFragment sql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, 0, 0, true);
         return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, 0);
     }
 
@@ -1575,7 +1567,7 @@ public class Table
     public static long rowCount(TableInfo tinfo) throws SQLException
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
-        sql.append(QueryService.get().getSelectSQL(tinfo, tinfo.getPkColumns(), null, null, Table.ALL_ROWS, 0));
+        sql.append(QueryService.get().getSelectSQL(tinfo, tinfo.getPkColumns(), null, null, Table.ALL_ROWS, 0, false));
         sql.append(") x");
         return Table.executeSingleton(tinfo.getSchema(), sql.getSQL(), sql.getParamsArray(), Long.class);
     }

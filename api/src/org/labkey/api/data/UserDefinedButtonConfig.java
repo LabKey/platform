@@ -188,8 +188,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
             for (NavTree item : _menuItems)
             {
                 NavTree toAdd = new NavTree(item);
-                if (toAdd.getScript() != null)
-                    toAdd.setScript(getWrappedOnClick(ctx, toAdd.getScript()));
+                wrapOnClick(ctx, toAdd);
                 processURLs(ctx, toAdd);
                 btn.addMenuItem(toAdd);
             }
@@ -209,6 +208,17 @@ public class UserDefinedButtonConfig implements ButtonConfig
                 btn.setActionType(_action);
             btn.setRequiresSelection(_requiresSelection);
             return btn;
+        }
+    }
+
+    /** Recursively set the onClick wrapper script for the whole tree */
+    private void wrapOnClick(RenderContext ctx, NavTree tree)
+    {
+        if (tree.getScript() != null)
+            tree.setScript(getWrappedOnClick(ctx, tree.getScript()));
+        for (NavTree child : tree.getChildren())
+        {
+            wrapOnClick(ctx, child);
         }
     }
 }

@@ -36,6 +36,7 @@ public class WebThemeManager
     private static final WebTheme HARVEST = new WebTheme("Harvest", "212121", "892405", "F5E2BB", "F4F4F4", "FFFFFF", "892405", "DBD8D2");
     private static final WebTheme SAGE  =      new WebTheme("Sage", "212121", "0F4F0B", "D4E4D3", "F4F4F4", "FFFFFF", "386135", "E1E5E1");
     private static final WebTheme SEATTLE = new WebTheme("Seattle", "000000", "126495", "E7EFF4", "F8F8F8", "FFFFFF", "676767", "E0E6EA");
+    private static final WebTheme MADISON = new WebTheme("Madison", "212121", "990000", "FFECB0", "FFFCF8", "FFFFFF", "CCCCCC", "EEEBE0");
     
     // handle Web Theme color management
     private static final String THEME_NAMES_KEY = "themeNames";
@@ -50,6 +51,14 @@ public class WebThemeManager
             PropertyManager.PropertyMap properties = AppProps.getWebThemeConfigProperties();
             String themeNames = properties.get(THEME_NAMES_KEY);
             String[] themeNamesArray = (null == themeNames ? "" : themeNames).split(";");
+
+            addToMap(BLUE);
+            addToMap(BROWN);
+            addToMap(HARVEST);
+            addToMap(SAGE);
+            addToMap(MADISON);
+            addToMap(SEATTLE);
+
             if (null != themeNamesArray)
             {
                 // load the color settings from database
@@ -64,67 +73,32 @@ public class WebThemeManager
                     key.append(themeName);
                     String themeColors = properties.get(key.toString());
                     String[] themeColorsArray = (null == themeColors ? "" : themeColors).split(";");
-                    if (null != themeColorsArray || themeColorsArray.length > 0)
+                    if (themeColorsArray.length > 0)
                     {
-                        if (6 == themeColorsArray.length || 7 == themeColorsArray.length)
+                        // Load default themes
+                        if (_webThemeMap.containsKey(themeName))
                         {
-                            // Works for backwards compatibility to bootstrap old theme types
-                            if (themeName.equals(BLUE.getFriendlyName()))
-                            {
-                                updateWebTheme(themeName, BLUE.getTextColor(), BLUE.getLinkColor(), BLUE.getGridColor(),
-                                        BLUE.getPrimaryBackgroundColor(), BLUE.getSecondaryBackgroundColor(),
-                                        BLUE.getBorderTitleColor(), BLUE.getWebPartColor());
-                            }
-                            else if (themeName.equals(BROWN.getFriendlyName()))
-                            {
-                                updateWebTheme(themeName, BROWN.getTextColor(), BROWN.getLinkColor(), BROWN.getGridColor(),
-                                        BROWN.getPrimaryBackgroundColor(), BROWN.getSecondaryBackgroundColor(),
-                                        BROWN.getBorderTitleColor(), BROWN.getWebPartColor());
-                            }
-                            else if (themeName.equals(HARVEST.getFriendlyName()))
-                            {
-                                updateWebTheme(themeName, HARVEST.getTextColor(), HARVEST.getLinkColor(), HARVEST.getGridColor(),
-                                        HARVEST.getPrimaryBackgroundColor(), HARVEST.getSecondaryBackgroundColor(),
-                                        HARVEST.getBorderTitleColor(), HARVEST.getWebPartColor());
-                            }
-                            else if (themeName.equals(SAGE.getFriendlyName()))
-                            {
-                                updateWebTheme(themeName, SAGE.getTextColor(), SAGE.getLinkColor(), SAGE.getGridColor(),
-                                        SAGE.getPrimaryBackgroundColor(), SAGE.getSecondaryBackgroundColor(),
-                                        SAGE.getBorderTitleColor(), SAGE.getWebPartColor());
-                            }
-                            else if (themeName.equals(SEATTLE.getFriendlyName()))
-                            {
-                                updateWebTheme(themeName, SEATTLE.getTextColor(), SEATTLE.getLinkColor(), SEATTLE.getGridColor(),
-                                        SEATTLE.getPrimaryBackgroundColor(), SEATTLE.getSecondaryBackgroundColor(),
-                                        SEATTLE.getBorderTitleColor(), SEATTLE.getWebPartColor());
-                            }
-                            else if (7 == themeColorsArray.length) {
+                            updateWebTheme(getTheme(themeName));
+                        }
 
-                                // Assume they are in the correct order
-                                String textColor = themeColorsArray[0];
-                                String linkColor = themeColorsArray[1];
-                                String gridColor = themeColorsArray[2];
-                                String primaryBackgroundColor = themeColorsArray[3];
-                                String secondaryBackgroundColor = themeColorsArray[4];
-                                String borderTitleColor = themeColorsArray[5];
-                                String webPartColor = themeColorsArray[6];
+                        // Load user defined themes
+                        else if (7 == themeColorsArray.length)
+                        {
+                            // Assumes correct order
+                            String textColor = themeColorsArray[0];
+                            String linkColor = themeColorsArray[1];
+                            String gridColor = themeColorsArray[2];
+                            String primaryBackgroundColor = themeColorsArray[3];
+                            String secondaryBackgroundColor = themeColorsArray[4];
+                            String borderTitleColor = themeColorsArray[5];
+                            String webPartColor = themeColorsArray[6];
 
-                                try
-                                {
-                                    WebTheme webTheme = new WebTheme(
-                                            themeName,
-                                            textColor, linkColor,
-                                            gridColor, primaryBackgroundColor,
-                                            secondaryBackgroundColor, borderTitleColor, webPartColor);
-
-                                    addToMap(webTheme);
-                                }
-                                catch (IllegalArgumentException e)
-                                {
-                                    // ignore color definition problem
-                                }
-                            }
+                            WebTheme webTheme = new WebTheme(
+                                    themeName,
+                                    textColor, linkColor,
+                                    gridColor, primaryBackgroundColor,
+                                    secondaryBackgroundColor, borderTitleColor, webPartColor, true);
+                            updateWebTheme(webTheme);
                         }
                     }
                 }
@@ -134,12 +108,6 @@ public class WebThemeManager
         {
             // just continue
         }
-
-        addToMap(BLUE);
-        addToMap(BROWN);
-        addToMap(HARVEST);
-        addToMap(SAGE);
-        addToMap(SEATTLE);
     }
 
     public final static WebTheme DEFAULT_THEME = SEATTLE;
@@ -198,17 +166,20 @@ public class WebThemeManager
         return null;
     }
 
+    public static void updateWebTheme(WebTheme theme) throws SQLException
+    {
+        synchronized(_webThemeMap)
+        {
+            removeFromMap(theme.getFriendlyName());
+            addToMap(theme);
+            saveWebThemes();
+        }
+    }
+    
     public static void updateWebTheme(String friendlyName, String textColor, String linkColor, String gridColor, String primaryBackgroundColor, String secondaryBackgroundColor, String borderTitleColor, String webPartColor)
         throws SQLException
     {
-        WebTheme updateTheme = new WebTheme(friendlyName, textColor, linkColor, gridColor, primaryBackgroundColor, secondaryBackgroundColor, borderTitleColor, webPartColor);
-
-        synchronized(_webThemeMap)
-        {
-            removeFromMap(friendlyName);
-            addToMap(updateTheme);
-            saveWebThemes();
-        }
+        updateWebTheme(new WebTheme(friendlyName, textColor, linkColor, gridColor, primaryBackgroundColor, secondaryBackgroundColor, borderTitleColor, webPartColor));
     }
 
     public static void deleteWebTheme(String friendlyName) throws SQLException

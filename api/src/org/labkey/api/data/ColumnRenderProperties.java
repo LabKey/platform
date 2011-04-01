@@ -276,14 +276,24 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public static boolean inferIsMeasure(ColumnRenderProperties col)
     {
         return inferIsMeasure(col.getName(),
+                col.getLabel(),
                 col.isNumericType(),
                 col.isAutoIncrement(),
                 col.isLookup(),
                 col.isHidden());
     }
 
-    public static boolean inferIsMeasure(String name, boolean isNumeric, boolean isAutoIncrement, boolean isLookup, boolean isHidden)
+    public static boolean inferIsMeasure(String name, String label, boolean isNumeric, boolean isAutoIncrement, boolean isLookup, boolean isHidden)
     {
+        if (label != null)
+        {
+            String[] parts = label.toLowerCase().split(" ");
+            for (String part : parts)
+            {
+                if (part.equals("code") || part.equals("id"))
+                    return false;
+            }
+        }
         return isNumeric &&
                 !isAutoIncrement &&
                 !isLookup &&
@@ -299,7 +309,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     {
         // If measure is unspecified/null, make a best guess based on the type of the field:
         if (measure == null)
-            return inferIsMeasure(getName(), isNumericType(), isAutoIncrement(), isLookup(), isHidden());
+            return inferIsMeasure(getName(), getLabel(), isNumericType(), isAutoIncrement(), isLookup(), isHidden());
         else
             return measure;
     }

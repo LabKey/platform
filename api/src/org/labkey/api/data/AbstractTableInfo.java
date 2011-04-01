@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
@@ -417,6 +418,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public ActionURL getInsertURL(Container container)
     {
+        if (_insertURL == LINK_DISABLER)
+        {
+            return LINK_DISABLER_ACTION_URL;
+        }
         if (_insertURL != null)
         {
             return _insertURL.copy(container).getActionURL();
@@ -426,6 +431,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
     {
+        if (_updateURL == LINK_DISABLER)
+        {
+            return LINK_DISABLER;
+        }
         if (_updateURL != null && _updateURL.validateFieldKeys(columns))
         {
             return _updateURL.copy(container);
@@ -451,7 +460,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     public void setDetailsURL(DetailsURL detailsURL)
     {
         _detailsURLs.clear();
-        _detailsURLs.add(detailsURL);
+        if (detailsURL != null)
+        {
+            _detailsURLs.add(detailsURL);
+        }
     }
 
     public void addDetailsURL(DetailsURL detailsURL)
@@ -588,10 +600,30 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             setDescription(xmlTable.getDescription());
         if (xmlTable.getGridUrl() != null)
             _gridURL = parseDetailsURL(schema.getContainer(), xmlTable.getGridUrl(), errors);
-        if (xmlTable.getInsertUrl() != null)
-            _insertURL = parseDetailsURL(schema.getContainer(), xmlTable.getInsertUrl(), errors);
-        if (xmlTable.getUpdateUrl() != null)
-            _updateURL = parseDetailsURL(schema.getContainer(), xmlTable.getUpdateUrl(), errors);
+
+        if (xmlTable.isSetInsertUrl())
+        {
+            if (StringUtils.isBlank(xmlTable.getInsertUrl()))
+            {
+                _insertURL = LINK_DISABLER;
+            }
+            else
+            {
+                _insertURL = parseDetailsURL(schema.getContainer(), xmlTable.getInsertUrl(), errors);
+            }
+        }
+        if (xmlTable.isSetUpdateUrl())
+        {
+            if (StringUtils.isBlank(xmlTable.getUpdateUrl()))
+            {
+                _updateURL = LINK_DISABLER;
+            }
+            else
+            {
+                _updateURL = parseDetailsURL(schema.getContainer(), xmlTable.getUpdateUrl(), errors);
+            }
+        }
+
         if (xmlTable.getTableUrl() != null)
             setDetailsURL(parseDetailsURL(schema.getContainer(), xmlTable.getTableUrl(), errors));
 

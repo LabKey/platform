@@ -146,11 +146,13 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @NotNull
     public String getHref(ViewContext context)
     {
-        ActionURL url = context.getActionURL();
-        int port = context.getRequest().getServerPort();
-        boolean defaultPort = "http".equals(url.getScheme()) && 80 == port || "https".equals(url.getScheme()) && 443 == port;
+        ActionURL url = null==context ? null : context.getActionURL();
+        int port = null==url ? AppProps.getInstance().getServerPort() : url.getPort();
+        String host = null==url ? AppProps.getInstance().getServerName() : url.getHost();
+        String scheme = null==context ? AppProps.getInstance().getScheme() : url.getScheme();
+        boolean defaultPort = "http".equals(scheme) && 80 == port || "https".equals(scheme) && 443 == port;
         String portStr = defaultPort ? "" : ":" + port;
-        return c(url.getScheme() + "://" + url.getHost() + portStr, getLocalHref(context));
+        return c(scheme + "://" + host + portStr, getLocalHref(context));
     }
 
 

@@ -44,7 +44,7 @@ LABKEY.Query = new function()
         var dataObject = {
             schemaName : config.schemaName,
             queryName : config.queryName,
-            rows : config.rowDataArray,
+            rows : config.rows || config.rowDataArray,
             transacted : config.transacted,
             extraContext : config.extraContext
         };
@@ -119,7 +119,7 @@ LABKEY.Query = new function()
         return {
             schemaName: args[0],
             queryName: args[1],
-            rowDataArray: args[2],
+            rows: args[2],
             successCallback: args[3],
             errorCallback: args[4]
         };
@@ -479,7 +479,7 @@ LABKEY.Query = new function()
         * @param {String} config.queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
+        * @param {Array} config.rows Array of record objects in which each object has a property for each field.
         *               The row array must include the primary key column values and values for
         *               other columns you wish to update.
         * @param {Object} [config.extraContext] <b>Experimental:</b> Optional extra context object passed into the transformation/validation script environment.
@@ -575,7 +575,7 @@ LABKEY.Query = new function()
         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
+        * @param {Array} config.rows Array of record objects in which each object has a property for each field.
         *                  The row data array must include all column values except for the primary key column.
         *                  However, you will need to include the primary key column values if you defined
         *                  them yourself instead of relying on auto-number.
@@ -604,7 +604,7 @@ LABKEY.Query = new function()
                  containerPath: '/home/Study/demo/guestaccess',
                  schemaName: 'lists',
                  queryName: 'Reagent Requests',
-             rowDataArray: [
+             rows: [
                 {"Name":  ReagentReqForm.DisplayName.value,
                 "Email": ReagentReqForm.Email.value,
                 "UserID": ReagentReqForm.UserID.value,
@@ -646,7 +646,7 @@ LABKEY.Query = new function()
                      (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
 		* @param {Function} [config.failure] Function called when execution of the "deleteRows" function fails.
          *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
-        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
+        * @param {Array} config.rows Array of record objects in which each object has a property for each field.
         *                  The row data array needs to include only the primary key column value, not all columns.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
         *              If not supplied, the current container path will be used.

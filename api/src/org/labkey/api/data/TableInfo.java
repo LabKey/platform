@@ -23,6 +23,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
@@ -52,6 +53,10 @@ public interface TableInfo
     public static int TABLE_TYPE_TABLE = 1;
     public static int TABLE_TYPE_VIEW = 2;
 
+    /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
+    public static final ActionURL LINK_DISABLER_ACTION_URL = new ActionURL();
+    /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
+    public static final DetailsURL LINK_DISABLER = new DetailsURL(LINK_DISABLER_ACTION_URL);
 
     String getName();
 

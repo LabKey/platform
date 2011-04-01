@@ -102,6 +102,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
 
                 Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
 
+                bindings.put(ScriptEngine.FILENAME, "ScriptReport");
                 bindings.put("viewContext", context);
                 bindings.put("consoleOut", consolePw);
 
