@@ -47,7 +47,6 @@ public class WorkbookQueryView extends QueryView
         setShadeAlternatingRows(true);
         setShowBorders(true);
         setShowDeleteButton(true);
-        setShowRecordSelectors(true);
         setFrame(FrameType.NONE);
     }
 

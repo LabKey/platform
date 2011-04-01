@@ -1,15 +1,12 @@
 package org.labkey.visualization.sql;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.*;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
 * Copyright (c) 2011 LabKey Corporation
@@ -35,12 +32,15 @@ public class VisualizationSourceQuery
     private Container _container;
     private UserSchema _schema;
     private String _queryName;
+    private TableInfo _tinfo;
     private VisualizationSourceColumn _pivot;
     private Set<VisualizationSourceColumn> _selects = new LinkedHashSet<VisualizationSourceColumn>();
+    private Set<VisualizationSourceColumn> _allSelects = null;
     private Set<VisualizationAggregateColumn> _aggregates = new LinkedHashSet<VisualizationAggregateColumn>();
     private Set<VisualizationSourceColumn> _sorts = new LinkedHashSet<VisualizationSourceColumn>();
     private VisualizationSourceQuery _joinTarget;  // query this query must join to when building SQL
     private List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> _joinConditions;
+    private SimpleFilter _filter;
 
     VisualizationSourceQuery(Container container, UserSchema schema, String queryName, VisualizationSourceQuery joinTarget)
     {
@@ -49,6 +49,14 @@ public class VisualizationSourceQuery
         _queryName = queryName;
         _joinTarget = joinTarget;
     }
+
+    private TableInfo getTableInfo()
+    {
+        if (_tinfo == null)
+            _tinfo = _schema.getTable(_queryName);
+        return _tinfo;
+    }
+
 
     private void ensureSameQuery(VisualizationSourceColumn measure)
     {
@@ -80,9 +88,19 @@ public class VisualizationSourceQuery
         _selects.add(select);
     }
 
-    public Set<VisualizationSourceColumn> getSelects()
+    public Set<VisualizationSourceColumn> getSelects(boolean includeRequiredExtraCols)
     {
-        return _selects;
+        if (includeRequiredExtraCols)
+        {
+            if (_allSelects == null)
+            {
+                _allSelects = new LinkedHashSet<VisualizationSourceColumn>(_selects);
+                _allSelects.addAll(getOORColumns());
+            }
+            return _allSelects;
+        }
+        else
+            return _selects;
     }
 
     public void addAggregate(VisualizationAggregateColumn aggregate)
@@ -170,7 +188,7 @@ public class VisualizationSourceQuery
         Set<VisualizationSourceColumn> selects = new LinkedHashSet<VisualizationSourceColumn>();
         if (_pivot != null)
                 selects.add(_pivot);
-        selects.addAll(_selects);
+        selects.addAll(getSelects(true));
         selects.addAll(_sorts);
         selects.addAll(_aggregates);
         appendColumnNames(selectList, selects, true, false, true);
@@ -242,10 +260,77 @@ public class VisualizationSourceQuery
             return "";
     }
 
+    /**
+     * Currently, query does not have a notion of dependent columns- this happens only at the query view level.  As
+     * a result, it's possible to select a set of columns that will not correctly render in a data region.  One common
+     * example of this occurs with out-of-range indicators, where a failure to select a column's sibling out-of-range
+     * indicator column produces an error at render time.  We address this here in a nasty way by checking every selected
+     * column to see if an OOR sibling column is present, and adding it to the select if so.
+     * @return A set of additional columns that should be selected to ensure that the columns actually requested
+     * by the user correctly display their out-of-range indicators.
+     */
+    private Set<VisualizationSourceColumn> getOORColumns()
+    {
+        Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+        for (VisualizationSourceColumn selectCol : this.getSelects(false))
+        {
+            FieldKey oorSelect = FieldKey.fromString(selectCol.getOriginalName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
+            fieldKeys.add(oorSelect);
+        }
+        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getTableInfo(), fieldKeys);
+        Set<VisualizationSourceColumn> oorSelects = new HashSet<VisualizationSourceColumn>();
+        for (FieldKey key : cols.keySet())
+            oorSelects.add(new VisualizationSourceColumn(getSchema(), getQueryName(), key.toString()));
+        return oorSelects;
+    }
+
+    private Map<FieldKey, ColumnInfo> getFilterColumns(SimpleFilter filter)
+    {
+        Map<FieldKey, String> fieldKeys = new HashMap<FieldKey, String>();
+        for (SimpleFilter.FilterClause clause : filter.getClauses())
+        {
+            for (String colName : clause.getColumnNames())
+                fieldKeys.put(FieldKey.fromString(colName), colName);
+        }
+        return QueryService.get().getColumns(getTableInfo(), fieldKeys.keySet());
+    }
+
+    private String appendSimpleFilter(StringBuilder where, SimpleFilter filter, String separator)
+    {
+        Map<FieldKey, ColumnInfo> filterColTypes = getFilterColumns(filter);
+        List<SimpleFilter.FilterClause> clauses = new ArrayList<SimpleFilter.FilterClause>(filter.getClauses());
+        for (SimpleFilter.FilterClause clause : clauses)
+        {
+            List<String> colNames = clause.getColumnNames();
+            boolean allColsFound = true;
+            for (String colName : colNames)
+            {
+                if (!filterColTypes.containsKey(FieldKey.fromString(colName)))
+                    allColsFound = false;
+            }
+            if (allColsFound)
+            {
+                where.append(separator).append(clause.getLabKeySQLWhereClause(filterColTypes));
+                separator = " AND\n";
+            }
+            else
+            {
+                // Remove filter clauses for columns that are no longer found on the specified query.
+                // Removing them here ensures that we send an accurate description of the current filters to the client.
+                for (String colName : colNames)
+                    filter.deleteConditions(colName);
+            }
+        }
+        return separator;
+    }
+
     public String getWhereClause() throws VisualizationSQLGenerator.GenerationException
     {
         StringBuilder where = new StringBuilder();
         String sep = "WHERE ";
+        if (_filter != null)
+            sep = appendSimpleFilter(where, _filter, sep);
+
         for (VisualizationSourceColumn select : _selects)
         {
             if (select.getValues() != null && !select.getValues().isEmpty())
@@ -253,7 +338,7 @@ public class VisualizationSourceQuery
                 where.append(sep);
                 appendColumnNames(where, Collections.singleton(select), false, false, false);
                 appendValueList(where, select);
-                sep = " AND ";
+                sep = " AND\n";
             }
         }
         for (VisualizationSourceColumn sort : _sorts)
@@ -263,7 +348,7 @@ public class VisualizationSourceQuery
                 where.append(sep);
                 appendColumnNames(where, Collections.singleton(sort), false, false, false);
                 appendValueList(where, sort);
-                sep = " AND ";
+                sep = " AND\n";
             }
         }
         where.append("\n");
@@ -299,5 +384,15 @@ public class VisualizationSourceQuery
     public String getQueryName()
     {
         return _queryName;
+    }
+
+    public void setFilter(SimpleFilter filter)
+    {
+        _filter = filter;
+    }
+
+    public SimpleFilter getFilter()
+    {
+        return _filter;
     }
 }

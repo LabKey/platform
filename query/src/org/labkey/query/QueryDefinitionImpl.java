@@ -322,8 +322,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             query.setTablesDocument(null);
         TableInfo ret = query.getTableInfo();
         if (null != ret)
-            ((QueryTableInfo)ret).setDescription(getDescription());
-        
+        {
+            QueryTableInfo queryTable = (QueryTableInfo)ret;
+            queryTable.setDescription(getDescription());
+            queryTable.setName(getName());
+        }
+
         if (null != ret && null != query.getTablesDocument())
             ((QueryTableInfo)ret).loadFromXML(schema, query.getTablesDocument().getTables().getTableArray(0), errors);
 

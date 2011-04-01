@@ -95,7 +95,18 @@
         {
             reportCount++;
             if (!StringUtils.isEmpty(view.get("runUrl"))) { %>
-                <tr><td><a href="<%=h(view.get("runUrl"))%>"><%=h(view.get("name"))%></a></td></tr>
+                <tr>
+                    <td>
+                        <%
+                        if (view.containsKey("icon"))
+                        {
+                        %>
+                        <img src="<%= h(view.get("icon"))%>" alt="">
+                        <%
+                        }
+                        %>
+                    </td>
+                <td><a href="<%=h(view.get("runUrl"))%>"><%=h(view.get("name"))%></a></td></tr>
          <% } else { %>
                 <tr><td><%=h(view.get("name"))%></td></tr>
          <% }

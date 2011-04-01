@@ -133,7 +133,6 @@ th.labkey-header a:hover
 .labkey-announcement-title a
 {
 	color:#<%= link %>;
-	font-size: 14px;
 }
 
 /*  Used across the site whenever there is a label with a colored background */
@@ -190,19 +189,22 @@ a.labkey-menu-button:hover span
 
 /* ********* Standalone Buttons ******** */
 
-a.labkey-button, a.labkey-button:visited
+a.labkey-button, a.labkey-button:visited,
+span.labkey-button
 {
     background-color: #<%= second %>;
     color: #<%= link %>;
 }
 
-a.labkey-button:hover
+a.labkey-button:hover,
+span.labkey-button:hover
 {
     background-color: #<%= second %>;
     color: #<%= text %>;
 }
 
-a.labkey-button:active
+a.labkey-button:active,
+span.labkey-button:active
 {
     background-color: #<%= second %>;
 }
@@ -215,6 +217,8 @@ span.css-arrow-right
 span.css-arrow-down
 {
     border-top: 6px solid #<%= link %>;
+    border-left: 4px solid #<%= webpart %>;
+    border-right: 4px solid #<%= webpart %>;
 }
 
 /* This is used in simple cases to give an area the same background as the

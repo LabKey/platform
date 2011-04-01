@@ -56,8 +56,6 @@ public class PipelineQueryView extends QueryView
         setShowBorders(true);
 
         setButtonBarPosition(minimal ? DataRegion.ButtonBarPosition.TOP : DataRegion.ButtonBarPosition.BOTH);
-
-        setShowRecordSelectors(!minimal && (getContainer().hasPermission(getUser(), UpdatePermission.class) || getContainer().isRoot()));
     }
 
     private QuerySettings createSettings(ViewContext context)

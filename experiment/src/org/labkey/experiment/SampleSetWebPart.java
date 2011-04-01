@@ -49,7 +49,6 @@ public class SampleSetWebPart extends QueryView
         setTitleHref(new ActionURL(ExperimentController.ListMaterialSourcesAction.class, viewContext.getContainer()));
         setShowDetailsColumn(false);
 
-        setShowRecordSelectors(!_narrow);
         if (_narrow)
         {
             setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);

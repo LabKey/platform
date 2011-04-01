@@ -1415,7 +1415,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         if (!this.rendered)
             return;
 
-        var padding = [20,20];
+        var padding = [46,32];
         var xy = this.el.getXY();
         var size = {
             width : Math.max(100,w-xy[0]-padding[0]),

@@ -101,7 +101,7 @@
             enableDrag: false,
             useArrows : true,
             autoScroll: true,
-            title : 'Where would you like to move the \'<%=c.getName()%>\'?',
+            title : 'Please select a new parent for Folder \'' + <%=PageFlowUtil.jsString(c.getName())%> + '\'.',
             border: true
         });
 

@@ -1287,6 +1287,7 @@ public class MothershipController extends SpringActionController
             getDataRegion().setFormActionUrl(saveURL);
             getDataRegion().setTable(MothershipManager.get().getTableInfoExceptionStackTrace());
             getDataRegion().addColumns(MothershipManager.get().getTableInfoExceptionStackTrace(), "ExceptionStackTraceId,StackTrace,BugNumber,Comments");
+            getDataRegion().addHiddenFormField("exceptionStackTraceId", Integer.toString(form.getBean().getExceptionStackTraceId()));
             getDataRegion().addDisplayColumn(new AssignedToDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("AssignedTo"), c));
             getDataRegion().getDisplayColumn(1).setVisible(false);
             getDataRegion().addDisplayColumn(new CreateIssueDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("StackTrace"), b));

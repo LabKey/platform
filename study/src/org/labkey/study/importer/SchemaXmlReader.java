@@ -135,7 +135,7 @@ public class SchemaXmlReader implements SchemaReader
                 if (columnXml.isSetMeasure())
                     measure = columnXml.getMeasure();
                 else
-                    measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), t.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
+                    measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), t.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
 
                 boolean dimension;
                 if (columnXml.isSetDimension())

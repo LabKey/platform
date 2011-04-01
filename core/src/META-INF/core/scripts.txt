@@ -6,7 +6,8 @@ Ext JS|3.2|{link:Ext JS|http://extjs.com/}|{link:GPL v3|http://www.gnu.org/licen
 js_color_picker|v2|{link:dhtmlgoodies.com|http://www.dhtmlgoodies.com/index.html?whichScript=js_color_picker_v2}|{link:LGPL|http://www.dhtmlgoodies.com/index.html?page=termsOfUse}|jeckels|Color picker for web themes
 LovCombo|1.3|{link:Ext.ux.form.LovCombo|http://lovcombo.extjs.eu/}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|kevink|Multi-select ("List Of Values") combo box widget for Ext JS
 Slider|1.0|{link:Slider|http://webfx.eae.net/dhtml/slider/slider.html}|{link:Apache 2.0|http://webfx.eae.net/license/asl2}|daves|Basis for the range slider used for m/z range filter
-TinyMCE|2.0.9|{link:TinyMCE|http://tinymce.moxiecode.com/}|{link:LGPL|http://wiki.moxiecode.com/index.php/TinyMCE:License}|daves|HTML WYSIWYG editor
+TinyMCE|3.4|{link:TinyMCE|http://tinymce.moxiecode.com/}|{link:LGPL|http://tinymce.moxiecode.com/js/tinymce/jscripts/tiny_mce/license.txt}|georgesn|HTML WYSIWYG editor
+TinyMCE PDW|1.2|{link:PDW|http://www.neele.name/pdw_toggle_toolbars/}|{link:LGPL|http://tinymce.moxiecode.com/js/tinymce/jscripts/tiny_mce/license.txt}|georgesn|TinyMCE plugin to hide toolbars
 YUI|0.12.0|{link:YUI|http://developer.yahoo.com/yui/}|{link:BSD|http://developer.yahoo.com/yui/license.txt}|matthewb|Browser User Interface Library
 Protovis|3.2|{link:Protovis|http://vis.stanford.edu/protovis/}|{link:BSD|http://vis.stanford.edu/protovis/}|klum|Graphical Toolkit for Visualization
 {table}

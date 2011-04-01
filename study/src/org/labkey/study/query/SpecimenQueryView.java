@@ -499,29 +499,29 @@ public class SpecimenQueryView extends BaseStudyQueryView
         if (participantDatasets != null && participantDatasets.length > 0)
         {
             StringBuilder whereClause = new StringBuilder();
-            Object[] params = new Object[2 * participantDatasets.length];
-            int param = 0;
+            List<Object> params = new ArrayList<Object>();
+            String sep = "";
             for (ParticipantDataset pd : participantDatasets)
             {
-                if (param > 0)
-                    whereClause.append(" OR ");
+                whereClause.append(sep);
                 whereClause.append("(");
-                if (visitBased)
+                if (visitBased && pd.getSequenceNum() != null)
                 {
                     whereClause.append("Visit = ? AND ");
-                    params[param++] = pd.getSequenceNum();
+                    params.add(pd.getSequenceNum());
                 }
-                else
+                else if (pd.getVisitDate() != null)
                 {
                     whereClause.append(StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("DrawTimestamp"));
                     whereClause.append(" = ");
                     whereClause.append(StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("?")).append(" AND ");
-                    params[param++] = pd.getVisitDate();
+                    params.add(pd.getVisitDate());
                 }
                 whereClause.append(StudyService.get().getSubjectColumnName(getContextContainer())).append(" = ?)");
-                params[param++] = pd.getParticipantId();
+                params.add(pd.getParticipantId());
+                sep = " OR ";
             }
-            filter = filter.addWhereClause(whereClause.toString(), params);
+            filter = filter.addWhereClause(whereClause.toString(), params.toArray(new Object[params.size()]));
         }
         return filter;
     }

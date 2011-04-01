@@ -12,37 +12,53 @@ var _tocTree;
 //you must init the tinyMCE before the page finishes loading
 //if you don't, you'll get a blank page an an error
 //seems to be a limitation of the tinyMCE.
+
+//
+// I coppied these options from Tinymce version 3.4 word.html example page, then trimmed down to remove
+// unneeded buttons and plugins.  Added one third-party plugin, pwd, which toggles the lower two
+// toolbars on and off.
+//
 tinyMCE.init({
+
+
+    // General options
     mode : "none",
     theme : "advanced",
-    entity_encoding : "named",
-    entities : "160,nbsp,60,lt,62,gt,38,amp",
+    plugins : "table, advlink, iespell, preview, media, searchreplace, print, paste, " +
+        "contextmenu, fullscreen, noneditable, inlinepopups, style, pdw ",
+
+    // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
     convert_urls: false,
-    plugins : "table,advhr,advlink,advimage,searchreplace,contextmenu,fullscreen,nonbreaking,inlinepopups",
-    theme_advanced_buttons1_add : "fontselect,fontsizeselect",
-    theme_advanced_buttons2_add : "separator,forecolor,backcolor",
-    theme_advanced_buttons2_add_before: "cut,copy,paste,separator,search,replace,separator",
-    theme_advanced_buttons3_add_before : "tablecontrols,separator",
-    theme_advanced_buttons3_add : "advhr,nonbreaking,separator,fullscreen",
-    theme_advanced_disable : "code,hr,removeformat,visualaid",
-    theme_advanced_layout_manager: "SimpleLayout",
-    width: "100%",
-    nonbreaking_force_tab : true,
-    fullscreen_new_window : false,
-    fullscreen_settings : {
-    theme_advanced_path_location : "top"},
+
+    // Button bar -- rearraged based on my on aestheic judgement, not customer requests -georgesn
+    theme_advanced_buttons1 : "pdw_toggle, |, undo, redo, |, search, |, formatselect, bold, italic, underline, |, " +
+            "bullist, numlist, |, link, unlink, |, image, removeformat, fullscreen ",
+
+    theme_advanced_buttons2 : "cut, copy, paste, pastetext, pasteword, iespell, |, justifyleft, justifycenter, justifyright, |, " +
+            "outdent, indent, |, fontselect, fontsizeselect, forecolor, backcolor, ",
+
+    theme_advanced_buttons3 : "preview, print, |, tablecontrols, |, hr, media, anchor, charmap, styleprops, |, help",
+
+
     theme_advanced_toolbar_location : "top",
     theme_advanced_toolbar_align : "left",
-    theme_advanced_path_location : "bottom",
-    apply_source_formatting : true,
-    extended_valid_elements : "a[name|href|target|title|onclick],img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name|style],hr[class|width|size|noshade],font[face|size|color|style],span[class|align|style]",
-    external_link_list_url : "example_data/example_link_list.js",
-    external_image_list_url : "example_data/example_image_list.js",
-    theme_advanced_statusbar_location: "bottom",
-    fix_list_elements : true,
-    handle_event_callback : "tinyMceHandleEvent",
-    gecko_spellcheck: true
-    });
+    theme_advanced_statusbar_location : "bottom",
+    theme_advanced_resizing : true,
+
+    // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
+    // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
+    gecko_spellcheck : true,
+
+    // PDW (third-party) Toggle Toolbars settings.  see http://www.neele.name/pdw_toggle_toolbars
+    pdw_toggle_on : 1,
+    pdw_toggle_toolbars : "2,3",
+
+    // labkey specific
+    handle_event_callback : "tinyMceHandleEvent"
+
+});
+
+
 
 //the onReady function will execute after all elements
 //have been loaded and parsed into the DOM
@@ -582,14 +598,15 @@ function onSaveEditorPrefError(exceptionInfo)
     setError("There was a problem while saving your editor preference: " + exceptionInfo.exception);
 }
 
+
 function textContainsNonVisualElements(content)
 {
     var bodyText = new String(content);
     bodyText.toLowerCase();
 
-    //look for pre, form, and script tags
-    return null != bodyText.match(/<pre[\s>]/) ||
-            null != bodyText.match(/<script[\s>]/) ||
+    // look for form, script tag
+    // used to also block pre tag, but tinymc3.4 handles <pre> properly, so removed from blacklist
+    return  null != bodyText.match(/<script[\s>]/) ||
             null != bodyText.match(/<form[\s>]/)
 
 }

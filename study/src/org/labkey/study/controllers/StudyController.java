@@ -1182,7 +1182,11 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, "\"" + target.getSubjectColumnName() + "\" is not a valid subject column name.");
 
             if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounSingular()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounSingular() + "\" is not a valid subject noun.");
+                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounSingular() + "\" is not a valid singular subject noun.");
+
+            // For now, apply the same check to the plural noun as to the singular- there rules should be exactly the same.
+            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounPlural()))
+                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounPlural() + "\" is not a valid plural subject noun.");
         }
 
         public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
@@ -4438,7 +4442,13 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(DatasetPropertyForm form, BindException errors) throws Exception
         {
-            // Check for bad labels
+            // Check for bad labels, including the case where all labels are cleared out:
+            if (form.getIds() != null && form.getIds().length > 0 && form.getLabel() == null)
+            {
+                errors.reject("datasetVisibility", "Label cannot be blank");
+                return false;
+            }
+
             Set<String> labels = new HashSet<String>();
             for (String label : form.getLabel())
             {

@@ -489,7 +489,7 @@ public class SpecimenImporter
             new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("total_cell_count", "TotalCellCount", "INT", TargetTable.VIALS_AND_SPECIMEN_EVENTS)
+            new SpecimenColumn("total_cell_count", "TotalCellCount", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS)
     );
 
     public static final Collection<ImportableColumn> ADDITIVE_COLUMNS = Arrays.asList(
@@ -616,7 +616,7 @@ public class SpecimenImporter
             
             // Specimen temp table must be populated AFTER the types tables have been reloaded, since the SpecimenHash
             // calculated in the temp table relies on the new RowIds for the types:
-            SpecimenLoadInfo loadInfo = populateTempSpecimensTable(user, schema, container, iterMap.get("specimens"));
+            SpecimenLoadInfo loadInfo = populateTempSpecimensTable(user, schema, container, iterMap.get("specimens"), merge);
 
             // NOTE: if no rows were loaded in the temp table, don't remove existing materials/specimens/vials/events.
             if (loadInfo.getRowCount() > 0)
@@ -625,7 +625,7 @@ public class SpecimenImporter
                 info("Specimens: 0 rows found in input");
 
             cpuCurrentLocations.start();
-            updateCalculatedSpecimenData(container, user, _logger);
+            updateCalculatedSpecimenData(container, user, merge, _logger);
             cpuCurrentLocations.stop();
             info("Time to determine locations: " + cpuCurrentLocations.toString());
 
@@ -665,10 +665,10 @@ public class SpecimenImporter
         logDebug.debug(cpuPopulateTempTable);
     }
 
-    private SpecimenLoadInfo populateTempSpecimensTable(User user, DbSchema schema, Container container, Iterable<Map<String, Object>> iter) throws SQLException, IOException
+    private SpecimenLoadInfo populateTempSpecimensTable(User user, DbSchema schema, Container container, Iterable<Map<String, Object>> iter, boolean merge) throws SQLException, IOException
     {
         String tableName = createTempTable(schema);
-        Pair<List<SpecimenColumn>, Integer> pair = populateTempTable(schema, container, tableName, iter);
+        Pair<List<SpecimenColumn>, Integer> pair = populateTempTable(schema, container, tableName, iter, merge);
         return new SpecimenLoadInfo(user, container, schema, pair.first, pair.second, tableName);
     }
 
@@ -767,6 +767,70 @@ public class SpecimenImporter
             throw new RuntimeException(e);
         }
         return conflicts;
+    }
+
+    private static void clearConflictingVialColumns(Specimen specimen, Set<String> conflicts)
+            throws SQLException
+    {
+        SQLFragment sql = new SQLFragment();
+        sql.append("UPDATE ").append(StudySchema.getInstance().getTableInfoVial()).append(" SET\n  ");
+
+        boolean hasConflict = false;
+        String sep = "";
+        for (SpecimenColumn col : SPECIMEN_COLUMNS)
+        {
+            if (col.getAggregateEventFunction() == null && col.getTargetTable().isVials() && !col.isUnique())
+            {
+                if (conflicts.contains(col.getDbColumnName()))
+                {
+                    hasConflict = true;
+                    sql.append(sep);
+                    sql.append(col.getDbColumnName()).append(" = NULL");
+                    sep = ",\n  ";
+                }
+            }
+        }
+
+        if (!hasConflict)
+            return;
+
+        sql.append("\nWHERE Container = ? AND GlobalUniqueId = ?");
+        sql.add(specimen.getContainer().getId());
+        sql.add(specimen.getGlobalUniqueId());
+
+        Table.execute(StudySchema.getInstance().getSchema(), sql);
+    }
+
+    private static void clearConflictingSpecimenColumns(Specimen specimen, Set<String> conflicts)
+            throws SQLException
+    {
+        SQLFragment sql = new SQLFragment();
+        sql.append("UPDATE ").append(StudySchema.getInstance().getTableInfoSpecimen()).append(" SET\n  ");
+
+        boolean hasConflict = false;
+        String sep = "";
+        for (SpecimenColumn col : SPECIMEN_COLUMNS)
+        {
+            if (col.getAggregateEventFunction() == null && col.getTargetTable().isSpecimens() && !col.isUnique())
+            {
+                if (conflicts.contains(col.getDbColumnName()))
+                {
+                    hasConflict = true;
+                    sql.append(sep);
+                    sql.append(col.getDbColumnName()).append(" = NULL");
+                    sep = ",\n  ";
+                }
+            }
+        }
+
+        if (!hasConflict)
+            return;
+
+        sql.append("\nWHERE Container = ? AND RowId = ?");
+        sql.add(specimen.getContainer().getId());
+        sql.add(specimen.getSpecimenId());
+
+        Table.execute(StudySchema.getInstance().getSchema(), sql);
     }
 
     private static void updateCommentSpecimenHashes(Container container, Logger logger) throws SQLException
@@ -917,7 +981,7 @@ public class SpecimenImporter
     }
 
     // UNDONE: add vials in-clause to only update data for rows that changed
-    private static void updateCalculatedSpecimenData(Container container, User user, Logger logger) throws SQLException
+    private static void updateCalculatedSpecimenData(Container container, User user, boolean merge, Logger logger) throws SQLException
     {
         // delete unnecessary comments and create placeholders for newly discovered errors:
         prepareQCComments(container, user, logger);
@@ -1000,6 +1064,17 @@ public class SpecimenImporter
                         Set<String> conflicts = getConflictingEventColumns(events);
                         if (!conflicts.isEmpty())
                         {
+                            // Null out conflicting Vial columns
+                            if (merge)
+                            {
+                                // NOTE: in checkForConflictingSpecimens() we check the imported specimen columns used
+                                // to generate the specimen hash are not in conflict so we shouldn't need to clear any
+                                // columns on the specimen table.  Vial columns are not part of the specimen hash and
+                                // can safely be cleared without compromising the specimen hash.
+                                //clearConflictingSpecimenColumns(specimen, conflicts);
+                                clearConflictingVialColumns(specimen, conflicts);
+                            }
+
                             String sep = "";
                             message = "Conflicts found: ";
                             for (String conflict : conflicts)
@@ -1274,6 +1349,7 @@ public class SpecimenImporter
         return columnList.toString();
     }
 
+    // NOTE: In merge case, we've already checked the specimen hash columns are not in conflict.
     private void appendConflictResolvingSQL(SqlDialect dialect, SQLFragment sql, SpecimenColumn col, String tempTableName)
     {
         String selectCol = tempTableName + "." + col.getDbColumnName();
@@ -1919,7 +1995,7 @@ public class SpecimenImporter
 
     private Pair<List<SpecimenColumn>, Integer> populateTempTable(
             DbSchema schema, final Container container, String tempTable,
-            Iterable<Map<String, Object>> iter)
+            Iterable<Map<String, Object>> iter, boolean merge)
         throws SQLException, IOException
     {
         assert cpuPopulateTempTable.start();
@@ -1956,6 +2032,11 @@ public class SpecimenImporter
         remapTempTableLookupIndexes(schema, container, tempTable, loadedColumns);
 
         updateTempTableVisits(schema, container, tempTable);
+
+        if (merge)
+        {
+            checkForConflictingSpecimens(schema, container, tempTable, loadedColumns);
+        }
 
         updateTempTableSpecimenHash(schema, container, tempTable, loadedColumns);
 
@@ -2015,9 +2096,104 @@ public class SpecimenImporter
         }
     }
 
+    private void checkForConflictingSpecimens(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+            throws SQLException
+    {
+        info("Checking for conflicting specimens before merging...");
+
+        // Columns used in the specimen hash
+        StringBuilder hashCols = new StringBuilder();
+        for (SpecimenColumn col : loadedColumns)
+        {
+            if (col.getTargetTable().isSpecimens() && col.getAggregateEventFunction() == null)
+            {
+                hashCols.append(",\n\t");
+                hashCols.append(col.getDbColumnName());
+            }
+        }
+        hashCols.append("\n");
+
+        SQLFragment existingEvents = new SQLFragment("SELECT Vial.Container, GlobalUniqueId");
+        existingEvents.append(hashCols);
+        existingEvents.append("FROM ").append(StudySchema.getInstance().getTableInfoVial()).append(" AS Vial\n");
+        existingEvents.append("JOIN ").append(StudySchema.getInstance().getTableInfoSpecimen()).append(" AS Specimen\n");
+        existingEvents.append("ON Vial.SpecimenId = Specimen.RowId\n");
+        existingEvents.append("WHERE Vial.Container=?\n").add(container.getId());
+        existingEvents.append("AND Vial.GlobalUniqueId IN (SELECT GlobalUniqueId FROM ").append(tempTable).append(")\n");
+
+        SQLFragment tempTableEvents = new SQLFragment("SELECT Container, GlobalUniqueId");
+        tempTableEvents.append(hashCols);
+        tempTableEvents.append("FROM ").append(tempTable);
+
+        // "UNION ALL" the temp and the existing tables and group by columns used in the specimen hash
+        SQLFragment allEventsByHashCols = new SQLFragment("SELECT COUNT(*) AS Group_Count, * FROM (\n");
+        allEventsByHashCols.append("(\n").append(existingEvents).append("\n)\n");
+        allEventsByHashCols.append("UNION ALL\n");
+        allEventsByHashCols.append("(\n").append(tempTableEvents).append("\n)\n");
+        allEventsByHashCols.append(") U\n");
+        allEventsByHashCols.append("GROUP BY Container, GlobalUniqueId");
+        allEventsByHashCols.append(hashCols);
+
+        Map<String, List<Map<String, Object>>> rowsByGUID = new HashMap<String, List<Map<String, Object>>>();
+        Set<String> duplicateGUIDs = new TreeSet<String>();
+        Map<String, Object>[] allEventsByHashColsResults = Table.executeQuery(schema, allEventsByHashCols, Map.class);
+        for (Map<String, Object> row : allEventsByHashColsResults)
+        {
+            String guid = (String)row.get("GlobalUniqueId");
+            if (guid != null)
+            {
+                if (rowsByGUID.containsKey(guid))
+                {
+                    // Found a duplicate
+                    List<Map<String, Object>> dups = rowsByGUID.get(guid);
+                    dups.add(row);
+                    duplicateGUIDs.add(guid);
+                }
+                else
+                {
+                    rowsByGUID.put(guid, new ArrayList<Map<String, Object>>(Arrays.asList(row)));
+                }
+            }
+        }
+
+        if (duplicateGUIDs.size() == 0)
+        {
+            info("No conflicting specimens found");
+        }
+        else
+        {
+            StringBuilder sb = new StringBuilder();
+            for (String guid : duplicateGUIDs)
+            {
+                List<Map<String, Object>> dups = rowsByGUID.get(guid);
+                if (dups != null && dups.size() > 0)
+                {
+                    if (sb.length() > 0)
+                        sb.append("\n");
+                    sb.append("Conflicting specimens found for GlobalUniqueId '").append(guid).append("':\n");
+
+                    for (Map<String, Object> row : dups)
+                    {
+                        // CONSIDER: if we want to be really fancy, we could diff the columns to find the conflicting value.
+                        for (SpecimenColumn col : loadedColumns)
+                            if (col.getTargetTable().isSpecimens() && col.getAggregateEventFunction() == null)
+                                sb.append("  ").append(col.getDbColumnName()).append("=").append(row.get(col.getDbColumnName())).append("\n");
+                        sb.append("\n");
+                    }
+                }
+            }
+
+            _logger.error(sb);
+
+            // If conflicts are found, stop the import.
+            throw new IllegalStateException("Conflicting specimens found for GlobalUniqueId(s): " + StringUtils.join(duplicateGUIDs, ","));
+        }
+    }
+
     private void updateTempTableSpecimenHash(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
+        // NOTE: In merge case, we've already checked the specimen hash columns are not in conflict.
         SQLFragment conflictResolvingSubselect = new SQLFragment("SELECT GlobalUniqueId");
         for (SpecimenColumn col : loadedColumns)
         {

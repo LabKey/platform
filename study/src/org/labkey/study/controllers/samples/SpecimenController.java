@@ -233,7 +233,11 @@ public class SpecimenController extends BaseStudyController
             {
                 for (ParticipantDataset pd : getFilterPds())
                 {
-                    if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
+                    if (pd.getSequenceNum() == null)
+                    {
+                        ptidVisits.add(new Pair<String, String>(pd.getParticipantId(), null));
+                    }
+                    else if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
                     {
                         ptidVisits.add(new Pair<String, String>(pd.getParticipantId(), DateUtil.formatDate(pd.getVisitDate())));
                     }

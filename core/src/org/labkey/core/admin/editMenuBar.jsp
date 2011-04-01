@@ -25,22 +25,29 @@
     boolean menuEnabled = LookAndFeelProperties.getInstance(me.getViewContext().getContainer()).isMenuUIEnabled();
     ActionURL refreshURL = urlProvider(AdminUrls.class).getProjectSettingsMenuURL(me.getViewContext().getContainer());
 %>
-<form action="" method="POST">
-    <br>The menu bar is a beta feature of labkey server that can be customized to provide quick access to LabKey features.<br><br>
-    The menu bar is currently <%=menuEnabled ? "on" : "off"%>.<br>
-    <input type="hidden" value="<%=menuEnabled ? 0 : 1%>"  name="enableMenuBar">
-    <%=generateSubmitButton(menuEnabled ? "Turn Off Custom Menus" : "Turn On Custom Menus")%>
-</form>
-<br>
-The menu bar is populated by web parts. You can add and remove webparts here.<br>
-<%
-    if (menuEnabled)
+<style type="text/css">
+    div.section
     {
-%>
-<%= generateButton("Refresh Menu Bar", refreshURL) %><br>
-<%
+        padding: 8px 0;
     }
-%>
-<br>
-<%
-    include(me.getView("menubar"), out);%>
+</style>
+<div>
+    <form action="" method="POST">
+        <div class="section">
+            <span>The menu bar is a beta feature of labkey server that can be customized to provide quick access to LabKey features.</span>
+            <br/><br/>
+            <span>The menu bar is currently <%=menuEnabled ? "on" : "off"%>.</span>
+        </div>
+        <div class="section">
+            <%=generateSubmitButton(menuEnabled ? "Turn Off Custom Menus" : "Turn On Custom Menus")%>
+        </div>
+        <div class="section">
+            <span>The menu bar is populated by web parts. You can add and remove webparts here.</span>
+        </div>
+        <input type="hidden" value="<%=menuEnabled ? 0 : 1%>"  name="enableMenuBar">
+    </form>
+    <div class="section">
+        <% if (menuEnabled){ %><%= generateButton("Refresh Menu Bar", refreshURL) %><% } %>
+    </div>
+    <div class="section"><% include(me.getView("menubar"), out); %></div>
+</div>

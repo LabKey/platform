@@ -186,7 +186,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         @Override
         public String getExecuteHref(ViewContext context)
         {
-            return null;
+            return getHref(context);
         }
     }
     
@@ -204,7 +204,8 @@ class WikiWebdavProvider implements WebdavService.Provider
             _containerId = _c.getId();
             setPolicy(_c.getPolicy());
             _wiki = WikiSelectManager.getWiki(_c, new HString(name));
-            _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);
+            if (null != _wiki)
+                _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);
         }
 
 
@@ -416,7 +417,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         @Override
         public String getDescription()
         {
-            return _title.toString();
+            return null != _title ? _title.toString() : null;
         }
 
         @Override

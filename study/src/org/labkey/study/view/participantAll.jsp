@@ -70,11 +70,14 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
+<%@ page import="org.labkey.study.query.DataSetTable" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     ViewContext context = HttpView.currentContext();
-    UserSchema querySchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
+    org.labkey.study.query.StudyQuerySchema querySchema = (org.labkey.study.query.StudyQuerySchema)QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
     DbSchema dbSchema = querySchema.getDbSchema();
     String contextPath = request.getContextPath();
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
@@ -250,7 +253,7 @@
             }
 
             // get the data for this dataset and group rows by SequenceNum/Key
-            TableInfo table = dataset.getTableInfo(user);
+            TableInfo table = new org.labkey.study.query.DataSetTable(querySchema, dataset);
             Map<Double,Map<Object,Map>> seqKeyRowMap = new HashMap();
             String keyCol = dataset.getKeyPropertyName();
 
@@ -462,7 +465,9 @@ QCState getQCState(Study study, Integer id)
 Map<FieldKey,ColumnInfo> getQueryColumns(TableInfo t)
 {
     List<ColumnInfo> cols = t.getColumns();
-    List<FieldKey> keys = new ArrayList<FieldKey>(cols.size());
+    // Use all of the columns in the default view of the dataset, which might include columns from the assay side if
+    // the data was linked
+    Set<FieldKey> keys = new java.util.LinkedHashSet<FieldKey>(t.getDefaultVisibleColumns());
     for (ColumnInfo c : cols)
         keys.add(c.getFieldKey());
     return QueryService.get().getColumns(t, keys);
@@ -471,7 +476,7 @@ Map<FieldKey,ColumnInfo> getQueryColumns(TableInfo t)
 
 static CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet(
         "lsid","sourcelsid","sequencenum","qcstate","participantid",
-        "visitrowid","dataset","participantsequencekey","created","modified");
+        "visitrowid","dataset","participantsequencekey","created","modified","createdby","modifiedby","participantvisit");
 
 
 ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext context)
@@ -485,9 +490,11 @@ ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext c
             if (sortMap.containsKey(col.getName()))
                 ret[sortMap.get(col.getName())] = col;
         }
+        List<ColumnInfo> results = new ArrayList<ColumnInfo>();
         for (ColumnInfo col : ret)
-            assert col != null;
-        return ret;
+            if (col != null)
+                results.add(col);
+        return results.toArray(new ColumnInfo[results.size()]);
     }
 
     // default list

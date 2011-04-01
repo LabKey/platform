@@ -303,7 +303,20 @@ public class FileContentController extends SpringActionController
                             @Override
                             protected void renderView(Object model, PrintWriter out) throws Exception
                             {
-                                renderResourceContents(out, _resource);
+                                InputStream fis = null;
+                                try
+                                {
+                                    fis = _resource.getInputStream(getUser());
+                                    IOUtils.copy(new InputStreamReader(fis), out);
+                                }
+                                catch (FileNotFoundException x)
+                                {
+                                    out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
+                                }
+                                finally
+                                {
+                                    IOUtils.closeQuietly(fis);
+                                }
                             }
                         };
                         webPart.setTitle(_resource.getName());
@@ -452,6 +465,8 @@ public class FileContentController extends SpringActionController
             }
             part.setFrame(WebPartView.FrameType.NONE);
             part.setWide(true);
+            part.getModelBean().setAutoResize(true);
+            part.getModelBean().setShowDetails(true);
             return part;
         }
 

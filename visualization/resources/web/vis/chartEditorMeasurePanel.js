@@ -24,7 +24,8 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             'dimensionSelected',
             'chartDefinitionChanged',
             'measureMetadataRequestPending',
-            'measureMetadataRequestComplete'
+            'measureMetadataRequestComplete',
+            'filterCleared'
         );
 
         LABKEY.vis.ChartEditorMeasurePanel.superclass.constructor.call(this, config);
@@ -53,6 +54,24 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             handler: this.showMeasureSelectionWindow,
             scope: this
         });
+
+        this.dataFilterUrl = this.filterUrl;
+        this.dataFilterWarning = new Ext.form.Label({
+            // No text by default
+        });
+        this.dataFilterRemoveButton = new Ext.Button({
+            hidden: true,
+            text: 'Remove',
+            listeners: {
+                scope: this,
+                'click' : function()
+                {
+                    this.removeFilterWarning();
+                }
+            }
+        });
+        columnOneItems.push(this.dataFilterWarning);
+        columnOneItems.push(this.dataFilterRemoveButton);
 
         // add a label and radio buttons for allowing user to divide data into series (subject and dimension options)
         columnTwoItems.push({
@@ -227,6 +246,26 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         }, this);
 
         LABKEY.vis.ChartEditorMeasurePanel.superclass.initComponent.call(this);
+    },
+
+    setFilterWarningText: function(text)
+    {
+        var warning = "<b>This chart data is filtered:</b> " + LABKEY.Utils.encodeHtml(text);
+        this.dataFilterWarning.setText(warning, false);
+        this.dataFilterRemoveButton.show();
+    },
+
+    removeFilterWarning: function()
+    {
+        this.dataFilterUrl = undefined;
+        this.dataFilterWarning.setText('');
+        this.dataFilterRemoveButton.hide();
+        this.fireEvent('filterCleared');
+    },
+
+    getDataFilterUrl: function()
+    {
+        return this.dataFilterUrl;
     },
 
     showMeasureSelectionWindow: function() {

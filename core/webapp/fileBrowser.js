@@ -810,7 +810,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                     callback(fileSystem, false, path, response);
                 else
                 {
-                    window.alert(response.statusText);
+                    Ext.Msg.alert('Unable to delete resource', 'An error occurred on the server: ' + response.statusText);
                     callback(fileSystem, false, path, response);
                 }
             };
@@ -3316,8 +3316,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
 
             // the description field is hidden by default until a file is selected
-            this.descriptionField = new Ext.form.TextField({hidden:true, name: 'description', fieldLabel: 'Description', width: 350});
-            this.descriptionField.on('render', function(cmp){cmp.label.setVisible(false);});
+            this.descriptionField = new Ext.form.TextField({name: 'description', disabled: true, fieldLabel: 'Description', width: 350});
+            this.descriptionField.on('render', function(cmp){cmp.label.addClass('labkey-disabled');});
 
             // disable the upload button until a file is selected
             var uploadBtnId = Ext.id();
@@ -3325,8 +3325,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 var btn = Ext.getCmp(uploadBtnId);
                 if (btn)
                     btn.enable();
-                this.descriptionField.label.setVisible(true);
-                this.descriptionField.setVisible(true);
+                this.descriptionField.label.removeClass('labkey-disabled');
+                this.descriptionField.setDisabled(false);
             }, this);
 
             this.uploadPanel = new Ext.FormPanel({
@@ -3365,7 +3365,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.appletPanel = new Ext.Panel({
                 fieldLabel: 'File and Folder Drop Target',
                 isFormField: true,
-                height: 60,
+                height: 50,
                 width: 325
             });
 
@@ -3394,7 +3394,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             uploadPanel = new Ext.Panel({
                 border: false,
                 layout: 'card',
-                height: 135,
+                height: 115,
                 deferredRender: true,
                 defaults: defaults,
                 activeItem: this.uploadPanel.getId(),
@@ -3436,7 +3436,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.fileUploadPanel = new Ext.Panel({
                 region: 'north',
                 collapseMode: 'mini',
-                height: 135,
+                height: 115,
                 defaults: defaults,
                 header: false,
                 margins:'0 0 0 0',
@@ -3602,6 +3602,17 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }
     },
 
+    // gets just the name portion of a path (if any)
+    getName : function(path)
+    {
+        var separator = Ext.isWindows ? "\\" : "/";
+        var i = path.lastIndexOf(separator);
+        if (i > -1)
+            path = path.substring(i+1);
+
+        return path;
+    },
+
     // handler for a file upload complete event
     uploadSuccess : function(f, action)
     {
@@ -3616,8 +3627,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         // UNDONE: update data store directly
         //this.toggleTabPanel();
         this.refreshDirectory();
-        this.selectFile(this.fileSystem.concatPaths(options.record.data.path, options.name));
-        this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:new URI(this.fileSystem.concatPaths(options.record.data.uri, encodeURIComponent(options.name))).pathname}]});
+        var name = this.getName(options.name);
+
+        this.selectFile(this.fileSystem.concatPaths(options.record.data.path, name));
+        this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:name, id:new URI(this.fileSystem.concatPaths(options.record.data.uri, encodeURIComponent(name))).pathname}]});
     },
 
     // handler for a file upload failed event

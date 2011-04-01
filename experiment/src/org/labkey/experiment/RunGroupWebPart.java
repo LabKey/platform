@@ -53,7 +53,6 @@ public class RunGroupWebPart extends QueryView
         }
         else
         {
-            setShowRecordSelectors(true);
             setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             setShowExportButtons(false);
             setShowBorders(true);

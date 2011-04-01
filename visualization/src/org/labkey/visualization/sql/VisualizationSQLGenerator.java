@@ -4,8 +4,11 @@ import org.json.JSONArray;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.visualization.VisualizationController;
 
@@ -117,6 +120,19 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             {
                 VisualizationSourceColumn sort = new VisualizationSourceColumn(getViewContext(), sortInfo);
                 getSourceQuery(sort, true).addSort(sort);
+            }
+        }
+
+        Object filterUrlString = properties.get("filterUrl");
+        if (filterUrlString != null)
+        {
+            ActionURL filterUrl = new ActionURL((String) filterUrlString);
+            String queryName = (String) properties.get("filterQuery");
+            VisualizationSourceQuery query = _sourceQueries.get(queryName);
+            if (query != null)
+            {
+                SimpleFilter filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
+                query.setFilter(filter);
             }
         }
 
@@ -232,6 +248,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 sql.append(sep).append(orderBy.getValue().getAlias()).append(".").append(orderBy.getKey().getAlias());
                 sep = ", ";
             }
+            DefaultSchema defSchema = DefaultSchema.get(_viewContext.getUser(), _viewContext.getContainer());
+            if (defSchema.getDbSchema().getSqlDialect().isSqlServer())
+                sql.append(" LIMIT 1000000");
+
         }
 
         return sql.toString();
@@ -240,6 +260,15 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     public Map<String, String> getColumnMapping()
     {
         Map<String, String> colMap = new LinkedHashMap<String, String>();
+
+        // Add the sort columns first, since these are generally important to the user and should appear
+        // on the left-hand side of any data grids.  (Subject ID is the most common sort column.)
+        for (VisualizationSourceQuery query : _sourceQueries.values())
+        {
+            for (VisualizationSourceColumn sort : query.getSorts())
+                colMap.put(sort.getOriginalName(), sort.getAlias());
+        }
+
         for (VisualizationSourceQuery query : _sourceQueries.values())
         {
             Set<VisualizationAggregateColumn> aggregates = query.getAggregates();
@@ -262,12 +291,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     }
                 }
             }
-
-            for (VisualizationSourceColumn select : query.getSelects())
+            for (VisualizationSourceColumn select : query.getSelects(true))
                 colMap.put(select.getOriginalName(), select.getAlias());
-
-            for (VisualizationSourceColumn sort : query.getSorts())
-                colMap.put(sort.getOriginalName(), sort.getAlias());
 
             if (query.getJoinConditions() != null)
             {
@@ -307,5 +332,20 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     {
         VisualizationSourceQuery firstQuery = _sourceQueries.values().iterator().next();
         return firstQuery.getSchema();
+    }
+
+    public String getFilterDescription()
+    {
+        StringBuilder builder = new StringBuilder();
+        String sep = "";
+        for (VisualizationSourceQuery query : _sourceQueries.values())
+        {
+            if (query.getFilter() != null)
+            {
+                builder.append(sep).append(query.getFilter().getFilterText());
+                sep = " AND ";
+            }
+        }
+        return builder.toString();
     }
 }

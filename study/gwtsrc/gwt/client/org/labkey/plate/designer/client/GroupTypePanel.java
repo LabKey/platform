@@ -68,7 +68,6 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         List wellgroups = _view.getPlate().getTypeToGroupsMap().get(_type);
         FlexTable groupList = new FlexTable();
         groupList.setCellPadding(5);
-        groupList.setCellSpacing(0);
         if (wellgroups != null)
         {
             for (int i = 0; i < wellgroups.size(); i++)

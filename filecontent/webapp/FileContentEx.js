@@ -138,7 +138,7 @@ LABKEY.FilesWebPartPanelEx = Ext.extend(LABKEY.FilesWebPartPanel, {
             this.extraFileProperties[id] = newProps;
 
             LABKEY.Query.insertRows({schemaName:this.annotationConfig.schemaName, queryName:this.annotationConfig.queryName, containerPath:this.annotationConfig.containerPath,
-                rowDataArray:[newProps],
+                rows:[newProps],
                 successCallback:function() {},
                 failureCallback:function (result) {alert("failure: " + result.exception);}});
         }
@@ -146,7 +146,7 @@ LABKEY.FilesWebPartPanelEx = Ext.extend(LABKEY.FilesWebPartPanel, {
         {
             Ext.apply(oldProps, newProps);
             LABKEY.Query.updateRows({schemaName:this.annotationConfig.schemaName, queryName:this.annotationConfig.queryName, containerPath:this.annotationConfig.containerPath,
-                rowDataArray:[oldProps],
+                rows:[oldProps],
                 successCallback:function() {},
                 failureCallback:function (result) {alert("failure: " + result.exception);}});
         }
@@ -315,7 +315,7 @@ LABKEY.FilesWebPartPanelEx = Ext.extend(LABKEY.FilesWebPartPanel, {
         {
             annotationPanel = panel;
             LABKEY.Query.deleteRows({schemaName:me.annotationConfig.schemaName, queryName:me.annotationConfig.queryName,  containerPath:this.annotationConfig.containerPath,
-                rowDataArray:rowData, successCallback:showAnnotationDialog, errorCallback:showError, scope:me});
+                rows:rowData, successCallback:showAnnotationDialog, errorCallback:showError, scope:me});
         }
 
         function showError(result) {
@@ -423,7 +423,7 @@ LABKEY.FilesWebPartPanelEx = Ext.extend(LABKEY.FilesWebPartPanel, {
 
             function insertRows() {
                 LABKEY.Query.insertRows({schemaName:me.annotationConfig.schemaName, queryName:me.annotationConfig.queryName, containerPath:me.annotationConfig.containerPath,
-                    rowDataArray:rowData,
+                    rows:rowData,
                     successCallback:function() {updateCachedProperties(); win.close();},
                     failureCallback:function (result) {alert("failure: " + result.exception);}});
             }

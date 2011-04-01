@@ -38,6 +38,7 @@
     // the default project pipeline root based on the site default root
     String projectDefaultRoot = "";
     String folderRadioBtnLabel = "Set a pipeline override";
+    boolean hasInheritedOverride = SetupForm.hasInheritedOverride(getViewContext().getContainer());
 /*
     if (!getViewContext().getContainer().isProject())
         folderRadioBtnLabel = "Use a folder specific pipeline root";
@@ -130,10 +131,16 @@
             <td colspan="10">
                 <table>
                     <tr>
-                        <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="siteDefault"
+                        <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="siteDefault" <%=hasInheritedOverride ? "disabled" : ""%>
                             <%="siteDefault".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
                                    onclick="updatePipelineSelection();">
+<%                      if (hasInheritedOverride) { %>
+                            <label for="pipeOptionSiteDefault" class="labkey-disabled">Use a default based on the site-level root</label>
+                            <%=PageFlowUtil.helpPopup("Pipeline root", "Setting a default pipeline root for this folder is not supported because a pipeline " +
+                                    "override has been set in a parent folder.")%></td>
+<%                      } else { %>
                             <label for="pipeOptionSiteDefault">Use a default based on the site-level root</label></td>
+<%                      } %>
                         <td><input type="text" id="pipeRootPath" size="50" disabled="true" value="<%=h(projectDefaultRoot)%>"></td>
                     </tr>
                     <tr>

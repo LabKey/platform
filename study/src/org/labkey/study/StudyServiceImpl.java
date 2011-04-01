@@ -157,7 +157,7 @@ public class StudyServiceImpl implements StudyService.Service
             // however it can be changed by the update
             newData.put("lsid", result.get(0));
 
-            addDatasetAuditEvent(u, c, def, oldData, newData, null);
+            addDatasetAuditEvent(u, c, def, oldData, newData);
 
             return result.get(0);
         }
@@ -408,19 +408,24 @@ public class StudyServiceImpl implements StudyService.Service
 
         String oldRecordString = null;
         String newRecordString = null;
+        Object lsid;
         if (oldRecord == null)
         {
             newRecordString = encodeAuditMap(newRecord);
+            lsid = newRecord.get("lsid");
         }
         else if (newRecord == null)
         {
             oldRecordString = encodeAuditMap(oldRecord);
+            lsid = oldRecord.get("lsid");
         }
         else
         {
             oldRecordString = encodeAuditMap(oldRecord);
             newRecordString = encodeAuditMap(newRecord);
+            lsid = newRecord.get("lsid");
         }
+        event.setKey1(lsid == null ? null : lsid.toString());
 
         event.setComment(auditComment);
 
@@ -675,6 +680,8 @@ public class StudyServiceImpl implements StudyService.Service
 
     public boolean isValidSubjectColumnName(Container container, String subjectColumnName)
     {
+        if (subjectColumnName == null || subjectColumnName.length() == 0)
+            return false;
         // Short-circuit for the common case:
         if ("ParticipantId".equalsIgnoreCase(subjectColumnName))
             return true;
@@ -686,6 +693,8 @@ public class StudyServiceImpl implements StudyService.Service
 
     public boolean isValidSubjectNounSingular(Container container, String subjectNounSingular)
     {
+        if (subjectNounSingular == null || subjectNounSingular.length() == 0)
+            return false;
         String subjectTableName = getSubjectTableName(subjectNounSingular);
         String subjectVisitTableName = getSubjectVisitTableName(subjectNounSingular);
         for (SchemaTableInfo schemaTable : StudySchema.getInstance().getSchema().getTables())

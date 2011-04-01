@@ -29,8 +29,9 @@ GO
 
 /* study-10.32-10.33.sql */
 
-ALTER TABLE study.SpecimenEvent ADD TotalCellCount INT
+ALTER TABLE study.SpecimenEvent ADD TotalCellCount FLOAT
 GO
 
-ALTER TABLE study.Vial ADD TotalCellCount INT
+ALTER TABLE study.Vial ADD TotalCellCount FLOAT
 GO
+

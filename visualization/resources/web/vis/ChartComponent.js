@@ -26,6 +26,10 @@ LABKEY.vis.Shapes =[{name:"cross", markSize:20, lineWidth:4},
     {name:"square", markSize:20, lineWidth:1},
     {name:"circle", markSize:20, lineWidth:1}];
 
+//See issue 11788. Want to reuse same shape for same series over time on same page, even thru redraws.
+//We'll keep a mapping of series caption to series style here.
+LABKEY.vis.SeriesStyleMap = {};
+
 /**
  * A singleton class to convert SVG text to downloadable images
  * Note that this cannot be used to generate an image to be loaded into an image tag as a POST is required
@@ -98,6 +102,16 @@ LABKEY.vis.SVGConverter = {
         return xml;
     }
 
+};
+
+LABKEY.vis.getAxisRange = function (values, scaleType) {
+    //pv scales blow up on bad values
+    if (scaleType == "log")
+        values = values.filter(function(n) {return n > 0});
+    var scale = new pv.Scale[scaleType || "linear"](values);
+    scale.nice();
+    var domain = scale.domain();
+    return {min:domain[0],max:domain[domain.length-1]};
 };
 
 LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
@@ -229,7 +243,8 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         }
 
         rule.anchor(edge).add(pv.Label)
-                .text(scale.tickFormat)
+                //See issue 11789. Work around bug with pv number formatting
+                .text(this.getTickRenderer(scale))
                 .visible(function (d) {
                         if (axis.scale == "log")
                             return this.index % 9 == 0;
@@ -249,6 +264,47 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                 label.bottom(this.style.smallMargin).top(null);
         }
 
+    },
+
+    /**
+     * Return a renderer that uses a consistent number of decimal places and uses exponential notation only when necessary
+     * @param scale
+     */
+    getTickRenderer: function (scale) {
+        var tickArray = scale.ticks();
+        //Use pv default renderer for dates
+        if (Ext.isDate(tickArray[0]))
+            return scale.tickFormat;
+        
+        var maxDecimals = 0;
+        tickArray.forEach(function(val) {
+            var str = String(val);
+            var decimalPos = str.indexOf(".");
+            if (str.indexOf("e") == -1 && decimalPos != -1)
+            {
+                //Can end up with lots of decimals due to inexact tick calculations e.g. 1.6000000002 or 1.59999999998
+                if (str.length - decimalPos > 8)
+                {
+                    str = str.substring(0, decimalPos + 8);
+                    if (str.charAt(str.length - 1) == '0')
+                        str = str.replace(/0*$/, "");
+                    else if (str.charAt(str.length - 1) == '9')
+                        str = str.replace(/9*$/, "");
+                }
+
+                maxDecimals = Math.max(maxDecimals, str.length - decimalPos -1);
+            }
+        });
+
+        //Tricky way to repeat a string using array and join...
+        var fmtString = maxDecimals > 0 ? "0,0." + new Array(maxDecimals + 1).join("0") : "0,0";
+        return function (n) {
+            var str = String(n);
+            if (str.indexOf("e") == -1 && n < 1e8) //JS will give you up to 20 zeros
+                return Ext.util.Format.number(n, fmtString);
+            else
+                return str;
+        }
     },
 
     drawLegend: function () {
@@ -506,12 +562,14 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
         var chartComponent = this;
        var seriesIndex = 0;
         this.series.forEach(function (series) {
-            series.style = series.style || {};
+            series.style = series.style || LABKEY.vis.SeriesStyleMap[series.caption] || {};
             var style = series.style;
             Ext.applyIf(style, chartComponent.seriesStyle);
             if (!style.markColor)
                 style.markColor = chartComponent.style.seriesColors(series.caption).alpha(style.markAlpha);
-            style.shape = style.shape || LABKEY.vis.Shapes[seriesIndex % LABKEY.vis.Shapes.length];
+            if (!style.shape)
+                style.shape = LABKEY.vis.Shapes[seriesIndex % LABKEY.vis.Shapes.length];
+            LABKEY.vis.SeriesStyleMap[series.caption] = style; //Stash this away for later
 
             if (series.xProperty && !series.getX)
                 series.getX = chartComponent.createGetter(series.xProperty, false);
@@ -524,7 +582,7 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
             //The graphing doesn't work with missing values, so we strip them out of the series in the first place.
             //Consider, replace series data with static x/y values so don't have to call the getter so often
             var cleanData = [];
-            series.data.forEach(function (d) {
+            series.data.forEach(function (d) {  
                 var x = series.getX(d);
                 var y = series.getY(d);
 

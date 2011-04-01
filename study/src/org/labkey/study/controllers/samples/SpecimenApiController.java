@@ -125,6 +125,7 @@ public class SpecimenApiController extends BaseStudyController
                 if (additiveType != null)
                     vialProperties.put("additiveType", additiveType.getAdditive());
             }
+            vialProperties.put("drawTimestamp", vial.getDrawTimestamp());
             vialProperties.put("currentLocation", vial.getCurrentLocation() != null ?
                     getLocation(getContainer(), vial.getCurrentLocation().intValue()) : null);
             if (vial.getOriginatingLocationId() != null)

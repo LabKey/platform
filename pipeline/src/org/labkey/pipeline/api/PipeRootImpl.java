@@ -363,6 +363,12 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
+    public boolean isDefault()
+    {
+        return _isDefaultRoot;
+    }
+
+    @Override
     public String toString()
     {
         StringBuilder result = new StringBuilder();

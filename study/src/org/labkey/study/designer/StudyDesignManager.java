@@ -249,6 +249,7 @@ public class StudyDesignManager
                 getSchema().getScope().beginTransaction();
             version = Table.insert(user, getStudyVersionTable(), version);
             designInfo.setPublicRevision(version.getRevision());
+            designInfo.setLabel(version.getLabel());
             Table.update(user, getStudyDesignTable(), designInfo, designInfo.getStudyId());
             if (ownTransaction)
                 getSchema().getScope().commitTransaction();

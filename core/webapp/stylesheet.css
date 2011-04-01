@@ -74,17 +74,17 @@ input, select, .gwt-TextBox
 
 fieldset
 {
-    border: 1px solid #89A1B4;
-    padding-left: 5px;
-    padding-right: 5px;
-    padding-bottom: 0;
+    border: 1px solid #b4b4b4;
+    padding: 8px;
 }
 
 legend
 {
-    border: 1px solid #89A1B4;
-    padding: 2px 6px;
-    background-color: #EBF4FF;
+    border: 1px solid #999;
+    padding: 0 5px 2px 5px;
+    background-color: #999;
+	color: #fff;
+	margin-top: 8px;
 }
 
 table#header
@@ -216,10 +216,11 @@ table.labkey-expandable-nav th.labkey-header {
 
 .labkey-form-label-nowrap, tr td.labkey-form-label-nowrap {
 	background-color: #e0e6ea;
-    padding: 4px;
     white-space: nowrap;
-    vertical-align: top;
-    text-align: right;
+    padding-right:4px;
+    padding-left:4px;
+    padding-top:1px;
+    padding-bottom:1px;
 }
 
 /* Used in some cases where there are tables with cells that have borders or colored backgrounds that
@@ -261,7 +262,7 @@ table.labkey-no-spacing
 {
     background-color: #F4F4F4;
     border: 1px solid #AAAAAA;
-    padding: 2px !important;
+    padding: 3px !important;
 }
 
 .labkey-dataregion-msg
@@ -334,12 +335,11 @@ table.labkey-button-bar
 .labkey-button-bar .labkey-menu-button,
 .labkey-button-bar .labkey-button:visited,
 .labkey-button-bar .labkey-menu-button:visited {
-	background: none !important;
-    background-color: #E7EFF4;
+	background: none;
     border: 1px solid #E7EFF4;
 
-    margin-right: 5px;
-    padding: 3px 5px;
+    margin: 0.1em 0.8em 0.5em 0;
+    padding: 4px;
     position: relative;
     vertical-align: middle;
     white-space: nowrap;
@@ -359,21 +359,67 @@ table.labkey-button-bar
 
 .labkey-button-bar .labkey-button:hover,
 .labkey-button-bar .labkey-menu-button:hover {
-    background: #fff !important;
 	background-color: #FFFFFF;
-    border: 1px solid #676767;
+    border: 1px solid #676767 !important;
 
-    margin-right: 5px;
-    padding: 3px 5px;
+    margin: 0.1em 0.8em 0.5em 0;
+    padding: 4px;
     position: relative;
     vertical-align: middle;
     white-space: nowrap;
 
     color: #000000;
     cursor:pointer;
+
     border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
+
+    *position: relative;
+    white-space: nowrap;
+    *display: inline;
+
+	/* For WebKit (Safari, Google Chrome etc) */
+    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+    /* For Mozilla/Gecko (Firefox etc) */
+    background: -moz-linear-gradient(top, #fff, #e5e5e5);
+	/* For IE */
+	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5);
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)";
+
+}
+
+.labkey-button-bar .labkey-disabled-button,
+.labkey-button-bar .labkey-disabled-button:visited,
+.labkey-button-bar .labkey-disabled-button:hover,
+.labkey-menu-button .labkey-disabled-button,
+.labkey-menu-button .labkey-disabled-button:visited,
+.labkey-menu-button .labkey-disabled-button:hover,
+.labkey-disabled-menu-button,
+.labkey-disabled-menu-button:visited,
+.labkey-disabled-menu-button:hover {
+    background: none !important;
+	background-color: #E7EFF4;
+    border: 1px solid transparent !important;
+
+    margin: 0.1em 0.8em 0.5em 0;
+    padding: 4px;
+    position: relative;
+    vertical-align: middle;
+    white-space: nowrap;
+
+    color: #808080 !important;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: bold;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    cursor: default;
+
+    line-height: 2.3em;
+    *line-height: 1.9em;
+    *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
+                    is required for IE to recognize its position attribute, which in
+                    turn enables relative positioning of our menu button arrow gif. */
 }
 
 /* this keeps the space between text and menu down arrows */
@@ -387,6 +433,14 @@ a.labkey-disabled-menu-button span
 a.labkey-menu-button
 {
     color: #126495;
+}
+
+/* this keeps disabled button hover bg invisible and no hand cursor */
+.labkey-button-bar .labkey-disabled-button:hover
+{
+    border: 1px solid #E7EFF4;
+    background-color: #E7EFF4;
+	cursor: default;
 }
 
 /* this keeps the hover state style for enabled buttons */
@@ -431,7 +485,8 @@ img.labkey-mv-indicator
 /* ********* Standalone Buttons ******** */
 
 a.labkey-button,
-a.labkey-button:visited {
+a.labkey-button:visited,
+span.labkey-button {
     padding: 3px 5px;
 	margin-right: 5px;
     border: 1px solid #b4b4b4;
@@ -442,29 +497,29 @@ a.labkey-button:visited {
     font-weight: bold;
     white-space: nowrap;
 
+	border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-    border-radius: 5px;
+
+    *position: relative;
+    white-space: nowrap;
+    *display: inline;
 
 	/* For WebKit (Safari, Google Chrome etc) */
     background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
     /* For Mozilla/Gecko (Firefox etc) */
     background: -moz-linear-gradient(top, #fff, #e5e5e5);
-    /* For Internet Explorer 5.5 - 7 */
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#FFFFFFFF, endColorstr=#E5E5E5E5);
-    /* For Internet Explorer 8 */
-    -ms-filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#FFFFFFFF, endColorstr=#E5E5E5E5);
-
-    /* *padding: 1px 5px 0px 5px; */
-	*padding: 3px 5px;
-	*margin-bottom: 2px;
+	/* For IE */
+	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5) !important;
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)" !important;
 }
 
-a.labkey-button:hover
+a.labkey-button:hover,
+span.labkey-button:hover
 {
     padding: 3px 5px;
-	*padding: 5px;
-    border: 1px solid #b4b4b4;
+	margin-right: 5px;
+    border: 1px solid #676767 !important;
     color: #000000;
     text-transform: uppercase;
     font-size: 10px;
@@ -472,64 +527,69 @@ a.labkey-button:hover
     font-weight: bold;
     cursor: pointer;
 
+    border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-    border-radius: 5px;
 
 	/* For WebKit (Safari, Google Chrome etc) */
     background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
     /* For Mozilla/Gecko (Firefox etc) */
     background: -moz-linear-gradient(top, #fff, #e5e5e5);
-    /* For Internet Explorer 5.5 - 7 */
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#FFFFFFFF, endColorstr=#e5e5e5e5);
-    /* For Internet Explorer 8 */
-    -ms-filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#FFFFFFFF, endColorstr=#e5e5e5e5);
-
-    /* *padding: 1px 5px 0px 5px; */
-	*padding: 3px 5px;
-	*margin-bottom: 2px;
 }
 
 .labkey-disabled-button,
 .labkey-disabled-button:visited,
-a.labkey-disabled-button,
-a.labkey-disabled-button:hover,
-.labkey-button-bar a.labkey-menu-button .labkey-disabled-button,
-.labkey-button-bar a.labkey-menu-button .labkey-disabled-button:visited,
-.labkey-button-bar a.labkey-menu-button .labkey-disabled-button:hover {
-    padding: 3px 5px !important;
-	margin-right: 5px !important;
-    border: 1px solid transparent !important;
-    color: #b4b4b4 !important;
-    text-transform: uppercase !important;
-    font-size: 10px !important;
-    position: relative;
-    font-family: Verdana, Arial, Helvetica, sans serif !important;
-    font-weight: bold !important;
-    white-space: nowrap !important;
-    cursor: default !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    vertical-align : middle !important;
+.labkey-disabled-button:active,    
+a.labkey-disabled-button {
+    padding: 3px 5px;
+    border: 1px solid #b4b4b4;
+    margin-right: 5px;
+    color: #808080 !important;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+    cursor: default;
 
-    -moz-border-radius: 5px !important;
-    -webkit-border-radius: 5px !important;
-    border-radius: 5px !important;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
 
-    line-height: 2.3em !important;
-    *line-height: 1.9em !important;
-    *height: 1% !important; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
-                    is required for IE to recognize its position attribute, which in
-                    turn enables relative positioning of our menu button arrow gif. */
+    *position: relative;
+    white-space: nowrap;
+    *display: inline;
 
-    *padding: 3px 5px !important;
-	*margin-bottom: 2px !important;
+	/* For WebKit (Safari, Google Chrome etc) */
+    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+    /* For Mozilla/Gecko (Firefox etc) */
+    background: -moz-linear-gradient(top, #fff, #e5e5e5);
 }
 
-a.labkey-button:active
+a.labkey-button:active,
+span.labkey-button:active
 {
-    border: 1px solid #b4b4b4;
-    position: relative;
+    padding: 3px 5px;
+	margin-right: 5px;
+    border: 1px solid #b4b4b4 !important;
+    color: #000000;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+    cursor: pointer;
+
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+
+    *position: relative;
+    white-space: nowrap;
+    *display: inline;
+
+	/* For WebKit (Safari, Google Chrome etc) */
+    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+    /* For Mozilla/Gecko (Firefox etc) */
+    background: -moz-linear-gradient(top, #fff, #e5e5e5);
 }
 
 /* Used across the site for simple indenting */
@@ -619,7 +679,9 @@ div.labkey-pagination
 table.labkey-nav-trail
 {
     width: 100%;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0;
+    *border-collapse: collapse;
+    *margin: 5px 0 20px 0;
 }
 
 /* Used for the "App Bar" containing the main title and the application button bar */
@@ -849,10 +911,29 @@ table.labkey-show-surrounding-border
 }
 
 .labkey-row TD, .labkey-alternate-row TD,
-.labkey-data-region TH, .wiki-table TD, .wiki-table TH, .labkey-data-region .labkey-column-header
+.labkey-data-region TH, .labkey-data-region .labkey-column-header
 {
     padding: 1px;
     padding-right:4px;
+}
+
+table.wiki-table, table.wiki-table td, table.wiki-table th {
+    border-color: #e5e5e5;
+    border-style: solid;
+}
+
+table.wiki-table {
+    border-width: 0 0 1px 1px;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+table.wiki-table td, table.wiki-table th
+{
+    margin: 0;
+    padding: 7px;
+    border-width: 1px 1px 0 0;
+    text-align: left;
 }
 
 table.labkey-pad-cells
@@ -996,8 +1077,8 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
 
 .labkey-data-region-header-container
 {
-    background-color: #E7EFF4;
-    border: 1px solid #89a1b4;
+    background-color: #E9e9e9;
+    border: 1px solid #b4b4b4;
     padding: 0;
 }
 
@@ -1299,13 +1380,12 @@ table.labkey-proj
     padding: 0 30px 30px 30px;
     *border-collapse: collapse;
     *width: 95%;
-    *margin-left: auto;
-    *margin-right: auto;
+    *margin: 0 30px 30px 30px;
 }
 
 td.labkey-proj
 {
-    *vertical-align: top; /* IE */
+    vertical-align: top;
     height: 100%;
 }
 
@@ -1825,8 +1905,9 @@ span.labkey-wp-icon-button-inactive:hover {
 }
 
 .labkey-wp-text-buttons a, .labkey-wp-text-buttons a:visited {
-	padding: 4px 5px;
+	padding: 3px 5px;
 	margin-left: 5px;
+	margin-bottom: 2px;
     border: 1px solid #fff;
     color: #126495;
     text-transform: uppercase;
@@ -1892,6 +1973,7 @@ a.labkey-text-link:hover {
 	opacity: 0.4;
     filter: alpha(opacity=40);
     -moz-opacity: 0.4;
+    *top: 6px;
 }
 
 a.labkey-text-link:hover .css-arrow-right {
@@ -1905,6 +1987,7 @@ a.labkey-text-link:hover .css-arrow-right {
 	opacity: 0.4;
     filter: alpha(opacity=40);
     -moz-opacity: 0.4;
+    *top: 6px;
 }
 
 .css-arrow-down {
@@ -1918,6 +2001,7 @@ a.labkey-text-link:hover .css-arrow-right {
 	opacity: 0.4;
     filter: alpha(opacity=40);
     -moz-opacity: 0.4;
+    *top: 12px;
 }
 
 a.labkey-disabled-button .css-arrow-down {
@@ -1931,6 +2015,7 @@ a.labkey-disabled-button .css-arrow-down {
     opacity: 0.4;
     filter: alpha(opacity=40);
     -moz-opacity: 0.4;
+    *top: 12px;
 }
 
 
@@ -2085,6 +2170,41 @@ table.labkey-manage-default-reqs
 
 
 /* Wiki */
+
+div.labkey-wiki h1
+{
+    font-size: 2em;
+    margin: 0.83em 0;
+    font-weight: 500;
+}
+
+.labkey-wiki .heading-1, div.labkey-wiki h2
+{
+    font-size: 1.2em;
+    margin: 0.83em 0;
+    font-weight: bold;
+}
+
+.labkey-wiki .heading-1-1, div.labkey-wiki h3
+{
+    font-size: 1.0em;
+    margin: 0.83em 0;
+    font-weight: bold;
+}
+
+.labkey-wiki .heading-1-1-1, div.labkey-wiki h4
+{
+    text-transform: uppercase;
+    font-size: 0.8em;
+    margin: 0.83em 0 0.0px 0;
+    font-weight: bold;
+}
+
+.labkey-wiki .code
+{
+    font-family: courier,monospace;
+    padding-left: 0.25in;
+}
 
 /* R reports */
 table.labkey-r-tsvout
@@ -2661,7 +2781,10 @@ div.yuimenu li.checked em.checkedindicator.disabled {
 
 .x-panel-header {
     color:#000000;
-	border: 1px solid #89a1b4;
+	border-top: 1px solid #d0d0d0;
+	border-left: 1px solid #d0d0d0;
+	border-right: 1px solid #d0d0d0;
+	border-bottom: 1px solid #fff;
     background: #E7EFF4;
 }
 
@@ -2791,12 +2914,12 @@ td a.x-grid3-hd-btn:hover {
 .x-menu {
     padding:0;
     background: #FFFFFF none;
-    border-color: #89A1B4;
+    border-color: #b4b4b4;
 }
 .x-menu-sep {margin:1px 1px 0 1px;}
 
 li.x-menu-item-active {
-	background:#E7EFF4 none repeat scroll 0 0;
+	background:#e5e5e5 none repeat scroll 0 0;
 	border: none;
 }
 
@@ -2808,7 +2931,7 @@ li.x-menu-item-active a.x-menu-item {
 
 .extContainer .x-menu-item-active {
     background:#EAEAEA repeat-x left bottom;
-    border:1px solid #89A1B4;
+    border:1px solid #b4b4b4;
     padding:0;
 }
 
@@ -3091,6 +3214,10 @@ body .x-window .x-window-tl .x-window-header {
     border-width:0;
 }
 
+.x-fieldset legend {
+	color: #fff;
+}
+
 /* GRID ROWS */
 
 body .x-grid3 .x-grid3-row {
@@ -3102,7 +3229,7 @@ body .x-grid3 .x-grid3-row {
 body .x-grid3 .x-grid3-row-selected {
 	padding:0;
     border: 1px solid #126495;
-    background: #E7EFF4 !important;
+    background: #eeeeee !important;
 }
 
 body .x-grid3 .x-grid3-row-alt {
@@ -3171,9 +3298,9 @@ table.labkey-tab-strip
 /* This tab has no bottom border so it looks like it is forward */
 td.labkey-tab-selected, .labkey-tab-selected {
 	padding: 4px 7px;
-    border-top: solid 1px #89A1B4;
-    border-left: solid 1px #89A1B4;
-    border-right: solid 1px #89A1B4;
+    border-top: solid 1px #b4b4b4;
+    border-left: solid 1px #b4b4b4;
+    border-right: solid 1px #b4b4b4;
     border-bottom: solid 1px #ffffff;
     background-color: #fff;
     color: #000000;
@@ -3183,7 +3310,7 @@ td.labkey-tab-selected, .labkey-tab-selected {
 
 .labkey-tab-selected a {
 	padding: 4px 7px;
-    border-top: solid 1px #89A1B4;
+    border-top: solid 1px #b4b4b4;
     border-bottom: solid 1px #ffffff;
     background-color: #fff;
     color: #000000;
@@ -3194,8 +3321,8 @@ td.labkey-tab-selected, .labkey-tab-selected {
 /* This tab has a bottom border so it looks like it is back */
 td.labkey-tab, .labkey-tab {
 	padding: 4px 7px;
-    border: solid 1px #89A1B4;
-    background-color: #e7eff4;
+    border: solid 1px #b4b4b4;
+    background-color: #f4f4f4;
     color: #126495;
     text-decoration: none;
     vertical-align: bottom;
@@ -3205,7 +3332,7 @@ td.labkey-tab, .labkey-tab {
 
 .labkey-tab a {
 	padding: 4px 7px;
-    background-color: #e7eff4;
+    background-color: #f4f4f4;
     color: #126495;
 	font-weight: bold;
     text-decoration: none;
@@ -3216,7 +3343,7 @@ td.labkey-tab, .labkey-tab {
 
 .labkey-tab a:hover {
 	padding: 4px 7px;
-    background-color: #e7eff4;
+    background-color: #f4f4f4;
     color: #000000;
 	font-weight: bold;
     text-decoration: none;
@@ -3228,18 +3355,18 @@ td.labkey-tab, .labkey-tab {
 /* This tab has a bottom border and its text is shaded so it looks like it is back and unselectable */
 td.labkey-tab-inactive {
 	padding: 4px 7px;
-    border:solid 1px #89A1B4;
+    border:solid 1px #b4b4b4;
     text-decoration: none;
     color: #444444;
-	background-color: #e7e7e7;
+	background-color: #f4f4f4;
 }
 
 td.labkey-tab-content, .labkey-tab-content {
 	padding: 4px 7px;
-    border-left: solid 1px #89A1B4;
-    border-right: solid 1px #89A1B4;
-    border-bottom: solid 1px #89A1B4;
-    background-color:#FFFFFF;
+    border-left: solid 1px #b4b4b4;
+    border-right: solid 1px #b4b4b4;
+    border-bottom: solid 1px #b4b4b4;
+    background-color:#ffffff;
     vertical-align:bottom;
 }
 
@@ -3254,13 +3381,13 @@ td.labkey-tab-space, .labkey-tab-space
     border-top: 0;
     border-left: 0;
     border-right: 0;
-    border-bottom: 1px solid #89A1B4;
+    border-bottom: 1px solid #b4b4b4;
 }
 
 /* styles used for TabStripView tabs */
 ul.labkey-tab-strip
 {
-    border-bottom : 1px solid #89A1B4;
+    border-bottom : 1px solid #b4b4b4;
     margin : 0;
     padding-left : 10px;
 }
@@ -3275,9 +3402,9 @@ ul.labkey-tab-strip li
 
 ul.labkey-tab-strip a
 {
-    border-top : 1px solid #89A1B4;
-    border-right : 1px solid #89A1B4;
-    border-left : 1px solid #89A1B4;
+    border-top : 1px solid #b4b4b4;
+    border-right : 1px solid #b4b4b4;
+    border-left : 1px solid #b4b4b4;
     border-bottom : none;
     float: left;
     line-height : 14px;
@@ -3297,7 +3424,7 @@ li.labkey-tab-active a
 
 li.labkey-tab-inactive a
 {
-    background-color: #E7EFF4;
+    background-color: #f4f4f4;
     font-weight: bold;
 }
 
@@ -3305,8 +3432,8 @@ li.labkey-tab-inactive a
 {
     height: 4px;
     background-color:#fff;
-	border-left : 1px solid #89A1B4;
-	border-right : 1px solid #89A1B4;
+	border-left : 1px solid #b4b4b4;
+	border-right : 1px solid #b4b4b4;
 	border-bottom : 1px solid #fff;
     font-size:1px;
     line-height:1px;
@@ -3315,7 +3442,7 @@ li.labkey-tab-inactive a
 .labkey-tab-strip-content
 {
 	background: #ffffff;
-	border: 1px solid #89A1B4;
+	border: 1px solid #b4b4b4;
 	border-top: none;
 	clear: both;
 	margin: 0;
@@ -3342,7 +3469,7 @@ li.labkey-tab-inactive a
 /* gwt */
 
 .gwt-TabPanelBottom {
-	border: 1px solid #89A1B4;
+	border: 1px solid #b4b4b4;
 }
 
 .gwt-TabBar {
@@ -3359,13 +3486,13 @@ li.labkey-tab-inactive a
 }
 
 .gwt-TabBar .gwt-TabBarItem {
-  border-top: 1px solid #89A1B4;
-  border-left: 1px solid #89A1B4;
-  border-right: 1px solid #89A1B4;
+  border-top: 1px solid #b4b4b4;
+  border-left: 1px solid #b4b4b4;
+  border-right: 1px solid #b4b4b4;
   margin-right: 6px;
   padding: 4px 7px;
   cursor: pointer;
-  background-color: #E7EFF4;
+  background-color: #f4f4f4;
 }
 
 .gwt-TabBar .gwt-TabBarItem-selected {
@@ -3412,22 +3539,22 @@ div.extContainer .x-tab-panel {
 }
 
 .x-tab-panel-body {
-    border-color: #89A1B4;
+    border-color: #b4b4b4;
 }
 
 .x-tab-panel-bbar-noborder .x-toolbar {
     border-width:0;
-    border-top:1px solid #d0d0d0;
+    border-top:1px solid #b4b4b4;
 }
 
 .x-tab-panel-tbar-noborder .x-toolbar {
     border-width:0;
-    border-bottom:1px solid #d0d0d0;
+    border-bottom:1px solid #b4b4b4;
 }
 
 .x-tab-panel-header, .x-tab-panel-footer {
 	background-color: #fff;
-	border-color: none;
+	border-color: #b4b4b4;
 	border: none;
 	border-left: none;
 	border-right: none;
@@ -3437,14 +3564,16 @@ div.extContainer .x-tab-panel {
 ul.x-tab-strip-top {
 	background: #ffffff none;
 	padding-top:3px;
+	border-color: #b4b4b4;
+	list-style: none;
 }
 
 ul.x-tab-strip-top li {
     margin-left:6px;
-    border-top:1px solid #89A1B4;
-    border-right:1px solid #89A1B4;
-    border-left:1px solid #89A1B4;
-	background-color: #e7eff4;
+    border-top:1px solid #b4b4b4;
+    border-right:1px solid #b4b4b4;
+    border-left:1px solid #b4b4b4;
+	background-color: #f4f4f4;
 }
 
 .x-tab-strip-top .x-tab-strip-active .x-tab-right,
@@ -3488,8 +3617,8 @@ ul.x-tab-strip-top li {
 .x-tab-panel-header .x-tab-strip-spacer
 {
     height:4px;
-    border-left:1px solid #89A1B4;
-	border-right:1px solid #89A1B4;
+    border-left:1px solid #b4b4b4;
+	border-right:1px solid #b4b4b4;
 	border-top: none;
 	border-bottom: none;
 	background-color: #FFFFFF;

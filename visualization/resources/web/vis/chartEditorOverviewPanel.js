@@ -52,51 +52,19 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
             }]
         }));
 
-        // second item in the card layout: panel for users without insert perms (shows description and report name/description if available)
-        var displayItems = [];
-        this.nameDisplayField = new Ext.form.DisplayField({
-            fieldLabel: 'Report Name',
-            value: (typeof this.reportInfo == 'object' ? Ext.util.Format.htmlEncode(this.reportInfo.name) : null),
-            border: false
-        });
+        // Note that the following check means that Readers are allowed to save new charts (readers own new charts they're creating)- this is by design.
+        var canSaveChanges = this.canSaveChanges();
+        var canSaveSharedCharts = this.canSaveSharedCharts();
+        var savedReport = this.isSavedReport();
+        var currentlyShared = (savedReport && this.reportInfo.shared) || (!savedReport && canSaveSharedCharts);
+        var createdBy = savedReport ? this.reportInfo.createdBy : LABKEY.Security.currentUser.id;
 
-        this.descDisplayField = new Ext.form.DisplayField({
-            fieldLabel: 'Report Description',
-            value: (typeof this.reportInfo == 'object' ? Ext.util.Format.htmlEncode(this.reportInfo.description) : null),
-            border: false
-        });
-
-        // only add the display fields to the panel if they have something to show
-        if(typeof this.reportInfo == 'object'){
-            displayItems.push(this.nameDisplayField);
-            displayItems.push(this.descDisplayField);
-        }
-
-        items.push({
-            layout: 'column',
-            title: '',
-            autoHeight: true,
-            autoWidth: true,
-            border: false,
-            items: [{
-                columnWidth: .6,
-                border: false,
-                bodyStyle: 'padding: 5px 20px 5px 5px',
-                html: chartEditorDescription
-            },{
-                columnWidth: .4,
-                layout: 'form',
-                border: false,
-                bodyStyle: 'padding: 5px',
-                labelWidth: 125,
-                items: displayItems
-            }]
-        });
-
-        // third item in the card layout: panel for users with insert permissions (shows desription and report name/description input fields)
+        // Second item in the card layout: panel for users with insert permissions (shows desription and report name/description input fields)
+        // a report by that name already exists within the container, if the user can update, ask if they would like to replace
         this.saveBtn = new Ext.Button({
             text: "Save",
-            hidden: (typeof this.reportInfo == 'object' && !LABKEY.Security.currentUser.canUpdate ? true : false), // hide if user can't update a saved report
+            hidden: false, // hide if user can't update a saved report
+            disabled: !canSaveChanges,
             handler: function() {
                 var formVals = this.saveChartFormPanel.getForm().getValues();
 
@@ -113,8 +81,8 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
 
                 // the save button will not allow for replace if this is a new chart,
                 // but will force replace if this is a change to a saved chart
-                var shared = typeof formVals.reportShared == "string" ? 'true' == formVals.reportShared : new Boolean(formVals.reportShared);
-                this.fireEvent('saveChart', 'Save', (typeof this.reportInfo == "object" ? true : false), formVals.reportName, formVals.reportDescription, shared);
+                var shared = typeof formVals.reportShared == "string" ? 'true' == formVals.reportShared : (new Boolean(formVals.reportShared)).valueOf();
+                this.fireEvent('saveChart', 'Save', (typeof this.reportInfo == "object"), formVals.reportName, formVals.reportDescription, shared, canSaveSharedCharts, createdBy);
             },
             scope: this,
             formBind: true
@@ -123,13 +91,13 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
         // save as button, initially hidden if not rendering a saved chart
         this.saveAsBtn = new Ext.Button({
             text: "Save As",
-            hidden: (typeof this.reportInfo == 'object' ? false : true),
+            hidden: !savedReport || LABKEY.Security.currentUser.isGuest,
             handler: function() {
                 var formVals = this.saveChartFormPanel.getForm().getValues();
 
                 // the save as button does not allow for replace initially
-                var shared = typeof formVals.reportShared == "string" ? 'true' == formVals.reportShared : new Boolean(formVals.reportShared);
-                this.fireEvent('saveChart', 'Save As', false, formVals.reportName, formVals.reportDescription, shared);
+                var shared = typeof formVals.reportShared == "string" ? 'true' == formVals.reportShared : (new Boolean(formVals.reportShared)).valueOf();
+                this.fireEvent('saveChart', 'Save As', false, formVals.reportName, formVals.reportDescription, shared, canSaveSharedCharts, createdBy);
             },
             scope: this,
             formBind: true
@@ -146,8 +114,8 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                 new Ext.form.TextField({
                     name: 'reportName',
                     fieldLabel: 'Report Name',
-                    readOnly: (typeof this.reportInfo == "object" ? true : false), // disabled for saved report
-                    value: (typeof this.reportInfo == "object" ? this.reportInfo.name : null),
+                    readOnly: savedReport || !canSaveChanges, // disabled for saved report
+                    value: (savedReport ? this.reportInfo.name : null),
                     allowBlank: false,
                     preventMark: true,
                     anchor: '100%',
@@ -156,18 +124,19 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                 new Ext.form.TextArea({
                     name: 'reportDescription',
                     fieldLabel: 'Report Description',
-                    value: (typeof this.reportInfo == "object" ? this.reportInfo.description : null),
+                    readOnly: !canSaveChanges,
+                    value: (savedReport ? this.reportInfo.description : null),
                     allowBlank: true,
                     anchor: '100%',
-                    height: 40
+                    height: 35
                 }),
                 new Ext.form.RadioGroup({
                     name: 'reportShared',
                     fieldLabel: 'Viewable by',
                     anchor: '100%',
                     items : [
-                            { name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', checked: (typeof this.reportInfo == "object" ? this.reportInfo.shared : true) },
-                            { name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', checked: !(typeof this.reportInfo == "object" ? this.reportInfo.shared : true) }
+                            { name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', disabled: !canSaveSharedCharts, checked: currentlyShared },
+                            { name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !canSaveSharedCharts, checked: !currentlyShared }
                         ]
                 })
             ],
@@ -200,18 +169,41 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
         this.items = items;
 
         // determine the initial active item to set for this chart layout
-        var active = 0;
-        // if showing saved report and user can insert, show input fields; else, show displayfields
-        if(typeof this.reportInfo == 'object'){
-            active = (LABKEY.Security.currentUser.canInsert ? 2 : 1);
-        }
-        this.activeItem = active;
+        this.activeItem = savedReport ? 1 : 0;
 
         this.on('activate', function(){
            this.doLayout();
         }, this);
 
         LABKEY.vis.ChartEditorOverviewPanel.superclass.initComponent.call(this);
+    },
+
+    isSavedReport : function()
+    {
+        return (typeof this.reportInfo == "object");
+    },
+
+    isChartCreator : function()
+    {
+        return (!this.isSavedReport() || this.reportInfo.createdBy == LABKEY.Security.currentUser.id);
+    },
+
+    isChartOwner : function()
+    {
+        return (!this.isSavedReport() || this.reportInfo.ownerId == LABKEY.Security.currentUser.id);
+    },
+
+    canSaveChanges : function()
+    {
+        if (LABKEY.Security.currentUser.isGuest)
+            return false;
+        // Note that the following check means that Readers are allowed to save new charts (readers own new charts they're creating)- this is by design.
+        return (LABKEY.Security.currentUser.isAdmin || this.isChartCreator());
+    },
+
+    canSaveSharedCharts : function()
+    {
+        return LABKEY.Security.currentUser.canInsert && this.canSaveChanges();
     },
 
     showMeasureSelectionWindow: function() {
@@ -274,19 +266,13 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
             this.saveChartFormPanel.getComponent(2).setValue(this.reportInfo.shared);
 
             // if the user can update, show save button (which is now for replacing the saved report)
-            (LABKEY.Security.currentUser.canUpdate ? this.saveBtn.show() : this.saveBtn.hide());
-            // if the user can insert, show them the save as button
-            (LABKEY.Security.currentUser.canInsert ? this.saveAsBtn.show() : this.saveAsBtn.hide());
+            (this.canSaveChanges() ? this.saveBtn.show() : this.saveBtn.hide());
+            // Always show the save as button
+            this.saveAsBtn.show();
         }
 
         // change the active card layout item
-        if(LABKEY.Security.currentUser.canInsert){
-            this.getLayout().setActiveItem(2);
-        }
-        else{
-            this.getLayout().setActiveItem(1);
-        }
-
+        this.getLayout().setActiveItem(1);
         this.doLayout();
     }
 });

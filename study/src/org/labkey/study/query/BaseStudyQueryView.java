@@ -74,7 +74,8 @@ public abstract class BaseStudyQueryView extends QueryView
         }
         if (_buttons != null)
         {
-            ButtonBar bbar = view.getDataRegion().getButtonBar(DataRegion.MODE_GRID);
+            ButtonBar bbar = new ButtonBar();
+            bbar.addAll(view.getDataRegion().getButtonBar(DataRegion.MODE_GRID).getList());
             for (DisplayElement button : _buttons)
             {
                 bbar.add(button);

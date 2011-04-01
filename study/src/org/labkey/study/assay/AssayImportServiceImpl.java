@@ -26,6 +26,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
@@ -42,6 +43,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -376,5 +378,30 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             return url.getLocalURIString();
         }
         return null;
+    }
+
+    @Override
+    public List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws ImportException
+    {
+        AssayProvider provider = AssayService.get().getProvider(providerName);
+        List<GWTPropertyDescriptor> baseColumns = new ArrayList<GWTPropertyDescriptor>();
+
+        // don't import columns already included in the base results domain
+        Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template = provider.getAssayTemplate(getViewContext().getUser(), getContainer());
+
+        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : template.getValue())
+        {
+            String uri = domainInfo.getKey().getTypeURI();
+            Lsid uriLSID = new Lsid(uri);
+
+            if (uriLSID.getNamespacePrefix() != null && uriLSID.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_DATA))
+            {
+                for (DomainProperty prop : domainInfo.getKey().getProperties())
+                {
+                    baseColumns.add(DomainUtil.getPropertyDescriptor(prop));
+                }
+            }
+        }
+        return baseColumns;
     }
 }

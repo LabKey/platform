@@ -34,6 +34,7 @@
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
     createRequestURL.addParameter("returnUrl", getViewContext().getActionURL().toString());
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
+    String subjectNounPlural = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
 %>
 <script>
     var CREATE_REQUEST_BASE_LINK = '<%= createRequestURL.getLocalURIString() %>';
@@ -62,7 +63,7 @@
         filterString.append("<b>This view is displaying specimens only from ");
         if (bean.isSingleVisitFilter())
         {
-            filterString.append("participant(s) ");
+            filterString.append(subjectNounPlural.toLowerCase()).append(" ");
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 String ptid = it.next().getKey();
@@ -70,7 +71,10 @@
                 if (it.hasNext())
                     filterString.append(", ");
             }
-            filterString.append(" at visit ").append(bean.getFilteredPtidVisits().iterator().next().getValue()).append(".</b><br>");
+            String visit = bean.getFilteredPtidVisits().iterator().next().getValue();
+            if (visit != null)
+                filterString.append(" at visit ").append(visit);
+            filterString.append(".</b><br>");
         }
         else
         {

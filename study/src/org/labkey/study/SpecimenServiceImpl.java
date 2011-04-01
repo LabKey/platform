@@ -247,6 +247,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         // CONSIDER: move ShowUploadSpecimensAction validation to importer.process()
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
+        rows = importer.fixupSpecimenRows(rows);
         importer.process(user, container, rows, merge);
     }
 }

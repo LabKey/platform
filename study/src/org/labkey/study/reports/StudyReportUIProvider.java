@@ -29,6 +29,7 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.study.reports.CrosstabReport;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.TimeChartReport;
@@ -72,7 +73,12 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         crossTabURL.addParameter(QueryParam.queryName, settings.getQueryName());
         crossTabURL.addParameter(QueryParam.viewName, settings.getViewName());
         crossTabURL.addParameter(QueryParam.dataRegionName, settings.getDataRegionName());
-        crossTabURL.addParameter("redirectUrl", context.getActionURL().getLocalURIString());
+
+        URLHelper returnUrl = settings.getReturnURL();
+        if (returnUrl == null)
+            returnUrl = context.getActionURL();
+
+        crossTabURL.addParameter("redirectUrl", returnUrl.getLocalURIString());
 
         if (StudyManager.getSchemaName().equals(settings.getSchemaName()))
         {
@@ -95,7 +101,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             {
                 RReportBean rBean = new RReportBean(settings);
                 rBean.setReportType(StudyRReport.TYPE);
-                rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+                rBean.setRedirectUrl(returnUrl.getLocalURIString());
 
                 designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
             }
@@ -117,7 +123,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         if (ReportUtil.canCreateScript(context))
         {
             ScriptReportBean bean = new ScriptReportBean(settings);
-            bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+            bean.setRedirectUrl(returnUrl.getLocalURIString());
             bean.setScriptExtension(".js");
             bean.setReportType(JavaScriptReport.TYPE);
             designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "JavaScript View", ReportUtil.getScriptReportDesignerURL(context, bean)));

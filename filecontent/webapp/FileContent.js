@@ -262,7 +262,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
 
         // update the expand collapse state of the file upload panel
-        if (!this.disableGeneralAdminSettings && config.expandFileUpload != undefined)
+        if (this.uploadEnabled && !this.disableGeneralAdminSettings && (config.expandFileUpload != undefined))
         {
             if (config.expandFileUpload)
                 this.fileUploadPanel.expand();

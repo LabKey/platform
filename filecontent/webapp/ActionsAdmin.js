@@ -369,10 +369,13 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             items.push({
                 //xtype: 'panel',
                 bodyStyle : 'padding: 30 10px;',
+                autoHeight: true,
+                layout: 'fit',
                 border: false,
                 html: 'There is a Pipeline Override for this folder and actions are not available for the ' +
-                      'default file location.<br/><br/>Customize this web part to use the pipeline location using the ' +
-                      'customize web part button <img src="' + LABKEY.contextPath + '/_images/partedit.gif"/>'
+                      'default file location.<br/><br/>Customize this web part to use the pipeline location by clicking on the ' +
+                      '"more" button in the web part title area and selecting the "customize" option.<br>' +
+                      '<img src="' + LABKEY.contextPath + '/_images/customize-example.png"/>'
             });
         }
 

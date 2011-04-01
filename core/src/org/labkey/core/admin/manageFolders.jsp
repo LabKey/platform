@@ -64,7 +64,8 @@
         move   : 'showMoveFolderTree',
         order  : 'reorderFolders',
         remove : 'deleteFolder',
-        rename : 'renameFolder'
+        rename : 'renameFolder',
+        reorder: 'reorderFolders'
     };
     
     function init() {
@@ -81,8 +82,8 @@
                 expanded : true,
                 editable : true,
                 expandable : true,
-                text : <%=PageFlowUtil.jsString(project.getParent().getName())%>,
-                <%=project.equals(c) ? "cls : 'x-tree-node-current'" : ""%>
+                text : <%=PageFlowUtil.jsString(project.getParent().getName())%>
+                <%=project.equals(c) ? ", cls : 'x-tree-node-current'" : ""%>
             }),
             rootVisible: false,
             enableDrag: false,
@@ -93,7 +94,8 @@
                     new Ext.Button({text: 'Move', ref: '../move', handler : function(){ action('move'); }}),
                     new Ext.Button({text: 'Create Subfolder', ref: '../create', handler : function(){ action('create'); }}),
                     new Ext.Button({text: 'Delete', ref: '../remove', handler : function(){ action('remove'); }}),
-                    new Ext.Button({text: 'Aliases', ref: '../alias', handler : function(){ action('alias'); }})]
+                    new Ext.Button({text: 'Aliases', ref: '../alias', handler : function(){ action('alias'); }}),
+                    new Ext.Button({text: 'Change Display Order', ref: '../reorder', handler : function(){ action('reorder'); }})]
         });
 
         /*

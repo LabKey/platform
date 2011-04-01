@@ -54,11 +54,11 @@
                 <option value="<%=h(email)%>" <%=(email.equals(user.getEmail())) ? "selected" : ""%>><%=h(email)%></option ><%
                 }
             %>
-            </select><br>
+            </select></td><td>
             <%=generateReturnUrlFormField(returnURL)%>
             <%=generateSubmitButton("Impersonate")%><%
             }
-            %>
+            %></td>
         </td></tr>
         </table>
     </form>

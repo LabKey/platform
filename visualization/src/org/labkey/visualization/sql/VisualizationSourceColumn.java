@@ -92,7 +92,11 @@ public class VisualizationSourceColumn
         for (String part : parts)
         {
             selectName.append(sep);
-            selectName.append(_schema.getDbSchema().getSqlDialect().makeLegalIdentifier(part));
+            String identifier = _schema.getDbSchema().getSqlDialect().makeLegalIdentifier(part);
+            if (identifier.charAt(0) == '"')
+                selectName.append(identifier);
+            else
+                selectName.append("\"").append(identifier).append("\"");
             sep = ".";
         }
         return selectName.toString();

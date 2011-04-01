@@ -126,6 +126,11 @@ public class PipelineStatusManager
         try
         {
             PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
+            if (sfExist == null)
+            {
+                // Then try based on file path
+                sfExist = getStatusFile(job.getLogFile().toString());
+            }
             PipelineStatusFileImpl sfSet = new PipelineStatusFileImpl(job, status, info);
 
             if (null == sfExist)

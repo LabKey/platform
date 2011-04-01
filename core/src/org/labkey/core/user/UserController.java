@@ -572,7 +572,6 @@ public class UserController extends SpringActionController
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
             queryView.setShowDetailsColumn(true);
-            queryView.setShowRecordSelectors(getUser().isAdministrator());
             queryView.setFrame(WebPartView.FrameType.NONE);
             queryView.setAllowableContainerFilterTypes();
             return queryView;

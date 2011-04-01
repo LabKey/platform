@@ -266,7 +266,7 @@ public class DatasetFileReader
                 continue;
             String dsKey = m.group(1);
             dsKey = normalizeIntegerString(dsKey);
-            DataSetDefinition ds = dsMap.get(dsKey);
+            DataSetDefinition ds = dsMap.get(dsKey.toLowerCase());
             if (null == ds)
                 continue;
             DatasetImportRunnable runnable = jobMap.get(ds);

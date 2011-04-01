@@ -435,6 +435,15 @@ public abstract class Method
             return jdbcType;
         }
 
+        @Override
+        public JdbcType getJdbcType(JdbcType[] args)
+        {
+            JdbcType jdbcType = _jdbcType;
+            if (jdbcType == JdbcType.OTHER)
+                jdbcType = args.length > 0 ? args[0] : JdbcType.VARCHAR;
+            return jdbcType;
+        }
+
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();

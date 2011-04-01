@@ -31,6 +31,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.security.roles.EditorRole" %>
 <%@ page import="org.labkey.api.security.roles.ReaderRole" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     String groupName(Group g)
@@ -135,7 +137,7 @@ else
         out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
 
     int row = 0;
-    %><br/><table class="labkey-data-region labkey-show-borders"><colgroup>
+    %><br/><table class="labkey-data-region labkey-show-borders" id="datasetSecurityFormTable"><colgroup>
     <%
     for (int i = 0; i < restrictedGroups.size() + 1; i++)
     {
@@ -147,15 +149,13 @@ else
     {
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
     }
-    %></tr><%
-    for (DataSet ds : study.getDataSets())
+
+    java.util.List<Role> possibleRoles = new ArrayList<Role>();
+    List<org.labkey.study.model.DataSetDefinition> datasets = study.getDataSets();
+    if (!datasets.isEmpty())
     {
+        org.labkey.study.model.DataSetDefinition ds = datasets.get(0);
         SecurityPolicy dsPolicy = SecurityManager.getPolicy(ds);
-
-        String inputName = "dataset." + ds.getDataSetId();
-        %><tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><td><%=h(ds.getLabel())%></td><%
-
-        java.util.List<Role> possibleRoles = new ArrayList<Role>();
         for (org.labkey.api.security.roles.Role role : org.labkey.api.security.roles.RoleManager.getAllRoles())
         {
             if (role.isApplicable(dsPolicy, ds) && role.getClass() != org.labkey.api.security.roles.ReaderRole.class && role.getClass() != org.labkey.api.security.roles.EditorRole.class)
@@ -163,6 +163,30 @@ else
                 possibleRoles.add(role);
             }
         }
+    }
+
+    %></tr>
+    <tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><th>&nbsp;</th><%
+    for (Group g : restrictedGroups)
+    {
+        %><td style="padding: 0 5px 0 5px;"><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
+            <option value="" selected>&lt;set all to...&gt;</option>
+            <option value="None">None</option>
+            <option value="Read">Read</option>
+            <option value="Edit">Edit</option>
+            <% for (Role role : possibleRoles)
+            { %>
+                <option value="<%= h(role.getName()) %>"><%= h(role.getName()) %></option>
+            <% } %>
+        </select></td><%
+    }
+    %></tr><%
+    for (DataSet ds : study.getDataSets())
+    {
+        SecurityPolicy dsPolicy = SecurityManager.getPolicy(ds);
+
+        String inputName = "dataset." + ds.getDataSetId();
+        %><tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><td><%=h(ds.getLabel())%></td><%
 
         for (Group g : restrictedGroups)
         {
@@ -217,6 +241,32 @@ function setAllSelections(value)
     for (var i=0; i<elements.length; i++)
     {
         var elem = elements[i];
+        if (elem.nodeName == 'SELECT')
+        {
+            var options = elem.options;
+            for (var optionIndex = 0; optionIndex < options.length; optionIndex++)
+            {
+                if (options[optionIndex].text == value)
+                {
+                    elem.selectedIndex = optionIndex;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+function setColumnSelections(select)
+{
+    var value = select.value;
+    if(!value)
+        return;
+
+    var colIdx = select.parentNode.cellIndex;
+    var table = document.getElementById("datasetSecurityFormTable");
+    for (var i=2; i<table.rows.length; i++)
+    {
+        var elem = table.rows[i].cells[colIdx].firstElementChild;
         if (elem.nodeName == 'SELECT')
         {
             var options = elem.options;

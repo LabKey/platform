@@ -73,6 +73,11 @@ public class TableQueryDefinition extends QueryDefinitionImpl
             }
         }
 
+        if (url == TableInfo.LINK_DISABLER_ACTION_URL)
+        {
+            return null;
+        }
+
         return url != null ? url : super.urlFor(action, container);
     }
 
@@ -147,6 +152,11 @@ public class TableQueryDefinition extends QueryDefinitionImpl
             case updateQueryRow:
                 expr = table.getUpdateURL(Table.createFieldKeyMap(table).keySet(), container);
                 break;
+        }
+
+        if (expr == TableInfo.LINK_DISABLER)
+        {
+            return null;
         }
 
         if (expr == null)

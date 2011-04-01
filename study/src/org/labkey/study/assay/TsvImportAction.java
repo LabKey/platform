@@ -15,19 +15,11 @@
  */
 package org.labkey.study.assay;
 
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.study.actions.ImportAction;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.permissions.DesignAssayPermission;
-import org.labkey.api.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -42,31 +34,6 @@ public class TsvImportAction extends ImportAction
     @Override
     protected ModelAndView createGWTView(Map<String, String> properties)
     {
-        ImportForm form = getForm();
-        AssayProvider provider = AssayService.get().getProvider(form.getProviderName());
-
-        // don't import columns already included in the base results domain
-        Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template = provider.getAssayTemplate(getViewContext().getUser(), getContainer());
-
-        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : template.getValue())
-        {
-            String uri = domainInfo.getKey().getTypeURI();
-            Lsid uriLSID = new Lsid(uri);
-
-            if (uriLSID.getNamespacePrefix() != null && uriLSID.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_DATA))
-            {
-                StringBuilder sb = new StringBuilder();
-                String delim = "";
-                for (DomainProperty prop : domainInfo.getKey().getProperties())
-                {
-                    sb.append(delim);
-                    sb.append(prop.getName());
-
-                    delim = ",";
-                }
-                properties.put("baseColumnNames", sb.toString());
-            }
-        }
         properties.put("showInferredColumns", "true");
 
         return super.createGWTView(properties);

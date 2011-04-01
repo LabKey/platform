@@ -35,7 +35,8 @@
 %>
 
 <script type="text/javascript">
-    LABKEY.requiresScript('tinymce3/tiny_mce.js');
+    LABKEY.requiresScript('tiny_mce/tiny_mce.js');
+
 </script>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();

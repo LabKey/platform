@@ -49,7 +49,14 @@ import java.util.*;
  */
 public class TsvDataHandler extends AbstractAssayTsvDataHandler implements TransformDataHandler
 {
-    public static final AssayDataType DATA_TYPE = new AssayDataType("AssayRunTSVData", new FileType(Arrays.asList(".tsv", ".xls", ".txt"), ".tsv"));
+    public static final AssayDataType DATA_TYPE;
+    static
+    {
+        FileType fileType = new FileType(Arrays.asList(".tsv", ".xls", ".txt"), ".tsv");
+        fileType.setExtensionsMutuallyExclusive(false);
+        DATA_TYPE = new AssayDataType("AssayRunTSVData", fileType);
+    }
+    
     private boolean _allowEmptyData = false;
 
     public Priority getPriority(ExpData data)

@@ -1825,15 +1825,22 @@ public class StudyManager
         {
             List<ParticipantDataset> pds = new ArrayList<ParticipantDataset>();
             TableInfo sdti = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
-            rs = Table.select(sdti, Table.ALL_COLUMNS, filter, null);
+            rs = Table.select(sdti, Table.ALL_COLUMNS, filter, new Sort("DatasetId"));
+            DataSetDefinition dataset = null;
             while (rs.next())
             {
                 ParticipantDataset pd = new ParticipantDataset();
                 pd.setContainer(container);
-                pd.setDataSetId(rs.getInt("DatasetId"));
+                int datasetId = rs.getInt("DatasetId");
+                if (dataset == null || datasetId != dataset.getDataSetId())
+                    dataset = getDataSetDefinition(getStudy(container), datasetId);
+                pd.setDataSetId(datasetId);
                 pd.setLsid(rs.getString("LSID"));
-                pd.setSequenceNum(rs.getDouble("SequenceNum"));
-                pd.setVisitDate(rs.getTimestamp("_VisitDate"));
+                if (!dataset.isDemographicData())
+                {
+                    pd.setSequenceNum(rs.getDouble("SequenceNum"));
+                    pd.setVisitDate(rs.getTimestamp("_VisitDate"));
+                }
                 pd.setParticipantId(rs.getString("ParticipantId"));
                 pds.add(pd);
             }

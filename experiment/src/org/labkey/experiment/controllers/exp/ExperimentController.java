@@ -440,7 +440,6 @@ public class ExperimentController extends SpringActionController
             view.setShadeAlternatingRows(true);
             view.setShowBorders(true);
             view.setShowDetailsColumn(false);
-            view.setShowRecordSelectors(true);
             return view;
         }
 

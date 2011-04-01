@@ -45,6 +45,7 @@ public class StudyQuerySchema extends UserSchema
     private Map<Integer, List<Double>> _datasetSequenceMap;
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
     public static final String STUDY_DATA_TABLE_NAME = "StudyData";
+    public static final String QCSTATE_TABLE_NAME = "QCState";
 
     public StudyQuerySchema(StudyImpl study, User user, boolean mustCheckPermissions)
     {
@@ -267,7 +268,7 @@ public class StudyQuerySchema extends UserSchema
             DataSetColumnsTable ret = new DataSetColumnsTable(this);
             return ret;
         }
-        if ("QCState".equalsIgnoreCase(name))
+        if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
         {
             FilteredTable ret = new QCStateTable(this);
             return ret;

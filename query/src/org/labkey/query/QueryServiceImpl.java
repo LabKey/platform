@@ -1098,7 +1098,7 @@ public class QueryServiceImpl extends QueryService
 		if (q.getParseErrors().size() > 0)
 			throw q.getParseErrors().get(0);
 
-        SQLFragment sqlf = getSelectSQL(table, null, null, null, 0, 0);
+        SQLFragment sqlf = getSelectSQL(table, null, null, null, 0, 0, false);
 
 		return Table.executeQuery(table.getSchema(), sqlf);
 	}
@@ -1155,7 +1155,7 @@ public class QueryServiceImpl extends QueryService
 
     public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Map<String,Object> parameters) throws SQLException
     {
-        SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0);
+        SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0, false);
         bindNamedParameters(sql, parameters);
         validateNamedParameters(sql);
 		ResultSet rs = Table.executeQuery(table.getSchema(), sql);
@@ -1164,7 +1164,7 @@ public class QueryServiceImpl extends QueryService
 
 
 	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> selectColumns, Filter filter, Sort sort,
-        int rowCount, long offset)
+                                    int rowCount, long offset, boolean forceSort)
 	{
         if (null == selectColumns)
             selectColumns = table.getColumns();
@@ -1234,7 +1234,7 @@ public class QueryServiceImpl extends QueryService
 			filterFrag = filter.getSQLFragment(dialect, columnMap);
 		}
 
-		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0 || Table.NO_ROWS == rowCount))
+		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0 || Table.NO_ROWS == rowCount || forceSort))
 		{
 			sort = createDefaultSort(selectColumns);
 		}

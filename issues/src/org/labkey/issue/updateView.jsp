@@ -166,16 +166,16 @@
                 {
     %>
                     <tr>
-                        <td class="labkey-form-label"><%=bean.getLabel("NotifyList") + popup%><br/><br/>
+                        <td class="labkey-form-label-nowrap"><%=bean.getLabel("NotifyList") + popup%><br/><br/>
     <%
                         if (issue.getIssueId() == 0)
                         {
     %>
-                            <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).getLocalURIString(), null, null, Collections.singletonMap("tabindex", "20"))%>
+                            <%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).getLocalURIString(), null, null, Collections.singletonMap("tabindex", "20"))%>
     <%
                         } else {
     %>
-                            <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()).getLocalURIString(), null, null, Collections.singletonMap("tabindex", "20"))%>
+                            <%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()).getLocalURIString(), null, null, Collections.singletonMap("tabindex", "20"))%>
     <%
                         }
     %>

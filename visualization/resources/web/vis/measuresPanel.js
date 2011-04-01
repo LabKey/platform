@@ -28,10 +28,9 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         this.border = false;
         this.flex = 1;
 
-        var measureListPanel = this.createMeasuresListPanel();
         this.items = [
             this.createMeasuresFormPanel(),
-            measureListPanel
+            this.createMeasuresListPanel()
         ];
 
         var loaded = false;
@@ -98,36 +97,36 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             LABKEY.Utils.displayAjaxErrorResponse(resp, options);
             this.getEl().unmask();
         }, this);
-
-        var items = [];
+        
         this.listView = new Ext.list.ListView({
             store: this.measuresStore,
             flex: 1,
             singleSelect: true,
             columns: [
-                {header:'name', dataIndex:'label', width:.25},
-                {header:'dataset', dataIndex:'queryName', width: .4},
-                {header:'description', dataIndex:'description', cls : 'normal-wrap'}
+                {header:'Dataset', dataIndex:'queryName', width: .4},
+                {header:'Measure', dataIndex:'label', width:.25},
+                {header:'Description', dataIndex:'description', cls : 'normal-wrap'}
             ]
         });
 
         // enable disable toolbar actions on selection change
         this.listView.on('selectionchange', this.onListViewSelectionChanged, this);
 
-        var searchBox = new Ext.form.TextField({
+        this.searchBox = new Ext.form.TextField({
             fieldLabel: 'Search data types',
             width: 200,
-            enableKeyEvents: true
+            enableKeyEvents: true,
+            emptyText : 'Search',
+            listeners : {
+                // filter the listview using both the label and category names
+                keyup : function(cmp, e){ this.filterMeasures(cmp.getValue()); },
+                scope : this
+            }
         });
 
-        // filter the listview using both the label and category names
-        searchBox.on('keyup', function(cmp, e){
-            var txt = cmp.getValue();
-            this.filterMeasures(txt);
-        }, this);
-        this.searchBox = searchBox;
-
         var tbarItems = [{xtype:'tbspacer'}];
+
+        tbarItems.push(this.searchBox);
 
         // create a toolbar button for each of the axis types
         if (this.hasBtnSelection) {
@@ -148,12 +147,9 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             }
         }
 
-        tbarItems.push({xtype:'tbfill'});
-        tbarItems.push({xtype:'label', text: 'Search'});
-        tbarItems.push({xtype:'tbspacer'});
-        tbarItems.push(searchBox);
-
+        var items = [];
         items.push(new Ext.Toolbar({
+            style : 'padding: 5px 2px',
             items: tbarItems
         }));
         items.push(this.listView);

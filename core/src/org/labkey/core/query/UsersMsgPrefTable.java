@@ -27,9 +27,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +74,24 @@ public class UsersMsgPrefTable extends FilteredTable
             }
         });
 
+        // add all of the active users who have read permission to this container to an in clause, this avoids
+        // having to do the permission checking at render time and fixes the pagination display issues
+        try
+        {
+            List<Integer> userIds = new ArrayList<Integer>();
+            for (User user : UserManager.getActiveUsers())
+            {
+                if (container.hasPermission(user, ReadPermission.class))
+                    userIds.add(user.getUserId());
+            }
+
+            if (!userIds.isEmpty())
+                addInClause(getRealTable().getColumn("UserId"), userIds);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
         setDefaultVisibleColumns(getDefaultColumns());
     }
 

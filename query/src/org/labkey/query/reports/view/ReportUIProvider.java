@@ -33,6 +33,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 
 import javax.script.ScriptEngineFactory;
@@ -53,7 +54,11 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
         ChartDesignerBean chartBean = new ChartDesignerBean(settings);
         chartBean.setReportType(ChartQueryReport.TYPE);
-        chartBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+
+        URLHelper returnUrl = settings.getReturnURL();
+        if (returnUrl == null)
+            returnUrl = context.getActionURL();
+        chartBean.setRedirectUrl(returnUrl.getLocalURIString());
         designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts", ReportUtil.getChartDesignerURL(context, chartBean)));
 
         boolean canCreateScript = ReportUtil.canCreateScript(context);
@@ -62,7 +67,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         {
             RReportBean rBean = new RReportBean(settings);
             rBean.setReportType(RReport.TYPE);
-            rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+            rBean.setRedirectUrl(returnUrl.getLocalURIString());
             designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
         }
 
@@ -74,7 +79,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             if (canCreateScript && LabkeyScriptEngineManager.isFactoryEnabled(factory) && !factory.getLanguageName().equalsIgnoreCase("R"))
             {
                 ScriptReportBean bean = new ScriptReportBean(settings);
-                bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+                bean.setRedirectUrl(returnUrl.getLocalURIString());
                 bean.setScriptExtension(factory.getExtensions().get(0));
 
                 if (factory instanceof ExternalScriptEngineFactory)
@@ -101,7 +106,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         if (canCreateScript)
         {
             ScriptReportBean bean = new ScriptReportBean(settings);
-            bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+            bean.setRedirectUrl(returnUrl.getLocalURIString());
             bean.setScriptExtension(".js");
             bean.setReportType(JavaScriptReport.TYPE);
             designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "JavaScript View", ReportUtil.getScriptReportDesignerURL(context, bean)));
@@ -116,6 +121,9 @@ public class ReportUIProvider extends DefaultReportUIProvider
             return context.getContextPath() + "/reports/r.gif";
         if (ChartQueryReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/chart.gif";
+        if (JavaScriptReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/js.png";
+
         return super.getReportIcon(context, reportType);
     }
 }

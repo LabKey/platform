@@ -117,6 +117,8 @@ public class ParticipantDataSetTable extends VirtualTable
                     if (displayField == null)
                         return null;
                     ColumnInfo ret = new ParticipantVisitDataSetTable(_schema, def, parent).getColumn(displayField);
+                    if (ret == null)
+                        return null;
                     ret.setLabel(parent.getLabel() + " " + ret.getLabel());
                     return ret;
                 }

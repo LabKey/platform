@@ -393,7 +393,7 @@ public class ListController extends SpringActionController
                 table.fireBatchTrigger(getContainer(), triggerType, true, batchErrors, null);
                 try
                 {
-                    table.fireRowTrigger(getContainer(), triggerType, true, 0, tableForm.getTypedColumns(), newValues, oldValues);
+                    table.fireRowTrigger(getContainer(), triggerType, true, 0, newValues, oldValues, null);
 
                     for (ColumnInfo column : tableForm.getTable().getColumns())
                     {

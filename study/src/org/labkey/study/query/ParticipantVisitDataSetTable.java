@@ -175,13 +175,16 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             SQLFragment sqlf = super.getJoinCondition(baseAliasName);
             if (_study.getTimepointType() == TimepointType.DATE)
             {
+                // We need to join differently if this is a specimen table, since the subject column name is 'PTID'
+                // rather than 'ParticipantId'.
+                boolean specimenTable = getParentTable() instanceof AbstractSpecimenTable;
                 sqlf.append(" AND ");
                 sqlf.append(getTableAlias(baseAliasName)).append(".SequenceNum = (select pv.sequencenum " +
                     "from " +
                     "study.participantvisit pv " +
                     "where " +
                     "pv.participantid = (");
-                sqlf.append(baseAliasName + "." + _study.getSubjectColumnName());
+                sqlf.append(baseAliasName + "." + (specimenTable ? "PTID" : "ParticipantId"));
                 sqlf.append(") and pv.visitrowid = ?)");
                 sqlf.add(_visit.getRowId());
             }
@@ -284,20 +287,20 @@ public class ParticipantVisitDataSetTable extends VirtualTable
 
         // UNDONE: if/when visits have names use Visit.getName() before Visit.getLabel()
 
-        if (-1 == seq)
+        for (VisitImpl v : StudyManager.getInstance().getVisits(_study, Visit.Order.SEQUENCE_NUM))
         {
-            for (VisitImpl v : StudyManager.getInstance().getVisits(_study, Visit.Order.SEQUENCE_NUM))
+            if (name.equals(v.getLabel()) || (seq != -1 && seq >= v.getSequenceNumMin() && seq <= v.getSequenceNumMax()))
             {
-                if (name.equals(v.getLabel()))
-                {
-                    if (null != visitMatch)
-                        return null;        // ambiguous
-                    visitMatch = v;
-                    seq = v.getSequenceNumMin();
-                }
+                if (null != visitMatch)
+                    return null;        // ambiguous
+                visitMatch = v;
+                seq = v.getSequenceNumMin();
             }
         }
         if (-1 == seq)
+            return null;
+
+        if (visitMatch == null)
             return null;
 
         // see if we already have a column for this sequence (with a different name)

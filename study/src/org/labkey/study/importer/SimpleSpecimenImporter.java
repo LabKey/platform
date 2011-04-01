@@ -17,6 +17,7 @@
 package org.labkey.study.importer;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
@@ -135,6 +136,35 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         }
         tl.setColumns(mappedCols);
+    }
+
+    // UNDONE: Converting values belongs in _process
+    public List<Map<String, Object>> fixupSpecimenRows(List<Map<String, Object>> rows)
+    {
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+        for (Map<String, Object> row : rows)
+            result.add(fixupSpecimenRow(row));
+        return result;
+    }
+
+    private Map<String, Object> fixupSpecimenRow(Map<String, Object> row)
+    {
+        Map<String, Object> result = new HashMap<String, Object>();
+        for (String key : row.keySet())
+        {
+            Object value = row.get(key);
+            if (value instanceof String)
+            {
+                SpecimenColumn specCol = findSpecimenColumn(key);
+                Class type = String.class;
+                if (null != specCol)
+                    type = specCol.getColumnDescriptor().clazz;
+                value = ConvertUtils.convert((String)value, type);
+            }
+            result.put(key, value);
+        }
+
+        return result;
     }
 
     public ColumnDescriptor[] getSimpleSpecimenColumns()

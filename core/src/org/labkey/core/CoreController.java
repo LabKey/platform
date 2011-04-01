@@ -883,6 +883,16 @@ public class CoreController extends SpringActionController
         }
     }
 
+    private enum AccessType
+    {
+        /** User shouldn't see the folder at all */
+        none,
+        /** User has permission to access the folder itself */
+        direct,
+        /** User doesn't have permission to access the folder, but it still needs to be displayed because they have access to a subfolder */
+        indirect
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class GetExtContainerTreeAction extends ApiAction<ExtContainerTreeForm>
     {
@@ -908,9 +918,19 @@ public class CoreController extends SpringActionController
 
                 for (Container child : parent.getChildren())
                 {
-                    if (!child.isWorkbook() && child.hasPermission(user, _reqPerm))
+                    if (!child.isWorkbook())
                     {
-                        children.put(getContainerProps(child));
+                        AccessType accessType = getAccessType(child, user, _reqPerm);
+                        if (accessType != AccessType.none)
+                        {
+                            JSONObject childProps = getContainerProps(child);
+                            if (accessType == AccessType.indirect)
+                            {
+                                // Disable so they can't act on it directly, since they have no permission
+                                childProps.put("disabled", true);
+                            }
+                            children.put(childProps);
+                        }
                     }
                 }
             }
@@ -920,6 +940,30 @@ public class CoreController extends SpringActionController
             resp.getWriter().write(children.toString());
 
             return null;
+        }
+
+        /**
+         * Determine if the user can access the folder directly, or only because they have permission to a subfolder,
+         * or not at all
+         */
+        protected AccessType getAccessType(Container container, User user, Class<? extends Permission> perm)
+        {
+            if (container.hasPermission(user, perm))
+            {
+                return AccessType.direct;
+            }
+            // If no direct permission, check if they have permission to a subfolder
+            for (Container child : container.getChildren())
+            {
+                AccessType childAccess = getAccessType(child, user, perm);
+                if (childAccess == AccessType.direct || childAccess == AccessType.indirect)
+                {
+                    // They can access a subfolder, so give them indirect access so they can see but not use it
+                    return AccessType.indirect;
+                }
+            }
+            // No access to the folder or any of its subfolders
+            return AccessType.none;
         }
 
         protected JSONObject getContainerProps(Container c)
@@ -960,9 +1004,18 @@ public class CoreController extends SpringActionController
                 {
                     if (!child.isWorkbook())
                     {
-                        JSONObject childProps = getContainerProps(child);
-                        childProps.put("expanded", true);
-                        childrenProps.put(childProps);
+                        AccessType accessType = getAccessType(child, getUser(), _reqPerm);
+                        if (accessType != AccessType.none)
+                        {
+                            JSONObject childProps = getContainerProps(child);
+                            if (accessType == AccessType.indirect)
+                            {
+                                // Disable so they can't act on it directly, since they have no permission
+                                childProps.put("disabled", true);
+                            }
+                            childProps.put("expanded", true);
+                            childrenProps.put(childProps);
+                        }
                     }
                 }
                 props.put("children", childrenProps);
@@ -993,7 +1046,6 @@ public class CoreController extends SpringActionController
         protected JSONObject getContainerProps(Container c)
         {
             JSONObject props = super.getContainerProps(c);
-            String text = PageFlowUtil.filter(c.getName());
             if (c.equals(getViewContext().getContainer()))
             {
                 props.put("cls", "x-tree-node-current");
@@ -1016,9 +1068,18 @@ public class CoreController extends SpringActionController
                 {
                     if (!child.isWorkbook())
                     {
-                        JSONObject childProps = getContainerProps(child);
-                        childProps.put("expanded", true);
-                        childrenProps.put(childProps);
+                        AccessType accessType = getAccessType(child, getUser(), _reqPerm);
+                        if (accessType != AccessType.none)
+                        {
+                            JSONObject childProps = getContainerProps(child);
+                            childProps.put("expanded", true);
+                            if (accessType == AccessType.indirect)
+                            {
+                                // Disable so they can't act on it directly, since they have no permission
+                                childProps.put("disabled", true);
+                            }
+                            childrenProps.put(childProps);
+                        }
                     }
                 }
                 props.put("children", childrenProps);

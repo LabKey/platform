@@ -62,8 +62,8 @@ class SpecimenWriter implements Writer<StudyImpl, StudyContext>
             TableInfo tinfo = tt.isEvents() ? schema.getTableInfoSpecimenEvent() : schema.getTableInfoSpecimenDetail();
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
 
-            ci.setLabel(column.getTsvColumnName());
             DataColumn dc = new DataColumn(ci);
+            dc.setCaption(column.getTsvColumnName());
             displayColumns.add(dc);
 
             sql.append(comma);

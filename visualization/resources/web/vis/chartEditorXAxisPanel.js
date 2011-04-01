@@ -91,6 +91,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             displayField: 'label',
             forceSelection: true,
             width: 175,
+            minListWidth : 350,
             listeners: {
                 scope: this,
                 'select': function(cmp, record, index) {
@@ -109,6 +110,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             valueField: 'name',
             displayField: 'longlabel',
             forceSelection: true,
+            minListWidth : 350,
             listeners: {
                 scope: this,
                 'select': function(cmp, record, index) {

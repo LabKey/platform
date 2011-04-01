@@ -16,6 +16,7 @@
 package gwt.client.org.labkey.assay.designer.client;
 
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
@@ -58,4 +59,11 @@ public interface AssayImporterService extends DomainImporterService
      */
     public String getImportURL(GWTProtocol protocol, String directoryPath, String file) throws ImportException;
     public String getDesignerURL(GWTProtocol protocol, String directoryPath, String file) throws ImportException;
+
+    /**
+     * Returns the base columns from the data domain template. These columns can be used
+     * to map columns from the uploaded file.
+     * The assay instance does not yet exist when this method is called by the client.
+     */
+    public List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws ImportException;
 }

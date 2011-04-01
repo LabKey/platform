@@ -143,7 +143,7 @@
                                 <select<%=Boolean.valueOf(null == bean.assignedToGroup) ? " disabled=\"true\"" : ""%> name="assignedToGroup"><%
                                     for (Group group : SecurityManager.getGroups(c.getProject(), true))
                                     {
-                                        if (!group.isGuests() && !group.isUsers())
+                                        if (!group.isGuests())
                                         {
                                             String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
                                             out.println("<option value=\"" + group.getUserId() + "\"" + (null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId() ? " selected" : "") + ">" + h(displayText) + "</option>");

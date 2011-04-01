@@ -122,7 +122,6 @@ public class WikiTOC extends NavTreeMenu
     {
         super(context, "");
         setFrame(FrameType.PORTAL);
-        setHighlightSelection(false);
 
         //set specified web part title
         Object title = context.get("title");

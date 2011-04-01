@@ -41,7 +41,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
         if ("study".equalsIgnoreCase(settings.getSchemaName()))
         {
             VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-            ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer(), settings.getSchemaName(), settings.getQueryName());
+            ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer(), context.getUser(), settings);
             info.add(new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", designerURL));
         }
         return info;

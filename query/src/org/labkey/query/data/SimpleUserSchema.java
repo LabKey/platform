@@ -104,11 +104,13 @@ public class SimpleUserSchema extends UserSchema
     @Override
     public String getDomainURI(String queryName)
     {
-        SimpleTable table = (SimpleTable)getTable(queryName);
+        TableInfo table = getTable(queryName);
         if (table == null)
             throw new NotFoundException("Table '" + queryName + "' not found in this container '" + getContainer().getPath() + "'.");
 
-        return table.getDomainURI();
+        if (table instanceof SimpleTable)
+            return ((SimpleTable)table).getDomainURI();
+        return null;
     }
 
     public static class SimpleTable extends FilteredTable

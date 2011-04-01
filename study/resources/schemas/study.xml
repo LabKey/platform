@@ -592,6 +592,7 @@
         </ns:column>
         <ns:column columnName="TotalCellCount">
           <ns:description>The total cell count for each vial.</ns:description>
+          <ns:formatString>0.####</ns:formatString>
         </ns:column>
       </ns:columns>
     </ns:table>
@@ -847,6 +848,7 @@
       </ns:column>
       <ns:column columnName="TotalCellCount">
         <ns:description>The total cell count for each vial.</ns:description>
+        <ns:formatString>0.####</ns:formatString>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -1200,6 +1202,7 @@
       </ns:column>
       <ns:column columnName="TotalCellCount">
         <ns:description>The total cell count for each vial.</ns:description>
+        <ns:formatString>0.####</ns:formatString>
       </ns:column>
     </ns:columns>
   </ns:table>

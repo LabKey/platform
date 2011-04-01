@@ -28,7 +28,7 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
         LABKEY.vis.SubjectSeriesSelector.superclass.constructor.call(this, config);
     },
 
-    getSubjectValues: function(schema, query) {
+    getSubjectValues: function(schema, query, filterUrl) {
         // if there was a previous gridPanel showing (i.e. user is now changing measure),
         // remove it and delete the subject values array
         if(this.items && this.getComponent('subject-list-view')){
@@ -42,6 +42,8 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
             schemaName: schema,
             queryName: query
         };
+        if (filterUrl) //Don't add param if it is null
+            subjectInfo.filterUrl = filterUrl;
         Ext.apply(this.subject, subjectInfo);
 
         // this is the query/column we need to get the subject IDs for the selected measure

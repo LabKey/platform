@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ 
+ALTER TABLE study.Vial
+    ALTER COLUMN TotalCellCount FLOAT
+GO
 
-/* study-10.30-10.31.sql */
-
-CREATE SCHEMA assayresult;
-
-SELECT core.executeJavaUpgradeCode('materializeAssayResults');
-
-/* study-10.31-10.32.sql */
-
-SELECT core.executeJavaUpgradeCode('deleteDuplicateAssayDatasetFields');
-
-/* study-10.32-10.33.sql */
-
-ALTER TABLE study.SpecimenEvent ADD TotalCellCount INT;
-ALTER TABLE study.Vial ADD TotalCellCount INT;
+ALTER TABLE study.SpecimenEvent
+    ALTER COLUMN TotalCellCount FLOAT
+GO

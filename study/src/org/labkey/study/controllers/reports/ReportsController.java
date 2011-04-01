@@ -2182,8 +2182,7 @@ public class ReportsController extends BaseStudyController
                 html.append(ReportDescriptor.Prop.filterParam);
                 html.append("\"");
                 html.append("participantId".equals(bean.getFilterParam()) ? "checked" : "");
-//                html.append(" onchange=\"LABKEY.setDirty(true);return true;\");
-                html.append("> ");
+                html.append(" onchange=\"LABKEY.setDirty(true);return true;\"> ");
                 html.append(PageFlowUtil.filter(subjectNoun));
                 html.append(" chart&nbsp;");
                 html.append(PageFlowUtil.helpPopup(subjectNoun + " chart", subjectNoun +
@@ -2192,12 +2191,9 @@ public class ReportsController extends BaseStudyController
                 html.append("</td></tr>");
             }
 
-            html.append("<tr><td><input type=\"checkbox\" name=\"cached\" ");
-            html.append(bean.isCached() ? "checked" : "");
-
-            // TODO: Check dirty
-            //html.append(" onchange=\"LABKEY.setDirty(true);return true;\"");
-
+            html.append("<tr><td><input type=\"checkbox\" name=\"cached\"");
+            html.append(bean.isCached() ? " checked" : "");
+            html.append(" onchange=\"LABKEY.setDirty(true);return true;\"");
             html.append("> Automatically cache this report for faster reloading</td></tr>");
             html.append("<tr><td>&nbsp;</td></tr>");
 

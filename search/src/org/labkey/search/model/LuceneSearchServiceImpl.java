@@ -268,6 +268,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 // case, but skip the custom properties.
             }
 
+            // Fix #11393.  Can't append description to searchTitle in FileSystemResource() because constructor is too
+            // early to retrieve description.  TODO: Move description into properties, instead of exposing it as a
+            // top-level getter.  This is a bigger change, so we'll wait for 11.2.
+            String description = r.getDescription();
+
+            if (null != description)
+                searchTitle += " " + description;   
+
             String type = r.getContentType();
 
             // Don't load content of images or zip files (for now), but allow searching by name and properties

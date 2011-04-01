@@ -18,11 +18,13 @@ package org.labkey.core.admin;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.*;
@@ -476,7 +478,14 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
                         SetupForm form = SetupForm.init(c);
                         form.setShowAdditionalOptionsLink(true);
+                        form.setErrors(_errors);
+                        PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
 
+                        if (pipeRoot != null)
+                        {
+                            for (String errorMessage : pipeRoot.validate())
+                                _errors.addError(new LabkeyError(errorMessage));
+                        }
                         box.addView(PipelineService.get().getSetupView(form));
                         box.addView(new HttpView() {
                             protected void renderInternal(Object model, PrintWriter out) throws Exception {

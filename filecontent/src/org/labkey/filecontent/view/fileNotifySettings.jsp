@@ -166,7 +166,7 @@
             buttonAlign: 'left',
             labelPad: 15,
             border: false,
-            bodyStyle : 'padding:10px;',
+            bodyStyle : 'padding: 0 10px;',
             items:[emailDefaultCombo, emailCombo],
             buttons:[folderDefaultBtn, bulkEditBtn]
         });

@@ -32,7 +32,10 @@ import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyService;
@@ -63,6 +66,7 @@ import java.util.*;
 public class VisualizationController extends SpringActionController
 {
     public static final String NAME = "visualization";
+    public static final String FILTER_DATAREGION = "Dataset";
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(VisualizationController.class);
     private static final Logger _log = Logger.getLogger(VisualizationController.class);
 
@@ -71,6 +75,7 @@ public class VisualizationController extends SpringActionController
         public static final String TIME_CHART_VIEW_NAME = "timeChartWizard";
         private static final String VISUALIZATION_NAME_PARAM = "name";
         private static final String VISUALIZATION_SCHEMA_PARAM = "schemaName";
+        private static final String VISUALIZATION_FILTER_URL = "filterUrl";
         private static final String VISUALIZATION_QUERY_PARAM = "queryName";
         private static final String VISUALIZATION_EDIT_PARAM = "edit";
         @Override
@@ -80,13 +85,29 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public ActionURL getTimeChartDesignerURL(Container container, String schemaName, String queryName)
+        public ActionURL getTimeChartDesignerURL(Container container, User user, QuerySettings settings)
         {
             ActionURL url = getBaseTimeChartURL(container, true);
+            String queryName = settings.getQueryName();
             if (queryName != null)
                 url.addParameter(VISUALIZATION_QUERY_PARAM, queryName);
+            String schemaName = settings.getSchemaName();
             if (schemaName != null)
                 url.addParameter(VISUALIZATION_SCHEMA_PARAM, schemaName);
+
+            // Get URL (column-header) filters:
+            ActionURL filterURL = settings.getSortFilterURL();
+
+            // Add the base filter as set in code:
+            SimpleFilter baseFilter = settings.getBaseFilter();
+            baseFilter.applyToURL(filterURL, FILTER_DATAREGION);
+
+            // Finally, add view-level filters:
+            CustomView view = QueryService.get().getCustomView(user, container, settings.getSchemaName(), settings.getQueryName(), settings.getViewName());
+            if (view != null)
+                view.applyFilterAndSortToURL(filterURL, FILTER_DATAREGION);
+
+            url.addParameter(VISUALIZATION_FILTER_URL, filterURL.getLocalURIString());
             return url;
         }
 
@@ -148,6 +169,21 @@ public class VisualizationController extends SpringActionController
         public void setIncludeDemographics(boolean includeDemographics)
         {
             _includeDemographics = includeDemographics;
+        }
+    }
+
+    public static class DimensionValuesForm extends MeasuresForm
+    {
+        private String _filterUrl;
+
+        public String getFilterUrl()
+        {
+            return _filterUrl;
+        }
+
+        public void setFilterUrl(String filterUrl)
+        {
+            _filterUrl = filterUrl;
         }
     }
 
@@ -399,9 +435,9 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetDimensionValues extends GetMeasuresAction
+    public class GetDimensionValues extends GetMeasuresAction<DimensionValuesForm>
     {
-        public ApiResponse execute(MeasuresForm form, BindException errors) throws Exception
+        public ApiResponse execute(DimensionValuesForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -422,7 +458,14 @@ public class VisualizationController extends SpringActionController
                         {
                             Table.TableResultSet rs = null;
                             try {
-                                SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), null, null, Table.ALL_ROWS, 0);
+                                SimpleFilter filter = null;
+                                String filterUrlString = form.getFilterUrl();
+                                if (filterUrlString != null)
+                                {
+                                    ActionURL filterUrl = new ActionURL(filterUrlString);
+                                    filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
+                                }
+                                SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, 0, false);
 
                                 rs = Table.executeQuery(uschema.getDbSchema(), sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParamsArray());
                                 Iterator<Map<String, Object>> it = rs.iterator();
@@ -585,6 +628,9 @@ public class VisualizationController extends SpringActionController
             Map<String, Object> extraProperties = new HashMap<String, Object>();
             Map<String, String> measureNameToColumnName = sqlGenerator.getColumnMapping();
             extraProperties.put("measureToColumn", measureNameToColumnName);
+            String filterDescription = sqlGenerator.getFilterDescription();
+            if (filterDescription != null && filterDescription.length() > 0)
+                extraProperties.put("filterDescription", filterDescription);
             response.setExtraReturnProperties(extraProperties);
 
             return response;
@@ -931,51 +977,77 @@ public class VisualizationController extends SpringActionController
             resp.put("queryName", vizDescriptor.getProperty(ReportDescriptor.Prop.queryName));
             resp.put("type", vizDescriptor.getReportType());
             resp.put("shared", vizDescriptor.getOwner() == null);
+            resp.put("ownerId", vizDescriptor.getOwner() != null ? vizDescriptor.getOwner() : null);
+            resp.put("createdBy", vizDescriptor.getCreatedBy());
             return resp;
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin
     public class SaveVisualizationAction extends ApiAction<SaveVisualizationForm>
     {
+        private Report _currentReport;
         @Override
-        public ApiResponse execute(SaveVisualizationForm form, BindException errors) throws Exception
+        public void validateForm(SaveVisualizationForm form, Errors errors)
         {
+            super.validateForm(form, errors);
             if (form.getName() == null)
-            {
                 errors.reject(ERROR_MSG, "Name must be specified when saving a report.");
-                return null;
+
+            if (!getContainer().hasPermission(getUser(), InsertPermission.class) && form.isShared())
+                errors.reject(ERROR_MSG, "Only users with insert permissions can save shared reports.");
+
+            try
+            {
+                _currentReport = getReport(form);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
             }
 
-            Report currentReport = getReport(form);
-            if (currentReport != null && !form.isReplace())
+            if (_currentReport != null)
             {
-                errors.reject(ERROR_MSG, "A report by the name \"" + form.getName() + "\" already exists.  " +
-                        "To update, set the 'replace' parameter to true.");
-                return null;
+                if (!form.isReplace())
+                {
+                    errors.reject(ERROR_MSG, "A report by the name \"" + form.getName() + "\" already exists.  " +
+                            "To update, set the 'replace' parameter to true.");
+                }
+
+                boolean reportOwner = getContainer().hasPermission(getUser(), AdminPermission.class) ||
+                                      _currentReport.getDescriptor().getCreatedBy() == getUser().getUserId();
+                if (!reportOwner)
+                {
+                    errors.reject(ERROR_MSG, "Only Administrators can change reports created by other users.");
+                }
             }
-            if (currentReport == null)
+            else
             {
                 if (form.getType() == null)
                 {
                     errors.reject(ERROR_MSG, "Report type must be specified.");
-                    return null;
                 }
 
-                currentReport = ReportService.get().createReportInstance(form.getType());
-                if (currentReport == null)
+                _currentReport = ReportService.get().createReportInstance(form.getType());
+                if (_currentReport == null)
                 {
                     errors.reject(ERROR_MSG, "Report type \"" + form.getType() + "\" is not recognized.");
-                    return null;
                 }
             }
-            ReportDescriptor descriptor = currentReport.getDescriptor();
+            ReportDescriptor descriptor = _currentReport.getDescriptor();
             if (!(descriptor instanceof VisualizationReportDescriptor))
             {
                 errors.reject(ERROR_MSG, "Report type \"" + form.getType() + "\" is not an available visualization type.");
-                return null;
             }
-            VisualizationReportDescriptor vizDescriptor = (VisualizationReportDescriptor) descriptor;
+        }
+
+        @Override
+        public ApiResponse execute(SaveVisualizationForm form, BindException errors) throws Exception
+        {
+            if (_currentReport == null)
+                throw new IllegalStateException("_currentReport should always be set in validateForm");
+            VisualizationReportDescriptor vizDescriptor = (VisualizationReportDescriptor) _currentReport.getDescriptor();
             vizDescriptor.setReportName(form.getName());
             vizDescriptor.setReportKey(getReportKey(form));
             vizDescriptor.setJSON(form.getJson());
@@ -985,13 +1057,13 @@ public class VisualizationController extends SpringActionController
                 vizDescriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
             if (form.getQueryName() != null)
                 vizDescriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
-            if (currentReport.getDescriptor().getReportId() != null)
-                vizDescriptor.setReportId(currentReport.getDescriptor().getReportId());
+            if (_currentReport.getDescriptor().getReportId() != null)
+                vizDescriptor.setReportId(_currentReport.getDescriptor().getReportId());
             vizDescriptor.setOwner(form.isShared() ? null : getViewContext().getUser().getUserId());
-            int reportId = ReportService.get().saveReport(getViewContext(), vizDescriptor.getReportKey(), currentReport);
+            int reportId = ReportService.get().saveReport(getViewContext(), vizDescriptor.getReportKey(), _currentReport);
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("visualizationId", reportId);
-            resp.put("name", currentReport.getDescriptor().getReportName());
+            resp.put("name", _currentReport.getDescriptor().getReportName());
             return resp;
         }
     }

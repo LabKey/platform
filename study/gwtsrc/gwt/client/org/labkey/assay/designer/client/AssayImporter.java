@@ -71,28 +71,42 @@ public class AssayImporter implements EntryPoint
     private BooleanProperty _showEditor = new BooleanProperty();
     private AssayImporterServiceAsync service = null;
     private GWTProtocol _protocol;
+    private String _providerName;
+    private RootPanel _rootPanel;
 
     public void onModuleLoad()
     {
-        RootPanel rootPanel = StudyApplication.getRootPanel();
-        if (null == rootPanel)
-            rootPanel = RootPanel.get("gwt.AssayDesigner-Root");
+        _rootPanel = StudyApplication.getRootPanel();
+        if (null == _rootPanel)
+            _rootPanel = RootPanel.get("gwt.AssayDesigner-Root");
 
         _path = PropertyUtil.getServerProperty("path");
         _file = PropertyUtil.getServerProperty("file");
         _showInferredColumns = Boolean.valueOf(PropertyUtil.getServerProperty("showInferredColumns"));
+        _providerName = PropertyUtil.getServerProperty("providerName");
 
-        if (rootPanel != null)
+        if (_rootPanel != null)
         {
-            addButtonBar(rootPanel);
+            addButtonBar(_rootPanel);
 
-            rootPanel.add(new HTML("<br/>"));
-            addAssayWebPart(rootPanel);
+            _rootPanel.add(new HTML("<br/>"));
+            addAssayWebPart(_rootPanel);
 
             if (_showInferredColumns)
             {
-                rootPanel.add(new HTML("<br/>"));
-                addImporterWebPart(rootPanel);
+                getService().getBaseColumns(_providerName, new ErrorDialogAsyncCallback<List<GWTPropertyDescriptor>>()
+                {
+                    public void handleFailure(String message, Throwable caught)
+                    {
+                        onCancel();
+                    }
+
+                    public void onSuccess(List<GWTPropertyDescriptor> baseColumns)
+                    {
+                        _rootPanel.add(new HTML("<br/>"));
+                        addImporterWebPart(_rootPanel, baseColumns);
+                    }
+                });
             }
         }
     }
@@ -170,20 +184,15 @@ public class AssayImporter implements EntryPoint
         panel.add(table);
     }
 
-    private void addImporterWebPart(RootPanel root)
+    private void addImporterWebPart(RootPanel root, List<GWTPropertyDescriptor> baseColumns)
     {
         Set<String> baseColumnNames = new HashSet<String>();
         List<String> columnsToMap = new ArrayList<String>();
         
-        String baseColNamesString = PropertyUtil.getServerProperty("baseColumnNames");
-        if (baseColNamesString != null)
+        for (GWTPropertyDescriptor prop : baseColumns)
         {
-            String[] baseColArray = baseColNamesString.split(",");
-            for (String s : baseColArray)
-            {
-                baseColumnNames.add(s);
-                columnsToMap.add(s);
-            }
+            baseColumnNames.add(prop.getName());
+            columnsToMap.add(prop.getName());
         }
 
         VerticalPanel panel = new VerticalPanel();
@@ -194,6 +203,7 @@ public class AssayImporter implements EntryPoint
         // create an importer instance, we will manage the buttons externally
         _domainImporter = new AssayDomainImporter(getService(), columnsToMap, baseColumnNames);
         _domainImporter.setHideButtons(true);
+        _domainImporter.setColumnsToMap(baseColumns);
 
         HTML title = new HTML("Columns for Assay Data");
         title.setStyleName("labkey-wp-title");

@@ -42,7 +42,9 @@
                 description: result.description,
                 queryName: result.queryName,
                 schemaName: result.schemaName,
-                shared: result.shared
+                shared: result.shared,
+                ownerId: result.ownerId,
+                createdBy: result.createdBy
             };
 
             initializeTimeChartPanel(result.visualizationConfig, saveReportInfo);

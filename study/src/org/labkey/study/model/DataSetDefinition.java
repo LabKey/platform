@@ -49,9 +49,14 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.SpecimenService;
@@ -511,9 +516,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return _study;
     }
 
-
-    public boolean canRead(User user)
+    public Set<Class<? extends Permission>> getPermissions(User user)
     {
+        Set<Class<? extends Permission>> result = new HashSet<Class<? extends Permission>>();
+
         //if the study security type is basic read or basic write, use the container's policy instead of the
         //study's policy. This will enable us to "remember" the study-level role assignments in case we want
         //to switch back to them in the future
@@ -521,34 +527,61 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         SecurityPolicy studyPolicy = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ?
                 SecurityManager.getPolicy(getContainer()) : SecurityManager.getPolicy(getStudy());
 
-
         //need to check both the study's policy and the dataset's policy
         //users that have read permission on the study can read all datasets
         //users that have read-some permission on the study must also have read permission on this dataset
-        return studyPolicy.hasPermission(user, ReadPermission.class) ||
-                (studyPolicy.hasPermission(user, ReadSomePermission.class) && SecurityManager.getPolicy(this).hasPermission(user, ReadPermission.class));
+        if (studyPolicy.hasPermission(user, ReadPermission.class) ||
+            (studyPolicy.hasPermission(user, ReadSomePermission.class) && SecurityManager.getPolicy(this).hasPermission(user, ReadPermission.class)))
+        {
+            result.add(ReadPermission.class);
+
+            // Now check if they can write
+            if (securityType == SecurityType.BASIC_WRITE)
+            {
+                if (user.isAdministrator())
+                {
+                    result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
+                }
+                else if (getStudy().getContainer().getPolicy().hasPermission(user, UpdatePermission.class))
+                {
+                    // Basic write access grants insert/update/delete for datasets to everyone who has update permission
+                    // in the folder
+                    result.add(UpdatePermission.class);
+                    result.add(DeletePermission.class);
+                    result.add(InsertPermission.class);
+                }
+            }
+            else if (securityType == SecurityType.ADVANCED_WRITE)
+            {
+                if (user.isAdministrator())
+                {
+                    result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
+                }
+                else if (studyPolicy.hasPermission(user, UpdatePermission.class))
+                {
+                    result.add(UpdatePermission.class);
+                    result.add(DeletePermission.class);
+                    result.add(InsertPermission.class);
+                }
+                else if (studyPolicy.hasPermission(user, ReadSomePermission.class))
+                {
+                    // Advanced write grants dataset permissions based on the policy stored directly on the dataset
+                    result.addAll(SecurityManager.getPolicy(this).getPermissions(user));
+                }
+            }
+        }
+        
+        return result;
+    }
+
+    public boolean canRead(User user)
+    {
+        return getPermissions(user).contains(ReadPermission.class);
     }
 
     public boolean canWrite(User user)
     {
-        if (!canRead(user))
-            return false;
-
-        if (!getStudy().getContainer().getPolicy().hasPermission(user, UpdatePermission.class))
-            return false;
-
-        SecurityType securityType = getStudy().getSecurityType();
-
-        if (securityType == SecurityType.BASIC_READ || securityType == SecurityType.ADVANCED_READ)
-            return false; // Dataset rows are not editable
-
-        if (securityType == SecurityType.BASIC_WRITE)
-        {
-            return true;
-        }
-
-        return SecurityManager.getPolicy(getStudy()).hasPermission(user, UpdatePermission.class) ||
-            SecurityManager.getPolicy(this).hasPermission(user, UpdatePermission.class);
+        return getPermissions(user).contains(UpdatePermission.class);
     }
 
     @Override
@@ -1517,7 +1550,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             long start = System.currentTimeMillis();
             DatasetImportHelper helper = new DatasetImportHelper(user, this, lastModified);
-            List<String> imported = OntologyManager.insertTabDelimited(getTableInfo(user), getContainer(), user,
+            List<String> imported = OntologyManager.insertTabDelimited(getTableInfo(user, false), getContainer(), user,
                     helper, dataMaps, logger);
             long end = System.currentTimeMillis();
             _log.info("imported " + getName() + " : " + DateUtil.formatDuration(end-start));

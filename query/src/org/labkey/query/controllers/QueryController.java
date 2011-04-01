@@ -1865,6 +1865,7 @@ public class QueryController extends SpringActionController
                 HttpView.throwNotFound("Query not found");
                 return null;
             }
+            _table.overlayMetadata(_table.getName(), _schema, new ArrayList<QueryException>());
             QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext(), null);
             BindException errors = new NullSafeBindException(new BeanUtilsPropertyBindingResult(command, "form"));
             command.validateBind(errors);

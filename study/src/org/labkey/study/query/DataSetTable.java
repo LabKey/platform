@@ -130,7 +130,8 @@ public class DataSetTable extends FilteredTable
                     {
                         public TableInfo getLookupTableInfo()
                         {
-                            return new QCStateTable(_schema);
+                            // Go through the schema so that metadata is overlaid
+                            return _schema.getTable(StudyQuerySchema.QCSTATE_TABLE_NAME);
                         }
                     });
 
@@ -386,6 +387,11 @@ public class DataSetTable extends FilteredTable
             return null;
         }
         AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider == null)
+        {
+            // Provider must have been in a module that's no longer available
+            return null;
+        }
         AssaySchema schema = AssayService.get().createSchema(_schema.getUser(), protocol.getContainer());
         ContainerFilterable result = provider.createDataTable(schema, protocol, false);
         if (result != null)
@@ -455,7 +461,10 @@ public class DataSetTable extends FilteredTable
     private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("VisitRowId", "Created", "CreatedBy", "ModifiedBy", "Modified", "lsid", "SourceLsid");
     private boolean isVisibleByDefault(ColumnInfo col)
     {
-        if (_dsd.getKeyManagementType() != DataSet.KeyManagementType.None && col.getName().equals(_dsd.getKeyPropertyName()))
+        // If this is a server-managed key, or an assay-backed dataset, don't include the key column in the default
+        // set of visible columns
+        if ((_dsd.getKeyManagementType() != DataSet.KeyManagementType.None || _dsd.getProtocolId() != null) &&
+                col.getName().equals(_dsd.getKeyPropertyName()))
             return false;
         return (!col.isHidden() && !col.isUnselectable() && !defaultHiddenCols.contains(col.getName()));
     }

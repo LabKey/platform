@@ -1508,11 +1508,12 @@ groupByLoop:
                 if (_colinfo == null)
                 {
                     _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()));
-                    if (_aliasId != null)
-                        _colinfo.setLabel(ColumnInfo.labelFromName(getName()));
                 }
                 to.copyAttributesFrom(_colinfo);
             }
+            if (_aliasId != null)
+                to.setLabel(ColumnInfo.labelFromName(getName()));
+
             // copy URL if possible
             FieldKey fk = null != _resolved ? _resolved.getFieldKey() : null;
             if (null != fk)

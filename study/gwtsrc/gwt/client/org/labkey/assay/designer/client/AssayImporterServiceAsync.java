@@ -17,6 +17,7 @@ package gwt.client.org.labkey.assay.designer.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterServiceAsync;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
@@ -38,4 +39,5 @@ public interface AssayImporterServiceAsync extends DomainImporterServiceAsync
     void getDomainImportURI(GWTProtocol protocol, AsyncCallback<String> async);
     void getImportURL(GWTProtocol protocol, String directoryPath, String file, AsyncCallback<String> async);
     void getDesignerURL(GWTProtocol protocol, String directoryPath, String file, AsyncCallback<String> async);
+    void getBaseColumns(String providerName, AsyncCallback<List<GWTPropertyDescriptor>> async);
 }

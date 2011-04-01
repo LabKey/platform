@@ -29,6 +29,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Table;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
@@ -445,24 +446,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
 
             QueryView queryView = new QueryView(new CoreQuerySchema(getViewContext().getUser(), getViewContext().getContainer()), settings, _errors)
             {
-                @Override
-                protected DataRegion createDataRegion()
-                {
-                    DataRegion rgn = new DataRegion(){
-                        @Override
-                        protected void renderTableRow(RenderContext ctx, Writer out, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
-                        {
-                            User user = UserManager.getUser(((Integer)ctx.get("userId")).intValue());
-
-                            if (ctx.getContainer().hasPermission(user, ReadPermission.class) && user.isActive())
-                                super.renderTableRow(ctx, out, renderers, realRowIndex++);  // rowIndex doesn't know anything about filtering  TODO: Change DataRegion to handle this better in 8.2
-                        }
-
-                    };
-                    configureDataRegion(rgn);
-                    return rgn;
-                }
-
                 @Override
                 public List<DisplayColumn> getDisplayColumns()
                 {

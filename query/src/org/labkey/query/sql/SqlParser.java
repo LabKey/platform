@@ -1034,6 +1034,28 @@ public class SqlParser
     }
 
 
+    // resolve method identifiers into method fields
+    // just duplicating the more complete version in QuerySelect
+    static QExpr resolveMethods(QExpr expr)
+    {
+        QIdentifier methodName = null;
+        if (expr instanceof QMethodCall)
+        {
+            if (expr.childList().get(0) instanceof QIdentifier)
+                methodName = (QIdentifier)expr.childList().get(0);
+        }
+
+        QExpr ret = (QExpr) expr.clone();
+		for (QNode child : expr.children())
+        {
+            //
+            if (child == methodName)
+                ret.appendChild(new QField(null, methodName.getIdentifier(), child));
+            else
+                ret.appendChild(resolveMethods((QExpr)child));
+        }
+        return ret;
+    }
 
 
     //
@@ -1237,7 +1259,10 @@ public class SqlParser
             new Pair("1 || ' plus ' || 2", JdbcType.VARCHAR),
             new Pair("1 + 2", JdbcType.INTEGER),
             new Pair("1.0 + 2.1", JdbcType.DOUBLE),
-            new Pair("1 + 2.1", JdbcType.DOUBLE)
+            new Pair("1 + 2.1", JdbcType.DOUBLE),
+            new Pair("ROUND(0.0,1)", JdbcType.DOUBLE),
+            new Pair("1 + ROUND(0.0,1)", JdbcType.DOUBLE),
+            new Pair("CASE WHEN TRUE THEN ROUND(0.0,1) ELSE ROUND(0.0,1) END", JdbcType.DOUBLE)
         };
 
 
@@ -1296,7 +1321,8 @@ public class SqlParser
             for (Pair<String,JdbcType> test : typeExprs)
             {
                 List<QueryParseException> errors = new ArrayList<QueryParseException>();
-                QExpr e = new SqlParser().parseExpr(test.first,errors);
+                QExpr parsed = new SqlParser().parseExpr(test.first,errors);
+                QExpr e = SqlParser.resolveMethods(parsed);
                 assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
                 assertTrue(test.first + " has parse errors", errors.isEmpty());
                 assertNotNull(test.first + " did not parse", e);

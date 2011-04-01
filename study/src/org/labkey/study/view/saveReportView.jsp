@@ -68,9 +68,9 @@
 </table>
 
 <form method="post" action="<%=h(new ActionURL(ReportsController.SaveReportViewAction.class, context.getContainer()))%>" onsubmit="return validateForm();">
-    <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=bean.getSchemaName()%>">
-    <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=bean.getQueryName()%>">
-    <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=bean.getViewName()%>">
+    <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
+    <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
+    <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
     <input type="hidden" name="redirectUrl" value="<%=bean.getRedirectUrl()%>">
     <table>
     <tr>
