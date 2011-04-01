@@ -330,7 +330,7 @@ public class DataRegion extends DisplayElement
     public boolean getShowRecordSelectors(RenderContext ctx)
     {
         // Issue 11569: QueryView.showRecordSelectors should take metadata override buttons into account
-        return _showRecordSelectors || _gridButtonBar.hasRequiresSelectionButton(ctx);
+        return _showRecordSelectors || (_buttonBarPosition != ButtonBarPosition.NONE && _gridButtonBar.hasRequiresSelectionButton(ctx));
     }
 
     public boolean getShowSelectMessage()

@@ -129,7 +129,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         StepHandler<FormType> handler = _stepHandlers.get(currentStep);
         if (handler == null)
         {
-            throw new IllegalStateException("Unknown wizard post step: " + currentStep);
+            throw new NotFoundException("Unknown wizard post step: " + currentStep);
         }
 
         return handler.handleStep(form, errors);
