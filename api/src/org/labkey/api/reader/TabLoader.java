@@ -255,6 +255,8 @@ public class TabLoader extends DataLoader
                     _strQuoteQuote = new String(new char[] {chQuote, chQuote});
                     _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
                 }
+                if (_strDelimiter == null)
+                    _strDelimiter = new String(new char[]{_chDelimiter});
 
                 end = start;
                 boolean hasQuotes = false;

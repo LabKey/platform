@@ -95,6 +95,7 @@ xll	application/vnd.ms-excel
 xlm	application/vnd.ms-excel
 xls	application/vnd.ms-excel
 xlw	application/vnd.ms-excel
+eot	application/vnd.ms-fontobject
 xlam	application/vnd.ms-excel.addin.macroEnabled.12
 xlsb	application/vnd.ms-excel.sheet.binary.macroEnabled.12
 xlsm	application/vnd.ms-excel.sheet.macroEnabled.12
@@ -345,6 +346,7 @@ mp3	audio/mpeg
 mp4	audio/mpeg
 mpa	audio/mpeg
 mpga	audio/mpeg
+ogg audio/ogg
 s3m	audio/s3m
 tsp	audio/tsplayer
 qcp	audio/vnd.qcelp
@@ -383,6 +385,8 @@ voc	audio/x-voc
 wav	audio/x-wav
 pdb	chemical/x-pdb
 xyz	chemical/x-pdb
+ttf font/ttf
+otf font/otf
 bm	image/bmp
 bmp	image/bmp
 cod	image/cis-cod
@@ -455,6 +459,8 @@ pov	model/x-pov
 pvu	paleovu/x-pv
 asp	text/asp
 ics	text/calendar
+appcache text/cache-manifest
+manifest text/cache-manifest
 css	text/css
 acgi	text/html
 body	text/html
@@ -547,6 +553,7 @@ mpe	video/mpeg
 mpeg	video/mpeg
 mpg	video/mpeg
 mpv2	video/mpeg2
+ogv video/ogg
 moov	video/quicktime
 mov	video/quicktime
 qt	video/quicktime
@@ -555,6 +562,7 @@ rv	video/vnd.rn-realvideo
 viv	video/vnd.vivo
 vivo	video/vnd.vivo
 vos	video/vosaic
+webm video/webm
 xdr	video/x-amt-demorun
 xsr	video/x-amt-showrun
 fmf	video/x-atomic3d-feature
