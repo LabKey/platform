@@ -513,7 +513,7 @@ public class QueryView extends WebPartView<Object>
         URLHelper ret = getSettings().getReturnURL();
         if (null == ret)
             ret = getSettings().getSortFilterURL();
-        else
+        else if (getSettings().getDataRegionName() != null)
         {
             // if we are using a returnUrl for this QV, make sure we apply any sort and filter
             // parameters so that reports stay in sync with the data region.

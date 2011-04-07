@@ -16,10 +16,12 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.reports.report.r.ParamReplacement;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.File;
 import java.util.Map;
@@ -111,5 +113,21 @@ public class ROutputView extends HttpView
             sb.append("</th></tr>");
         }
         out.write(sb.toString());
+    }
+
+    protected File moveToTemp(File file, String prefix)
+    {
+        try {
+            File newFile = File.createTempFile(prefix, "." + FileUtil.getExtension(file));
+            newFile.delete();
+
+            if (file.renameTo(newFile))
+                return newFile;
+        }
+        catch (IOException ioe)
+        {
+            throw new RuntimeException(ioe);
+        }
+        return null;
     }
 }

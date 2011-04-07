@@ -170,6 +170,8 @@ LABKEY.WebPart = function(config)
     return {
 	  /**
  	  *   Renders the WebPart to the div element specified in the configuration settings.
+       * @returns A transaction id for the async request that can be used to cancel the request
+       * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.Ajax" target="_blank">Ext.Ajax.abort()</a>).
 	  */
         render : function()
         {
@@ -199,7 +201,7 @@ LABKEY.WebPart = function(config)
             //strip it if it's there so it's not included twice (Ext always appends one)
             delete _partConfig["_dc"];
 
-            Ext.Ajax.request({
+            return Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("project", "getWebPart", _containerPath),
                 success: renderPart,
                 failure: _errorCallback,

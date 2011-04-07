@@ -26,6 +26,7 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.util.Collections;
 
@@ -82,9 +83,10 @@ public abstract class DownloadOutputView extends ROutputView
             }
             else
             {
+                File newFile = moveToTemp(getFile(), "RReportPdf");
                 // file hasn't been saved yet
                 String key = "temp:" + GUID.makeGUID();
-                getViewContext().getRequest().getSession(true).setAttribute(key, getFile());
+                getViewContext().getRequest().getSession(true).setAttribute(key, newFile);
 
                 out.write("<a href=\"");
                 out.write(PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer()).

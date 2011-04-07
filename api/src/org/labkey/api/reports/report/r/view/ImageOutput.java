@@ -90,7 +90,12 @@ public class ImageOutput extends AbstractParamReplacement
             {
                 if (getFile().length() > 0)
                 {
-                    File imgFile = moveToTemp(getFile());
+                    File imgFile;
+                    if (!_deleteFile)
+                        imgFile = getFile();
+                    else
+                        imgFile = moveToTemp(getFile(), "RReportImg");
+
                     if (imgFile != null)
                     {
                         String key = "temp:" + GUID.makeGUID();
@@ -116,25 +121,6 @@ public class ImageOutput extends AbstractParamReplacement
                 else
                     getFile().delete();
             }
-        }
-
-        private File moveToTemp(File file)
-        {
-            try {
-                if (!_deleteFile)
-                    return file;
-
-                File newFile = File.createTempFile("RReportImg", ".jpg");
-                newFile.delete();
-
-                if (file.renameTo(newFile))
-                    return newFile;
-            }
-            catch (IOException ioe)
-            {
-                throw new RuntimeException(ioe);
-            }
-            return null;
         }
     }
 }

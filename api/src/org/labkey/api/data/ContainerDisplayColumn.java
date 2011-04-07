@@ -68,6 +68,12 @@ public class ContainerDisplayColumn extends DataColumn
     }
 
     @Override
+    public Object getJsonValue(RenderContext ctx)
+    {
+        return getDisplayValue(ctx);
+    }
+
+    @Override
     public Object getDisplayValue(RenderContext ctx)
     {
         // Get the container for this row; stash the path in the context so urls can use it

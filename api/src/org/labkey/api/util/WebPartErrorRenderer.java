@@ -20,6 +20,8 @@ import java.io.PrintWriter;
 
 class WebPartErrorRenderer extends ErrorRenderer
 {
+    private String _id;
+
     WebPartErrorRenderer(int status, String message, Throwable x, boolean isStartupFailure)
     {
         super(status, message, x, isStartupFailure);
@@ -27,13 +29,12 @@ class WebPartErrorRenderer extends ErrorRenderer
 
     public void renderStart(PrintWriter out)
     {
-        String id = "errorDiv" + System.identityHashCode(this);
-        out.println("<div id='" + id + "' style=\"height:200px; overflow:scroll;\">");
+        _id = "errorDiv" + System.identityHashCode(this);
+        out.println("<div id='" + _id + "' style=\"height:200px; overflow:scroll;\">");
         if (null != getHeading())
         {
             out.println("<h3 style=\"color:red;\">" + getHeading() + "</h3>");
         }
-        out.println("<script>new Ext.Resizable(Ext.get('" + id + "'), { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{padding:2}})</script>");
         super.renderStart(out);
     }
 
@@ -41,5 +42,6 @@ class WebPartErrorRenderer extends ErrorRenderer
     {
         super.renderEnd(out);
         out.println("</div>");
+        out.println("<script>new Ext.Resizable(Ext.get('" + _id + "'), { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{padding:2}})</script>");
     }
 }

@@ -26,6 +26,7 @@ import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -104,17 +105,15 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             {
                 runScript(context, outputSubst, createInputDataFile(context));
             }
+            catch (ScriptException e)
+            {
+                view.addView(handleException(e));
+            }
             catch (Exception e)
             {
-                final String error1 = "Error executing command";
-                final String error2 = PageFlowUtil.filter(e.getMessage());
-
-                errors.add(error1);
-                errors.add(error2);
-
-                String err = "<font class=\"labkey-error\">" + error1 + "</font><pre>" + error2 + "</pre>";
-                HttpView errView = new HtmlView(err);
-                view.addView(errView);
+                ExceptionUtil.logExceptionToMothership(context.getRequest(), e);
+                
+                view.addView(handleException(e));
             }
 
             cacheResults(context, outputSubst);
@@ -123,6 +122,15 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         renderViews(this, view, outputSubst, false);
 
         return view;
+    }
+
+    private HttpView handleException(Exception e)
+    {
+        final String error1 = "Error executing command";
+        final String error2 = PageFlowUtil.filter(e.getMessage());
+
+        String err = "<font class=\"labkey-error\">" + error1 + "</font><pre>" + error2 + "</pre>";
+        return new HtmlView(err);
     }
 
     @Override
