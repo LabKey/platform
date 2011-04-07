@@ -72,8 +72,8 @@ However, If this account is re-enabled, it would have the following permissions.
         ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getProjectURL(row.getContainer());
 %>
     <tr class="<%= rowNumber++ % 2 == 0 ?  "labkey-alternate-row" : "labkey-row"%>">
-        <td style="padding-left:<%= cellPadding + (10 * row.getDepth()) %>;">
-            <a href="<%= containerPermissionsLink.getLocalURIString() %>"><%= row.getContainer().getName() %></a>
+        <td style="padding-left:<%= cellPadding + (10 * row.getDepth()) %>px;">
+            <a href="<%= containerPermissionsLink.getLocalURIString() %>"><%= h(row.getContainer().getName()) %></a>
         </td>
         <td ><%= row.getAccess() %><%= inherited ? "*" : "" %></td>
     <%

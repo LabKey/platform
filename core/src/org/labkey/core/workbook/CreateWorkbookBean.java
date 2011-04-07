@@ -25,6 +25,7 @@ public class CreateWorkbookBean
 {
     private String _title;
     private String _description;
+    private String _folderType;
 
     public String getTitle()
     {
@@ -44,5 +45,15 @@ public class CreateWorkbookBean
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    public String getFolderType()
+    {
+        return _folderType;
+    }
+
+    public void setFolderType(String folderType)
+    {
+        _folderType = folderType;
     }
 }

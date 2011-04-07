@@ -747,16 +747,17 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class CreateWorkbookAction extends SimpleViewAction<Object>
+    public class CreateWorkbookAction extends SimpleViewAction<CreateWorkbookBean>
     {
         @Override
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        public ModelAndView getView(CreateWorkbookBean bean, BindException errors) throws Exception
         {
-            CreateWorkbookBean bean = new CreateWorkbookBean();
-
-            //suggest a name
-            //per spec it should be "<user-display-name> YYYY-MM-DD"
-            bean.setTitle(getViewContext().getUser().getDisplayName(getUser()) + " " + DateUtil.formatDate(new Date()));
+            if (bean.getTitle() == null)
+            {
+                //suggest a name
+                //per spec it should be "<user-display-name> YYYY-MM-DD"
+                bean.setTitle(getViewContext().getUser().getDisplayName(getUser()) + " " + DateUtil.formatDate(new Date()));
+            }
 
             return new JspView<CreateWorkbookBean>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
         }

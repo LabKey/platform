@@ -1480,10 +1480,7 @@ public class AnnouncementsController extends SpringActionController
             int emailOption = AnnouncementManager.getUserEmailOption(c, user);
             if (emailOption == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT)
             {
-                if (projectUsers.contains(user))
-                    emailOption = AnnouncementManager.getDefaultEmailOption(c);
-                else
-                    emailOption = AnnouncementManager.EMAIL_PREFERENCE_BROADCAST;
+                emailOption = AnnouncementManager.getDefaultEmailOption(c);
             }
 
             form.setEmailOption(emailOption);

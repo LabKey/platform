@@ -321,6 +321,21 @@ public class DataSetTable extends FilteredTable
                         fieldKey = FieldKey.fromParts("Analyte", "Properties", analytePropertyName);
                     }
                 }
+                else
+                {
+                    // Check the name to prevent infinite recursion
+                    if (!name.equalsIgnoreCase("Properties"))
+                    {
+                        // Try looking for it as a NAb specimen property
+                        fieldKey = FieldKey.fromParts("Properties", "SpecimenLsid", "Property", name);
+                        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
+                        result = columns.get(fieldKey);
+                        if (result != null)
+                        {
+                            return result;
+                        }
+                    }
+                }
             }
         }
         if (fieldKey == null && !name.equalsIgnoreCase("Properties"))

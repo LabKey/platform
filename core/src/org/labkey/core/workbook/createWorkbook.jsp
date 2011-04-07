@@ -27,7 +27,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<CreateWorkbookBean> me = (JspView<CreateWorkbookBean>) HttpView.currentView();
-    CreateWorkbookBean searchBean = me.getModelBean();
+    CreateWorkbookBean bean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
 
     Set<FolderType> folderTypes = new LinkedHashSet<FolderType>();
@@ -89,12 +89,12 @@
     <table class="cwb-layout-table">
         <tr>
             <td class="labkey-form-label">Title:</td>
-            <td><input id="workbookTitle" type="text" name="title" class="cwb-input" value="<%=h(searchBean.getTitle())%>"/></td>
+            <td><input id="workbookTitle" type="text" name="title" class="cwb-input" value="<%=h(bean.getTitle())%>"/></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Description:</td>
             <td>
-                <textarea id="workbookDescription" name="description" rows="4" cols="40" class="cwb-input"><%=null == searchBean.getDescription() ? "" : h(searchBean.getDescription())%></textarea>
+                <textarea id="workbookDescription" name="description" rows="4" cols="40" class="cwb-input"><%=null == bean.getDescription() ? "" : h(bean.getDescription())%></textarea>
             </td>
         </tr>
         <% if (folderTypes.size() > 1) { %>
@@ -104,7 +104,7 @@
                     <select id="workbookFolderType" name="folderType">
                         <option value="" />
                         <% for (FolderType folderType : folderTypes) { %>
-                            <option value="<%=h(folderType.getName()) %>"><%=h(folderType.getLabel()) %></option>
+                            <option value="<%=h(folderType.getName()) %>" <% if (folderType.getName().equals(bean.getFolderType())) { %>selected="true" <% } %>><%=h(folderType.getLabel()) %></option>
                         <% } %>
                     </select>
                 </td>

@@ -42,7 +42,7 @@ public class AuthenticationModule extends DefaultModule
 
     public double getVersion()
     {
-        return 10.39;
+        return 11.10;
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
