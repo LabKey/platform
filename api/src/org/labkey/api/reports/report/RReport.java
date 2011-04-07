@@ -102,7 +102,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
 
         if (inputFile != null && inputFile.exists())
         {
-            labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\", comment.char=\"\")\n");
+            labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\")\n");
         }
 
         labkey.append("labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
