@@ -19,7 +19,6 @@ package org.labkey.api.audit;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -27,6 +26,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DataView;
@@ -60,7 +60,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
 
     public String getDescription()
     {
-        return null;
+        return getName();
     }
 
     public List<FieldKey> getDefaultVisibleColumns()
@@ -68,13 +68,8 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
         return Collections.emptyList();
     }
 
-    public void setupTable(TableInfo table)
+    public void setupTable(FilteredTable table)
     {
-    }
-
-    public void setupView(DataView view)
-    {
-
     }
 
     private static Object _82decodeObject(String s) throws IOException

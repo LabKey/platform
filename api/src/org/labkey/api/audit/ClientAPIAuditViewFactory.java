@@ -42,6 +42,12 @@ public class ClientAPIAuditViewFactory extends SimpleAuditViewFactory
         return EVENT_TYPE;
     }
 
+    @Override
+    public String getDescription()
+    {
+        return "Information about audit events created through the client API.";
+    }
+
     public QueryView createDefaultQueryView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter();

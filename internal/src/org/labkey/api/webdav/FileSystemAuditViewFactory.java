@@ -21,8 +21,8 @@ import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
@@ -68,6 +68,12 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
         return "File events";
     }
 
+    @Override
+    public String getDescription()
+    {
+        return "Displays information about file uploads and modifications.";
+    }
+
     public QueryView createDefaultQueryView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter("EventType", EVENT_TYPE);
@@ -93,7 +99,7 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(TableInfo table)
+    public void setupTable(FilteredTable table)
     {
         ColumnInfo dir = table.getColumn("Key1");
         if (dir != null)

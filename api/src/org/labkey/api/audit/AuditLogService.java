@@ -22,6 +22,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -122,8 +123,7 @@ public class AuditLogService
         
         public QueryView createDefaultQueryView(ViewContext context);
         public List<FieldKey> getDefaultVisibleColumns();
-        public void setupTable(TableInfo table);
-        public void setupView(DataView view);
+        public void setupTable(FilteredTable table);
     }
 
     public interface Replaceable{}

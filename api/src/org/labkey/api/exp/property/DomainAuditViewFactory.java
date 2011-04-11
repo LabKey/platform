@@ -22,10 +22,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
@@ -101,7 +99,7 @@ public class DomainAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(final TableInfo table)
+    public void setupTable(final FilteredTable table)
     {
         final ColumnInfo containerId = table.getColumn("ContainerId");
         ColumnInfo col = table.getColumn("Key1");
