@@ -54,7 +54,7 @@ public class AuditQueryViewImpl extends AuditLogQueryView
 
     public DataView createDataView()
     {
-        setShowDetailsColumn(false);
+        setShowDetailsColumn(true);
 
         DataView view = super.createDataView();
 
@@ -99,18 +99,7 @@ public class AuditQueryViewImpl extends AuditLogQueryView
             view.getDataRegion().addDisplayColumn(entry.getKey(), entry.getValue());
         }
 
-        setupView(view);
-
         return view;
-    }
-
-    private void setupView(DataView view)
-    {
-        AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(getSettings().getQueryName());
-        if (factory != null)
-        {
-            factory.setupView(view);
-        }
     }
 
     protected TableInfo createTable()

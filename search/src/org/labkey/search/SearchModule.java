@@ -24,6 +24,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
@@ -185,7 +186,7 @@ public class SearchModule extends DefaultModule
         }
 
         @Override
-        public void setupTable(TableInfo table)
+        public void setupTable(FilteredTable table)
         {
             ColumnInfo col = table.getColumn("Key1");
             col.setLabel("Query");

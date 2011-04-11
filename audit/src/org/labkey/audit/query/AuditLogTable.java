@@ -16,6 +16,7 @@
 
 package org.labkey.audit.query;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditDisplayColumnFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -57,14 +58,14 @@ import java.util.TreeMap;
  */
 public class AuditLogTable extends FilteredTable
 {
-    private String _viewFactoryName;
+    private AuditLogService.AuditViewFactory _viewFactory;
 
     public AuditLogTable(QuerySchema schema, TableInfo tInfo, String viewFactoryName)
     {
         super(tInfo, schema.getContainer());
 
-        _viewFactoryName = viewFactoryName;
-        
+        _viewFactory = AuditLogService.get().getAuditViewFactory(viewFactoryName);
+
         ColumnInfo createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));
         createdBy.setFk(new UserIdForeignKey());
         createdBy.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -107,12 +108,12 @@ public class AuditLogTable extends FilteredTable
         List<FieldKey> visibleColumns = getDefaultColumns();
 
         // in addition to the hard table columns, join in any ontology table columns associated with this query view
-        if (_viewFactoryName != null)
+        if (_viewFactory != null)
         {
             //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
             try
             {
-                String parentLsid = AuditLogService.get().getDomainURI(_viewFactoryName);
+                String parentLsid = AuditLogService.get().getDomainURI(_viewFactory.getName());
                 SimpleFilter filter = new SimpleFilter();
                 filter.addCondition("PropertyURI", parentLsid, CompareType.STARTS_WITH);
                 PropertyDescriptor[] pds = Table.select(OntologyManager.getTinfoPropertyDescriptor(), Table.ALL_COLUMNS, filter, null, PropertyDescriptor.class);
@@ -187,10 +188,9 @@ public class AuditLogTable extends FilteredTable
     private List<FieldKey> getDefaultColumns()
     {
         List<FieldKey> columns = new ArrayList<FieldKey>();
-        AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(_viewFactoryName);
-        if (factory != null)
+        if (_viewFactory != null)
         {
-            final List<FieldKey> cols = factory.getDefaultVisibleColumns();
+            final List<FieldKey> cols = _viewFactory.getDefaultVisibleColumns();
             if (!cols.isEmpty())
                 columns = cols;
         }
@@ -209,10 +209,9 @@ public class AuditLogTable extends FilteredTable
 
     private void setupTable()
     {
-        AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(_viewFactoryName);
-        if (factory != null)
+        if (_viewFactory != null)
         {
-            factory.setupTable(this);
+            _viewFactory.setupTable(this);
         }
     }
 
@@ -226,5 +225,15 @@ public class AuditLogTable extends FilteredTable
         }
         else
             throw new IllegalStateException("Column does not exist: " + columnName);
+    }
+
+    @Override
+    public String getDescription()
+    {
+        if (_viewFactory != null)
+        {
+            return StringUtils.defaultIfEmpty(_viewFactory.getDescription(), super.getDescription());
+        }
+        return super.getDescription();
     }
 }

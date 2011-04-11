@@ -40,6 +40,7 @@ public class AuditQuerySchema extends UserSchema
     public static final String SCHEMA_NAME = "auditLog";
     public static final String SCHEMA_DESCR = "Contains data about audit log events.";
     public static final String AUDIT_TABLE_NAME = "audit";
+    private static Set<String> _tables = new HashSet<String>();
 
     static public void register()
     {
@@ -58,7 +59,15 @@ public class AuditQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return new HashSet<String>(Arrays.asList(AUDIT_TABLE_NAME));
+        if (_tables.isEmpty())
+        {
+            _tables.add(AUDIT_TABLE_NAME);
+            for (AuditLogService.AuditViewFactory factory : AuditLogService.get().getAuditViewFactories())
+            {
+                _tables.add(factory.getEventType());
+            }
+        }
+        return _tables;
     }
 
     public TableInfo createTable(String name)

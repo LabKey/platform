@@ -25,6 +25,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -85,6 +86,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+        addDetailsColumn(view);
 
         return view;
     }
@@ -97,12 +99,13 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));
         view.setTitle("<br/><b>Dataset Snapshot History:</b>");
+        addDetailsColumn(view);
 
         return view;
     }
     
     @Override
-    public void setupTable(final TableInfo table)
+    public void setupTable(final FilteredTable table)
     {
         final ColumnInfo containerColumn = table.getColumn("ContainerId");
         final ColumnInfo datasetDefColumn = table.getColumn("IntKey1");
@@ -159,14 +162,14 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         });
     }
 
-    @Override
-    public void setupView(DataView view)
+    private void addDetailsColumn(AuditLogQueryView view)
     {
         TableInfo table = view.getTable();
         ColumnInfo detailBitCol = table.getColumn("IntKey2");
         ColumnInfo containerCol = table.getColumn("ContainerId");
         ColumnInfo rowCol = table.getColumn("RowId");
-        view.getDataRegion().addDisplayColumn(0, new DetailsColumn(rowCol, containerCol, detailBitCol));
+
+        view.addDisplayColumn(0, new DetailsColumn(rowCol, containerCol, detailBitCol));
     }
 
     public List<FieldKey> getDefaultVisibleColumns()

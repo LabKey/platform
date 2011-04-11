@@ -66,6 +66,12 @@ public class ContainerAuditViewFactory extends SimpleAuditViewFactory
         return "Project and Folder events";
     }
 
+    @Override
+    public String getDescription()
+    {
+        return "Information about project and folder modifications.";
+    }
+
     public QueryView createDefaultQueryView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter("EventType", ContainerManager.CONTAINER_AUDIT_EVENT);

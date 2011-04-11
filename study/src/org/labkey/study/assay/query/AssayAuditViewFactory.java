@@ -81,6 +81,12 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         return "Copy-to-Study Assay events";
     }
 
+    @Override
+    public String getDescription()
+    {
+        return "Information about copy-to-study Assay events.";
+    }
+
     public QueryView createDefaultQueryView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -89,6 +95,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         view.setSort(new Sort("-Date"));
+        addDetailsColumn(view);
 
         return view;
     }
@@ -103,6 +110,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
         view.setSort(new Sort("-Date"));
+        addDetailsColumn(view);
 
         return view;
     }
@@ -120,7 +128,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(TableInfo table)
+    public void setupTable(FilteredTable table)
     {
         ColumnInfo col = table.getColumn("Key1");
 
@@ -144,7 +152,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         }
     }
 
-    public void setupView(DataView view)
+    private void addDetailsColumn(AuditLogQueryView view)
     {
         ColumnInfo col = view.getTable().getColumn("Property");
         if (col != null)
@@ -163,7 +171,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
             params.put("protocolId", view.getTable().getColumn("IntKey1"));
             ColumnInfo containerId = view.getTable().getColumn("Key1");
 
-            view.getDataRegion().addDisplayColumn(0, new PublishDetailsColumn(params, containerId));
+            view.addDisplayColumn(0, new PublishDetailsColumn(params, containerId));
         }
     }
 

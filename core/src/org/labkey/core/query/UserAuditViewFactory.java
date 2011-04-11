@@ -21,6 +21,7 @@ import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.UserManager;
@@ -64,6 +65,12 @@ public class UserAuditViewFactory extends SimpleAuditViewFactory
         return "User events";
     }
 
+    @Override
+    public String getDescription()
+    {
+        return "Describes information about user logins, impersonations, and modifications.";
+    }
+
     public QueryView createDefaultQueryView(ViewContext context)
     {
         return createUserHistoryView(context, null);
@@ -96,7 +103,7 @@ public class UserAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(TableInfo table)
+    public void setupTable(FilteredTable table)
     {
         ColumnInfo col = table.getColumn("IntKey1");
         if (col != null)

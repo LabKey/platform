@@ -23,6 +23,7 @@ import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.ViewContext;
 
@@ -67,6 +68,12 @@ public class AttachmentAuditViewFactory extends SimpleAuditViewFactory
         return "Attachment events";
     }
 
+    @Override
+    public String getDescription()
+    {
+        return "Displays information about attachment events.";
+    }
+
     public QueryView createDefaultQueryView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter("EventType", AttachmentService.ATTACHMENT_AUDIT_EVENT);
@@ -93,7 +100,7 @@ public class AttachmentAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(TableInfo table)
+    public void setupTable(FilteredTable table)
     {
         ColumnInfo col = table.getColumn("Key1");
         if (col != null)

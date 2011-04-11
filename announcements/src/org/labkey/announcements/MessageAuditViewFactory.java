@@ -19,6 +19,7 @@ package org.labkey.announcements;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ViewContext;
@@ -87,7 +88,7 @@ public class MessageAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(TableInfo table)
+    public void setupTable(FilteredTable table)
     {
         ColumnInfo col1 = table.getColumn("Key1");
         if (col1 != null)

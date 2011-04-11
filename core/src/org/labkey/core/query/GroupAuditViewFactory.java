@@ -71,6 +71,12 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         return "Group events";
     }
 
+    @Override
+    public String getDescription()
+    {
+        return "Information about group modifications and security changes.";
+    }
+
     public QueryView createDefaultQueryView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter("EventType", GroupManager.GROUP_AUDIT_EVENT);
@@ -98,7 +104,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(TableInfo table)
+    public void setupTable(FilteredTable table)
     {
         ColumnInfo col = table.getColumn("IntKey1");
         if (col != null)

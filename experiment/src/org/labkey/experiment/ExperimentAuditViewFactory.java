@@ -16,7 +16,6 @@
 
 package org.labkey.experiment;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
@@ -26,6 +25,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -79,6 +79,12 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
         return "Assay/Experiment events";
     }
 
+    @Override
+    public String getDescription()
+    {
+        return "Describes information about assay run events.";
+    }
+
     public QueryView createDefaultQueryView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -123,7 +129,7 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
         return new Pair<String, String>(parts[0], parts[1].length() > 0 ? parts[1] : null);
     }
 
-    public void setupTable(final TableInfo table)
+    public void setupTable(final FilteredTable table)
     {
         final ColumnInfo containerId = table.getColumn("ContainerId");
 

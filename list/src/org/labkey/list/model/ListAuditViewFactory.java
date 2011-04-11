@@ -31,7 +31,6 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -40,6 +39,7 @@ import org.labkey.api.exp.property.DomainAuditViewFactory;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
@@ -114,6 +114,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+        addDetailsColumn(view);
 
         return view;
     }
@@ -128,8 +129,21 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         view.setTitle("List Item History:");
         view.setSort(new Sort("-Date"));
         view.setVisibleColumns(new String[]{"Date", "CreatedBy", "ImpersonatedBy", "Comment"});
+        addDetailsColumn(view);
 
         return view;
+    }
+
+    private void addDetailsColumn(AuditLogQueryView view)
+    {
+        Map<String, ColumnInfo> params = new HashMap<String, ColumnInfo>();
+
+        params.put("listId", view.getTable().getColumn("IntKey1"));
+        params.put("entityId", view.getTable().getColumn("Key2"));
+        params.put("rowId", view.getTable().getColumn("RowId"));
+        ColumnInfo containerId = view.getTable().getColumn("ContainerId");
+
+        view.addDisplayColumn(0, new ListItemDetailsColumn(params, containerId));
     }
 
     public List<FieldKey> getDefaultVisibleColumns()
@@ -146,7 +160,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(final TableInfo table)
+    public void setupTable(final FilteredTable table)
     {
         final ColumnInfo containerId = table.getColumn("ContainerId");
         ColumnInfo col = table.getColumn("Key1");
@@ -165,18 +179,6 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
             col.setHidden(true);
             col.setIsUnselectable(true);
         }
-    }
-
-    public void setupView(DataView view)
-    {
-        Map<String, ColumnInfo> params = new HashMap<String, ColumnInfo>();
-
-        params.put("listId", view.getTable().getColumn("IntKey1"));
-        params.put("entityId", view.getTable().getColumn("Key2"));
-        params.put("rowId", view.getTable().getColumn("RowId"));
-        ColumnInfo containerId = view.getTable().getColumn("ContainerId");
-
-        view.getDataRegion().addDisplayColumn(0, new ListItemDetailsColumn(params, containerId));
     }
 
     public AuditLogQueryView createListHistoryView(ViewContext context, ListDefinition def)

@@ -16,7 +16,10 @@
 package org.labkey.audit;
 
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ExprColumn;
@@ -39,7 +42,7 @@ import java.io.IOException;
  * Time: 3:10:03 PM
  */
 
-public class SiteSettingsAuditViewFactory implements AuditLogService.AuditViewFactory
+public class SiteSettingsAuditViewFactory extends SimpleAuditViewFactory
 {
     public String getEventType()
     {
@@ -80,29 +83,12 @@ public class SiteSettingsAuditViewFactory implements AuditLogService.AuditViewFa
         return columns;
     }
 
-    public void setupTable(TableInfo table)
+    public void setupTable(FilteredTable table)
     {
-        //nothing yet
-    }
-
-    public void setupView(DataView view)
-    {
-        DataRegion dataRegion = view.getDataRegion();
-        TableInfo table = dataRegion.getTable();
         ColumnInfo idCol = table.getColumn("RowId");
 
-        ExprColumn detailsCol = new ExprColumn(table, "details", idCol.getValueSql(ExprColumn.STR_TABLE_ALIAS), idCol.getSqlTypeInt());
-        detailsCol.copyAttributesFrom(idCol);
-        detailsCol.copyURLFrom(idCol, null, Collections.singletonMap(idCol.getFieldKey(), detailsCol.getFieldKey()));
-        detailsCol.setLabel("Details");
-        detailsCol.setDisplayColumnFactory(new DisplayColumnFactory(){
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new DetailsDisplayColumn(colInfo);
-            }
-        });
-
-        dataRegion.addColumn(0, detailsCol);
+        ActionURL url = new ActionURL(AuditController.ShowSiteSettingsAuditDetailsAction.class, table.getContainer());
+        table.addDetailsURL(new DetailsURL(url, Collections.singletonMap("id", idCol.getFieldKey())));
     }
 
     private class DetailsDisplayColumn extends DataColumn
