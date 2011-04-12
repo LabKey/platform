@@ -295,6 +295,43 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     }
 
 
+    private static class AnchorMacro extends BaseMacro
+    {
+        public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException, IOException
+        {
+            String name = macroParameter.get("name");
+            if (null == name)
+                name = macroParameter.get(0);
+            if (name != null)
+            {
+                StringBuilder buf = new StringBuilder();
+                buf.append("<a name=\"").append(PageFlowUtil.filter(name)).append("\">");
+                writer.write(buf.toString());
+            }
+        }
+
+        public String getName()
+        {
+            return "anchor";
+        }
+
+        public String getDescription()
+        {
+            return "Anchor Tag";
+        }
+
+        private final String[] PARAMS = new String[]
+        {
+            "name: anchor name."
+        };
+
+        public String[] getParamDescription()
+        {
+            return PARAMS;
+        }
+    }
+
+
     public boolean attachmentExists(String s)
     {
         if (null == _attachments)
@@ -314,6 +351,8 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         repository.put("div", new StylableMacro("div"));
         repository.put("span", new StylableMacro("span"));
         repository.put("labkey", new LabKeyMacro());
+        repository.put("title", new StylableMacro("h1")); // so user has some way to match html-editor
+        repository.put("anchor", new AnchorMacro());
     }
 
     //
@@ -378,14 +417,23 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     private void _appendLink(StringBuffer sb, String name, String view, String hash, String className)
     {
-        boolean isAttachment = attachmentExists(name);
-        String href = (attachmentExists(name) ? _attachmentPrefix : _wikiHrefPrefix) + PageFlowUtil.encode(name);
+        boolean isAnchorOnly = name.length() == 0 && null != hash;
+        boolean isAttachment = name.length() > 0 && attachmentExists(name);
+        String href =
+                isAnchorOnly ? "" :
+                isAttachment ? _attachmentPrefix + PageFlowUtil.encode(name) :
+                _wikiHrefPrefix + PageFlowUtil.encode(name);
+        if (null != hash)
+            href += "#" + hash;
 
         // if view is null or empty, try to lookup the
         // target page's title, or at least set it equal to the last part of name
         if (null == view || view.length() == 0)
         {
-            view = name.lastIndexOf('/') >= 0 ? name.substring(name.lastIndexOf('/')) : name;
+            if (isAnchorOnly)
+                view = hash;
+            else
+                view = name.lastIndexOf('/') >= 0 ? name.substring(name.lastIndexOf('/')) : name;
             if (null != _pageTitles)
             {
                 HString title = _pageTitles.get(new HString(name));
@@ -410,8 +458,6 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         }
 
         WIKI_LINK_FORMAT.format(new Object[]{PageFlowUtil.filter(href), PageFlowUtil.filter(view), className}, sb, null);
-        if (null != hash)
-            sb.append("#").append(hash);
     }
 
 
@@ -596,8 +642,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                     else
                     {
                         // internal link
-
-                        if (wikiEngine.exists(name))
+                        if (name.length() == 0 && null != hash || wikiEngine.exists(name))
                         {
                             String view = "";
                             if (-1 != pipeIndex)
