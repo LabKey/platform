@@ -608,6 +608,8 @@ public class AdminController extends SpringActionController
             documentedFilenamesCopy.addAll(documentedFilenames);
             documentedFilenames.removeAll(filenames);
             filenames.removeAll(documentedFilenamesCopy);
+            for (String name : filenames.toArray(new String[filenames.size()]))
+                if (name.startsWith(".")) filenames.remove(name);
 
             String undocumentedErrors = filenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (filenames.size() > 1 ? "s were" : " was") + " found in your " + foundWhere + " but "+ (filenames.size() > 1 ? "are" : " is") + " not documented in " + creditsFilename + ":**\\\\" + StringUtils.join(filenames.iterator(), "\\\\");
             String missingErrors = documentedFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (documentedFilenames.size() > 1 ? "s are" : " is") + " documented in " + creditsFilename + " but " + (documentedFilenames.size() > 1 ? " were" : " was") + " not found in your " + foundWhere + ":**\\\\" + StringUtils.join(documentedFilenames.iterator(), "\\\\");

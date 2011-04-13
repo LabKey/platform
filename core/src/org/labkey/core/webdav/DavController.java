@@ -800,7 +800,7 @@ public class DavController extends SpringActionController
                 {
                     // CONSIDER: enforce ContentType=text/plain?
                     filename = getRequest().getParameter("filename");
-                    String content = getRequest().getParameter("content");
+                    String content = StringUtils.defaultString(getRequest().getParameter("content"),"");
                     stream = new FileStream.ByteArrayFileStream(content.getBytes());
                 }
 
