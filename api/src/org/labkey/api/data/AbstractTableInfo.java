@@ -460,15 +460,15 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     public void setDetailsURL(DetailsURL detailsURL)
     {
         _detailsURLs.clear();
-        if (detailsURL != null)
-        {
-            _detailsURLs.add(detailsURL);
-        }
+        addDetailsURL(detailsURL);
     }
 
     public void addDetailsURL(DetailsURL detailsURL)
     {
-        _detailsURLs.add(detailsURL);
+        if (detailsURL != null)
+        {
+            _detailsURLs.add(detailsURL);
+        }
     }
 
     @Override

@@ -1942,14 +1942,19 @@ public class OntologyManager
         Map<String, DomainDescriptor> ret = new LinkedHashMap<String, DomainDescriptor>();
         String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Project = ?";
         Container project = container.getProject();
-        DomainDescriptor[] dds = Table.executeQuery(getExpSchema(), sql, new Object[] { project.getId() }, DomainDescriptor.class);
-        for (DomainDescriptor dd : dds)
+
+        if (null != project)
         {
-            ret.put(dd.getDomainURI(), dd);
+            DomainDescriptor[] dds = Table.executeQuery(getExpSchema(), sql, new Object[] { project.getId() }, DomainDescriptor.class);
+            for (DomainDescriptor dd : dds)
+            {
+                ret.put(dd.getDomainURI(), dd);
+            }
         }
+
         if (!project.equals(ContainerManager.getSharedContainer()))
         {
-            dds = Table.executeQuery(getExpSchema(), sql, new Object[] { ContainerManager.getSharedContainer().getId()}, DomainDescriptor.class);
+            DomainDescriptor[] dds = Table.executeQuery(getExpSchema(), sql, new Object[] { ContainerManager.getSharedContainer().getId()}, DomainDescriptor.class);
             for (DomainDescriptor dd : dds)
             {
                 if (!ret.containsKey(dd.getDomainURI()))

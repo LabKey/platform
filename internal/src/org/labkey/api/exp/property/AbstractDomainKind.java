@@ -28,6 +28,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +95,9 @@ public abstract class AbstractDomainKind extends DomainKind
         }
         catch (ChangePropertyDescriptorException e)
         {
-            return Collections.singletonList(e.getMessage());
+            // Collections.singletonList() is not GWT serializeable
+            //return Collections.singletonList(e.getMessage());
+            return new ArrayList<String>(Arrays.asList(e.getMessage()));
         }
     }
 

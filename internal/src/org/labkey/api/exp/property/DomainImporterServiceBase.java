@@ -34,7 +34,7 @@ import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -190,7 +190,8 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         }
         catch (ChangePropertyDescriptorException e)
         {
-            return Collections.singletonList(e.getMessage());
+            // for GWT serialization don't use Collections.singleList()
+            return new ArrayList<String>(Arrays.asList(e.getMessage()));
         }
     }
 
