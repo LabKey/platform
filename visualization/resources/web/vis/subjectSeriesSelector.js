@@ -64,6 +64,26 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
         // decode the JSON responseText
         var subjectValues = Ext.util.JSON.decode(response.responseText);
 
+        // if this is not a saved chart with pre-selected values, initially select the first 5 values (after sorting)
+        var selectDefault = false;
+        if(!this.subject.values){
+            selectDefault = true;
+
+            // sort the subject values
+            function compareValue(a, b) {
+                if (a.value < b.value) {return -1}
+                if (a.value > b.value) {return 1}
+                return 0;
+            }
+            subjectValues.values.sort(compareValue)
+
+            // select the first 5 values, or all if the length is less than 5
+            this.subject.values = [];
+            for(var i = 0; i < (subjectValues.values.length < 5 ? subjectValues.values.length : 5); i++) {
+                this.subject.values.push(subjectValues.values[i].value);
+            }
+        }
+
         this.defaultDisplayField = new Ext.form.DisplayField({
             hideLabel: true,
             hidden: true,
@@ -114,16 +134,6 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
             listeners: {
                 scope: this,
                 'viewready': function(grid){
-                    // if this is not a saved chart with pre-selected values, initially select the first 5 values
-                    var selectDefault = false;
-                    if(!this.subject.values){
-                        selectDefault = true;
-                        this.subject.values = new Array();
-                        for(var i = 0; i < (grid.getStore().getCount() < 5 ? grid.getStore().getCount() : 5); i++) {
-                            this.subject.values.push(grid.getStore().getAt(i).get("value"));
-                        }
-                    }
-
                     // show the selecting default text if necessary
                     if(grid.getStore().getCount() > 5 && selectDefault){
                         // show the display for 3 seconds before hiding it again
