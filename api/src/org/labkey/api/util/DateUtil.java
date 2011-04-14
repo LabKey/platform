@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 
 public class DateUtil
@@ -94,6 +95,20 @@ public class DateUtil
     public static Calendar newCalendar(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec)
     {
         return new _Calendar(tz, _localeDefault, year, mon, mday, hour, min, sec, 0);
+    }
+
+    // disallow date overflow arithmetic
+    public static Calendar newCalendarStrict(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec)
+    {
+        Calendar cal = new _Calendar(tz, _localeDefault, year, mon, mday, hour, min, sec, 0);
+        if (cal.get(Calendar.YEAR) != year ||
+            cal.get(Calendar.MONTH) != mon ||
+            cal.get(Calendar.DAY_OF_MONTH) != mday ||
+            cal.get(Calendar.HOUR) != hour ||
+            cal.get(Calendar.MINUTE) != min ||
+            cal.get(Calendar.SECOND) != sec)
+            throw new IllegalArgumentException();
+        return cal;
     }
 
 
@@ -229,7 +244,7 @@ public class DateUtil
     {
         am, pm
     }
-    
+
     enum TZ
     {
         gmt(0),ut(0),utc(0),est(5*60),edt(4*60),cst(6*60),cdt(5*60),mst(7*60),mdt(6*60),pst(8*60),pdt(7*60);
@@ -252,7 +267,7 @@ public class DateUtil
         parts = list.toArray(new Enum[list.size()]);
     }
 
-    static Comparator compEnum = new Comparator<Object>() {public int compare(Object o1, Object o2){return ((Enum)o1).name().compareTo((String)o2);}}; 
+    static Comparator compEnum = new Comparator<Object>() {public int compare(Object o1, Object o2){return ((Enum)o1).name().compareTo((String)o2);}};
     static Enum resolveDatePart(String sequence, int start, int end)
     {
         if (end-start < 2)
@@ -266,8 +281,17 @@ public class DateUtil
     }
 
 
-    public static long parseStringUS(String s, boolean allowTimeOnly)
+    private enum DateTimeOption
     {
+        DateTime,
+        DateOnly,
+        TimeOnly
+    }
+
+
+    private static long parseDateTimeUS(String s, DateTimeOption option, boolean strict)
+    {
+        Month month = null; // set if month is specified using name
         int year = -1;
         int mon = -1;
         int mday = -1;
@@ -277,7 +301,7 @@ public class DateUtil
         char c = 0;
         char si = 0;
         int i = 0;
-        int n = -1;
+        int n, digits;
         int tzoffset = -1;
         char prevc = 0;
         int limit = 0;
@@ -319,8 +343,10 @@ public class DateUtil
             if ('0' <= c && c <= '9')
             {
                 n = c - '0';
+                digits = 1;
                 while (i < limit && '0' <= (c = s.charAt(i)) && c <= '9')
                 {
+                    digits++;
                     n = n * 10 + c - '0';
                     i++;
                 }
@@ -350,13 +376,13 @@ validNum:       {
                         tzoffset = n;
                         break validNum;
                     }
-                    if (n >= 70 || (prevc == '/' && mon >= 0 && mday >= 0 && year < 0))
+                    if (digits > 3 || n >= 70 || ((prevc == '/' || prevc == '-') && mon >= 0 && mday >= 0 && year < 0))
                     {
                         if (year >= 0)
                             throw new ConversionException(s);
                         else if (c <= ' ' || c == ',' || c == '/' || c == '-' || i >= limit)
                         {
-                            if (n >= 100)
+                            if (n >= 100 || digits > 3)
                                 year = n;
                             else if (n > twoDigitCutoff)
                                 year = n + defaultCentury;
@@ -367,7 +393,7 @@ validNum:       {
                             throw new ConversionException(s);
                         break validNum;
                     }
-                    if (c == ':')
+                    if (c == ':' || (hour < 0 && option == DateTimeOption.TimeOnly))
                     {
                         if (hour < 0)
                             hour = n;
@@ -379,6 +405,8 @@ validNum:       {
                     }
                     if (c == '/')
                     {
+                        if (option == DateTimeOption.TimeOnly)
+                            throw new ConversionException(s);
                         if (mon < 0)
                             mon = n - 1;
                         else if (mday < 0)
@@ -454,7 +482,7 @@ validNum:       {
                 }
                 if (null == dp)
                     throw new ConversionException(s);
-                if (monthexpected && !(dp instanceof Month))
+                if (option != DateTimeOption.TimeOnly && monthexpected && !(dp instanceof Month))
                     throw new ConversionException(s);
                 monthexpected = false;
                 if (dp == AMPM.am || dp == AMPM.pm)
@@ -489,24 +517,24 @@ validNum:       {
                     // month
                     if (mon < 0)
                     {
-                        mon = ((Month)dp).month;
+                        month = (Month)dp;
+                        mon = month.month;
                     }
-                    else if (mday < 0 && prevc == '/')
+                    else if (mday < 0 && prevc == '/' && month == null)
                     {
                         // handle 01/Jan/2001 case (strange I know, the customer is always right)
                         // of course this probably makes Jan/Feb/2001 legal as well
+                        month = (Month)dp;
                         mday = mon+1;
-                        mon = ((Month)dp).month;
+                        mon = month.month;
                     }
                     else
                     {
                         throw new ConversionException(s);
                     }
-                    // handle 01Jan2001 pretend we're seeing 01/Jan/01
-                    if (i < limit && s.charAt(i) >= '0' && s.charAt(i) <= '9')
-                    {
+                    // handle "01Jan2001" or "01 Jan 2001" pretend we're seeing 01/Jan/2001
+                    if (i < limit && year < 0)
                         prevc = '/';
-                    }
                 }
                 else
                 {
@@ -515,13 +543,22 @@ validNum:       {
             }
         }
 
-
-        if (year < 0 || mon < 0 || mday < 0)
+        switch (option)
         {
-            if (allowTimeOnly && year < 0 && mon < 0 && mday < 0)
-                return 1000L * (hour * (60*60) + (min * 60) + sec);
-            throw new ConversionException(s);
+            case DateOnly:
+                if (hour >= 0 || min >= 0 || sec >= 0 || tzoffset >= 0)
+                    throw new ConversionException(s);
+                // fall through
+            case DateTime:
+                if (year < 0 || mon < 0 || mday < 0)
+                    throw new ConversionException(s);
+                break;
+            case TimeOnly:
+                if (year >= 0 || mon >= 0 || mday >= 0 || tzoffset >= 0)
+                    throw new ConversionException(s);
+                break;
         }
+
         if (sec < 0)
             sec = 0;
         if (min < 0)
@@ -529,6 +566,11 @@ validNum:       {
         if (hour < 0)
             hour = 0;
 
+        if (option == DateTimeOption.TimeOnly)
+        {
+            return 1000L * (hour * (60*60) + (min * 60) + sec);
+        }
+        
         //
         // This part is changed to work with Java
         //
@@ -551,8 +593,18 @@ validNum:       {
             }
         }
 
-        Calendar cal = newCalendar(tz, year, mon, mday, hour, min, sec);
-        return cal.getTimeInMillis();
+        try
+        {
+            Calendar cal = strict ?
+                    newCalendarStrict(tz, year, mon, mday, hour, min, sec) :
+                    newCalendar(tz, year, mon, mday, hour, min, sec);
+
+            return cal.getTimeInMillis();
+        }
+        catch (IllegalArgumentException x)
+        {
+            throw new ConversionException(s);
+        }
     }
 
 
@@ -616,7 +668,7 @@ validNum:       {
         {
             ;
         }
-        
+
         throw new ConversionException(s);
     }
 
@@ -630,6 +682,7 @@ validNum:       {
 
         return new SimpleDateFormat(pattern).parse(s);
     }
+
 
 
     // Lenient parsing using a variety of standard formats
@@ -664,7 +717,7 @@ validNum:       {
                     ms *= 10;
                 s = s.substring(0, period);
             }
-            long time = parseStringUS(s, false);
+            long time = parseDateTimeUS(s, DateTimeOption.DateTime, true);
             return time + ms;
         }
         catch (ConversionException x)
@@ -673,6 +726,47 @@ validNum:       {
         }
 
         return parseStringJava(s);
+    }
+
+
+    // Lenient parsing using a variety of standard formats
+    public static long parseDate(String s)
+    {
+        try
+        {
+            // quick check for JDBC/ISO date
+            if (s.length() == 10 && s.charAt(4) == '-' && s.charAt(7) == '-')
+                return parseStringJDBC(s);
+        }
+        catch (ConversionException x)
+        {
+            ;
+        }
+
+        return parseDateTimeUS(s, DateTimeOption.DateOnly, true);
+    }
+
+
+    public static long parseTime(String s)
+    {
+        // strip off trailing decimal :00:00.000
+        int ms = 0;
+        int len = s.length();
+        int period = s.lastIndexOf('.');
+        if (period > 6 && period >= len - 4 && period < len - 1 &&
+                s.charAt(period - 3) == ':' &&
+                s.charAt(period - 6) == ':')
+        {
+            String m = s.substring(period + 1);
+            ms = Integer.parseInt(m);
+            if (m.length() == 1)
+                ms *= 100;
+            else if (m.length() == 2)
+                ms *= 10;
+            s = s.substring(0, period);
+        }
+        long time = parseDateTimeUS(s, DateTimeOption.TimeOnly, true);
+        return time + ms;
     }
 
 
@@ -717,7 +811,7 @@ validNum:       {
 
 
     // Format date & time using specified pattern
-    // Note: This implementation is thread-safe and reuses formatters -- SimpleDateFormat is neither 
+    // Note: This implementation is thread-safe and reuses formatters -- SimpleDateFormat is neither
     public static String formatDateTime(Date date, String pattern)
     {
         if (null == date)
@@ -864,7 +958,7 @@ Parse:
     private static long _addDuration(long start, String s, int sign)
     {
         _duration d = _parseDuration(s);
-        
+
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(start);
 
@@ -957,34 +1051,74 @@ Parse:
 
     public static class TestCase extends Assert
     {
+        void assertIllegalDate(String s)
+        {
+            try
+            {
+                parseDate(s);
+                fail("Not a legal date: " + s);
+            }
+            catch (ConversionException x)
+            {
+                return;
+            }
+        }
+
+        void assertIllegalDateTime(String s)
+        {
+            try
+            {
+                parseDateTime(s);
+                fail("Not a legal datetime: " + s);
+            }
+            catch (ConversionException x)
+            {
+                return;
+            }
+        }
+
+        void assertIllegalTime(String s)
+        {
+            try
+            {
+                parseTime(s);
+                fail("Not a legal datetime: " + s);
+            }
+            catch (ConversionException x)
+            {
+                return;
+            }
+        }
+
         @Test
         public void testDateTime()
         {
             long datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
             long dateExpected = java.sql.Date.valueOf("2001-02-03").getTime();
-            String s;
 
-            s = new Date(datetimeExpected).toString();
-            assertEquals(datetimeExpected, DateUtil.parseDateTime(s)); 
-            s = new Date(datetimeExpected).toGMTString();
-            assertEquals(datetimeExpected, DateUtil.parseDateTime(s));
-            s = new Date(datetimeExpected).toLocaleString();
-            assertEquals(datetimeExpected, DateUtil.parseDateTime(s));
+            // DateTime with time
+            Date dt = new Date(datetimeExpected);
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toString()));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toGMTString()));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toLocaleString()));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(ConvertUtils.convert(dt)));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03T04:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/01 4:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06"));
-            s = ConvertUtils.convert(new Date(datetimeExpected));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime(s));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
+            // illegal
+            assertIllegalDateTime("2");
+            assertIllegalDateTime("2/3");
 
-            s = new Date(dateExpected).toString();
-            assertEquals(dateExpected, DateUtil.parseDateTime(s));
-            s = new Date(dateExpected).toGMTString();
-            assertEquals(dateExpected, DateUtil.parseDateTime(s));
-            s = new Date(dateExpected).toLocaleString();
-            assertEquals(dateExpected, DateUtil.parseDateTime(s));
+            // DateTime without time
+            Date d = new Date(dateExpected);
+            assertEquals(dateExpected, DateUtil.parseDateTime(d.toString()));
+            assertEquals(dateExpected, DateUtil.parseDateTime(d.toGMTString()));
+            assertEquals(dateExpected, DateUtil.parseDateTime(d.toLocaleString()));
+            assertEquals(dateExpected, DateUtil.parseDateTime(ConvertUtils.convert(d)));
+            assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
             assertEquals(dateExpected, DateUtil.parseDateTime("2/3/01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
@@ -993,15 +1127,7 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDateTime("03Feb2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 2001"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb2001"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb2001"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("Feb 03 2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("February 3, 2001"));
-            s = ConvertUtils.convert(new Date(dateExpected)); 
-            assertEquals(dateExpected, DateUtil.parseDateTime(s));
 
             // some zero testing
             datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 00:00:00.000").getTime();
@@ -1016,6 +1142,59 @@ Parse:
             assertEquals(parseDateTime("3/FeB/2001"), dateExpected);
             assertEquals(parseDateTime("03/feb/2001"), dateExpected);
             assertEquals(parseDateTime("03/FEB/2001"), dateExpected);
+            assertIllegalDateTime("Jan/Feb/2001");
+        }
+
+        @Test
+        public void testDate()
+        {
+            long dateExpected = java.sql.Date.valueOf("2001-02-03").getTime();
+
+            // Date
+            assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
+            assertEquals(dateExpected, DateUtil.parseDate("2/3/01"));
+            assertEquals(dateExpected, DateUtil.parseDate("2/3/01"));
+            assertEquals(dateExpected, DateUtil.parseDate("3-Feb-01"));
+            assertEquals(dateExpected, DateUtil.parseDate("3Feb01"));
+            assertEquals(dateExpected, DateUtil.parseDate("3Feb2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("03Feb01"));
+            assertEquals(dateExpected, DateUtil.parseDate("03Feb2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("3 Feb 01"));
+            assertEquals(dateExpected, DateUtil.parseDate("3 Feb 2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("Feb 03 2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("February 3, 2001"));
+            assertIllegalDate("2");
+            assertIllegalDate("2/3");
+            assertIllegalDate("2/3/2001 0:00:00");
+            assertIllegalDate("2/3/2001 12:00am");
+            assertIllegalDate("2/3/2001 12:00pm");
+        }
+
+
+        @Test 
+        public void testTime()
+        {
+            long hrs12 = TimeUnit.HOURS.toMillis(12);
+            long timeSecExpected = TimeUnit.HOURS.toMillis(4) + TimeUnit.MINUTES.toMillis(5) + TimeUnit.SECONDS.toMillis(6);
+            long timeMinExpected = TimeUnit.HOURS.toMillis(4) + TimeUnit.MINUTES.toMillis(5);
+            long timeHrExpected = TimeUnit.HOURS.toMillis(4);
+            assertEquals(timeHrExpected, parseTime("4"));
+            assertEquals(timeHrExpected, parseTime("4 am"));
+            assertEquals(timeHrExpected, parseTime("4AM"));
+            assertEquals(timeHrExpected + hrs12, parseTime("4pm"));
+            assertEquals(timeHrExpected + hrs12, parseTime("16"));
+            assertEquals(timeHrExpected + hrs12, parseTime("16:00:00"));
+            assertEquals(timeMinExpected, parseTime("4:05"));
+            assertEquals(timeSecExpected, parseTime("4:05:06"));
+            assertEquals(timeSecExpected, parseTime("4:05:06 am"));
+            assertEquals(timeSecExpected, parseTime("4:05:06AM"));
+            assertEquals(timeSecExpected, parseTime("4:05:06.0"));
+            assertEquals(timeSecExpected, parseTime("4:05:06.00"));
+            assertEquals(timeSecExpected, parseTime("4:05:06.000"));
+            assertEquals(timeSecExpected+7, parseTime("4:05:06.007"));
+            assertEquals(timeSecExpected+70, parseTime("4:05:06.07"));
+            assertEquals(timeSecExpected+700, parseTime("4:05:06.7"));
+            assertIllegalTime("2/3/2001 4:05:06");
         }
 
 
