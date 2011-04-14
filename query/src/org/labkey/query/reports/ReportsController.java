@@ -155,6 +155,12 @@ public class ReportsController extends SpringActionController
             return new ActionURL(SaveScriptReportAction.class, c);
         }
 
+        @Override
+        public ActionURL urlAjaxSaveScriptReport(Container c)
+        {
+            return new ActionURL(AjaxSaveScriptReportAction.class, c);
+        }
+
         public ActionURL urlUpdateRReportState(Container c)
         {
             return new ActionURL(UpdateScriptReportStateAction.class, c);
@@ -814,6 +820,80 @@ public class ReportsController extends SpringActionController
     {
         if (!ReportUtil.canCreateScript(getViewContext()))
             HttpView.throwUnauthorized("Only members of the Site Admin and Site Developers groups are allowed to create script views.");
+    }
+
+
+    @RequiresNoPermission
+    public class AjaxSaveScriptReportAction extends ApiAction<RReportBean>
+    {
+        @Override
+        public ApiResponse execute(RReportBean form, BindException errors) throws Exception
+        {
+            Report report = null;
+
+            try
+            {
+                if (getViewContext().getUser().isGuest())
+                {
+                    errors.reject("saveScriptReport", "You must be logged in to be able to save reports");
+                    return null;
+                }
+
+                report = form.getReport();
+
+                if (null == report)
+                {
+                    errors.reject("saveScriptReport", "Report not found.");
+                }
+                // on new reports, check for duplicates
+                else if (null == report.getDescriptor().getReportId())
+                {
+                    if (reportNameExists(report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(report.getDescriptor())))
+                    {
+                        errors.reject("saveScriptReport", "There is already a report with the name of: '" + report.getDescriptor().getReportName() +
+                                "'. Please specify a different name.");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                errors.reject("saveScriptReport", e.getMessage());
+            }
+
+            if (errors.hasErrors())
+                return null;
+
+            validatePermissions();
+            ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            response.put("success", true);
+            response.put("redirect", form.getRedirectUrl());
+
+            return response;
+        }
+
+        // TODO: Use shared method instead?
+        private boolean reportNameExists(String reportName, String key)
+        {
+            try
+            {
+                ViewContext context = getViewContext();
+
+                for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
+                {
+                    if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
+                        return true;
+                }
+
+                return false;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
     }
 
 
@@ -1526,7 +1606,8 @@ public class ReportsController extends SpringActionController
 
     private boolean reportNameExists(ViewContext context, String reportName, String key)
     {
-        try {
+        try
+        {
             for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
             {
                 if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))

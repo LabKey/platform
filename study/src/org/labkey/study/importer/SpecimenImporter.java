@@ -142,7 +142,7 @@ public class SpecimenImporter
                 else if (_dbType.indexOf(DATETIME_TYPE) >= 0)
                     throw new IllegalStateException("Java types for DateTime/Timestamp columns should be previously initalized.");
                 else if (_dbType.indexOf("FLOAT") >= 0 || _dbType.indexOf(NUMERIC_TYPE) >= 0)
-                    _javaType = Float.class;
+                    _javaType = Double.class;
                 else if (_dbType.indexOf("INT") >= 0)
                     _javaType = Integer.class;
                 else if (_dbType.indexOf(BOOLEAN_TYPE) >= 0)
@@ -161,8 +161,8 @@ public class SpecimenImporter
                 return JdbcType.TIMESTAMP;
             else if (getJavaType() == TimeOnlyDate.class)
                 return JdbcType.TIMESTAMP;
-            else if (getJavaType() == Float.class)
-                return JdbcType.REAL;
+            else if (getJavaType() == Double.class)
+                return JdbcType.DOUBLE;
             else if (getJavaType() == Integer.class)
                 return JdbcType.INTEGER;
             else if (getJavaType() == Boolean.class)

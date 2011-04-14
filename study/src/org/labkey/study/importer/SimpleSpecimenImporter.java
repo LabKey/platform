@@ -23,7 +23,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -262,11 +264,13 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         private final String tsvLabelCol;
         // additive, derivative, primarytype, and site all use ExternalId as the id column.
         private final String dbIdCol = "ExternalId";
+        private final String dbRowIdCol = "RowId";
         private final String dbLabelCol;
 
         // Maps of label -> id
         private final HashMap<String, Integer> existingKeyMap = new HashMap<String, Integer>();
         private final HashMap<String, Integer> keyMap = new HashMap<String, Integer>();
+        private int minId = 0;
         private int lastId = 0;
 
         LookupTable(TableInfo table, Container c, String tsvName, String foreignKeyCol, String tsvIdCol, String tsvLabelCol, String dbLabelCol)
@@ -284,13 +288,36 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         private void getKeyMap(TableInfo table, Container c)
                 throws SQLException
         {
+            List<Map<String, Object>> missingExternalId = new ArrayList<Map<String, Object>>();
             Filter filter = new SimpleFilter("Container", c.getId());
-            Map<String, Object>[] maps = Table.selectMaps(table, Sets.newCaseInsensitiveHashSet(dbIdCol, dbLabelCol), filter, null);
+            Map<String, Object>[] maps = Table.selectMaps(table, Sets.newCaseInsensitiveHashSet(dbRowIdCol, dbIdCol, dbLabelCol), filter, new Sort("RowId"));
             for (Map<String, Object> map : maps)
             {
                 Integer id = (Integer)map.get(dbIdCol);
+                if (id == null)
+                {
+                    missingExternalId.add(map);
+                }
+                else
+                {
+                    existingKeyMap.put((String)map.get(dbLabelCol), id);
+                    minId = Math.min(minId, id);
+                    lastId = Math.max(lastId, id);
+                }
+            }
+
+            // UNDONE: Temporary fix for 11.1: Create fake ExternalId for rows with null ExternalId
+            for (Map<String, Object> map : missingExternalId)
+            {
+                Integer rowId = (Integer)map.get(dbRowIdCol);
+                int id = --minId;
                 existingKeyMap.put((String)map.get(dbLabelCol), id);
-                lastId = Math.max(lastId, id);
+
+                SQLFragment sql = new SQLFragment();
+                sql.append("UPDATE ").append(table);
+                sql.append(" SET ").append(dbIdCol).append(" = ?").add(id);
+                sql.append(" WHERE ").append(dbRowIdCol).append(" = ?").add(rowId);
+                Table.execute(table.getSchema(), sql);
             }
         }
 

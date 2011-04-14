@@ -90,6 +90,7 @@ import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
 import org.labkey.query.sql.Query;
+import org.labkey.query.sql.QueryTableInfo;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -1234,8 +1235,11 @@ public class QueryServiceImpl extends QueryService
 			filterFrag = filter.getSQLFragment(dialect, columnMap);
 		}
 
-		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0 || Table.NO_ROWS == rowCount || forceSort))
-		{
+		if ((sort == null || sort.getSortList().size() == 0) &&
+            (rowCount > 0 || offset > 0 || Table.NO_ROWS == rowCount || forceSort) &&
+            // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
+            (!(table instanceof QueryTableInfo) || !((QueryTableInfo)table).hasSort()))
+        {
 			sort = createDefaultSort(selectColumns);
 		}
 

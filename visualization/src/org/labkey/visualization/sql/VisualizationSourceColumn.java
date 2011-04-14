@@ -5,10 +5,13 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -115,7 +118,9 @@ public class VisualizationSourceColumn
                             ".  The table may not exist, or you may not have permissions to read the data.");
                 }
 
-                ColumnInfo column = tinfo.getColumn(_name);
+                FieldKey dimensionKey = FieldKey.fromString(_name);
+                Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(tinfo, Collections.singleton(dimensionKey));
+                ColumnInfo column = cols.get(dimensionKey);
                 if (column == null)
                 {
                     throw new VisualizationSQLGenerator.GenerationException("Unable to find field " + _name + " in " + _schema.getName() + "." + _queryName +

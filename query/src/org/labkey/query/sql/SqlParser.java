@@ -611,14 +611,14 @@ public class SqlParser
         QIdentifier identType = (QIdentifier)nodeType;
         QExpr exprDefault = (QExpr)nodeDefault;
         boolean required = exprDefault == null;
-        ParameterType type = ParameterType.valueOf(identType.getIdentifier());
-        Object value = null==exprDefault ? null : type.convert(((IConstant)exprDefault).getValue());
-
+        ParameterType type = ParameterType.resolve(identType.getIdentifier());
         if (null == type)
         {
-            _parseErrors.add(new QueryParseException("Type is not supported: " + identType.getIdentifier(), null, identType.getLine(), identType.getColumn()));
+            _parseErrors.add(new QueryParseException("Parameter type is not supported: " + identType.getIdentifier(), null, identType.getLine(), identType.getColumn()));
             return null;
         }
+        Object value = null==exprDefault ? null : type.convert(((IConstant)exprDefault).getValue());
+
         return new QParameter(parameter, identName.getIdentifier(), type, required, value);
     }
     

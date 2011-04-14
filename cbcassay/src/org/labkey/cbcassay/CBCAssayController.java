@@ -458,7 +458,7 @@ public class CBCAssayController extends SpringActionController
                 }
 
                 QueryUpdateService updateService = quf.getTable().getUpdateService();
-                updateService.updateRows(getUser(), getContainer(), Collections.singletonList(newValues), Collections.singletonList(oldValues), Collections.<String, Object>emptyMap());
+                updateService.updateRows(getUser(), getContainer(), Collections.singletonList(newValues), Collections.singletonList(oldValues), null);
 
                 if (transaction)
                 {

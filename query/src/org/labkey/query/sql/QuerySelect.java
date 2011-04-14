@@ -983,6 +983,12 @@ groupByLoop:
                 f.append("(").append(sql).append(") ").append(alias);
                 return f;
             }
+
+            @Override
+            public boolean hasSort()
+            {
+                return _orderBy != null && !_orderBy.childList().isEmpty();
+            }
         };
 
         for (SelectColumn col : _columns.values())

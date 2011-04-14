@@ -35,8 +35,8 @@ public enum ParameterType
     NUMERIC(JdbcType.DECIMAL),
     REAL(JdbcType.REAL),
     SMALLINT(JdbcType.SMALLINT),
-    DATE(JdbcType.DATE),
-    TIME(JdbcType.TIME),
+//    DATE(JdbcType.DATE),
+//    TIME(JdbcType.TIME),
     TIMESTAMP(JdbcType.TIMESTAMP),
     TINYINT(JdbcType.TINYINT),
     VARCHAR(JdbcType.VARCHAR)
@@ -47,6 +47,18 @@ public enum ParameterType
     ParameterType(JdbcType type)
     {
         this.type = type;
+    }
+
+    public static ParameterType resolve(String s)
+    {
+        try
+        {
+            return ParameterType.valueOf(s);
+        }
+        catch (IllegalArgumentException x)
+        {
+            return null;
+        }
     }
 
     public Object convert(Object o)

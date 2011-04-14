@@ -326,22 +326,15 @@ public class DomainImpl implements Domain
                 addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
             }
 
-
-            if (keyColumnsChanged)
+            if (keyColumnsChanged && null != kind)
             {
-                if (null != kind)
+                boolean hasRows = kind.hasRows(this);
+                if (hasRows)
                 {
-                    SQLFragment sqlObjectIds = kind.sqlObjectIdsInDomain(this);
-                    SQLFragment sqlCount = new SQLFragment("SELECT COUNT(exp.object.objectId) AS value FROM exp.object WHERE exp.object.objectid IN (");
-                    sqlCount.append(sqlObjectIds);
-                    sqlCount.append(")");
-                    Map[] maps = Table.executeQuery(ExperimentService.get().getSchema(), sqlCount, Map.class);
-                    if (((Number) maps[0].get("value")).intValue() != 0)
-                    {
-                        throw new IllegalStateException("The required property cannot be changed when rows already exist.");
-                    }
+                    throw new IllegalStateException("The required property cannot be changed when rows already exist.");
                 }
             }
+
             if (transaction)
             {
                 ExperimentService.get().commitTransaction();

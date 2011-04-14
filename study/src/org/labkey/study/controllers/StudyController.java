@@ -868,12 +868,20 @@ public class StudyController extends BaseStudyController
 
                     if (canWrite)
                     {
-                        ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
-                        ActionButton deleteRows = new ActionButton(deleteRowsURL, "Delete");
-                        deleteRows.setRequiresSelection(true, "Delete selected row from this dataset?", "Delete selected rows from this dataset?");
-                        deleteRows.setActionType(ActionButton.Action.POST);
-                        deleteRows.setDisplayPermission(DeletePermission.class);
-                        buttonBar.add(deleteRows);
+                        TableInfo tableInfo = new StudyQuerySchema(StudyController.this.getStudy(), getUser(), false).getTable(def.getLabel());
+                        ActionURL deleteRowsURL = tableInfo.getDeleteURL(getContainer());
+                        if (deleteRowsURL != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
+                        {
+                            if (deleteRowsURL == null)
+                            {
+                                deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
+                            }
+                            ActionButton deleteRows = new ActionButton(deleteRowsURL, "Delete");
+                            deleteRows.setRequiresSelection(true, "Delete selected row from this dataset?", "Delete selected rows from this dataset?");
+                            deleteRows.setActionType(ActionButton.Action.POST);
+                            deleteRows.setDisplayPermission(DeletePermission.class);
+                            buttonBar.add(deleteRows);
+                        }
                     }
                 }
                 else if (isAssayDataset)
@@ -2423,7 +2431,7 @@ public class StudyController extends BaseStudyController
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;
 
-                qus.deleteRows(getViewContext().getUser(), getContainer(), keys, Collections.<String, Object>emptyMap());
+                qus.deleteRows(getViewContext().getUser(), getContainer(), keys, null);
 
                 scope.commitTransaction();
                 inTransaction = false;

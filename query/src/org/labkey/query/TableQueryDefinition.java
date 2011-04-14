@@ -67,6 +67,9 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                 case insertQueryRow:
                     url = table.getInsertURL(container);
                     break;
+                case deleteQueryRows:
+                    url = table.getDeleteURL(container);
+                    break;
                 case executeQuery:
                     url = table.getGridURL(container);
                     break;

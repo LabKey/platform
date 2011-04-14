@@ -93,4 +93,9 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
             return ContainerFilter.CURRENT;
         return _containerFilter;
     }
+
+    public boolean hasSort()
+    {
+        return false;
+    }
 }

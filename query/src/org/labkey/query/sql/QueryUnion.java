@@ -245,6 +245,12 @@ public class QueryUnion extends QueryRelation
                 f.append("(").append(sql).append(") ").append(alias);
                 return f;
             }
+
+            @Override
+            public boolean hasSort()
+            {
+                return _qorderBy != null && !_qorderBy.childList().isEmpty(); 
+            }
         };
 
         for (UnionColumn unioncol : _unionColumns.values())

@@ -177,7 +177,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             {
                 // We need to join differently if this is a specimen table, since the subject column name is 'PTID'
                 // rather than 'ParticipantId'.
-                boolean specimenTable = getParentTable() instanceof AbstractSpecimenTable;
+                boolean specimenTable = getParentTable() instanceof AbstractSpecimenTable || getParentTable() instanceof SpecimenSummaryTable;
                 sqlf.append(" AND ");
                 sqlf.append(getTableAlias(baseAliasName)).append(".SequenceNum = (select pv.sequencenum " +
                     "from " +

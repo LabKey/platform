@@ -82,7 +82,7 @@ class PostgreSqlDialect extends SqlDialect
                 "end, end-exec, except, fetch, for, foreign, freeze, from, full, grant, group, having, ilike, in, initially, " +
                 "inner, intersect, into, is, isnull, join, leading, left, like, limit, natural, not, notnull, null, offset, " +
                 "on, only, or, order, outer, over, overlaps, placing, primary, references, returning, right, select, similar, " +
-                "some, symmetric, table, then, to, trailing, union, unique, using, variadic, verbose, when, where, window, " +
+                "some, symmetric, table, then, to, trailing, union, unique, user, using, variadic, verbose, when, where, window, " +
                 "with" +
 
                 // for <= PostgreSQL 8.4

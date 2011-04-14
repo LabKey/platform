@@ -1799,7 +1799,7 @@ public class QueryController extends SpringActionController
                 if (ownTransaction)
                     dbSchema.getScope().beginTransaction();
 
-                updateService.deleteRows(getUser(), getContainer(), keyValues, Collections.<String, Object>emptyMap());
+                updateService.deleteRows(getUser(), getContainer(), keyValues, null);
 
                 if (ownTransaction)
                 {
@@ -1930,7 +1930,7 @@ public class QueryController extends SpringActionController
                 
                 if (insert)
                 {
-                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.<String, Object>emptyMap());
+                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), null);
                 }
                 else
                 {
@@ -1941,7 +1941,7 @@ public class QueryController extends SpringActionController
                         if (!(oldValues instanceof CaseInsensitiveMapWrapper))
                             oldValues = new CaseInsensitiveMapWrapper<Object>(oldValues);
                     }
-                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), Collections.<String, Object>emptyMap());
+                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
                 }
 
                 if (ownTransaction)

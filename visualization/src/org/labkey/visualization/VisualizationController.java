@@ -453,7 +453,9 @@ public class VisualizationController extends SpringActionController
 
                     if (tinfo != null)
                     {
-                        ColumnInfo col = tinfo.getColumn(form.getName());
+                        FieldKey dimensionKey = FieldKey.fromString(form.getName());
+                        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(tinfo, Collections.singleton(dimensionKey));
+                        ColumnInfo col = cols.get(dimensionKey);
                         if (col != null)
                         {
                             Table.TableResultSet rs = null;
@@ -470,16 +472,11 @@ public class VisualizationController extends SpringActionController
                                 rs = Table.executeQuery(uschema.getDbSchema(), sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParamsArray());
                                 Iterator<Map<String, Object>> it = rs.iterator();
 
-                                while (it.hasNext())
+                                while (rs.next())
                                 {
-                                    Map<String, Object> row = it.next();
-
-                                    if (row.containsKey(col.getName()))
-                                    {
-                                        Object o = row.get(col.getName());
-                                        if (o != null)
-                                            values.add(Collections.singletonMap("value", ConvertUtils.convert(o)));
-                                    }
+                                    Object o = rs.getObject(1);
+                                    if (o != null)
+                                        values.add(Collections.singletonMap("value", ConvertUtils.convert(o)));
                                 }
                             }
                             finally

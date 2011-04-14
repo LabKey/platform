@@ -1366,8 +1366,9 @@ td.labkey-site-nav-panel {
 }
 
 div.menu-wrapper {
-    width: 175px;
+    width: auto;
     overflow: hidden;
+    *overflow: visible;
 }
 
 /* The project area (the rest of the page besides the side and top panels) */
