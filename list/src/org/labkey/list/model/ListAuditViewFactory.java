@@ -193,6 +193,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));
+        addDetailsColumn(view);
 
         return view;
     }

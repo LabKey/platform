@@ -113,7 +113,7 @@ public class AuditLogTable extends FilteredTable
             //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
             try
             {
-                String parentLsid = AuditLogService.get().getDomainURI(_viewFactory.getName());
+                String parentLsid = AuditLogService.get().getDomainURI(_viewFactory.getEventType());
                 SimpleFilter filter = new SimpleFilter();
                 filter.addCondition("PropertyURI", parentLsid, CompareType.STARTS_WITH);
                 PropertyDescriptor[] pds = Table.select(OntologyManager.getTinfoPropertyDescriptor(), Table.ALL_COLUMNS, filter, null, PropertyDescriptor.class);
