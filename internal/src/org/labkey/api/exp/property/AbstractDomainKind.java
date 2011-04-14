@@ -18,8 +18,11 @@ package org.labkey.api.exp.property;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
@@ -29,6 +32,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.ArrayList;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -123,5 +127,38 @@ public abstract class AbstractDomainKind extends DomainKind
     public String getStorageSchemaName()
     {
         return null;
+    }
+
+    @Override
+    public boolean hasRows(Domain domain)
+    {
+        try
+        {
+            // CONSIDER changing to EXISTS test or LIMIT 1 for performance
+            SQLFragment sqlCount;
+            if (getStorageSchemaName() == null)
+            {
+                SQLFragment sqlObjectIds = sqlObjectIdsInDomain(domain);
+                sqlCount = new SQLFragment("SELECT COUNT(exp.object.objectId) AS value FROM exp.object WHERE exp.object.objectid IN (");
+                sqlCount.append(sqlObjectIds);
+                sqlCount.append(")");
+            }
+            else if (domain.getStorageTableName() != null)
+            {
+                String table = domain.getStorageTableName();
+                sqlCount = new SQLFragment("SELECT COUNT(*) AS value FROM " + getStorageSchemaName() + "." + table);
+            }
+            else
+            {
+                return false;
+            }
+
+            Map[] maps = Table.executeQuery(ExperimentService.get().getSchema(), sqlCount, Map.class);
+            return ((Number) maps[0].get("value")).intValue() != 0;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeException(x);
+        }
     }
 }

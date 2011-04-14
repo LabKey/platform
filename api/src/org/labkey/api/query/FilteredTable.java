@@ -120,6 +120,13 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     }
 
     @Override
+    public ActionURL getDeleteURL(Container container)
+    {
+        ActionURL url = super.getDeleteURL(container);
+        return url != null ? url : getRealTable().getDeleteURL(container);
+    }
+
+    @Override
     public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
     {
         StringExpression expr = super.getUpdateURL(columns, container);

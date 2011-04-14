@@ -345,6 +345,9 @@ LABKEY.Specimen = new function()
                 };
             }
 
+            var failure = LABKEY.Utils.getOnFailure(config);
+            var success = LABKEY.Utils.getOnSuccess(config);
+            
             // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
             // default callback and callback wrapper functions:
             if (!failure)

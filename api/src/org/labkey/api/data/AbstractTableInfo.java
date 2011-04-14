@@ -85,6 +85,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     protected DetailsURL _gridURL;
     protected DetailsURL _insertURL;
     protected DetailsURL _updateURL;
+    protected DetailsURL _deleteURL;
     protected ButtonBarConfig _buttonBarConfig;
     private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(1);
 
@@ -429,6 +430,19 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
+    public ActionURL getDeleteURL(Container container)
+    {
+        if (_deleteURL == LINK_DISABLER)
+        {
+            return LINK_DISABLER_ACTION_URL;
+        }
+        if (_deleteURL != null)
+        {
+            return _deleteURL.copy(container).getActionURL();
+        }
+        return null;
+    }
+
     public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
     {
         if (_updateURL == LINK_DISABLER)
@@ -495,6 +509,11 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         _insertURL = insertURL;
     }
     
+    public void setDeleteURL(DetailsURL deleteURL)
+    {
+        _deleteURL = deleteURL;
+    }
+
     public void setUpdateURL(DetailsURL updateURL)
     {
         _updateURL = updateURL;
@@ -621,6 +640,17 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             else
             {
                 _updateURL = parseDetailsURL(schema.getContainer(), xmlTable.getUpdateUrl(), errors);
+            }
+        }
+        if (xmlTable.isSetDeleteUrl())
+        {
+            if (StringUtils.isBlank(xmlTable.getDeleteUrl()))
+            {
+                _deleteURL = LINK_DISABLER;
+            }
+            else
+            {
+                _deleteURL = parseDetailsURL(schema.getContainer(), xmlTable.getDeleteUrl(), errors);
             }
         }
 

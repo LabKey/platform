@@ -95,4 +95,10 @@ abstract public class DomainKind implements Handler<String>
     abstract public DbScope getScope();
     abstract public String getStorageSchemaName();
     abstract public Set<PropertyStorageSpec.Index> getPropertyIndices();
+
+    /**
+     * Need to be able to tell if a domain has rows.
+     * Perhaps DomainKind should have getTableInfo() method.
+     */
+    abstract public boolean hasRows(Domain domain);
 }

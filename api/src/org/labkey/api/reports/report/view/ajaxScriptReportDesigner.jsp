@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.ScriptReport" %>
 <%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.AjaxScriptReportView.Mode" %>
@@ -34,6 +33,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.reports.report.RReport" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
@@ -58,6 +59,7 @@
     // data region name for the data tab.
     String dataTabRegionName = "reportRegion" + uid;
 
+    ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
     Pair<String, String>[] params = ctx.getActionURL().getParameters();
@@ -84,6 +86,8 @@
 %>
 <script type="text/javascript">LABKEY.requiresScript("/editarea/edit_area_full.js");</script>
 <script type="text/javascript">
+    if (<%=!readOnly%>)
+        window.onbeforeunload = LABKEY.beforeunload();
 
 // Since multiple reports could be rendered on the same page, use an anonymous function to provide a separate namespace
 // for all the properties and methods.  The Save button needs to call saveReport(), so new up a class and return an
@@ -95,6 +99,8 @@ var f_scope<%=uid%> = new (function() {
     var viewDivExtElement;
     var dataDivExtElement = null;
     var tabsDivExtElement;
+    var downloadLink;
+    var downloadHelp;
     var initialViewURL = <%=q(initialViewURL.toString())%>;   // Use original URL filter/sort params if data tab hasn't been used
     var baseViewURL = <%=q(baseViewURL.toString())%>;     // URL with filter and sort stripped out; we'll use filter/sort from data tab instead
     var dataFirstLoad = true;
@@ -105,12 +111,14 @@ var f_scope<%=uid%> = new (function() {
         scriptText = document.getElementById("<%=scriptId%>");
         viewDivExtElement = Ext.get("<%=viewDivId%>");
         tabsDivExtElement = Ext.get("tabsDiv<%=uid%>");
+        downloadLink = document.getElementById("downloadLink<%=uid%>");
+        downloadHelp = document.getElementById("downloadHelp<%=uid%>");
 
         var activeTab = 0;
         var items = new Array();
 
         items.push({title: 'View', autoHeight: true, contentEl: '<%=viewDivId%>', listeners: {activate: activateViewTab}});
-        items.push({title: 'Data', autoHeight: true, contentEl: 'dataDiv<%=uid%>', listeners: {activate: activateDataTab}});
+        items.push({title: 'Data', autoHeight: true, contentEl: 'dataTabDiv<%=uid%>', listeners: {activate: activateDataTab}});
 
         var sourceAndHelp = <%=sourceAndHelp%>;
         var help = <%=null != helpHtml%>;
@@ -350,6 +358,7 @@ var f_scope<%=uid%> = new (function() {
         if (dr)
         {
             dataRegion = dr;
+            updateDownloadLink(true);
 
             // On first load of the QWP, initialize the "previous view URL" to match the current dataregion state.  This
             // prevents an unnecessary refresh of the report in scenarios like "Source" -> "View" -> "Data" -> "View".
@@ -363,8 +372,23 @@ var f_scope<%=uid%> = new (function() {
 
     function dataFailure()
     {
+        updateDownloadLink(false);
         dataDivExtElement.update("Failed to retrieve data grid.");
         dataDivExtElement = null;  // Request the data grid again next time
+    }
+
+    function updateDownloadLink(success)
+    {
+        if (downloadLink)
+        {
+            downloadLink.href = success ? <%=q(report.getDownloadDataURL(ctx).toString())%> : "";
+            downloadLink.innerHTML = success ? "Download input data" : "";
+
+            if (downloadHelp)
+            {
+                downloadHelp.innerHTML = <%=q(helpPopup("Download input data", report.getDownloadDataHelpMessage()))%>;
+            }
+        }
     }
 
     function updateScript()
@@ -381,18 +405,72 @@ var f_scope<%=uid%> = new (function() {
         {
             var reportName = document.getElementById('reportName');
             reportName.value = name;
-            submit();
+            submit(null);
         }
         else
         {
-            // If they hit cancel then clear the submit bit (which will re-instate the dirty bit)
+            // If user hits cancel then clear the submit bit (which will re-instate the dirty bit)
             LABKEY.setSubmit(false);
         }
     }
 
-    function submit()
+    function submit(previousName)
     {
-        document.getElementById('renderReport').submit();
+        var form = document.getElementById('renderReport');
+
+        Ext.Ajax.request({
+            url: <%=q(saveURL.toString())%>,
+            method: 'POST',
+            success: saveSuccess,
+            failure: saveFailure,
+            form: form
+        });
+
+        // This clears the name in the form on first save, just in case the save fails (e.g., due to existing report by same name)
+        document.getElementById('reportName').value = previousName;
+    }
+
+    function saveSuccess(response)
+    {
+        var bean = Ext.util.JSON.decode(response.responseText);
+
+        if (bean.success)
+        {
+            window.location = bean.redirect;
+        }
+        else
+        {
+            saveFailure(response);
+        }
+    }
+
+    function saveFailure(response)
+    {
+        var message = '';
+
+        if (response.responseText)
+        {
+            var bean = Ext.util.JSON.decode(response.responseText);
+            var errors = bean.errors;
+
+            if (errors && errors.length > 0)
+            {
+                for (var i = 0; i < errors.length; i++)
+                {
+                    message = message + errors[i].message + '\n';
+                }
+
+                Ext.Msg.alert('Save Failed', message);
+                return;
+            }
+        }
+
+        if (response.statusText)
+        {
+            message = response.statusText;
+        }
+
+        Ext.Msg.alert('Save Failed', message);
     }
 
     // Need to make this function "public" -- callable by the Save button
@@ -417,7 +495,7 @@ var f_scope<%=uid%> = new (function() {
             }
             else
             {
-                document.getElementById('renderReport').submit();
+                submit(reportName.value);
             }
         }
     };
@@ -434,7 +512,21 @@ var f_scope<%=uid%> = new (function() {
 <div id="tabsDiv<%=uid%>" class="extContainer">
     <div id="<%=viewDivId%>" class="x-hide-display">
     </div>
-    <div id="dataDiv<%=uid%>" class="x-hide-display">
+    <div id="dataTabDiv<%=uid%>" class="x-hide-display">
+        <table width="100%"><%
+            if (sourceAndHelp && report instanceof RReport)
+            {
+            %>
+            <tr><td width="100%">
+                <a href="" id="downloadLink<%=uid%>"></a><span id="downloadHelp<%=uid%>"></span>
+            </td></tr><%
+            }
+            %>
+            <tr><td width="100%">
+                <div id="dataDiv<%=uid%>">
+                </div>
+            </td></tr>
+        </table>
     </div>
     <div id="scriptDiv<%=uid%>" class="x-hide-display">
         <form id="renderReport" method="post">
@@ -453,11 +545,7 @@ var f_scope<%=uid%> = new (function() {
             </td></tr><%
 
             if (!readOnly)
-            { %>
-            <script type="text/javascript">
-                window.onbeforeunload = LABKEY.beforeunload();
-            </script><%
-
+            {
                 if (isAdmin)
                 {
             %>

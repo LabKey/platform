@@ -1868,7 +1868,7 @@ LABKEY.DataRegion._filterUI =
             var c;
             if ("DATE" == mappedType)
             {
-                c = new Ext.form.DateField({id: id, width:180, renderTo:inputDiv});
+                c = new Ext.form.DateField({id: id, width:180, renderTo:inputDiv, altFormats: "m/d/Y|n/j/Y|n/j/y|m/j/y|n/d/y|m/j/Y|n/d/Y|m-d-y|m-d-Y|m/d|m-d|md|mdy|mdY|d|Y-m-d|j-M-Y|j M Y|j-M-y|j M y"});
             }
             else if ("INT" == mappedType)
             {
@@ -2263,7 +2263,9 @@ LABKEY.DataRegion._filterUI =
 
         if (Ext.isEmpty(allValues))
         {
-            alert("filter value for field '" + fieldName + "' cannot be empty.");
+            // We'll get an empty value if the Ext field can't validate the input, it doesn't necessarily mean
+            // that the user left it blank
+            alert("Filter value for field '" + fieldName + "' is not valid.");
             return undefined;
         }
         var values = allValues.split(";");
@@ -2288,7 +2290,9 @@ LABKEY.DataRegion._filterUI =
 
         if (Ext.isEmpty(value))
         {
-            alert("filter value for field '" + fieldName + "' cannot be empty.");
+            // We'll get an empty value if the Ext field can't validate the input, it doesn't necessarily mean
+            // that the user left it blank
+            alert("Filter value for field '" + fieldName + "' is not valid.");
             return undefined
         }
 

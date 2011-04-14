@@ -71,6 +71,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     private DetailsURL _gridURL;
     private DetailsURL _insertURL;
+    private DetailsURL _deleteURL;
     private DetailsURL _updateURL;
     private DetailsURL _detailsURL;
     protected ButtonBarConfig _buttonBarConfig;
@@ -578,6 +579,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         {
             _insertURL = DetailsURL.fromString(xmlTable.getInsertUrl());
         }
+        if (xmlTable.getDeleteUrl() != null)
+        {
+            _deleteURL = DetailsURL.fromString(xmlTable.getDeleteUrl());
+        }
         if (xmlTable.getUpdateUrl() != null)
         {
             _updateURL = DetailsURL.fromString(xmlTable.getUpdateUrl());
@@ -769,6 +774,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         if (_insertURL != null)
             return _insertURL.copy(container).getActionURL();
+        return null;
+    }
+
+    public ActionURL getDeleteURL(Container container)
+    {
+        if (_deleteURL != null)
+            return _deleteURL.copy(container).getActionURL();
         return null;
     }
 

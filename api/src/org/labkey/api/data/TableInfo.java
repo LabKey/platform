@@ -153,6 +153,17 @@ public interface TableInfo
     ActionURL getInsertURL(Container container);
 
     /**
+     * Return the delete URL expression for the table or null.
+     * If the table provides an update service via {@link #getUpdateService()},
+     * a default action will be provided.
+     * Instead of calling this method directly, callers should pass
+     * {@link QueryAction#deleteQueryRows} to
+     * {@link org.labkey.api.query.QueryView#urlFor(QueryAction)} or
+     * {@link org.labkey.api.query.UserSchema#urlFor(org.labkey.api.query.QueryAction)}.
+     */
+    ActionURL getDeleteURL(Container container);
+
+    /**
      * Return the update URL expression for a particular record or null.
      * If the table provides an update service via {@link #getUpdateService()},
      * a default update view will be provided.
