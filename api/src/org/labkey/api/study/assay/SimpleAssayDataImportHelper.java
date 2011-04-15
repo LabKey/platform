@@ -55,4 +55,9 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
     {
         target.put("DataId", _data.getRowId());
     }
+
+    @Override
+    public void afterImportObject(Map<String, Object> map) throws SQLException
+    {
+    }
 }

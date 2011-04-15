@@ -139,7 +139,7 @@ public class OntologyManager
         return insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rows, ensureObjects, null);
     }
 
-    public static List<String> insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects, Logger logger) throws SQLException, ValidationException
+    private static List<String> insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects, Logger logger) throws SQLException, ValidationException
     {
 		CPUTimer total  = new CPUTimer("insertTabDelimited");
 		CPUTimer before = new CPUTimer("beforeImport");
@@ -285,12 +285,12 @@ public class OntologyManager
      *
      * This code is made complicated by the fact that while we are trying to move toward a TableInfo/ColumnInfo view
      * of the world, validators are attached to PropertyDescriptors.  Also, missing value handling is attached
-     * to PropertyDescriptors
+     * to PropertyDescriptors.
      *
      * The original version of this method expects a data be be a map PropertyURI->value.  This version will also
      * accept Name->value.
      *
-     * Name->Value is preferred we're using TableInfo after all.
+     * Name->Value is preferred, we are using TableInfo after all.
      */
     public static List<String> insertTabDelimited(TableInfo tableInsert, Container c, User user,
             UpdateableTableImportHelper helper,
@@ -394,10 +394,12 @@ public class OntologyManager
                     }
                     try
                     {
+                        String key = col.getName();
+                        if (!parameterMap.containsKey(key))
+                            key = propertyURI;
                         if (null == propertyTypes[i])
                         {
                             // some built-in columns won't have parameters (createdby, etc)
-                            String key = null == propertyURI ? col.getName() : propertyURI;
                             if (parameterMap.containsKey(key))
                             {
                                 assert !(value instanceof MvFieldWrapper);
@@ -411,7 +413,7 @@ public class OntologyManager
                         {
                             Pair<Object,String> p = new Pair<Object,String>(value,null);
                             convertValuePair(pd, propertyTypes[i], p);
-                            parameterMap.put(col.getPropertyURI(), p.first);
+                            parameterMap.put(key, p.first);
                             if (null != p.second)
                             {
                                 String mvName = col.getMvColumnName();
@@ -428,9 +430,9 @@ public class OntologyManager
                     }
 				}
                 
-                helper.bindAdditionalParameters(map, parameterMap);
-                
+                helper.bindAdditionalParameters(currentRow, parameterMap);
                 parameterMap.execute();
+                helper.afterImportObject(currentRow);
                 rowCount++;
             }
 
@@ -480,7 +482,7 @@ public class OntologyManager
 	{
 		/** return LSID for new or existing Object
          *
-         * may modifiy map
+         * may modify map
          */
 		String beforeImportObject(Map<String, Object> map) throws SQLException;
 
@@ -492,6 +494,11 @@ public class OntologyManager
 
     public interface UpdateableTableImportHelper extends ImportHelper
     {
+        /**
+         * may be used to process attachments, for auditing, etc etc
+         */
+        void afterImportObject(Map<String, Object> map) throws SQLException;
+
         /** may set parameters directly for columns that are not exposed by tableinfo
          * e.g. "_key"
          * 

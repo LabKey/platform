@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1003,6 +1004,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
+    {
+        return null;
+    }
+
+    @Override
+    public CaseInsensitiveHashSet skipProperties()
     {
         return null;
     }

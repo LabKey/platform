@@ -17,6 +17,7 @@ package org.labkey.api.study.assay;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
@@ -322,6 +323,12 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
 
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
+    {
+        return null;
+    }
+
+    @Override
+    public CaseInsensitiveHashSet skipProperties()
     {
         return null;
     }

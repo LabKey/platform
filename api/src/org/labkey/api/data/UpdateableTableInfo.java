@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.security.User;
 
 import java.sql.Connection;
@@ -73,12 +74,20 @@ public interface UpdateableTableInfo
      * Some columns in the SchemaTableInfo may be aliased in the QueryTableInfo.  This map describes the mapping.
      *
      * physical column -> query column
-     *
      * e.g. for list if the key column is named "Name" then this map should have ("key" -> "Name")
+     *
+     * TODO this should probably be handled by a tranform step, and removed from this api
      */
     @Nullable
     CaseInsensitiveHashMap<String> remapSchemaColumns();
 
+    /**
+     * if table.getDomain() is not null, you can use this method to skip properties that should not be
+     * persisted in the exp.ObjectProperites.  This happens when there is a PropertyDescriptor that actually
+     * describes a column in the base-table (e.g. Key column in list)
+     */
+    @Nullable
+    CaseInsensitiveHashSet skipProperties();
 
     Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException;
 }
