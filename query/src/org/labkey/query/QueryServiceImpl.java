@@ -1239,7 +1239,7 @@ public class QueryServiceImpl extends QueryService
             (rowCount > 0 || offset > 0 || Table.NO_ROWS == rowCount || forceSort) &&
             // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
             (!(table instanceof QueryTableInfo) || !((QueryTableInfo)table).hasSort()))
-        {
+		{
 			sort = createDefaultSort(selectColumns);
 		}
 

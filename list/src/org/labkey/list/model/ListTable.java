@@ -17,6 +17,7 @@
 package org.labkey.list.model;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
@@ -277,6 +278,14 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
             m.put("key", _list.getKeyName());
             return m;
         }
+        return null;
+    }
+
+    @Override
+    public CaseInsensitiveHashSet skipProperties()
+    {
+        if (!_list.getKeyName().isEmpty())
+            return new CaseInsensitiveHashSet(_list.getKeyName());
         return null;
     }
 

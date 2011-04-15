@@ -215,6 +215,11 @@ class DatasetImportHelper implements OntologyManager.UpdateableTableImportHelper
         target.put("_key", key==null ? "" : String.valueOf(key));
     }
 
+    @Override
+    public void afterImportObject(Map<String, Object> map) throws SQLException
+    {
+    }
+
     public void afterBatchInsert(int currentRow) throws SQLException
     {
     }

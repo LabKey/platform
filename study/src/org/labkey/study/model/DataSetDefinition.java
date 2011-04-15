@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1002,6 +1003,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             return m;
+        }
+
+        @Override
+        public CaseInsensitiveHashSet skipProperties()
+        {
+            return null;
         }
     }
 

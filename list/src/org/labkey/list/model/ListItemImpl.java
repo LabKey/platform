@@ -71,7 +71,8 @@ public class ListItemImpl implements ListItem
     ListItm _itm;
     Map<String, ObjectProperty> _properties;
     Map<String, ObjectProperty> _oldProperties;
-    private static final KeyIncrementer _keyIncrementer = new KeyIncrementer();
+    // UNDONE: isn't this better on the ListDefinition class?
+    public static final KeyIncrementer _keyIncrementer = new KeyIncrementer();
     private static final Logger _log = Logger.getLogger(ListItemImpl.class);
 
     public ListItemImpl(ListDefinitionImpl list, ListItm item)
@@ -356,7 +357,7 @@ public class ListItemImpl implements ListItem
         }
     }
 
-    private static class KeyIncrementer
+    public static class KeyIncrementer
     {
         private Map<Integer, Integer> _lastKeyByList = new HashMap<Integer, Integer>();
         private static final Object INCREMENT_SYNC = new Object();
