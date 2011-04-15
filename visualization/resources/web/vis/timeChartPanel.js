@@ -138,6 +138,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 disabled: true,
                 chartLayout: this.chartInfo.chartLayout,
                 mainTitle: this.chartInfo.title,
+                lineWidth: this.chartInfo.lineWidth,
                 subjectNounSingular: this.viewInfo.subjectNounSingular,
                 listeners: {
                     scope: this,
@@ -330,6 +331,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorOverviewPanel.updateOverview(this.saveReportInfo);
             this.editorYAxisPanelVar.setLabel(measure.label);
             this.editorChartsPanel.setMainTitle(measure.queryName);
+            this.editorChartsPanel.setLineWidth(this.chartInfo.lineWidth);
         }
     },
 
@@ -507,7 +509,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     data: this.chartSubjectData[subject] ? this.chartSubjectData[subject][yAxisSeries] : [],
                     xProperty:"interval",
                     yProperty: "dataValue",
-                    dotShape: 'circle'
+                    style: {lineWidth: this.chartInfo.lineWidth}
                 });
             }
         }
@@ -697,6 +699,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 {axis: {multiSelect: "false", name: "y-axis", label: "", scale: "linear", range: {type: 'automatic'}}, measure: {}}
             ],
             chartLayout: 'single',
+            lineWidth: 4,
             subject: {},
             title: '',
             filterUrl: LABKEY.Visualization.getDataFilterFromURL(),
@@ -708,6 +711,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         return {
             title: this.editorChartsPanel.getMainTitle(),
             chartLayout: this.editorChartsPanel.getChartLayout(),
+            lineWidth: this.editorChartsPanel.getLineWidth(),
             subject: this.subjectSelector.getSubject(),
             measures: [
                 { // x-axis information

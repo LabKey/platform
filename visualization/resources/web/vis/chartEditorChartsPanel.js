@@ -103,6 +103,21 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             }
         });
 
+        // slider field to set the line width for the chart(s)
+        this.lineWidthSliderField = new Ext.form.SliderField({
+            fieldLabel: 'Line Width',
+            width: 300,
+            value: this.lineWidth || 4, // default to 4 if not specified
+            increment: 1,
+            minValue: 0,
+            maxValue: 10
+        });
+        this.lineWidthSliderField.slider.on('changecomplete', function(cmp, newVal, thumb) {
+            this.lineWidth = newVal;
+            this.fireEvent('chartDefinitionChanged', false);
+        }, this);
+        columnTwoItems.push(this.lineWidthSliderField);
+
         this.items = [{
             border: false,
             layout: 'column',
@@ -136,6 +151,10 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         return this.chartLayout;
     },
 
+    getLineWidth: function(){
+        return this.lineWidth;
+    },
+
     setMainTitle: function(newMainTitle){
         this.mainTitle = newMainTitle;
         Ext.getCmp('chart-title-textfield').setValue(newMainTitle);
@@ -165,6 +184,11 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             this.chartLayoutPerDimensionRadio.setValue(true);
             this.chartLayoutPerDimensionRadio.resumeEvents();
         }
+    },
+
+    setLineWidth: function(newLineWidth){
+        this.lineWidth = newLineWidth;
+        this.lineWidthSliderField.setValue(newLineWidth);
     },
 
     disableDimensionOption: function(hasDimension){
