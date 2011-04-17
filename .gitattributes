@@ -2298,7 +2298,6 @@ study/resources/schemas/dbscripts/postgresql/study-10.31-10.32.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.32-10.33.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.39-10.391.sql -text
 study/resources/schemas/dbscripts/postgresql/study-8.30-9.10.sql -text
-study/resources/schemas/dbscripts/postgresql/study-8.301-9.10.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.10-9.20.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.20-9.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.201-9.30.sql -text
