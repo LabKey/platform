@@ -17,7 +17,7 @@
 package org.labkey.bigiron.sas;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 
@@ -33,7 +33,7 @@ import java.sql.SQLException;
 // Supports the SAS 9.1 SAS/SHARE JDBC driver
 public class Sas91Dialect extends SasDialect
 {
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
     {
         return new Sas91ColumnMetaDataReader(rsCols);
     }

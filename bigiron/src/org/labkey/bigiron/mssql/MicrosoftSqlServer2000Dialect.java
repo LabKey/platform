@@ -20,7 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlScriptParser;
@@ -704,7 +703,7 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
         return true;
     }
 
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
     {
         return new SqlServerColumnMetaDataReader(rsCols);
     }

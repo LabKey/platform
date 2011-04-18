@@ -614,9 +614,17 @@ class PostgreSqlDialect extends SqlDialect
 
     // Do dialect-specific work after schema load, if necessary
 
-    // TODO: Shift to single table
+    // TODO: Remove this -- now using column meta data to determine this
     public void prepareNewDbSchema(DbSchema schema)
     {
+        // Paranoid: count the sequences we determined via column meta data.  We'll check at the end to verify the method
+        // below produces the same count.
+        int sequences = 0;
+
+        for (SchemaTableInfo ti : schema.getTables())
+            if (null != ti.getSequence())
+                sequences++;
+
         ResultSet rsSeq = null;
         try
         {
@@ -647,7 +655,8 @@ class PostgreSqlDialect extends SqlDialect
                     String sequence = src.substring(start + 1, end);
                     if (!sequence.toLowerCase().startsWith(schema.getName().toLowerCase() + "."))
                         sequence = schema.getName() + "." + sequence;
-                    t.setSequence(sequence);
+                    assert sequence.equals(t.getSequence());
+                    sequences--;
                 }
             }
         }
@@ -658,6 +667,7 @@ class PostgreSqlDialect extends SqlDialect
         finally
         {
             ResultSetUtil.close(rsSeq);
+            assert sequences == 0;
         }
     }
 
@@ -1027,21 +1037,21 @@ class PostgreSqlDialect extends SqlDialect
         return true;
     }
 
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
     {
         // Retrieve and pass in the previously queried scale values for this scope.
-        return new PostgreSQLColumnMetaDataReader(rsCols, scope);
+        return new PostgreSQLColumnMetaDataReader(rsCols, schema);
     }
 
 
     private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
     {
-        private final DbScope _scope;
+        private final DbSchema _schema;
 
-        public PostgreSQLColumnMetaDataReader(ResultSet rsCols, DbScope scope)
+        public PostgreSQLColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
         {
             super(rsCols);
-            _scope = scope;
+            _schema = schema;
             assert null != _userDefinedTypeScales;
 
             _nameKey = "COLUMN_NAME";
@@ -1083,7 +1093,7 @@ class PostgreSqlDialect extends SqlDialect
                 if (null == scale)
                 {
                     // Some domain wasn't there when we initialized the datasource, so reload now.  This will happpen at bootstrap.
-                    initializeUserDefinedTypes(_scope);
+                    initializeUserDefinedTypes(_schema.getScope());
                     scale = _userDefinedTypeScales.get(typeName);
                 }
 
@@ -1094,6 +1104,26 @@ class PostgreSqlDialect extends SqlDialect
             }
 
             return super.getScale();
+        }
+
+        @Override
+        public String getSequence() throws SQLException
+        {
+            String src = _rsCols.getString("COLUMN_DEF");
+
+            int start = src.indexOf('\'');
+            int end = src.lastIndexOf('\'');
+
+            if (end > start)
+            {
+                String sequence = src.substring(start + 1, end);
+                if (!sequence.toLowerCase().startsWith(_schema.getName().toLowerCase() + "."))
+                    sequence = _schema.getName() + "." + sequence;
+
+                return sequence;
+            }
+
+            return null;
         }
     }
 
