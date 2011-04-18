@@ -304,7 +304,6 @@ var f_scope<%=uid%> = new (function() {
                 showDetailsColumn: false,
                 showUpdateColumn: false,
                 showRecordSelectors: false,
-                showDeleteButton: false,    // TODO: Remove when #11998 is fixed
                 renderTo: dataDivExtElement,
                 maskEl: tabsDivExtElement,
                 success: dataSuccess,

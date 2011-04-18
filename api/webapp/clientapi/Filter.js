@@ -273,7 +273,7 @@ LABKEY.Filter = new function()
             return result;
         },
 
-        /** @private Returns an filter type for the urlSuffix. */
+        /** @private Returns a filter type for the urlSuffix. */
         getFilterTypeForURLSuffix : function (urlSuffix)
         {
             return urlMap[urlSuffix];
