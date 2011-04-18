@@ -35,9 +35,10 @@ public class TableXmlUtils
 {
     private static final Logger _log = Logger.getLogger(TableXmlUtils.class);
 
-    public static TablesDocument getXmlDocumentFromMetaData(String dbSchemaName, boolean bFull) throws Exception
+    public static TablesDocument createXmlDocumentFromMetaData(String dbSchemaName, boolean bFull) throws Exception
     {
         DbSchema dbSchema = DbSchema.createFromMetaData(dbSchemaName);
+        dbSchema.forceLoadAllTables(); // TODO: Remove once tableinfos are cached
         TablesDocument xmlTablesDoc = TablesDocument.Factory.newInstance();
         TablesDocument.Tables xmlTables = xmlTablesDoc.addNewTables();
 
@@ -60,7 +61,7 @@ public class TableXmlUtils
             TablesDocument tablesDocMetaData;
             TablesDocument tablesDocFromXml = null;
 
-            tablesDocMetaData = getXmlDocumentFromMetaData(dbSchemaName, false);
+            tablesDocMetaData = createXmlDocumentFromMetaData(dbSchemaName, false);
             Resource r = DbSchema.getSchemaResource(dbSchemaName);
             if (null != r)
                 xmlStream = r.getInputStream();

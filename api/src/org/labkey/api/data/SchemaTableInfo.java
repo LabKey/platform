@@ -756,6 +756,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public void setSequence(String sequence)
     {
+        assert null == _sequence : "Sequence already set for " + getName() + "! " + _sequence + " vs. " + sequence;
         _sequence = sequence;
     }
 

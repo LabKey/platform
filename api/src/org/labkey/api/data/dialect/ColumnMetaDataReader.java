@@ -70,6 +70,11 @@ public abstract class ColumnMetaDataReader
         return _rsCols.getInt(_nullableKey) == 1;
     }
 
+    public String getSequence() throws SQLException
+    {
+        return null;
+    }
+
     public int getPosition() throws SQLException
     {
         return _rsCols.getInt(_postionKey);

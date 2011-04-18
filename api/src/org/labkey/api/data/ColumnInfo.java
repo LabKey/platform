@@ -1121,7 +1121,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         else
             rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);
 
-        ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols, parentTable.getSchema().getScope());
+        ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols, parentTable.getSchema());
 
         while (rsCols.next())
         {
@@ -1165,6 +1165,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
             if (nonEditableColNames.contains(col.getPropertyName()))
                 col.setUserEditable(false);
+
+            if (col.isAutoIncrement())
+                parentTable.setSequence(reader.getSequence());
 
             colList.put(col.getName(), col);
         }

@@ -28,7 +28,6 @@ import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.TableType;
@@ -83,10 +82,10 @@ public class DbSchema
         return module.getModuleResource("/schemas/" + schemaName + ".xml");
     }
 
-    // This method uses the old code path; method below uses the new code path  TODO: test and migrate everything to new code path
+
     public static DbSchema createFromMetaData(String dbSchemaName) throws SQLException, NamingException, ServletException
     {
-        return oldCreateFromMetaData(dbSchemaName, DbScope.getLabkeyScope());
+        return createFromMetaData(dbSchemaName, DbScope.getLabkeyScope());
     }
 
 
@@ -204,7 +203,7 @@ public class DbSchema
     }
 
 
-    private SchemaTableInfo loadTable(String tableName) throws SQLException
+    SchemaTableInfo loadTable(String tableName) throws SQLException
     {
         SchemaTableInfo ti = createTableFromDatabaseMetaData(tableName);
         TableType xmlTable = _tableXmlMap.get(tableName);
@@ -246,99 +245,6 @@ public class DbSchema
         loader.load();
 
         return ti;
-    }
-
-
-    public static DbSchema oldCreateFromMetaData(String schemaName, DbScope scope) throws SQLException
-    {
-        Connection conn = null;
-        DbSchema schema = new DbSchema(schemaName, scope);
-        String dbName = scope.getDatabaseName();
-
-        long startLoad = System.currentTimeMillis();
-
-        _log.info("Loading DbSchema \"" + scope.getDisplayName() + "." + schemaName + "\"");
-
-        // Remember if we're using a connection that somebody lower on the call stack checked out,
-        // and therefore shouldn't close it out from under them
-        boolean inTransaction = scope.isTransactionActive();
-
-        try
-        {
-            conn = scope.getConnection();
-            DatabaseMetaData dbmd = conn.getMetaData();
-
-            String[] types = {"TABLE", "VIEW",};
-
-            ResultSet rs;
-
-            if (schema.getSqlDialect().treatCatalogsAsSchemas())
-                rs = dbmd.getTables(schemaName, null, "%", types);
-            else
-                rs = dbmd.getTables(dbName, schemaName, "%", types);
-
-            ArrayList<SchemaTableInfo> list = new ArrayList<SchemaTableInfo>();
-
-            try
-            {
-                while (rs.next())
-                {
-                    String metaDataName = rs.getString("TABLE_NAME").trim();
-
-                    // Ignore system tables
-                    if (schema.getSqlDialect().isSystemTable(metaDataName))
-                        continue;
-
-                    // skip if it looks like one of our temp table names: name$<32hexchars>
-                    if (metaDataName.length() > 33 && metaDataName.charAt(metaDataName.length()-33) == '$')
-                        continue;
-
-                    SchemaTableInfo ti = new SchemaTableInfo(metaDataName, schema);
-                    ti.setMetaDataName(metaDataName);
-                    ti.setTableType(rs.getString("TABLE_TYPE"));
-                    String description = rs.getString("REMARKS");
-                    if (null != description && !"No comments".equals(description))  // Consider: Move "No comments" exclusion to SAS dialect?
-                        ti.setDescription(description);
-                    list.add(ti);
-                }
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
-
-            for (SchemaTableInfo ti : list)
-            {
-                ti.loadFromMetaData(dbmd, dbName, schemaName);
-                schema.addTable(ti.getName(), ti);
-            }
-
-            schema.getSqlDialect().prepareNewDbSchema(schema);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Exception loading schema \"" + schemaName + "\" from database metadata", e);
-            throw e;
-        }
-        finally
-        {
-            try
-            {
-                if (!inTransaction && null != conn) scope.releaseConnection(conn);
-            }
-            catch (Exception x)
-            {
-                _log.error("DbSchema.createFromMetaData()", x);
-            }
-        }
-
-        long elapsed = System.currentTimeMillis() - startLoad;
-
-        // Seems impossible, but we've seen a negative elapsed time (clock change in the middle of a schema load?).  See #11739.
-        if (elapsed >= 0)
-            _log.debug("" + schema.getTables().size() + " tables loaded in " + DateUtil.formatDuration(elapsed));
-
-        return schema;
     }
 
 
@@ -425,7 +331,15 @@ public class DbSchema
     // Note: TableInfos are fetched on-demand, so this is a very expensive method to call!
     public Collection<SchemaTableInfo> getTables()
     {
-        return Collections.unmodifiableCollection(_tables.values());
+        Collection<SchemaTableInfo> tables = new LinkedList<SchemaTableInfo>();
+
+        for (String tableName : _tableNames)
+        {
+            SchemaTableInfo table = getTable(tableName);
+            tables.add(table);
+        }
+
+        return Collections.unmodifiableCollection(tables);
     }
 
     public SchemaTableInfo getTable(String tableName)
@@ -575,7 +489,7 @@ public class DbSchema
 
             //noinspection unchecked
             Map<String, Object>[] maps = (Map<String, Object>[]) Table.select(testTable, Table.ALL_COLUMNS, filter, null, Map.class);
-            assertTrue(maps != null && maps.length == 1);
+            assertTrue(maps.length == 1);
             m = maps[0];
 
             assertTrue("Rollback did not appear to work.", (Integer) m.get("IntNotNull") == 0);
@@ -707,7 +621,7 @@ public class DbSchema
 
     private static Integer checkContainerColumns(String dbSchemaName, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId) throws SQLException
     {
-        int row = rowId.intValue();
+        int row = rowId;
         DbSchema curSchema = DbSchema.get(dbSchemaName);
         SQLFragment sbSql = new SQLFragment();
 
@@ -770,14 +684,14 @@ public class DbSchema
 
         sbSqlCmd.append(sbSql);
 
-        return new Integer(row);
+        return row;
     }
 
     public static String checkAllContainerCols(boolean bfix) throws SQLException
     {
         List<Module> modules = ModuleLoader.getInstance().getModules();
         ResultSet rs1 = null;
-        Integer lastRowId = new Integer(0);
+        Integer lastRowId = 0;
         DbSchema coreSchema = CoreSchema.getInstance().getSchema();
 
         List<ColumnInfo> listColInfos = new ArrayList<ColumnInfo>();

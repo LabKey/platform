@@ -463,7 +463,7 @@ public class DbScope
     // External data source case: no schema.xml file to check, no isStale() check (for now)
     protected DbSchema loadSchema(String schemaName) throws Exception
     {
-        return DbSchema.oldCreateFromMetaData(schemaName, this);
+        return DbSchema.createFromMetaData(schemaName, this);
     }
 
 

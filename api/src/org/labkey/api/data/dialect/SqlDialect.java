@@ -900,6 +900,6 @@ public abstract class SqlDialect
     public abstract boolean isEditable();
     public abstract boolean isSqlServer();
     public abstract boolean isPostgreSQL();
-    public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope);
+    public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
 }

@@ -47,6 +47,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -562,6 +563,7 @@ public class StorageProvisioner
                 try
                 {
                     schema = DbSchema.createFromMetaData(domainReport.getSchemaName());
+                    schema.forceLoadAllTables();
                     schemas.put(domainReport.getSchemaName(), schema);
                 }
                 catch (Exception e)
@@ -872,14 +874,17 @@ renaming a property AND toggling mvindicator on in the same change.
         }
 
 
+        // TODO: We have this (or something much like it) in the SqlDialect -- merge!
         private ColumnMetadata getJdbcColumnMetadata(String schema, String table, String column) throws Exception
         {
             Connection con = null;
+            ResultSet rs = null;
+
             try
             {
                 con = DbScope.getLabkeyScope().getConnection();
                 DatabaseMetaData dbmd = con.getMetaData();
-                ResultSet rs = dbmd.getColumns(null, schema, table, column);
+                rs = dbmd.getColumns(null, schema, table, column);
 
                 if (!rs.next())
                     // no column matched the column, table and schema given
@@ -889,9 +894,9 @@ renaming a property AND toggling mvindicator on in the same change.
             }
             finally
             {
+                ResultSetUtil.close(rs);
                 if (con != null) { con.close(); }
             }
-
         }
 
         class ColumnMetadata
@@ -910,7 +915,5 @@ renaming a property AND toggling mvindicator on in the same change.
             }
 
         }
-
     }
-
 }
