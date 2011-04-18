@@ -173,7 +173,11 @@ public class SqlScriptController extends SpringActionController
             Container c = getContainer();
             StringBuilder html = new StringBuilder();
             if (AppProps.getInstance().isDevMode())
-                html.append(PageFlowUtil.textLink("consolidate scripts", "consolidateScripts.view") + "<p/>");
+            {
+                html.append(PageFlowUtil.textLink("consolidate scripts", new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
+                html.append(PageFlowUtil.textLink("orphaned scripts", new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
+                html.append("<p/>");
+            }
             html.append("<table><tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
             html.append("<tr valign=top>");
@@ -262,7 +266,7 @@ public class SqlScriptController extends SpringActionController
                     url.addParameter("filename", script.getDescription());
 
                     html.append("<a href=\"");
-                    html.append(url);
+                    html.append(PageFlowUtil.filter(url));
                     html.append("\">");
                     html.append(script.getDescription());
                     html.append("</a><br>\n");
@@ -586,6 +590,86 @@ public class SqlScriptController extends SpringActionController
         protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion)  throws SqlScriptException
         {
             return new ScriptConsolidator(provider, schemaName, fromVersion, toVersion);
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class OrphanedScriptsAction extends SimpleViewAction<ConsolidateForm>
+    {
+        public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
+        {
+            Set<SqlScript> orphanedScripts = new TreeSet<SqlScript>();
+            Map<SqlScript, SqlScript> successors = new HashMap<SqlScript, SqlScript>();
+            List<Module> modules = ModuleLoader.getInstance().getModules();
+
+            for (Module module : modules)
+            {
+                if (module instanceof DefaultModule)
+                {
+                    DefaultModule defModule = (DefaultModule)module;
+
+                    if (defModule.hasScripts())
+                    {
+                        defModule.clearResourceCache();
+                        FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
+                        Set<String> schemaNames = provider.getSchemaNames();
+
+                        for (String schemaName : schemaNames)
+                        {
+                            Set<SqlScript> scripts = new TreeSet<SqlScript>(provider.getScripts(schemaName));
+                            SqlScript previous = null;
+
+                            for (SqlScript script : scripts)
+                            {
+                                if (null != previous && (previous.getSchemaName().equals(script.getSchemaName()) && previous.getFromVersion() == script.getFromVersion()))
+                                {
+                                    // Save the script so we can render them in order
+                                    orphanedScripts.add(previous);
+                                    // Save successor as well to render with the orphaned script name
+                                    successors.put(previous, script);
+                                }
+
+                                previous = script;
+                            }
+                        }
+                    }
+                }
+            }
+
+            StringBuilder html = new StringBuilder();
+            html.append("  <table>\n");
+            html.append("    <tr><td>The following SQL scripts will never execute, because another script has the same" +
+                    " \"from\" version and a later \"to\" version.  These scripts can be \"obsoleted\" safely.</td></tr>\n");
+            html.append("    <tr><td>&nbsp;</td></tr>\n");
+            html.append("    <tr><td>Note that after moving or deleting a script from the source directory you may also want " +
+                    "to delete it from the deploy directory (e.g., /labkey/build/deploy/modules/<name>/schemas/dbscripts/<database> " +
+                    "as well so it doesn't appear here.</td></tr>\n");
+            html.append("    <tr><td>&nbsp;</td></tr>\n");
+            html.append("  </table>\n");
+
+            html.append("  <table>\n");
+            html.append("    <tr><th align=\"left\">Orphaned Script</th><th align=\"left\">Superceded By</th></tr>\n");
+
+            for (SqlScript orphanedScript : orphanedScripts)
+            {
+                html.append("    <tr><td>");
+                html.append(orphanedScript.getDescription());
+                html.append("</td><td>");
+                html.append(successors.get(orphanedScript).getDescription());
+                html.append("</td></tr>\n");
+            }
+
+            html.append("  </table>\n");
+
+            return new HtmlView(html.toString());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new ScriptsAction().appendNavTrail(root);
+            root.addChild("Orphaned Scripts");
+            return root;
         }
     }
 
