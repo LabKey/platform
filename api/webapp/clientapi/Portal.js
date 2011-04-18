@@ -114,6 +114,9 @@ LABKEY.Portal = new function()
             }
             else if (action == REMOVE_ACTION)
             {
+                var breakEl   = targetTable.previousElementSibling;
+                var breakNode = targetTable.previousSibling;
+                targetTable.parentNode.removeChild(breakEl || breakNode); // TODO: Does not properly remove in IE7
                 targetTable.parentNode.removeChild(targetTable);
             }
         }
