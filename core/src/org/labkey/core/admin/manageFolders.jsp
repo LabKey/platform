@@ -97,7 +97,7 @@
                     new Ext.Button({text: 'Aliases', ref: '../alias', handler : function(){ action('alias'); }}),
                     new Ext.Button({text: 'Change Display Order', ref: '../reorder', handler : function(){ action('reorder'); }})]
         });
-
+        
         /*
          * select node with id - this is only called once
          * after the tree is rendered for the first time.
@@ -107,8 +107,7 @@
         function select_node(node) {
             node.eachChild( function(child) {
                 if(child.attributes.id == <%= c.getRowId() %>) {
-                    child.select();
-                    validateFolder(child);
+                    ensureVisible(child);
                 }
             });
         }
@@ -133,12 +132,20 @@
                 height : Math.max(100,h-xy[1]-padding[1])};
             folderPanel.setSize(size);
             folderPanel.doLayout();
+            if (selectedFolder){ ensureVisible(selectedFolder); }            
         };
 
         Ext.EventManager.onWindowResize(_resize);
         Ext.EventManager.fireWindowResize();
 
         _init = true;
+    }
+
+    function ensureVisible(node){
+        node.ensureVisible(function(){
+            node.select();
+            validateFolder(node);
+        });
     }
     
     function action(actionType) {

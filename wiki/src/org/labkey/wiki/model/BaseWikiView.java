@@ -152,16 +152,6 @@ public abstract class BaseWikiView extends JspView<Object>
         {
             insertURL = new ActionURL(WikiController.EditWikiAction.class, c);
             insertURL.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
-
-            if (isWebPart())
-            {
-                insertURL.addParameter("redirect", url.getLocalURIString());
-                insertURL.addParameter("pageId", _pageId);
-                insertURL.addParameter("index", Integer.toString(_index));
-            }
-
-            if (null != wiki)
-                insertURL.addParameter("defName", wiki.getName());
         }
 
         if (perms.allowUpdate(wiki))
@@ -214,6 +204,8 @@ public abstract class BaseWikiView extends JspView<Object>
         {
             if (null != updateContentURL)
                 menu.addChild("Edit", updateContentURL.toString(), path + "/_images/partedit.png");
+            if (null != insertURL)
+                menu.addChild("New", insertURL.toString());
             if (null != customizeURL)
                 setCustomizeLink(customizeURL.toString());
             if (null != manageURL)

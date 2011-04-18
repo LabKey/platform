@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <% 
     ActionURL setFlagUrl = urlProvider(ExperimentUrls.class).getSetFlagURL(getViewContext().getContainer());
@@ -32,7 +31,7 @@
         var images = [];
         var allImages = document.images;
         var allImageCount = allImages.length;
-        for (var i = 0; i < allImageCount; i ++)
+        for (var i = 0; i < allImageCount; i++)
         {
             var image = allImages[i];
             if (image.getAttribute("flagId") == flagId)
@@ -46,37 +45,18 @@
         if (!comment)
             comment = defaultComment;
         var imgSrc = images[0].src;
-        for (var i = 0; i < images.length; i ++)
-        {
-            var img = images[i];
-            img.src = <%=q(AppProps.getInstance().getContextPath() + "/Experiment/flagWait.gif")%>;
-        }
-        var x,y,fNS;
-        if (window.pagexOffset != undefined)
-        {
-            fNS = true;
-            x = window.pagexOffset;
-            y = window.pageyOffset;
-        }
-        else
-        {
-            x = document.body.scrollLeft;
-            y = document.body.scrollTop;
-        }
         var newComment = window.prompt("Enter a comment", comment ? comment : defaultComment);
-        function restoreScrollPosition() {
-            window.scrollTo(x, y);
-        }
-        window.setTimeout(restoreScrollPosition, 1);
         if (newComment != null)
         {
             if (newComment)
                 defaultComment = newComment;
             urlSet += "&comment=" + escape(newComment) + "&unique=" + new Date().getTime();
         }
-        for (var i = 0; i < images.length; i ++)
+        for (var j = 0; j < images.length; j++)
         {
-            var img = images[i];
+            var img = images[j];
+            img.src = <%=q(AppProps.getInstance().getContextPath() + "/Experiment/flagWait.gif")%>;
+            
             if (newComment == null)
             {
                 // user canceled; restore original img src
