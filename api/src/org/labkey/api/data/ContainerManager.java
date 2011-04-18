@@ -2023,4 +2023,40 @@ public class ContainerManager
             return list.toArray(new Container[list.size()]);
         }
     }
+
+
+
+    static final ContainerService _instance = new ContainerServiceImpl();
+
+    public static ContainerService getContainerService()
+    {
+        return _instance;
+    }
+
+    private static class ContainerServiceImpl implements ContainerService
+    {
+        @Override
+        public Container getForId(GUID id)
+        {
+            return ContainerManager.getForId(id);
+        }
+
+        @Override
+        public Container getForId(String id)
+        {
+            return ContainerManager.getForId(id);
+        }
+
+        @Override
+        public Container getForPath(Path path)
+        {
+            return ContainerManager.getForPath(path);
+        }
+
+        @Override
+        public Container getForPath(String path)
+        {
+            return ContainerManager.getForPath(path);
+        }
+    }
 }
