@@ -649,13 +649,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         else if (c.isProject())
         {
             displayTitle = "Project -- " + c.getName();
-            searchTitle = c.getName() + " " + c.getDescription() + " project";
             body = StringUtils.trimToEmpty(c.getDescription());
+            searchTitle = c.getName() + " " + body + " project";
         }
         else if (c.isWorkbook())
         {
             displayTitle = "Workbook -- " + c.getName();
-            searchTitle = c.getName() + " " + c.getDescription() + " workbook";
+            searchTitle = c.getName() + " " + StringUtils.trimToEmpty(c.getDescription()) + " workbook";
             body = "Workbook " + c.getName() + " in Project " + p.getName();
         }
         else

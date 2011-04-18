@@ -83,8 +83,8 @@ public class AnnouncementManager
 {
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("message", "Messages");
 
-    private static CommSchema _comm = CommSchema.getInstance();
-    private static CoreSchema _core = CoreSchema.getInstance();
+    private static final CommSchema _comm = CommSchema.getInstance();
+    private static final CoreSchema _core = CoreSchema.getInstance();
 
     public static final int EMAIL_PREFERENCE_DEFAULT = -1;
     public static final int EMAIL_PREFERENCE_NONE = 0;
@@ -96,12 +96,6 @@ public class AnnouncementManager
     public static final int EMAIL_NOTIFICATION_TYPE_DIGEST = 256; // If this bit is set, send daily digest instead of individual email for each post
 
     public static final int EMAIL_DEFAULT_OPTION = EMAIL_PREFERENCE_MINE;
-
-    //    public static final int EMAIL_FORMAT_TEXT = 0;
-    public static final int EMAIL_FORMAT_HTML = 1;
-
-    public static final int PAGE_TYPE_MESSAGE = 0;
-    public static final int PAGE_TYPE_WIKI = 1;
 
     private static Logger _log = Logger.getLogger(AnnouncementManager.class);
 
