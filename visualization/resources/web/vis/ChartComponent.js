@@ -544,12 +544,14 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
             .bottom(function (d) { return pinMin(y, s.getY(d))})
             .strokeStyle(color)
             .lineWidth(style.lineWidth);
-           var dots = lines.add(pv.Dot)
-                .size(style.shape.markSize)
-                .fillStyle(color)
-                .title(s.getTitle)
-                .lineWidth(style.shape.lineWidth)
-                .shape(style.shape.name);
+            if(!style.shape.hidden){
+               var dots = lines.add(pv.Dot)
+                    .size(style.shape.markSize)
+                    .fillStyle(color)
+                    .title(s.getTitle)
+                    .lineWidth(style.shape.lineWidth)
+                    .shape(style.shape.name);
+            }
 
            seriesIndex++;
        }, this);

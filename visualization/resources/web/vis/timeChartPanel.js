@@ -139,6 +139,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 chartLayout: this.chartInfo.chartLayout,
                 mainTitle: this.chartInfo.title,
                 lineWidth: this.chartInfo.lineWidth,
+                hideDataPoints: this.chartInfo.hideDataPoints,
                 subjectNounSingular: this.viewInfo.subjectNounSingular,
                 listeners: {
                     scope: this,
@@ -332,6 +333,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorYAxisPanelVar.setLabel(measure.label);
             this.editorChartsPanel.setMainTitle(measure.queryName);
             this.editorChartsPanel.setLineWidth(this.chartInfo.lineWidth);
+            this.editorChartsPanel.setHideDataPoints(this.chartInfo.hideDataPoints);
         }
     },
 
@@ -502,6 +504,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     caption += " " + yAxisSeries;
                 }
 
+                var style = {lineWidth: this.chartInfo.lineWidth};
+                if(this.chartInfo.hideDataPoints){
+                    style.shape = {name: "square", lineWidth: 1, markSize: 20, hidden: true};
+                }
+
                 series.push({
                     subject: subject,
                     yAxisSeries: yAxisSeries,
@@ -509,7 +516,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     data: this.chartSubjectData[subject] ? this.chartSubjectData[subject][yAxisSeries] : [],
                     xProperty:"interval",
                     yProperty: "dataValue",
-                    style: {lineWidth: this.chartInfo.lineWidth}
+                    style: style
                 });
             }
         }
@@ -700,6 +707,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             ],
             chartLayout: 'single',
             lineWidth: 4,
+            hideDataPoints: false,
             subject: {},
             title: '',
             filterUrl: LABKEY.Visualization.getDataFilterFromURL(),
@@ -712,6 +720,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             title: this.editorChartsPanel.getMainTitle(),
             chartLayout: this.editorChartsPanel.getChartLayout(),
             lineWidth: this.editorChartsPanel.getLineWidth(),
+            hideDataPoints: this.editorChartsPanel.getHideDataPoints(),
             subject: this.subjectSelector.getSubject(),
             measures: [
                 { // x-axis information

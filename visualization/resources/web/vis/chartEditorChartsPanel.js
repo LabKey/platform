@@ -118,6 +118,22 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         }, this);
         columnTwoItems.push(this.lineWidthSliderField);
 
+        // checkbox to hide/show data points
+        this.hideDataPointCheckbox = new Ext.form.Checkbox({
+            boxLabel: 'Hide Data Points',
+            hideLabel: true,
+            checked: this.hideDataPoints || false, // default to show data points
+            value: this.hideDataPoints || false, // default to show data points
+            listeners: {
+                scope: this,
+                'check': function(cmp, checked){
+                    this.hideDataPoints = checked;
+                    this.fireEvent('chartDefinitionChanged', false);
+                }
+            }
+        });
+        columnTwoItems.push(this.hideDataPointCheckbox);
+
         this.items = [{
             border: false,
             layout: 'column',
@@ -155,6 +171,10 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         return this.lineWidth;
     },
 
+    getHideDataPoints: function(){
+        return this.hideDataPoints;
+    },
+
     setMainTitle: function(newMainTitle){
         this.mainTitle = newMainTitle;
         Ext.getCmp('chart-title-textfield').setValue(newMainTitle);
@@ -189,6 +209,13 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
     setLineWidth: function(newLineWidth){
         this.lineWidth = newLineWidth;
         this.lineWidthSliderField.setValue(newLineWidth);
+    },
+
+    setHideDataPoints: function(hide){
+        this.hideDataPoints = hide;
+        this.hideDataPointCheckbox.suspendEvents(false);
+        this.hideDataPointCheckbox.setValue(hide);
+        this.hideDataPointCheckbox.resumeEvents();
     },
 
     disableDimensionOption: function(hasDimension){
