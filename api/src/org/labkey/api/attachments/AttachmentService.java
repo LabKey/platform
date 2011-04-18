@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -98,6 +99,7 @@ public class AttachmentService
         if (_serviceImpl != null)
             throw new IllegalStateException("Service has already been set.");
         _serviceImpl = serviceImpl;
+        ServiceRegistry.get().registerService(AttachmentService.Service.class, serviceImpl);
     }
 
     public static Service get()
