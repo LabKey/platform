@@ -20,7 +20,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.wiki.BaseWikiPermissions;
-import org.labkey.wiki.ServiceImpl;
+import org.labkey.wiki.WikiManager;
 import org.labkey.wiki.WikiSelectManager;
 
 import java.util.Set;
@@ -112,7 +112,7 @@ public class WikiEditModel
     {
         if (null == _wikiVersion)
             return _format != null ? PageFlowUtil.jsString(_format)
-                    : PageFlowUtil.jsString(ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE.name());
+                    : PageFlowUtil.jsString(WikiManager.DEFAULT_WIKI_RENDERER_TYPE.name());
         else
             return PageFlowUtil.jsString(_wikiVersion.getRendererType());
     }

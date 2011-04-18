@@ -40,7 +40,7 @@ public class WikiContentCache
 
         if (null == html)
         {
-            FormattedHtml formattedHtml = WikiManager.formatWiki(c, wiki, version);
+            FormattedHtml formattedHtml = WikiManager.get().formatWiki(c, wiki, version);
             html = formattedHtml.getHtml();
 
             if (!formattedHtml.isVolatile())

@@ -42,7 +42,7 @@ public class WikiContainerListener implements ContainerManager.ContainerListener
     {
         try
         {
-            WikiManager.purgeContainer(c);
+            WikiManager.get().purgeContainer(c);
         }
         catch (SQLException e)
         {

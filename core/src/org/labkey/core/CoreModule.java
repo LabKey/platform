@@ -28,6 +28,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
@@ -184,6 +185,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     protected void init()
     {
+        ServiceRegistry.get().registerService(ContainerService.class, ContainerManager.getContainerService());
         SqlDialectManager.register(new PostgreSqlDialectFactory());
 
         addController("admin", AdminController.class);

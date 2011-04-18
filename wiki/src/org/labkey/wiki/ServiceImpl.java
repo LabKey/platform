@@ -104,7 +104,7 @@ public class ServiceImpl implements WikiService
 
         try
         {
-            WikiManager.insertWiki(user, c, wiki, wikiversion, null);
+            WikiManager.get().insertWiki(user, c, wiki, wikiversion, null);
         }
         catch (SQLException e)
         {

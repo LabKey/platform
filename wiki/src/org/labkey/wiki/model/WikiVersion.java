@@ -24,8 +24,8 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.wiki.ServiceImpl;
 import org.labkey.wiki.WikiContentCache;
+import org.labkey.wiki.WikiManager;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -171,7 +171,7 @@ public class WikiVersion
     public String getRendererType()
     {
         if (_rendererType == null)
-            _rendererType = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;
+            _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
         return _rendererType.name();
     }
@@ -179,7 +179,7 @@ public class WikiVersion
     public WikiRendererType getRendererTypeEnum()
     {
         if (_rendererType == null)
-            _rendererType = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;
+            _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
         return _rendererType;
     }
@@ -200,10 +200,8 @@ public class WikiVersion
                                     Collection<? extends Attachment> attachments)
     {
         if (_rendererType == null)
-            _rendererType = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;
+            _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
-        //TODO: why are we calling a version of getRenderer that doesn't exist on the service interface?
-        WikiService svc = ServiceRegistry.get().getService(WikiService.class);
-        return null == svc ? null : ((ServiceImpl)svc).getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments);
+        return WikiManager.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments);
     }
 }

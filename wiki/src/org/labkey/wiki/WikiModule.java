@@ -81,7 +81,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     {
         addController("wiki", WikiController.class, "attachments");
 
-        ServiceRegistry.get().registerService(WikiService.class, new ServiceImpl());
+        ServiceRegistry.get().registerService(WikiService.class, WikiManager.get());
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -185,13 +185,13 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         wikiversion.setBody(body);
 
         if (renderAs == null)
-            renderAs = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;
+            renderAs = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
         wikiversion.setRendererTypeEnum(renderAs);
 
         try
         {
-            WikiManager.insertWiki(user, c, wiki, wikiversion, null);
+            getWikiManager().insertWiki(user, c, wiki, wikiversion, null);
         }
         catch (SQLException e)
         {
@@ -221,7 +221,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
             {
                 public void run()
                 {
-                    WikiManager.indexWikis(task, c, modifiedSince);
+                    getWikiManager().indexWikis(task, c, modifiedSince);
                 }
             };
         task.addRunnable(r, SearchService.PRIORITY.bulk);
@@ -233,5 +233,11 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         Table.execute(CommSchema.getInstance().getSchema(), new SQLFragment(
             "UPDATE comm.pages SET lastIndexed=NULL"
         ));
+    }
+
+
+    private WikiManager getWikiManager()
+    {
+        return WikiManager.get();
     }
 }

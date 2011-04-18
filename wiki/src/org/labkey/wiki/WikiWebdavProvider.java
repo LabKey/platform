@@ -373,7 +373,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         @Override
         public void setLastIndexed(long ms, long modified)
         {
-            WikiManager.setLastIndexed(_c, _name, ms);
+            WikiManager.get().setLastIndexed(_c, _name, ms);
         }
         
 
@@ -450,7 +450,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
             try
             {
-                WikiManager.updateWiki(user, _wiki, version);
+                WikiManager.get().updateWiki(user, _wiki, version);
                 _version = null;
                 return len;
             }

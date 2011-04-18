@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -29,7 +30,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -49,20 +50,31 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.FormattedHtml;
+import org.labkey.api.wiki.MacroProvider;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiService;
+import org.labkey.wiki.model.RadeoxMacroProxy;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
+import org.labkey.wiki.model.WikiView;
+import org.labkey.wiki.renderer.HtmlRenderer;
+import org.labkey.wiki.renderer.PlainTextRenderer;
+import org.labkey.wiki.renderer.RadeoxRenderer;
+import org.radeox.macro.MacroRepository;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -76,14 +88,57 @@ import java.util.Map;
  * Date: Mar 10, 2005
  * Time: 1:27:36 PM
  */
-public class WikiManager
+public class WikiManager implements WikiService
 {
+    static final WikiManager _instance = new WikiManager();
+    public static WikiManager get()
+    {
+        return _instance;
+    }
+
+
     private static final Logger LOG = Logger.getLogger(WikiManager.class);
 
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
 
-    private static CommSchema comm = CommSchema.getInstance();
-    private static CoreSchema core = CoreSchema.getInstance();
+    /* service/schema dependencies */
+    private CommSchema comm = CommSchema.getInstance();
+    private CoreSchema core = CoreSchema.getInstance();
+
+    private AttachmentService.Service _attachmentService;
+    private SearchService _searchService;
+    private DiscussionService.Service _discussionService;
+    private ContainerService _containerService;
+
+    synchronized AttachmentService.Service getAttachmentService()
+    {
+        if (null == _attachmentService)
+            _attachmentService = ServiceRegistry.get(AttachmentService.Service.class);
+        return _attachmentService;
+    }
+
+    synchronized SearchService getSearchService()
+    {
+        if (null == _searchService)
+            _searchService = ServiceRegistry.get(SearchService.class);
+        return _searchService;
+    }
+
+    synchronized DiscussionService.Service getDiscussionService()
+    {
+        if (null == _discussionService)
+            _discussionService = ServiceRegistry.get(DiscussionService.Service.class);
+        return _discussionService;
+    }
+
+    synchronized ContainerService getContainerService()
+    {
+        if (null == _containerService)
+            _containerService = ServiceRegistry.get(ContainerService.class);
+        return _containerService;
+    }
+    /* service dependencies */
+
 
     private WikiManager()
     {
@@ -91,7 +146,7 @@ public class WikiManager
 
 
     // Used to verify that entityId is a wiki and belongs in the specified container
-    public static Wiki getWikiByEntityId(Container c, String entityId) throws SQLException
+    public Wiki getWikiByEntityId(Container c, String entityId) throws SQLException
     {
         if (null == c || c.getId().length() == 0 || null == entityId || entityId.length() == 0)
             return null;
@@ -108,7 +163,7 @@ public class WikiManager
     }
 
 
-    public static boolean insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files)
+    public boolean insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files)
             throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
         DbScope scope = comm.getSchema().getScope();
@@ -137,7 +192,7 @@ public class WikiManager
             wikiInsert.setPageVersionId(wikiversion.getRowId());
             Table.update(user, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId());
 
-            AttachmentService.get().addAttachments(wikiInsert, files, user);
+            getAttachmentService().addAttachments(wikiInsert, files, user);
 
             scope.commitTransaction();
         }
@@ -154,7 +209,7 @@ public class WikiManager
     }
 
 
-    public static boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew)
+    public boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew)
             throws SQLException
     {
         DbScope scope = comm.getSchema().getScope();
@@ -214,7 +269,7 @@ public class WikiManager
 
 
 
-    public static void deleteWiki(User user, Container c, Wiki wiki) throws SQLException
+    public void deleteWiki(User user, Container c, Wiki wiki) throws SQLException
     {
         //shift children to new parent
         reparent(user, wiki);
@@ -233,10 +288,10 @@ public class WikiManager
             Table.delete(comm.getTableInfoPages(),
                     new SimpleFilter("entityId", wiki.getEntityId()));
 
-            AttachmentService.get().deleteAttachments(wiki);
+            getAttachmentService().deleteAttachments(wiki);
 
-//            DiscussionService.get().unlinkDiscussions(c, wiki.getEntityId(), user);
-            DiscussionService.get().deleteDiscussions(c, wiki.getEntityId(), user);
+            if (null != getDiscussionService())
+                getDiscussionService().deleteDiscussions(c, wiki.getEntityId(), user);
 
             scope.commitTransaction();
         }
@@ -252,7 +307,7 @@ public class WikiManager
     }
 
 
-    private static void reparent(User user, Wiki wiki) throws SQLException
+    private void reparent(User user, Wiki wiki) throws SQLException
     {
         //shift any children upward so they are not orphaned
 
@@ -316,7 +371,7 @@ public class WikiManager
     }
 
 
-    public static void purgeContainer(Container c) throws SQLException
+    public void purgeContainer(Container c) throws SQLException
     {
         WikiCache.uncache(c);
 
@@ -352,13 +407,13 @@ public class WikiManager
     }
 
 
-    public static int purge() throws SQLException
+    public int purge() throws SQLException
     {
         return ContainerUtil.purgeTable(comm.getTableInfoPages(), null);
     }
 
 
-    public static FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion) throws SQLException
+    public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion) throws SQLException
     {
         String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, HString.EMPTY).toString();
 
@@ -382,7 +437,7 @@ public class WikiManager
 
 
     //copies a single wiki page
-    public static Wiki copyPage(User user, Container cSrc, Wiki srcPage, Container cDest, List<HString> destPageNames,
+    public Wiki copyPage(User user, Container cSrc, Wiki srcPage, Container cDest, List<HString> destPageNames,
                           Map<Integer, Integer> pageIdMap, boolean fOverwrite)
             throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
@@ -440,13 +495,13 @@ public class WikiManager
         //get wiki & attachments
         Wiki wiki = WikiSelectManager.getWiki(cSrc, srcName);
         Collection<Attachment> attachments = wiki.getAttachments();
-        List<AttachmentFile> files = AttachmentService.get().getAttachmentFiles(wiki, attachments);
+        List<AttachmentFile> files = getAttachmentService().getAttachmentFiles(wiki, attachments);
 
         if (fOverwrite)
         {
-            WikiManager.updateWiki(user, destPage, newWikiVersion);
-            AttachmentService.get().deleteAttachments(destPage);
-            AttachmentService.get().addAttachments(destPage, files, user);
+            updateWiki(user, destPage, newWikiVersion);
+            getAttachmentService().deleteAttachments(destPage);
+            getAttachmentService().addAttachments(destPage, files, user);
             // NOTE indexWiki() gets called twice in this case
             touch(destPage);
             indexWiki(destPage);
@@ -454,7 +509,7 @@ public class WikiManager
         else
         {
             //insert new wiki page in destination container
-            WikiManager.insertWiki(user, cDest, newWikiPage, newWikiVersion, files);
+            insertWiki(user, cDest, newWikiPage, newWikiVersion, files);
 
             //map source row id to dest row id
             if (pageIdMap != null)
@@ -467,10 +522,10 @@ public class WikiManager
     }
 
 
-    public static String updateAttachments(User user, Wiki wiki, List<String> deleteNames, List<AttachmentFile> files)
+    public String updateAttachments(User user, Wiki wiki, List<String> deleteNames, List<AttachmentFile> files)
             throws IOException
     {
-        AttachmentService.Service attsvc = AttachmentService.get();
+        AttachmentService.Service attsvc = getAttachmentService();
         boolean changes = false;
         String message = null;
 
@@ -519,26 +574,26 @@ public class WikiManager
     //
 
 
-    static void unindexWiki(String entityId)
+    void unindexWiki(String entityId)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = getSearchService();
         String docid = "wiki:" + entityId;
-        if (null != ss)
+        if (null != getSearchService())
             ss.deleteResource(docid);
         // UNDONE attachment
     }
     
 
-    static void indexWiki(Wiki page)
+    void indexWiki(Wiki page)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
-        Container c = ContainerManager.getForId(page.getContainerId());
+        SearchService ss = getSearchService();
+        Container c = getContainerService().getForId(page.getContainerId());
         if (null != ss && null != c)
             indexWikiContainerFast(ss.defaultTask(), c, null, page.getName().getSource());
     }
 
 
-    private static void touch(Wiki wiki)
+    private void touch(Wiki wiki)
     {
         try
         {
@@ -553,7 +608,7 @@ public class WikiManager
     }
 
 
-    public static void setLastIndexed(Container c, String name, long ms)
+    public void setLastIndexed(Container c, String name, long ms)
     {
         try
         {
@@ -569,10 +624,10 @@ public class WikiManager
     }
 
     
-    public static void indexWikis(@NotNull final SearchService.IndexTask task, @NotNull Container c, final Date modifiedSince)
+    public void indexWikis(@NotNull final SearchService.IndexTask task, @NotNull Container c, final Date modifiedSince)
     {
         assert null != c;
-        final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        final SearchService ss = getSearchService();
         if (null == ss || null == c)
             return;
 
@@ -580,7 +635,7 @@ public class WikiManager
     }
 
 
-    public static void indexWikiContainerSlow(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
+    public void indexWikiContainerSlow(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
         ResultSet rs = null;
         ActionURL page = new ActionURL(WikiController.PageAction.class, null);
@@ -616,7 +671,7 @@ public class WikiManager
     }
 
 
-    public static void indexWikiContainerFast(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, String name)
+    public void indexWikiContainerFast(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, String name)
     {
         ResultSet rs = null;
         try
@@ -689,7 +744,7 @@ public class WikiManager
             
             if (!ids.isEmpty())
             {
-                List<Pair<String,String>> list = AttachmentService.get().listAttachmentsForIndexing(ids.keySet(), modifiedSince);
+                List<Pair<String,String>> list = getAttachmentService().listAttachmentsForIndexing(ids.keySet(), modifiedSince);
 
                 for (Pair<String,String> pair : list)
                 {
@@ -703,7 +758,7 @@ public class WikiManager
                             .replaceParameter("name",documentName);
                     // UNDONE: set title to make LuceneSearchServiceImpl work
                     String displayTitle = "\"" + documentName + "\" attached to page \"" + titles.get(entityId) + "\"";
-                    WebdavResource attachmentRes = AttachmentService.get().getDocumentResource(
+                    WebdavResource attachmentRes = getAttachmentService().getDocumentResource(
                             new Path(entityId,documentName),
                             attachmentURL, displayTitle,
                             parent,
@@ -728,38 +783,211 @@ public class WikiManager
     }
 
 
+    //
+    // WikiService
+    //
+
+        public static WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
+    public static WikiRendererType DEFAULT_MESSAGE_RENDERER_TYPE = WikiRendererType.TEXT_WITH_LINKS;
+
+    private Map<String, MacroProvider> providers = new HashMap<String, MacroProvider>();
+
+    public String getHtml(Container c, String name)
+    {
+        if (null == c || null == name)
+            return null;
+
+        try
+        {
+            Wiki wiki = WikiSelectManager.getWiki(c, new HString(name));
+            if (null == wiki)
+                return null;
+            WikiVersion version = wiki.getLatestVersion();
+            return version.getHtml(c, wiki);
+        }
+        catch (Exception x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+    @Override
+    @Deprecated
+    public WebPartView getView(Container c, String name, boolean forceRefresh, boolean renderContentOnly)
+    {
+        return getView(c, name, renderContentOnly);
+    }
+
+    @Override
+    @Deprecated
+    public String getHtml(Container c, String name, boolean forceRefresh)
+    {
+        return getHtml(c, name);
+    }
+
+    public void insertWiki(User user, Container c, String name, String body, WikiRendererType renderType, String title)
+    {
+        Wiki wiki = new Wiki(c, new HString(name));
+        WikiVersion wikiversion = new WikiVersion();
+        wikiversion.setTitle(new HString(title));
+
+        wikiversion.setBody(body);
+
+        if (renderType == null)
+            renderType = getDefaultWikiRendererType();
+
+        wikiversion.setRendererTypeEnum(renderType);
+
+        try
+        {
+            insertWiki(user, c, wiki, wikiversion, null);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        catch (AttachmentService.DuplicateFilenameException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void registerMacroProvider(String name, MacroProvider provider)
+    {
+        providers.put(name, provider);
+        MacroRepository repository = MacroRepository.getInstance();
+        repository.put(name, new RadeoxMacroProxy(name, provider));
+
+    }
+
+    //Package
+    MacroProvider getMacroProvider(String name)
+    {
+        return providers.get(name);
+    }
+
+    public WebPartView getView(Container c, String name, boolean contentOnly)
+    {
+        try
+        {
+            if (contentOnly)
+            {
+                String html = getHtml(c, name);
+                return null == html ? null : new HtmlView(html);
+            }
+            Wiki wiki = WikiSelectManager.getWiki(c, new HString(name));
+            if (null == wiki)
+                return null;
+            WikiVersion version = wiki.getLatestVersion();
+            WikiView view = new WikiView(wiki, version, true);
+            return view;
+        }
+        catch (Exception x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+    public WikiRendererType getDefaultWikiRendererType()
+    {
+        return DEFAULT_WIKI_RENDERER_TYPE;
+    }
+
+    public WikiRendererType getDefaultMessageRendererType()
+    {
+        return DEFAULT_MESSAGE_RENDERER_TYPE;
+    }
+
+    public WikiRenderer getRenderer(WikiRendererType rendererType)
+    {
+        return getRenderer(rendererType, null, null, null, null);
+    }
+
+    @Override
+    public WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Collection<? extends Attachment> attachments)
+    {
+        return getRenderer(rendererType, null, attachPrefix, null, attachments);
+    }
+
+    public WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
+                                    String attachPrefix, Map<HString, HString> nameTitleMap,
+                                    Collection<? extends Attachment> attachments)
+    {
+        WikiRenderer renderer;
+
+        switch (rendererType)
+        {
+            case RADEOX:
+                renderer = new RadeoxRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
+                break;
+            case HTML:
+                renderer = new HtmlRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
+                break;
+            case TEXT_WITH_LINKS:
+                renderer = new PlainTextRenderer();
+                break;
+            default:
+                renderer = new RadeoxRenderer(null, attachPrefix, null, attachments);
+        }
+
+        return renderer;
+    }
+
+
+    public List<String> getNames(Container c)
+    {
+        List<HString> l = WikiSelectManager.getPageNames(c);
+        ArrayList<String> ret = new ArrayList<String>();
+        for (HString h : l)
+            ret.add(h.getSource());
+        return ret;
+    }
+
     public static class TestCase extends Assert
     {
+        WikiManager _m = null;
+
+        @Before
+        public void setup()
+        {
+            _m = new WikiManager();
+        }
+        
         @Test
         public void testSchema()
         {
-            assertNotNull("couldn't find table Pages", comm.getTableInfoPages());
-            assertNotNull(comm.getTableInfoPages().getColumn("Container"));
-            assertNotNull(comm.getTableInfoPages().getColumn("EntityId"));
-            assertNotNull(comm.getTableInfoPages().getColumn("Name"));
+            assertNotNull("couldn't find table Pages", _m.comm.getTableInfoPages());
+            assertNotNull(_m.comm.getTableInfoPages().getColumn("Container"));
+            assertNotNull(_m.comm.getTableInfoPages().getColumn("EntityId"));
+            assertNotNull(_m.comm.getTableInfoPages().getColumn("Name"));
 
 
-            assertNotNull("couldn't find table PageVersions", comm.getTableInfoPageVersions());
-            assertNotNull(comm.getTableInfoPageVersions().getColumn("PageEntityId"));
-            assertNotNull(comm.getTableInfoPageVersions().getColumn("Title"));
-            assertNotNull(comm.getTableInfoPageVersions().getColumn("Body"));
-            assertNotNull(comm.getTableInfoPageVersions().getColumn("Version"));
+            assertNotNull("couldn't find table PageVersions", _m.comm.getTableInfoPageVersions());
+            assertNotNull(_m.comm.getTableInfoPageVersions().getColumn("PageEntityId"));
+            assertNotNull(_m.comm.getTableInfoPageVersions().getColumn("Title"));
+            assertNotNull(_m.comm.getTableInfoPageVersions().getColumn("Body"));
+            assertNotNull(_m.comm.getTableInfoPageVersions().getColumn("Version"));
         }
 
 
         private void purgePages(Container c, boolean verifyEmpty) throws SQLException
         {
-            String deleteDocuments = "DELETE FROM " + core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)";
-            int docs = Table.execute(comm.getSchema(), deleteDocuments, new Object[]{c.getId(), c.getId()});
+            // TODO this belongs in attachment service!
+            String deleteDocuments = "DELETE FROM " + _m.core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
+            int docs = Table.execute(_m.comm.getSchema(), deleteDocuments, new Object[]{c.getId(), c.getId()});
 
-            String updatePages = "UPDATE " + comm.getTableInfoPages() + " SET PageVersionId = null WHERE Container = ?";
-            Table.execute(comm.getSchema(), updatePages, new Object[]{c.getId()});
+            String updatePages = "UPDATE " + _m.comm.getTableInfoPages() + " SET PageVersionId = null WHERE Container = ?";
+            Table.execute(_m.comm.getSchema(), updatePages, new Object[]{c.getId()});
 
-            String deletePageVersions = "DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)";
-            int pageVersions = Table.execute(comm.getSchema(), deletePageVersions, new Object[]{c.getId()});
+            String deletePageVersions = "DELETE FROM " + _m.comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
+            int pageVersions = Table.execute(_m.comm.getSchema(), deletePageVersions, new Object[]{c.getId()});
 
-            String deletePages = "DELETE FROM " + comm.getTableInfoPages() + " WHERE Container = ?";
-            int pages = Table.execute(comm.getSchema(), deletePages, new Object[]{c.getId()});
+            String deletePages = "DELETE FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?";
+            int pages = Table.execute(_m.comm.getSchema(), deletePages, new Object[]{c.getId()});
 
             if (verifyEmpty)
             {
@@ -768,6 +996,7 @@ public class WikiManager
                 assertEquals(0, pages);
             }
         }
+
 
         @Test
         public void testWiki()
@@ -791,7 +1020,7 @@ public class WikiManager
             wikiversion.setTitle(new HString("Topic A", false));
             wikiversion.setBody("[pageA]");
 
-            insertWiki(user, c, wikiA, wikiversion, null);
+            _m.insertWiki(user, c, wikiA, wikiversion, null);
 
             // verify objects
             wikiA = WikiSelectManager.getWikiFromDatabase(c, new HString("pageA", false));
@@ -803,7 +1032,7 @@ public class WikiManager
             //
             // DELETE
             //
-            deleteWiki(user, c, wikiA);
+            _m.deleteWiki(user, c, wikiA);
 
             // verify
             assertNull(WikiSelectManager.getWikiFromDatabase(c, new HString("pageA", false)));

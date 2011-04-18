@@ -374,7 +374,7 @@ public class WikiController extends SpringActionController
                 HttpView.throwUnauthorized("You do not have permissions to delete this wiki page");
 
             //delete page and all versions
-            WikiManager.deleteWiki(getUser(), c, _wiki);
+            getWikiManager().deleteWiki(getUser(), c, _wiki);
             return true;
         }
 
@@ -494,7 +494,7 @@ public class WikiController extends SpringActionController
                 _wikiVersion = null;
             }
 
-            WikiManager.updateWiki(getUser(), _wiki, _wikiVersion);
+            getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion);
 
             if (SHOW_CHILD_REORDERING)
             {
@@ -555,7 +555,7 @@ public class WikiController extends SpringActionController
                     if (sibling.getRowId() == order[i])
                     {
                         sibling.setDisplayOrder(i + 1);
-                        WikiManager.updateWiki(getUser(), sibling, null);
+                        getWikiManager().updateWiki(getUser(), sibling, null);
                         break;
                     }
                 }
@@ -579,7 +579,7 @@ public class WikiController extends SpringActionController
 
     private Wiki getWiki(AttachmentForm form) throws ServletException, SQLException
     {
-        Wiki wiki = WikiManager.getWikiByEntityId(getContainer(), form.getEntityId());
+        Wiki wiki = getWikiManager().getWikiByEntityId(getContainer(), form.getEntityId());
         if (null == wiki)
             throw new NotFoundException("Unable to find wiki page");
 
@@ -941,7 +941,7 @@ public class WikiController extends SpringActionController
                 List<HString> srcPageNames;
 
                 if (parentPage != null)
-                    // TODO: make subtrees work; previously beWikiManager.getSubTreePageList(cSrc, parentPage), now
+                    // TODO: make subtrees work; previously begetWikiManager().getSubTreePageList(cSrc, parentPage), now
                     // somethinge like WikiSelectManager.getDescendents(cSrc, name)
                     srcPageNames = WikiSelectManager.getPageNames(cSrc);
                 else
@@ -959,7 +959,7 @@ public class WikiController extends SpringActionController
                 for (HString name : srcPageNames)
                 {
                     Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
-                    WikiManager.copyPage(getUser(), cSrc, srcWikiPage, cDest, destPageNames, pageIdMap, false);
+                    getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, cDest, destPageNames, pageIdMap, false);
                 }
 
                 //display the wiki module in the destination container
@@ -1004,7 +1004,7 @@ public class WikiController extends SpringActionController
             List<HString> destPageNames = WikiSelectManager.getPageNames(cDest);
 
             //copy single page
-            Wiki newWikiPage = WikiManager.copyPage(getUser(), cSrc, srcPage, cDest, destPageNames, null, form.isOverwrite());
+            Wiki newWikiPage = getWikiManager().copyPage(getUser(), cSrc, srcPage, cDest, destPageNames, null, form.isOverwrite());
 
             displayWikiModuleInDestContainer(cDest);
 
@@ -1602,7 +1602,7 @@ public class WikiController extends SpringActionController
                 HttpView.throwUnauthorized("You do not have permission to set the current version of this page.");
 
             //update wiki & insert new wiki version
-            WikiManager.updateWiki(getUser(), _wiki, _wikiversion);
+            getWikiManager().updateWiki(getUser(), _wiki, _wikiversion);
             return true;
         }
 
@@ -1627,7 +1627,7 @@ public class WikiController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            int rows = WikiManager.purge();
+            int rows = getWikiManager().purge();
             return new HtmlView("deleted " + rows + " pages<br>");
         }
 
@@ -1772,7 +1772,7 @@ public class WikiController extends SpringActionController
             {
                 //check for existing wiki with this name
                 Container c = ContainerManager.getForPath(getContainerPath().getSource());
-                if (!newName.equalsIgnoreCase(oldName) && WikiManager.wikiNameExists(c, newName))
+                if (!newName.equalsIgnoreCase(oldName) && WikiManager.get().wikiNameExists(c, newName))
                     errors.rejectValue("name", ERROR_MSG, "A page with the name '" + newName + "' already exists in this folder. Please choose a different name.");
             }
         }
@@ -2272,7 +2272,7 @@ public class WikiController extends SpringActionController
             wikiversion.setRendererType(form.getRendererType());
 
             //insert new wiki and new version
-            WikiManager.insertWiki(getUser(), c, wiki, wikiversion, null);
+            getWikiManager().insertWiki(getUser(), c, wiki, wikiversion, null);
 
             //if page id and index were sent, update the corresponding
             //web part to show the newly inserted page
@@ -2324,7 +2324,7 @@ public class WikiController extends SpringActionController
             if (null == form.getEntityId())
                 throw new IllegalArgumentException("The entityId parameter must be supplied.");
 
-            Wiki wikiUpdate = WikiManager.getWikiByEntityId(getViewContext().getContainer(), form.getEntityId().toString());
+            Wiki wikiUpdate = getWikiManager().getWikiByEntityId(getViewContext().getContainer(), form.getEntityId().toString());
             if (wikiUpdate == null)
                 HttpView.throwNotFound("Could not find the wiki page matching the passed id; if it was a valid page, it may have been deleted by another user.");
 
@@ -2358,7 +2358,7 @@ public class WikiController extends SpringActionController
                 wikiversion.setTitle(title);
                 wikiversion.setBody(form.getBody());
                 wikiversion.setRendererType(currentRendererName);
-                WikiManager.updateWiki(getViewContext().getUser(), wikiUpdate, wikiversion);
+                getWikiManager().updateWiki(getViewContext().getUser(), wikiUpdate, wikiversion);
             }
 
             //return an API response containing the current wiki and version data
@@ -2416,7 +2416,7 @@ public class WikiController extends SpringActionController
                 throw new IllegalArgumentException("The entityId parameter is required!");
 
             //get the wiki using the entity id
-            Wiki wiki = WikiManager.getWikiByEntityId(getViewContext().getContainer(), form.getEntityId());
+            Wiki wiki = getWikiManager().getWikiByEntityId(getViewContext().getContainer(), form.getEntityId());
             if (null == wiki)
                 throw new IllegalArgumentException("Could not find the wiki with entity id '" + form.getEntityId() + "'!");
 
@@ -2432,7 +2432,7 @@ public class WikiController extends SpringActionController
             else
                 names = Arrays.asList(deleteNames);
 
-            String message = WikiManager.updateAttachments(getUser(), wiki, names, getAttachmentFileList());
+            String message = getWikiManager().updateAttachments(getUser(), wiki, names, getAttachmentFileList());
 
             if (null != message)
             {
@@ -2732,5 +2732,10 @@ public class WikiController extends SpringActionController
 
             return new ApiSimpleResponse("success", true);
         }
+    }
+    
+    private WikiManager getWikiManager()
+    {
+        return WikiManager.get();
     }
 }
