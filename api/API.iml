@@ -30,10 +30,11 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="InternalGWT" exported="" />
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/log4j-1.2.16.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../build/staging/labkeyWebapp/WEB-INF/lib/schemas.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -42,18 +43,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/jxl.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/jexcelapi_2_6_8.zip!/src" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-codec-1.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/annotations.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -62,7 +52,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/tar.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/axis.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -71,45 +61,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/jcommon-1.0.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/jfreechart-1.0.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/jfreechart-1.0.0.zip!/jfreechart-1.0.0/source" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-validator.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/gwt-servlet.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/collections-generic-4.01.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -130,145 +82,14 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-discovery-0.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-codec-1.5.jar!/" />
         </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/xbean.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/junit-4.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/Jama-1.0.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/common/jtds.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/common/postgresql.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/common/mail.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-runtime.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-compiler.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/commons-el.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-compiler-jdt.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/naming-resources.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/naming-factory.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$CATALINA_HOME$/bin/bootstrap.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/radeox.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/tidy.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-codec-1.5-javadoc.jar!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-codec-1.5-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
@@ -283,38 +104,9 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/collections-generic-4.01.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-discovery-0.2.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/axis.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/spring-mock-2.5.5.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/spring-2.5.5.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="http://static.springframework.org/spring/docs/2.5.5/api" />
-        </JAVADOC>
         <SOURCES />
       </library>
     </orderEntry>
@@ -322,34 +114,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-httpclient-3.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/spring-webmvc-2.5.5.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/annotations.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module" module-name="InternalGWT" exported="" />
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../build/staging/labkeyWebapp/WEB-INF/lib/schemas.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -371,7 +135,277 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang-2.6.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang-2.6-javadoc.jar!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang-2.6-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.1.1.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.1.1-javadoc.jar!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.1.1-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-2.2.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-2.2-javadoc.zip!/commons-net-2.2/apidocs" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-2.2-src.zip!/commons-net-2.2-src/src/main/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-validator.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Ehcache 2.4">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.4.0.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.4.0-javadoc.jar!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.4.0-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/guava-r07.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/guava-src-r07.zip!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/gwt-servlet.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpclient-4.1.1.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-bin.zip!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-contrib/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-cache/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpmime/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient/src/test/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient/src/examples" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpmime/src/examples" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-benchmark/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-cache/src/test/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpmime/src/test/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcore-4.1.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-bin.zip!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-contrib/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-cache/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpmime/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient/src/test/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient/src/examples" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpmime/src/examples" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-benchmark/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-cache/src/test/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpmime/src/test/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/Jama-1.0.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/jaxrpc.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jcommon-1.0.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jtidy-r938.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jtidy-r938.zip!/javadoc" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jtidy-r938-sources.zip!/src/main/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jfreechart-1.0.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jfreechart-1.0.0.zip!/jfreechart-1.0.0/source" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/junit-4.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jxl.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jexcelapi_2_6_8.zip!/src" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/kaptcha-2.3.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/log4j-1.2.16.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/radeox.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/spring-2.5.5.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="http://static.springframework.org/spring/docs/2.5.5/api" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/spring-mock-2.5.5.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/spring-webmvc-2.5.5.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/tar.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/xbean.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/xercesImpl.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -407,20 +441,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang-2.6.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang-2.6-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang-2.6-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/kaptcha-2.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/common/jtds.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -429,18 +450,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/guava-r07.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/guava-src-r07.zip!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/xercesImpl.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/common/mail.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -449,27 +459,73 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-2.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/common/postgresql.jar!/" />
         </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-2.2-javadoc.zip!/commons-net-2.2/apidocs" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-2.2-src.zip!/commons-net-2.2-src/src/main/java" />
-        </SOURCES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Ehcache 2.4">
+    <orderEntry type="module-library" exported="">
+      <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.4.0.jar!/" />
+          <root url="jar://$CATALINA_HOME$/bin/bootstrap.jar!/" />
         </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.4.0-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.4.0-sources.jar!/" />
-        </SOURCES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$CATALINA_HOME$/common/lib/commons-el.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$CATALINA_HOME$/common/lib/jasper-compiler.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$CATALINA_HOME$/common/lib/jasper-runtime.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$CATALINA_HOME$/common/lib/jasper-compiler-jdt.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$CATALINA_HOME$/common/lib/naming-factory.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$CATALINA_HOME$/common/lib/naming-resources.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
   </component>

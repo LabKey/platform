@@ -16,18 +16,30 @@
 
 package org.labkey.api;
 
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.log4j.Logger;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.List;
 
 /**
  * User: matthewb
@@ -37,10 +49,12 @@ import java.util.Iterator;
  * This is one home brewed way to remote a simple interface.  For general purpose use and extensibility
  * consider using a standard XML remoting transport or other standard.
  */
+
+// TODO: Warning... this class was converted from HttpClient 3.1 to HttpClient 4.1.1 but was NOT tested.
 public class RemoteControllerProxy
 {
     static Logger _log = Logger.getLogger(RemoteControllerProxy.class);
-    static HttpClient _client = new HttpClient(new MultiThreadedHttpConnectionManager());
+    static HttpClient _client = new DefaultHttpClient(new ThreadSafeClientConnManager());
 
     private RemoteControllerProxy() {}
 
@@ -122,11 +136,10 @@ public class RemoteControllerProxy
     {
         Class _interface;
         HttpHost _httpHost;
-        HttpState _httpState;
         String _boundEndpoint;
         String _authorization;
 
-        _Proxy(Class i, String endpoint, String authorization) throws URIException
+        _Proxy(Class i, String endpoint, String authorization)
         {
             String name = i.getName().substring(i.getPackage().getName().length()+1);
             name = name.substring(0,1).toLowerCase() + name.substring(1);
@@ -134,8 +147,6 @@ public class RemoteControllerProxy
                 endpoint += "/";
             _boundEndpoint = endpoint + name + ".post";
             _authorization = authorization;
-            _httpHost = new HttpHost(new URI(endpoint));
-            _httpState = new HttpState();
             _interface = i;
         }
 
@@ -198,40 +209,42 @@ public class RemoteControllerProxy
             {
                 Object result;
                 InputStream in = null;
-                PostMethod post = null;
+                HttpPost post = null;
                 try
                 {
                     if (_log.isDebugEnabled())
                         _logDebug();
 
                     String methodUrl = _boundEndpoint + "?_method=" + _method;
-                    post = new PostMethod(methodUrl);
+                    post = new HttpPost(methodUrl);
                     if (null != _authorization)
-                        post.setRequestHeader("Authorization", "Basic " + _authorization);
-                    post.setRequestHeader("Content-Type","application/octet-stream");
-                    post.setRequestEntity(new ByteArrayRequestEntity(_argsEncoded));
-                    _client.executeMethod(null, post, _httpState);
-                    if (post.getStatusCode() == HttpStatus.SC_OK)
+                        post.setHeader("Authorization", "Basic " + _authorization);
+                    post.setHeader("Content-Type","application/octet-stream");
+                    post.setEntity(new ByteArrayEntity(_argsEncoded));
+                    HttpResponse response = _client.execute(post);
+                    StatusLine statusLine = response.getStatusLine();
+
+                    if (statusLine.getStatusCode() == HttpStatus.SC_OK)
                     {
-                        in = post.getResponseBodyAsStream();
+                        HttpEntity entity = response.getEntity();
+                        in = entity.getContent();
                         result = new ObjectInputStream(in).readObject();
                     }
                     else
                     {
-                        result = new Exception(post.getStatusLine().toString() + " " + methodUrl);
+                        result = new Exception(response.getStatusLine().toString() + " " + methodUrl);
                     }
-                    post.releaseConnection();
                 }
                 catch (Throwable x)
                 {
                     result = x;
+                    if (post != null)
+                        post.abort();
                 }
                 finally
                 {
                     if (in != null)
                         try {in.close();}catch(IOException x){}
-                    if (post != null)
-                        post.releaseConnection();
                 }
 
                 if (result instanceof Throwable)
@@ -262,7 +275,7 @@ public class RemoteControllerProxy
 
     private static class _ProxyAsync extends _Proxy
     {
-        _ProxyAsync(Class i, String endpoint, String authorization) throws URIException
+        _ProxyAsync(Class i, String endpoint, String authorization)
         {
             super(i,endpoint,authorization);
         }
@@ -291,22 +304,21 @@ public class RemoteControllerProxy
     }
 
 
-    public static void addCookie(Object p, String name, String value)
+    public static void replaceCookie(Object p, String name, String value)
     {
         if (!(p instanceof Proxy))
             throw new IllegalArgumentException(p.getClass().getName());
         _Proxy proxy = (_Proxy)Proxy.getInvocationHandler(p);
-        ArrayList<Cookie> cookies = new ArrayList<Cookie>();
-        cookies.addAll(Arrays.asList(proxy._httpState.getCookies()));
-        for (Iterator i = cookies.iterator(); i.hasNext() ; )
-        {
-            Cookie c = (Cookie)i.next();
-            if (c.getName().equals(name))
-                i.remove();
-        }
-        cookies.add(new Cookie(proxy._httpHost.getHostName(), name, value, "/", null, false));
-        proxy._httpState.clearCookies();
-        proxy._httpState.addCookies(cookies.toArray(new Cookie[cookies.size()]));
+
+        CookieStore store = null;  // TODO: How do we get the CookieStore from the proxy using HttpClient 4.1.1??
+
+        List<Cookie> oldCookies = store.getCookies();
+
+        for (Cookie c : oldCookies)
+            if (!c.getName().equals(name))
+                store.addCookie(c);
+
+        store.addCookie(new BasicClientCookie(name, value));
     }
 
 

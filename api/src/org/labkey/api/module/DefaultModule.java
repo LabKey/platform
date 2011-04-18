@@ -558,8 +558,8 @@ public abstract class DefaultModule implements Module
 
         for (String script : dir.listNames())
         {
-            String name = script.toLowerCase();
-            if (name.endsWith(".sql") && (null == schemaName || name.startsWith(schemaName + "-")))
+            // TODO: Ignore case to work around EHR case inconsistencies
+            if (StringUtils.endsWithIgnoreCase(script, ".sql") && (null == schemaName || StringUtils.startsWithIgnoreCase(script, schemaName + "-")))
                 fileNames.add(script);
         }
 
