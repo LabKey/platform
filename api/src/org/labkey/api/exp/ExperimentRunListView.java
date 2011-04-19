@@ -56,6 +56,7 @@ public class ExperimentRunListView extends QueryView
     {
         QuerySettings settings = schema.getSettings(model, tableName, tableName);
         settings.getQueryDef(schema);
+        settings.setBaseSort(new Sort("-RowId"));
         settings.setAllowChooseQuery(false);
         settings.setAllowChooseView(allowCustomizations);
         return settings;
@@ -65,14 +66,6 @@ public class ExperimentRunListView extends QueryView
     {
         UserSchema schema = QueryService.get().getUserSchema(model.getUser(), model.getContainer(), selectedType.getSchemaName());
         return new ExperimentRunListView(schema, getRunListQuerySettings(schema, model, selectedType.getTableName(), allowCustomizations), selectedType);
-    }
-
-
-    public DataView createDataView()
-    {
-        DataView result = super.createDataView();
-        result.getRenderContext().setBaseSort(new Sort("-RowId"));
-        return result;
     }
 
     public void setShowUploadAssayRunsButton(boolean showUploadAssayRunsButton)
