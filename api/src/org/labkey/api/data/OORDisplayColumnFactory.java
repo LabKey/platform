@@ -76,7 +76,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
         inRangeSQL.append(" ELSE NULL END");
 
         ColumnInfo inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
-                    inRangeSQL, numberColumn.getSqlTypeInt(), wrappedNumberColumn, wrappedOORIndicatorCol));
+                    inRangeSQL, numberColumn.getJdbcType(), wrappedNumberColumn, wrappedOORIndicatorCol));
         inRangeColumn.setLabel(caption + " In Range");
         inRangeColumn.setFormat(numberColumn.getFormat());
 

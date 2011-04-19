@@ -152,7 +152,7 @@ public class GroupTableInfo extends VirtualTable
     {
         // All lookup columns have already been flattened into a subselect for us, so we just need to pluck out the
         // values by alias
-        ExprColumn result = new ExprColumn(this, sourceCol.getAlias(), new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + sourceCol.getAlias()), sourceCol.getSqlTypeInt());
+        ExprColumn result = new ExprColumn(this, sourceCol.getAlias(), new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + sourceCol.getAlias()), sourceCol.getJdbcType());
         result.copyAttributesFrom(sourceCol);
         return result;
     }

@@ -1482,7 +1482,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             final ExprColumn studyCopiedColumn = new ExprColumn(table,
                 studyColumnName,
                 new SQLFragment(studyCopiedSql),
-                Types.VARCHAR,
+                JdbcType.VARCHAR,
                 datasetColumn);
             final String copiedToStudyColumnCaption = "Copied to " + studyName;
             studyCopiedColumn.setLabel(copiedToStudyColumnCaption);

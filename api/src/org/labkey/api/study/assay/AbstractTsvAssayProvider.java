@@ -167,7 +167,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                     continue;
                 }
             }
-            insertInto.append(", ").append(to.getSelectName());
+            insertInto.append(", ").append(schema.getDbSchema().getSqlDialect().makeLegalIdentifier(to.getSelectName()));
             select.append(", ").append(from.getAlias());
         }
         insertInto.append(")\n");

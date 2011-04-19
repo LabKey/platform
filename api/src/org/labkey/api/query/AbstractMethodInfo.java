@@ -46,22 +46,17 @@ abstract public class AbstractMethodInfo implements MethodInfo
 
     public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
     {
-        return new ExprColumn(parentTable, alias, getSQL(ExprColumn.STR_TABLE_ALIAS, parentTable.getSchema(), getSQLFragments(arguments)), getSqlType(arguments).sqlType);
-    }
-
-    public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias, int sqlType)
-    {
-        return new ExprColumn(parentTable, alias, getSQL(ExprColumn.STR_TABLE_ALIAS, parentTable.getSchema(), getSQLFragments(arguments)), sqlType);
+        return new ExprColumn(parentTable, alias, getSQL(ExprColumn.STR_TABLE_ALIAS, parentTable.getSchema(), getSQLFragments(arguments)), getSqlType(arguments));
     }
 
     protected SQLFragment[] getSQLFragments(ColumnInfo[] arguments)
     {
-        List<SQLFragment> ret = new ArrayList();
+        List<SQLFragment> ret = new ArrayList<SQLFragment>();
         for (ColumnInfo col : arguments)
         {
             ret.add(col.getValueSql(ExprColumn.STR_TABLE_ALIAS));
         }
-        return ret.toArray(new SQLFragment[0]);
+        return ret.toArray(new SQLFragment[ret.size()]);
     }
 
     public SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments)

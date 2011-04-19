@@ -30,25 +30,17 @@ public class ExprColumn extends ColumnInfo
     SQLFragment _sql;
     private ColumnInfo[] _dependentColumns;
 
-    
     public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
-    {
-        this(parent, key, sql, type.sqlType, dependentColumns);
-    }
-
-    @Deprecated // use JdbcType
-    public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, int sqltype, ColumnInfo ... dependentColumns)
     {
         super(key, parent);
         setAlias(AliasManager.makeLegalName(key.toString(), parent.getSqlDialect()));
-        setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(sqltype));
+        setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(type.sqlType));
         _sql = sql;
         for (ColumnInfo dependentColumn : dependentColumns)
         {
             if (dependentColumn == null)
             {
-                // Enable after https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=8439 is fixed
-//                throw new NullPointerException("Dependent columns may not be null");
+                throw new NullPointerException("Dependent columns may not be null");
             }
         }
         // Since these are typically calculated columns, it doesn't make sense to show them in update or insert views
@@ -60,16 +52,8 @@ public class ExprColumn extends ColumnInfo
     
     public ExprColumn(TableInfo parent, String name, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
     {
-        this(parent, FieldKey.fromString(name), sql, type.sqlType, dependentColumns);
+        this(parent, FieldKey.fromString(name), sql, type, dependentColumns);
     }
-
-    @Deprecated // use JdbcType
-    public ExprColumn(TableInfo parent, String name, SQLFragment sql, int sqltype, ColumnInfo ... dependentColumns)
-    {
-        this(parent, FieldKey.fromString(name), sql, sqltype, dependentColumns);
-//        assert -1 == name.indexOf('/');
-    }
-
 
     public SQLFragment getValueSql(String tableAlias)
     {

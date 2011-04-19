@@ -196,11 +196,11 @@ public class CrosstabTableInfo extends VirtualTable
     {
         //add the instance count/sort pattern columns
         ColumnInfo instanceCountCol = addColumn(new ExprColumn(this, COL_INSTANCE_COUNT,
-                new SQLFragment(COL_INSTANCE_COUNT), Types.INTEGER));
+                new SQLFragment(COL_INSTANCE_COUNT), JdbcType.INTEGER));
         instanceCountCol.setLabel(getSettings().getInstanceCountCaption());
 
         ColumnInfo sortPatternCol = addColumn(new ExprColumn(this, COL_SORT_PATTERN,
-                new SQLFragment(COL_SORT_PATTERN), Types.INTEGER));
+                new SQLFragment(COL_SORT_PATTERN), JdbcType.INTEGER));
         sortPatternCol.setHidden(true);
     }
 

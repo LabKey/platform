@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
@@ -38,7 +39,7 @@ public class StudyDataSetColumn extends ExprColumn
     public StudyDataSetColumn(TableInfo parent, String name, AssayProvider provider, DataSet assayDataSet, User user)
     {
         super(parent, name, new SQLFragment("(CASE WHEN " + getDatasetIdAlias(assayDataSet.getContainer()) +
-                "._key IS NOT NULL THEN " + assayDataSet.getDataSetId() + " ELSE NULL END)"), Types.INTEGER);
+                "._key IS NOT NULL THEN " + assayDataSet.getDataSetId() + " ELSE NULL END)"), JdbcType.INTEGER);
         _provider = provider;
         _assayDataSet = assayDataSet;
         _user = user;

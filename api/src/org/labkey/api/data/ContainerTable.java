@@ -88,7 +88,7 @@ public class ContainerTable extends FilteredTable
                 getSqlDialect().getColumnSelectName("set") + " AND p.Name = ?)");
         folderTypeSQL.add(Container.FOLDER_TYPE_PROPERTY_SET_NAME);
         folderTypeSQL.add(Container.FOLDER_TYPE_PROPERTY_NAME);
-        ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, Types.VARCHAR);
+        ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, JdbcType.VARCHAR);
         addColumn(folderTypeColumn);
 
         col = getColumn("CreatedBy");

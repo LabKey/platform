@@ -156,7 +156,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             sql.append("CAST(NULL AS " + dialect.getBooleanDataType() + ")");
         }
 
-        tableInfo.addColumn(new ExprColumn(tableInfo, AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME, sql, Types.BOOLEAN));
+        tableInfo.addColumn(new ExprColumn(tableInfo, AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME, sql, JdbcType.BOOLEAN));
         return tableInfo;
     }
 

@@ -67,45 +67,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private List<AssayDataCollector> _collectors;
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
 
-    // Unfortunate query hackery that orders display columns based on default view
-    protected DomainProperty[] reorderDomainColumns(DomainProperty[] domainOrderedColumns, ViewContext context, ExpProtocol protocol)
-    {
-        Map<String, DomainProperty> uriToCol = new LinkedHashMap<String, DomainProperty>();
-        for (DomainProperty pd : domainOrderedColumns)
-            uriToCol.put(pd.getPropertyDescriptor().getPropertyURI(), pd);
-
-        List<DomainProperty> orderedColumns = new ArrayList<DomainProperty>();
-        // add all columns that are found in the default view in the correct order:
-        QueryView dataView = getProvider().createResultsQueryView(context, protocol);
-        List<DisplayColumn> allColumns = dataView.getDisplayColumns();
-        for (DisplayColumn dc : allColumns)
-        {
-            if (!dc.isEditable())
-                continue;
-
-            if (dc instanceof UrlColumn)
-                continue;
-
-            String uri = dc.getColumnInfo().getPropertyURI();
-            DomainProperty col = uri != null ? uriToCol.get(uri) : null;
-            if (col != null)
-            {
-                orderedColumns.add(col);
-                uriToCol.remove(uri);
-            }
-        }
-        // add the remaining columns:
-        for (DomainProperty col : uriToCol.values())
-            orderedColumns.add(col);
-        return orderedColumns.toArray(new DomainProperty[orderedColumns.size()]);
-    }
-
     public DomainProperty[] getRunDataProperties()
     {
         AssayProvider provider = AssayService.get().getProvider(getProtocol());
         Domain domain = provider.getResultsDomain(getProtocol());
-        DomainProperty[] properties = domain.getProperties();
-        return reorderDomainColumns(properties, getViewContext(), getProtocol());
+        return domain.getProperties();
     }
 
     public Map<DomainProperty, String> getRunProperties() throws ExperimentException
@@ -115,7 +81,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
             Domain domain = provider.getRunDomain(getProtocol());
             DomainProperty[] properties = domain.getProperties();
-            properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
             _runProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
         return Collections.unmodifiableMap(_runProperties);
@@ -129,7 +94,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
             Domain domain = provider.getBatchDomain(getProtocol());
             DomainProperty[] properties = domain.getProperties();
-            properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
             _uploadSetProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
         return Collections.unmodifiableMap(_uploadSetProperties);

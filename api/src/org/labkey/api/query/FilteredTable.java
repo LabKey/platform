@@ -177,7 +177,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     public ColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
     {
         assert underlyingColumn.getParentTable() == _rootTable;
-        ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS), underlyingColumn.getSqlTypeInt());
+        ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS), underlyingColumn.getJdbcType());
         ret.copyAttributesFrom(underlyingColumn);
         ret.copyURLFrom(underlyingColumn, null, null);
         ret.setLabel(ColumnInfo.labelFromName(alias));

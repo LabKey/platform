@@ -20,7 +20,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.DomainProperty;
 
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -172,7 +171,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
 
         public InRangeExprColumn(TableInfo parent, FieldKey name, String baseName)
         {
-            super(parent, name, null, Types.INTEGER);
+            super(parent, name, null, JdbcType.INTEGER);
             _baseName = baseName;
         }
 

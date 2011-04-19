@@ -71,7 +71,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         _enum = e;
         _getter = getter;
 
-        ExprColumn column = new ExprColumn(this, "Value", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Value"), Types.VARCHAR);
+        ExprColumn column = new ExprColumn(this, "Value", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Value"), JdbcType.VARCHAR);
         column.setKeyField(true);
         setTitleColumn(column.getName());
         addColumn(column);
