@@ -420,8 +420,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     }, this);
                 }, this);
 
-                // store the temp schema and query name for the data grid
-                this.tempGridInfo = {schema: data.schemaName, query: data.queryName};
+                // store the temp schema name, query name, etc. for the data grid
+                this.tempGridInfo = {schema: data.schemaName, query: data.queryName,
+                        subjectCol: data.measureToColumn[this.viewInfo.subjectColumn],
+                        intervalCol: this.chartInfo.measures[xAxisMeasureIndex].dateOptions.interval
+                };
 
                 // now that we have the temp grid info, enable the View Data button
                 // and make sure that the view charts button is hidden
@@ -686,6 +689,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 renderTo: gridPanelId,
                 schemaName: this.tempGridInfo.schema,
                 queryName: this.tempGridInfo.query,
+                sort: this.tempGridInfo.subjectCol + ', ' + this.tempGridInfo.intervalCol,
                 allowChooseQuery: false,
                 allowChooseView: false,
                 title: "",

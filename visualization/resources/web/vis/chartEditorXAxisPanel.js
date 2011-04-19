@@ -46,7 +46,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     'load': function(cmp, records, options) {
                         // if this is not a saved chart and the zerodatecol value has loaded, then set the default axis label
                         if(!this.axis.label && this.zeroDateCombo && this.zeroDateCombo.getValue()) {
-                            var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('name', this.zeroDateCombo.getValue())).data.label;
+                            var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
                             var newLabel = "Days Since " + zeroDateLabel;
                             Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
 
@@ -65,7 +65,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 'select': function(cmp, record, index) {
                     // change the axis label if it has not been customized by the user
                     // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
-                    var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('name', this.zeroDateCombo.getValue())).data.label;
+                    var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
                     var ending = " Since " + zeroDateLabel;
                     if(Ext.getCmp('x-axis-label-textfield').getValue().indexOf(ending) > -1) {
                         var newLabel = record.data.value + " Since " + zeroDateLabel;
@@ -107,7 +107,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.Store(),
-            valueField: 'name',
+            valueField: 'longlabel',
             displayField: 'longlabel',
             forceSelection: true,
             minListWidth : 350,
@@ -295,7 +295,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     // if this is a saved report, we will have a zero date to select
                     var index = 0;
                     if(this.dateOptions.zeroDateCol){
-                        index = store.find('name', this.dateOptions.zeroDateCol.name);
+                        // need to get the index by the variable name and query name
+                        index = store.findBy(function(record, id){
+                            return (record.get('name') == this.dateOptions.zeroDateCol.name
+                               && record.get('queryName') == this.dateOptions.zeroDateCol.queryName)
+                        }, this);
                     }
                     // otherwise, try a few hard-coded options
                     else if(store.find('name', 'StartDate') > -1) {
@@ -309,13 +313,13 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     }
 
                     if(store.getAt(index)){
-                        this.zeroDateCombo.setValue(store.getAt(index).get('name'));
+                        this.zeroDateCombo.setValue(store.getAt(index).get('longlabel'));
                         this.dateOptions.zeroDateCol = store.getAt(index).data;
                     }
 
                     // if this is not a saved chart and the interval value has loaded, then set the default axis label
-                    if(!this.axis.label && this.intervalCombo && this.intervalCombo.getValue() && store.find('name', this.zeroDateCombo.getValue()) > -1) {
-                        var zeroDateLabel = store.getAt(store.find('name', this.zeroDateCombo.getValue())).data.label;
+                    if(!this.axis.label && this.intervalCombo && this.intervalCombo.getValue() && store.find('longlabel', this.zeroDateCombo.getValue()) > -1) {
+                        var zeroDateLabel = store.getAt(store.find('longlabel', this.zeroDateCombo.getValue())).data.label;
                         var newLabel = this.intervalCombo.getValue() + " Since " + zeroDateLabel;
                         Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
 
