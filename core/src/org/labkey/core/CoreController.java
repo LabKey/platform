@@ -1194,4 +1194,20 @@ public class CoreController extends SpringActionController
             return result;
         }
     }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class StyleOverviewAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/core/styling.jsp");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Styling Overview");
+        }
+    }
 }
