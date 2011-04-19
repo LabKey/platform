@@ -19,6 +19,7 @@ package org.labkey.api.action;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.PropertyValues;
@@ -90,7 +91,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
                     ModelAndView mv = getSuccessView(form);
                     if (null != mv)
                         return mv;
-                    HttpView.throwRedirect(getSuccessURL(form));
+                    throw new RedirectException(getSuccessURL(form));
                 }
             }
             else
@@ -106,7 +107,9 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
         // We failed... redirect if fail URL is specified, otherwise return the error view
         ActionURL urlFail = getFailURL(form, errors);
         if (null != urlFail)
-            HttpView.throwRedirect(urlFail);
+        {
+            throw new RedirectException(urlFail);
+        }
 
         return getFailView(form, errors);
     }

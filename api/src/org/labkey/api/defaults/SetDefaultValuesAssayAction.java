@@ -27,7 +27,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.permissions.DesignAssayPermission;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -152,7 +152,9 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
     {
         _provider = AssayService.get().getProvider(domainIdForm.getProviderName());
         if (_provider == null)
-            HttpView.throwNotFound("Could not find assay provider with name " + domainIdForm.getProviderName());
+        {
+            throw new NotFoundException("Could not find assay provider with name " + domainIdForm.getProviderName());
+        }
         return super.getView(domainIdForm, reshow, errors);
 
     }

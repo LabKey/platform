@@ -17,7 +17,7 @@
 package org.labkey.api.action;
 
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -63,7 +63,9 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
         }
 
         if (success)
-            HttpView.throwRedirect(getSuccessURL(form));
+        {
+            throw new RedirectException(getSuccessURL(form));
+        }
 
         return getErrorView(form, errors);
     }

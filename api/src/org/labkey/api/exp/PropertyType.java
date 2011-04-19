@@ -22,7 +22,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.JdbcType;
 
 import java.io.File;
-import java.sql.Types;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -115,9 +114,9 @@ public enum PropertyType
             if (null == value)
                 return null;
             if (value instanceof Integer)
-                return (Integer)value;
+                return value;
             else
-                return (Integer)ConvertUtils.convert(value.toString(), Integer.class);
+                return ConvertUtils.convert(value.toString(), Integer.class);
         }
     },
     FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 100, "file", CellType.LABEL, File.class)

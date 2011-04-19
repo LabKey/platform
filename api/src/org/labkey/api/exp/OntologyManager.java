@@ -85,6 +85,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static org.labkey.api.search.SearchService.PROPERTY;
@@ -349,7 +350,7 @@ public class OntologyManager
 
 			for (Map<String, Object> map : rows)
 			{
-                currentRow = new CaseInsensitiveHashMap(map);
+                currentRow = new CaseInsensitiveHashMap<Object>(map);
                 
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
@@ -774,13 +775,6 @@ public class OntologyManager
             Integer objid = ontologyObject.getObjectId();
             deleteOntologyObjects(new Integer[]{objid}, container, deleteOwnedObjects, true);
         }
-    }
-
-
-    /** Delete owned properties and objects, but not the object itself or it's properties. */
-    public static void deleteOntologyObjectChildren(Integer[] ownerIds, Container container) throws SQLException
-    {
-        deleteOntologyObjects(ownerIds, container, true, false);
     }
 
 
@@ -1944,7 +1938,7 @@ public class OntologyManager
     }
 
 
-    public static DomainDescriptor[] getDomainDescriptors(Container container) throws SQLException
+    public static Collection<DomainDescriptor> getDomainDescriptors(Container container) throws SQLException
     {
         Map<String, DomainDescriptor> ret = new LinkedHashMap<String, DomainDescriptor>();
         String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Project = ?";
@@ -1970,7 +1964,7 @@ public class OntologyManager
                 }
             }
         }
-        return ret.values().toArray(new DomainDescriptor[ret.size()]);
+        return ret.values();
     }
     
     public static String getCacheKey (DomainDescriptor dd)
@@ -2040,33 +2034,6 @@ public class OntologyManager
 			throw new RuntimeSQLException(x);
 		}
 	}
-
-
-    public static DomainDescriptor[] getDomainsForProperty(String propertyURI, Container c)
-	{
-        Container proj = c.getProject();
-        if (null==proj)
-            proj=c;
-        try
-		{
-            String sql = " SELECT DD.* FROM " + getTinfoPropertyDescriptor() + " PD " +
-                         "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
-                         "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
-                         "  WHERE PD.PropertyURI = ?  AND PD.Project = ? ORDER BY DD.DomainId ASC ";
-            DomainDescriptor[] ddArray = Table.executeQuery(getExpSchema(), sql, new Object[]{propertyURI, proj}, DomainDescriptor.class );
-            for (DomainDescriptor dd : ddArray) {
-				domainDescCache.put(getCacheKey(dd),dd);
-			}
-
-			return ddArray;
-		}
-		catch (SQLException x)
-		{
-			_log.error("Error getting domain descriptors for property: " + propertyURI, x);
-			return null;
-		}
-	}
-
 
 	public static void deleteType(String domainURI, Container c) throws DomainNotFoundException
 	{
@@ -2260,20 +2227,6 @@ public class OntologyManager
 		propDescCache.put(getCacheKey(pd), pd);
 		return pd;
 	}
-
-
-    public static DomainDescriptor insertOrUpdateDomainDescriptor(DomainDescriptor dd)
-            throws SQLException
-    {
-        DomainDescriptor exist = getDomainDescriptor(dd.getDomainURI(),dd.getContainer());
-        if (null == exist)
-            return insertDomainDescriptor(dd);
-        else
-        {
-            dd.setDomainId(exist.getDomainId());
-            return updateDomainDescriptor(dd);
-        }
-    }
 
 
     public static DomainDescriptor insertDomainDescriptor(DomainDescriptor dd) throws SQLException

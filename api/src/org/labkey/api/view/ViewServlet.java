@@ -35,6 +35,7 @@ import org.labkey.api.util.SessionAppender;
 import org.labkey.api.util.URLHelper;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletConfig;
@@ -498,8 +499,7 @@ public class ViewServlet extends HttpServlet
             Module module = ModuleLoader.getInstance().getModuleForController(url.getPageFlow());
             if (module == null)
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
             module.dispatch(request, mockResponse, url);
             return mockResponse;

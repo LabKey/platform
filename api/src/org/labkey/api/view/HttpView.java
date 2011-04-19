@@ -577,30 +577,10 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
     }
 
-
-    public static ModelAndView throwRedirect(URLHelper url) throws RedirectException
-    {
-        throw new RedirectException(url.getLocalURIString());
-    }
-
-
-    public static ModelAndView throwRedirect(String url) throws RedirectException
-    {
-        throw new RedirectException(url);
-    }
-
-
-    public static ModelAndView throwRedirect(HString url) throws RedirectException
-    {
-        throw new RedirectException(url.getSource());
-    }
-
-
     public static ModelAndView redirect(URLHelper url)
     {
         return new ModelAndView(new RedirectView(url.getLocalURIString(), false));
     }
-
 
     public static ModelAndView redirect(String url)
     {
@@ -610,26 +590,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public static ModelAndView redirect(HString url)
     {
         return new ModelAndView(new RedirectView(url.getSource(), false));
-    }
-
-    public static ModelAndView throwNotFound() throws NotFoundException
-    {
-        throw new NotFoundException();
-    }
-
-    public static ModelAndView throwNotFound(String message) throws NotFoundException
-    {
-        throw new NotFoundException(message);
-    }
-
-    public static ModelAndView throwUnauthorized() throws UnauthorizedException
-    {
-        throw new UnauthorizedException();
-    }
-
-    public static void throwUnauthorized(String message) throws UnauthorizedException
-    {
-        throw new UnauthorizedException(message);
     }
 
     /**

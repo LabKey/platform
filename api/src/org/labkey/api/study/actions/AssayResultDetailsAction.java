@@ -28,8 +28,9 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
@@ -59,11 +60,13 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         AbstractAssayProvider aap = (AbstractAssayProvider) provider;
         _data = aap.getDataForDataRow(_dataRowId, _protocol);
         if (_data == null)
-            HttpView.throwNotFound("Assay ExpData not found for dataRowId: " + _dataRowId);
+        {
+            throw new NotFoundException("Assay ExpData not found for dataRowId: " + _dataRowId);
+        }
 
         if (!_data.getContainer().equals(getViewContext().getContainer()))
         {
-            HttpView.throwRedirect(getViewContext().cloneActionURL().setContainer(_data.getContainer()));
+            throw new RedirectException(getViewContext().cloneActionURL().setContainer(_data.getContainer()));
         }
 
         return provider.createResultDetailsView(context, _protocol, _data, _dataRowId);

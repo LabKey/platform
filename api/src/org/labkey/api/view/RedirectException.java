@@ -15,7 +15,9 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.HString;
 import org.labkey.api.util.SkipMothershipLogging;
+import org.labkey.api.util.URLHelper;
 
 import javax.servlet.ServletException;
 
@@ -23,7 +25,7 @@ public class RedirectException extends ServletException implements SkipMothershi
 {
     String _url;
 
-    public RedirectException(ActionURL url)
+    public RedirectException(URLHelper url)
     {
         this(url.getLocalURIString());
     }
@@ -31,6 +33,11 @@ public class RedirectException extends ServletException implements SkipMothershi
     public RedirectException(String url)
     {
         _url = url;
+    }
+
+    public RedirectException(HString url)
+    {
+        _url = url.getSource();
     }
 
     public String getURL()

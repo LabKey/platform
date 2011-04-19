@@ -27,12 +27,13 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 
@@ -323,7 +324,9 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         String columnListName = getViewName();
         QueryDefinition querydef = getQueryDef();
         if (null == querydef)
-            HttpView.throwNotFound();
+        {
+            throw new NotFoundException();
+        }
         _customView = querydef.getCustomView(getUser(), getViewContext().getRequest(), columnListName);
         return _customView;
     }

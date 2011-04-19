@@ -32,8 +32,9 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.GUID;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;
 
@@ -159,7 +160,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
         }
         else if (!container.hasPermission(getUser(), ReadPermission.class))
         {
-            HttpView.throwUnauthorized();
+            throw new UnauthorizedException();
         }
 
         return DefaultSchema.get(getUser(), container);

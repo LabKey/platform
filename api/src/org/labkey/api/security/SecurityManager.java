@@ -61,8 +61,10 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -1742,7 +1744,9 @@ public class SecurityManager
             String path = extraPath.substring(0, slash);
             c = ContainerManager.getForPath(path);
             if (null == c)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
         }
 
         return getGroupId(c, group);
@@ -1814,7 +1818,9 @@ public class SecurityManager
             throw new RuntimeSQLException(x);
         }
         if (groupId == null && throwOnFailure)
-            HttpView.throwNotFound();
+        {
+            throw new NotFoundException();
+        }
 
         return groupId;
     }

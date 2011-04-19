@@ -18,7 +18,8 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 
@@ -60,7 +61,7 @@ public class PkFilter extends SimpleFilter
                     }
                     catch (ConversionException e)
                     {
-                        HttpView.throwNotFound("Failed to convert '" + value + "' for '" + name + "', should be of type " + targetClass.getName());
+                        throw new NotFoundException("Failed to convert '" + value + "' for '" + name + "', should be of type " + targetClass.getName());
                     }
                 }
             }

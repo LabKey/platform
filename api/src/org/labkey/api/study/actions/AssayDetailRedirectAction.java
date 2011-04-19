@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.view.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.AssayUrls;
+import org.springframework.web.servlet.ModelAndView;
 /*
  * User: brittp
  * Date: Mar 17, 2009
@@ -51,7 +52,9 @@ public class AssayDetailRedirectAction extends SimpleRedirectAction<AssayDetailR
     public ActionURL getRedirectURL(AssayDetailsForm form) throws Exception
     {
         if (form.getRunId() == null)
-            HttpView.throwNotFound();
+        {
+            throw new NotFoundException();
+        }
         ExpRun run = ExperimentService.get().getExpRun(form.getRunId().intValue());
         if (run == null)
             throw new NotFoundException("The assay run that produced the data has been deleted.");

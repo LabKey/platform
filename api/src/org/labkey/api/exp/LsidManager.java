@@ -77,9 +77,7 @@ public class LsidManager
         public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
         {
             Container c = getContainer(lsid);
-            if (c != null)
-                return c.hasPermission(user, perm);
-            return false;
+            return c != null && c.hasPermission(user, perm);
         }
     }
 
@@ -151,9 +149,7 @@ public class LsidManager
     public boolean hasPermission(Lsid lsid, User user, Class<? extends ReadPermission> perm)
     {
         LsidHandler handler = findHandler(lsid);
-        if (null != handler)
-            return handler.hasPermission(lsid, user, perm);
-        return false;
+        return null != handler && handler.hasPermission(lsid, user, perm);
     }
 
     public boolean hasPermission(String lsid, User user, Class<? extends ReadPermission> perm)
@@ -176,8 +172,7 @@ public class LsidManager
         if (null == handlerMap)
             return null;
 
-        LsidHandler handler = handlerMap.get(lsid.getNamespacePrefix());
-        return handler;
+        return handlerMap.get(lsid.getNamespacePrefix());
     }
 
 

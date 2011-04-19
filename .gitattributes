@@ -311,7 +311,6 @@ api/src/org/labkey/api/exp/PropertyType.java -text
 api/src/org/labkey/api/exp/ProtocolApplicationParameter.java -text
 api/src/org/labkey/api/exp/ProtocolParameter.java -text
 api/src/org/labkey/api/exp/RawValueColumn.java -text
-api/src/org/labkey/api/exp/RunExpansionHandler.java -text
 api/src/org/labkey/api/exp/SamplePropertyHelper.java -text
 api/src/org/labkey/api/exp/XarContext.java -text
 api/src/org/labkey/api/exp/XarFormatException.java -text
@@ -320,7 +319,6 @@ api/src/org/labkey/api/exp/api/AbstractExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/api/AssayDomainType.java -text
 api/src/org/labkey/api/exp/api/DataType.java -text
 api/src/org/labkey/api/exp/api/DefaultExperimentDataHandler.java -text
-api/src/org/labkey/api/exp/api/ExpChildObject.java -text
 api/src/org/labkey/api/exp/api/ExpData.java -text
 api/src/org/labkey/api/exp/api/ExpDataRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpExperiment.java -text

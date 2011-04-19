@@ -25,7 +25,6 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
@@ -142,12 +141,12 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
         File f = root.resolvePath(path);
         if (!NetworkDrive.exists(f))
         {
-            HttpView.throwNotFound("Unable to find file: " + path);
+            throw new NotFoundException("Unable to find file: " + path);
         }
 
         if (files == null)
         {
-            HttpView.throwNotFound("Could not find any matching files");
+            throw new NotFoundException("Could not find any matching files");
         }
 
         for (String fileName : files)
@@ -166,7 +165,7 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
 
         if (retFiles.isEmpty())
         {
-            HttpView.throwNotFound("Could not find any matching files");
+            throw new NotFoundException("Could not find any matching files");
         }
 
         Collections.sort(retFiles);

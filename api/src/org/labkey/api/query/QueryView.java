@@ -41,6 +41,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -93,8 +94,7 @@ public class QueryView extends WebPartView<Object>
         UserSchema s = form.getSchema();
         if (s == null)
         {
-            HttpView.throwNotFound("Could not find schema: " + form.getSchemaName());
-            return null;
+            throw new NotFoundException("Could not find schema: " + form.getSchemaName());
         }
         return create(form.getViewContext(), s, form.getQuerySettings(), errors);
     }

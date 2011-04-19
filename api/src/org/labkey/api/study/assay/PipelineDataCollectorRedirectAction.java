@@ -29,9 +29,9 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -65,7 +65,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
             File f = root.resolvePath(path);
             if (!NetworkDrive.exists(f))
             {
-                HttpView.throwNotFound("Unable to find file: " + path);
+                throw new NotFoundException("Unable to find file: " + path);
             }
 
             for (String fileName : getViewContext().getRequest().getParameterValues("file"))
@@ -104,7 +104,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
 
         if (files.isEmpty())
         {
-            HttpView.throwNotFound("Could not find any matching files");
+            throw new NotFoundException("Could not find any matching files");
         }
         files = validateFiles(errors, files);
 
@@ -120,8 +120,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
             maps.add(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, file));
         }
         PipelineDataCollector.setFileCollection(getViewContext().getRequest().getSession(true), container, form.getProtocol(), maps);
-        HttpView.throwRedirect(AssayService.get().getProvider(form.getProtocol()).getImportURL(container, form.getProtocol()));
-        return null;
+        throw new RedirectException(AssayService.get().getProvider(form.getProtocol()).getImportURL(container, form.getProtocol()));
     }
 
     /**
@@ -163,7 +162,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
             ExpProtocol result = ExperimentService.get().getExpProtocol(_protocolId);
             if (result == null)
             {
-                HttpView.throwNotFound("Could not find protocol");
+                throw new NotFoundException("Could not find protocol");
             }
             return result;
         }

@@ -17,7 +17,6 @@ package org.labkey.api.util;
 
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.RedirectException;
 import org.jetbrains.annotations.Nullable;
 
@@ -104,7 +103,7 @@ public class ReturnURLString extends HString
 
     public void throwRedirect() throws RedirectException
     {
-        HttpView.throwRedirect(this);
+        throw new RedirectException(this);
     }
 
 

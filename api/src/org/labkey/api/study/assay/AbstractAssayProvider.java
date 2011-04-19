@@ -1266,11 +1266,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return data;
     }
 
-    public boolean canCopyToStudy()
-    {
-        return true;
-    }
-
     public RunListQueryView createRunQueryView(ViewContext context, ExpProtocol protocol)
     {
         RunListQueryView queryView = new RunListQueryView(protocol, context);

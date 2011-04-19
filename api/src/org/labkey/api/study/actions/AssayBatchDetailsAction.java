@@ -19,8 +19,9 @@ package org.labkey.api.study.actions;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.AppBar;
@@ -65,11 +66,13 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
         _protocol = getProtocol(form);
         _exp = ExperimentService.get().getExpExperiment(form.getBatchId());
         if (_exp == null)
-            HttpView.throwNotFound("Assay batch not found for runId: " + form.getBatchId());
+        {
+            throw new NotFoundException("Assay batch not found for runId: " + form.getBatchId());
+        }
 
         if (!_exp.getContainer().equals(getViewContext().getContainer()))
         {
-            HttpView.throwRedirect(getViewContext().cloneActionURL().setContainer(_exp.getContainer()));
+            throw new RedirectException(getViewContext().cloneActionURL().setContainer(_exp.getContainer()));
         }
 
         AssayProvider provider = AssayService.get().getProvider(_protocol);

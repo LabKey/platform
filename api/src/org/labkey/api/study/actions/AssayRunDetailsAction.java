@@ -27,8 +27,9 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
@@ -65,11 +66,13 @@ public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction
         _protocol = getProtocol(form);
         _run = ExperimentService.get().getExpRun(form.getRunId());
         if (_run == null)
-            HttpView.throwNotFound("Assay run not found for runId: " + form.getRunId());
+        {
+            throw new NotFoundException("Assay run not found for runId: " + form.getRunId());
+        }
 
         if (!_run.getContainer().equals(getViewContext().getContainer()))
         {
-            HttpView.throwRedirect(getViewContext().cloneActionURL().setContainer(_run.getContainer()));
+            throw new RedirectException(getViewContext().cloneActionURL().setContainer(_run.getContainer()));
         }
 
         AssayProvider provider = AssayService.get().getProvider(_protocol);

@@ -102,8 +102,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
     ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
 
-    boolean canCopyToStudy();
-
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 
     List<Pair<Domain, Map<DomainProperty, Object>>> getDomains(ExpProtocol protocol);
@@ -196,8 +194,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /**
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
-     * @param protocol
-     * @param scripts
      */
     void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts, ScriptType type) throws ExperimentException;
 

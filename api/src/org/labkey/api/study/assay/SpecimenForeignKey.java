@@ -23,7 +23,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
 
-import java.sql.Types;
 import java.util.*;
 
 /**

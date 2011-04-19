@@ -29,13 +29,15 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -137,7 +139,9 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (!isValid())
             throw new SQLException("Form is not valid.");
         if (!hasPermission(InsertPermission.class))
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
         if (null != _tinfo.getColumn("container"))
             set("container", _c.getId());
 
@@ -158,7 +162,9 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (!isValid())
             throw new SQLException("Form is not valid.");
         if (!hasPermission(UpdatePermission.class))
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
 
         if (null != _tinfo.getColumn("container"))
             set("container", _c.getId());
@@ -180,7 +186,9 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         assert null != getPkVals();
 
         if (!hasPermission(DeletePermission.class))
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
 
         if (null != _selectedRows && _selectedRows.length > 0)
         {
@@ -217,7 +225,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         }
         if (!foundNotNullValue)
         {
-            HttpView.throwNotFound("Invalid PK value - cannot be null");
+            throw new NotFoundException("Invalid PK value - cannot be null");
         }
         Map[] maps = Table.select(_tinfo, _tinfo.getColumnNameSet(), new PkFilter(_tinfo, pkVals), null, Map.class);
 

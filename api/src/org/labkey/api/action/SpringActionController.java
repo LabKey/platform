@@ -201,7 +201,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
     protected void requiresLogin() throws ServletException
     {
         if (getUser().isGuest())
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
     }
     
     protected ViewBackgroundInfo getViewBackgroundInfo()
@@ -316,8 +318,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             action = resolveAction(url.getAction());
             if (null == action)
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
 
             ActionURL redirectURL = getUpgradeMaintenanceRedirect(request, action);
@@ -351,7 +352,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 if (mv.getView() instanceof RedirectView)
                 {
                     // treat same as a throw redirect
-                    HttpView.throwRedirect(((RedirectView)mv.getView()).getUrl());
+                    throw new RedirectException(((RedirectView)mv.getView()).getUrl());
                 }
                 renderInTemplate(context, action, pageConfig, mv);
             }

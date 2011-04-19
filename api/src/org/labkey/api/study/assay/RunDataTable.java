@@ -41,7 +41,7 @@ import java.util.Set;
  * Time: 5:35:15 PM
  */
 @Deprecated
-public class RunDataTable extends FilteredTable
+/* package */ class RunDataTable extends FilteredTable
 {
     private Domain _resultsDomain;
 

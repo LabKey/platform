@@ -442,7 +442,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             if (publishErrors.isEmpty())
             {
                 DataRegionSelection.clearAll(getViewContext(), publishConfirmForm.getDataRegionSelectionKey());
-                HttpView.throwRedirect(successURL);
+                throw new RedirectException(successURL);
             }
             for (String publishError : publishErrors)
             {

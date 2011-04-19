@@ -580,8 +580,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         Container c = context.getContainer();
         if (null == c)
         {
-            HttpView.throwNotFound();
-            return;
+            throw new NotFoundException();
         }
 
         User user = context.getUser();
@@ -618,7 +617,9 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             if (isPOST)
             {
                 if (!user.isAdministrator())
-                    HttpView.throwUnauthorized();
+                {
+                    throw new UnauthorizedException();
+                }
             }
             else
             {
@@ -635,11 +636,15 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
         if (requiresSiteAdmin && !user.isAdministrator())
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
 
         boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
         if (requiresLogin && user.isGuest())
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
 
         CSRF csrfCheck = actionClass.getAnnotation(CSRF.class);
         if (null != csrfCheck && isPOST)

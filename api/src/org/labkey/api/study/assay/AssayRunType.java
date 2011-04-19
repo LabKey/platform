@@ -24,7 +24,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.actions.ShowSelectedDataAction;
-import org.labkey.api.study.actions.PublishStartAction;
 import org.labkey.api.security.permissions.InsertPermission;
 
 import java.util.List;
@@ -38,13 +37,11 @@ public class AssayRunType extends ExperimentRunType
 {
     public static final String SCHEMA_NAME = "assay";
     private final ExpProtocol _protocol;
-    private final Container _container;
 
     public AssayRunType(ExpProtocol protocol, Container c)
     {
         super(protocol.getName(), SCHEMA_NAME, AssayService.get().getRunsTableName(protocol));
         _protocol = protocol;
-        _container = c;
     }
 
     @Override
@@ -60,19 +57,16 @@ public class AssayRunType extends ExperimentRunType
         viewSelectedButton.setActionType(ActionButton.Action.POST);
         bar.add(viewSelectedButton);
 
-        if (AssayService.get().getProvider(_protocol).canCopyToStudy())
-        {
-            ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(context.getContainer(), _protocol);
-            copyURL.addParameter("runIds", true);
-            if (table.getContainerFilter() != null)
-                copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());
-            ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
-            copySelectedButton.setDisplayPermission(InsertPermission.class);
-            copySelectedButton.setURL(copyURL);
-            copySelectedButton.setRequiresSelection(true);
-            copySelectedButton.setActionType(ActionButton.Action.POST);
-            bar.add(copySelectedButton);
-        }
+        ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(context.getContainer(), _protocol);
+        copyURL.addParameter("runIds", true);
+        if (table.getContainerFilter() != null)
+            copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());
+        ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
+        copySelectedButton.setDisplayPermission(InsertPermission.class);
+        copySelectedButton.setURL(copyURL);
+        copySelectedButton.setRequiresSelection(true);
+        copySelectedButton.setActionType(ActionButton.Action.POST);
+        bar.add(copySelectedButton);
 
         List<ActionButton> buttons = AssayService.get().getImportButtons(_protocol, context.getUser(), context.getContainer(), false);
         bar.addAll(buttons);

@@ -17,12 +17,12 @@
 package org.labkey.api.study.actions;
 
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.AssayUrls;
@@ -43,11 +43,10 @@ public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
         ExpProtocol protocol = protocolIdForm.getProtocol();
         
         if(!allowDelete(protocol))
-            HttpView.throwUnauthorized("You do not have sufficient permissions to delete this assay design.");
+            throw new UnauthorizedException("You do not have sufficient permissions to delete this assay design.");
 
         protocolIdForm.getProtocol().delete(getViewContext().getUser());
-        HttpView.throwRedirect(PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getViewContext().getContainer()));
-        return null;
+        throw new RedirectException(PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getViewContext().getContainer()));
     }
 
     private boolean allowDelete(ExpProtocol protocol)

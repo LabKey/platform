@@ -238,7 +238,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             ActionURL helper = getViewContext().cloneActionURL();
             helper.replaceParameter("uploadStep", BatchStepHandler.NAME);
-            HttpView.throwRedirect(helper);
+            throw new RedirectException(helper);
         }
         InsertView insertView = createBatchInsertView(runForm, errorReshow, errors);
         insertView.getDataRegion().setFormActionUrl(new ActionURL(UploadWizardAction.class, getContainer()));
@@ -562,7 +562,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             if (getCompletedUploadAttemptIDs().contains(form.getUploadAttemptID()))
             {
-                HttpView.throwRedirect(getViewContext().getActionURL());
+                throw new RedirectException(getViewContext().getActionURL());
             }
 
             if (!form.isResetDefaultValues() && validatePost(form, errors))

@@ -234,7 +234,6 @@ public class ExperimentService
         public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
         public void registerExperimentDataHandler(ExperimentDataHandler handler);
-        public void registerRunExpansionHandler(RunExpansionHandler handler);
         public void registerExperimentRunTypeSource(ExperimentRunTypeSource source);
         public void registerDataType(DataType type);
         public void registerProtocolImplementation(ProtocolImplementation impl);

@@ -139,7 +139,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                 links.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, _containerFilter))));
             }
 
-            if (AuditLogService.get().isViewable() && _provider.canCopyToStudy())
+            if (AuditLogService.get().isViewable())
                 links.add(new NavTree("view copy-to-study history", AssayPublishService.get().getPublishHistory(getViewContext().getContainer(), _protocol, _containerFilter)));
         }
         else

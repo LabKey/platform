@@ -27,8 +27,8 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -94,7 +94,7 @@ abstract public class UserSchema extends AbstractSchema
             return null;
 
         if (!canReadSchema())
-            HttpView.throwUnauthorized("Cannot read query " + getSchemaName() + "." + name + " in " + getContainer().getPath());
+            throw new UnauthorizedException("Cannot read query " + getSchemaName() + "." + name + " in " + getContainer().getPath());
 
         TableInfo table = createTable(name);
         if (table != null)
