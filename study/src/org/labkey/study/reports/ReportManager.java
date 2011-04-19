@@ -32,7 +32,8 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.study.DataSet;
@@ -40,6 +41,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.sql.ResultSet;
@@ -250,17 +252,17 @@ public class ReportManager implements StudyManager.DataSetListener
         DataSetDefinition def = study.getDataSet(datasetId);
         if (def == null)
         {
-            HttpView.throwNotFound();
-            return null; // silence intellij warnings
+            throw new NotFoundException();
         }
         if (!def.canRead(ctx.getUser()))
-            HttpView.throwUnauthorized();
+            throw new UnauthorizedException();
+
         VisitImpl visit = null;
         if (visitRowId != 0)
         {
             visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
             if (null == visit)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
         }
 
         SimpleFilter filter = new SimpleFilter("DatasetId", datasetId);

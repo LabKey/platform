@@ -75,7 +75,9 @@ public class PropertyController extends SpringActionController
             if (_domain == null)
             {
                 if (!form.isCreateOrEdit())
-                    HttpView.throwNotFound("Domain not found");
+                {
+                    throw new NotFoundException("Domain not found");
+                }
 
                 // Domain wasn't found, let's create a new one.
                 String domainURI = form.getDomainURI();
@@ -85,21 +87,29 @@ public class PropertyController extends SpringActionController
                 }
 
                 if (domainURI == null)
-                    HttpView.throwNotFound("Can't create domain without DomainURI or schemaName/queryName pair.");
+                {
+                    throw new NotFoundException("Can't create domain without DomainURI or schemaName/queryName pair.");
+                }
 
                 DomainKind kind = PropertyService.get().getDomainKind(domainURI);
                 if (kind == null)
-                    HttpView.throwNotFound("Domain kind not found");
+                {
+                    throw new NotFoundException("Domain kind not found");
+                }
 
                 if (!kind.canCreateDefinition(getUser(), getContainer()))
-                    HttpView.throwUnauthorized();
+                {
+                    throw new UnauthorizedException();
+                }
 
                 _domain = PropertyService.get().createDomain(getContainer(), domainURI, form.getQueryName() != null ? form.getQueryName() : "");
             }
             else
             {
                 if (!_domain.getDomainKind().canEditDefinition(getUser(), _domain))
-                    HttpView.throwUnauthorized();
+                {
+                    throw new UnauthorizedException();
+                }
             }
 
             Map<String, String> props = new HashMap<String, String>();
@@ -435,7 +445,7 @@ public class PropertyController extends SpringActionController
             throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
 
         if (!kind.canCreateDefinition(user, container))
-            HttpView.throwUnauthorized("You don't have permission to create a new domain");
+            throw new UnauthorizedException("You don't have permission to create a new domain");
 
         Domain created = kind.createDomain(domain, arguments, container, user);
         if (created == null)

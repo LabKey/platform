@@ -277,7 +277,7 @@ public class CohortController extends BaseStudyController
             {
                 Cohort cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getRowId());
                 if (cohort == null)
-                    return HttpView.throwNotFound("Could not find cohort for rowId: " + form.getRowId());
+                    throw new NotFoundException("Could not find cohort for rowId: " + form.getRowId());
                 cohortLabel = cohort.getLabel();
                 if (!getStudy().isManualCohortAssignment())
                 {

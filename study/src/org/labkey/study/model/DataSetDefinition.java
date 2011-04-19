@@ -68,17 +68,16 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.StudyQuerySchema;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -385,7 +384,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             throw new IllegalArgumentException("user cannot be null");
 
         if (checkPermission && !canRead(user) && user != User.getSearchUser())
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
 
         return new DatasetSchemaTableInfo(this, user);
     }

@@ -17,11 +17,13 @@
 package org.labkey.query.controllers;
 
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
+import org.springframework.web.servlet.ModelAndView;
 
 public class InternalViewForm extends ViewForm
 {
@@ -53,20 +55,24 @@ public class InternalViewForm extends ViewForm
     {
         if (view == null)
         {
-            HttpView.throwNotFound();
+            throw new NotFoundException();
         }
         if (!view.getContainerId().equals(context.getContainer().getId()))
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
         if (view.getCustomViewOwner() == null)
         {
             if (!context.hasPermission(UpdatePermission.class))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
         }
         else
         {
             if (view.getCustomViewOwner().intValue() != context.getUser().getUserId())
             {
-                HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
             }
         }
     }

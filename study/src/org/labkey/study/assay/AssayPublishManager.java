@@ -42,7 +42,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.view.ViewContext;
@@ -52,6 +52,7 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -784,8 +785,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             return url;
         }
 
-        HttpView.throwNotFound("Specified protocol is invalid");
-        return null;
+        throw new NotFoundException("Specified protocol is invalid");
     }
 
     public TimepointType getTimepointType(Container container)
@@ -838,7 +838,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     public List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, ViewContext viewContext)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        if (provider.canCopyToStudy() && protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI) != null)
+        if (protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI) != null)
         {
             // First, track down the target study
             String targetStudyContainerId = protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI).getStringValue();

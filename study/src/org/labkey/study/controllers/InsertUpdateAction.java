@@ -29,7 +29,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
@@ -338,6 +337,6 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
     protected void redirectTypeNotFound(int datasetId) throws RedirectException
     {
-        HttpView.throwRedirect(new ActionURL(StudyController.TypeNotFoundAction.class, getViewContext().getContainer()).addParameter("id", datasetId));
+        throw new RedirectException(new ActionURL(StudyController.TypeNotFoundAction.class, getViewContext().getContainer()).addParameter("id", datasetId));
     }
 }

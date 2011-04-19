@@ -220,6 +220,24 @@ function validate()
     <%WebPartView.endTitleFrame(out);%>
     </td>
     <td width="30%" valign="top">
+        <div id="defaultTabDiv" style="display:<%="None".equals(folderType.getName()) ? "" : "none"%>">
+            <%WebPartView.startTitleFrame(out, "Default Tab", null, "100%", null);%>
+            <select name="defaultModule" value="<%=defaultModule.getName()%>">
+            <%
+                    for (Module module : allModules)
+                        {
+                        if (activeModules.contains(module))
+                            {
+                            %>
+                                <option value="<%= module.getName() %>" <%= module.getName().equals(defaultModule.getName()) ? "selected" : "" %>><%= module.getTabName(HttpView.currentContext()) %></option>
+                            <%
+                            }
+                        }
+            %>
+            </select>
+            <%WebPartView.endTitleFrame(out);%>
+        </div>
+
         <%WebPartView.startTitleFrame(out, "Modules", null, "100%", null);%>
 
         <labkey:errors/>
@@ -240,22 +258,7 @@ for (Module module : allModules)
         <%
         }
     }
-%><br>
-<div class="labkey-announcement-title" id="defaultTabDiv" style="display:<%="None".equals(folderType.getName()) ? "" : "none"%>"><span>Default Tab:</span><br>
-<select name="defaultModule" value="<%=defaultModule.getName()%>">
-<%
-        for (Module module : allModules)
-            {
-            if (activeModules.contains(module))
-                {
-                %>
-                    <option value="<%= module.getName() %>" <%= module.getName().equals(defaultModule.getName()) ? "selected" : "" %>><%= module.getTabName(HttpView.currentContext()) %></option>
-                <%
-                }
-            }
 %>
-</select>
-    </div>
     <%WebPartView.endTitleFrame(out);%>
 </td></tr>
 </table>

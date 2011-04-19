@@ -100,6 +100,7 @@ import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
@@ -279,10 +280,14 @@ public class QueryController extends SpringActionController
     protected void assertQueryExists(QueryForm form) throws ServletException
     {
         if (form.getSchema() == null)
-            HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
+        {
+            throw new NotFoundException("Could not find schema: " + form.getSchemaName().getSource());
+        }
 
         if (!queryExists(form))
-            HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' doesn't exist.");
+        {
+            throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' doesn't exist.");
+        }
     }
 
 
@@ -502,12 +507,18 @@ public class QueryController extends SpringActionController
             if (form.getSchema() == null)
             {
                 if (form.getSchemaName().isEmpty())
-                    HttpView.throwNotFound("Schema name not specified");
+                {
+                    throw new NotFoundException("Schema name not specified");
+                }
                 else
-                    HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
+                {
+                    throw new NotFoundException("Could not find schema: " + form.getSchemaName().getSource());
+                }
             }
             if (!form.getSchema().canCreate())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
             getPageConfig().setFocusId("ff_newQueryName");
             _form = form;
             setHelpTopic(new HelpTopic("customSQL"));
@@ -517,9 +528,13 @@ public class QueryController extends SpringActionController
         public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
         {
             if (form.getSchema() == null)
-                HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
+            {
+                throw new NotFoundException("Could not find schema: " + form.getSchemaName().getSource());
+            }
             if (!form.getSchema().canCreate())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
             try
             {
                 if (form.ff_baseTableName == null || "".equals(form.ff_baseTableName))
@@ -630,8 +645,7 @@ public class QueryController extends SpringActionController
             _form = form;
             if (form.getQueryDef() == null)
 	    	{
-	    		HttpView.throwNotFound();
-	    		return null;
+                throw new NotFoundException();
 	    	}
             if (form.ff_queryText == null)
             {
@@ -682,7 +696,7 @@ public class QueryController extends SpringActionController
                         // the URL again after the query definition is deleted
                         ActionURL redirect = _form.getForwardURL();
                         query.delete(getUser());
-                        HttpView.throwRedirect(redirect);
+                        throw new RedirectException(redirect);
                     }
                 }
                 else
@@ -781,8 +795,7 @@ public class QueryController extends SpringActionController
             QueryDefinition query = form.getQueryDef();
             if (null == query)
             {
-                HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' not found");
-                return null;
+                throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' not found");
             }
 
             QueryView queryView = QueryView.create(form, errors);
@@ -822,8 +835,7 @@ public class QueryController extends SpringActionController
             QueryDefinition query = form.getQueryDef();
             if (null == query)
             {
-                HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' not found");
-                return null;
+                throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' not found");
             }
 
             QueryView queryView = QueryView.create(form, errors);
@@ -1128,7 +1140,9 @@ public class QueryController extends SpringActionController
             if (!getContainer().hasPermission(getUser(), ReadPermission.class))
             {
                 if (!getUser().isGuest())
-                    HttpView.throwUnauthorized();
+                {
+                    throw new UnauthorizedException();
+                }
                 getViewContext().getResponse().setHeader("WWW-Authenticate", "Basic realm=\"" + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription() + "\"");
                 getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return null;
@@ -1386,7 +1400,9 @@ public class QueryController extends SpringActionController
             _form = form;
             _queryDef = (QueryDefinitionImpl) form.getQueryDef();
             if (null == _queryDef)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             if (form.ff_designXML == null)
             {
@@ -1414,7 +1430,9 @@ public class QueryController extends SpringActionController
             _form = form;
             _queryDef = (QueryDefinitionImpl) form.getQueryDef();
             if (null == _queryDef)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             if (form.ff_dirty)
             {
@@ -1669,8 +1687,7 @@ public class QueryController extends SpringActionController
             QueryDefinition queryDef = form.getQueryDef();
             if (queryDef == null)
 			{
-                HttpView.throwNotFound("Query not found");
-				return null;
+                throw new NotFoundException("Query not found");
 			}
             _form = form;
             _form.setDescription(queryDef.getDescription());
@@ -1687,7 +1704,9 @@ public class QueryController extends SpringActionController
             // assertQueryExists requires that it be well-formed
             // assertQueryExists(form);
             if (!form.canEdit())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
             QueryDefinition queryDef = form.getQueryDef();
             _queryName = form.getQueryName();
             if (queryDef == null || !queryDef.getContainer().getId().equals(getContainer().getId()))
@@ -1757,7 +1776,7 @@ public class QueryController extends SpringActionController
 
             if (!table.hasPermission(getUser(), DeletePermission.class))
             {
-                HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
             }
 
             QueryUpdateService updateService = table.getUpdateService();
@@ -1856,14 +1875,12 @@ public class QueryController extends SpringActionController
             _schema = form.getSchema();
             if (null == _schema)
             {
-                HttpView.throwNotFound("Schema not found");
-                return null;
+                throw new NotFoundException("Schema not found");
             }
             _table = _schema.getTable(form.getQueryName());
             if (null == _table)
             {
-                HttpView.throwNotFound("Query not found");
-                return null;
+                throw new NotFoundException("Query not found");
             }
             _table.overlayMetadata(_table.getName(), _schema, new ArrayList<QueryException>());
             QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext(), null);
@@ -1913,7 +1930,9 @@ public class QueryController extends SpringActionController
         {
             TableInfo table = form.getTable();
             if (!table.hasPermission(form.getUser(), insert ? InsertPermission.class : UpdatePermission.class))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             Map<String, Object> values = form.getTypedColumns();
 
@@ -2637,7 +2656,7 @@ public class QueryController extends SpringActionController
             TableInfo table = getTableInfo(container, user, schemaName, queryName);
 
             if (!table.hasPermission(user, commandType.getPermission()))
-                HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
 
             if (table.getPkColumns().size() == 0)
                 throw new IllegalArgumentException("The table '" + table.getPublicSchemaName() + "." +
@@ -3367,8 +3386,7 @@ public class QueryController extends SpringActionController
         @Override
         protected ModelAndView handleGet() throws Exception
         {
-            HttpView.throwUnauthorized();
-            return null;
+            throw new UnauthorizedException();
         }
 
         public ApiResponse execute(DeleteViewForm form, BindException errors) throws Exception
@@ -3376,13 +3394,12 @@ public class QueryController extends SpringActionController
             CustomView view = form.getCustomView();
             if (view == null)
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
             if (view.isShared())
             {
                 if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
-                    HttpView.throwUnauthorized();
+                    throw new UnauthorizedException();
             }
             view.delete(getUser(), getViewContext().getRequest());
 
@@ -3459,8 +3476,7 @@ public class QueryController extends SpringActionController
             CustomView view = form.getCustomView();
             if (view == null)
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
             if (!view.isSession())
                 throw new IllegalArgumentException("This action only supports saving session views.");
@@ -3473,7 +3489,7 @@ public class QueryController extends SpringActionController
             if (form.isShared() || form.isInherit())
             {
                 if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
-                    HttpView.throwUnauthorized();
+                    throw new UnauthorizedException();
             }
 
             // Delete the session view.
@@ -3670,7 +3686,7 @@ public class QueryController extends SpringActionController
             if (form.ff_share)
             {
                 if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-                    HttpView.throwUnauthorized();
+                    throw new UnauthorizedException();
             }
             CstmView[] existing = QueryManager.get().getCstmViews(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false);
             CstmView view;

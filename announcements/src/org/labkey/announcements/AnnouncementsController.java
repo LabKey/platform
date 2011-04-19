@@ -105,6 +105,8 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -275,7 +277,9 @@ public class AnnouncementsController extends SpringActionController
         public boolean doAction(Object o, BindException errors) throws Exception
         {
             if (!getPermissions().allowDeleteAnyThread())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             Container c = getContainer();
 
@@ -319,9 +323,13 @@ public class AnnouncementsController extends SpringActionController
                 ann = AnnouncementManager.getAnnouncement(getContainer(), form.getRowId(), AnnouncementManager.INCLUDE_RESPONSES);
 
             if (null == ann)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
             if (!perm.allowDeleteMessage(ann))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             _returnUrl = form.getReturnURLHelper();
 
@@ -350,9 +358,11 @@ public class AnnouncementsController extends SpringActionController
                 ann = AnnouncementManager.getAnnouncement(c, form.getRowId(), AnnouncementManager.INCLUDE_RESPONSES);
 
             if (ann == null)
-                return throwResponseNotFound();
+                throw new NotFoundException("Could not find response");
             if (!perm.allowDeleteMessage(ann))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             AnnouncementManager.deleteAnnouncement(c, ann.getRowId());
 
@@ -464,7 +474,9 @@ public class AnnouncementsController extends SpringActionController
         public boolean handlePost(MemberListRemovalForm form, BindException errors) throws Exception
         {
             if (form.getUserId() != getUser().getUserId())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             // TODO: Make this insert a new message to get history?
             AnnouncementManager.deleteUserFromMemberList(getUser(), form.getMessageId());
@@ -544,7 +556,7 @@ public class AnnouncementsController extends SpringActionController
         AnnouncementModel ann = AnnouncementManager.getAnnouncement(getContainer(), form.getEntityId(), true);  // Force member list to be selected
 
         if (null == ann)
-            throwThreadNotFound(getContainer());
+            throw createThreadNotFoundException(getContainer());
 
         return ann;
     }
@@ -591,7 +603,9 @@ public class AnnouncementsController extends SpringActionController
         protected void verifyPermissions(AnnouncementModel ann) throws ServletException
         {
             if (!getPermissions().allowUpdate(ann))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
         }
     }
 
@@ -632,7 +646,9 @@ public class AnnouncementsController extends SpringActionController
         protected void verifyPermissions(AnnouncementModel ann) throws ServletException
         {
             if (!getPermissions().allowRead(ann))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
         }
     }
 
@@ -782,7 +798,9 @@ public class AnnouncementsController extends SpringActionController
             Permissions perm = getPermissions();
 
             if (!perm.allowInsert())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             User u = getUser();
             Container c = getContainer();
@@ -858,7 +876,7 @@ public class AnnouncementsController extends SpringActionController
 
             // Can't use getSuccessURL since this is a URLHelper, not an ActionURL
             if (success)
-                HttpView.throwRedirect(_returnURL.getLocalURIString());
+                throw new RedirectException(_returnURL);
 
             return false;
         }
@@ -904,7 +922,9 @@ public class AnnouncementsController extends SpringActionController
             Permissions perm = getPermissions(c, getUser(), settings);
 
             if (!perm.allowInsert())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             InsertMessageView insertView = new InsertMessageView(form, "New " + settings.getConversationName(), errors, reshow, form.getReturnUrl(), false, true);
             insertView.setShowTitle(false);
@@ -944,12 +964,13 @@ public class AnnouncementsController extends SpringActionController
 
             if (null == parent)
             {
-                throwThreadNotFound(c);
-                return null;
+                throw createThreadNotFoundException(c);
             }
 
             if (!perm.allowResponse(parent))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             ThreadView threadView = new ThreadView(c, getActionURL(), parent, perm);
             threadView.setFrame(WebPartView.FrameType.DIV);
@@ -1281,10 +1302,14 @@ public class AnnouncementsController extends SpringActionController
         {
             AnnouncementModel ann = form.selectAnnouncement();
             if (null == ann)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             if (!getPermissions().allowUpdate(ann))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             _ann = ann;
 
@@ -1296,22 +1321,24 @@ public class AnnouncementsController extends SpringActionController
             AnnouncementModel ann = form.selectAnnouncement();
 
             if (!getPermissions().allowUpdate(ann))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             Container c = getContainer();
             AnnouncementModel update = form.getBean();
 
             // TODO: What is this checking for?
             if (!c.getId().equals(update.getContainerId()))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             AnnouncementManager.updateAnnouncement(getUser(), update);
 
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()
-            HttpView.throwRedirect(form.getReturnUrl().getLocalURIString());
-
-            return true;
+            throw new RedirectException(form.getReturnUrl());
         }
 
         public void validateCommand(AnnouncementForm form, Errors errors)
@@ -1695,7 +1722,9 @@ public class AnnouncementsController extends SpringActionController
         {
             // Allow broadcast only if message board is not secure and user is site administrator
             if (settings.isSecure() || !getUser().isAdministrator())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             Collection<String> emails = getBroadcastEmailAddresses(c);
             ViewMessage m = getMessage(c, settings, null, parent, a, isResponse, null, currentRendererType, Reason.broadcast);
@@ -1816,19 +1845,11 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static boolean throwThreadNotFound(Container c)
+    private static NotFoundException createThreadNotFoundException(Container c)
     {
-        HttpView.throwNotFound("Could not find " + getSettings(c).getConversationName().toLowerCase());
-        return false;
+        return new NotFoundException("Could not find " + getSettings(c).getConversationName().toLowerCase());
     }
-
-
-    private boolean throwResponseNotFound() throws ServletException
-    {
-        HttpView.throwNotFound("Could not find response");
-        return false;
-    }
-
+    
     public static class AnnouncementDeleteForm extends ReturnUrlForm
     {
         private int _rowId;
@@ -2561,7 +2582,9 @@ public class AnnouncementsController extends SpringActionController
                 throws ServletException
         {
             if (null == c || !perm.allowRead(ann))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             if (ann instanceof AnnouncementManager.BareAnnouncementModel)
                 throw new IllegalArgumentException("can't use getBareAnnoucements() with this view");
@@ -2600,7 +2623,7 @@ public class AnnouncementsController extends SpringActionController
             }
             catch(NumberFormatException e)
             {
-                throwThreadNotFound(c);
+                throw createThreadNotFoundException(c);
             }
         }
 
@@ -2609,7 +2632,7 @@ public class AnnouncementsController extends SpringActionController
             if (0 != rowId)
                 return AnnouncementManager.getAnnouncement(c, rowId, AnnouncementManager.INCLUDE_RESPONSES + AnnouncementManager.INCLUDE_MEMBERLIST);
             else if (null == entityId)
-                throwThreadNotFound(c);
+                throw createThreadNotFoundException(c);
 
             return AnnouncementManager.getAnnouncement(c, entityId, true);
         }

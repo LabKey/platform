@@ -55,7 +55,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
@@ -818,8 +817,8 @@ public class DavController extends SpringActionController
                 String returnUrl = getRequest().getParameter(ReturnUrlForm.Params.returnUrl.toString());
                 if (null != StringUtils.trimToNull(returnUrl))
                 {
-                    HttpView.throwRedirect(returnUrl + (returnUrl.indexOf('?')==-1 ? '?' : '&') + "status=" + status);
-                    return WebdavStatus.SC_OK;
+                    String url = returnUrl + (returnUrl.indexOf('?')==-1 ? '?' : '&') + "status=" + status;
+                    throw new RedirectException(url);
                 }
 
                 if (status == WebdavStatus.SC_CREATED)

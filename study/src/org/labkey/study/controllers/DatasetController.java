@@ -37,7 +37,6 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import gwt.client.org.labkey.study.dataset.client.DatasetImporter;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
@@ -345,8 +344,7 @@ public class DatasetController extends BaseStudyController
             AuditLogEvent event = AuditLogService.get().getEvent(auditRowId);
             if (event == null)
             {
-                HttpView.throwNotFound("Could not find event " + auditRowId + " to display.");
-                return null;
+                throw new NotFoundException("Could not find event " + auditRowId + " to display.");
             }
             VBox view = new VBox();
 

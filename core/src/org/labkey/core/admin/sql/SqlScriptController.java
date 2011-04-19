@@ -71,7 +71,9 @@ public class SqlScriptController extends SpringActionController
             List<SqlScript> scripts = SqlScriptRunner.getRunningScripts(form.getModuleName());
 
             if (scripts.isEmpty())
-                HttpView.throwRedirect(PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL());
+            {
+                throw new RedirectException(PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL());
+            }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
 

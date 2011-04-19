@@ -37,8 +37,8 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.StudyController;
@@ -47,6 +47,7 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.util.Map;
@@ -111,7 +112,7 @@ public class ReportQueryViewFactory
             return true;    // normal permission checking
 
         if (!policy.hasPermission(user, ReadPermission.class))
-            HttpView.throwUnauthorized();
+            throw new UnauthorizedException();
 
         return false;   // user is OK, don't check permissions
     }

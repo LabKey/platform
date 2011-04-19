@@ -285,7 +285,7 @@ public class FileContentController extends SpringActionController
                         }
                         catch (FileNotFoundException x)
                         {
-                            HttpView.throwNotFound(_resource.getName());
+                            throw new NotFoundException(_resource.getName());
                         }
                         return null;
                     }

@@ -74,10 +74,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.study.assay.AssayImportServiceImpl;
@@ -348,8 +348,7 @@ public class AssayController extends SpringActionController
             _protocol = form.getRowId() != null ? ExperimentService.get().getExpProtocol(form.getRowId().intValue()) : null;
             if (_protocol == null)
             {
-                HttpView.throwNotFound();
-                return null; // return to hide intellij warnings
+                throw new NotFoundException();
             }
 
             final Container currentContainer = getViewContext().getContainer();
@@ -401,8 +400,7 @@ public class AssayController extends SpringActionController
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
         {
             _protocol = getProtocol(form);
-            HttpView.throwRedirect(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-            return null;
+            throw new RedirectException(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -598,7 +596,9 @@ public class AssayController extends SpringActionController
         public ModelAndView getView(DownloadFileForm form, BindException errors) throws Exception
         {
             if (form.getPropertyId() == null)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
             OntologyObject obj = null;
             if (form.getObjectId() != null)
             {
@@ -616,9 +616,9 @@ public class AssayController extends SpringActionController
                 ActionURL correctedURL = getViewContext().getActionURL().clone();
                 Container objectContainer = obj.getContainer();
                 if (objectContainer == null)
-                    HttpView.throwNotFound();
+                    throw new NotFoundException();
                 correctedURL.setContainer(objectContainer);
-                HttpView.throwRedirect(correctedURL);
+                throw new RedirectException(correctedURL);
             }
 
             PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(form.getPropertyId().intValue());
@@ -631,7 +631,7 @@ public class AssayController extends SpringActionController
                 throw new NotFoundException();
             File file = new File(fileProperty.getStringValue());
             if (!file.exists())
-                HttpView.throwNotFound("File " + file.getPath() + " does not exist on the server file system.");
+                throw new NotFoundException("File " + file.getPath() + " does not exist on the server file system.");
             PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
             return null;
         }
@@ -714,13 +714,13 @@ public class AssayController extends SpringActionController
         public ModelAndView getView(AssayRunUploadForm form, BindException errors) throws Exception
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
-                HttpView.throwNotFound("Pipeline root must be configured before uploading assay files");
+                throw new NotFoundException("Pipeline root must be configured before uploading assay files");
 
             _protocol = getProtocol(form);
 
             AssayProvider ap = AssayService.get().getProvider(_protocol);
             if (ap == null)
-                HttpView.throwNotFound("Assay not found for protocol with lsid: " + _protocol.getLSID());
+                throw new NotFoundException("Assay not found for protocol with lsid: " + _protocol.getLSID());
             if (!(ap instanceof ModuleAssayProvider))
                 throw new RuntimeException("Assay must be a ModuleAssayProvider");
             ModuleAssayProvider provider = (ModuleAssayProvider) ap;

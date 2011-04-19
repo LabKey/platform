@@ -63,7 +63,6 @@ import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.types.TypesController;
-import org.labkey.experiment.xar.DefaultRunExpansionHandler;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -216,7 +215,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 return Collections.singleton(ExperimentRunType.ALL_RUNS_TYPE);
             }
         });
-        ExperimentService.get().registerRunExpansionHandler(new DefaultRunExpansionHandler());
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerDataType(new LogDataType());
         AuditLogService.get().addAuditViewFactory(DomainAuditViewFactory.getInstance());

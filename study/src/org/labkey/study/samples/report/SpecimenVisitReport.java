@@ -1,6 +1,7 @@
 package org.labkey.study.samples.report;
 
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
@@ -8,12 +9,12 @@ import org.labkey.study.CohortFilter;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;
 
@@ -379,7 +380,8 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             customViewName = null;
         CustomView view = def.getCustomView(_parameters.getUser(), _parameters.getViewContext().getRequest(), customViewName);
         if (view == null)
-            HttpView.throwNotFound("Custom view " + _parameters.getBaseCustomViewName() + " was not found.  It may have been deleted by another user.") ;
+            throw new NotFoundException("Custom view " + _parameters.getBaseCustomViewName() + " was not found.  It may have been deleted by another user.");
+
         return view;
     }
 }

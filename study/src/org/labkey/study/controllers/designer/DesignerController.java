@@ -197,7 +197,7 @@ public class DesignerController extends SpringActionController
             {
                 ActionURL url = new ActionURL(DesignerAction.class, info.getContainer());
                 url.addParameter("studyId", form.getStudyId());
-                HttpView.throwRedirect(url);
+                throw new RedirectException(url);
             }
 
             int revision = form.getRevision();
@@ -206,8 +206,7 @@ public class DesignerController extends SpringActionController
                 Integer revInteger = StudyDesignManager.get().getLatestRevisionNumber(getContainer(), form.getStudyId());
                 if (revInteger == null)
                 {
-                    HttpView.throwNotFound("No revision found for Study ID: " + form.getStudyId());
-                    return null;
+                    throw new NotFoundException("No revision found for Study ID: " + form.getStudyId());
                 }
                 revision = revInteger.intValue();
             }
@@ -458,7 +457,7 @@ public class DesignerController extends SpringActionController
                             form.getFolderName(), form.getBeginDate(), form.getSubjectNounSingular(), form.getSubjectNounPlural(),
                             form.getSubjectColumnName(), info, participantMaps, getSpecimens());
                     final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
-                    HttpView.throwRedirect(studyFolderUrl);
+                    throw new RedirectException(studyFolderUrl);
             }
 
             titleForNav = form.getWizardStep().getTitle();
@@ -481,7 +480,9 @@ public class DesignerController extends SpringActionController
 
         //Now see if the study already exists.
         if (info.isActive())
-            HttpView.throwRedirect(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(info.getContainer()));
+        {
+            throw new RedirectException(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(info.getContainer()));
+        }
 
         //Make sure we haven't done some crazy back/forward thing
         int stepNumber = form.getWizardStep().getNumber();

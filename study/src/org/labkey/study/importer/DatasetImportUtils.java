@@ -21,10 +21,11 @@ import org.labkey.api.study.Study;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.pipeline.DatasetBatch;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -42,8 +43,7 @@ public class DatasetImportUtils
     {
         if (null == datasetFile || !datasetFile.exists() || !datasetFile.isFile())
         {
-            HttpView.throwNotFound();
-            return;
+            throw new NotFoundException();
         }
 
         File lockFile = StudyPipeline.lockForDataset(study, datasetFile);

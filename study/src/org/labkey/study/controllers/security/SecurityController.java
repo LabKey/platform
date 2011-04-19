@@ -282,8 +282,7 @@ public class SecurityController extends SpringActionController
                 StudyImpl study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
                 if (null == study)
                 {
-                    HttpView.throwRedirect(new ActionURL(StudyController.BeginAction.class, getViewContext().getContainer()));
-                    return null;
+                    throw new RedirectException(new ActionURL(StudyController.BeginAction.class, getViewContext().getContainer()));
                 }
                 return new Overview(study, getViewContext().getActionURL());
             }
@@ -294,8 +293,7 @@ public class SecurityController extends SpringActionController
                     return new JspView<Report>("/org/labkey/study/view/reportPermission.jsp", reportId.getReport());
                 else
                 {
-                    HttpView.throwNotFound();
-                    return null;
+                    throw new NotFoundException();
                 }
             }
         }
@@ -322,8 +320,7 @@ public class SecurityController extends SpringActionController
 
             if (null == report)
             {
-                HttpView.throwNotFound();
-                return false;
+                throw new NotFoundException();
             }
 
             MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityManager.getPolicy(report.getDescriptor()));

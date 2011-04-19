@@ -55,6 +55,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
@@ -631,8 +632,7 @@ public class SearchController extends SpringActionController
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
             if (null == ss)
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
 
             String query = form.getQueryString();
@@ -704,8 +704,7 @@ public class SearchController extends SpringActionController
 
             if (null == ss)
             {
-                HttpView.throwNotFound("Search service is not registered");
-                return null;
+                throw new NotFoundException("Search service is not registered");
             }
 
             form.setPrint(isPrint());
@@ -891,7 +890,9 @@ public class SearchController extends SpringActionController
             SearchService ss = ServiceRegistry.get(SearchService.class);
 
             if (!ss.hasExternalIndexPermission(getUser()))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
         }
 
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception

@@ -202,7 +202,9 @@ public class ListController extends SpringActionController
         public ActionURL getRedirectURL(ListDefinitionForm listDefinitionForm) throws Exception
         {
             if (listDefinitionForm.getListId() == null)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
             return new ActionURL(EditListDefinitionAction.class, getContainer()).addParameter("listId", listDefinitionForm.getListId().intValue());
         }
     }
@@ -843,7 +845,7 @@ public class ListController extends SpringActionController
             if (event != null)
                 return new JspView<AuditLogEvent>(this.getClass(), "historyDetail.jsp", event);
             else
-                return HttpView.throwNotFound("Unable to find the audit history detail for this event");
+                throw new NotFoundException("Unable to find the audit history detail for this event");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -864,7 +866,9 @@ public class ListController extends SpringActionController
             int listId = NumberUtils.toInt((String)getViewContext().get("listId"));
             _list = ListService.get().getList(getContainer(), listId);
             if (_list == null)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             AuditLogEvent event = AuditLogService.get().getEvent(id);
             if (event != null && event.getLsid() != null)
@@ -896,7 +900,7 @@ public class ListController extends SpringActionController
                         return new HtmlView("No details available for this event.");
                 }
             }
-            return HttpView.throwNotFound("Unable to find the audit history detail for this event");
+            throw new NotFoundException("Unable to find the audit history detail for this event");
         }
 
         public NavTree appendNavTrail(NavTree root)

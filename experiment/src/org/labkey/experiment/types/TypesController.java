@@ -59,6 +59,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -183,7 +184,7 @@ public class TypesController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            DomainDescriptor[] types = OntologyManager.getDomainDescriptors(getViewContext().getContainer());
+            Collection<DomainDescriptor> types = OntologyManager.getDomainDescriptors(getViewContext().getContainer());
             TypeBean bean = new TypeBean();
             Container shared = ContainerManager.getSharedContainer();
 

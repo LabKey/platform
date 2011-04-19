@@ -948,7 +948,9 @@ public class SecurityApiActions
         {
             group = getGroup(form);
             if (null == group)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
             return new JspView<Group>(SecurityController.class, "renameGroup.jsp", group, errors);
         }
 

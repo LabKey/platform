@@ -252,8 +252,7 @@ public class StudyController extends BaseStudyController
         {
             if (_def == null)
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
             if (!form.isFileImport())
             {
@@ -303,8 +302,7 @@ public class StudyController extends BaseStudyController
             _def = def;
             if (null == def)
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
             if (null == def.getTypeURI())
             {
@@ -354,8 +352,7 @@ public class StudyController extends BaseStudyController
             _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId());
             if (_def == null)
             {
-                HttpView.throwNotFound("Invalid Dataset ID");
-                return null;
+                throw new NotFoundException("Invalid Dataset ID");
             }
             return  new StudyJspView<DataSetDefinition>(StudyManager.getInstance().getStudy(getContainer()),
                     "datasetDetails.jsp", _def, errors);
@@ -590,9 +587,8 @@ public class StudyController extends BaseStudyController
                 if (report != null)
                     ReportService.get().deleteReport(getViewContext(), report);
             }
-            HttpView.throwRedirect(new ActionURL(DatasetAction.class, getContainer()).
-                    addParameter(DataSetDefinition.DATASETKEY, datasetId));
-            return null;
+            throw new RedirectException(new ActionURL(DatasetAction.class, getContainer()).
+                        addParameter(DataSetDefinition.DATASETKEY, datasetId));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -638,7 +634,7 @@ public class StudyController extends BaseStudyController
                     }
                     catch (ConversionException x)
                     {
-                        HttpView.throwNotFound();
+                        throw new NotFoundException();
                     }
                 }
                 else
@@ -649,7 +645,7 @@ public class StudyController extends BaseStudyController
                 }
             }
             if (null == _def)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
             return _def;
         }
         
@@ -721,7 +717,7 @@ public class StudyController extends BaseStudyController
                 assert study.getTimepointType() != TimepointType.CONTINUOUS;
                 visit = StudyManager.getInstance().getVisitForRowId(getStudy(), _visitId);
                 if (null == visit)
-                    HttpView.throwNotFound();
+                    throw new NotFoundException();
             }
 
             final StudyQuerySchema querySchema = new StudyQuerySchema((StudyImpl)study, getUser(), true);
@@ -1030,7 +1026,7 @@ public class StudyController extends BaseStudyController
             _form = form;
             _study = getStudy();
             if (null == _form.getParticipantId() || null == _study)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
             getPageConfig().setTemplate(PageConfig.Template.Print);
             getPageConfig().setNoIndex();
             VBox box = new VBox();
@@ -1077,7 +1073,7 @@ public class StudyController extends BaseStudyController
             _cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
             // display the next and previous buttons only if we have a cached participant index
             if (_cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
-                HttpView.throwUnauthorized("User does not have permission to view cohort information");
+                throw new UnauthorizedException("User does not have permission to view cohort information");
 
             List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, _cohortFilter, form.getQCState());
             if (participants != null)
@@ -1680,7 +1676,8 @@ public class StudyController extends BaseStudyController
         {
             VisitImpl postedVisit = form.getBean();
             if (!getContainer().getId().equals(postedVisit.getContainer().getId()))
-                    HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
+
             // UNDONE: how do I get struts to handle this checkbox?
             postedVisit.setShowByDefault(null != StringUtils.trimToNull((String)getViewContext().get("showByDefault")));
 
@@ -1779,8 +1776,7 @@ public class StudyController extends BaseStudyController
                 StudyManager.getInstance().deleteVisit(getStudy(), visit, getUser());
                 return true;
             }
-            HttpView.throwNotFound();
-            return false;
+            throw new NotFoundException();
         }
 
         public ActionURL getSuccessURL(IdForm idForm)
@@ -1802,7 +1798,7 @@ public class StudyController extends BaseStudyController
 
             _visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (null == _visit)
-                return HttpView.throwNotFound();
+                throw new NotFoundException();
 
             ModelAndView view = new StudyJspView<VisitImpl>(study, "confirmDeleteVisit.jsp", _visit, errors);
             return view;
@@ -1973,7 +1969,7 @@ public class StudyController extends BaseStudyController
             form.setTypeURI(StudyManager.getInstance().getDatasetType(getContainer(), form.getDatasetId()));
 
             if (form.getTypeURI() == null)
-                return HttpView.throwNotFound();
+                throw new NotFoundException();
 
             form.setKeys(StringUtils.join(def.getDisplayKeyNames(), ", "));
 
@@ -2368,7 +2364,7 @@ public class StudyController extends BaseStudyController
             {
                 ExpRun expRun = ExperimentService.get().getExpRun(originalSourceLsid);
                 if (expRun != null && expRun.getContainer() != null)
-                    HttpView.throwRedirect(AssayPublishService.get().getPublishHistory(expRun.getContainer(), protocol));
+                    throw new RedirectException(AssayPublishService.get().getPublishHistory(expRun.getContainer(), protocol));
             }
             return true;
         }
@@ -2419,10 +2415,10 @@ public class StudyController extends BaseStudyController
             StudyImpl study = getStudy();
             DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
             if (null == dataset)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             if (!dataset.canWrite(getUser()))
-                HttpView.throwUnauthorized("User does not have permission to delete rows from this dataset");
+                throw new UnauthorizedException("User does not have permission to delete rows from this dataset");
 
             // Operate on each individually for audit logging purposes, but transact the whole thing
             DbScope scope =  StudySchema.getInstance().getSchema().getScope();
@@ -3446,8 +3442,7 @@ public class StudyController extends BaseStudyController
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
             if (def == null)
             {
-                HttpView.throwNotFound("No dataset found for id: " + _datasetId);
-                return null;
+                throw new NotFoundException("No dataset found for id: " + _datasetId);
             }
             Set<String> lsids = null;
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
@@ -3576,7 +3571,9 @@ public class StudyController extends BaseStudyController
 
             String redirect = form.getRedirect();
             if (null != redirect)
-                HttpView.throwRedirect(redirect);
+            {
+                throw new RedirectException(redirect);
+            }
             return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
         }
     }
@@ -3753,8 +3750,7 @@ public class StudyController extends BaseStudyController
                     return new StudyJspView<ViewPrefsBean>(study, "viewPreferences.jsp", bean, errors);
                 }
             }
-            HttpView.throwNotFound("Invalid dataset ID");
-            return null;
+            throw new NotFoundException("Invalid dataset ID");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4178,8 +4174,7 @@ public class StudyController extends BaseStudyController
                 DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
                 if (null == dataset)
                 {
-                    HttpView.throwNotFound();
-                    return null;
+                    throw new NotFoundException();
                 }
 
                 String typeURI = dataset.getTypeURI();
@@ -4592,8 +4587,7 @@ public class StudyController extends BaseStudyController
                 scope.beginTransaction();
                 StudyManager.getInstance().deleteDataset(getStudy(), getUser(), ds);
                 scope.commitTransaction();
-                HttpView.throwRedirect(new ActionURL(ManageTypesAction.class, getContainer()));
-                return null;
+                throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
             }
             finally
             {
@@ -5145,7 +5139,7 @@ public class StudyController extends BaseStudyController
                         replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
 
                 if (dsDef == null)
-                    return HttpView.throwNotFound("Unable to edit the created DataSet Definition");
+                    throw new NotFoundException("Unable to edit the created DataSet Definition");
 
                 Map<String,String> props = PageFlowUtil.map(
                         "studyId", String.valueOf(study.getRowId()),
@@ -5345,7 +5339,7 @@ public class StudyController extends BaseStudyController
                     DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
 
                     if (dsDef == null)
-                        return HttpView.throwNotFound("Unable to edit the created DataSet Definition");
+                        throw new NotFoundException("Unable to edit the created DataSet Definition");
 
                     ActionURL returnURL = getViewContext().cloneActionURL().replaceParameter("showDataset", "0");
                     Map<String,String> props = PageFlowUtil.map(

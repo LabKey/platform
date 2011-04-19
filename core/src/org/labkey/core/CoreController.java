@@ -505,7 +505,7 @@ public class CoreController extends SpringActionController
             Container targetContainer = ContainerManager.getForId(form.getContainerId());
             if (targetContainer == null)
             {
-                HttpView.throwNotFound();
+                throw new NotFoundException();
             }
             ActionURL url = getViewContext().getActionURL().clone();
             url.deleteParameter("action");

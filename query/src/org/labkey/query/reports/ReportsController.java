@@ -97,6 +97,8 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -392,7 +394,7 @@ public class ReportsController extends SpringActionController
             if (report != null)
             {
                 if (!report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
-                    return HttpView.throwUnauthorized();
+                    throw new UnauthorizedException();
                 ReportService.get().deleteReport(getViewContext(), report);
             }
             return HttpView.redirect(forwardUrl);
@@ -819,7 +821,7 @@ public class ReportsController extends SpringActionController
     protected void validatePermissions() throws Exception
     {
         if (!ReportUtil.canCreateScript(getViewContext()))
-            HttpView.throwUnauthorized("Only members of the Site Admin and Site Developers groups are allowed to create script views.");
+            throw new UnauthorizedException("Only members of the Site Admin and Site Developers groups are allowed to create script views.");
     }
 
 
@@ -1085,8 +1087,7 @@ public class ReportsController extends SpringActionController
             Report[] report = ReportService.get().getReports(filter);
             if (report.length != 1)
             {
-                HttpView.throwNotFound("Unable to find report");
-                return null;
+                throw new NotFoundException("Unable to find report");
             }
 
             //if (!report.getDescriptor().getACL().hasPermission(getUser(), ACL.PERM_READ))
@@ -1311,7 +1312,7 @@ public class ReportsController extends SpringActionController
                 if (report != null)
                 {
                     if (!report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
-                        HttpView.throwUnauthorized();
+                        throw new UnauthorizedException();
                     ReportService.get().deleteReport(getViewContext(), report);
                 }
             }
@@ -1324,7 +1325,7 @@ public class ReportsController extends SpringActionController
                     if (customView.isShared())
                     {
                         if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
-                            HttpView.throwUnauthorized();
+                            throw new UnauthorizedException();
                     }
                     customView.delete(getUser(), getViewContext().getRequest());
                 }

@@ -83,6 +83,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -353,11 +354,11 @@ public class WikiController extends SpringActionController
         {
             _wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
             if (null == _wiki)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             BaseWikiPermissions perms = getPermissions();
             if (!perms.allowDelete(_wiki))
-                HttpView.throwUnauthorized("You do not have permissions to delete this wiki page");
+                throw new UnauthorizedException("You do not have permissions to delete this wiki page");
 
             return new JspView<Wiki>("/org/labkey/wiki/view/wikiDelete.jsp", _wiki);
         }
@@ -367,11 +368,11 @@ public class WikiController extends SpringActionController
             Container c = getContainer();
             _wiki = WikiSelectManager.getWiki(c, form.getName());
             if (null == _wiki)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             BaseWikiPermissions perms = getPermissions();
             if (!perms.allowDelete(_wiki))
-                HttpView.throwUnauthorized("You do not have permissions to delete this wiki page");
+                throw new UnauthorizedException("You do not have permissions to delete this wiki page");
 
             //delete page and all versions
             getWikiManager().deleteWiki(getUser(), c, _wiki);
@@ -426,12 +427,12 @@ public class WikiController extends SpringActionController
             _wiki = WikiSelectManager.getWiki(getContainer(), name);
 
             if (null == _wiki)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             BaseWikiPermissions perms = getPermissions();
 
             if (!perms.allowUpdate(_wiki))
-                HttpView.throwUnauthorized("You do not have permissions to manage this wiki page");
+                throw new UnauthorizedException("You do not have permissions to manage this wiki page");
 
             ManageBean bean = new ManageBean();
             bean.wiki = _wiki;
@@ -466,13 +467,12 @@ public class WikiController extends SpringActionController
 
             if (null == _wiki)
             {
-                HttpView.throwNotFound();
-                return false;
+                throw new NotFoundException();
             }
 
             BaseWikiPermissions perms = getPermissions();
             if (!perms.allowUpdate(_wiki))
-                HttpView.throwUnauthorized("You do not have permissions to manage this wiki page");
+                throw new UnauthorizedException("You do not have permissions to manage this wiki page");
 
             // Get the latest version based on previous properties
             WikiVersion versionOld = _wiki.getLatestVersion();
@@ -716,7 +716,7 @@ public class WikiController extends SpringActionController
             Container c = getContainer();
             HString name = form.getName();
             if (name == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             WikiTree tree = WikiSelectManager.getWikiTree(c, name);
 
@@ -929,7 +929,7 @@ public class WikiController extends SpringActionController
                 parentPage = WikiSelectManager.getWiki(cSrc, pageName);
 
                 if (parentPage == null)
-                    HttpView.throwNotFound("No page named '" + pageName + "' exists in the source container.");
+                    throw new NotFoundException("No page named '" + pageName + "' exists in the source container.");
             }
 
             //UNDONE: currently overwrite option is not exposed in UI
@@ -993,12 +993,14 @@ public class WikiController extends SpringActionController
             Container cSrc = getSourceContainer(form.getSourceContainer());
             Container cDest = getDestContainer(form.getDestContainer(), form.getPath());
             if (pageName == null || cSrc == null || cDest == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
+
             if (!cDest.hasPermission(getUser(), AdminPermission.class))
-                HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
+
             Wiki srcPage = WikiSelectManager.getWiki(cSrc, pageName);
             if (srcPage == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             //get existing destination wiki names
             List<HString> destPageNames = WikiSelectManager.getPageNames(cDest);
@@ -1009,8 +1011,7 @@ public class WikiController extends SpringActionController
             displayWikiModuleInDestContainer(cDest);
 
             ActionURL url = getPageURL(newWikiPage, cDest);
-            HttpView.throwRedirect(url);
-            return true;
+            throw new RedirectException(url);
         }
 
         public void validateCommand(CopyWikiForm copyWikiForm, Errors errors)
@@ -1118,7 +1119,7 @@ public class WikiController extends SpringActionController
             //if there's no name parameter, find default page and reload with parameter.
             //default page is not necessarily same page displayed in wiki web part
             if (null == name || name.isEmpty())
-                HttpView.throwRedirect(new BeginAction().getUrl());
+                throw new RedirectException(new BeginAction().getUrl());
 
             //page may be existing page, or may be new page
             _wiki = WikiSelectManager.getWiki(getContainer(), name);
@@ -1138,7 +1139,7 @@ public class WikiController extends SpringActionController
                 _wikiversion = _wiki.getLatestVersion();
 
                 if (_wikiversion == null)
-                    HttpView.throwNotFound();
+                    throw new NotFoundException();
             }
 
             if (isSource())
@@ -1251,7 +1252,7 @@ public class WikiController extends SpringActionController
 
             _wiki = WikiSelectManager.getWiki(getContainer(), name);
             if (null == _wiki)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             //return latest version first since it may be cached
             _wikiversion = _wiki.getLatestVersion();
@@ -1260,14 +1261,15 @@ public class WikiController extends SpringActionController
             {
                 //if version requested is higher than latest version, throw not found
                 if (version > _wikiversion.getVersion())
-                    HttpView.throwNotFound();
+                    throw new NotFoundException();
+
                 //if this is a valid version that is not the latest version, get that version
                 if (version != _wikiversion.getVersion())
                     _wikiversion = WikiSelectManager.getVersion(_wiki, version);
             }
 
             if (null == _wikiversion)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             VersionBean bean = new VersionBean(_wiki, _wikiversion, getPermissions());
 
@@ -1350,17 +1352,17 @@ public class WikiController extends SpringActionController
             _wiki = WikiSelectManager.getWiki(getContainer(), name);
 
             if (null == _wiki)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             _wikiVersion1 = WikiSelectManager.getVersion(_wiki, form.getEarlierVersion());
 
             if (null == _wikiVersion1)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             _wikiVersion2 = WikiSelectManager.getVersion(_wiki, form.getLaterVersion());
 
             if (null == _wikiVersion2)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             DiffMatchPatch diffTool = new DiffMatchPatch();
             LinkedList<DiffMatchPatch.Diff> diffs = diffTool.diff_main(StringUtils.trimToEmpty(_wikiVersion1.getBody()), StringUtils.trimToEmpty(_wikiVersion2.getBody()));
@@ -1470,10 +1472,12 @@ public class WikiController extends SpringActionController
         {
             HString wikiname = form.getName();
             if (wikiname == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
+
             _wiki = WikiSelectManager.getWiki(getContainer(), wikiname);
             if (null == _wiki)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
+
             _wikiversion = _wiki.getLatestVersion();
 
             BaseWikiPermissions perms = getPermissions();
@@ -1599,7 +1603,7 @@ public class WikiController extends SpringActionController
             //same as some previous version
             BaseWikiPermissions perms = getPermissions();
             if (!perms.allowUpdate(_wiki))
-                HttpView.throwUnauthorized("You do not have permission to set the current version of this page.");
+                throw new UnauthorizedException("You do not have permission to set the current version of this page.");
 
             //update wiki & insert new wiki version
             getWikiManager().updateWiki(getUser(), _wiki, _wikiversion);
@@ -2326,7 +2330,7 @@ public class WikiController extends SpringActionController
 
             Wiki wikiUpdate = getWikiManager().getWikiByEntityId(getViewContext().getContainer(), form.getEntityId().toString());
             if (wikiUpdate == null)
-                HttpView.throwNotFound("Could not find the wiki page matching the passed id; if it was a valid page, it may have been deleted by another user.");
+                throw new NotFoundException("Could not find the wiki page matching the passed id; if it was a valid page, it may have been deleted by another user.");
 
             SecurityPolicy policy = SecurityManager.getPolicy(getViewContext().getContainer());
             Set<Role> contextualRoles = new HashSet<Role>();
@@ -2334,7 +2338,7 @@ public class WikiController extends SpringActionController
                 contextualRoles.add(RoleManager.getRole(OwnerRole.class));
 
             if (!policy.hasPermission(user, UpdatePermission.class, contextualRoles))
-                HttpView.throwUnauthorized("You are not allowed to edit this wiki page.");
+                throw new UnauthorizedException("You are not allowed to edit this wiki page.");
 
             WikiVersion wikiversion = new WikiVersion(wikiUpdate.getLatestVersion());
 

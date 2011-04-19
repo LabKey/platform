@@ -25,6 +25,8 @@
 <%@ page import="java.util.*" %>
 <%@ page import="org.labkey.api.collections.MultiValueMap" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.springframework.web.servlet.ModelAndView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -75,8 +77,7 @@ if (null != CUI)
     {
         %>Searching for '<%=h(CUI)%>'<!--<%
         out.flush();
-        HttpView.throwRedirect(urlProvider(SearchUrls.class).getSearchURL(CUI, "umls"));
-        return;
+        throw new RedirectException(urlProvider(SearchUrls.class).getSearchURL(CUI, "umls"));
     }
     Related[] related = UmlsController.getRelated(umls,CUI);
     Definition[] definitions = UmlsController.getDefinitions(umls,CUI);

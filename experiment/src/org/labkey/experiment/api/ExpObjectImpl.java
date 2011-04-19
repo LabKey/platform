@@ -18,14 +18,12 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpChildObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.GUID;
 import org.labkey.api.query.ValidationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ObjectUtils;
@@ -171,18 +169,6 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         {
             throw new RuntimeSQLException(e);
         }
-    }
-
-    public ExpChildObject createPropertyObject(PropertyDescriptor pd) throws Exception
-    {
-        if (pd.getPropertyType() != PropertyType.RESOURCE)
-            throw new IllegalArgumentException("Not a child object property.");
-        if (getProperty(pd) != null)
-            throw new IllegalArgumentException("Property already exists");
-        String objectURI = GUID.makeURN();
-        ObjectProperty oprop = new ObjectProperty(getLSID(), getContainer(), pd.getPropertyURI(), objectURI);
-        OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
-        return new ExpChildObjectImpl(getOwnerObject(), this, pd, objectURI);
     }
 
     public boolean equals(Object obj)

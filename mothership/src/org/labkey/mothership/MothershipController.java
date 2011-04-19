@@ -82,8 +82,7 @@ public class MothershipController extends SpringActionController
         {
             ActionURL url = new ActionURL(ShowExceptionsAction.class, getContainer());
             url.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
-            HttpView.throwRedirect(url);
-            return null;
+            throw new RedirectException(url);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -428,8 +427,7 @@ public class MothershipController extends SpringActionController
             ExceptionStackTrace stackTrace = MothershipManager.get().getExceptionStackTrace(form.getExceptionStackTraceId(), getContainer());
             stackTrace.setBugNumber(form.getIssueId());
             MothershipManager.get().updateExceptionStackTrace(stackTrace, getUser());
-            HttpView.throwRedirect(new ActionURL(BeginAction.class, getContainer()));
-            return null;
+            throw new RedirectException(new ActionURL(BeginAction.class, getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)

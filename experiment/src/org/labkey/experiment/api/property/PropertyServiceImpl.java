@@ -113,11 +113,11 @@ public class PropertyServiceImpl implements PropertyService.Interface
     {
         try
         {
-            DomainDescriptor[] dds = OntologyManager.getDomainDescriptors(container);
-            Domain[] ret = new Domain[dds.length];
-            for (int i = 0; i < dds.length; i ++)
+            List<DomainDescriptor> dds = new ArrayList<DomainDescriptor>(OntologyManager.getDomainDescriptors(container));
+            Domain[] ret = new Domain[dds.size()];
+            for (int i = 0; i < dds.size(); i ++)
             {
-                ret[i] = new DomainImpl(dds[i]);
+                ret[i] = new DomainImpl(dds.get(i));
             }
             return ret;
         }

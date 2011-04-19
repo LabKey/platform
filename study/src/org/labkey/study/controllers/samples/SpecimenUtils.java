@@ -50,9 +50,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SampleManager;
@@ -82,6 +82,7 @@ import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
@@ -622,7 +623,7 @@ public class SpecimenUtils
     {
         SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
         if (statuses == null || statuses.length == 1)
-            HttpView.throwRedirect(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
+            throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
     }
 
 

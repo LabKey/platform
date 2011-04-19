@@ -200,8 +200,7 @@ public class SpecimenController extends BaseStudyController
         boolean cachedFilter = selectionCache != null && getContainer().equals(selectionCache.getKey());
         if (!newFilter && !cachedFilter)
         {
-            HttpView.throwRedirect(getSamplesURL());
-            return null; // return null to remove intellij warning
+            throw new RedirectException(getSamplesURL());
         }
 
         if (newFilter)
@@ -323,7 +322,8 @@ public class SpecimenController extends BaseStudyController
         protected ModelAndView getHtmlView(SampleViewTypeForm form, BindException errors) throws Exception
         {
             if (getStudy() == null)
-                HttpView.throwNotFound("No study exists in this folder.");
+                throw new NotFoundException("No study exists in this folder.");
+
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
             JspView<SpecimenHeaderBean> header = new JspView<SpecimenHeaderBean>("/org/labkey/study/view/samples/samplesHeader.jsp",
                     new SpecimenHeaderBean(getViewContext(), view));
@@ -564,7 +564,8 @@ public class SpecimenController extends BaseStudyController
             _showingSelectedSamples = viewEventForm.isSelected();
             Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), viewEventForm.getId());
             if (specimen == null)
-                HttpView.throwNotFound("Specimen " + viewEventForm.getId() + " does not exist.");
+                throw new NotFoundException("Specimen " + viewEventForm.getId() + " does not exist.");
+
             JspView<SpecimenEventBean> summaryView = new JspView<SpecimenEventBean>("/org/labkey/study/view/samples/sample.jsp",
                     new SpecimenEventBean(specimen, viewEventForm.getReturnUrl()));
             summaryView.setTitle("Vial Summary");
@@ -612,7 +613,7 @@ public class SpecimenController extends BaseStudyController
     private void requiresEditRequestPermissions(SampleRequest request) throws SQLException, ServletException
     {
         if (!SampleManager.getInstance().hasEditRequestPermissions(getUser(), request))
-            HttpView.throwUnauthorized();
+            throw new UnauthorizedException();
     }
 
     public static interface HiddenFormInputGenerator
@@ -971,7 +972,8 @@ public class SpecimenController extends BaseStudyController
         {
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             if (request == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
+
             _requestId = request.getRowId();
             ManageRequestBean bean = new ManageRequestBean(getViewContext(), request, form.getExport() != null,
                     form.isSubmissionResult(), form.getReturnUrl());
@@ -993,7 +995,8 @@ public class SpecimenController extends BaseStudyController
 
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             if (request == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
+
             if (form.getNewActor() != null && form.getNewActor() > 0)
             {
                 SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getNewActor());
@@ -1182,7 +1185,8 @@ public class SpecimenController extends BaseStudyController
         {
             _sampleRequest = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             if (_sampleRequest == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
+
             return new JspView<ManageRequestBean>("/org/labkey/study/view/samples/manageRequestStatus.jsp",
                     new ManageRequestBean(getViewContext(), _sampleRequest, false, null, null), errors);
         }
@@ -1191,7 +1195,7 @@ public class SpecimenController extends BaseStudyController
         {
             _sampleRequest = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             if (_sampleRequest == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             boolean statusChanged = form.getStatus() != _sampleRequest.getStatusId();
             boolean detailsChanged = !nullSafeEqual(form.getRequestDescription(), _sampleRequest.getComments());
@@ -1773,7 +1777,8 @@ public class SpecimenController extends BaseStudyController
             if (!context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class))
             {
                 if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer()))
-                    HttpView.throwUnauthorized();
+                    throw new UnauthorizedException();
+
                 SampleRequestStatus cartStatus = SampleManager.getInstance().getRequestShoppingCartStatus(context.getContainer(), context.getUser());
                 filter = new SimpleFilter("StatusId", cartStatus.getRowId());
             }
@@ -1798,7 +1803,9 @@ public class SpecimenController extends BaseStudyController
     protected void requiresManageSpecimens() throws ServletException
     {
         if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
     }
 
     @RequiresPermissionClass(InsertPermission.class)
@@ -1954,7 +1961,8 @@ public class SpecimenController extends BaseStudyController
         {
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             if (request == null)
-                HttpView.throwNotFound("Sample request " + form.getId() + " does not exist.");
+                throw new NotFoundException("Sample request " + form.getId() + " does not exist.");
+
             SampleManager.getInstance().deleteMissingSpecimens(request);
             return true;
         }
@@ -2034,7 +2042,8 @@ public class SpecimenController extends BaseStudyController
             final SampleRequestRequirement requirement =
                     SampleManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getRequirementId());
             if (_sampleRequest == null || requirement == null || requirement.getRequestId() != form.getId())
-                HttpView.throwNotFound();
+                throw new NotFoundException();
+
             return new JspView<ManageRequirementBean>("/org/labkey/study/view/samples/manageRequirement.jsp",
                     new ManageRequirementBean(getViewContext(), _sampleRequest, requirement));
         }
@@ -2048,7 +2057,7 @@ public class SpecimenController extends BaseStudyController
             final SampleRequestRequirement requirement =
                     SampleManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getRequirementId());
             if (_sampleRequest == null || requirement == null || requirement.getRequestId() != form.getId())
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             List<AttachmentFile> files = getAttachmentFileList();
             SampleManager.RequestEventType eventType;
@@ -2418,7 +2427,8 @@ public class SpecimenController extends BaseStudyController
         public boolean doAction(IdForm form, BindException errors) throws Exception
         {
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
-                HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
+
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
             Specimen[] specimens = request.getSpecimens();
@@ -2471,7 +2481,7 @@ public class SpecimenController extends BaseStudyController
             requiresEditRequestPermissions(request);
             SampleRequestStatus cartStatus = SampleManager.getInstance().getRequestShoppingCartStatus(getContainer(), getUser());
             if (request.getStatusId() != cartStatus.getRowId())
-                HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
 
             try
             {
@@ -2502,11 +2512,11 @@ public class SpecimenController extends BaseStudyController
         {
             final SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             if (request == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             SiteImpl receivingSite = StudyManager.getInstance().getSite(getContainer(), request.getDestinationSiteId());
             if (receivingSite == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             final LabSpecimenListsBean.Type type;
             try
@@ -2515,8 +2525,7 @@ public class SpecimenController extends BaseStudyController
             }
             catch (IllegalArgumentException e)
             {
-                HttpView.throwNotFound();
-                return false;
+                throw new NotFoundException();
             }
 
             Map<SiteImpl, List<ActorNotificationRecipientSet>> notifications = new HashMap<SiteImpl, List<ActorNotificationRecipientSet>>();
@@ -2685,7 +2694,7 @@ public class SpecimenController extends BaseStudyController
             SiteImpl sourceSite = StudyManager.getInstance().getSite(getContainer(), form.getSourceSiteId());
             SiteImpl destSite = StudyManager.getInstance().getSite(getContainer(), form.getDestSiteId());
             if (sampleRequest == null || sourceSite == null || destSite == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             LabSpecimenListsBean.Type type = LabSpecimenListsBean.Type.valueOf(form.getListType());
             if (null != form.getExport())
@@ -2720,7 +2729,8 @@ public class SpecimenController extends BaseStudyController
         {
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             if (request == null  || form.getListType() == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
+
             _requestId = request.getRowId();
 
             try
@@ -2730,7 +2740,7 @@ public class SpecimenController extends BaseStudyController
             catch (IllegalArgumentException e)
             {
                 // catch malformed/old URL case, where the posted value of 'type' isn't a valid Type:
-                HttpView.throwNotFound("Unrecognized list type.");
+                throw new NotFoundException("Unrecognized list type.");
             }
             return new JspView<LabSpecimenListsBean>("/org/labkey/study/view/samples/labSpecimenLists.jsp",
                     new LabSpecimenListsBean(getUtils(), request, _type));
@@ -3613,7 +3623,7 @@ public class SpecimenController extends BaseStudyController
     public static void submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root, boolean merge) throws IOException, SQLException
     {
         if (null == f || !f.exists() || !f.isFile())
-            HttpView.throwNotFound();   // TODO: Better error message
+            throw new NotFoundException();
 
         SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(c, user, url), f, root, merge);
         batch.submit();

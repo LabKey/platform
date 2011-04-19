@@ -28,6 +28,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -77,7 +78,9 @@ public class LdapController extends SpringActionController
         public boolean handlePost(Config config, BindException errors) throws Exception
         {
             if (!getUser().isAdministrator())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
             LdapAuthenticationManager.saveProperties(config);
             return true;
         }

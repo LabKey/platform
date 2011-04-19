@@ -18,6 +18,7 @@ package org.labkey.study.reports;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 
 import java.io.PrintWriter;
@@ -61,7 +62,7 @@ public abstract class RedirectReport extends AbstractReport
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            HttpView.throwRedirect(getUrl(getViewContext()));
+            throw new RedirectException(getUrl(getViewContext()));
         }
     }
 }

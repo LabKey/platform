@@ -29,7 +29,6 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Table;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
@@ -44,9 +43,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -145,7 +142,9 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
     {
         Container c = getContainer();
         if (c.isRoot())
-            HttpView.throwNotFound();
+        {
+            throw new NotFoundException();
+        }
 
         String[] modules = form.getActiveModules();
 
@@ -190,7 +189,9 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
     {
         Container c = getContainer();
         if (c.isRoot())
-            HttpView.throwNotFound();
+        {
+            throw new NotFoundException();
+        }
 
         ContainerManager.updateSearchable(c, form.getSearchable(), getUser());
         _successURL = getViewContext().getActionURL();  // Redirect to ourselves -- this forces a reload of the Container object to get the property update

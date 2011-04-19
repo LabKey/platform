@@ -18,8 +18,8 @@ package org.labkey.study.controllers.samples;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.action.*;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SampleManager;
@@ -29,6 +29,7 @@ import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.*;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -495,8 +496,7 @@ public class SpecimenApiController extends BaseStudyController
         }
         if (vial == null)
         {
-            HttpView.throwNotFound("No vial was found with " +  idType + " " + vialId + ".");
-            return null;
+            throw new NotFoundException("No vial was found with " +  idType + " " + vialId + ".");
         }
         return vial;
     }

@@ -153,12 +153,16 @@ public class SecurityController extends SpringActionController
         if (group.getContainer() == null)
         {
             if (!c.isRoot())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
         }
         else
         {
             if (!c.getId().equals(group.getContainer()))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
         }
     }
     
@@ -171,18 +175,24 @@ public class SecurityController extends SpringActionController
         if (-1 == group.indexOf("/"))
         {
             if (!c.isRoot())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
         }
         else
         {
             String groupContainer = group.substring(0, group.lastIndexOf("/"));
             if (c.isRoot())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
             String projectContainer = c.getPath();
             if (projectContainer.startsWith("/"))
                 projectContainer = projectContainer.substring(1);
             if (!projectContainer.equals(groupContainer))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
         }
     }
 
@@ -193,13 +203,9 @@ public class SecurityController extends SpringActionController
         {
             if (null == getContainer() || getContainer().isRoot())
             {
-                HttpView.throwRedirect(new ActionURL(AddUsersAction.class, ContainerManager.getRoot()));
+                throw new RedirectException(new ActionURL(AddUsersAction.class, ContainerManager.getRoot()));
             }
-            else
-            {
-                HttpView.throwRedirect(new ActionURL(ProjectAction.class, getContainer()));
-            }
-            return null;
+            throw new RedirectException(new ActionURL(ProjectAction.class, getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -299,7 +305,9 @@ public class SecurityController extends SpringActionController
             if (null != p)
             {
                 if (group.getContainer() != null && !p.getId().equals(group.getContainer()))
-                    HttpView.throwUnauthorized();
+                {
+                    throw new UnauthorizedException();
+                }
             }
             return group;
         }
@@ -835,7 +843,9 @@ public class SecurityController extends SpringActionController
         List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group.getUserId());
 
         if (null == members)
-            HttpView.throwNotFound();
+        {
+            throw new NotFoundException();
+        }
 
         VBox view = new VBox(new GroupView(group, members, messages, group.isSystemGroup(), errors));
         if (getUser().isAdministrator())
@@ -943,7 +953,7 @@ public class SecurityController extends SpringActionController
                 buildAccessDetailList(Collections.singletonList(getContainer().getProject()), rows, _requestedGroup, 0);
             }
             else
-                return HttpView.throwNotFound("Group not found");
+                throw new NotFoundException("Group not found");
 
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, false);
             return new JspView<UserController.AccessDetail>("/org/labkey/core/user/userAccess.jsp", bean, errors);

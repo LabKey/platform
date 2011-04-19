@@ -458,7 +458,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.expData = data;
         if (objectId == null)
         {
-            HttpView.throwNotFound();
+            throw new NotFoundException();
         }
         if (objectId instanceof Number)
         {
@@ -472,7 +472,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             }
             catch (NumberFormatException e)
             {
-                HttpView.throwNotFound();
+                throw new NotFoundException();
             }
         }
 

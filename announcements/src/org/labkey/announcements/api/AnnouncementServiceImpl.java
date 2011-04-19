@@ -28,6 +28,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.UnauthorizedException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -50,7 +52,9 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
         Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
 
         if (!perm.allowInsert())
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
                               
         AnnouncementModel insert = new AnnouncementModel();
         insert.setTitle(title);
@@ -137,7 +141,9 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
             model = AnnouncementManager.getAnnouncement(c, RowId);
 
             if (!perm.allowUpdate(model))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
             
             model.setTitle(title);
             model.setBody(body);
@@ -160,7 +166,9 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
         try
         {
             if (!perm.allowDeleteAnyThread())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
             
             AnnouncementManager.deleteAnnouncement(container, announcement.getRowId());
         }

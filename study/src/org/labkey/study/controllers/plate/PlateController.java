@@ -169,10 +169,10 @@ public class PlateController extends SpringActionController
         {
             Plate plate = PlateService.get().getPlate(getContainer(), form.getRowId());
             if (plate == null)
-                return HttpView.throwNotFound("Plate " + form.getRowId() + " does not exist.");
+                throw new NotFoundException("Plate " + form.getRowId() + " does not exist.");
             ActionURL url = PlateManager.get().getDetailsURL(plate);
             if (url == null)
-                return HttpView.throwNotFound("Details URL has not been configured for plate type " + plate.getName() + ".");
+                throw new NotFoundException("Details URL has not been configured for plate type " + plate.getName() + ".");
 
             return HttpView.redirect(url);
         }

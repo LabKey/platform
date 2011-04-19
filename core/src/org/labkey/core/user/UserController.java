@@ -631,17 +631,19 @@ public class UserController extends SpringActionController
         if (c.isRoot())
         {
             // Only site admin can view at the root (all users)
-            HttpView.throwUnauthorized();
+            throw new UnauthorizedException();
         }
         else
         {
             // Must be project admin to view outside the root...
             if (!c.hasPermission(user, AdminPermission.class))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             // ...and user must be a project user
             if (!SecurityManager.getProjectUsersIds(c).contains(userId))
-                HttpView.throwUnauthorized("Project administrators can only " + action + " project users");
+                throw new UnauthorizedException("Project administrators can only " + action + " project users");
         }
     }
 
@@ -928,12 +930,12 @@ public class UserController extends SpringActionController
                     }
                     else
                     {
-                        HttpView.throwNotFound();
+                        throw new NotFoundException();
                     }
                 }
                 catch (ValidEmail.InvalidEmailException e)
                 {
-                    HttpView.throwNotFound();
+                    throw new NotFoundException();
                 }
             }
             if (_userId == null)
@@ -942,7 +944,7 @@ public class UserController extends SpringActionController
             }
             User requestedUser = UserManager.getUser(_userId.intValue());
             if (requestedUser == null)
-                return HttpView.throwNotFound("User not found");
+                throw new NotFoundException("User not found");
             List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
 
             Container c = getContainer();
@@ -1188,7 +1190,9 @@ public class UserController extends SpringActionController
                 view.getViewContext().addContextualRole(UpdatePermission.class);
             }
             else
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             if (isOwnRecord)
                 view =  new VBox(new HtmlView("Please enter your contact information."), view);

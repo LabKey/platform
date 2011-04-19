@@ -295,8 +295,7 @@ public class DemoController extends SpringActionController
     {
         public HttpView getView(Object o, boolean reshow, BindException errors) throws Exception
         {
-            HttpView.throwRedirect(getSuccessURL(o));
-            return null;
+            throw new RedirectException(getSuccessURL(o));
         }
 
         public boolean handlePost(Object o, BindException errors) throws Exception

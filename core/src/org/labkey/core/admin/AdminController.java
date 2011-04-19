@@ -3157,7 +3157,9 @@ public class AdminController extends SpringActionController
         {
             String dbSchemaName = form.getDbSchema();
             if (null == dbSchemaName || dbSchemaName.length() == 0)
-                HttpView.throwNotFound("Must specify dbSchema parameter");
+            {
+                throw new NotFoundException("Must specify dbSchema parameter");
+            }
 
             boolean bFull = form.getFull();
 
@@ -3364,7 +3366,9 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
         {
             if (getContainer().isRoot())
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             return new JspView<ManageFoldersForm>("/org/labkey/core/admin/manageFolders.jsp", form);
         }
@@ -3592,7 +3596,7 @@ public class AdminController extends SpringActionController
             Container newParent =  ContainerManager.getForPath(form.getTarget());
 
             if (c.isRoot())
-                return HttpView.throwNotFound("Can't move the root folder.");  // Don't show move tree from root
+                throw new NotFoundException("Can't move the root folder.");  // Don't show move tree from root
 
             if (null == newParent)
             {
@@ -3601,7 +3605,9 @@ public class AdminController extends SpringActionController
             }
 
             if (!newParent.hasPermission(getUser(), AdminPermission.class))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             if (newParent.hasChild(c.getName()))
             {
@@ -3770,7 +3776,9 @@ public class AdminController extends SpringActionController
 
             // Must be site admin to delete a project
             if (c.isProject() && !getUser().isAdministrator())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             if (form.getRecurse())
             {

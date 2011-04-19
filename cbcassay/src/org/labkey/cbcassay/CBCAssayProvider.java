@@ -350,7 +350,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
             throw new RuntimeSQLException(e);
         }
         if (cbcData == null || !cbcData.getContainer().equals(context.getContainer()))
-            HttpView.throwNotFound("Data '" + dataRowId + "' does not exist.");
+        {
+            throw new NotFoundException("Data '" + dataRowId + "' does not exist.");
+        }
 
         return new JspView<CBCData>("/org/labkey/cbcassay/view/showDetails.jsp", cbcData);
     }

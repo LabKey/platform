@@ -563,7 +563,7 @@ public class ReportsController extends BaseStudyController
                 }
             }
             else
-                HttpView.throwUnauthorized("A report of the same name already exists");
+                throw new UnauthorizedException("A report of the same name already exists");
             return new ApiSimpleResponse("success", false);
         }
     }
@@ -582,7 +582,7 @@ public class ReportsController extends BaseStudyController
             int reportId = ReportService.get().saveReport(getViewContext(), key, report);
 
             if (form.isRedirectToReport())
-                HttpView.throwRedirect("showReport.view?reportId=" + reportId);
+                throw new RedirectException("showReport.view?reportId=" + reportId);
 
             if (form.getShowWithDataset() != 0)
             {
@@ -691,9 +691,14 @@ public class ReportsController extends BaseStudyController
                 report = ReportManager.get().getReport(getContainer(), form.getReportId());
 
             if (report == null)
-                HttpView.throwNotFound("Report " + (form.getReportId() != -1 ? form.getReportId() : form.getReportView()) + " not found");
+            {
+                String message = "Report " + (form.getReportId() != -1 ? form.getReportId() : form.getReportView()) + " not found";
+                throw new NotFoundException(message);
+            }
             if (!report.getDescriptor().canRead(getUser()))
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             return report.renderReport(getViewContext());
         }
@@ -920,8 +925,7 @@ public class ReportsController extends BaseStudyController
                 Report r = form.getReportId().getReport();
                 if (!(r instanceof ExportExcelReport))
                 {
-                    HttpView.throwNotFound();
-                    return null;
+                    throw new NotFoundException();
                 }
                 report = (ExportExcelReport)r;
             }
@@ -1029,19 +1033,18 @@ public class ReportsController extends BaseStudyController
             Integer reportId = form.getReportId();
             if (null == reportId)
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
             AttachmentReport report = (AttachmentReport) ReportManager.get().getReport(getContainer(), reportId);
             if (null == report || null == report.getFilePath())
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             if (!ReportManager.get().canReadReport(getUser(), getContainer(), report))
-                HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
 
             File file = new File(report.getFilePath());
             if (!file.exists())
-                HttpView.throwNotFound("Could not find file with name " + report.getFilePath());
+                throw new NotFoundException("Could not find file with name " + report.getFilePath());
 
             PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
             return null;
@@ -1056,20 +1059,20 @@ public class ReportsController extends BaseStudyController
         {
             Integer reportId = form.getReportId();
             if (null == reportId)
-            {
-                HttpView.throwNotFound();
-                return false;
-            }
+                throw new NotFoundException();
+
             AttachmentReport report = (AttachmentReport) ReportManager.get().getReport(getContainer(), reportId);
             if (null == report || null == report.getFilePath())
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             if (!ReportManager.get().canReadReport(getUser(), getContainer(), report))
-                HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
 
             File file = new File(report.getFilePath());
             if (!file.exists())
-                HttpView.throwNotFound("Could not find file with name " + report.getFilePath());
+            {
+                throw new NotFoundException("Could not find file with name " + report.getFilePath());
+            }
 
             PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
             return true;
@@ -1096,12 +1099,11 @@ public class ReportsController extends BaseStudyController
             Report[] report = ReportService.get().getReports(filter);
             if (report.length == 0)
             {
-                HttpView.throwNotFound("Unable to find report");
-                return null;
+                throw new NotFoundException("Unable to find report");
             }
 
             if (!ReportManager.get().canReadReport(getUser(), getContainer(), report[0]))
-                HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
 
             if (report[0] instanceof AttachmentReport)
                 AttachmentService.get().download(getViewContext().getResponse(), (AttachmentReport)report[0], form.getName());
@@ -1122,8 +1124,7 @@ public class ReportsController extends BaseStudyController
             Report[] report = ReportService.get().getReports(filter);
             if (report.length == 0)
             {
-                HttpView.throwNotFound("Unable to find report");
-                return false;
+                throw new NotFoundException("Unable to find report");
             }
 
             //if (!report.getDescriptor().getACL().hasPermission(getUser(), ACL.PERM_READ))
@@ -1795,8 +1796,7 @@ public class ReportsController extends BaseStudyController
             DataSet def = study.getDataSet(datasetId);
             if (def == null)
             {
-                HttpView.throwNotFound();
-                return; // silence intellij warnings
+                throw new NotFoundException();
             }
             VisitImpl visit = null;
             if (0 != visitRowId)
@@ -1804,8 +1804,7 @@ public class ReportsController extends BaseStudyController
                 visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
                 if (null == visit)
                 {
-                    HttpView.throwNotFound();
-                    return; // silence intellij warnings
+                    throw new NotFoundException();
                 }
             }
 
@@ -1840,7 +1839,9 @@ public class ReportsController extends BaseStudyController
 			if (StringUtils.isEmpty(form.getSchemaName()))
 				form.setSchemaName("study");
 			if (null == DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(form.getSchemaName()))
-				HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             Map<String, String> props = new HashMap<String, String>();
             for (Pair<String, String> param : form.getParameters())

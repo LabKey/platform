@@ -54,8 +54,10 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -191,7 +193,9 @@ public class ProjectController extends SpringActionController
                 if (!c.hasPermission(getUser(), ReadPermission.class))
                 {
                     if (getUser().isGuest())
-                        HttpView.throwUnauthorized();
+                    {
+                        throw new UnauthorizedException();
+                    }
                     return new HtmlView("You do not have permission to view this folder.<br>" +
                             "Please select another folder from the tree to the left.");
                 }
@@ -214,8 +218,7 @@ public class ProjectController extends SpringActionController
             Container c = getContainer();
             if (null == c)
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
 
             boolean appendPath = true;
@@ -314,7 +317,7 @@ public class ProjectController extends SpringActionController
             }
             else
             {
-                HttpView.throwNotFound();
+                throw new NotFoundException();
             }
             return true;
         }

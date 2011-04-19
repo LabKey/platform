@@ -16,9 +16,10 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * User: jeckels
@@ -61,7 +62,7 @@ public class ExperimentRunForm
         }
         if (run == null)
         {
-            HttpView.throwNotFound("Could not find experiment run");
+            throw new NotFoundException("Could not find experiment run");
         }
         return run;
     }

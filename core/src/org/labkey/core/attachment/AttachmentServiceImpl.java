@@ -79,6 +79,7 @@ import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
@@ -169,7 +170,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     public void download(HttpServletResponse response, AttachmentParent parent, String filename) throws ServletException, IOException
     {
         if (null == filename || 0 == filename.length())
-            HttpView.throwNotFound();
+        {
+            throw new NotFoundException();
+        }
 
         boolean asAttachment = true;
         String mime = _mimeMap.getContentTypeFor(filename);
@@ -739,7 +742,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             else
             {
                 if (!rs.next())
-                    HttpView.throwNotFound();
+                {
+                    throw new NotFoundException();
+                }
 
                 writer.setContentType(rs.getString("DocumentType"));
                 if (asAttachment)

@@ -338,8 +338,7 @@ public class IssuesController extends SpringActionController
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             if (null == _issue)
             {
-                HttpView.throwNotFound("Unable to find " + names.singularName + " " + form.getIssueId());
-                return null;
+                throw new NotFoundException("Unable to find " + names.singularName + " " + form.getIssueId());
             }
 
             IssuePage page = new IssuePage();
@@ -813,7 +812,9 @@ public class IssuesController extends SpringActionController
             int issueId = form.getIssueId();
             _issue = getIssue(issueId);
             if (_issue == null)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             Issue prevIssue = (Issue)_issue.clone();
             User user = getUser();
@@ -881,7 +882,9 @@ public class IssuesController extends SpringActionController
             int issueId = form.getIssueId();
             _issue = getIssue(issueId);
             if (null == _issue)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             Issue prevIssue = (Issue)_issue.clone();
             User user = getUser();
@@ -932,7 +935,9 @@ public class IssuesController extends SpringActionController
             int issueId = form.getIssueId();
             _issue = getIssue(issueId);
             if (null == _issue)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             Issue prevIssue = (Issue)_issue.clone();
             User user = getUser();
@@ -973,7 +978,9 @@ public class IssuesController extends SpringActionController
             int issueId = form.getIssueId();
             _issue = getIssue(issueId);
             if (_issue == null)
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             Issue prevIssue = (Issue)_issue.clone();
 
@@ -1238,7 +1245,9 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(EmailPrefsForm form, boolean reshow, BindException errors) throws Exception
         {
             if (getViewContext().getUser().isGuest())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
 
             int emailPrefs = IssueManager.getUserEmailPreferences(getContainer(), getUser().getUserId());
             int issueId = form.getIssueId() == null ? 0 : form.getIssueId().intValue();
@@ -1649,7 +1658,9 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             if (!getUser().isAdministrator())   // GLOBAL
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
             String message = IssueManager.purge();
             return new HtmlView(message);
         }
@@ -2266,7 +2277,9 @@ public class IssuesController extends SpringActionController
             throws ServletException
     {
         if (!hasUpdatePermission(user, issue))
-            HttpView.throwUnauthorized();
+        {
+            throw new UnauthorizedException();
+        }
     }
 
 

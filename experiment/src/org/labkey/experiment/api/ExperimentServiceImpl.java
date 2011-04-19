@@ -80,7 +80,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private List<ExperimentRunTypeSource> _runTypeSources = new ArrayList<ExperimentRunTypeSource>();
     private Set<ExperimentDataHandler> _dataHandlers = new HashSet<ExperimentDataHandler>();
-    private Set<RunExpansionHandler> _expansionHanders = new HashSet<RunExpansionHandler>();
     protected Map<String, DataType> _dataTypes = new HashMap<String, DataType>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<String, ProtocolImplementation>();
 
@@ -2932,11 +2931,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         _dataHandlers.add(handler);
     }
 
-    public void registerRunExpansionHandler(RunExpansionHandler handler)
-    {
-        _expansionHanders.add(handler);
-    }
-
     public void registerExperimentRunTypeSource(ExperimentRunTypeSource source)
     {
         _runTypeSources.add(source);
@@ -2960,11 +2954,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public Set<ExperimentDataHandler> getExperimentDataHandlers()
     {
         return Collections.unmodifiableSet(_dataHandlers);
-    }
-
-    public Set<RunExpansionHandler> getRunExpansionHandlers()
-    {
-        return Collections.unmodifiableSet(_expansionHanders);
     }
 
     public DataType getDataType(String namespacePrefix)

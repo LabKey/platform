@@ -21,11 +21,11 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SampleRequestActor;
@@ -57,7 +57,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         SiteImpl site = getSite(form);
 
         if (actor == null)
-            return HttpView.throwNotFound();
+            throw new NotFoundException();
 
         User[] members = actor.getMembers(site);
         JspView<GroupMembersBean> view = new JspView<GroupMembersBean>("/org/labkey/study/view/samples/groupMembers.jsp",

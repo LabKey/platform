@@ -22,14 +22,12 @@ import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
-import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.portal.ProjectUrls;
@@ -490,7 +488,9 @@ public class PipelineController extends SpringActionController
 
             File fileCurrent = pr.resolvePath(relativePath);
             if (!fileCurrent.exists())
-                HttpView.throwNotFound("File not found: " + form.getPath());
+            {
+                throw new NotFoundException("File not found: " + form.getPath());
+            }
 
             ActionURL browseURL = new ActionURL(BrowseAction.class, c);
             String browseParam = pr.relativePath(fileCurrent);
@@ -566,8 +566,7 @@ public class PipelineController extends SpringActionController
             PipeRoot pr = PipelineService.get().findPipelineRoot(container);
             if (pr == null || !pr.isValid())
             {
-                HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
-                return null;
+                throw new NotFoundException("Pipeline root not set or does not exist on disk");
             }
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             FilesAdminOptions options = svc.getAdminOptions(container);
@@ -1053,7 +1052,7 @@ public class PipelineController extends SpringActionController
         {
             // Job data is only available from the mini-pipeline.
             if (PipelineService.get().isEnterprisePipeline())
-                return HttpView.throwNotFound();
+                throw new NotFoundException();
             
             setHelpTopic(getHelpTopic("pipeline/status"));
 
@@ -1092,7 +1091,9 @@ public class PipelineController extends SpringActionController
             // Pipeline, since it redirects to the mini-pipeline queue status
             // page.
             if (PipelineService.get().isEnterprisePipeline())
-                HttpView.throwNotFound();
+            {
+                throw new NotFoundException();
+            }
 
             PipelineQueue queue = PipelineService.get().getPipelineQueue();
             boolean success = queue.cancelJob(getJobDataContainer(), form.getJobId());
@@ -1143,15 +1144,15 @@ public class PipelineController extends SpringActionController
         {
             PipeRoot pipeRoot = getPipelineRoot(getContainer());
             if (null == pipeRoot || null == StringUtils.trimToNull(form.getPath()))
-                return HttpView.throwNotFound();
+                throw new NotFoundException();
 
             // check pipeline ACL
             if (!org.labkey.api.security.SecurityManager.getPolicy(pipeRoot).hasPermission(getUser(), ReadPermission.class))
-                return HttpView.throwUnauthorized();
+                throw new UnauthorizedException();
 
             File file = pipeRoot.resolvePath(form.getPath());
             if (!file.exists() || !file.isFile())
-                return HttpView.throwNotFound();
+                throw new NotFoundException();
 
             PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
             return null;

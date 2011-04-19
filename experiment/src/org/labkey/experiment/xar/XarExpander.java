@@ -377,42 +377,6 @@ public class XarExpander extends AbstractXarImporter
 
             //add an empty properties node
         xbProtApp.addNewProperties();
-
-        String cpasType = trimString(xbProtApp.getCpasType());
-
-        RunExpansionHandler handler = findExpansionHandler(cpasType);
-        if (handler != null)
-        {
-            handler.protocolApplicationExpanded(xbProtApp, new ExpRunImpl(_run));
-        }
-        else
-        {
-             if (cpasType != null && !"ProtocolApplication".equals(cpasType) && !"ExperimentRun".equals(cpasType) && !"ExperimentRunOutput".equals(cpasType))
-                getLog().warn("Unrecognized ApplicationType '" + cpasType + "' found in Protocol definition.");
-        }
-    }
-
-    public RunExpansionHandler findExpansionHandler(String cpasType)
-    {
-        if (cpasType == null)
-        {
-            return null;
-        }
-        RunExpansionHandler bestHandler = null;
-        Handler.Priority bestPriority = null;
-        for (RunExpansionHandler handler : ExperimentServiceImpl.get().getRunExpansionHandlers())
-        {
-            Handler.Priority priority = handler.getPriority(cpasType);
-            if (priority != null)
-            {
-                if (bestPriority == null || bestPriority.compareTo(priority) < 0)
-                {
-                    bestHandler = handler;
-                    bestPriority = priority;
-                }
-            }
-        }
-        return bestHandler;
     }
 
     private void convertParameterToXBean(SimpleValueType val, AbstractParameter param)

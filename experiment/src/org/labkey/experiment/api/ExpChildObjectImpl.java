@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpChildObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.Lsid;
@@ -27,7 +26,7 @@ import org.labkey.api.data.Container;
 
 import java.util.Date;
 
-public class ExpChildObjectImpl extends ExpObjectImpl implements ExpChildObject
+public class ExpChildObjectImpl extends ExpObjectImpl
 {
     ExpObject _owner;
     ExpObject _parent;

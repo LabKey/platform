@@ -21,9 +21,9 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.samples.SampleSearchBean;
@@ -45,7 +45,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     {
         _study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
         if (null == _study)
-            HttpView.throwNotFound("No study exists in this folder.");
+            throw new NotFoundException("No study exists in this folder.");
 
         _title = (form.isShowVials() ? "Vial" : "Specimen") + " Search";
 

@@ -166,7 +166,7 @@ public abstract class BaseStudyController extends SpringActionController
         {
             // redirect to the study home page, where admins will see a 'create study' button,
             // and non-admins will simply see a message that no study exists.
-            HttpView.throwRedirect(new ActionURL(StudyController.BeginAction.class, c));
+            throw new RedirectException(new ActionURL(StudyController.BeginAction.class, c));
         }
         return study;
     }
@@ -290,7 +290,7 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected void redirectTypeNotFound(int datasetId) throws RedirectException
     {
-        HttpView.throwRedirect(new ActionURL(StudyController.TypeNotFoundAction.class, getContainer()).addParameter("id", datasetId));
+        throw new RedirectException(new ActionURL(StudyController.TypeNotFoundAction.class, getContainer()).addParameter("id", datasetId));
     }
 
     public static class StudyJspView<T> extends JspView<T>

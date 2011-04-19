@@ -98,7 +98,9 @@ public class StatusController extends SpringActionController
         if (c == null || c.isRoot())
         {
             if (!getUser().isAdministrator())
-                HttpView.throwUnauthorized();
+            {
+                throw new UnauthorizedException();
+            }
         }
 
         return c;
@@ -319,7 +321,7 @@ public class StatusController extends SpringActionController
 
             if (sf.getDataUrl() != null)
             {
-                HttpView.throwRedirect(sf.getDataUrl());
+                throw new RedirectException(sf.getDataUrl());
             }
 
             return urlDetails(c, form.getRowId());
@@ -341,7 +343,9 @@ public class StatusController extends SpringActionController
             }
 
             if (c != null)
-                HttpView.throwRedirect(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
+            {
+                throw new RedirectException(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
+            }
 
             return urlDetails(c, form.getRowId());
         }
@@ -369,11 +373,11 @@ public class StatusController extends SpringActionController
 
             PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
             if (sf == null)
-                return HttpView.throwNotFound();
+                throw new NotFoundException();
 
             PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
             if (provider == null)
-                return HttpView.throwNotFound();
+                throw new NotFoundException();
 
             try
             {
@@ -885,8 +889,7 @@ public class StatusController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             PipelineServiceImpl.get().refreshLocalJobs();
-            HttpView.throwRedirect(new ActionURL(ShowListAction.class, ContainerManager.getRoot()));
-            return null;
+            throw new RedirectException(new ActionURL(ShowListAction.class, ContainerManager.getRoot()));
         }
 
         public NavTree appendNavTrail(NavTree root)

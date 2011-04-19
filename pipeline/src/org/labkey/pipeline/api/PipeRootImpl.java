@@ -33,7 +33,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.UnauthorizedException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
@@ -226,7 +227,7 @@ public class PipeRootImpl implements PipeRoot
     {
         if (!hasPermission(container, user, perm))
         {
-            HttpView.throwUnauthorized();
+            throw new UnauthorizedException();
         }
     }
 
