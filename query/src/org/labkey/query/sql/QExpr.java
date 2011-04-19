@@ -93,7 +93,7 @@ abstract public class QExpr extends QNode
     {
         DbSchema schema = table.getSchema();
         SQLFragment sql = getSqlFragment(schema);
-        return new ExprColumn(table, name, sql, getSqlType().sqlType);
+        return new ExprColumn(table, name, sql, getSqlType());
     }
 
     public QueryParseException fieldCheck(QNode parent, SqlDialect d)

@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -73,7 +74,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 sql.add(_schema.getContainer());
                 sql.add(Boolean.TRUE);
                 sql.add(Boolean.FALSE);
-                ExprColumn result = new ExprColumn(this, "Active", sql, Types.BOOLEAN);
+                ExprColumn result = new ExprColumn(this, "Active", sql, JdbcType.BOOLEAN);
                 result.setFormat("Yes;No");
                 result.setDescription("Indicates if this sample set is current the active, or default, for this folder or project");
                 return result;
@@ -83,7 +84,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM " +
                     ExperimentServiceImpl.get().getTinfoMaterial() +
                     " m WHERE m.CpasType = " + ExprColumn.STR_TABLE_ALIAS + ".LSID)");
-                ExprColumn sampleCountColumnInfo = new ExprColumn(this, "SampleCount", sql, Types.INTEGER);
+                ExprColumn sampleCountColumnInfo = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
                 sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample set");
                 return sampleCountColumnInfo;
             }

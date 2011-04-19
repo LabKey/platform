@@ -141,7 +141,7 @@ public abstract class BaseStudyTable extends FilteredTable
         private static final String DATE_VISIT_JOIN_ALIAS = "DateVisitJoin";
         public DateVisitColumn(TableInfo parent)
         {
-            super(parent, "Visit", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + DATE_VISIT_JOIN_ALIAS + ".SequenceNumMin"), Types.VARCHAR);
+            super(parent, "Visit", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + DATE_VISIT_JOIN_ALIAS + ".SequenceNumMin"), JdbcType.VARCHAR);
         }
 
         @Override
@@ -222,7 +222,7 @@ public abstract class BaseStudyTable extends FilteredTable
         public SpecimenCommentColumn(FilteredTable parent, TableInfo ptidCommentTable, String ptidCommentProperty,
                                      TableInfo ptidVisitCommentTable, String ptidVisitCommentProperty, boolean includeVialComments)
         {
-            super(parent, COLUMN_NAME, new SQLFragment(), Types.VARCHAR);
+            super(parent, COLUMN_NAME, new SQLFragment(), JdbcType.VARCHAR);
 
             _container = parent.getContainer();
             _ptidCommentTable = ptidCommentTable;

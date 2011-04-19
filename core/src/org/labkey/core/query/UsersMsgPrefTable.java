@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -125,7 +126,7 @@ public class UsersMsgPrefTable extends FilteredTable
 
         public EmailSettingsColumn(String name, String type, FilteredTable parent)
         {
-            super(parent, name, new SQLFragment(), Types.VARCHAR);
+            super(parent, name, new SQLFragment(), JdbcType.VARCHAR);
 
             _type = type;
             _container = parent.getContainer();

@@ -1061,6 +1061,17 @@ public class StudyController extends BaseStudyController
             ActionURL previousParticipantURL = null;
             ActionURL nextParticipantURL = null;
 
+            if (form.getParticipantId() == null)
+            {
+                throw new NotFoundException("No " + study.getSubjectNounSingular() + " specified");
+            }
+
+            Participant participant = StudyManager.getInstance().getParticipant(study, form.getParticipantId());
+            if (participant == null)
+            {
+                throw new NotFoundException("Could not find " + study.getSubjectNounSingular() + " " + form.getParticipantId());
+            }
+
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
 
             _cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());

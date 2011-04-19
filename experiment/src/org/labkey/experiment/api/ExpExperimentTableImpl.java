@@ -64,7 +64,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn("RowId"));
             case RunCount:
-                ExprColumn runCountColumnInfo = new ExprColumn(this, "RunCount", new SQLFragment("(SELECT COUNT(*) FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)"), Types.INTEGER);
+                ExprColumn runCountColumnInfo = new ExprColumn(this, "RunCount", new SQLFragment("(SELECT COUNT(*) FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)"), JdbcType.INTEGER);
                 runCountColumnInfo.setDescription("Contains the number of runs associated with this run group");
                 return runCountColumnInfo;
             case BatchProtocolId:
@@ -101,7 +101,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         }
 
         ColumnInfo expRowIdCol = getColumn(Column.RowId);
-        ExprColumn result = new ExprColumn(this, "RunMembership", sql, Types.BOOLEAN, expRowIdCol);
+        ExprColumn result = new ExprColumn(this, "RunMembership", sql, JdbcType.BOOLEAN, expRowIdCol);
         result.setLabel("");
         result.setDisplayColumnFactory(new ExperimentMembershipDisplayColumnFactory(expRowIdCol, run == null ? -1 : run.getRowId()));
         addColumn(result);
@@ -170,6 +170,6 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             sql.append(")");
         }
         sql.append(")");
-        return new ExprColumn(this, alias, sql, Types.INTEGER);
+        return new ExprColumn(this, alias, sql, JdbcType.INTEGER);
     }
 }

@@ -1,5 +1,6 @@
 package org.labkey.study.query;
 
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
@@ -40,7 +41,7 @@ public class DataSetColumnsTable extends FilteredTable
         setDescription("Metadata table containing one row of metadata for each column in all study datasets.");
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");
-        ColumnInfo datasetLookupCol = new ExprColumn(this, "DataSet", sql, Types.INTEGER);
+        ColumnInfo datasetLookupCol = new ExprColumn(this, "DataSet", sql, JdbcType.INTEGER);
         datasetLookupCol.setFk(new LookupForeignKey("DataSetId")
         {
             public TableInfo getLookupTableInfo()

@@ -86,7 +86,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         //  Set this column type to string so that exports to excel correctly set the column type as string.
         // (We're using a custom display column to output the text of the comment in this col, even though
         // the SQL expression returns an integer.)
-        ColumnInfo commentsCol = addColumn(new ExprColumn(this, "Comments", sqlFragComments, Types.VARCHAR));
+        ColumnInfo commentsCol = addColumn(new ExprColumn(this, "Comments", sqlFragComments, JdbcType.VARCHAR));
         commentsCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -118,7 +118,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         //  Set this column type to string so that exports to excel correctly set the column type as string.
         // (We're using a custom display column to output the text of the comment in this col, even though
         // the SQL expression returns an integer.)
-        addColumn(new ExprColumn(this, "QualityControlFlag", sqlFragConflicts, Types.BOOLEAN));
+        addColumn(new ExprColumn(this, "QualityControlFlag", sqlFragConflicts, JdbcType.BOOLEAN));
     }
 
     public static class CommentDisplayColumn extends DataColumn

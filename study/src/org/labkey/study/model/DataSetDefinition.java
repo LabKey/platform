@@ -378,7 +378,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public TableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException
+    public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException
     {
         //noinspection ConstantConditions
         if (user == null && checkPermission)
@@ -867,7 +867,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // Dataset
 
-            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ")"), Types.VARCHAR);
+            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ")"), JdbcType.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
                 public TableInfo getLookupTableInfo()

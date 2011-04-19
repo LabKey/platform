@@ -222,7 +222,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         "\nWHERE exp.ProtocolApplication.CpasType = 'ProtocolApplication' AND exp.ProtocolApplication.RunId = " +
                         ExprColumn.STR_TABLE_ALIAS + ".RowId)");
 
-                return new ExprColumn(this, alias, sql, Types.VARCHAR);
+                return new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
             }
             case RowId:
             {
@@ -292,7 +292,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             sql.add(role);
         }
         sql.append(")");
-        return doAdd(new ExprColumn(this, alias, sql, Types.INTEGER));
+        return doAdd(new ExprColumn(this, alias, sql, JdbcType.INTEGER));
     }
 
     public ColumnInfo addDataCountColumn(String alias, String roleName)
@@ -311,7 +311,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             sql.add(roleName);
         }
         sql.append(")");
-        return doAdd(new ExprColumn(this, alias, sql, Types.INTEGER));
+        return doAdd(new ExprColumn(this, alias, sql, JdbcType.INTEGER));
     }
 
     public ColumnInfo createInputLookupColumn()
@@ -319,7 +319,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRun + "')");
-        ColumnInfo ret = new ExprColumn(this, Column.Input.toString(), sql, Types.INTEGER);
+        ColumnInfo ret = new ExprColumn(this, Column.Input.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of inputs (both materials and data files) that could be used for this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, new DelegatingContainerFilter(this)));
         ret.setIsUnselectable(true);
@@ -331,7 +331,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRunOutput + "')");
-        ColumnInfo ret = new ExprColumn(this, Column.Output.toString(), sql, Types.INTEGER);
+        ColumnInfo ret = new ExprColumn(this, Column.Output.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of outputs (both materials and data files) that could be produced by this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, new DelegatingContainerFilter(this)));
         ret.setIsUnselectable(true);
@@ -539,7 +539,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             {
                 if (displayField.equalsIgnoreCase(exp.getName()))
                 {
-                    ExprColumn result = new ExprColumn(parent.getParentTable(), exp.getName(), new SQLFragment("~~PLACEHOLDER~~"), Types.BOOLEAN, parent)
+                    ExprColumn result = new ExprColumn(parent.getParentTable(), exp.getName(), new SQLFragment("~~PLACEHOLDER~~"), JdbcType.BOOLEAN, parent)
                     {
                         @Override
                         public SQLFragment getValueSql(String tableAlias)

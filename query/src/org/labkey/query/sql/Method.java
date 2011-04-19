@@ -368,7 +368,7 @@ public abstract class Method
                     /* */
                 }
             }
-            return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema(), fragments), jdbcType.sqlType);
+            return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema(), fragments), jdbcType);
         }
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] fragments)

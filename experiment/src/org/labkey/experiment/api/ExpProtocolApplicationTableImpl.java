@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.*;
@@ -84,7 +85,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             sql.append(")");
         }
         sql.append(")");
-        ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
+        ColumnInfo ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
 
         ret.setFk(schema.materialIdForeignKey(sampleSet));
         return ret;
@@ -108,7 +109,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             sql.append(")");
         }
         sql.append(")");
-        ColumnInfo ret = new ExprColumn(this, name, sql, Types.INTEGER);
+        ColumnInfo ret = new ExprColumn(this, name, sql, JdbcType.INTEGER);
 
         ret.setFk(new ExpSchema.ExperimentLookupForeignKey("RowId")
         {

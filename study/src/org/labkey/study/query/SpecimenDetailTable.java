@@ -25,7 +25,6 @@ import org.labkey.study.model.StudyManager;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
-import java.sql.Types;
 
 public class SpecimenDetailTable extends AbstractSpecimenTable
 {
@@ -124,7 +123,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     {
         protected static final String QUALITY_CONTROL_JOIN = "QualityControlJoin$";
 
-        public QualityControlColumn(TableInfo parent, String name, SQLFragment sql, int sqltype)
+        public QualityControlColumn(TableInfo parent, String name, SQLFragment sql, JdbcType sqltype)
         {
             super(parent, name, sql, sqltype);
         }
@@ -156,7 +155,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             super(parent, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                     new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_VISIT_JOIN + ".ParticipantSequenceKey"),
-                    Types.INTEGER);
+                    JdbcType.INTEGER);
 
             setFk(new LookupForeignKey("ParticipantSequenceKey")
             {
@@ -194,7 +193,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             super(parent, "CollectionCohort",
                     new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + COLLECTION_COHORT_JOIN + ".CohortId"),
-                    Types.INTEGER);
+                    JdbcType.INTEGER);
 
             setFk(new LookupForeignKey("RowId")
             {
@@ -232,7 +231,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             super(parent,
                     "QualityControlFlag",
                     new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlFlag = ? THEN ? ELSE ? END)", Boolean.TRUE, Boolean.TRUE, Boolean.FALSE),
-                    Types.BOOLEAN);
+                    JdbcType.BOOLEAN);
             // our column wrapping is too complex for the description to propagate through- set it here:
             setDescription("Whether this comment is associated with a quality control alert.");
         }
@@ -245,7 +244,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             super(parent,
                     "QualityControlComments",
                     new SQLFragment("(" + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlComments)"),
-                    Types.VARCHAR);
+                    JdbcType.VARCHAR);
             // our column wrapping is too complex for the description to propagate through- set it here:
             setDescription("Quality control-associated comments.  Set by the system to indicate which fields are causing quality control alerts.");
         }

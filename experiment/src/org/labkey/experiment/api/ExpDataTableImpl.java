@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
@@ -143,7 +144,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             case Protocol:
                 ExprColumn col = new ExprColumn(this, Column.Protocol.toString(), new SQLFragment(
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
-                        " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), Types.VARCHAR, getColumn(Column.SourceProtocolApplication));
+                        " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR, getColumn(Column.SourceProtocolApplication));
                 col.setFk(getExpSchema().getProtocolForeignKey("LSID"));
                 return col;
             case SourceProtocolApplication:
@@ -276,7 +277,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             sql.add(role);
         }
         sql.append(")");
-        ExprColumn ret = new ExprColumn(this, alias, sql, Types.INTEGER);
+        ExprColumn ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         return doAdd(ret);
     }
 
@@ -292,7 +293,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             sql.add(ss.getLSID());
         }
         sql.append(")");
-        ExprColumn ret = new ExprColumn(this, alias, sql, Types.INTEGER);
+        ExprColumn ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         ret.setFk(schema.materialIdForeignKey(ss));
         return doAdd(ret);
     }
@@ -329,7 +330,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.ProtocolApplication.RunId) " +
                 "FROM exp.ProtocolApplication INNER JOIN Exp.DataInput ON exp.ProtocolApplication.RowId = Exp.DataInput.TargetApplicationId " +
                 "WHERE Exp.DataInput.DataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
-        ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
+        ColumnInfo ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         return doAdd(ret);
     }
 
