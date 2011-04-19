@@ -49,6 +49,7 @@ public abstract class BaseWikiView extends JspView<Object>
     public boolean folderHasWikis;
 
     public ActionURL insertURL = null;
+    public ActionURL newURL = null;
     public ActionURL versionsURL = null;
     public ActionURL updateContentURL = null;
     public ActionURL manageURL = null;
@@ -152,6 +153,20 @@ public abstract class BaseWikiView extends JspView<Object>
         {
             insertURL = new ActionURL(WikiController.EditWikiAction.class, c);
             insertURL.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
+
+            // This is used to return back to page where Wiki webpart is being rendered.
+            if (isWebPart())
+            {
+                insertURL.addParameter("redirect", url.getLocalURIString());
+                insertURL.addParameter("pageId", _pageId);
+                insertURL.addParameter("index", Integer.toString(_index));
+            }
+
+            if (null != wiki)
+                insertURL.addParameter("defName", wiki.getName());
+
+            newURL = new ActionURL(WikiController.EditWikiAction.class, c);
+            newURL.addParameter("cancel", context.getActionURL().getLocalURIString());
         }
 
         if (perms.allowUpdate(wiki))
@@ -192,8 +207,6 @@ public abstract class BaseWikiView extends JspView<Object>
         setTitle(title.getSource());
     }
 
-    //public abstract boolean isWebPart();
-
     @Override
     public NavTree getNavMenu()
     {
@@ -204,8 +217,8 @@ public abstract class BaseWikiView extends JspView<Object>
         {
             if (null != updateContentURL)
                 menu.addChild("Edit", updateContentURL.toString(), path + "/_images/partedit.png");
-            if (null != insertURL)
-                menu.addChild("New", insertURL.toString());
+            if (null != newURL)
+                menu.addChild("New", newURL.toString());
             if (null != customizeURL)
                 setCustomizeLink(customizeURL.toString());
             if (null != manageURL)
