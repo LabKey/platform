@@ -1174,8 +1174,6 @@ public class PageFlowUtil
                 " onClick=" + script +
                 (attributes != null ? " " + attributes : "") +
                 "><span>" + filter(text) + "</span>&nbsp;<span class=\"css-arrow-down\"></span></a>";
-        /*<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
-                "/_images/button_arrow.gif\" class=\"labkey-button-arrow\"> */
         return myReturn;
     }
 
