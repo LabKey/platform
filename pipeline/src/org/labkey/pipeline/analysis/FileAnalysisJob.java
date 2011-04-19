@@ -157,7 +157,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     private File findFileInAlternateDirectory(File expectedDir, File dir, String name)
     {
         // Bail out if we've gotten all the way down to the originally expected file location
-        if (dir.equals(expectedDir))
+        if (dir == null || dir.equals(expectedDir))
         {
             return null;
         }
