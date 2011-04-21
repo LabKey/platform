@@ -201,9 +201,6 @@ public abstract class SpringModule extends DefaultModule
 
     protected void initWebApplicationContext()
     {
-        if (null != getApplicationContext())
-            return;
-        
         final List<String> contextConfigFiles = getContextConfigLocation();
         if (!contextConfigFiles.isEmpty())
         {
