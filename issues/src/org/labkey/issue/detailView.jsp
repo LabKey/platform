@@ -82,16 +82,16 @@
         <td valign="top"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
             <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%= h(bean.getLabel("Type")) %></td><td><%=h(issue.getType())%></td></tr>
-            <tr><td class="labkey-form-label"><%= h(bean.getLabel("Area")) %></td><td><%=h(issue.getArea())%></td></tr>
-            <tr><td class="labkey-form-label"><%= h(bean.getLabel("Priority")) %></td><td><%=bean._toString(issue.getPriority())%></td></tr>
-            <tr><td class="labkey-form-label"><%= h(bean.getLabel("Milestone")) %></td><td><%=h(issue.getMilestone())%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Type")%></td><td><%=h(issue.getType())%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Area")%></td><td><%=h(issue.getArea())%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Priority")%></td><td><%=bean._toString(issue.getPriority())%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Milestone")%></td><td><%=h(issue.getMilestone())%></td></tr>
         </table></td>
         <td valign="top"><table>
             <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(user))%></td></tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%= h(bean.getLabel("Resolution")) %></td><td><%=h(issue.getResolution())%></td></tr><%
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
                 %><tr><td class="labkey-form-label">Duplicate</td><td>
