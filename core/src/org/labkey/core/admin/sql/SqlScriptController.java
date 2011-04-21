@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2010 LabKey Corporation
+ * Copyright (c) 2007-2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -645,7 +645,7 @@ public class SqlScriptController extends SpringActionController
                     " \"from\" version and a later \"to\" version.  These scripts can be \"obsoleted\" safely.</td></tr>\n");
             html.append("    <tr><td>&nbsp;</td></tr>\n");
             html.append("    <tr><td>Note that after moving or deleting a script from the source directory you may also want " +
-                    "to delete it from the deploy directory (e.g., /labkey/build/deploy/modules/<name>/schemas/dbscripts/<database> " +
+                    "to delete it from the deploy directory (e.g., /labkey/build/deploy/modules/&lt;name&gt;/schemas/dbscripts/&lt;database&gt;) " +
                     "as well so it doesn't appear here.</td></tr>\n");
             html.append("    <tr><td>&nbsp;</td></tr>\n");
             html.append("  </table>\n");

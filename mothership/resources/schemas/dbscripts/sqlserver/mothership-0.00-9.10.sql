@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,87 +14,10 @@
  * limitations under the License.
  */
 
-/* mothership-0.00-8.10.sql */
-
-/* mothership-0.00-2.30.sql */
-
 /* mothership-0.00-2.10.sql */
 
 EXEC sp_addapprole 'mothership', 'password'
 GO
-
-CREATE TABLE mothership.ExceptionStackTrace
-(
-    ExceptionStackTraceId INT IDENTITY(1,1) NOT NULL,
-    Container ENTITYID NOT NULL,
-    StackTrace TEXT NOT NULL,
-    StackTraceHash VARCHAR(50) NOT NULL,
-    AssignedTo USERID,
-    BugNumber INT,
-
-    CONSTRAINT PK_ExceptionStackTrace PRIMARY KEY (ExceptionStackTraceId),
-    CONSTRAINT UQ_ExceptionStackTraceId_StackTraceHashContainer UNIQUE (StackTraceHash, Container),
-    CONSTRAINT FK_ExceptionStackTrace_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
-    CONSTRAINT FK_ExceptionStackTrace_AssignedTo FOREIGN KEY (AssignedTo) REFERENCES core.Usersdata(UserId)
-)
-GO
-
-
-CREATE TABLE mothership.ServerInstallation
-(
-    ServerInstallationId INT IDENTITY(1,1) NOT NULL,
-    ServerInstallationGUID ENTITYID NOT NULL,
-    Description VARCHAR(100),
-    Container ENTITYID NOT NULL,
-
-    CONSTRAINT PK_ServerInstallation PRIMARY KEY (ServerInstallationId),
-    CONSTRAINT UQ_ServerInstallation_ServerInstallationGUID UNIQUE (ServerInstallationGUID),
-    CONSTRAINT FK_ServerInstallation_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId)
-)
-GO
-
-CREATE TABLE mothership.ServerSession
-(
-    ServerSessionId INT IDENTITY(1,1) NOT NULL,
-    ServerInstallationId INT,
-    ServerSessionGUID ENTITYID NOT NULL,
-    EarliestKnownTime DATETIME NOT NULL,
-    LastKnownTime DATETIME NOT NULL,
-    Container ENTITYID NOT NULL,
-
-    CONSTRAINT PK_ServerSession PRIMARY KEY (ServerSessionId),
-    CONSTRAINT UQ_ServerSession_ServerSessionGUID UNIQUE (ServerSessionGUID),
-    CONSTRAINT FK_ServerSession_ServerInstallation FOREIGN KEY (ServerInstallationId) REFERENCES mothership.ServerInstallation(ServerInstallationId),
-    CONSTRAINT FK_ServerSession_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId)
-)
-GO
-
-CREATE TABLE mothership.ExceptionReport
-(
-    ExceptionReportId INT IDENTITY(1,1) NOT NULL,
-    ExceptionStackTraceId INT,
-    Created DATETIME DEFAULT GETDATE(),
-    SVNRevision INT,
-    URL VARCHAR(512),
-    ServerSessionId INT NOT NULL,
-    DatabaseProductName VARCHAR(200),
-    DatabaseProductVersion VARCHAR(200),
-    DatabaseDriverName VARCHAR(200),
-    DatabaseDriverVersion VARCHAR(200),
-    RuntimeOS VARCHAR(100),
-    Username VARCHAR(50),
-    Browser VARCHAR(100),
-
-    CONSTRAINT PK_ExceptionReport PRIMARY KEY (ExceptionReportId),
-    CONSTRAINT FK_ExceptionReport_ExceptionStackTrace FOREIGN KEY (ExceptionStackTraceId) REFERENCES mothership.ExceptionStackTrace(ExceptionStackTraceId),
-    CONSTRAINT FK_ExceptionReport_ServerSessionId FOREIGN KEY (ServerSessionId) REFERENCES mothership.ServerSession(ServerSessionId)
-)
-GO
-
-DROP TABLE mothership.ExceptionReport;
-DROP TABLE mothership.ServerSession;
-DROP TABLE mothership.ServerInstallation;
-DROP TABLE mothership.ExceptionStackTrace;
 
 CREATE TABLE mothership.ExceptionStackTrace
 (
@@ -171,11 +94,11 @@ GO
 
 ALTER TABLE mothership.ExceptionReport ADD ReferrerURL VARCHAR(512)
 GO
-
 ALTER TABLE mothership.ServerInstallation ADD ServerHostName VARCHAR(256)
 GO
 ALTER TABLE mothership.ExceptionStackTrace ADD Comments TEXT
 GO
+
 CREATE TABLE mothership.SoftwareRelease
 (
     ReleaseId INT IDENTITY(1,1) NOT NULL,
@@ -188,14 +111,10 @@ CREATE TABLE mothership.SoftwareRelease
 )
 GO
 
-
 ALTER TABLE mothership.ExceptionReport ADD PageflowName VARCHAR(30)
 GO
 
 ALTER TABLE mothership.ExceptionReport ADD PageflowAction VARCHAR(40)
-GO
-
-DELETE FROM mothership.serverinstallation WHERE serverinstallationid NOT IN (SELECT serverinstallationid FROM mothership.serversession)
 GO
 
 CREATE INDEX IX_ServerSession_ServerInstallationId ON mothership.serversession(serverinstallationid)
@@ -234,46 +153,24 @@ GO
 
 /* mothership-2.30-8.10.sql */
 
-/* mothership-2.30-2.31.sql */
-
 ALTER TABLE mothership.ServerSession ADD EnterprisePipelineEnabled BIT
 GO
 
 ALTER TABLE mothership.ServerSession ADD LDAPEnabled BIT
 GO
 
-/* mothership-2.31-2.32.sql */
-
 ALTER TABLE mothership.ExceptionReport ADD SQLState VARCHAR(100)
 GO
 
 /* mothership-8.30-9.10.sql */
 
-/* mothership-8.30-8.31.sql */
-
 -- Migrate from using just the SVN revision to tracking the revision and URL.
-
--- Make sure that we're a real FK to container
-DELETE FROM mothership.softwarerelease WHERE Container NOT IN (SELECT EntityId FROM core.containers)
-GO
-
 ALTER TABLE mothership.softwarerelease ADD CONSTRAINT FK_SoftwareRelease_Container
     FOREIGN KEY (Container) REFERENCES core.containers(EntityId)
 GO
 
 -- Handle null revisions, which happens when building from a source distribution instead of SVN
 ALTER TABLE mothership.SoftwareRelease ALTER COLUMN SVNRevision INT NULL
-GO
-
--- Make sure that we have a release entry for every report we've gotten
-INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
-    SELECT DISTINCT si.Container, ss.SVNRevision, CASE WHEN ss.SVNRevision IS NULL THEN 'NotSvn' ELSE CAST(ss.SVNRevision AS NVARCHAR(50)) END
-        FROM mothership.ServerSession ss, mothership.ServerInstallation si
-        WHERE si.ServerInstallationId = ss.ServerInstallationId AND SVNRevision NOT IN
-            (SELECT SVNRevision FROM mothership.SoftwareRelease sr WHERE sr.Container = si.Container)
-GO
-
-DELETE FROM mothership.SoftwareRelease WHERE SVNRevision IS NULL
 GO
 
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
@@ -290,13 +187,6 @@ GO
 ALTER TABLE mothership.SoftwareRelease ADD SoftwareReleaseId INT IDENTITY
 GO
 ALTER TABLE mothership.SoftwareRelease ADD CONSTRAINT pk_softwarerelease PRIMARY KEY (SoftwareReleaseId)
-GO
-
--- Point to the row in the release table
-UPDATE mothership.ServerSession SET SoftwareReleaseId =
-    (SELECT sr.SoftwareReleaseId FROM mothership.SoftwareRelease sr
-        WHERE (sr.SVNRevision = mothership.ServerSession.SVNRevision OR (sr.SVNRevision IS NULL AND mothership.ServerSession.SVNRevision IS NULL)) AND
-            mothership.ServerSession.Container = sr.Container)
 GO
 
 ALTER TABLE mothership.ServerSession ALTER COLUMN SoftwareReleaseId INT NOT NULL

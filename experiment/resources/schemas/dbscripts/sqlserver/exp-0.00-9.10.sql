@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 EXEC sp_addapprole 'exp', 'password'
 GO
 
-if NOT EXISTS (SELECT * FROM systypes WHERE name ='LSIDtype')
+IF NOT EXISTS (SELECT * FROM systypes WHERE name ='LSIDtype')
     EXEC sp_addtype 'LSIDtype', 'nvarchar(300)'
 GO
 
@@ -1072,6 +1072,7 @@ CREATE TABLE exp.RunList
     CONSTRAINT FK_RunList_ExperimentRunId FOREIGN KEY (ExperimentRunId)
             REFERENCES exp.ExperimentRun(RowId) )
 GO
+
 INSERT INTO exp.RunList (ExperimentId, ExperimentRunId)
 SELECT E.RowId, ER.RowId
    FROM exp.Experiment E INNER JOIN exp.ExperimentRun ER

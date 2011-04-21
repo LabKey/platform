@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,15 +78,9 @@ CREATE TABLE query.DbUserSchema
     CONSTRAINT UQ_DbUserSchema UNIQUE(Container, UserSchemaName)
 );
 
-UPDATE query.querydef SET metadata = REPLACE(metadata, 'http://cpas.fhcrc.org/data/xml', 'http://labkey.org/data/xml');
-
 ALTER TABLE query.dbuserschema ADD COLUMN editable BOOLEAN NOT NULL DEFAULT '0';
 ALTER TABLE query.dbuserschema ADD COLUMN metadata TEXT NULL;
-
 ALTER TABLE query.customview ALTER COLUMN queryname TYPE VARCHAR(200);
-
-DELETE FROM query.dbuserschema WHERE dbschemaname IS NULL;
-
 ALTER TABLE query.dbuserschema ALTER COLUMN dbschemaname SET NOT NULL;
 
 CREATE TABLE query.QuerySnapshotDef
@@ -119,11 +113,5 @@ ALTER TABLE query.QuerySnapshotDef ADD COLUMN QueryTableName VARCHAR(200) NULL;
 ALTER TABLE query.QuerySnapshotDef DROP COLUMN ViewName;
 
 /* query-8.30-9.10.sql */
-
-/* query-8.30-8.31.sql */
-
-SELECT core.executeJavaUpgradeCode('upgradeRConfiguration');
-
-/* query-8.31-8.32.sql */
 
 ALTER TABLE query.customview ALTER COLUMN name type varchar(200);

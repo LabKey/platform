@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/* prop-0.00-2.30.sql */
 
 /* prop-0.00-1.00.sql */
 
@@ -64,17 +62,4 @@ CREATE PROCEDURE prop.Property_setValue(@Set int, @Name VARCHAR(255), @Value VAR
             INSERT prop.Properties VALUES (@Set, @Name, @Value)
         END
     END
-GO
-
-/* prop-8.30-9.10.sql */
-
-/* prop-8.31-8.32.sql */
-
--- Delete properties assigned to orphaned property sets
-DELETE FROM prop.Properties WHERE "Set" IN
-  (SELECT "Set" FROM prop.PropertySets WHERE ObjectId NOT IN (SELECT EntityId FROM core.containers))
-GO
-
--- Delete orphaned property sets
-DELETE FROM prop.PropertySets WHERE ObjectId NOT IN (SELECT EntityId FROM core.containers)
 GO

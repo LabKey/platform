@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,18 +81,12 @@ CREATE TABLE query.DbUserSchema
 )
 GO
 
-UPDATE query.querydef SET metadata = REPLACE(CAST(metadata AS VARCHAR(8000)), 'http://cpas.fhcrc.org/data/xml', 'http://labkey.org/data/xml')
-GO
-
 ALTER TABLE query.dbuserschema ADD
     editable BIT DEFAULT 0,
     metadata NTEXT NULL
 GO
 
 ALTER TABLE query.customview ALTER COLUMN queryname nvarchar(200)
-GO
-
-DELETE query.dbuserschema WHERE dbschemaname IS NULL
 GO
 
 ALTER TABLE query.dbuserschema ALTER COLUMN dbschemaname NVARCHAR(50) NOT NULL
@@ -123,30 +117,20 @@ ALTER TABLE query.QueryDef ALTER COLUMN Name NVARCHAR(200) NOT NULL
 GO
 ALTER TABLE query.QuerySnapshotDef ALTER COLUMN Name NVARCHAR(200) NOT NULL
 GO
-
 ALTER TABLE query.QuerySnapshotDef ADD LastUpdated DATETIME NULL
 GO
 ALTER TABLE query.QuerySnapshotDef ADD NextUpdate DATETIME NULL
 GO
 ALTER TABLE query.QuerySnapshotDef ADD UpdateDelay INT DEFAULT 0
 GO
-
 ALTER TABLE query.QuerySnapshotDef ADD ViewName NVARCHAR(50) NULL
 GO
-
 ALTER TABLE query.QuerySnapshotDef ADD QueryTableName NVARCHAR(200) NULL
 GO
 ALTER TABLE query.QuerySnapshotDef DROP COLUMN ViewName
 GO
 
 /* query-8.30-9.10.sql */
-
-/* query-8.30-8.31.sql */
-
-EXEC core.executeJavaUpgradeCode 'upgradeRConfiguration'
-GO
-
-/* query-8.31-8.32.sql */
 
 ALTER TABLE query.customview ALTER COLUMN name nvarchar(200)
 GO

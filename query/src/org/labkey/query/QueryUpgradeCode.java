@@ -15,16 +15,15 @@
  */
 package org.labkey.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.reports.ExternalScriptEngineDefinition;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.api.security.UserManager;
 import org.labkey.query.persist.QueryManager;
 
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Map;
 
 /*
 * User: Karl Lum
@@ -33,35 +32,6 @@ import java.util.Map;
 */
 public class QueryUpgradeCode implements UpgradeCode
 {
-    private static final String R_EXE = "RReport.RExe";
-    private static final String R_CMD = "RReport.RCmd";
-
-    // Invoked at version 9.1
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void upgradeRConfiguration(ModuleContext moduleContext)
-    {
-        if (!moduleContext.isNewInstall())
-        {
-            Map<String, String> map = UserManager.getUserPreferences(false);
-
-            if (map.containsKey(R_EXE))
-            {
-                ExternalScriptEngineDefinition def = LabkeyScriptEngineManager.createDefinition();
-
-                def.setName("R Scripting Engine");
-                def.setExeCommand(map.get(R_CMD));
-                def.setExePath(map.get(R_EXE));
-                def.setExtensions(new String[]{"R", "r"});
-                def.setLanguageName("R");
-                def.setOutputFileName("script.Rout");
-                def.setEnabled(true);
-                def.setExternal(true);
-                
-                LabkeyScriptEngineManager.saveDefinition(def);
-            }
-        }
-    }
-
     // Invoked from script query-9.20-9.21.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void populateDataSourceColumn(ModuleContext ctx) throws SQLException

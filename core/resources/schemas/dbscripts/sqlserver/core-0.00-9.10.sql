@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -382,34 +382,6 @@ GO
 ALTER TABLE core.Report ADD Flags INT NOT NULL DEFAULT 0
 GO
 
--- clean up user history prefs for deleted users (issue#5465)
-CREATE VIEW core._Users AS
-    SELECT Principals.Name AS Email, UsersData.*
-    FROM core.Principals Principals
-        INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
-    WHERE Type = 'u'
-GO
-
-DELETE FROM core.UserHistory WHERE UserID NOT IN
-(
-    SELECT U1.UserId
-    FROM core._Users U1
-)
-GO
-
-DROP VIEW core._Users
-GO
-
--- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
--- script runner to invoke the specified method at this point in the script running process.  See usages of the
--- UpgradeCode interface for more details.
-CREATE PROCEDURE core.executeJavaUpgradeCode(@Name VARCHAR(255)) AS
-    BEGIN
-        DECLARE @notice VARCHAR(255)
-        SET @notice = 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.'
-    END
-GO
-
 -- Add Active column to Principals table
 ALTER TABLE core.Principals ADD
     Active bit NOT NULL DEFAULT 1
@@ -417,15 +389,9 @@ GO
 
 /* core-8.30-9.10.sql */
 
-/* core-8.30-8.31.sql */
-
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
 -- script runner to invoke the specified method at this point in the script running process.  See usages of the
 -- UpgradeCode interface for more details.
-IF EXISTS(SELECT name FROM sysobjects WHERE name = 'executeJavaUpgradeCode' AND type = 'P')
-    DROP PROCEDURE core.executeJavaUpgradeCode
-GO
-
 CREATE PROCEDURE core.executeJavaUpgradeCode(@Name VARCHAR(255)) AS
 BEGIN
     DECLARE @notice VARCHAR(255)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2010 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2011 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
  
-/* prop-0.00-2.10.sql */
-
 /* prop-0.00-1.00.sql */
 
 -- Create generic properties tables, stored procedures, etc.
@@ -74,14 +72,3 @@ CREATE FUNCTION prop.Property_setValue(int, text, text) RETURNS void AS '
         RETURN;
     END;
     ' LANGUAGE plpgsql;
-
-/* prop-8.30-9.10.sql */
-
-/* prop-8.31-8.32.sql */
-
--- Delete properties assigned to orphaned property sets
-DELETE FROM prop.Properties WHERE Set IN
-  (SELECT Set FROM prop.PropertySets WHERE ObjectId NOT IN (SELECT EntityId FROM core.containers));
-
--- Delete orphaned property sets
-DELETE FROM prop.PropertySets WHERE ObjectId NOT IN (SELECT EntityId FROM core.containers);

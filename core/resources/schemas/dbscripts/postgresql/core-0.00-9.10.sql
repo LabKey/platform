@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -335,27 +335,16 @@ $$ LANGUAGE plpgsql;
 ALTER TABLE core.Documents ALTER COLUMN DocumentType TYPE VARCHAR(500);
 ALTER TABLE core.Report ADD COLUMN Flags INT NOT NULL DEFAULT 0;
 
--- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
--- script runner to invoke the specified method at this point in the script running process.  See usages of the
--- UpgradeCode interface for more details.
-CREATE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
-    DECLARE note TEXT := 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.';
-    BEGIN
-    END
-$$ LANGUAGE plpgsql;
-
 -- Add Active column to Principals table
 ALTER TABLE core.Principals
     ADD COLUMN Active boolean NOT NULL DEFAULT true;
 
 /* core-8.30-9.10.sql */
 
-/* core-8.30-8.31.sql */
-
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
 -- script runner to invoke the specified method at this point in the script running process.  See usages of the
 -- UpgradeCode interface for more details.
-CREATE OR REPLACE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
+CREATE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
     DECLARE note TEXT := 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.';
     BEGIN
     END

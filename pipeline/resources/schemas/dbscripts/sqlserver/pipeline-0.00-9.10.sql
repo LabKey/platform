@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,6 @@ CREATE TABLE pipeline.StatusFiles
     Info NVARCHAR(255),
     FilePath NVARCHAR(500),
     Email NVARCHAR(255)
-
-    CONSTRAINT PK_StatusFiles PRIMARY KEY (RowId)
 )
 GO
 
@@ -86,9 +84,6 @@ ALTER TABLE pipeline.StatusFiles
     ALTER COLUMN DataUrl VARCHAR(1024)
 GO
 
-CREATE INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container)
-GO
-
 ALTER TABLE pipeline.StatusFiles ADD
     JobParent uniqueidentifier,
     JobStore NTEXT
@@ -108,10 +103,6 @@ ALTER TABLE pipeline.StatusFiles ADD
     ActiveTaskId NVARCHAR(255)
 GO
 
-DELETE FROM pipeline.statusfiles WHERE filepath IN (SELECT filepath FROM (SELECT COUNT(rowid) AS c, filepath FROM pipeline.statusfiles GROUP BY filepath) x WHERE c > 1)
-    AND rowid NOT IN (SELECT rowid FROM (SELECT COUNT(rowid) AS c, MIN(rowid) AS rowid, filepath FROM pipeline.statusfiles GROUP BY filepath) y WHERE c > 1)
-GO
-
 ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_FilePath UNIQUE (FilePath)
 GO
 
@@ -121,12 +112,6 @@ GO
 CREATE INDEX IX_StatusFiles_JobParent ON pipeline.StatusFiles (JobParent)
 GO
 
-DROP INDEX pipeline.StatusFiles.IX_StatusFiles_Container
-GO
-
-ALTER TABLE pipeline.StatusFiles DROP CONSTRAINT pk_statusfiles
-GO
-
 CREATE CLUSTERED INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container)
 GO
 
@@ -134,25 +119,6 @@ ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT pk_statusfiles PRIMARY KEY (RowI
 GO
 
 /* pipeline-8.30-9.10.sql */
-
-/* pipeline-8.30-8.31.sql */
-
-UPDATE pipeline.StatusFiles SET JobParent = NULL
-    WHERE JobParent NOT IN (SELECT Job FROM pipeline.StatusFiles WHERE Job IS NOT NULL)
-GO
-
-UPDATE pipeline.StatusFiles SET Job = EntityId WHERE Job IS NULL
-GO
-
-/* pipeline-8.31-8.32.sql */
-
-EXEC core.fn_dropifexists 'StatusFiles', 'pipeline', 'CONSTRAINT', 'FK_StatusFiles_JobParent'
-GO
-
-/* pipeline-8.32-8.33.sql */
-
-EXEC core.fn_dropifexists 'StatusFiles', 'pipeline', 'CONSTRAINT', 'UQ_StatusFiles_Job'
-GO
 
 ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_Job UNIQUE (Job)
 GO

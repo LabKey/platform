@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,9 +98,6 @@ ALTER TABLE pipeline.PipelineRoots ADD COLUMN PerlPipeline boolean NOT NULL DEFA
 
 ALTER TABLE pipeline.StatusFiles ADD COLUMN ActiveTaskId VARCHAR(255);
 
-DELETE FROM pipeline.statusfiles WHERE filepath IN (SELECT filepath FROM (SELECT COUNT(rowid) AS c, filepath FROM pipeline.statusfiles GROUP BY filepath) x WHERE c > 1)
-    AND rowid NOT IN (SELECT rowid FROM (SELECT COUNT(rowid) AS c, MIN(rowid) AS rowid, filepath FROM pipeline.statusfiles GROUP BY filepath) y WHERE c > 1);
-
 ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_FilePath UNIQUE (FilePath);
 
 CREATE INDEX IX_StatusFiles_Job ON pipeline.StatusFiles (Job);
@@ -108,21 +105,6 @@ CREATE INDEX IX_StatusFiles_Job ON pipeline.StatusFiles (Job);
 CREATE INDEX IX_StatusFiles_JobParent ON pipeline.StatusFiles (JobParent);
 
 /* pipeline-8.30-9.10.sql */
-
-/* pipeline-8.30-8.31.sql */
-
-UPDATE pipeline.StatusFiles SET JobParent = NULL
-    WHERE JobParent NOT IN (SELECT Job FROM pipeline.StatusFiles WHERE Job IS NOT NULL);
-
-UPDATE pipeline.StatusFiles SET Job = EntityId WHERE Job IS NULL;
-
-/* pipeline-8.31-8.32.sql */
-
-SELECT core.fn_dropifexists('StatusFiles', 'pipeline', 'CONSTRAINT', 'FK_StatusFiles_JobParent');
-
-/* pipeline-8.32-8.33.sql */
-
-SELECT core.fn_dropifexists('StatusFiles', 'pipeline', 'CONSTRAINT', 'UQ_StatusFiles_Job');
 
 ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_Job UNIQUE (Job);
 
