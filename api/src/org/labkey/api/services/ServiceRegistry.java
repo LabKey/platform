@@ -17,7 +17,17 @@ package org.labkey.api.services;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.module.ModuleLoader;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.AbstractRefreshableApplicationContext;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.AbstractRefreshableWebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -37,8 +47,31 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ServiceRegistry
 {
+    private static class _ServiceDef
+    {
+        <T> _ServiceDef(Class<T> c, T i)
+        {
+            cls = c;
+            longName = c.getName(); // full name with $ for inner classes
+            String name = longName.substring(longName.lastIndexOf('.')+1);
+            if (name.endsWith("$Service"))
+                name = name.substring(0,name.length()-"$Service".length());
+            else if (name.endsWith("$I"))
+                name = name.substring(0,name.length()-"$I".length());
+            shortName = name.substring(0,1).toLowerCase() + name.substring(1);
+            instance = i;
+            assert -1 == shortName.indexOf('.');
+            assert -1 != longName.indexOf('.');
+        }
+        final String shortName;
+        final String longName;
+        final Class cls;
+        final Object instance;
+    }
+    
     private static final ServiceRegistry _instance = new ServiceRegistry();
-    private ConcurrentMap<Class,Object> _services = new ConcurrentHashMap<Class,Object>();
+    private ConcurrentMap<Class, _ServiceDef> _servicesByClass = new ConcurrentHashMap<Class, _ServiceDef>();
+    
     static {ServiceRegistry._instance.registerService(ServiceRegistry.class, _instance);}
     
     /**
@@ -64,7 +97,8 @@ public class ServiceRegistry
     @Nullable
     public <T> T getService(Class<T> type)
     {
-        return (T)(_services.get(type));
+        _ServiceDef s = _servicesByClass.get(type);
+        return null==s ? null : (T)s.instance;
     }
 
 
@@ -84,9 +118,14 @@ public class ServiceRegistry
     public <T> void registerService(@NotNull Class<T> type, @NotNull T instance)
     {
         //warn about double-registration
-        assert null == _services.get(type) : "A service instance for type " + type.toString() + " is already registered!";
-        _services.put(type, instance);
+        assert null == _servicesByClass.get(type) : "A service instance for type " + type.toString() + " is already registered!";
+
+        _ServiceDef s = new _ServiceDef(type, instance);
+        _servicesByClass.put(s.cls, s);
+        ((ConfigurableListableBeanFactory)applicationContext.getAutowireCapableBeanFactory()).registerSingleton(s.longName, s.instance);
+        ((ConfigurableListableBeanFactory)applicationContext.getAutowireCapableBeanFactory()).registerSingleton(s.shortName, s.instance);
     }
+
 
     /**
      * Unregisters a service.
@@ -94,21 +133,43 @@ public class ServiceRegistry
      */
     public void unregisterService(@NotNull Class type)
     {
-        getServices().remove(type);
+        _ServiceDef sd = _servicesByClass.get(type);
+        if (null != sd)
+        {
+            _servicesByClass.remove(sd.cls);
+            // UNDONE: removeSingleton()?
+        }
     }
 
-    /**
-     * Returns the services concurrent map. Override to return a different map implementation.
-     * @return The services concurrent map
-     */
-    @NotNull
-    protected ConcurrentMap<Class, Object> getServices()
+
+    public ApplicationContext getApplicationContext()
     {
-        return _services;
+        return applicationContext;
     }
 
-    /**
-     * Private constructor for singleton pattern--use static get() to get an instance.
-     */
-    private ServiceRegistry()  {}
+
+    WebApplicationContext applicationContext = createWebApplicationContext();
+
+
+    WebApplicationContext createWebApplicationContext()
+    {
+        WebApplicationContext wac = WebApplicationContextUtils.getWebApplicationContext(ModuleLoader.getServletContext());
+        // use global if we can, but there's no guarantee that it uses a ConfigurableListableBeanFactory
+        if (wac.getAutowireCapableBeanFactory() instanceof ConfigurableListableBeanFactory)
+            return wac;
+
+        wac = new AbstractRefreshableWebApplicationContext()
+        {
+            @Override
+            protected void loadBeanDefinitions(DefaultListableBeanFactory defaultListableBeanFactory) throws IOException, BeansException
+            {
+                for (_ServiceDef sd : _servicesByClass.values())
+                {
+                    defaultListableBeanFactory.registerSingleton(sd.shortName, sd.instance);
+                    defaultListableBeanFactory.registerSingleton(sd.longName, sd.instance);
+                }
+            }
+        };
+        return wac;
+    }
 }

@@ -28,15 +28,16 @@ import org.labkey.api.data.*;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.xml.XmlBeanFactory;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.naming.*;
@@ -46,6 +47,8 @@ import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -340,18 +343,36 @@ public class ModuleLoader implements Filter
 
     public static List<Module> loadModules(List<File> explodedModuleDirs)
     {
+        ApplicationContext parentContext = ServiceRegistry.get().getApplicationContext();
+        
         Map<String,File> moduleNameToFile = new CaseInsensitiveHashMap<File>();
         List<Module> modules = new ArrayList<Module>();
         for(File moduleDir : explodedModuleDirs)
         {
-            Module module;
+            Module module = null;
             File moduleXml = new File(moduleDir, "config/module.xml");
             try
             {
                 if (moduleXml.exists())
                 {
-                    BeanFactory beanFactory = new XmlBeanFactory(new FileSystemResource(moduleXml));
-                    module = (Module)beanFactory.getBean("moduleBean", Module.class);
+                    XmlWebApplicationContext beanFactory = new XmlWebApplicationContext();
+                    beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
+                    beanFactory.setParent(parentContext);
+                    beanFactory.setServletContext(new SpringModule.ModuleServletContextWrapper(ModuleLoader.getServletContext()));
+                    beanFactory.refresh();
+
+                    try
+                    {
+                        module = (Module)beanFactory.getBean("moduleBean", Module.class);
+                    }
+                    catch (NoSuchBeanDefinitionException x)
+                    {
+                        _log.error("module configuration does not specify moduleBean: " + moduleXml);
+                    }
+                    catch (RuntimeException x)
+                    {
+                        _log.error("error reading module configuration: " + moduleXml.getPath(), x);
+                    }
                 }
                 else
                 {
@@ -1150,7 +1171,7 @@ public class ModuleLoader implements Filter
             catch (Exception x)
             {
                 _log.error("Couldn't load version.properties");
-                return "9.3";
+                return "11.1";
             }
         }
         return labkeyVersion;

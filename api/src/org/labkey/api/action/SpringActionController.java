@@ -34,6 +34,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.*;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.multipart.MultipartException;
@@ -66,7 +71,7 @@ import java.util.*;
  * Whenever a discrepency is found that someone cares about, please go ahead and make a change in the direction of better
  * compatibility. 
  */
-public abstract class SpringActionController implements Controller, HasViewContext, ViewResolver
+public abstract class SpringActionController implements Controller, HasViewContext, ViewResolver, ApplicationContextAware
 {
     // This is a prefix to indicate that a field is present on a form
     // For instance for checkboxes (with checkbox name = 'myField' use hidden name="@myField"
@@ -148,7 +153,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         long getMaxTime();
     }
 
-    WebApplicationContext _webApplicationContext;
+    ApplicationContext _applicationContext = null;
     ViewResolver _viewResolver = null;
     ActionResolver _actionResolver;
     ViewContext _viewContext;
@@ -158,19 +163,15 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
     }
 
-    public SpringActionController(WebApplicationContext wac)
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
     {
-        setWebApplicationContext(wac);
+        _applicationContext = applicationContext;
     }
 
-    public WebApplicationContext getWebApplicationContext()
+    public ApplicationContext getApplicationContext()
     {
-        return _webApplicationContext;
-    }
-
-    public void setWebApplicationContext(WebApplicationContext webApplicationContext)
-    {
-        _webApplicationContext = webApplicationContext;
+        return _applicationContext;
     }
 
     public void setViewContext(ViewContext context)
@@ -239,29 +240,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return page;
     }
 
-    void setViewResolver(ViewResolver v)
-    {
-        _viewResolver = v;
-    }
-
 
     public View resolveViewName(String viewName, Locale locale) throws Exception
     {
-        View v;
-
-        if (null != _viewResolver)
+        if (null != _applicationContext)
         {
-            v = _viewResolver.resolveViewName(viewName, locale);
-            if (null != v)
-                return v;
-        }
-
-        if (null != _webApplicationContext)
-        {
-            ViewResolver resolver = (ViewResolver)_webApplicationContext.getBean("viewResolver");
-            v = resolver.resolveViewName(viewName, locale);
-            if (null != v)
-                return v;
+            // WWSD (what would spring do)
         }
 
         return HttpView.viewFromString(viewName);
@@ -279,25 +263,18 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (null != _actionResolver)
             c = _actionResolver.resolveActionName(this, name);
 
-/* We should probably try using the webApplicationContext to try to look up actions here.
-           Something like this...
-        if (null == c)
-            WebApplicationContext wac = _webApplicationContext;
-            if (null != wac)
-            {
-                Controller c = wac.getBean(this.getName() + "." + name, Controller.class);
-                if (null != c)
-                    return c;
-            }
-*/
+        if (null != _applicationContext)
+        {
+            // WWSD (what would spring do)
+        }
         return c;
    }
 
 
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws MultipartException
     {
-        request.setAttribute(DispatcherServlet.WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
-        _viewContext.setWebApplicationContext(_webApplicationContext);
+        request.setAttribute(DispatcherServlet.WEB_APPLICATION_CONTEXT_ATTRIBUTE, getApplicationContext());
+        _viewContext.setApplicationContext(_applicationContext);
 
         Throwable throwable = null;
 

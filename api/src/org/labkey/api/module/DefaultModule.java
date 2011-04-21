@@ -49,6 +49,9 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
@@ -75,7 +78,7 @@ import java.util.Set;
  * Date: Jul 14, 2005
  * Time: 11:42:09 AM
  */
-public abstract class DefaultModule implements Module
+public abstract class DefaultModule implements Module, ApplicationContextAware
 {
     public static final String CORE_MODULE_NAME = "Core";
 
@@ -870,6 +873,12 @@ public abstract class DefaultModule implements Module
                 f = new File(new File(source), "src");
                 if (f.isDirectory())
                     dirs.add(FileUtil.canonicalFile(f));
+
+
+                if (new File(source).isDirectory())
+                {
+                    dirs.add(FileUtil.canonicalFile(new File(source)));
+                }
             }
             if (null != build)
             {
@@ -917,5 +926,21 @@ public abstract class DefaultModule implements Module
     public static boolean isRuntimeJar(String name)
     {
         return name.endsWith(".jar") && !name.endsWith("javadoc.jar") && !name.endsWith("sources.jar");
+    }
+
+    protected ApplicationContext _applicationContext = null;
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
+    {
+        if (null != _applicationContext)
+            throw new IllegalStateException("already set");
+        _applicationContext = applicationContext;
+    }
+
+
+    public ApplicationContext getApplicationContext()
+    {
+        return _applicationContext;
     }
 }

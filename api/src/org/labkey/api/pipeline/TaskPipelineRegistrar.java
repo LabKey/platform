@@ -15,9 +15,11 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.context.WebApplicationContext;
@@ -174,7 +176,16 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
     {
         if (applicationContext instanceof WebApplicationContext)
         {
-            _declaringModule = (SpringModule)((WebApplicationContext)applicationContext).getServletContext();
+            try
+            {
+                _declaringModule = (SpringModule)applicationContext.getBean("moduleBean", SpringModule.class);
+            }
+            catch (NoSuchBeanDefinitionException x)
+            {
+                String name = applicationContext.getDisplayName();
+                name = name.substring(0,name.indexOf(" "));
+                _declaringModule = (SpringModule)ModuleLoader.getInstance().getModule(name);
+            }
         }
     }
 }

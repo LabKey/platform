@@ -16,19 +16,20 @@
 
 package org.labkey.api.module;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.action.SpringActionController;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URIUtil;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.web.context.ConfigurableWebApplicationContext;
-import org.springframework.web.context.ContextLoader;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
-import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
@@ -41,9 +42,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URI;
-import java.util.*;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -52,8 +58,10 @@ import java.util.*;
  *
  * SpringModule knows how to load spring application context information (applicationContext.xml etc)
  */
-public abstract class SpringModule extends DefaultModule implements ServletContext
+public abstract class SpringModule extends DefaultModule
 {                              
+    private static final Logger _log = Logger.getLogger(SpringModule.class);
+
     /**
      * The name of the init parameter on the <code>ServletContext</code> specifying
      * the path where Spring configuration files may be found.
@@ -71,14 +79,25 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
     public enum ContextType { none, context, config }
 
 
+    public SpringModule()
+    {
+        _moduleServletContext = createtModuleServletContext();
+    }
+
+
     @Override
     public Controller getController(@Nullable HttpServletRequest request, Class controllerClass)
     {
         try
         {
-            Controller con = (Controller)controllerClass.newInstance();
-            if (con instanceof SpringActionController)
-                ((SpringActionController)con).setWebApplicationContext(getWebApplicationContext());
+            // try spring configuration first
+            Controller con = (Controller)getBean(controllerClass);
+            if (null == con)
+            {
+                con = (Controller)controllerClass.newInstance();
+                if (con instanceof ApplicationContextAware)
+                    ((ApplicationContextAware)con).setApplicationContext(getApplicationContext());
+            }
             return con;
         }
         catch (IllegalAccessException x)
@@ -91,6 +110,7 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
         }
     }
 
+
     /** Do not override this method, instead implement startupAfterSpringConfig(), which will be invoked for you */
     @Override
     public final void startup(ModuleContext moduleContext)
@@ -99,6 +119,7 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
         startupAfterSpringConfig(moduleContext);
     }
 
+    
     /** Invoked after Spring has been configured as part of the startup() method */
     protected abstract void startupAfterSpringConfig(ModuleContext moduleContext);
 
@@ -126,9 +147,10 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
         String potentialPath = "/WEB-INF/" + getName().toLowerCase() + "Context.xml";
 
         // Look for a context file
-        InputStream is = ModuleLoader.getServletContext().getResourceAsStream(potentialPath);
+        InputStream is = null;
         try
         {
+            is = ModuleLoader.getServletContext().getResourceAsStream(potentialPath);
             if (is != null && is.read() != -1)
             {
                 return potentialPath;
@@ -137,7 +159,7 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
         catch (IOException e) { /* Just return */ }
         finally
         {
-            if (is != null) { try { is.close(); } catch (IOException e) {} }
+            IOUtils.closeQuietly(is);
         }
         return null;
     }
@@ -157,7 +179,7 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
         result.add(contextXMLFilePath);
 
         // Look for post-installation config outside the module
-        String configPath = getInitParameter(INIT_PARAMETER_CONFIG_PATH);
+        String configPath = getModuleServletContext().getInitParameter(INIT_PARAMETER_CONFIG_PATH);
         if (configPath != null)
         {
             File dirConfig = new File(configPath);
@@ -176,37 +198,36 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
         return result;
     }
 
-    ContextLoader _contextLoader;
-    WebApplicationContext _wac;
 
     protected void initWebApplicationContext()
     {
-        _parentContext = ModuleLoader.getServletContext();
-
+        if (null != getApplicationContext())
+            return;
+        
         final List<String> contextConfigFiles = getContextConfigLocation();
         if (!contextConfigFiles.isEmpty())
         {
-            final WebApplicationContext rootWebApplicationContext = WebApplicationContextUtils.getWebApplicationContext(ModuleLoader.getServletContext());
+            ApplicationContext parentApplicationContext = getParentApplicationContext();
+
             _log.info("Loading Spring configuration for the " + getName() + " module from " + contextConfigFiles);
 
             try
             {
-                _contextLoader = new ContextLoader()
+                XmlWebApplicationContext xml = new XmlWebApplicationContext()
                 {
                     @Override
-                    protected ApplicationContext loadParentContext(ServletContext servletContext) throws BeansException
+                    protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws IOException
                     {
-                        return rootWebApplicationContext;
-                    }
-
-                    protected void customizeContext(ServletContext servletContext, ConfigurableWebApplicationContext applicationContext)
-                    {
-                        applicationContext.setConfigLocations(contextConfigFiles.toArray(new String[contextConfigFiles.size()]));
+                        beanFactory.registerSingleton("module",SpringModule.this);
+                        super.loadBeanDefinitions(beanFactory);
                     }
                 };
-                _contextLoader.initWebApplicationContext(this);
-                _wac = (WebApplicationContext)getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
-                ((AbstractApplicationContext)_wac).setDisplayName(getName() + " WebApplicationContext");
+                xml.setParent(parentApplicationContext);
+                xml.setConfigLocations(contextConfigFiles.toArray(new String[contextConfigFiles.size()]));
+                xml.setServletContext(getModuleServletContext());
+                xml.setDisplayName(getName() + " WebApplicationContext");
+                xml.refresh();
+                _applicationContext = xml;
             }
             catch (Exception x)
             {
@@ -221,9 +242,26 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
     // CONSIDER: have SpringModule implement getServlet(), and use that to dispatch requests
     // that could remove some spring config code from SpringActionController
 
-    public WebApplicationContext getWebApplicationContext()
+    protected ServletContext getParentServletContext()
     {
-        return _wac;
+        return ModuleLoader.getServletContext();
+    }
+
+    ServletContext _moduleServletContext = null;
+    
+    protected ServletContext createtModuleServletContext()
+    {
+        return new ModuleServletContextWrapper(getParentServletContext());
+    }
+
+    protected ServletContext getModuleServletContext()
+    {
+        return _moduleServletContext;
+    }
+
+    public String getInitParameter(String s)
+    {
+        return getModuleServletContext().getInitParameter(s);
     }
 
 
@@ -231,160 +269,211 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
     // ServletContext (for per module web applications)
     //
 
-    ServletContext _parentContext = null;
-    HashMap<String,Object> _attributes = new HashMap<String,Object>();
-    HashMap<String,String> _initParameters = new HashMap<String,String>();
-    Logger _log = Logger.getLogger(this.getClass());
-
-    public ServletContext getContext(String string)
+    public static class ModuleServletContextWrapper implements ServletContext
     {
-        return null;
-    }
+        HashMap<String,Object> _attributes = new HashMap<String,Object>();
+        HashMap<String,String> _initParameters = new HashMap<String,String>();
 
-    public int getMajorVersion()
-    {
-        return 0;
-    }
+        final ServletContext _wrapped;
 
-    public int getMinorVersion()
-    {
-        return 0;
-    }
-
-    public String getMimeType(String string)
-    {
-        return "text/html";
-    }
-
-    public Set getResourcePaths(String string)
-    {
-        return _parentContext.getResourcePaths(string);
-    }
-
-    public URL getResource(String string) throws MalformedURLException
-    {
-        return _parentContext.getResource(string);
-    }
-
-    public InputStream getResourceAsStream(String string)
-    {
-        InputStream is = _parentContext.getResourceAsStream(string);
-        if (is == null)
+        ModuleServletContextWrapper(ServletContext wrapped)
         {
-            // If the path starts with the config root, try creating
-            // a raw FileInputStream for it.
-            String configPath = getInitParameter(INIT_PARAMETER_CONFIG_PATH);
-            if (configPath == null)
-                return null;
-
-            File configRoot = new File(configPath);
-            File configFile = new File(string);
-            if (!URIUtil.isDescendant(configRoot.toURI(), configFile.toURI()))
-                return null;
-
-            try
-            {
-                is = new FileInputStream(configFile);
-            }
-            catch (FileNotFoundException e)
-            {
-                _log.debug("Could not find config override " + string);
-            }
+            _wrapped = wrapped;    
         }
 
-        return is;
+        public ServletContext getContext(String string)
+        {
+            return null;
+        }
+
+        public int getMajorVersion()
+        {
+            return 0;
+        }
+
+        public int getMinorVersion()
+        {
+            return 0;
+        }
+
+        public String getMimeType(String string)
+        {
+            return "text/html";
+        }
+
+        public Set getResourcePaths(String string)
+        {
+            return _wrapped.getResourcePaths(string);
+        }
+
+        public URL getResource(String string) throws MalformedURLException
+        {
+            return _wrapped.getResource(string);
+        }
+
+        public InputStream getResourceAsStream(String string)
+        {
+            InputStream is = _wrapped.getResourceAsStream(string);
+            if (is == null)
+            {
+                // If the path starts with the config root, try creating
+                // a raw FileInputStream for it.
+                String configPath = getInitParameter(INIT_PARAMETER_CONFIG_PATH);
+                if (configPath == null)
+                    return null;
+
+                File configRoot = new File(configPath);
+                File configFile = new File(string);
+                if (!URIUtil.isDescendant(configRoot.toURI(), configFile.toURI()))
+                    return null;
+
+                try
+                {
+                    is = new FileInputStream(configFile);
+                }
+                catch (FileNotFoundException e)
+                {
+                    _log.debug("Could not find config override " + string);
+                }
+            }
+
+            return is;
+        }
+
+        public RequestDispatcher getRequestDispatcher(String string)
+        {
+            return _wrapped.getRequestDispatcher(string);
+        }
+
+        public RequestDispatcher getNamedDispatcher(String string)
+        {
+            return _wrapped.getNamedDispatcher(string);
+        }
+
+        public Servlet getServlet(String string) throws ServletException
+        {
+            return _wrapped.getServlet(string);
+        }
+
+        public Enumeration getServlets()
+        {
+            return _wrapped.getServlets();
+        }
+
+        public Enumeration getServletNames()
+        {
+            return _wrapped.getServletNames();
+        }
+
+        public void log(String string)
+        {
+            _log.info(string);
+        }
+
+        public void log(Exception exception, String string)
+        {
+            _log.error(string, exception);
+        }
+
+        public void log(String string, Throwable throwable)
+        {
+            _log.error(string, throwable);
+        }
+
+        public String getRealPath(String string)
+        {
+            return _wrapped.getRealPath(string);
+        }
+
+        public String getServerInfo()
+        {
+            return _wrapped.getServerInfo();
+        }
+
+        public String getInitParameter(String string)
+        {
+            String param = _initParameters.get(string);
+            if (param == null)
+                param = _wrapped.getInitParameter(string);
+            return param;
+        }
+
+        public Enumeration getInitParameterNames()
+        {
+            return null;
+        }
+
+        public Object getAttribute(String string)
+        {
+            return _attributes.get(string);
+        }
+
+        public Enumeration getAttributeNames()
+        {
+            return null;
+        }
+
+        public void setAttribute(String string, Object object)
+        {
+            _attributes.put(string,object);
+        }
+
+        public void removeAttribute(String string)
+        {
+            _attributes.remove(string);
+        }
+
+        public String getServletContextName()
+        {
+            return null;
+        }
+
+        public String getContextPath()
+        {
+            return AppProps.getInstance().getContextPath();
+        }
     }
 
-    public RequestDispatcher getRequestDispatcher(String string)
+
+    /** Spring BeanFactory likes strings, I don't like strings, so use this as an go-between */
+    public <T> T getBean(Class<T> cls)
     {
-        return _parentContext.getRequestDispatcher(string);
+        try
+        {
+            BeanFactory bf = getApplicationContext();
+            if (null == bf)
+                return null;
+            String name = cls.getSimpleName();
+            name = name.substring(0,1).toLowerCase() + name.substring(1);
+            Object o = bf.getBean(name, cls);
+            return (T)o;
+        }
+        catch (NoSuchBeanDefinitionException x)
+        {
+            return null;
+        }
+        catch (RuntimeException x)
+        {
+            _log.error("Error loading object for class " + cls.getName(), x);
+            throw x;
+        }
     }
 
-    public RequestDispatcher getNamedDispatcher(String string)
+
+    ApplicationContext _parentApplicationContext = null;
+    
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
     {
-        return _parentContext.getNamedDispatcher(string);
+        super.setApplicationContext(applicationContext);    //To change body of overridden methods use File | Settings | File Templates.
+        _parentApplicationContext = applicationContext;
     }
 
-    public Servlet getServlet(String string) throws ServletException
+    private ApplicationContext getParentApplicationContext()
     {
-        return _parentContext.getServlet(string);
-    }
-
-    public Enumeration getServlets()
-    {
-        return _parentContext.getServlets();
-    }
-
-    public Enumeration getServletNames()
-    {
-        return _parentContext.getServletNames();
-    }
-
-    public void log(String string)
-    {
-        _log.info(string);
-    }
-
-    public void log(Exception exception, String string)
-    {
-        _log.error(string, exception);
-    }
-
-    public void log(String string, Throwable throwable)
-    {
-        _log.error(string, throwable);
-    }
-
-    public String getRealPath(String string)
-    {
-        return _parentContext.getRealPath(string);
-    }
-
-    public String getServerInfo()
-    {
-        return _parentContext.getServerInfo();
-    }
-
-    public String getInitParameter(String string)
-    {
-        String param = _initParameters.get(string);
-        if (param == null)
-            param = _parentContext.getInitParameter(string);
-        return param;
-    }
-
-    public Enumeration getInitParameterNames()
-    {
-        return null;
-    }
-
-    public Object getAttribute(String string)
-    {
-        return _attributes.get(string);
-    }
-
-    public Enumeration getAttributeNames()
-    {
-        return null;
-    }
-
-    public void setAttribute(String string, Object object)
-    {
-        _attributes.put(string,object);
-    }
-
-    public void removeAttribute(String string)
-    {
-        _attributes.remove(string);
-    }
-
-    public String getServletContextName()
-    {
-        return null;
-    }
-
-    public String getContextPath()
-    {
-        return AppProps.getInstance().getContextPath();
+        // if we were created by an applicationContext, use that as our parent
+        if (null == _parentApplicationContext)
+            _parentApplicationContext = ServiceRegistry.get().getApplicationContext();
+        return _parentApplicationContext;
     }
 }

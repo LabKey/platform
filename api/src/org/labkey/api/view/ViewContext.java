@@ -33,6 +33,8 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.PropertyValues;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
@@ -52,12 +54,13 @@ import java.util.*;
  *
  * UNDONE: kill BoundMap functionality of ViewContext
  */
-public class ViewContext extends BoundMap implements MessageSource, ContainerContext, ContainerUser
+public class ViewContext extends BoundMap implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware
 {
-    private WebApplicationContext _webApplicationContext;
+    private ApplicationContext _applicationContext;
     private HttpServletRequest _request;
     private HttpServletResponse _response;
     private User _user;
+
     private ActionURL _url;                     // path and parameters on the URL (does not include posted values)
     private String _scopePrefix = "";
     private Container _c = null;
@@ -87,7 +90,7 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
         _user = copyFrom._user;
         _scopePrefix = copyFrom._scopePrefix;
         _c = copyFrom._c;
-        _webApplicationContext = copyFrom._webApplicationContext;
+        _applicationContext = copyFrom._applicationContext;
         _pvsBind = copyFrom.getBindPropertyValues();
         putAll(copyFrom.getExtendedProperties());
     }
@@ -404,14 +407,14 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
         }
     }
 
-    public WebApplicationContext getWebApplicationContext()
+    public ApplicationContext getApplicationContext()
     {
-        return _webApplicationContext;
+        return _applicationContext;
     }
 
-    public void setWebApplicationContext(WebApplicationContext webApplicationContext)
+    public void setApplicationContext(ApplicationContext applicationContext)
     {
-        _webApplicationContext = webApplicationContext;
+        _applicationContext = applicationContext;
     }
 
     /* return PropertyValues object used to bind the current command object */
