@@ -31,6 +31,8 @@
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -56,7 +58,12 @@
         %><input type=hidden name=status value="<%=h(status)%>"><%
     }
 
-    %><input type="text" size=50 id="query" name="q" value="<%=h(q)%>">&nbsp;<%=generateSubmitButton("Search")%>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch").getHelpTopicLink())%>
+    // open help link in new window
+    Map<String, String> linkParams = new HashMap<String, String>();
+    linkParams.put("target", "_new");
+
+
+    %><input type="text" size=50 id="query" name="q" value="<%=h(q)%>">&nbsp;<%=generateSubmitButton("Search")%>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch").getHelpTopicLink(), "", "", linkParams)%>
 </form><%
     if (0 < q.length())
     {

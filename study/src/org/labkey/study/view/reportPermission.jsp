@@ -172,8 +172,8 @@
         and cannot be granted access through this view. If the checkbox is selected, the group has been given explicit
         access through this view.<br/><br/>For more information on study security, consult the main documentation:
         <ul>
-            <li><a href="<%=new HelpTopic("security" ).getHelpTopicLink()%>" target="_blank">LabKey Security Documentation</a></li>
-            <li><a href="<%=new HelpTopic("studySecurity" ).getHelpTopicLink()%>" target="_blank">Study Security Documentation</a></li>
+            <li><a href="<%=new HelpTopic("security" ).getHelpTopicLink()%>" target="_new">LabKey Security Documentation</a></li>
+            <li><a href="<%=new HelpTopic("studySecurity" ).getHelpTopicLink()%>" target="_new">Study Security Documentation</a></li>
         </ul>
 </table>
 

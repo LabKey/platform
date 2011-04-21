@@ -36,7 +36,7 @@ definitions within each dataset.  The remaining properties are field properties;
 </p>
 <p>
 For more information about the schema definition format, see
-<a href="<%=new HelpTopic("DatasetBulkDefinition" ).getHelpTopicLink()%>" target="help">the dataset schema definition
+<a href="<%=new HelpTopic("DatasetBulkDefinition" ).getHelpTopicLink()%>" target="_new">the dataset schema definition
 documentation page</a>.
 </p>
 <table>

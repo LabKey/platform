@@ -172,7 +172,7 @@ public class ExperimentRunGraph
                 sb.append(" due to system configuration error. \n<BR>");
                 sb.append("For help on fixing your system configuration, please consult the Graphviz section of the <a href=\"");
                 sb.append((new HelpTopic("thirdPartyCode")).getHelpTopicLink());
-                sb.append("\" target=\"_blank\">LabKey Server documentation on third party components</a>.<br>");
+                sb.append("\" target=\"_new\">LabKey Server documentation on third party components</a>.<br>");
                 throw new ExperimentException(sb.toString());
             }
 

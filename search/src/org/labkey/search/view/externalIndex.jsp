@@ -51,7 +51,7 @@ if (null != ss)
                 Server, and configure searching of that index below.<br><br>
             </td></tr>
             <tr><td colspan="2" width="500">
-                See the <a href="<%=h(new HelpTopic("searchAdmin").getHelpTopicLink())%>">Search Administration documentation</a> for more details about configuring and updating an external index.<br><br>
+                See the <a href="<%=h(new HelpTopic("searchAdmin").getHelpTopicLink())%>" target="_new">Search Administration documentation</a> for more details about configuring and updating an external index.<br><br>
             </td></tr>
             <tr><td>External index description:</td><td><input name="externalIndexDescription" size="60" value="<%=h(props.getExternalIndexDescription())%>"/></td></tr>
             <tr><td>Path to external index directory:</td><td><input name="externalIndexPath" size="60" value="<%=h(props.getExternalIndexPath())%>"/></td></tr>
