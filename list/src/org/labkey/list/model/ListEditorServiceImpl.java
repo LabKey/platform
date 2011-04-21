@@ -97,7 +97,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     {
         if (id == 0)
             return null;
-        
+
         ListDefinition def =  ListService.get().getList(getContainer(), id); //ListManager.get().getList(getContainer(), id);
         if (def == null)
             return null;
@@ -125,7 +125,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             }
             catch (Exception x)
             {
-                /* */     
+                /* */
             }
         }
         return gwt;
@@ -190,7 +190,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             throw new RuntimeSQLException(x);
         }
-        
+
         try
         {
             try
@@ -203,7 +203,10 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             }
             catch (ChangePropertyDescriptorException e)
             {
-                return Collections.singletonList(e.getMessage());
+                List<String> errors = new ArrayList<String>();
+
+                errors.add(e.getMessage());
+                return errors;
             }
 
             boolean changedName = !def.getName().equals(list.getName());
@@ -242,7 +245,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         GWTDomain<GWTPropertyDescriptor> domain = _getDomainDescriptor(def);
         if (null==domain)
             return null;
-        
+
         GWTPropertyDescriptor key = findField(list.getKeyPropertyName(), domain.getFields());
         if (null == key)
         {
@@ -273,7 +276,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
                 { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
         return domain;
     }
-    
+
 
     public GWTDomain<GWTPropertyDescriptor> _getDomainDescriptor(ListDef def)
     {
