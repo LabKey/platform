@@ -95,6 +95,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         addController("announcements", AnnouncementsController.class);
         AnnouncementService.setInstance(new AnnouncementServiceImpl());
         AnnouncementSchema.register();
+        DiscussionService.register(new DiscussionServiceImpl());
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -143,8 +144,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     public void startup(ModuleContext moduleContext)
     {
-        DiscussionService.register(new DiscussionServiceImpl());
-
         AnnouncementListener listener = new AnnouncementListener();
         ContainerManager.addContainerListener(listener);
         UserManager.addUserListener(listener);

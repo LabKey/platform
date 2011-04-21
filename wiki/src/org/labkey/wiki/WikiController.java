@@ -2737,7 +2737,7 @@ public class WikiController extends SpringActionController
             return new ApiSimpleResponse("success", true);
         }
     }
-    
+
     private WikiManager getWikiManager()
     {
         return WikiManager.get();
