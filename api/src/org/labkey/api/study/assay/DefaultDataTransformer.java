@@ -44,6 +44,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
 {
     public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
+        boolean isDefault = isDefault(context.getProtocol());
         for (File scriptFile : context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL, AssayProvider.ScriptType.VALIDATION))
         {
             // read the contents of the script file
@@ -70,7 +71,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                 ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(FileUtil.getExtension(scriptFile));
                 if (engine != null)
                 {
-                    File scriptDir = getScriptDir(context.getProtocol());
+                    File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
                     try
                     {
                         DataExchangeHandler dataHandler = context.getProvider().getDataExchangeHandler();
@@ -104,12 +105,15 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                     }
                     finally
                     {
-                        // clean up temp directory
-                        if (FileUtil.deleteDir(scriptDir))
+                        if (!isDefault)
                         {
-                            File parent = scriptDir.getParentFile();
-                            if (parent != null)
-                                parent.delete();
+                            // clean up temp directory
+                            if (FileUtil.deleteDir(scriptDir))
+                            {
+                                File parent = scriptDir.getParentFile();
+                                if (parent != null)
+                                    parent.delete();
+                            }
                         }
                     }
                 }
@@ -130,6 +134,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
 
     public TransformResult transform(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
+        boolean isDefault = isDefault(context.getProtocol());
         TransformResult result = DefaultTransformResult.createEmptyResult();
         for (File scriptFile : context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL, AssayProvider.ScriptType.TRANSFORM))
         {
@@ -157,7 +162,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                 ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(FileUtil.getExtension(scriptFile));
                 if (engine != null)
                 {
-                    File scriptDir = getScriptDir(context.getProtocol());
+                    File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
                     try
                     {
                         DataExchangeHandler dataHandler = context.getProvider().getDataExchangeHandler();
@@ -192,11 +197,14 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                     finally
                     {
                         // clean up temp directory
-                        if (FileUtil.deleteDir(scriptDir))
+                        if (!isDefault)
                         {
-                            File parent = scriptDir.getParentFile();
-                            if (parent != null)
-                                parent.delete();
+                            if (FileUtil.deleteDir(scriptDir))
+                            {
+                                File parent = scriptDir.getParentFile();
+                                if (parent != null)
+                                    parent.delete();
+                            }
                         }
                     }
                 }
@@ -216,10 +224,17 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
         return result;
     }
 
-    protected File getScriptDir(ExpProtocol protocol)
+    protected File getScriptDir(ExpProtocol protocol, File scriptFile, boolean isDefault)
     {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
         File tempRoot = new File(tempDir, ExternalScriptEngine.DEFAULT_WORKING_DIRECTORY);
+
+        if (isDefault && scriptFile.exists())
+        {
+            tempDir = scriptFile.getParentFile();
+            tempRoot = new File(tempDir, "TransformAndValidationFiles");
+        }
+
         if (!tempRoot.exists())
             tempRoot.mkdirs();
 
@@ -228,5 +243,13 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
             tempFolder.mkdirs();
 
         return tempFolder;
+    }
+
+    protected boolean isDefault(ExpProtocol protocol)
+    {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider != null)
+            return provider.getSaveScriptFiles(protocol);
+        return false;
     }
 }

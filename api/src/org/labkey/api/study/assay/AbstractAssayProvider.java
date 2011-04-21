@@ -1578,6 +1578,34 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return Collections.emptyList();
     }
 
+    @Override
+    public void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException
+    {
+        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+        String propertyURI = protocol.getLSID() + "#SaveScriptFiles";
+
+        ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
+                propertyURI, save);
+        props.put(propertyURI, prop);
+
+        protocol.setObjectProperties(props);
+    }
+
+    @Override
+    public boolean getSaveScriptFiles(ExpProtocol protocol)
+    {
+        String propertyURI = protocol.getLSID() + "#SaveScriptFiles";
+        ObjectProperty prop = protocol.getObjectProperties().get(propertyURI);
+
+        if (prop != null)
+        {
+            Object o = prop.value();
+            if (o instanceof Boolean)
+                return (Boolean)o;
+        }
+        return false;  
+    }
+
     public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
         DataValidator validator = context.getProvider().getDataValidator();

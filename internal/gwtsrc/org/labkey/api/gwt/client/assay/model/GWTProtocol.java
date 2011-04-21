@@ -51,6 +51,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _allowValidationScript;
     private boolean _allowTransformationScript;
     private GWTContainer _autoCopyTargetContainer;
+    private boolean _saveScriptFiles;
 
     public GWTProtocol()
     {
@@ -195,5 +196,15 @@ public class GWTProtocol implements IsSerializable
     public void setAutoCopyTargetContainer(GWTContainer autoCopyTargetContainer)
     {
         _autoCopyTargetContainer = autoCopyTargetContainer;
+    }
+
+    public boolean isSaveScriptFiles()
+    {
+        return _saveScriptFiles;
+    }
+
+    public void setSaveScriptFiles(boolean saveScriptFiles)
+    {
+        _saveScriptFiles = saveScriptFiles;
     }
 }

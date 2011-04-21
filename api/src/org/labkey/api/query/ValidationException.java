@@ -126,7 +126,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
     {
         _row = row;
     }
-    
+
     public int getRowNumber()
     {
         return _rowNumber;
@@ -533,6 +533,12 @@ public class ValidationException extends Exception implements Iterable<Validatio
             return null;
 
         return o.toString();
+    }
+
+    @Override
+    public String getMessage()
+    {
+        return toString();
     }
 
     private static Map<String, Object> _getRow(Map<String, Object> rowErrors)

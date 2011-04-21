@@ -199,6 +199,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope, ScriptType type);
 
+    void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
+    boolean getSaveScriptFiles(ExpProtocol protocol);
+
     /**
      * @return the data type that this run creates for its analyzed results
      */
