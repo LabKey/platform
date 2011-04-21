@@ -401,7 +401,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         ret.addAll(ContainerManager.getChildren(this, user, ReadPermission.class));
 
         //add resources from study
-        ret.addAll(StudyService.get().getSecurableResources(this, user));
+        StudyService.Service sts = ServiceRegistry.get().getService(StudyService.Service.class);
+        if (null != sts)
+            ret.addAll(sts.getSecurableResources(this, user));
 
         //add report descriptors
         //this seems much more cumbersome than it should be

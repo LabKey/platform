@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 
@@ -177,6 +178,7 @@ public class StudyService
         if (_serviceImpl != null)
             throw new IllegalStateException("Service has already been set.");
         _serviceImpl = serviceImpl;
+        ServiceRegistry.get().registerService(StudyService.Service.class, serviceImpl);
     }
 
     public static Service get()

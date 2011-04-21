@@ -171,9 +171,13 @@ public interface FolderType
 
         public void addManageLinks(NavTree adminNavTree, Container container)
         {
-            adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
-            adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
-            adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
+            // make sure the modules are loaded first
+            if (null != ModuleLoader.getInstance().getModule("Study"))
+                adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
+            if (null != ModuleLoader.getInstance().getModule("List"))
+                adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
+            if (null != ModuleLoader.getInstance().getModule("Study"))
+                adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
         }
 
         public AppBar getAppBar(ViewContext context)
