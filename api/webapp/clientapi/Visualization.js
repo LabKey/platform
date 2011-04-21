@@ -304,7 +304,7 @@ LABKEY.Visualization = new function() {
                             <li><b>queryName</b>: The query to which this visualization has been scoped, if any</li>
                             <li><b>visualizationConfig</b>: The configuration object provided to {@link LABKEY.Visualization.save}</li>
                         </ul>
-                    <li>
+                    </li>
                     <li><b>request</b>: the XMLHttpRequest object</li>
                     <li><b>options</b>: a request options object</li>
                 </ul>
@@ -615,9 +615,15 @@ LABKEY.Visualization.Filter = new function()
 
     /** @scope LABKEY.Visualization.Filter */
     return {
+        /**
+         * @namespace Visualization Possible query types for measure filters.  See {@link LABKEY.Visualization.Filter}.
+        */
         QueryType : {
+            /** Return only queries that are built-in to the server */
             BUILT_IN : 'builtIn',
+            /** Return only queries that are custom (user defined) */
             CUSTOM : 'custom',
+            /** Return all queries (both built-in and custom) */
             ALL : 'all'
         },
 
@@ -625,10 +631,10 @@ LABKEY.Visualization.Filter = new function()
          * Creates a new filter object for use in {@link LABKEY.Visualization.getMeasures}.
          * @param config An object which contains the following configuration properties.
          * @param {String} config.schemaName Required.  Only measures from the specified schema will be returned.
-         * @param {String} config.queryName Optional.  If specified, only measures from the specified query will be returned.
-         * @param {Object} config.queryType Optional.  If specified, only measures from the specified query types will be returned
-         * Valid values for queryType are:  LABKEY.Visualization.Filter.QueryType.BUILT_IN, LABKEY.Visualization.Filter.QueryType.CUSTOM,
-         * and LABKEY.Visualization.Filter.QueryType.ALL.  By default, all queries will be returned.
+         * @param {String} [config.queryName] If specified, only measures from the specified query will be returned.
+         * @param {Object} [config.queryType] If specified, only measures from the specified query types will be returned
+         * Valid values for queryType are:  {@link LABKEY.Visualization.Filter.QueryType}.ALL, {@link LABKEY.Visualization.Filter.QueryType}.BUILT_IN,
+         * and {@link LABKEY.Visualization.Filter.QueryType}.CUSTOM.  By default, all queries will be returned.
          */
         create : function(config)
         {
