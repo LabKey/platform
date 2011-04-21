@@ -67,7 +67,7 @@
               out.write("| ");
           }
       %>
-      <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>">Help<% if (AppProps.getInstance().isDevMode() && bean.pageConfig.getHelpTopic() == HelpTopic.DEFAULT_HELP_TOPIC) { %> (default)<% } %></a>
+      <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>" target="_new">Help<% if (AppProps.getInstance().isDevMode() && bean.pageConfig.getHelpTopic() == HelpTopic.DEFAULT_HELP_TOPIC) { %> (default)<% } %></a>
       <%
       if (null != user && !user.isGuest())
       {

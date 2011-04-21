@@ -2484,7 +2484,7 @@ public class SecurityManager
         sb.append("</p>");
         sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the <a href=\"");
         sb.append((new HelpTopic("cpasxml")).getHelpTopicLink());
-        sb.append("\" target=\"_blank\">LabKey documentation on modifying your configuration file</a>.<br>");
+        sb.append("\" target=\"_new\">LabKey documentation on modifying your configuration file</a>.<br>");
     }
 
 

@@ -58,7 +58,7 @@ public class SearchUtils
 
         if (includeMoreInformationMessage)
         {
-            out.write("  <tr><td>For more information, visit the <a href=\"" + PageFlowUtil.filter(getHelpURL()) + "\">search syntax documentation.</a></td></tr>\n");
+            out.write("  <tr><td>For more information, visit the <a href=\"" + PageFlowUtil.filter(getHelpURL()) + "\" target=\"_new\">search syntax documentation.</a></td></tr>\n");
         }
 
         out.write("</table>\n");
