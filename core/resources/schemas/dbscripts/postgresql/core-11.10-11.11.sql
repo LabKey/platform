@@ -1,7 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- 
-
- * Copyright (c) 2009 LabKey Corporation
+/*
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
 
- -->
-<ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-</ns:tables>
+-- Delete "workbook" module and schema
+DELETE FROM core.Modules WHERE Name = 'Workbook';
+DELETE FROM core.SqlScripts WHERE ModuleName = 'Workbook';
+SELECT core.fn_dropifexists('*', 'workbook', 'SCHEMA', NULL);
+

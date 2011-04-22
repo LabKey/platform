@@ -14,9 +14,5 @@
  * limitations under the License.
  */
 
--- Start over to reconfigure Containers handling
-EXEC core.fn_dropifexists '*', 'cabig', 'SCHEMA'
-GO
-
 EXEC sp_addapprole 'cabig', 'password'
 GO

@@ -293,6 +293,7 @@ core/resources/schemas/dbscripts/postgresql/core-0.00-9.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-10.20-10.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-10.22-10.23.sql -text
+core/resources/schemas/dbscripts/postgresql/core-11.10-11.11.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.10-9.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.30-10.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
@@ -392,6 +393,7 @@ core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/test-0.00-1.00.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-0.00-9.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-10.10-10.20.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-11.10-11.11.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.10-9.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.30-10.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
@@ -3128,21 +3130,3 @@ wiki/src/org/labkey/wiki/view/wikiVersion.jsp -text
 wiki/src/org/labkey/wiki/welcomeWiki.txt -text
 wiki/webapp/_images/page.png -text
 wiki/webapp/wiki/js/wikiEdit.js -text
-workbook/Workbook.iml -text
-workbook/build.xml -text
-workbook/module.properties -text
-workbook/resources/schemas/dbscripts/postgresql/obsolete/workbook-0.00-0.01.sql -text
-workbook/resources/schemas/dbscripts/postgresql/workbook-0.00-1.00.sql -text
-workbook/resources/schemas/dbscripts/sqlserver/obsolete/workbook-0.00-0.01.sql -text
-workbook/resources/schemas/dbscripts/sqlserver/workbook-0.00-1.00.sql -text
-workbook/resources/schemas/workbook.xml -text
-workbook/src/org/labkey/workbook/WorkbookContainerListener.java -text
-workbook/src/org/labkey/workbook/WorkbookController.java -text
-workbook/src/org/labkey/workbook/WorkbookManager.java -text
-workbook/src/org/labkey/workbook/WorkbookModule.java -text
-workbook/src/org/labkey/workbook/WorkbookSchema.java -text
-workbook/src/org/labkey/workbook/view/CreateWorkbookView.java -text
-workbook/src/org/labkey/workbook/view/WorkbookList.java -text
-workbook/src/org/labkey/workbook/view/createWorkbook.jsp -text
-workbook/src/org/labkey/workbook/view/hello.jsp -text
-workbook/src/org/labkey/workbook/view/workbookList.jsp -text

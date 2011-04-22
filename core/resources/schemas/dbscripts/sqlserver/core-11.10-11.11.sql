@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,9 @@
  * limitations under the License.
  */
 
-package org.labkey.workbook;
+-- Delete "workbook" module
+DELETE FROM core.Modules WHERE Name = 'Workbook'
+DELETE FROM core.SqlScripts WHERE ModuleName = 'Workbook'
+EXEC core.fn_dropifexists '*', 'workbook', 'SCHEMA'
+GO
 
-public class WorkbookManager
-{
-    private static final WorkbookManager _instance = new WorkbookManager();
-
-    private WorkbookManager()
-    {
-        // prevent external construction with a private default constructor
-    }
-
-    public static WorkbookManager get()
-    {
-        return _instance;
-    }
-}

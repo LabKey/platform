@@ -14,7 +14,4 @@
  * limitations under the License.
  */
 
--- Start over to reconfigure Containers handling
-SELECT core.fn_dropifexists('*', 'cabig', 'SCHEMA', NULL);
-
 CREATE SCHEMA cabig;
