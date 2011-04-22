@@ -321,6 +321,8 @@ public class SecurityManager
                 return null;
             String rawEmail = auth.substring(0, colon);
             String password = auth.substring(colon+1);
+            if (rawEmail.toLowerCase().equals("guest"))
+                return User.guest;
             new ValidEmail(rawEmail);  // validate email address
             User u = AuthenticationManager.authenticate(rawEmail, password);
             return u;
@@ -412,6 +414,8 @@ public class SecurityManager
                 {
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
                     SecurityManager.setAuthenticatedUser(request, u, null, null, null);
+                    // accept Guest as valid credentials from authenticateBasic()
+                    return u;
                 }
             }
         }
