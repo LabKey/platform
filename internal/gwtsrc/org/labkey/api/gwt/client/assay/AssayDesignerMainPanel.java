@@ -515,8 +515,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 url += "?rowId=" + _protocolId;
 
                 LinkButton download = new LinkButton("Download Test Data", url);
-                table.setWidget(row++, 2, download);
+                table.setWidget(row, 2, download);
             }
+            row++;
 
             // add a checkbox to enter debug mode
             _debugScriptFiles.setBool(assay.isSaveScriptFiles());
