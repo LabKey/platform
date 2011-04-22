@@ -502,11 +502,12 @@ public class DavController extends SpringActionController
             catch (UnauthorizedException uex)
             {
                 WebdavResource resource = uex.getResource();
+                String resourcePath = uex.getResourcePath();
                 if (!getUser().isGuest())
                 {
-                    getResponse().sendError(WebdavStatus.SC_FORBIDDEN, resource.getPath());
+                    getResponse().sendError(WebdavStatus.SC_FORBIDDEN, resourcePath);
                 }
-                else if (resource.isCollection() && isBrowser() && "GET".equals(method))
+                else if ("GET".equals(method) && isBrowser() && null != resource && resource.isCollection())
                 {
                     getResponse().setStatus(WebdavStatus.SC_MOVED_PERMANENTLY);
                     response.setHeader("Location", getLoginURL().getEncodedLocalURIString());
@@ -514,7 +515,7 @@ public class DavController extends SpringActionController
                 else
                 {
                     getResponse().setRealm(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription());
-                    getResponse().sendError(WebdavStatus.SC_UNAUTHORIZED, resource.getPath());
+                    getResponse().sendError(WebdavStatus.SC_UNAUTHORIZED, resourcePath);
                 }
             }
             catch (DavException dex)
@@ -908,10 +909,12 @@ public class DavController extends SpringActionController
         public WebdavStatus doMethod() throws DavException, IOException
         {
             _log.debug("PROPFIND " + getResourcePathStr());
+            checkRequireLogin(null);
+
             WebdavResource root = getResource();
             if (root == null || !root.exists())
                 return notFound();
-            
+
             if (!root.canList(getUser()))
                 return unauthorized(root);
 
@@ -2690,6 +2693,23 @@ public class DavController extends SpringActionController
         }
     }
 
+
+    private void checkRequireLogin(WebdavResource r) throws DavException
+    {
+        // by default require login for OPTIONS and PROPFIND.
+        // this helps many clients that won't prompt for credentials
+        // if the initial OPTIONS request works.
+        // AllowNoLogin header returns to normal behavior (simple permission check)
+        String userAgent = getRequest().getHeader("User-Agent");
+        boolean isFinder = userAgent.startsWith("WebDAVFS") && -1 != userAgent.indexOf("Darwin");
+        boolean isBasicAuthentication = "Basic".equals(getRequest().getAttribute(org.labkey.api.security.SecurityManager.AUTHENTICATION_METHOD));
+        boolean isGuest = getUser().isGuest();
+//        boolean hasAllowNoLogin = !StringUtils.isEmpty(getRequest().getHeader("AllowNoLogin"));
+
+        if (isFinder && isGuest && !isBasicAuthentication)
+            throw new UnauthorizedException(r);
+    }
+    
     
     @RequiresNoPermission
     public class OptionsAction extends DavAction
@@ -2701,6 +2721,7 @@ public class DavController extends SpringActionController
 
         public WebdavStatus doMethod() throws DavException
         {
+            checkRequireLogin(null);
             WebdavResponse response = getResponse();
             response.addOptionsHeaders();
             StringBuilder methodsAllowed = determineMethodsAllowed();
@@ -4383,6 +4404,7 @@ public class DavController extends SpringActionController
         protected WebdavStatus status;
         protected String message;
         protected WebdavResource resource;
+        protected String resourcePath;
 
         DavException(WebdavStatus status)
         {
@@ -4426,6 +4448,11 @@ public class DavController extends SpringActionController
         public WebdavResource getResource()
         {
             return resource;
+        }
+
+        public String getResourcePath()
+        {
+            return null != resource ? resource.getPath().toString() : getResourcePathStr();
         }
     }
 
