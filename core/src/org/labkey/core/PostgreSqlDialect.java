@@ -19,7 +19,6 @@ package org.labkey.core;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -27,7 +26,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlScriptParser;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
@@ -611,66 +609,6 @@ class PostgreSqlDialect extends SqlDialect
                 scope.releaseConnection(conn);
         }
     }
-
-    // Do dialect-specific work after schema load, if necessary
-
-    // TODO: Remove this -- now using column meta data to determine this
-    public void prepareNewDbSchema(DbSchema schema)
-    {
-        // Paranoid: count the sequences we determined via column meta data.  We'll check at the end to verify the method
-        // below produces the same count.
-        int sequences = 0;
-
-        for (SchemaTableInfo ti : schema.getTables())
-            if (null != ti.getSequence())
-                sequences++;
-
-        ResultSet rsSeq = null;
-        try
-        {
-            // MAB: hacky, let's hope there is some system function that does the same thing
-            rsSeq = Table.executeQuery(schema,
-                    "SELECT relname, attname, adsrc\n" +
-                            "FROM pg_attrdef \n" +
-                            "\tJOIN pg_attribute ON pg_attrdef.adnum = pg_attribute.attnum AND pg_attrdef.adrelid=pg_attribute.attrelid \n" +
-                            "\tJOIN pg_class on pg_attribute.attrelid=pg_class.oid \n" +
-                            "\tJOIN pg_namespace ON pg_class.relnamespace=pg_namespace.oid\n" +
-                            "WHERE nspname=?",
-                    new Object[]{schema.getName()});
-
-            while (rsSeq.next())
-            {
-                SchemaTableInfo t = schema.getTable(rsSeq.getString("relname"));
-                if (null == t) continue;
-                ColumnInfo c = t.getColumn(rsSeq.getString("attname"));
-                if (null == c) continue;
-                if (!c.isAutoIncrement())
-                    continue;
-                String src = rsSeq.getString("adsrc");
-                int start = src.indexOf('\'');
-                int end = src.lastIndexOf('\'');
-
-                if (end > start)
-                {
-                    String sequence = src.substring(start + 1, end);
-                    if (!sequence.toLowerCase().startsWith(schema.getName().toLowerCase() + "."))
-                        sequence = schema.getName() + "." + sequence;
-                    assert sequence.equals(t.getSequence());
-                    sequences--;
-                }
-            }
-        }
-        catch (Exception x)
-        {
-            _log.error("Error trying to find auto-increment sequences", x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rsSeq);
-            assert sequences == 0;
-        }
-    }
-
 
     /**
      * Wrap one or more INSERT statements to allow explicit specification
