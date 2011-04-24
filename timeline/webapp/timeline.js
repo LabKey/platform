@@ -86,7 +86,7 @@ LABKEY.Timeline = {
 
         var queryConfig = Ext.apply({}, ec.query, {
             success:function(data) {LABKEY.Timeline.populateEvents(data, ec)},
-            failure:function() {alert("Error occurred in timeline query. schemaName: " + config.query.schemaName + ", queryName: " + config.query.queryName)}
+            failure:function() {alert("Error occurred in timeline query. schemaName: " + ec.query.schemaName + ", queryName: " + ec.query.queryName)}
         });
 
         LABKEY.Query.selectRows(queryConfig);
