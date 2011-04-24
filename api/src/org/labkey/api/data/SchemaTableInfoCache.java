@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.util.Filter;
 import org.labkey.api.util.Pair;
 
 /*
@@ -43,21 +44,38 @@ public class SchemaTableInfoCache
         _blockingCache.remove(key);
     }
 
+    void removeAllTables(String schemaName)
+    {
+        final String prefix = (schemaName + "/").toLowerCase();
+
+        _blockingCache.removeUsingFilter(new Filter<String>() {
+            @Override
+            public boolean accept(String key)
+            {
+                return key.startsWith(prefix);
+            }
+        });
+    }
+
+
     private String getCacheKey(DbSchema schema, String tableName)
     {
-        return schema.getName() + "/" + tableName;
+        return (schema.getName() + "/" + tableName).toLowerCase();
     }
 
 
     private class SchemaTableLoader implements CacheLoader<String, SchemaTableInfo>
     {
         @Override
-        public SchemaTableInfo load(String tableName, Object argument)
+        public SchemaTableInfo load(String key, Object argument)
         {
             try
             {
                 Pair<DbSchema, String> pair = (Pair<DbSchema, String>)argument;
-                return pair.getKey().loadTable(pair.getValue());
+                DbSchema schema = pair.first;
+                String tableName = pair.second;
+
+                return schema.loadTable(tableName);
             }
             catch (Exception e)
             {

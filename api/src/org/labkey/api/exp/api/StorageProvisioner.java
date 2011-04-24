@@ -553,6 +553,7 @@ public class StorageProvisioner
             rs.close();
         }
         
+        // TODO: Switch to normal schema/table cache (now that we actually use a cache for them)
         Map<String,DbSchema> schemas = new HashMap<String, DbSchema>();
 
         for (ProvisioningReport.DomainReport domainReport : report.getProvisionedDomains())
@@ -563,7 +564,6 @@ public class StorageProvisioner
                 try
                 {
                     schema = DbSchema.createFromMetaData(domainReport.getSchemaName());
-                    schema.forceLoadAllTables();
                     schemas.put(domainReport.getSchemaName(), schema);
                 }
                 catch (Exception e)

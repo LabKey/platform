@@ -72,6 +72,7 @@ public class DbScope
     private String _driverVersion;
 
     private final DbSchemaCache _schemaCache = new DbSchemaCache(this);
+    private final SchemaTableInfoCache _tableCache = new SchemaTableInfoCache();
 
     private static final ThreadLocal<Transaction> _transaction = new ThreadLocal<Transaction>();
 
@@ -460,6 +461,14 @@ public class DbScope
     }
 
 
+    // Each scope holds the cache for all its tables.  This makes it easier to 1) configure that cache on a per-scope
+    // basis and 2) invalidate schemas and their tables together
+    public SchemaTableInfo getTable(DbSchema schema, String tableName)
+    {
+        return _tableCache.get(schema, tableName);
+    }
+
+
     // External data source case: no schema.xml file to check, no isStale() check (for now)
     protected DbSchema loadSchema(String schemaName) throws Exception
     {
@@ -467,14 +476,22 @@ public class DbScope
     }
 
 
+    // Invalidates schema and all its tables
     public void invalidateSchema(String schemaName)
     {
-        // TODO: Invalidate all tables & columns as well (once they're cached)
         _schemaCache.remove(schemaName);
+        invalidateAllTables(schemaName);
     }
 
 
-    // Invalidates all incomplete schemas in this scope (see below for details).
+    // Invalidates all tables in this schema
+    void invalidateAllTables(String schemaName)
+    {
+        _tableCache.removeAllTables(schemaName);
+    }
+
+
+    // Invalidates all incomplete schemas in this scope (see below for details)
     public void invalidateIncompleteSchemas()
     {
         _schemaCache.removeIncomplete();

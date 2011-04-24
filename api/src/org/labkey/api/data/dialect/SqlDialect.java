@@ -253,12 +253,6 @@ public abstract class SqlDialect
         return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
     }
 
-    // Do dialect-specific work after schema load
-    public void prepareNewDbSchema(DbSchema schema)
-    {
-    }
-
-
     // Do dialect-specific work for this data source (nothing by default)
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {

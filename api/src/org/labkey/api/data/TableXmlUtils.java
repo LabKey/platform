@@ -35,15 +35,17 @@ public class TableXmlUtils
 {
     private static final Logger _log = Logger.getLogger(TableXmlUtils.class);
 
+    // Careful: don't use DbSchema.get(), schema.getTable(), or schema.getTables() -- we don't want schema.xml applied
+    // and we don't want to cache these TableInfo (because schema.xml hasn't been applied).
     public static TablesDocument createXmlDocumentFromMetaData(String dbSchemaName, boolean bFull) throws Exception
     {
         DbSchema dbSchema = DbSchema.createFromMetaData(dbSchemaName);
-        dbSchema.forceLoadAllTables(); // TODO: Remove once tableinfos are cached
         TablesDocument xmlTablesDoc = TablesDocument.Factory.newInstance();
         TablesDocument.Tables xmlTables = xmlTablesDoc.addNewTables();
 
-        for (SchemaTableInfo tableInfo : dbSchema.getTables())
+        for (String tableName : dbSchema.getTableNames())
         {
+            SchemaTableInfo tableInfo = dbSchema.createTableFromDatabaseMetaData(tableName);
             TableType xmlTable = xmlTables.addNewTable();
             tableInfo.copyToXml(xmlTable, bFull);
         }

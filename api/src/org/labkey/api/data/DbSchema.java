@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -58,11 +57,10 @@ public class DbSchema
 {
     private static final Logger _log = Logger.getLogger(DbSchema.class);
 
-    private final Map<String, SchemaTableInfo> _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
     private final DbScope _scope;
     private final String _name;
     private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<TableType>();
-    private final List<String> _tableNames = new LinkedList<String>();  // Union of all table names from database and schema.xml
+    private final Map<String, String> _metaDataTableNames = new CaseInsensitiveHashMap<String>();  // Union of all table names from database and schema.xml
 
     private ResourceRef _resourceRef = null;
 
@@ -103,13 +101,18 @@ public class DbSchema
             @Override
             protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
             {
-                _tableNames.add(name);
+                _metaDataTableNames.put(name, name);
             }
         };
 
         loader.load();
     }
 
+
+    // Base class that pulls table meta data from the database, based on a supplied table pattern.  This allows us to
+    // share code between schema load (when we capture just the table names for all tables) and table load (when we
+    // capture all properties of just a single table).  We want consistent transaction, exception, and filtering
+    // behavior in both cases.
     private abstract class TableMetaDataLoader
     {
         private final String _tableNamePattern;
@@ -187,25 +190,13 @@ public class DbSchema
     }
 
 
-    // Force load all tables upfront; this completes the separation between schema loading (where we load just the table
-    // names) and table loading  TODO: Next step is to load each table on demand.
-    public void forceLoadAllTables() throws SQLException
-    {
-        // Load all the tables in the database and in schema.xml
-        for (String tableName : _tableNames)
-        {
-            SchemaTableInfo ti = loadTable(tableName);
-            addTable(ti.getName(), ti);
-        }
-
-        // TODO: Migrate to "prepareNewTableInfo(this)"
-        getSqlDialect().prepareNewDbSchema(this);
-    }
-
-
     SchemaTableInfo loadTable(String tableName) throws SQLException
     {
-        SchemaTableInfo ti = createTableFromDatabaseMetaData(tableName);
+        // When querying table metadata we must use the name from the database
+        String metaDataTableName = _metaDataTableNames.get(tableName);
+
+        assert null != metaDataTableName;
+        SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
         TableType xmlTable = _tableXmlMap.get(tableName);
 
         if (null != xmlTable)
@@ -223,7 +214,7 @@ public class DbSchema
     }
 
 
-    private SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
+    SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
     {
         final SchemaTableInfo ti = new SchemaTableInfo(tableName, DbSchema.this);
 
@@ -231,7 +222,7 @@ public class DbSchema
             @Override
             protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
             {
-                assert tableName.equals(name);
+                assert tableName.equalsIgnoreCase(name);
                 ti.setMetaDataName(tableName);
                 ti.setTableType(rs.getString("TABLE_TYPE"));
                 String description = rs.getString("REMARKS");
@@ -310,7 +301,6 @@ public class DbSchema
 
     void setTablesDocument(TablesDocument tablesDoc)
     {
-        Set<String> databaseTableNames = new CaseInsensitiveHashSet(_tableNames);
         TableType[] xmlTables = tablesDoc.getTables().getTableArray();
 
         for (TableType xmlTable : xmlTables)
@@ -319,21 +309,21 @@ public class DbSchema
             _tableXmlMap.put(xmlTable.getTableName(), xmlTable);
 
             // Tables in schema.xml but not in the database need to be added to _tableNames
-            if (!databaseTableNames.contains(xmlTableName))
+            if (!_metaDataTableNames.containsKey(xmlTableName))
             {
-                _tableNames.add(xmlTableName);
-                databaseTableNames.add(xmlTableName);
+                _metaDataTableNames.put(xmlTableName, xmlTableName);
             }
         }
     }
 
 
-    // Note: TableInfos are fetched on-demand, so this is a very expensive method to call!
+    // Warning: This can be a VERY expensive method to call (e.g., on external schemas with thousands of tables)!
+    // If possible, use getTableNames() and retrieve TableInfos selectively.
     public Collection<SchemaTableInfo> getTables()
     {
         Collection<SchemaTableInfo> tables = new LinkedList<SchemaTableInfo>();
 
-        for (String tableName : _tableNames)
+        for (String tableName : _metaDataTableNames.keySet())
         {
             SchemaTableInfo table = getTable(tableName);
             tables.add(table);
@@ -342,14 +332,15 @@ public class DbSchema
         return Collections.unmodifiableCollection(tables);
     }
 
-    public SchemaTableInfo getTable(String tableName)
+    public Collection<String> getTableNames()
     {
-        return _tables.get(tableName);
+        return Collections.unmodifiableCollection(new LinkedList<String>(_metaDataTableNames.keySet()));
     }
 
-    private void addTable(String tableName, SchemaTableInfo table)
+    public SchemaTableInfo getTable(String tableName)
     {
-        _tables.put(tableName, table);
+        // Scope holds cache for all its tables
+        return _scope.getTable(this, tableName);
     }
 
     public void writeCreateTableSql(Writer out) throws IOException

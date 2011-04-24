@@ -28,7 +28,14 @@ import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.query.*;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ResultSetUtil;
@@ -44,7 +51,15 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 
 public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
@@ -534,8 +549,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
                 xmlTable.setHidden(true);
         }
 
-        org.labkey.data.xml.TableType.Columns xmlColumns = xmlTable.addNewColumns();
-        org.labkey.data.xml.ColumnType xmlCol;
+        TableType.Columns xmlColumns = xmlTable.addNewColumns();
+        ColumnType xmlCol;
+
         for (ColumnInfo columnInfo : columns)
         {
             xmlCol = xmlColumns.addNewColumn();

@@ -31,7 +31,7 @@ import org.labkey.api.settings.AppProps;
 * Time: 2:53:51 PM
 */
 
-// Every scope has its own cache of DbSchemas... TODO: Switch to single cache for all scopes?
+// Every scope has its own cache of DbSchemas
 public class DbSchemaCache
 {
     private final DbScope _scope;
@@ -72,7 +72,10 @@ public class DbSchemaCache
                 ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
 
                 if (!context.isInstallComplete())
+                {
+                    _scope.invalidateAllTables(schemaName);
                     return true;
+                }
             }
 
             return false;

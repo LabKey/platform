@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.data.xml.TablesDocument;
 
@@ -47,13 +46,12 @@ public class LabKeyScope extends DbScope
     // LabKey data source case.  Load meta data from database and overlay schema.xml.
     protected DbSchema loadSchema(String schemaName) throws Exception
     {
-        // Load from database meta data
-// TODO:        DbSchema schema  = super.loadSchema(schemaName);
         long startLoad = System.currentTimeMillis();
 
-        LOG.info("Loading DbSchema \"" + this.getDisplayName() + "." + schemaName + "\"");
+        LOG.info("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\"");
 
-        DbSchema schema = DbSchema.createFromMetaData(schemaName, DbScope.getLabkeyScope());
+        // Load from database meta data
+        DbSchema schema = super.loadSchema(schemaName);
 
         if (null != schema)
         {
@@ -88,16 +86,9 @@ public class LabKeyScope extends DbScope
                 }
             }
 
-            // Pre-emptively load all table meta data  TODO: Load them on demand
-            schema.forceLoadAllTables();
-
             long elapsed = System.currentTimeMillis() - startLoad;
 
             _schemaLoadTime.addAndGet(elapsed);
-
-            // Seems impossible, but we've seen a negative elapsed time (clock change in the middle of a schema load?).  See #11739.
-            if (elapsed >= 0)
-                LOG.info("" + schema.getTables().size() + " tables loaded in " + DateUtil.formatDuration(elapsed) + "; total: " + DateUtil.formatDuration(_schemaLoadTime.longValue()));
         }
 
         return schema;
