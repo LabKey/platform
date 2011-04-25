@@ -113,11 +113,17 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.axis.range.min = newVal;
-                    // fire change event if max is also set
-                    if(typeof this.axis.range.max == "number"){
-                        this.fireEvent('chartDefinitionChanged', false);
+                    // check to make sure that, if set, the min value is <= to max
+                    if(typeof this.axis.range.max == "number" && typeof newVal == "number" && newVal > this.axis.range.max){
+                        Ext.Msg.alert("ERROR", "Range 'min' value must be less than or equal to 'max' value.", function(){
+                            this.rangeMinNumberField.focus();
+                        }, this);
+                        return;
                     }
+
+                    this.axis.range.min = newVal;
+                    // fire change event, (max value may or may not be set)
+                    this.fireEvent('chartDefinitionChanged', false);
                 }
             }
         });
@@ -130,11 +136,17 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.axis.range.max = newVal;
-                    // fire change event if min is also set
-                    if(typeof this.axis.range.min == "number"){
-                        this.fireEvent('chartDefinitionChanged', false);
+                    // check to make sure that, if set, the max value is >= to min
+                    if(typeof this.axis.range.min == "number" && typeof newVal == "number" && newVal < this.axis.range.min){
+                        Ext.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
+                            this.rangeMaxNumberField.focus();
+                        }, this);
+                        return;
                     }
+
+                    this.axis.range.max = newVal;
+                    // fire change event, (min value may or may not be set)
+                    this.fireEvent('chartDefinitionChanged', false);
                 }
             }
         });
