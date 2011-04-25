@@ -255,13 +255,30 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.loader = this.renderLineChart;  // default is to show the chart
             this.viewGridBtn = new Ext.Button({text: "View Data", handler: this.viewDataGrid, scope: this, disabled: true});
             this.viewChartBtn = new Ext.Button({text: "View Chart(s)", handler: this.renderLineChart, scope: this, hidden: true});
+
+            // setup exportPDF button and menu (items to be added later)
+            // the single button will be used for "single" chart layout
+            // and the menu button will be used for multi-chart layouts
+            this.exportPdfMenu = new Ext.menu.Menu();
+            this.exportPdfMenuBtn = new Ext.Button({
+                text: 'Export PDF',
+                menu: this.exportPdfMenu,
+                hidden: true,
+                scope: this
+            });
+            this.exportPdfSingleBtn = new Ext.Button({
+                text: 'Export PDF',
+                disabled: true,
+                scope: this
+            });
+
             this.chart = new Ext.Panel({
                 id: 'chart-tabpanel',
                 region: 'center',
                 layout: 'fit',
                 frame: false,
                 autoScroll: true,
-                tbar: [this.viewGridBtn, this.viewChartBtn],
+                tbar: [this.viewGridBtn, this.viewChartBtn, '-', this.exportPdfSingleBtn, this.exportPdfMenuBtn],
                 items: [],
                 listeners: {
                     scope: this,
@@ -554,6 +571,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
         else   //Use an undefined min & max so that chart computes it
             this.autoAxisRange = {x:{}, y:{}}; //Let the chart compute this
+
+        // remove any existing charts, purge listeners from exportPdfSingleBtn, and remove items from the exportPdfMenu button
+        this.chart.removeAll();
+        this.exportPdfSingleBtn.purgeListeners();
+        this.exportPdfMenu.removeAll();
+
 	    // three options: all series on one chart, one chart per subject, or one chart per measure/dimension
         var charts = [];
         var warningText = null;
@@ -587,8 +610,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
         else if(this.chartInfo.chartLayout == "single")
             charts.push(this.newLineChart(size, series, null, null));
-
-        this.chart.removeAll();
 
         // if the user has selected more charts than the max allowed, show warning
         if(warningText){
@@ -644,17 +665,44 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             title: mainTitle
         });
 
-        var chartItems = [chartComponent];
-        if (chartComponent.canExport())
-            chartItems.push(new Ext.Button({
-                text:"Export PDF",
-                handler:function(btn) {chartComponent.exportImage("pdf");},
-                scope:this
-            }));
+        // if the chart component is exportable, either add a listener to the exportPdfSingleBtn or add an item to the exportPdfMenuBtn
+        if (chartComponent.canExport()) {
+            if(this.chartInfo.chartLayout == "single"){
+                // for a single chart, just add a listener to the button
+                this.exportPdfSingleBtn.addListener('click', function(){
+                    chartComponent.exportImage("pdf");
+                }, this);
+
+                this.toggleExportPdfBtns(true);
+            }
+            else{
+                // add an item to the export pdf menu
+                this.exportPdfMenu.add({
+                    text: mainTitle,
+                    handler: function() {chartComponent.exportImage("pdf");},
+                    scope: this
+                });
+
+                this.toggleExportPdfBtns(false);
+            }
+        }
         
-        return new Ext.Panel({
-            items: chartItems
-        });
+        return new Ext.Panel({items: chartComponent});
+    },
+
+    toggleExportPdfBtns: function(showSingle) {
+        if(showSingle){
+            this.exportPdfSingleBtn.show();
+            this.exportPdfSingleBtn.setDisabled(false);
+            this.exportPdfMenuBtn.hide();
+            this.exportPdfMenuBtn.setDisabled(true);
+        }
+        else{
+            this.exportPdfSingleBtn.hide();
+            this.exportPdfSingleBtn.setDisabled(true);
+            this.exportPdfMenuBtn.show();
+            this.exportPdfMenuBtn.setDisabled(false);
+        }
     },
 
     viewDataGrid: function() {
