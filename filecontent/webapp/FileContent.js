@@ -177,6 +177,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         var grid = new LABKEY.StatefulGridPanel(
         {
             store: this.store,
+            cls: 'labkey-filecontent-grid',
             border:false,
             selModel : sm,
             loadMask:{msg:"Loading, please wait..."},
