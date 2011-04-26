@@ -650,14 +650,22 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             height: size.height - 25,
             axes: {
                 y: {
-                    min: (this.chartInfo.measures[yAxisMeasureIndex].axis.range.min ? this.chartInfo.measures[yAxisMeasureIndex].axis.range.min : this.autoAxisRange.y.min),
-                    max: (this.chartInfo.measures[yAxisMeasureIndex].axis.range.max ? this.chartInfo.measures[yAxisMeasureIndex].axis.range.max : this.autoAxisRange.y.max),
+                    min: (typeof this.chartInfo.measures[yAxisMeasureIndex].axis.range.min == "number"
+                                ? this.chartInfo.measures[yAxisMeasureIndex].axis.range.min
+                                : this.autoAxisRange.y.min),
+                    max: (typeof this.chartInfo.measures[yAxisMeasureIndex].axis.range.max == "number"
+                                ? this.chartInfo.measures[yAxisMeasureIndex].axis.range.max
+                                : this.autoAxisRange.y.max),
                     caption: this.chartInfo.measures[yAxisMeasureIndex].axis.label,
                     scale: this.chartInfo.measures[yAxisMeasureIndex].axis.scale
                 },
                 x: {
-                    min: (this.chartInfo.measures[xAxisMeasureIndex].axis.range.min ? this.chartInfo.measures[xAxisMeasureIndex].axis.range.min : this.autoAxisRange.x.min),
-                    max: (this.chartInfo.measures[xAxisMeasureIndex].axis.range.max ? this.chartInfo.measures[xAxisMeasureIndex].axis.range.max : this.autoAxisRange.x.max),
+                    min: (typeof this.chartInfo.measures[xAxisMeasureIndex].axis.range.min == "number"
+                                ? this.chartInfo.measures[xAxisMeasureIndex].axis.range.min
+                                : this.autoAxisRange.x.min),
+                    max: (typeof this.chartInfo.measures[xAxisMeasureIndex].axis.range.max == "number"
+                                ? this.chartInfo.measures[xAxisMeasureIndex].axis.range.max
+                                : this.autoAxisRange.x.max),
                     caption: this.chartInfo.measures[xAxisMeasureIndex].axis.label
                 }
             },
