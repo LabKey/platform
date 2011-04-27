@@ -35,7 +35,6 @@ import org.labkey.api.util.SessionAppender;
 import org.labkey.api.util.URLHelper;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletConfig;
@@ -330,12 +329,13 @@ public class ViewServlet extends HttpServlet
                     throw new RedirectException(url.getLocalURIString());
             }
         }
+
         if (null != c)
             url.setContainer(c);
 
-        
         // lastfilter
         boolean expandLastFilter = ColumnInfo.booleanFromString(url.getParameter(DataRegion.LAST_FILTER_PARAM));
+
         if (expandLastFilter)
         {
             ActionURL expand = (ActionURL) request.getSession(true).getAttribute(url.getPath() + "#" + DataRegion.LAST_FILTER_PARAM);
