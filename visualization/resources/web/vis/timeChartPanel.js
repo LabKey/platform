@@ -259,7 +259,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // setup exportPDF button and menu (items to be added later)
             // the single button will be used for "single" chart layout
             // and the menu button will be used for multi-chart layouts
-            this.exportPdfMenu = new Ext.menu.Menu();
+            this.exportPdfMenu = new Ext.menu.Menu({cls: 'extContainer'});
             this.exportPdfMenuBtn = new Ext.Button({
                 text: 'Export PDF',
                 menu: this.exportPdfMenu,
