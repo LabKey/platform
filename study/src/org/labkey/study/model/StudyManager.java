@@ -16,7 +16,6 @@
 
 package org.labkey.study.model;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -44,10 +43,10 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.Lsid;
@@ -57,14 +56,11 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -72,18 +68,35 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.*;
+import org.labkey.api.security.RoleAssignment;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.*;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.study.QueryHelper;
@@ -109,7 +122,21 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -124,7 +151,6 @@ public class StudyManager
     private static final String SCHEMA_NAME = "study";
     private final TableInfo _tableInfoVisitMap;
     private final TableInfo _tableInfoParticipant;
-    //private final TableInfo _tableInfoStudyData;
     private final TableInfo _tableInfoUploadLog;
 
     private final QueryHelper<StudyImpl> _studyHelper;
@@ -1917,286 +1943,6 @@ public class StudyManager
         {
             throw new RuntimeSQLException(x);
         }
-    }
-
-
-    public SnapshotBean createSnapshot(SnapshotBean bean) throws SQLException, ServletException
-    {
-        DbScope scope = getSchema().getScope();
-        String schemaName = bean.getSchemaName();
-
-        if (scope.isTransactionActive())
-            throw new IllegalStateException("Create snapshot with transaction open.");
-
-        try
-        {
-            //Can't create schema during transaction
-            getSchema().getSqlDialect().dropSchema(getSchema(), schemaName);
-            Table.execute(getSchema(), getSchema().getSqlDialect().getCreateSchemaSql(schemaName), new Object[0]);
-            scope.beginTransaction();
-            for (String category : bean.getCategories())
-            {
-                for (String sourceName : bean.getSourceNames(category))
-                {
-                    TableSnapshotInfo snapshotInfo = bean.getTableSnapshotInfo(category, sourceName);
-                    if (null != snapshotInfo && snapshotInfo.snapshot && null != snapshotInfo.getTableInfo())
-                        Table.snapshot(snapshotInfo.getTableInfo(), schemaName + "." + bean.getDestTableName(category, sourceName));
-                }
-            }
-
-            bean.setLastSnapshotDate(new Date());
-            saveSnapshotInfo(bean);
-            scope.commitTransaction();
-
-            return bean;
-        }
-        finally
-        {
-            if (scope.isTransactionActive())
-                scope.rollbackTransaction();
-        }
-        //Drop existing schema
-        //
-    }
-
-    public static class SnapshotBean
-    {
-        private String schemaName;
-        private Date lastSnapshotDate;
-        private Container container;
-        private Map<String, Map<String, TableSnapshotInfo>> tableSnapshotInfo = new HashMap<String, Map<String, TableSnapshotInfo>>();
-
-        private SnapshotBean()
-        {
-
-        }
-
-        private SnapshotBean(User user, Container container) throws ServletException
-        {
-            initFromContainer(user,container);
-        }
-
-        public String getSchemaName()
-        {
-            return schemaName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            this.schemaName = schemaName;
-        }
-
-        public Date getLastSnapshotDate()
-        {
-            return lastSnapshotDate;
-        }
-
-        public void setLastSnapshotDate(Date lastSnapshotDate)
-        {
-            this.lastSnapshotDate = lastSnapshotDate;
-        }
-
-        public Container getContainer()
-        {
-            return container;
-        }
-
-        public void setContainer(Container container)
-        {
-            this.container = container;
-        }
-
-        public String[] getCategories()
-        {
-            String[] categories = tableSnapshotInfo.keySet().toArray(new String[tableSnapshotInfo.keySet().size()]);
-            Arrays.sort(categories);
-            return categories;
-        }
-
-        private void initFromContainer(User user, Container container) throws ServletException
-        {
-            this.container = container;
-            this.schemaName = AliasManager.makeLegalName(container.getName() + "_" + container.getRowId(), getSchema().getSqlDialect());
-            Map<String,ListDefinition> listMap = ListService.get().getLists(container);
-            Map<String,TableSnapshotInfo> listSnapshotInfo = new HashMap<String, TableSnapshotInfo>();
-            for (String listName : listMap.keySet())
-                listSnapshotInfo.put(listName, new TableSnapshotInfo(listMap.get(listName).getTable(user)));
-
-            tableSnapshotInfo.put("Lists", listSnapshotInfo);
-
-            StudyImpl study = StudyManager.getInstance().getStudy(container);
-            if (null == study)
-                return;
-
-            Map<String,TableSnapshotInfo> datasetSnapshotInfo = new HashMap<String, TableSnapshotInfo>();
-            for (DataSetDefinition dsd : study.getDataSets())
-                datasetSnapshotInfo.put(dsd.getName(), new TableSnapshotInfo(dsd.getTableInfo(user, true)));
-
-            tableSnapshotInfo.put("Datasets", datasetSnapshotInfo);
-        }
-        
-        public SortedSet<String> getSourceNames(String category)
-        {
-            SortedSet<String> names = new TreeSet<String>();
-            //Placeholder
-            Map<String,TableSnapshotInfo> categoryTables = tableSnapshotInfo.get(category);
-            if (null != categoryTables)
-                names.addAll(categoryTables.keySet());
-            
-            return names;
-        }
-
-        public String getDestTableName(String category, String sourceName)
-        {
-            Map<String,TableSnapshotInfo> categoryTables = tableSnapshotInfo.get(category);
-            if (null != categoryTables)
-            {
-                TableSnapshotInfo info = categoryTables.get(sourceName);
-                if (null != info && null != info.destTableName)
-                    return info.destTableName;
-            }
-
-            return AliasManager.makeLegalName(sourceName, getSchema().getSqlDialect());
-        }
-
-        public boolean isSaveTable(String category, String sourceName)
-        {
-            Map<String,TableSnapshotInfo> categoryTables = tableSnapshotInfo.get(category);
-            if (null != categoryTables)
-            {
-                TableSnapshotInfo info = categoryTables.get(sourceName);
-                if (null != info)
-                    return info.snapshot;
-            }
-
-            return true;
-        }
-
-        void setDestTableInfo(String category, String sourceName, String destName, boolean snapshot)
-        {
-            Map<String,TableSnapshotInfo> categoryTables = tableSnapshotInfo.get(category);
-            if (null == categoryTables) //If no tableInfo can't set anything
-                return;
-
-            TableSnapshotInfo info = categoryTables.get(sourceName);
-            if (null != info)
-            {
-                info.snapshot = snapshot;
-                info.destTableName = destName;
-            }
-        }
-
-        public void setSnapshot(String category, String sourceName, boolean snapshot)
-        {
-            Map<String,TableSnapshotInfo> categoryTables = tableSnapshotInfo.get(category);
-            if (null == categoryTables)
-                return; //Tables changed & that one isn't there anymore
-            TableSnapshotInfo snapshotInfo = categoryTables.get(sourceName);
-            if (null == snapshotInfo)
-                return;
-
-            snapshotInfo.snapshot = snapshot;
-        }
-
-        public void setDestTableName(String category, String sourceName, String destName)
-        {
-            Map<String,TableSnapshotInfo> categoryTables = tableSnapshotInfo.get(category);
-            if (null == categoryTables)
-                return; //Tables changed & that one isn't there anymore
-            TableSnapshotInfo snapshotInfo = categoryTables.get(sourceName);
-            if (null == snapshotInfo)
-                return; //Tables changed & that one isn't there anymore
-
-            snapshotInfo.destTableName = destName;
-        }
-
-        public TableSnapshotInfo getTableSnapshotInfo(String category, String sourceName)
-        {
-            Map<String,TableSnapshotInfo> categoryTables = tableSnapshotInfo.get(category);
-            if (null == categoryTables)
-                return null;
-
-            return categoryTables.get(sourceName);
-        }
-    }
-
-    static class TableSnapshotInfo
-    {
-        private boolean snapshot;
-        private String destTableName;
-        private TableInfo tableInfo;
-
-        TableSnapshotInfo(TableInfo tableInfo, boolean snapshot, String destTableName)
-        {
-            this.tableInfo = tableInfo;
-            this.snapshot = snapshot;
-            this.destTableName = destTableName;
-        }
-
-        public TableSnapshotInfo(TableInfo tableInfo)
-        {
-            this(tableInfo, true, null);
-        }
-
-        public TableInfo getTableInfo()
-        {
-            return tableInfo;
-        }
-
-        public void setTableInfo(TableInfo tableInfo)
-        {
-            this.tableInfo = tableInfo;
-        }
-    }
-
-    private static final String NO_SNAPSHOT = "~NO SNAPSHOT~";
-    public SnapshotBean getSnapshotInfo(User user, Container container) throws ServletException
-    {
-        SnapshotBean bean = new SnapshotBean(user, container);
-        applySavedSnapshotInfo(container, bean);
-
-        return bean;
-    }
-
-    private void applySavedSnapshotInfo(Container container, SnapshotBean bean)
-    {
-        Map<String, String> props = PropertyManager.getProperties(container.getId(), "snapshot");
-        if (props.isEmpty())
-            return;
-
-        bean.setSchemaName(props.get("schemaName"));
-        bean.setLastSnapshotDate((Date) ConvertUtils.convert(props.get("lastSnapshotDate"), Date.class));
-        for (String key : props.keySet())
-        {
-            int index = key.indexOf('.');
-            if (index < 0)
-                continue;
-
-            String category = key.substring(0, index);
-            String sourceName = key.substring(index + 1);
-            String targetName = props.get(key);
-            if (NO_SNAPSHOT.equals(targetName))
-                bean.setSnapshot(category, sourceName, false);
-            else
-                bean.setDestTableInfo(category, sourceName, targetName, true);
-        }
-    }
-
-    private void saveSnapshotInfo(SnapshotBean bean)
-    {
-        Map<String,String> props = PropertyManager.getWritableProperties(bean.getContainer().getId(), "snapshot", true);
-        props.clear(); //Don't want to track old tables
-        props.put("lastSnapshotDate", ConvertUtils.convert(bean.getLastSnapshotDate()));
-        props.put("schemaName", bean.getSchemaName());
-        for (String category : bean.getCategories())
-            for (String tableName : bean.getSourceNames(category))
-            {
-                if (bean.isSaveTable(category, tableName))
-                    props.put(category + "." + tableName, bean.getDestTableName(category, tableName));
-                else
-                    props.put(category + "." + tableName, NO_SNAPSHOT);
-            }
-        PropertyManager.saveProperties(props);
     }
 
 

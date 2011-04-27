@@ -29,20 +29,39 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -50,42 +69,120 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.query.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.*;
+import org.labkey.api.reports.report.AbstractReportIdentifier;
+import org.labkey.api.reports.report.ChartQueryReport;
+import org.labkey.api.reports.report.ChartReportDescriptor;
+import org.labkey.api.reports.report.QueryReport;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.*;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.*;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.study.*;
+import org.labkey.study.CohortFilter;
+import org.labkey.study.SampleManager;
+import org.labkey.study.StudyFolderType;
+import org.labkey.study.StudyModule;
+import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
-import org.labkey.study.importer.*;
+import org.labkey.study.importer.DatasetImportUtils;
+import org.labkey.study.importer.SchemaReader;
+import org.labkey.study.importer.SchemaTsvReader;
+import org.labkey.study.importer.StudyImportJob;
+import org.labkey.study.importer.StudyReload;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
-import org.labkey.study.model.*;
+import org.labkey.study.importer.VisitMapImporter;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.CustomParticipantView;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetReorderer;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.QCState;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.UploadLog;
+import org.labkey.study.model.VisitDataSet;
+import org.labkey.study.model.VisitDataSetType;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DataSetQueryView;
@@ -113,11 +210,27 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -4602,124 +4715,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @DeprecatedAction
-    @RequiresPermissionClass(AdminPermission.class)
-    public class SnapshotAction extends SimpleViewAction<SnapshotForm>
-    {
-        public ModelAndView getView(SnapshotForm form, BindException errors) throws Exception
-        {
-            StudyManager.SnapshotBean snapshotBean;
-            try
-            {
-                snapshotBean = StudyManager.getInstance().getSnapshotInfo(HttpView.currentContext().getUser(), HttpView.currentContext().getContainer());
-            }
-            catch (ServletException e)
-            {
-                throw new RuntimeException(e);
-            }
-            if (!isPost())
-            {
-                // First time through, just set the bean and display the form
-                int tableCount = 0;
-                for (String category : snapshotBean.getCategories())
-                    tableCount += snapshotBean.getSourceNames(category).size();
-
-                form.setCategory(new String[tableCount]);
-                form.setDestName(new String[tableCount]);
-                form.setSourceName(new String[tableCount]);
-                StudySnapshotBean studySnapshotBean = new StudySnapshotBean(snapshotBean, form);
-                return new StudyJspView<StudySnapshotBean>(getStudy(), "snapshotData.jsp", studySnapshotBean, errors);
-            }
-            // Update the bean with the form entries
-            snapshotBean.setSchemaName(form.getSchemaName());
-
-            String[] category = form.getCategory();
-            String[] source = form.getSourceName();
-            Set<String> categoryAndSourceToSnapshot;
-            if (null == form.getCategoryAndSourceToSnapshot() || form.getCategoryAndSourceToSnapshot().length == 0)
-            {
-                errors.reject("manageSnapshot", "No datasets selected. Please select datasets to snapshot.");
-                categoryAndSourceToSnapshot = Collections.emptySet();
-            }
-            else
-                categoryAndSourceToSnapshot = new HashSet<String>(Arrays.asList(form.getCategoryAndSourceToSnapshot()));
-
-            String[] destName = form.getDestName();
-            for (int i = 0; i < category.length; i++)
-            {
-                boolean shouldSnapshot = categoryAndSourceToSnapshot.contains(category[i] + ";" + source[i]);
-                snapshotBean.setSnapshot(category[i], source[i], shouldSnapshot);
-                snapshotBean.setDestTableName(category[i], source[i], destName[i]);
-            }
-
-            // validate, and then process
-            String schemaName = StringUtils.trimToNull(form.getSchemaName());
-            if (null == schemaName)
-            {
-                errors.reject("manageSnapshot", "You must supply a schema name.");
-            }
-            else if (!AliasManager.isLegalName(schemaName))
-            {
-                errors.reject("manageSnapshot", "Schema name must be a legal database identifier");
-            }
-            else
-            {
-                boolean badName = false;
-                for (Module module : ModuleLoader.getInstance().getModules())
-                {
-                    for (String schema : module.getSchemaNames())
-                    {
-                        if (schemaName.equalsIgnoreCase(schema))
-                        {
-                            errors.reject("manageSnapshot", "The schema name " + schema + " is already in use by the " + module.getName() + " module. Please pick a new name");
-                            badName = true;
-                            break;
-                        }
-                    }
-                    if (badName)
-                    {
-                        break;
-                    }
-                }
-                if (schemaName.equalsIgnoreCase("temp"))
-                {
-                    errors.reject("manageSnapshot", "'Temp' is a reserved schema name. Please choose a new name");
-                }
-            }
-
-            CaseInsensitiveHashSet names = new CaseInsensitiveHashSet();
-            for (String categoryName : snapshotBean.getCategories())
-            {
-                for (String sourceName : snapshotBean.getSourceNames(categoryName))
-                {
-                    String destTableName = snapshotBean.getDestTableName(categoryName, sourceName);
-                    if (!AliasManager.isLegalName(destTableName))
-                        errors.reject("manageSnapshot", "Not a legal table name: " + destTableName);
-                    if (snapshotBean.isSaveTable(categoryName, sourceName) && !names.add(destTableName))
-                        errors.reject("manageSnapshot", "Duplicate table name: " + destTableName);
-                }
-            }
-            if (errors.hasErrors())
-            {
-                return new StudyJspView<StudySnapshotBean>(getStudy(), "snapshotData.jsp",
-                        new StudySnapshotBean(snapshotBean, form), errors);
-            }
-            // Actually process
-            StudyManager.getInstance().createSnapshot(snapshotBean);
-            form.setComplete(true);
-
-            return new StudyJspView<StudySnapshotBean>(getStudy(), "snapshotData.jsp",
-                        new StudySnapshotBean(snapshotBean, form), errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            _appendManageStudy(root);
-            root.addChild("Manage Snapshot");
-            return root;
-        }
-    }
-
     private static final String DEFAULT_PARTICIPANT_VIEW_SOURCE =
             "<script type=\"text/javascript\">\n" +
             "   /* Include all headers necessary for client API usage: */\n" +
@@ -5410,91 +5405,6 @@ public class StudyController extends BaseStudyController
         }
     }
     
-    public static class StudySnapshotBean
-    {
-        private final StudyManager.SnapshotBean bean;
-        private final SnapshotForm form;
-
-        public StudySnapshotBean(StudyManager.SnapshotBean bean, SnapshotForm form)
-        {
-            this.bean = bean;
-            this.form = form;
-        }
-
-        public StudyManager.SnapshotBean getBean() {return bean;}
-        public SnapshotForm getForm() {return form;}   
-    }
-
-    public static class SnapshotForm
-    {
-        private String schemaName;
-        private boolean complete;
-        private String[] sourceName;
-        private String[] destName;
-        private String[] category;
-        private String[] categoryAndSourceToSnapshot; // format: "CATEGORY;SOURCE"
-        
-        public String getSchemaName()
-        {
-            return schemaName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            this.schemaName = schemaName;
-        }
-
-        public String[] getSourceName()
-        {
-            return sourceName;
-        }
-
-        public void setSourceName(String[] sourceName)
-        {
-            this.sourceName = sourceName;
-        }
-
-        public String[] getDestName()
-        {
-            return destName;
-        }
-
-        public void setDestName(String[] destName)
-        {
-            this.destName = destName;
-        }
-
-        public String[] getCategory()
-        {
-            return category;
-        }
-
-        public void setCategory(String[] category)
-        {
-            this.category = category;
-        }
-
-        public boolean isComplete()
-        {
-            return complete;
-        }
-
-        public void setComplete(boolean complete)
-        {
-            this.complete = complete;
-        }
-
-        public String[] getCategoryAndSourceToSnapshot()
-        {
-            return categoryAndSourceToSnapshot;
-        }
-
-        public void setCategoryAndSourceToSnapshot(String[] categoryAndSourceToSnapshot)
-        {
-            this.categoryAndSourceToSnapshot = categoryAndSourceToSnapshot;
-        }
-    }
-
     public static class DatasetPropertyForm extends PropertyForm
     {
         private int[] _ids;

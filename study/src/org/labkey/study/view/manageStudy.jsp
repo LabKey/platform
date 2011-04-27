@@ -221,7 +221,6 @@
 %>
 <%=generateButton("Export Study", StudyController.ExportStudyAction.class)%>
 <%=generateButton("Reload Study", StudyController.ImportStudyAction.class)%>
-<%=generateButton("Snapshot Study Data", StudyController.SnapshotAction.class)%>
 <%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
 <%
     }
