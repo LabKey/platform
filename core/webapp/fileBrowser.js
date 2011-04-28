@@ -3728,6 +3728,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var grid = new Ext.grid.GridPanel(
         {
             store: this.store,
+            cls: 'labkey-filecontent-grid',
             border:false,
             selModel : new Ext.grid.RowSelectionModel({singleSelect:true}),
             loadMask:{msg:"Loading, please wait..."},
