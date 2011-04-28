@@ -144,7 +144,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         @Override
         public String getDescription()
         {
-            return "Base LabKey macro, used for putting data from the LabKey Server portal into wikis.";
+            return "Base LabKey macro, used for including data from the LabKey Server portal into wikis.";
         }
 
         public void executeTree(Writer writer, MacroParameter params) throws IOException
@@ -235,7 +235,12 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             if (cssClass != null)
                 buf.append(" class=\"").append(PageFlowUtil.filter(cssClass)).append("\"");
             if (cssStyle != null)
-                buf.append(" style=\"").append(PageFlowUtil.filter(cssStyle)).append("\"");
+            {
+                if (-1 != cssStyle.toLowerCase().indexOf("behavior"))
+                    cssStyle = null;
+                if (null != cssStyle)
+                    buf.append(" style=\"").append(PageFlowUtil.filter(cssStyle)).append("\"");
+            }
             buf.append(">");
             buf.append(macroParameter.getContent());
             buf.append("</").append(_tagName).append(">");
