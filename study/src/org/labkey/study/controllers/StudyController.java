@@ -94,6 +94,7 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -120,6 +121,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -1234,8 +1236,21 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return _appendNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter, _bean.getQCState()).
-                    addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + _bean.getParticipantId());
+                    addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
+    }
+
+
+    // Obfuscate the passed in test if this user is in "demo" mode in this container
+    private String id(String id)
+    {
+        return id(id, getContainer(), getUser());
+    }
+
+    // Obfuscate the passed in test if this user is in "demo" mode in this container
+    private static String id(String id, Container c, User user)
+    {
+        return DemoMode.obfuscate(id, c, user);
     }
 
 
@@ -5921,7 +5936,8 @@ public class StudyController extends BaseStudyController
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            Container container = getViewContext().getContainer();
+            Container c = getViewContext().getContainer();
+            User user = getViewContext().getUser();
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
             String subjectNoun = PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer()));
@@ -5940,15 +5956,14 @@ public class StudyController extends BaseStudyController
 
             if (null != _currentParticipantId && null != ss)
             {
-                ActionURL search = new ActionURL("search", "search", container);
-                search.addParameter("q", "+" + ss.escapeTerm(_currentParticipantId));
-                out.print(PageFlowUtil.textLink("Search for '" + PageFlowUtil.filter(_currentParticipantId) + "'", search));
+                ActionURL search = PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(c, "+" + ss.escapeTerm(_currentParticipantId));
+                out.print(PageFlowUtil.textLink("Search for '" + PageFlowUtil.filter(id(_currentParticipantId, c, user)) + "'", search));
                 out.print("&nbsp;");
             }
 
-            if (_showCustomizeLink && container.hasPermission(getViewContext().getUser(), AdminPermission.class))
+            if (_showCustomizeLink && c.hasPermission(getViewContext().getUser(), AdminPermission.class))
             {
-                ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, container);
+                ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, c);
                 customizeURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
                 customizeURL.addParameter("participantId", _currentParticipantId);
                 customizeURL.addParameter(SharedFormParameters.QCState, _encodedQcState);
@@ -6522,6 +6537,58 @@ public class StudyController extends BaseStudyController
         public void setContent(String content)
         {
             _content = content;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DemoModeAction extends FormViewAction<DemoModeForm>
+    {
+        @Override
+        public URLHelper getSuccessURL(DemoModeForm form)
+        {
+            return null;
+        }
+
+        @Override
+        public void validateCommand(DemoModeForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(DemoModeForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/study/view/demoMode.jsp");
+        }
+
+        @Override
+        public boolean handlePost(DemoModeForm form, BindException errors) throws Exception
+        {
+            DemoMode.setDemoMode(getContainer(), getUser(), form.getMode());
+            return false;  // Reshow page
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Demo Mode");
+        }
+    }
+
+
+    public static class DemoModeForm
+    {
+        private boolean mode;
+
+        public boolean getMode()
+        {
+            return mode;
+        }
+
+        public void setMode(boolean mode)
+        {
+            this.mode = mode;
         }
     }
 }

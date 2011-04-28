@@ -1,19 +1,18 @@
 package org.labkey.study.query;
 
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.FieldKey;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentService;
-import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
 
-import java.sql.Types;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Copyright (c) 2008-2011 LabKey Corporation

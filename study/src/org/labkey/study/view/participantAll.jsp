@@ -30,7 +30,6 @@
 <%@ page import="org.labkey.api.exp.LsidManager" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
@@ -70,9 +69,6 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
-<%@ page import="org.labkey.study.query.DataSetTable" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%

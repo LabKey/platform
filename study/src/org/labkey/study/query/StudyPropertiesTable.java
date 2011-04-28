@@ -28,7 +28,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
 
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 

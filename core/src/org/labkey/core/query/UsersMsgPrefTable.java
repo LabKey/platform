@@ -35,7 +35,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

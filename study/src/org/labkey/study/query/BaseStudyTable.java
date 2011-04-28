@@ -16,10 +16,23 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
-import org.labkey.api.study.TimepointType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
@@ -28,10 +41,9 @@ import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.Types;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public abstract class BaseStudyTable extends FilteredTable
 {

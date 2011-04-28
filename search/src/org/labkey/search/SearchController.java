@@ -92,13 +92,15 @@ public class SearchController extends SpringActionController
     public static class SearchUrlsImpl implements SearchUrls
     {
         @Override
+        public ActionURL getSearchURL(Container c, String query)
+        {
+            return SearchController.getSearchURL(c, query);
+        }
+
+        @Override
         public ActionURL getSearchURL(String query, String category)
         {
-            ActionURL url = new ActionURL(SearchAction.class, ContainerManager.getRoot());
-            url.addParameter("q", query);
-            url.addParameter("category", category);
-
-            return url;
+            return SearchController.getSearchURL(ContainerManager.getRoot(), query, category);
         }
     }
 
@@ -737,10 +739,18 @@ public class SearchController extends SpringActionController
 
     private static ActionURL getSearchURL(Container c, String queryString)
     {
+        return getSearchURL(c, queryString, null);
+    }
+
+    private static ActionURL getSearchURL(Container c, String queryString, @Nullable String category)
+    {
         ActionURL url = getSearchURL(c);
         url.addParameter("q", queryString);
-        return url;
 
+        if (null != category)
+            url.addParameter("category", category);
+
+        return url;
     }
 
     // This interface hides all the specifics of internal vs. external index search, keeping search.jsp reasonably generic.

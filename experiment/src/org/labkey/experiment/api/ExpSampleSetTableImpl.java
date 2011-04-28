@@ -16,21 +16,20 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ExprColumn;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
-import java.sql.Types;
 
 /**
  * User: jeckels

@@ -16,18 +16,24 @@
 
 package org.labkey.study.plate.query;
 
-import org.labkey.api.query.*;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.study.StudySchema;
 
-import java.sql.Types;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.List;
-import java.util.ArrayList;
-
-import org.labkey.study.StudySchema;
 
 /**
  * User: brittp

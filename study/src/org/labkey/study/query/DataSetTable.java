@@ -35,6 +35,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -95,6 +96,18 @@ public class DataSetTable extends FilteredTable
                         return new DetailsURL(base, "participantId", parent.getFieldKey());
                     }
                 });
+
+                if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
+                {
+                    column.setDisplayColumnFactory(new DisplayColumnFactory() {
+                        @Override
+                        public DisplayColumn createRenderer(ColumnInfo column)
+                        {
+                            return new PtidObfuscatingDisplayColumn(column);
+                        }
+                    });
+                }
+
                 addColumn(column);
                 if (isVisibleByDefault(column))
                     defaultVisibleCols.add(FieldKey.fromParts(column.getName()));

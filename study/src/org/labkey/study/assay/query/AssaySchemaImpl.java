@@ -16,7 +16,19 @@
 
 package org.labkey.study.assay.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -26,10 +38,27 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.query.*;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
-import org.labkey.api.study.assay.*;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssaySchema;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.study.assay.StudyContainerFilter;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -42,8 +71,13 @@ import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 
 import javax.servlet.ServletException;
-import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: brittp

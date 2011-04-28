@@ -16,19 +16,40 @@
 
 package org.labkey.study.query;
 
-import org.labkey.study.StudySchema;
-import org.labkey.study.SampleManager;
-import org.labkey.study.model.SpecimenComment;
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.study.StudyService;
+import org.labkey.study.SampleManager;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.SpecimenComment;
 
-import java.sql.Types;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.io.Writer;
 import java.io.IOException;
-import java.util.*;
+import java.io.Writer;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class SpecimenSummaryTable extends BaseStudyTable
 {

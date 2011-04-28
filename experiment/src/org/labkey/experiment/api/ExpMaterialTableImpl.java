@@ -16,7 +16,16 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -24,8 +33,19 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.*;
-import org.labkey.api.query.*;
+import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -35,7 +55,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

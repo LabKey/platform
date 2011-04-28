@@ -2691,6 +2691,7 @@ study/src/org/labkey/study/query/ParticipantVisitColumn.java -text
 study/src/org/labkey/study/query/ParticipantVisitDataSetTable.java -text
 study/src/org/labkey/study/query/ParticipantVisitTable.java -text
 study/src/org/labkey/study/query/PrimaryTypeTable.java -text
+study/src/org/labkey/study/query/PtidObfuscatingDisplayColumn.java -text
 study/src/org/labkey/study/query/PublishedRecordQueryView.java -text
 study/src/org/labkey/study/query/QCStateTable.java -text
 study/src/org/labkey/study/query/SimpleSpecimenTable.java -text
@@ -2841,6 +2842,7 @@ study/src/org/labkey/study/view/datasetCharts.jsp -text
 study/src/org/labkey/study/view/datasetDetails.jsp -text
 study/src/org/labkey/study/view/datasetInfo.jsp -text
 study/src/org/labkey/study/view/datasets.jsp -text
+study/src/org/labkey/study/view/demoMode.jsp -text
 study/src/org/labkey/study/view/editSnapshot.jsp -text
 study/src/org/labkey/study/view/editTimepoint.jsp -text
 study/src/org/labkey/study/view/editVisit.jsp -text

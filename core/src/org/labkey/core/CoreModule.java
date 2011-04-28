@@ -601,13 +601,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     @NotNull
     @Override
-    protected Class[] getResourceClasses()
-    {
-        return new Class[] { getClass(), org.labkey.api.RemoteControllerProxy.class };
-    }
-
-    @NotNull
-    @Override
     protected List<File> getResourceDirectories()
     {
         List<File> resources = super.getResourceDirectories();
