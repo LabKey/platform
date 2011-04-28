@@ -87,15 +87,5 @@ public class CommSchema
     {
         return getSchema().getTable("EmailOptions");
     }
-
-    public TableInfo getTableInfoEmailFormats()
-    {
-        return getSchema().getTable("EmailFormats");
-    }
-
-    public TableInfo getTableInfoPageTypes()
-    {
-        return getSchema().getTable("PageTypes");
-    }
 }
 

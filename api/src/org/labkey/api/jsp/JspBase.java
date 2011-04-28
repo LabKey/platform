@@ -21,6 +21,7 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -148,6 +149,14 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public String u(String str)
     {
         return PageFlowUtil.encode(str);
+    }
+
+
+    // Obfuscate the passed in text if this user is in "demo" mode in this container
+    public String id(String id)
+    {
+        ViewContext ctx = getViewContext();
+        return DemoMode.obfuscate(id, ctx.getContainer(), ctx.getUser());
     }
 
 

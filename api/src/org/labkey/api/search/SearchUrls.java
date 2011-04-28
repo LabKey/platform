@@ -17,6 +17,7 @@
 package org.labkey.api.search;
 
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 
 /*
@@ -26,5 +27,6 @@ import org.labkey.api.view.ActionURL;
 */
 public interface SearchUrls extends UrlProvider
 {
+    public ActionURL getSearchURL(Container c, String query);
     public ActionURL getSearchURL(String query, String category);
 }

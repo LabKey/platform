@@ -93,8 +93,6 @@ public class PageFlowUtil
     private static Logger _log = Logger.getLogger(PageFlowUtil.class);
     private static final String _newline = System.getProperty("line.separator");
                                                                            
-    private static final Object[] NO_ARGS = new Object[ 0 ];
-
     private static final Pattern urlPattern = Pattern.compile(".*((http|https|ftp|mailto)://\\S+).*");
     private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+).*");
 
@@ -124,18 +122,6 @@ public class PageFlowUtil
 
 
     static public final String NONPRINTING_ALTCHAR = "~";
-    static final String nonPrinting;
-
-    static
-    {
-        StringBuffer sb = new StringBuffer();
-        for (char c = 1 ; c < ' ' ; c++)
-        {
-            if (" \t\r\n".indexOf('c') == -1)
-                sb.append(c);
-        }
-        nonPrinting = sb.toString();
-    }
 
     static public String filterXML(String s)
     {

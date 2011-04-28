@@ -1,5 +1,4 @@
 * text=auto !eol
-api/remotesrc/org/labkey/api/RemoteControllerProxy.java -text
 api/src/org/json/CDL.java -text
 api/src/org/json/Cookie.java -text
 api/src/org/json/CookieList.java -text
@@ -954,6 +953,7 @@ api/src/org/labkey/api/util/ContainerContext.java -text
 api/src/org/labkey/api/util/ContainerUtil.java -text
 api/src/org/labkey/api/util/ContextListener.java -text
 api/src/org/labkey/api/util/DOMUtil.java -text
+api/src/org/labkey/api/util/DemoMode.java -text
 api/src/org/labkey/api/util/ErrorRenderer.java -text
 api/src/org/labkey/api/util/ErrorRendererProperties.java -text
 api/src/org/labkey/api/util/ErrorView.java -text

@@ -28,8 +28,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 
-import java.sql.Types;
-
 /**
  * User: jeckels
  * Date: Feb 22, 2007

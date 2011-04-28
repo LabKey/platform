@@ -15,11 +15,10 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.query.ExprColumn;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.ExprColumn;
 
 import java.util.EnumSet;
-import java.sql.Types;
 
 /**
  * Exposes a Java enum as a virtual query table. Useful for creating lookups when it's really a hard-coded list
