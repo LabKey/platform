@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.sql.Types;
@@ -98,7 +99,64 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     @Override
     public abstract FilteredTable createDataTable(AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns);
 
-    public void materializeAssayResults(User user, ExpProtocol protocol) throws SQLException
+    public void materializeAssayResults(User user, ExpProtocol protocol, double targetVersion) throws SQLException
+    {
+        // Due to a bug in the original implementation, this upgrade is handled in two separate pieces.
+        if (targetVersion == 11.1)
+        {
+            // The first step is to create the hard table and migrate data into it
+            migrateToHardTable(user, protocol);
+        }
+        if (targetVersion == 11.101)
+        {
+            // The second step is to make the dataset match the new expectations for the key property name
+            renameObjectIdDatasetColumn(user, protocol);
+        }
+    }
+
+    /**
+     * The original migration code incorrectly left the single property named "ObjectId", instead of
+     * "RowId" which is what future copy-to-study operations expect. We need to loop through all datasets created
+     * from this assay definition and fix them up.
+     */
+    public void renameObjectIdDatasetColumn(User user, ExpProtocol protocol) throws SQLException
+    {
+        Set<Container> studyContainers = StudyService.get().getStudyContainersForAssayProtocol(protocol.getRowId());
+        // Iterate through all of the studies that contain a dataset created by copying from this assay
+        for (Container studyContainer : studyContainers)
+        {
+            Study study = StudyService.get().getStudy(studyContainer);
+            // Find the relevant dataset
+            for (DataSet dataSet : study.getDataSets())
+            {
+                if (dataSet.getProtocolId() != null && dataSet.getProtocolId().intValue() == protocol.getRowId())
+                {
+                    Domain domain = dataSet.getDomain();
+                    DomainProperty property = domain.getPropertyByName("ObjectId");
+                    // Check if we have the old property name - datasets created with 11.1 won't
+                    if (property != null)
+                    {
+                        try
+                        {
+                            // Rename it to be "RowId"
+                            property.setName("RowId");
+                            property.setLabel("RowId");
+                            domain.save(user);
+                            // Update the key property name too
+                            dataSet.setKeyPropertyName("RowId");
+                            dataSet.save(user);
+                        }
+                        catch (ChangePropertyDescriptorException e)
+                        {
+                            throw new UnexpectedException(e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void migrateToHardTable(User user, ExpProtocol protocol) throws SQLException
     {
         // First create the hard table
         Domain resultsDomain = getResultsDomain(protocol);

@@ -165,7 +165,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     PipelineProvider getPipelineProvider();
 
     /** Upgrade from property store to hard table */
-    void materializeAssayResults(User user, ExpProtocol protocol) throws SQLException;
+    void materializeAssayResults(User user, ExpProtocol protocol, double targetVersion) throws SQLException;
 
     public enum Scope {
         ALL,

@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.UnauthorizedException;
 
+import java.sql.SQLException;
 import java.util.Set;
 
 /**
@@ -62,6 +63,10 @@ public interface DataSet extends StudyEntity
 
     @Nullable
     String getKeyPropertyName();
+
+    void setKeyPropertyName(String name);
+
+    void save(User user) throws SQLException;
 
     Integer getProtocolId();
 

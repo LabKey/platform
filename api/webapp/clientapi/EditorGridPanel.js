@@ -830,8 +830,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         var colFilters = this.getColumnFilters(colName);
         var dropDowns = [
-            this.createFilterCombo(filterColType, colFilters.length >= 1 ? colFilters[0].getFilterType().getURLSuffix() : null),
-            this.createFilterCombo(filterColType, colFilters.length >= 2 ? colFilters[1].getFilterType().getURLSuffix() : null)];
+            LABKEY.ext.EditorGridPanel.createFilterCombo(filterColType, colFilters.length >= 1 ? colFilters[0].getFilterType().getURLSuffix() : null, true),
+            LABKEY.ext.EditorGridPanel.createFilterCombo(filterColType, colFilters.length >= 2 ? colFilters[1].getFilterType().getURLSuffix() : null)];
         var valueEditors = [
             new Ext.form.TextField({value:colFilters.length > 0 ? colFilters[0].getValue() : "",width:250}),
             new Ext.form.TextField({value:colFilters.length > 1 ? colFilters[1].getValue() : "",width:250, hidden:colFilters.length < 2, hideMode:'visibility'})];
@@ -842,7 +842,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         function validateEntry(index)
         {
             var filterType = dropDowns[index].getFilterType();
-            return filterType.validate(filterColType, valueEditors[index].getValue(), colName);
+            return filterType.validate(valueEditors[index].getValue(), filterColType, colName);
         }
 
         var win = new Ext.Window({
@@ -871,7 +871,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                             value = validateEntry(1);
                             if (!value)
                                 return;
-                            filters.push(LABKEY.Filter.create(filterColName, ""+tf.getValue(), filterType));
+                            filters.push(LABKEY.Filter.create(filterColName, value, filterType));
                         }
                         grid.setColumnFilters(colName, filters);
                         win.close();
@@ -931,7 +931,7 @@ LABKEY.ext.EditorGridPanel.createFilterCombo = function (type, filterOp, first)
 
     //Option lists for drop-downs. Filled in on-demand based on filter type
     var dropDownOptions = [];
-    Ext.each(LABKEY.Filter.filterTypesForType(type), function (filterType) {
+    Ext.each(LABKEY.Filter.getFilterTypesForType(type), function (filterType) {
         dropDownOptions.push([filterType.getURLSuffix(), filterType.getDisplayText()]);
     });
 

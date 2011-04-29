@@ -251,15 +251,35 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
 
         this.filters = this.filters || this.filterArray;
+
+        // 12187: Copy user's current URL filters/sort and add them to qsParamsToIgnore so they aren't added when building the DataRegion's URL.
+        var params = LABKEY.ActionURL.getParameters();
+        this.qsParamsToIgnore = {};
+        this.userFilters = {};
+        this.userSort = "";
+        for (var key in params)
+        {
+            if (key.indexOf(this.dataRegionName + ".") == 0 && key.indexOf("~") > -1)
+            {
+                this.userFilters[key] = params[key];
+                this.qsParamsToIgnore[key] = true;
+            }
+            else if (key == this.dataRegionName + ".sort")
+            {
+                this.userSort = params[key];
+                this.qsParamsToIgnore[key] = true;
+            }
+        }
+        
         if (config.removeableFilters)
         {
             // Translate the set of filters that are removeable to be included as the initial set of URL parameters
-            this.userFilters = LABKEY.Filter.appendFilterParams({}, config.removeableFilters, this.dataRegionName);
+            LABKEY.Filter.appendFilterParams(this.userFilters, config.removeableFilters, this.dataRegionName);
         }
 
         if (config.removeableSort)
         {
-            this.userSort = config.removeableSort;
+            this.userSort = this.userSort + config.removeableSort;
         }
 
         // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
@@ -267,7 +287,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         //{
         //    this.userAggregates = LABKEY.Filter.appendAggregateParams({}, config.removeableAggregates, this.dataRegionName);
         //}
-        this.qsParamsToIgnore = {};
 
         /**
          * @memberOf LABKEY.QueryWebPart#
@@ -303,7 +322,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         if (this.offset)
             params[this.dataRegionName + ".offset"] = this.offset;
         // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
-        if (this.userSort)
+        if (this.userSort && this.userSort.length > 0)
             params[this.dataRegionName + ".sort"] = this.userSort;
 
         //add user filters (already in encoded form)

@@ -92,7 +92,7 @@ public class PageFlowUtil
 
     private static Logger _log = Logger.getLogger(PageFlowUtil.class);
     private static final String _newline = System.getProperty("line.separator");
-                                                                           
+
     private static final Pattern urlPattern = Pattern.compile(".*((http|https|ftp|mailto)://\\S+).*");
     private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+).*");
 
@@ -132,7 +132,7 @@ public class PageFlowUtil
     {
         if (null == s)
             return HString.EMPTY;
-        
+
         return new HString(filter(s.getSource()), false);
     }
 
@@ -145,7 +145,7 @@ public class PageFlowUtil
         return new HString(filter(s.getSource()), false);
     }
 
-    
+
     static public String filter(String s, boolean encodeSpace, boolean encodeLinks)
     {
         if (null == s || 0 == s.length())
@@ -431,7 +431,7 @@ public class PageFlowUtil
         return toQueryString(c, false);
     }
 
-    
+
     public static String toQueryString(Collection<? extends Map.Entry<?,?>> c, boolean allowSubstSyntax)
     {
         if (null == c || c.isEmpty())
@@ -617,7 +617,7 @@ public class PageFlowUtil
 
     /**
      * boolean controlling whether or not we compress {@link ObjectOutputStream}s when we render them in HTML forms.
-     * 
+     *
      */
     static private final boolean COMPRESS_OBJECT_STREAMS = true;
     static public String encodeObject(Object o) throws IOException
@@ -645,7 +645,7 @@ public class PageFlowUtil
         s = StringUtils.trimToNull(s);
         if (null == s)
             return null;
-        
+
         try
         {
             byte[] buf = Base64.decodeBase64(s.getBytes());
@@ -670,7 +670,7 @@ public class PageFlowUtil
         }
     }
 
-    
+
     public static byte[] gzip(String s)
     {
         try
@@ -788,7 +788,7 @@ public class PageFlowUtil
         prepareResponseForFile(response, Collections.<String, String>emptyMap(), filename, asAttachment);
         response.getOutputStream().write(bytes);
     }
-    
+
 
     // Fetch the contents of a text file, and return it in a String.
     public static String getFileContentsAsString(File aFile)
@@ -1621,7 +1621,7 @@ public class PageFlowUtil
 
         Formatter F = new Formatter(sb);
         String link = useLESS ? "<link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "<link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
-        
+
         // Combined CSS
         if (combinedCSS)
         {
@@ -1676,15 +1676,15 @@ public class PageFlowUtil
         sb.append(filter(printStyleURL));
         sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\" >\n");
 
-        if (forEmail)
-        {
-            // mark these stylesheets as included (in case someone else tries)
-            sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
-            sb.append("LABKEY.loadedScripts('" + extJsRoot + "/resources/css/ext-all.css','" + theme.getStyleSheet() + "','printStyle.css');\n");
-            if (useLESS)
-                sb.append("LABKEY.requiresScript('less-1.0.35.js',true);\n");
-            sb.append("</script>\n");
-        }
+//        if (forEmail)
+//        {
+//            // mark these stylesheets as included (in case someone else tries)
+//            sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
+//            sb.append("LABKEY.loadedScripts('" + extJsRoot + "/resources/css/ext-all.css','" + theme.getStyleSheet() + "','printStyle.css');\n");
+//            if (useLESS)
+//                sb.append("LABKEY.requiresScript('less-1.0.35.js',true);\n");
+//            sb.append("</script>\n");
+//        }
 
         return sb.toString();
     }
@@ -1790,7 +1790,7 @@ public class PageFlowUtil
 
         included.addAll(scripts);
     }
-    
+
 
     public static String getLabkeyJS()
     {
@@ -1805,7 +1805,7 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-    
+
     public static String getJavaScriptIncludes()
     {
         boolean combinedJS = true;
@@ -1836,6 +1836,7 @@ public class PageFlowUtil
             comma = ",";
         }
         sb.append(");\n");
+        sb.append("Ext.Ajax.timeout = 5 * 60 * 1000; // Default to 5 minute timeout\n");
         sb.append("</script>\n");
         return sb.toString();
     }
@@ -1900,7 +1901,7 @@ public class PageFlowUtil
 
         if (errors.size() > 0 || (null != scriptWarnings && scriptWarnings.size() > 0))
             return null;
-        
+
         // let's return html not xhtml
         String tidy = tidy(html, false, errors);
         //FIX: 4528: old code searched for "<body>" but the body element can have attributes
@@ -2263,12 +2264,12 @@ public class PageFlowUtil
     {
         return strCheckbox(name, null, checked);
     }
-    
+
     static public String strCheckbox(String name, String value, boolean checked)
     {
         StringBuilder out = new StringBuilder();
         String htmlName = h(name);
-        
+
         out.append("<input type=\"checkbox\" name=\"");
         out.append(htmlName);
         out.append("\"");
@@ -2327,7 +2328,7 @@ public class PageFlowUtil
         return url.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
     }
 
-    
+
     public static ActionURL addLastFilterParameter(ActionURL url, String scope)
     {
         return url.addParameter(scope + DataRegion.LAST_FILTER_PARAM, "true");

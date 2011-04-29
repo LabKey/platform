@@ -47,6 +47,8 @@ Ext.namespace("LABKEY", "LABKEY.ext");
  * @param {Array} [config.filterArray] An array of LABKEY.Filter.FilterDefinition objects to use as the base filters.
  * @param {Boolean} [config.updatable] Defaults to true. Set to false to prohibit updates to this store.
  * @param {String} [config.containerPath] The container path from which to get the data. If not specified, the current container is used.
+ * @param {Integer} [config.maxRows] The maximum number of rows returned by this query (defaults to showing all rows).
+ * @param {Boolean} [config.ignoreFilter] True will ignore any filters applied as part of the view (defaults to false).
  * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
  *      Supported values include:
  *       <ul>
@@ -121,6 +123,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         if (config.containerFilter)
             baseParams.containerFilter = config.containerFilter;
+
+        if(config.ignoreFilter)
+            baseParams['query.ignoreFilter'] = 1;
+
+        if(config.maxRows)
+            baseParams['query.maxRows'] = config.maxRows;
 
         baseParams.apiVersion = 9.1;
 
