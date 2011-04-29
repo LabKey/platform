@@ -118,6 +118,11 @@ public class ReportService
          * the same container.
          */
         public Report importReport(User user, Container container, File reportFile) throws IOException, SQLException, XmlValidationException;
+
+        /**
+         * Runs maintenance on the report service.
+         */
+        public void maintenance();
     }
 
     public interface ViewFactory

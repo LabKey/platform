@@ -18,6 +18,7 @@ package org.labkey.api.reports.report;
 import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -38,6 +39,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
@@ -46,6 +48,7 @@ import org.labkey.api.reports.report.r.view.HtmlOutput;
 import org.labkey.api.reports.report.r.view.ImageOutput;
 import org.labkey.api.reports.report.r.view.PdfOutput;
 import org.labkey.api.reports.report.r.view.PostscriptOutput;
+import org.labkey.api.reports.report.r.view.ROutputView;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
 import org.labkey.api.services.ServiceRegistry;
@@ -96,6 +99,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     private File _tempFolder;
     private boolean _tempFolderPipeline;
+    private static Logger _log = Logger.getLogger(ScriptEngineReport.class);
 
     static
     {
@@ -242,7 +246,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
         if (_tempFolder == null || _tempFolderPipeline != isPipeline)
         {
-            File tempRoot = getTempRoot();
+            File tempRoot = getTempRoot(getDescriptor());
             String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
 
             if (isPipeline)
@@ -278,19 +282,72 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         }
     }
 
-    protected File getTempRoot()
+    /**
+     * Invoked from a maintenance task, clean up temporary report files and folders that are of a
+     * certain age.
+     */
+    public static void scheduledFileCleanup()
+    {
+        final long cutoff = System.currentTimeMillis() - (1000 * 3600 * 24);
+        File root = getTempRoot(ReportService.get().createDescriptorInstance(RReportDescriptor.TYPE));
+
+        for (File file : root.listFiles())
+        {
+            if (file.isDirectory())
+            {
+                _log.info("Deleting temporary report folder: " + file.getPath());
+                deleteReportDir(file, cutoff);
+            }
+            else
+            {
+                // shouldn't be loose files here, so delete anyway
+                file.delete();
+            }
+        }
+
+        // now delete any downloadable files (images and pdf's) that are moved up into the temp folder
+        ROutputView.cleanUpTemp(cutoff);
+    }
+
+    /**
+     * Delete any thread specific subfolders if they are older than the
+     * specified cutoff, and if there are no thread subfolders, delete the parent.
+     * @param dir
+     * @param cutoff
+     */
+    protected static void deleteReportDir(File dir, long cutoff)
+    {
+        if (dir.isDirectory())
+        {
+            boolean empty = true;
+            for (File child : dir.listFiles())
+            {
+                if (child.lastModified() < cutoff)
+                {
+                    FileUtil.deleteDir(child);
+                }
+                else
+                    empty = false;
+            }
+            // delete the parent if there are no subfolders
+            if (empty)
+                FileUtil.deleteDir(dir);
+        }
+    }
+    
+    protected static File getTempRoot(ReportDescriptor descriptor)
     {
         File tempRoot;
         String tempFolderName = null;// = getTempFolder();
-        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
+        boolean isPipeline = BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground));
 
         if (StringUtils.isEmpty(tempFolderName))
         {
             try
             {
-                if (isPipeline && getDescriptor().getContainerId() != null)
+                if (isPipeline && descriptor.getContainerId() != null)
                 {
-                    Container c = ContainerManager.getForId(getDescriptor().getContainerId());
+                    Container c = ContainerManager.getForId(descriptor.getContainerId());
                     PipeRoot root = PipelineService.get().findPipelineRoot(c);
                     tempRoot = root.resolvePath(REPORT_DIR);
 
@@ -577,7 +634,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
         }
     }
-
 
     public static class NADisplayColumn extends DataColumn
     {

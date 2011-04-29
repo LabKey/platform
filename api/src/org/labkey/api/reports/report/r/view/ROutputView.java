@@ -21,6 +21,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.reports.report.r.ParamReplacement;
 
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.File;
@@ -129,5 +130,32 @@ public class ROutputView extends HttpView
             throw new RuntimeException(ioe);
         }
         return null;
+    }
+
+    static final String PREFIX = "RReport";
+
+    public static void cleanUpTemp(final long cutoff)
+    {
+        File tempDir = new File(System.getProperty("java.io.tmpdir"));
+
+        if (tempDir.exists())
+        {
+            File[] filesToDelete = tempDir.listFiles(new FileFilter(){
+                @Override
+                public boolean accept(File file)
+                {
+                    if (!file.isDirectory() && file.getName().startsWith(PREFIX))
+                    {
+                        return file.lastModified() < cutoff;
+                    }
+                    return false;
+                }
+            });
+            
+            for (File file : filesToDelete)
+            {
+                file.delete();
+            }
+        }
     }
 }

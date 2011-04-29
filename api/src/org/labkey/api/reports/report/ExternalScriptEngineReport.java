@@ -322,7 +322,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         if (getDescriptor().getReportId() == null)
             return null;
 
-        File cacheDir = new File(getTempRoot(), "Report_" + FileUtil.makeLegalName(getDescriptor().getReportId().toString()) + File.separator + CACHE_DIR);
+        File cacheDir = new File(getTempRoot(getDescriptor()), "Report_" + FileUtil.makeLegalName(getDescriptor().getReportId().toString()) + File.separator + CACHE_DIR);
         if (!cacheDir.exists())
             cacheDir.mkdirs();
 
