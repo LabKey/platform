@@ -20,19 +20,34 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.*;
+import org.labkey.api.reports.report.AbstractReportIdentifier;
+import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.ReportDB;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportIdentifierConverter;
+import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -41,7 +56,13 @@ import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -69,6 +90,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         ContainerManager.addContainerListener(this);
         ConvertUtils.register(new ReportIdentifierConverter(), ReportIdentifier.class);
         QueryService.get().addQueryListener(this);
+        SystemMaintenance.addTask(new ReportServiceMaintenanceTask());
     }
 
     private DbSchema getSchema()
@@ -587,6 +609,12 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
     }
 
+    @Override
+    public void maintenance()
+    {
+        ScriptEngineReport.scheduledFileCleanup();
+    }
+
     private static class ReportComparator implements Comparator<Report>
     {
         private static final ReportComparator _instance = new ReportComparator();
@@ -602,6 +630,19 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         {
 
             return o1.getDescriptor().getReportId().toString().compareToIgnoreCase(o2.getDescriptor().getReportId().toString());
+        }
+    }
+
+    private static class ReportServiceMaintenanceTask implements SystemMaintenance.MaintenanceTask
+    {
+        public String getMaintenanceTaskName()
+        {
+            return "Report Service Maintenance";
+        }
+
+        public void run()
+        {
+            ReportService.get().maintenance();
         }
     }
 }
