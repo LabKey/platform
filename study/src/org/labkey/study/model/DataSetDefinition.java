@@ -646,6 +646,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _keyPropertyName = keyPropertyName;
     }
 
+    @Override
+    public void save(User user) throws SQLException
+    {
+        StudyManager.getInstance().updateDataSetDefinition(user, this);
+    }
+
     public void setKeyManagementType(@NotNull KeyManagementType type)
     {
         _keyManagementType = type;

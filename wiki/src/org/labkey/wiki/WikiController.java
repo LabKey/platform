@@ -2529,6 +2529,7 @@ public class WikiController extends SpringActionController
             {
                 Wiki wiki = new Wiki(container, new HString("_transform_temp",false));
                 WikiVersion wikiver = new WikiVersion(new HString("_transform_temp",false));
+                wikiver.setCacheContent(false);
 
                 if (null != form.getBody())
                     wikiver.setBody(form.getBody());

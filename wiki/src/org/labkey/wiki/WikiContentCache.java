@@ -33,8 +33,11 @@ public class WikiContentCache
 {
     private static final StringKeyCache<String> CONTENT_CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Wiki Content");
 
-    public static String getHtml(Container c, Wiki wiki, WikiVersion version) throws SQLException
+    public static String getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache) throws SQLException
     {
+        if (!cache)
+            return WikiManager.get().formatWiki(c, wiki, version).getHtml();
+
         String key = c.getId() + "/" + wiki.getName() + "/" + version.getVersion();
         String html = CONTENT_CACHE.get(key);
 

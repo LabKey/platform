@@ -75,13 +75,31 @@ public class StudyUpgradeCode implements UpgradeCode
             @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {
-                upgradeAssayResults(moduleContext.getUpgradeUser(), ContainerManager.getRoot());
+                upgradeAssayResults(moduleContext.getUpgradeUser(), ContainerManager.getRoot(), 11.1);
             }
         });
     }
 
-    /** Recurse through the container tree, upgrading any assay protocols that live there */ 
-    private void upgradeAssayResults(User user, Container c)
+    /** called at 11.10->11.101 */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void renameObjectIdToRowId(final ModuleContext moduleContext)
+    {
+        if (moduleContext.isNewInstall())
+            return;
+
+        // This needs to happen later, after all of the AssayProviders have been registered
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                upgradeAssayResults(moduleContext.getUpgradeUser(), ContainerManager.getRoot(), 11.101);
+            }
+        });
+    }
+
+    /** Recurse through the container tree, upgrading any assay protocols that live there */
+    private void upgradeAssayResults(User user, Container c, double targetVersion)
     {
         try
         {
@@ -91,14 +109,14 @@ public class StudyUpgradeCode implements UpgradeCode
                 if (provider != null)
                 {
                     // Upgrade is AssayProvider dependent
-                    provider.materializeAssayResults(user, protocol);
+                    provider.materializeAssayResults(user, protocol, targetVersion);
                 }
             }
 
             // Recurse through the children
             for (Container child : c.getChildren())
             {
-                upgradeAssayResults(user, child);
+                upgradeAssayResults(user, child, targetVersion);
             }
         }
         catch (SQLException e)

@@ -48,6 +48,7 @@ public class WikiVersion
     private int _createdBy;
     private Date _created;
     private WikiRendererType _rendererType;
+    private boolean _cache = true;
 
     private HString _wikiName;
 
@@ -121,7 +122,7 @@ public class WikiVersion
     // TODO: WikiVersion should know its wiki & container
     public String getHtml(Container c, Wiki wiki) throws SQLException
     {
-        return WikiContentCache.getHtml(c, wiki, this);
+        return WikiContentCache.getHtml(c, wiki, this, _cache);
     }
 
     public HString getTitle()
@@ -203,5 +204,11 @@ public class WikiVersion
             _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
         return WikiManager.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments);
+    }
+
+    // Cache the rendered wiki content by default; set to false to avoid caching
+    public void setCacheContent(boolean cache)
+    {
+        _cache = cache;
     }
 }
