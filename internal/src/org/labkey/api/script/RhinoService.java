@@ -17,6 +17,8 @@ package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -58,6 +60,102 @@ public final class RhinoService
     {
         SandboxContextFactory.initGlobal();
         ServiceRegistry.get().registerService(ScriptService.class, new RhinoFactory());
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void exportsTest() throws Exception
+        {
+            // Load script.
+            String js = "scripts/validationTest/exportTest.js";
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
+            ScriptReference script = svc.compile(r);
+
+            script.invokeFn("doTest");
+        }
+
+        // TODO: Enable once APIs exist to create tables.
+        public void queryTest() throws Exception
+        {
+            // Prepare table
+            // Need APIs
+
+            // Load script.
+            String js = "scripts/validationTest/queryTest.js";
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
+            ScriptReference script = svc.compile(r);
+
+            script.invokeFn("doTest");
+        }
+
+        @Test
+        public void simpleQueryTest() throws Exception
+        {
+            String js = "scripts/validationTest/simpleQueryTest.js";
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
+            ScriptReference script = svc.compile(r);
+
+            script.invokeFn("doTest");
+        }
+
+        @Test
+        public void filterTest() throws Exception
+        {
+            String js = "scripts/validationTest/filterTest.js";
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
+            ScriptReference script = svc.compile(r);
+
+            script.invokeFn("doTest");
+        }
+
+        @Test
+        public void messageTest() throws Exception
+        {
+            String js = "scripts/validationTest/messageTest.js";
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
+            ScriptReference script = svc.compile(r);
+
+            script.invokeFn("doTest");
+        }
+
+        @Test
+        public void actionUrlTest() throws Exception
+        {
+            String js = "scripts/validationTest/actionUrlTest.js";
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
+            ScriptReference script = svc.compile(r);
+
+            script.invokeFn("doTest");
+        }
+
+        @Test
+        public void securityTest() throws Exception
+        {
+            String js = "scripts/validationTest/securityTest.js";
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
+            ScriptReference script = svc.compile(r);
+
+            script.invokeFn("doTest");
+        }
+
+        @Test
+        public void utilsTest() throws Exception
+        {
+            String js = "scripts/validationTest/utilsTest.js";
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
+            ScriptReference script = svc.compile(r);
+
+            script.invokeFn("doTest");
+        }
     }
 }
 

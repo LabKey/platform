@@ -176,7 +176,17 @@ LABKEY.ActionURL = new function()
         */
         getParameters : function(url)
         {
-            return buildParameterMap(url);
+            var paramString;
+
+            if (!url)
+            {
+                return buildParameterMap(url);
+            }
+            if (url.indexOf('?') != -1)
+                paramString = url.substring(url.indexOf('?') + 1, url.length);
+            else
+                paramString = url;
+            return buildParameterMap(paramString);
         },
 
         /**
