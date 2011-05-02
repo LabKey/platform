@@ -655,9 +655,26 @@ public abstract class DisplayColumn extends RenderColumn
             out.write(style);
             out.write("'");
         }
+        String hoverContent = getHoverContent(ctx);
+        if (hoverContent != null)
+        {
+            StringBuilder showHelpDivArgs = new StringBuilder("this, 'Formatting Details',");
+            // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if
+            // it is text, we escape it to make it HTML.  Then, we have to escape it to turn it into a javascript string.
+            // Finally, since this is script inside of an attribute, it must be HTML escaped again.
+            showHelpDivArgs.append(PageFlowUtil.filter(PageFlowUtil.jsString(hoverContent)));
+            showHelpDivArgs.append(", null, 1000");
+            out.append("\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDivDelay(");
+            out.append(showHelpDivArgs).append(");\"");
+        }
         out.write(">");
         renderGridCellContents(ctx, out);
         out.write("</td>");
+    }
+
+    protected String getHoverContent(RenderContext ctx)
+    {
+        return null;
     }
 
     @NotNull /** Always return a non-null string to make it easy to concatenate values */

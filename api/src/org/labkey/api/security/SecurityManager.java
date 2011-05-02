@@ -64,7 +64,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -1044,13 +1043,6 @@ public class SecurityManager
     }
 
 
-    public static void renameGroup(Group group, HString newName, User currentUser)
-    {
-        // renameGroup calls validGroupName(group.getName(), group.getType());
-        renameGroup(group, null==newName?null:newName.getSource(), currentUser);
-    }
-    
-
     public static void renameGroup(Group group, String newName, User currentUser)
     {
         if (group.isSystemGroup())
@@ -1074,15 +1066,6 @@ public class SecurityManager
             throw new RuntimeSQLException(e);
         }
     }
-
-    public static void deleteGroup(String groupPath)
-    {
-        Integer groupId = getGroupId(groupPath);
-        if (groupId == null)
-            return;
-        deleteGroup(groupId);
-    }
-
 
     public static void deleteGroup(Group group)
     {

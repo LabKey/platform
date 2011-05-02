@@ -356,18 +356,36 @@ public class DataColumn extends DisplayColumn
         return super.renderURL(ctx);
     }
 
-    @Override @NotNull
-    protected String getCssStyle(RenderContext ctx)
+    protected String getHoverContent(RenderContext ctx)
+    {
+        ConditionalFormat format = findApplicableFormat(ctx);
+        if (format == null)
+        {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder("Formatting applied because ");
+        String separator = "";
+        for (SimpleFilter.FilterClause clause : format.getSimpleFilter().getClauses())
+        {
+            sb.append(separator);
+            separator = " and ";
+            clause.appendFilterText(sb, new SimpleFilter.ColumnNameFormatter());
+        }
+        sb.append(".");
+        return sb.toString();
+    }
+
+    private ConditionalFormat findApplicableFormat(RenderContext ctx)
     {
         for (ConditionalFormat format : getBoundColumn().getConditionalFormats())
         {
             Object value = ctx.get(_displayColumn.getFieldKey());
             if (format.meetsCriteria(value))
             {
-                return format.getCssStyle();
+                return format;
             }
         }
-        
+
         if (_displayColumn != getBoundColumn())
         {
             // If we're not showing the bound column, as in a lookup, check the display column to see if it has a
@@ -377,11 +395,18 @@ public class DataColumn extends DisplayColumn
                 Object value = ctx.get(_displayColumn.getFieldKey());
                 if (format.meetsCriteria(value))
                 {
-                    return format.getCssStyle();
+                    return format;
                 }
             }
         }
-        return "";
+        return null;
+    }
+
+    @Override @NotNull
+    protected String getCssStyle(RenderContext ctx)
+    {
+        ConditionalFormat format = findApplicableFormat(ctx);
+        return format == null ? "" : format.getCssStyle();
     }
 
     public String getFormattedValue(RenderContext ctx)

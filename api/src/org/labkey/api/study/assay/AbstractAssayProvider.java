@@ -118,19 +118,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: jeckels
@@ -232,6 +220,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     Map<String, Object> dataMap = new HashMap<String, Object>();
 
                     String runLSID = (String)runLSIDColumn.getValue(rs);
+                    String sourceLSID = getSourceLSID(runLSID, publishKey.getDataId());
                     if (sourceContainer == null)
                     {
                         sourceContainer = ExperimentService.get().getExpRun(runLSID).getContainer();
@@ -243,7 +232,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     {
                         dataMap.put(AssayPublishService.DATE_PROPERTY_NAME, publishKey.getDate());
                     }
-                    dataMap.put(AssayPublishService.SOURCE_LSID_PROPERTY_NAME, runLSID);
+                    dataMap.put(AssayPublishService.SOURCE_LSID_PROPERTY_NAME, sourceLSID);
                     dataMap.put(getTableMetadata().getDatasetRowIdPropertyName(), publishKey.getDataId());
                     dataMap.put(AssayPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
@@ -262,6 +251,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+    protected String getSourceLSID(String runLSID, int dataId)
+    {
+        return runLSID;
     }
 
     protected void registerLsidHandler()
@@ -926,15 +920,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return errors;
     }
 
-    protected PropertyDescriptor[] getPropertyDescriptors(Domain domain)
-    {
-        DomainProperty[] domainProperties = domain.getProperties();
-        PropertyDescriptor[] pds = new PropertyDescriptor[domainProperties.length];
-        for (int i = 0; i < domainProperties.length; i++)
-            pds[i] = domainProperties[i].getPropertyDescriptor();
-        return pds;
-    }
-
     protected void resolveExtraRunData(ParticipantVisitResolver resolver,
                                   AssayRunUploadContext context,
                                   Map<ExpMaterial, String> inputMaterials,
@@ -988,19 +973,19 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol)
     {
-        DomainProperty targetStudyDP = null;
+        DomainProperty targetStudyDP;
 
         Domain domain = getResultsDomain(protocol);
         if (domain != null && null != (targetStudyDP = domain.getPropertyByName(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)))
-            return new Pair(ExpProtocol.AssayDomainTypes.Result, targetStudyDP);
+            return new Pair<ExpProtocol.AssayDomainTypes, DomainProperty>(ExpProtocol.AssayDomainTypes.Result, targetStudyDP);
 
         domain = getRunDomain(protocol);
         if (domain != null && null != (targetStudyDP = domain.getPropertyByName(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)))
-            return new Pair(ExpProtocol.AssayDomainTypes.Run, targetStudyDP);
+            return new Pair<ExpProtocol.AssayDomainTypes, DomainProperty>(ExpProtocol.AssayDomainTypes.Run, targetStudyDP);
 
         domain = getBatchDomain(protocol);
         if (domain != null && null != (targetStudyDP = domain.getPropertyByName(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME)))
-            return new Pair(ExpProtocol.AssayDomainTypes.Batch, targetStudyDP);
+            return new Pair<ExpProtocol.AssayDomainTypes, DomainProperty>(ExpProtocol.AssayDomainTypes.Batch, targetStudyDP);
 
         return null;
     }

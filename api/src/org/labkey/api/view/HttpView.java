@@ -24,7 +24,6 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.springframework.beans.PropertyValues;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
@@ -35,7 +34,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.HashMap;
@@ -107,11 +105,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     /**
      * convert org.springframework.web.servlet.View.render(Map) to View.render(ModelBean)
-     * 
-     * @param map
-     * @param request
-     * @param response
-     * @throws Exception
      */
     public final void render(Map map, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
@@ -123,11 +116,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     /**
      * HttpView.render() does not check isVisible() renderInternal() should do that.
-     *
-     * @param model
-     * @param request
-     * @param response
-     * @throws Exception
      */
     public final void render(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
@@ -219,11 +207,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     /**
      * Subclasses usually implement renderInternal(Map, PrintWriter), or they may
      * implement renderInternal(Map, Request, Resposne)
-     *
-     * @param model
-     * @param request
-     * @param response
-     * @throws Exception
      */
     protected void renderInternal(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
@@ -307,8 +290,10 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
 
-    // CAREFUL: You probably should be using currentContext() instead of this.  This context won't represent the
-    // "current" action if, for example, the original action has forwarded somewhere else
+    /**
+     * CAREFUL: You probably should be using currentContext() instead of this.  This context won't represent the
+     * "current" action if, for example, the original action has forwarded somewhere else
+     */
     public static ViewContext getRootContext()
     {
 		ViewStack stack = _viewContexts.get();
@@ -336,8 +321,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     /**
      * This may seem odd, who needs currentModel except the view which can call getModel()?
      * However this is useful for Jsp's which actually subclass JspBase not HttpView
-     *  
-     * @return
      */
     public static Object currentModel()
     {
@@ -449,43 +432,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     /**
      * Only for use in special cases (Global.app, ViewServlet, test harness, etc)
-     *
-     * @param mv
-     * @throws Exception
      */
     public static void include(ModelAndView mv, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         mv.getView().render(mv.getModel(), request, response);
     }
 
-
-    // TODO: This doesn't actually work -- MockHttpServletResponse never calls getOutputStream().  See renderToString(), though.
-    public static void renderToStream(ModelAndView mv, final OutputStream out) throws Exception
-    {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        MockHttpServletResponse response = new MockHttpServletResponse(){
-            @Override
-            public ServletOutputStream getOutputStream()
-            {
-                return new ServletOutputStream(){
-                    @Override
-                    public void write(int b) throws IOException
-                    {
-                        out.write(b);
-                    }
-                };
-            }
-
-            @Override
-            public void setStatus(int status)
-            {
-                if (status != HttpServletResponse.SC_OK)
-                    throw new RuntimeException("Unexpected Status: " + status);
-            }
-        };
-        include(mv, request, response);
-    }
-    
 
     public static String renderToString(ModelAndView mv, HttpServletRequest request) throws Exception
     {
@@ -633,13 +585,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     /**
      * Current view context. Dangerous because some views do not use a ViewContext
      * object for their model and can cause a class cast exception.
-     * @return
      */
     public static ViewContext currentContext()
     {
         // CONSIDER: if we ever have something besides HttpView on stack
         // we may need to iterate til we find the top most HttpView
-        return (HttpView.currentView()).getViewContext();
+        return HttpView.currentView().getViewContext();
     }
 
 

@@ -254,14 +254,14 @@ function getHelpDiv()
     return _helpDiv;
 }
 
-function showHelpDivDelay(elem, titleText, bodyText, width)
+function showHelpDivDelay(elem, titleText, bodyText, width, delay)
 {
     // IE support
     function go()
     {
         showHelpDiv(elem, titleText, bodyText, width);
     }
-    _showTimer = setTimeout(go, 400);
+    _showTimer = setTimeout(go, delay ? delay : 400);
 }
 
 function showHelpDiv(elem, titleText, bodyText, width)
