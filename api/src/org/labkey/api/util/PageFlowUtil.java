@@ -1935,6 +1935,7 @@ public class PageFlowUtil
         ViewContext context = HttpView.currentView().getViewContext();
         Container container = context.getContainer();
         User user = HttpView.currentView().getViewContext().getUser();
+        HttpServletRequest request = context.getRequest();
 
         JSONObject userProps = new JSONObject();
 
@@ -1942,7 +1943,7 @@ public class PageFlowUtil
         userProps.put("displayName", user.getDisplayName(user));
         userProps.put("email", user.getEmail());
         userProps.put("phone", user.getPhone());
-        userProps.put("sessionid", getSessionId(context.getRequest()));
+        userProps.put("sessionid", request == null ? null : getSessionId(request));
 
         userProps.put("canInsert", null != container && container.hasPermission(user, InsertPermission.class));
         userProps.put("canUpdate", null != container && container.hasPermission(user, UpdatePermission.class));
@@ -1977,11 +1978,12 @@ public class PageFlowUtil
 
         json.put("serverName", StringUtils.isNotEmpty(props.getServerName()) ? props.getServerName() : "Labkey Server");
         json.put("versionString", props.getLabkeyVersionString());
-        if ("post".equalsIgnoreCase(context.getRequest().getMethod()))
+        if (request != null)
         {
-            json.put("postParameters", context.getRequest().getParameterMap());
+            if ("post".equalsIgnoreCase(request.getMethod()))
+                json.put("postParameters", request.getParameterMap());
+            json.put("CSRF", CSRFUtil.getExpectedToken(request));
         }
-        json.put("CSRF", CSRFUtil.getExpectedToken(context.getRequest()));
 
         // Include a few server-generated GUIDs/UUIDs
         json.put("uuids", Arrays.asList(GUID.makeGUID(), GUID.makeGUID(), GUID.makeGUID()));

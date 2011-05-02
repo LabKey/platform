@@ -145,6 +145,7 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
         if (request instanceof MockHttpServletRequest)
             ((MockHttpServletRequest)request).setUserPrincipal(user);
+        context.setRequest(request);
 
         // Major hack -- QueryView needs the context pushed onto the ViewContext stack in thread local 
         if (pushViewContext)
