@@ -30,11 +30,9 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlDownloadData(Container c);
     ActionURL urlRunReport(Container c);
     ActionURL urlSaveScriptReportState(Container c);
-    ActionURL urlSaveScriptReport(Container c);
     ActionURL urlAjaxSaveScriptReport(Container c);
     ActionURL urlUpdateRReportState(Container c);
     ActionURL urlDesignChart(Container c);
-    ActionURL urlCreateRReport(Container c);
     ActionURL urlCreateScriptReport(Container c);
     ActionURL urlViewScriptReport(Container c);
     ActionURL urlStreamFile(Container c);

@@ -98,7 +98,7 @@
         var saveDiv = YAHOO.util.Dom.get('saveDialog');
         saveDiv.style.display = "";
 
-        document.getElementById('renderReport').action = '<%=urlProvider(ReportUrls.class).urlSaveScriptReport(c)%>';
+//        document.getElementById('renderReport').action = '<!--urlProvider(ReportUrls.class).urlSaveScriptReport(c)-->';
         var reportName = YAHOO.util.Dom.get('reportName');
 
         if (reportName.value == null || reportName.value.length == 0)

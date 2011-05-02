@@ -29,19 +29,32 @@ import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
-import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
+import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.reports.CrosstabReport;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTrailConfig;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -52,7 +65,19 @@ import java.io.Writer;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class QueryView extends WebPartView<Object>
@@ -431,7 +456,7 @@ public class QueryView extends WebPartView<Object>
                 break;
             }
             case createRReport:
-                RReportBean bean = new RReportBean();
+                ScriptReportBean bean = new ScriptReportBean();
                 bean.setReportType(RReport.TYPE);
                 bean.setSchemaName(_schema.getSchemaName());
                 bean.setQueryName(getSettings().getQueryName());

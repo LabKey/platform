@@ -39,6 +39,7 @@ import java.util.List;
  * User: Karl Lum
  * Date: Feb 5, 2008
  */
+@Deprecated
 public class RunRReportView extends RunScriptReportView
 {
     public static final String TAB_SYNTAX = "Help";
@@ -74,6 +75,8 @@ public class RunRReportView extends RunScriptReportView
 
     public HttpView getTabView(String tabId) throws Exception
     {
+        assert false : "This code should not be executed";
+
         VBox view = new VBox();
         RReportBean form = getReportForm();
 
@@ -93,7 +96,7 @@ public class RunRReportView extends RunScriptReportView
                 {
                     for (ReportService.ViewFactory vf : ReportService.get().getViewFactories())
                     {
-                        view.addView(vf.createView(getViewContext(), form));
+                        //view.addView(vf.createView(getViewContext(), form));
                     }
                 }
 

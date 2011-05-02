@@ -478,7 +478,6 @@ var f_scope<%=uid%> = new (function() {
             updateScript();
 
             LABKEY.setSubmit(true);
-            document.getElementById('renderReport').action = '<%=urlProvider(ReportUrls.class).urlSaveScriptReport(c)%>';
             var reportName = document.getElementById('reportName');
 
             if (reportName.value == null || reportName.value.length == 0)

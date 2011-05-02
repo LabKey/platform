@@ -41,6 +41,8 @@ import java.util.List;
 /**
  * Tabbed view used for executing script engine reports
  */
+@Deprecated
+// Replaced by AjaxRunScriptReportView
 public class RunScriptReportView extends RunReportView
 {
     public static final String TAB_SOURCE = "Source";
@@ -50,6 +52,8 @@ public class RunScriptReportView extends RunReportView
 
     public RunScriptReportView(Report report)
     {
+        assert false : "This code should not be executed";
+
         _report = report;
 
         if (_report != null)

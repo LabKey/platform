@@ -67,9 +67,9 @@ public class ReportUtil
     }
 
     @Deprecated // use getScriptReportDesignerURL instead
-    public static ActionURL getRReportDesignerURL(ViewContext context, RReportBean bean)
+    public static ActionURL getRReportDesignerURL(ViewContext context, ScriptReportBean bean)
     {
-        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateRReport(context.getContainer());
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateScriptReport(context.getContainer());
         url.addParameters(context.getActionURL().getParameters());
         url.replaceParameter(TabStripView.TAB_PARAM, RunScriptReportView.TAB_SOURCE);
 
