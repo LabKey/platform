@@ -74,8 +74,6 @@ import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportDesignerSessionCache;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunRReportView;
-import org.labkey.api.reports.report.view.RunReportView;
-import org.labkey.api.reports.report.view.RunScriptReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -152,12 +150,6 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlSaveScriptReport(Container c)
-        {
-            return new ActionURL(SaveScriptReportAction.class, c);
-        }
-
-        @Override
         public ActionURL urlAjaxSaveScriptReport(Container c)
         {
             return new ActionURL(AjaxSaveScriptReportAction.class, c);
@@ -171,12 +163,6 @@ public class ReportsController extends SpringActionController
         public ActionURL urlDesignChart(Container c)
         {
             return new ActionURL(DesignChartAction.class, c);
-        }
-
-        @Deprecated
-        public ActionURL urlCreateRReport(Container c)
-        {
-            return new ActionURL(CreateScriptReportAction.class, c);
         }
 
         @Override
@@ -540,44 +526,12 @@ public class ReportsController extends SpringActionController
         public boolean handlePost(RReportBean form, BindException errors) throws Exception
         {
             //form.setIsDirty(true);    // TODO: Remove RReport dependencies?
+            assert false : "This code should not be executed";
             Report report = form.getReport();
             if (report instanceof RReport)
                 report.clearCache();
             ReportDesignerSessionCache.updateReportCache(form, false);
             return true;
-        }
-    }
-
-
-    @RequiresNoPermission
-    public class CreateRReportAction extends FormViewAction<RReportBean>
-    {
-        public void validateCommand(RReportBean target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(RReportBean form, boolean reshow, BindException errors) throws Exception
-        {
-            validatePermissions();
-            RunRReportView view = new RunRReportView(form.getReport());
-            view.setErrors(errors);
-
-            return view;
-        }
-
-        public boolean handlePost(RReportBean rReportBean, BindException errors) throws Exception
-        {
-            return true;
-        }
-
-        public ActionURL getSuccessURL(RReportBean rReportBean)
-        {
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("R View Builder");
         }
     }
 
@@ -596,17 +550,7 @@ public class ReportsController extends SpringActionController
             validatePermissions();
             _report = form.getReport();
 
-            // TODO: Remove old view
-            if ("1".equals(getViewContext().getActionURL().getParameter("old")))
-            {
-                RunScriptReportView oldView = new RunScriptReportView(_report);
-                oldView.setErrors(errors);
-                return oldView;
-            }
-            else
-            {
-                return new AjaxScriptReportView(null, form, Mode.create);
-            }
+            return new AjaxScriptReportView(null, form, Mode.create);
         }
 
         public boolean handlePost(ScriptReportBean form, BindException errors) throws Exception
@@ -899,79 +843,6 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresNoPermission
-    public class SaveScriptReportAction extends CreateRReportAction
-    {
-        private Report _report;
-
-        public void validateCommand(RReportBean form, Errors errors)
-        {
-            try
-            {
-                if (getViewContext().getUser().isGuest())
-                {
-                    errors.reject("saveScriptReport", "you must be logged in to be able to save reports");
-                    return;
-                }
-
-                _report = form.getReport();
-
-                // on new reports, check for duplicates
-                if (null == _report.getDescriptor().getReportId())
-                {
-                    if (reportNameExists(_report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(_report.getDescriptor())))
-                    {
-                        errors.reject("saveScriptReport", "There is already a report with the name of: '" + _report.getDescriptor().getReportName() +
-                                "'. Please specify a different name.");
-                        form.setReportName(null);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                errors.reject("saveScriptReport", e.getMessage());
-            }
-        }
-
-        public boolean handlePost(RReportBean form, BindException errors) throws Exception
-        {
-            if (_report != null)
-            {
-                validatePermissions();
-                ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(_report.getDescriptor()), _report);
-            }
-            return true;
-        }
-
-        public ActionURL getSuccessURL(RReportBean form)
-        {
-            if (form.getRedirectUrl() != null)
-                return new ActionURL(form.getRedirectUrl()).addParameter(RunReportView.MSG_PARAM, "Report: " + form.getReportName() + " successfully saved");
-            return null;
-        }
-
-        private boolean reportNameExists(String reportName, String key)
-        {
-            try
-            {
-                ViewContext context = getViewContext();
-
-                for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
-                {
-                    if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
-                        return true;
-                }
-
-                return false;
-            }
-            catch (Exception e)
-            {
-                return false;
-            }
-        }
-    }
-
-
     /**
      * Ajax action to start a pipeline-based R view.
      */
@@ -1095,21 +966,6 @@ public class ReportsController extends SpringActionController
 
             if (report[0] instanceof RReport)
                 AttachmentService.get().download(getViewContext().getResponse(), (RReport)report[0], form.getName());
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class RExpandStateNotifyAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            
             return null;
         }
 

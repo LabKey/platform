@@ -47,6 +47,8 @@ public class StudyRunRReportView extends RunRReportView
 
     public HttpView getTabView(String tabId) throws Exception
     {
+        assert false : "This code should not be executed";
+
         if (TAB_VIEW.equals(tabId))
         {
             VBox view = new VBox();

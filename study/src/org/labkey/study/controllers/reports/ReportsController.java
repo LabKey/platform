@@ -2145,14 +2145,6 @@ public class ReportsController extends BaseStudyController
 
     public static class StudyRReportViewFactory implements ReportService.ViewFactory
     {
-        public HttpView createView(ViewContext context, RReportBean bean)
-        {
-            if (StudyManager.getInstance().getStudy(context.getContainer()) != null)
-                return new StudyRReportView(bean);
-
-            return null;
-        }
-
         @Override
         public String getExtraFormHtml(ViewContext ctx, ScriptReportBean bean)
         {
