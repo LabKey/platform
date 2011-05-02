@@ -59,6 +59,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
@@ -113,6 +114,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1131,7 +1133,8 @@ public class IssuesController extends SpringActionController
     {
         public List<AjaxCompletion> getCompletions(CompleteUserForm form, BindException errors) throws Exception
         {
-            return UserManager.getAjaxCompletions(form.getPrefix(), getViewContext().getUser());
+            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getViewContext().getContainer(), Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
+            return UserManager.getAjaxCompletions(form.getPrefix(), possibleUsers, getViewContext().getUser());
         }
     }
 
@@ -2348,15 +2351,6 @@ public class IssuesController extends SpringActionController
         public void setIssueId(int issueId)
         {
             this.issueId = issueId;
-        }
-    }
-
-
-    public static class RequiredError extends FieldError
-    {
-        RequiredError(String field, String display)
-        {
-            super("issue", field, "", true, new String[] {"NullError"}, new Object[] {display}, "Error: The field: " + display + " is required");
         }
     }
 }

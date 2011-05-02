@@ -206,6 +206,8 @@ public class StatusController extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
+            getContainerCheckAdmin();
+            
             QueryView gridView = new PipelineQueryView(getViewContext(), errors, null, false);
             gridView.disableContainerFilterSelection();
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
