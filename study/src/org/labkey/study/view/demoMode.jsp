@@ -33,7 +33,9 @@
             <td>&nbsp;</td>
         </tr>
         <tr>
-            <td>Demo mode temporarily obscures participant IDs in many pages of the study, making it easier to create screenshots
+            <td><%  if (!demoMode)
+                    {  %>
+                Demo mode temporarily obscures participant IDs in many pages of the study, making it easier to create screenshots
                 or present live demos in situations where participant IDs can't be shown. Note that demo mode will not hide every
                 participant ID throughout the entire study; places where participant IDs may continue to be visible include:
 
@@ -43,7 +45,13 @@
                     <li>Free-form text that happens to include particiapnt IDs, for example, comments or notes fields, PDFs,
                         wikis, or messages
                 </ul>
-                As a result, you should hide your browser's address bar and status bar (most popular browsers support this)
+                As a result, you should<%
+                    }
+                    else
+                    {  %>
+                Remember to<%    
+                    }
+                %>  hide your browser's address bar and status bar (most popular browsers support this)
                 before giving a live demo. You should also plan and practice your demo carefully to avoid exposing participant
                 IDs.
             </td>
