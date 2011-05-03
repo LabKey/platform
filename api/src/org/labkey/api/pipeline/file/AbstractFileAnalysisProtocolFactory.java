@@ -205,7 +205,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         }
         catch (IOException eio)
         {
-            throw new IOException("Failed to load protocol file '" + file + "'.");
+            throw new IOException("Failed to load protocol file '" + file + "'. " + (eio.getMessage() == null ? "" : eio.getMessage()), eio);
         }
         finally
         {
