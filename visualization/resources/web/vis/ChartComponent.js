@@ -135,12 +135,20 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
       firstStrokeColor : "#000",
       outerMargin: 60,
       smallMargin: 10,
-      leftMargin: 90, //Enough for long numbers.
+      leftMargin: 10, // this value will be reset later if the left y-axis is needed
+      rightMargin: 10, // this value will be reset later if the right y-axis is needed
       titleFont: "bold 18px Arial, sans-serif",
       titleHeight:50,
       axisLabelFont: "bold 14px Arial, sans-serif",
       axisLabelHeight:14,
       legendWidth: 120
+    },
+
+    // booleans for which sides of the chart have axes
+    side: {
+        left: false,
+        right: false,
+        bottom: true
     },
 
     //Default style for series. Can be overridden
@@ -175,7 +183,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         }
 
        //Chart width is outer width - left margin - legendWidth - 2 * (margin around legend)
-       this.chartWidth = this.width - this.style.leftMargin - this.style.legendWidth - 2 * this.style.smallMargin;
+       this.chartWidth = this.width - this.style.leftMargin - this.style.rightMargin - this.style.legendWidth - 2 * this.style.smallMargin;
        this.chartHeight = this.height - 2 * this.style.outerMargin;
     },
 
@@ -211,10 +219,23 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
     {
         var style = this.style;
         var start = scale.domain()[0];
+        var end = scale.domain()[1];
+        var sides = this.side;
 
         var rule = this.chartPanel.add(pv.Rule)
                 .data(scale.ticks())
-                .strokeStyle(function (d) { return d > start ? style.strokeColor : style.firstStrokeColor });
+                .strokeStyle(function (d) {
+                    var ss = style.strokeColor;
+                    // add dark stroke for sides that have axis
+                    if(((edge == "right" || edge == "left") && sides.bottom && d == start)) // dark stroke on bottom
+                        ss = style.firstStrokeColor;
+                    else if(edge == "bottom" && sides.left && d == start) // dark stoke on left side
+                        ss = style.firstStrokeColor;
+                    else if(edge == "bottom" && sides.right && d == end) // dark stoke on right side
+                        ss = style.firstStrokeColor;
+            
+                    return ss;
+                });
 
         if (axis.scale == "log")
             rule.visible(function() {
@@ -233,7 +254,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                 angle = 0;
                 break;
             case "right":
-                rule.top(scale);
+                rule.bottom(scale);
                 angle = Math.PI / 2;
                 break;
             case "top":
@@ -260,6 +281,8 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                     .font(this.style.axisLabelFont);
             if (edge == "left")
                 label.left(this.style.smallMargin + this.style.axisLabelHeight);
+            if(edge == "right")
+                label.left(this.width - (2 * this.style.smallMargin) - this.style.legendWidth - this.style.axisLabelHeight);
             if (edge == "bottom")
                 label.bottom(this.style.smallMargin).top(null);
         }
@@ -332,6 +355,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         this.chartPanel = this.rootVisPanel.add(pv.Panel)
                 .top(this.style.outerMargin)
                 .left(this.style.leftMargin)
+                .right(this.style.rightMargin)
                 .width(this.chartWidth)
                 .height(this.chartHeight);
 
@@ -359,9 +383,9 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
      * @param pixels -- number of pixels the scale should map to
      * @param series -- All of the series that are going to be used on this scale.
      * @param getterName -- Name of the function used to get values for the series
-     * @param pixels
+     * @param axisName -- Name of the axis which the scale is being applied (left, right)
      */
-    getScale : function (axis, pixels, series, getterName) {
+    getScale : function (axis, pixels, series, getterName, axisName) {
 
         var domain;
         var scale;
@@ -391,7 +415,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
             return dir < 0 ? Math.floor(x / step) * step : Math.ceil(x/step) * step;
         }
 
-        domain = this.collect(series, getterName);
+        domain = this.collect(series, getterName, axisName);
         //If no data, just return something reasonable
         if (domain.length == 0)
             return pv.Scale.linear(0, 1).range(0, pixels);
@@ -442,9 +466,15 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
      * @param listOfListOfObject [ [{a:1, b:2}, {a:2, b:1}], [{a:3, b:0}, {a:2, b:1}] ]
      * @param getterName Name of function to call on all objects in all lists, such as "getX"
      */
-    collect : function (listOfListOfObject, getterName) {
+    collect : function (listOfListOfObject, getterName, axisName) {
         var all = [];
-        listOfListOfObject.forEach( function (s) { s.data.forEach(function (r) { all.push(s[getterName](r)) }) });
+        listOfListOfObject.forEach( function (s) {
+            s.data.forEach(function (r) {
+                if(!axisName || !s.axis || axisName == s.axis){
+                    all.push(s[getterName](r));
+                }
+            }); 
+        });
         return all;
     },
 
@@ -456,6 +486,20 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
 
             return val == null && makeNullsZero ? 0 : val;
         };
+    },
+
+    // if there is a right axes, set the rightMargin style value
+    setLeftMargin: function() {
+        var additionalMargin = 80;
+        this.style.leftMargin += additionalMargin;
+        this.chartWidth -= additionalMargin;
+    },
+
+    // if there is a right axes, set the rightMargin style value
+    setRightMargin: function() {
+        var additionalMargin = 80;
+        this.style.rightMargin += additionalMargin;
+        this.chartWidth -= additionalMargin;
     }
 });
 
@@ -515,12 +559,33 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
 
    render : function (container, position) {
        LABKEY.vis.LineChart.superclass.render.call(this, container, position);
-       var x = this.getScale(this.axes["x"], this.chartWidth, this.series, "getX");
-       var y = this.getScale(this.axes["y"], this.chartHeight, this.series, "getY");
+
+       // for backwards-compatability, allow the bottom axes name to be "x" and the left to be "y"
+       var bottomAxesName = this.axes["bottom"] ? "bottom" : "x";
+       var leftAxesName = this.axes["left"] ? "left" : "y";
+
+       // if the chart has a left axis, set up the scale for it
+       var left;
+       if(this.axes[leftAxesName]){
+           left = this.getScale(this.axes[leftAxesName], this.chartHeight, this.series, "getY", "left");
+           this.setLeftMargin();
+           this.side.left = true;
+       }
+
+       // if the chart has a right axis, set up the scale for it
+       var right;
+       if(this.axes["right"]){
+           right = this.getScale(this.axes["right"], this.chartHeight, this.series, "getY", "right");
+           this.setRightMargin();
+           this.side.right = true;
+       }
+       
+       var bottom = this.getScale(this.axes[bottomAxesName], this.chartWidth, this.series, "getX");
        var chartPanel = this.addChartPanel();
 
-       this.drawRule(x, "bottom", this.axes["x"]);
-       this.drawRule(y, "left", this.axes["y"]);
+       this.drawRule(bottom, "bottom", this.axes[bottomAxesName]);
+       if(left) this.drawRule(left, "left", this.axes[leftAxesName]);
+       if(right) this.drawRule(right, "right", this.axes["right"]);
 
        //To get z ordering right we add the dataPanel after rules etc have been drawn.
        var dataPanel = this.addDataPanel();
@@ -540,12 +605,12 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
            var color = style.markColor;
            var lines = dataPanel.add(pv.Line)
              .data(s.data)
-            .left(function (d) { return x(s.getX(d))})
-            .bottom(function (d) { return pinMin(y, s.getY(d))})
+            .left(function (d) { return bottom(s.getX(d))})
+            .bottom(function (d) { return pinMin(s.axis == "right" ? right : left, s.getY(d))})
             .strokeStyle(color)
             .lineWidth(style.lineWidth);
             if(!style.shape.hidden){
-               var dots = lines.add(pv.Dot)
+               lines.add(pv.Dot)
                     .size(style.shape.markSize)
                     .fillStyle(color)
                     .title(s.getTitle)
