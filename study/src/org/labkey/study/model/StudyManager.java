@@ -54,6 +54,7 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -63,6 +64,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -88,10 +90,12 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -2883,11 +2887,119 @@ public class StudyManager
     }
 
 
+
+
+
+
+
     public static class StudyTestCase extends Assert
     {
-        @Test
-        public void test()
+        TestContext _context = null;
+        StudyManager _manager = StudyManager.getInstance();
+
+        Container _c = null;
+        Study _study = null;
+
+
+//        @BeforeClass
+        public void createStudy() throws SQLException
         {
+            _context = TestContext.get();
+            Container junit = JunitUtil.getTestContainer();
+
+            String name = GUID.makeHash();
+            _c = ContainerManager.createContainer(junit,name);
+            StudyImpl s = new StudyImpl(_c, "Junit Study");
+            s.setTimepointType(TimepointType.DATE);
+            s.setStartDate(new Date(DateUtil.parseDateTime("2001-01-01")));
+            s.setSubjectColumnName("SubjectID");
+            s.setSubjectNounPlural("Subjects");
+            s.setSubjectNounSingular("Subject");
+            s.setSecurityType(SecurityType.BASIC_WRITE);
+            _study = StudyManager.getInstance().createStudy(_context.getUser(), s);
+        }
+
+
+        DataSetDefinition createDataset() throws Exception
+        {
+            // create DatasetDefinition and empty Domain
+            // probably easier way to do this
+            DataSetDefinition dd = new DataSetDefinition((StudyImpl)_study, 100, "Name", "Label", "Category", null);
+            _manager.createDataSetDefinition(_context.getUser(), _c, 100);
+            String domainURI = StudyManager.getInstance().getDomainURI(_study.getContainer(), null, dd);
+            OntologyManager.ensureDomainDescriptor(domainURI, dd.getName(), _study.getContainer());
+            dd.setTypeURI(domainURI);
+            dd.setEntityId(GUID.makeGUID());
+            StudyManager.getInstance().updateDataSetDefinition(null, dd);
+
+            // define columns
+            Domain domain = dd.getDomain();
+
+            DomainProperty measure = domain.addProperty();
+            measure.setName("Measure");
+            measure.setRangeURI(PropertyType.STRING.getTypeUri());
+
+            DomainProperty value = domain.addProperty();
+            value.setName("Value");
+            value.setRangeURI(PropertyType.DOUBLE.getTypeUri());
+            value.setMvEnabled(true);
+
+            dd.save(_context.getUser());
+            return dd;
+        }
+
+
+        @Test
+        public void testDatasetImportDateBased() throws Throwable
+        {
+            ResultSet rs = null;
+            try
+            {
+                createStudy();
+                DataSetDefinition def = createDataset();
+
+                StudyQuerySchema ss = new StudyQuerySchema((StudyImpl)_study, _context.getUser(), false);
+                TableInfo tt = ss.getTable(def.getName());
+                QueryUpdateService qus = tt.getUpdateService();
+                List<Map<String,Object>> rows = new ArrayList<Map<String,Object>>();
+                Map<String,Object> row = new HashMap<String,Object>();
+                row.put("SubjectId","A1");
+                row.put("Date",new Date(DateUtil.parseDateTime("1/1/2011")));
+                row.put("Measure","Test1");
+                row.put("Value",1.0);
+                rows.add(row);
+                qus.insertRows(
+                        _context.getUser(),
+                        _study.getContainer(),
+                        rows,
+                        new HashMap<String,Object>()
+                );
+                rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
+                assertTrue(rs.next());
+            }
+            catch (Throwable t)
+            {
+                tearDown();
+                throw t;
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
+
+
+//        @AfterClass
+        public void tearDown()
+        {
+            if (null != _study)
+            {
+
+            }
+            if (null != _c)
+            {
+                ContainerManager.delete(_c, _context.getUser());
+            }
         }
     }
 }
