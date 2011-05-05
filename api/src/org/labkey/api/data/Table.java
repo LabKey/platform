@@ -69,6 +69,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -2116,11 +2117,26 @@ public class Table
         sqlf.append(t);
     }
 
-    private static String p(SqlDialect d, boolean useVariable, int i)
+
+
+    private static void appendParameterOrVariable(SQLFragment f, SqlDialect d, boolean useVariable, Parameter p, Map<Parameter,String> names)
     {
-        return !useVariable ? "?" : d.isSqlServer() ? "@p" + i : "_$p" + i;
+        if (!useVariable)
+        {
+            f.append("?");
+            f.add(p);
+        }
+        else
+        {
+            String v = names.get(p);
+            if (null == v)
+            {
+                v =  (d.isSqlServer() ? "@p" : "_$p") + (names.size()+1);
+                names.put(p,v);
+            }
+            f.append(v);
+        }
     }
-    
 
 
     /**
@@ -2153,8 +2169,11 @@ public class Table
         SqlDialect d = tableInsert.getSqlDialect();
         boolean useVariables = false;
 
-        ArrayList<Parameter> parameters = new ArrayList<Parameter>();
+        // helper for generating procedure/function variation
+        Map<Parameter,String> parameterToVariable = new IdentityHashMap<Parameter,String>();
+        
         Timestamp ts = new Timestamp(System.currentTimeMillis());
+        Parameter containerParameter = null;
 
         String comma = "";
         Set done = Sets.newCaseInsensitiveHashSet();
@@ -2185,15 +2204,17 @@ public class Table
 
                 useVariables = d.isPostgreSQL();
                 sqlfDeclare.append("DECLARE " + objectIdVar + " INT;\n");
-                Parameter c = new Parameter("container", parameters.size()+1, JdbcType.VARCHAR);
-                parameters.add(c);
+                containerParameter = new Parameter("container", JdbcType.VARCHAR);
                 String parameterName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
                         ? updatable.getObjectURIColumnName()
                         : "objecturi";
-                Parameter u = new Parameter(parameterName, parameters.size()+1, JdbcType.VARCHAR);
-                parameters.add(u);
+                Parameter uriParameter = new Parameter(parameterName,JdbcType.VARCHAR);
                 sqlfObject.append("INSERT INTO exp.Object (container, objecturi) ");
-                sqlfObject.append("VALUES(" + p(d,useVariables,c.getIndexes()[0]) + "," + p(d,useVariables,u.getIndexes()[0]) + ");\n");
+                sqlfObject.append("VALUES(");
+                appendParameterOrVariable(sqlfObject, d, useVariables, containerParameter, parameterToVariable);
+                sqlfObject.append(",");
+                appendParameterOrVariable(sqlfObject, d, useVariables, uriParameter, parameterToVariable);
+                sqlfObject.append(");\n");
                 sqlfObject.append(setKeyword + objectIdVar + " = (");
                 appendSelectAutoIncrement(d, sqlfObject,DbSchema.get("exp").getTable("object"),"objectid");
                 sqlfObject.append(");\n");
@@ -2206,8 +2227,19 @@ public class Table
 
         SQLFragment cols = new SQLFragment();
         SQLFragment values = new SQLFragment();
+        ColumnInfo col;
 
-        ColumnInfo col = table.getColumn("Owner");
+        col = table.getColumn("Container");
+        if (null != col && null != user)
+        {
+            cols.append(comma).append("Container");
+            if (null == containerParameter)
+                containerParameter = new Parameter("container", JdbcType.VARCHAR);
+            appendParameterOrVariable(values, d, useVariables, containerParameter, parameterToVariable);
+            done.add("Container");
+            comma = ",";
+        }
+        col = table.getColumn("Owner");
         if (null != col && null != user)
         {
             cols.append(comma).append("Owner");
@@ -2273,9 +2305,9 @@ public class Table
             }
             else
             {
-                Parameter p = new Parameter(column, parameters.size()+1);
-                parameters.add(p);
-                values.append(comma).append(p(d,useVariables,p.getIndexes()[0]));
+                Parameter p = new Parameter(column, null);
+                values.append(comma);
+                appendParameterOrVariable(values, d, useVariables, p, parameterToVariable);
             }
             comma = ", ";
         }
@@ -2316,12 +2348,12 @@ public class Table
                 sqlfObjectProperty.append(objectIdVar);
                 sqlfObjectProperty.append(",").append(dp.getPropertyId());
                 sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
-                Parameter mv = new Parameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, parameters.size()+1, JdbcType.VARCHAR);
-                parameters.add(mv);
-                sqlfObjectProperty.append(",").append(p(d,useVariables,mv.getIndexes()[0]));
-                Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), parameters.size()+1, propertyType.getJdbcType());
-                parameters.add(v);
-                sqlfObjectProperty.append(",").append(p(d,useVariables,v.getIndexes()[0]));
+                Parameter mv = new Parameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, null, JdbcType.VARCHAR);
+                sqlfObjectProperty.append(",");
+                appendParameterOrVariable(sqlfObjectProperty, d,useVariables, mv, parameterToVariable);
+                Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), null, propertyType.getJdbcType());
+                sqlfObjectProperty.append(",");
+                appendParameterOrVariable(sqlfObjectProperty, d,useVariables, v, parameterToVariable);
                 sqlfObjectProperty.append(");\n");
             }
         }
@@ -2339,8 +2371,7 @@ public class Table
             script.append(sqlfObject);
             script.append(sqlfInsertInto);
             script.append(sqlfObjectProperty);
-            PreparedStatement stmt = conn.prepareStatement(script.getSQL());
-            ret = new Parameter.ParameterMap(stmt, parameters, updatable.remapSchemaColumns());
+            ret = new Parameter.ParameterMap(conn, script, updatable.remapSchemaColumns());
         }
         else
         {
@@ -2352,11 +2383,13 @@ public class Table
             SQLFragment call = new SQLFragment("SELECT " + fnName + "(");
             final SQLFragment drop = new SQLFragment("DROP FUNCTION " + fnName + "(");
             comma = "";
-            for (Parameter p : parameters)
+            for (Map.Entry<Parameter,String> e : parameterToVariable.entrySet())
             {
+                Parameter p = e.getKey();
+                String variable = e.getValue();
                 String type = d.sqlTypeNameFromSqlType(p.getType().sqlType);
                 fn.append("\n").append(comma);
-                fn.append(p(d,useVariables,p.getIndexes()[0]));
+                fn.append(variable);
                 fn.append(" ");
                 fn.append(type);
                 fn.append(" -- " + p.getName());
@@ -2375,8 +2408,7 @@ public class Table
             fn.append("\nEND;\n$$ LANGUAGE plpgsql;\n");
 
             Table.execute(table.getSchema(), fn);
-            PreparedStatement stmt = conn.prepareStatement(call.getSQL());
-            ret = new Parameter.ParameterMap(stmt, parameters, updatable.remapSchemaColumns());
+            ret = new Parameter.ParameterMap(conn, call, updatable.remapSchemaColumns());
             ret.onClose(new Runnable() { @Override public void run()
             {
                 try
