@@ -126,6 +126,14 @@ public class Parameter
         this(name, null, new int[] { index }, type);
     }
 
+
+    // this constructor should be used with new ParameterMap(SQLFragment) to compute indexes
+    public Parameter(String name, JdbcType type)
+    {
+        this(name, null, null, type);
+    }
+
+
     public Parameter(String name, int[] indexes, JdbcType type)
     {
         this(name, null, indexes, type);
@@ -322,7 +330,7 @@ public class Parameter
 
     public String toString()
     {
-        return "[" + Ints.join(",", _indexes) + (null==_name?"":":"+_name) + "]";
+        return "[" + (null==_indexes?"":Ints.join(",", _indexes)) + (null==_name?"":":"+_name) + "]";
     }
 
 
