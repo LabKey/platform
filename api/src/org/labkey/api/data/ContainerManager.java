@@ -1008,7 +1008,7 @@ public class ContainerManager
     // NOTE: Beware side-effect of changing ACLs and GROUPS if a container changes projects
     //
     // @return true if project has changed (should probably redirect to security page)
-    public static boolean move(Container c, Container newParent)
+    public static boolean move(Container c, Container newParent, User user)
     {
         if (c.isRoot())
             throw new IllegalArgumentException("can't move root container");
@@ -1040,7 +1040,7 @@ public class ContainerManager
             }
 
             Container newContainer = getForId(c.getId());
-            fireMoveContainer(newContainer, oldParent);
+            fireMoveContainer(newContainer, oldParent, user);
         }
         catch (SQLException e)
         {
@@ -1540,6 +1540,8 @@ public class ContainerManager
         void containerCreated(Container c, User user);
 
         void containerDeleted(Container c, User user);
+
+        void containerMoved(Container c, Container oldParent, User user);
     }
 
 
@@ -1639,8 +1641,21 @@ public class ContainerManager
     }
 
 
-    protected static void fireMoveContainer(Container c, Container oldParent)
+    protected static void fireMoveContainer(Container c, Container oldParent, User user)
     {
+        List<ContainerListener> list = getListeners();
+
+        for (ContainerListener cl : list)
+        {
+            try
+            {
+                cl.containerMoved(c, oldParent, user);
+            }
+            catch (Throwable t)
+            {
+                LOG.error("fireMoveContainer", t);
+            }
+        }
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Parent, oldParent, c.getParent());
         firePropertyChangeEvent(evt);
     }
@@ -1959,6 +1974,11 @@ public class ContainerManager
         public void containerDeleted(Container c, User user)
         {
             _containers.remove(c.getParsedPath());
+        }
+
+        @Override
+        public void containerMoved(Container c, Container oldParent, User user)
+        {            
         }
     }
 

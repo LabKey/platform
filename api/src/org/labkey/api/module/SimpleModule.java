@@ -190,6 +190,11 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
         }
     }
 
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {        
+    }
+
     private void purgeSchema(String schemaName, Container c, User user)
     {
         UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);

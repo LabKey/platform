@@ -461,6 +461,56 @@ LABKEY.Security = new function()
         },
 
         /**
+         * Moves an existing container, which may be a folder or workbook to be the subfolder of another folder and/or project.
+         * @param config A configuration object with the following properties
+         * @param {string} config.containerPath The current container path of the container that is going to be moved.
+         * @param {string} config.parent The container path of destination parent.
+         * @param {boolean} [config.addAlias] Add alias of current container path to container that is being moved (defaults to True).
+         * @param {function} [config.success] A reference to a function to call with the API results. This function will
+         * be passed the following parameters:
+         * <ul>
+         * <li><b>object:</b> Empty JavaScript object</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        moveContainer : function(config) {
+
+            var params = {};
+            params.container = config.container || config.containerPath;
+            params.parent = config.parent || config.parentPath;
+            params.addAlias = true;
+
+            if (!config.container) {
+                console.error('\'containerPath\' must be specified for LABKEY.Security.moveContainer invocation.');
+                return;
+            }
+
+            if (!config.parent) {
+                console.error('\'parent\' must be specified for LABKEY.Security.moveContainer invocation.');
+                return;
+            }
+            
+            if (config.addAlias === false) {
+                params.addAlias = false;
+            }
+            
+            return LABKEY.Ajax.request({
+                url : LABKEY.ActionURL.buildURL("core", "moveContainer", params.container),
+                method : 'POST',
+                jsonData : params,
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            });
+        },
+
+        /**
          * Retrieves the full set of folder types that are available on the server.
          * @param config A configuration object with the following properties
          * @param {function} config.success A reference to a function to call with the API results. This

@@ -50,7 +50,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -298,6 +297,11 @@ public class SecurityManager
         public void containerDeleted(Container c, User user)
         {
             deleteGroups(c, null);
+        }
+
+        @Override
+        public void containerMoved(Container c, Container oldParent, User user)
+        {            
         }
 
         public void propertyChange(PropertyChangeEvent evt)

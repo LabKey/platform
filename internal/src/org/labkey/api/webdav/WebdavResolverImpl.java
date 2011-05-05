@@ -150,6 +150,11 @@ public class WebdavResolverImpl implements WebdavResolver
             invalidate(c.getParsedPath().getParent(), false);
         }
 
+        @Override
+        public void containerMoved(Container c, Container oldParent, User user)
+        {            
+        }
+
         public void propertyChange(PropertyChangeEvent pce)
         {
             ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)pce;

@@ -2735,7 +2735,7 @@ public class OntologyManager
             String f = fldr1a.getPath();
             String propId = f + "PD1";
             assertNull(OntologyManager.getPropertyDescriptor(propId, proj2));
-            ContainerManager.move(fldr1a, proj2);
+            ContainerManager.move(fldr1a, proj2, TestContext.get().getUser());
 
             // if demoting a folder
             if (proj1.isRoot())
