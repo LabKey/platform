@@ -255,6 +255,13 @@ public class MicrosoftSqlServer2000Dialect extends SqlDialect
         return "EXEC " + schema.getName() + "." + procedureName + " " + parameters;
     }
 
+    @Override
+    public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
+    {
+        SQLFragment exec = new SQLFragment("EXEC " + schema.getName() + "." + procedureName + " ");
+        exec.append(parameters);
+        return exec;
+    }
 
     @Override
     public String concatenate(String... args)

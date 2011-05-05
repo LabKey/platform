@@ -694,6 +694,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-10.21-10.22.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-10.22-10.23.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-10.23-10.24.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-10.24-10.25.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-11.10-11.11.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.10-9.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.20-9.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.30-10.10.sql -text
@@ -799,6 +800,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-10.21-10.22.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-10.22-10.23.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-10.23-10.24.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-10.24-10.25.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-11.10-11.11.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.10-9.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.20-9.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.30-10.10.sql -text

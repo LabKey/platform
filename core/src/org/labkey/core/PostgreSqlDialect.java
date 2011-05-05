@@ -257,6 +257,13 @@ class PostgreSqlDialect extends SqlDialect
         return "SELECT " + schema.getName() + "." + procedureName + "(" + parameters + ")";
     }
 
+    public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
+    {
+        SQLFragment select = new SQLFragment("SELECT " + schema.getName() + "." + procedureName + "(");
+        select.append(parameters);
+        select.append(")");
+        return select;
+    }
 
     @Override
     public String concatenate(String... args)

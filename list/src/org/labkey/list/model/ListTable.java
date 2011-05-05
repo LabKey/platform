@@ -25,6 +25,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.PropertyColumn;
@@ -48,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ListTable extends FilteredTable implements UpdateableTableInfo
 {
@@ -292,6 +294,19 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
     {
-        return QueryService.get().insertStatement(conn, user, this);
+        return Table.insertStatement(conn, user, this);
+    }
+
+
+    @Override
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+    {
+        throw new UnsupportedOperationException();
     }
 }
