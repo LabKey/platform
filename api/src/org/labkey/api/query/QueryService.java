@@ -17,7 +17,16 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
@@ -27,10 +36,14 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 
 import java.io.File;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 abstract public class QueryService
 {
@@ -113,7 +126,6 @@ abstract public class QueryService
      * clause 
      */
     abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset, boolean forceSort);
-    abstract public Parameter.ParameterMap insertStatement(Connection conn, User user, TableInfo tableInsert) throws SQLException;
 
 
     public interface QueryListener
