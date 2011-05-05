@@ -488,18 +488,18 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         };
     },
 
-    // if there is a right axes, set the rightMargin style value
+    // if there is a left axes, set the leftMargin style value
     setLeftMargin: function() {
-        var additionalMargin = 80;
-        this.style.leftMargin += additionalMargin;
-        this.chartWidth -= additionalMargin;
+        var newMarginVal = 90;
+        this.chartWidth -= (newMarginVal - this.style.leftMargin);
+        this.style.leftMargin = newMarginVal;
     },
 
     // if there is a right axes, set the rightMargin style value
     setRightMargin: function() {
-        var additionalMargin = 80;
-        this.style.rightMargin += additionalMargin;
-        this.chartWidth -= additionalMargin;
+        var newMarginVal = 90;
+        this.chartWidth -= (newMarginVal - this.style.rightMargin);
+        this.style.rightMargin = newMarginVal;
     }
 });
 
