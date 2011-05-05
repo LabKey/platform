@@ -61,6 +61,12 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         }
     }
 
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {
+        String message = c.getName() + " was moved from " + oldParent.getPath() + " to " + c.getParent().getPath();
+        addAuditEvent(user, c, message);
+    }
 
     private void addAuditEvent(User user, Container c, String comment)
     {

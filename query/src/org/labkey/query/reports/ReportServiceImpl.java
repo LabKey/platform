@@ -191,6 +191,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
     }
 
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {        
+    }
+
     public Report createFromQueryString(String queryString) throws Exception
     {
         for (Pair<String, String> param : PageFlowUtil.fromQueryString(queryString))

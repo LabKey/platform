@@ -451,6 +451,12 @@ public class QueryManager
 
         }
 
+        @Override
+        public void containerMoved(Container c, Container oldParent, User user)
+        {
+            
+        }
+
         public void containerDeleted(Container c, User user)
         {
             try

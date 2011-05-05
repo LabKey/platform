@@ -151,6 +151,11 @@ public class MothershipModule extends DefaultModule
                 }
             }
 
+            @Override
+            public void containerMoved(Container c, Container oldParent, User user)
+            {                
+            }
+
             public void propertyChange(PropertyChangeEvent evt)
             {
             }

@@ -238,6 +238,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 }
             }
 
+            @Override
+            public void containerMoved(Container c, Container oldParent, User user)
+            {                
+            }
+
             public void propertyChange(PropertyChangeEvent evt)
             {
                 if (evt.getPropertyName().equals("Parent"))

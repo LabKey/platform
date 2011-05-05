@@ -50,6 +50,11 @@ public class StudyContainerListener implements ContainerManager.ContainerListene
         }
     }
 
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {
+    }
+
     public void propertyChange(PropertyChangeEvent evt)
     {
     }

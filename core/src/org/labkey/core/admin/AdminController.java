@@ -3625,7 +3625,7 @@ public class AdminController extends SpringActionController
                 return new JspView<ManageFoldersForm>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
             }
 
-            ContainerManager.move(c, newParent);
+            ContainerManager.move(c, newParent, getUser());
 
             if (form.isAddAlias())
             {

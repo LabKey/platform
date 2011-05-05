@@ -427,6 +427,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {               
+    }
+
     public void propertyChange(PropertyChangeEvent propertyChangeEvent)
     {
         ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;

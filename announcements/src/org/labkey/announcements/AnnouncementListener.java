@@ -45,6 +45,11 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
     {
     }
 
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {
+    }
+    
     // Note: Attachments are purged by AttachmentServiceImpl.containerDeleted()
     public void containerDeleted(Container c, User user)
     {

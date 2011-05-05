@@ -168,6 +168,11 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineManager.purge(c);
     }
 
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {        
+    }
+
     public void propertyChange(PropertyChangeEvent evt)
     {
     }

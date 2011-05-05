@@ -58,6 +58,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.workbook.*;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -746,6 +747,84 @@ public class CoreController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class MoveContainerAction extends ApiAction<SimpleApiJsonForm>
+    {
+        private Container target;
+        private Container parent;
+        
+        @Override
+        public void validateForm(SimpleApiJsonForm form, Errors errors)
+        {
+            JSONObject object = form.getJsonObject();
+            String targetPath = object.getString("container");
+
+            if (null == targetPath)
+            {
+                errors.reject(ERROR_MSG, "A target container must be specified for move operation.");
+            }
+
+            String pPath = object.getString("parent");
+
+            if (null == pPath)
+            {
+                errors.reject(ERROR_MSG, "A parent container must be specified for move operation.");
+            }
+
+            // Worry about escaping
+            Path path = Path.parse(targetPath);
+            target = ContainerManager.getForPath(path);
+
+            if (null == target)
+            {
+                errors.reject(ERROR_MSG, "Conatiner '" + targetPath + "' does not exist.");
+            }
+
+            if (target.isProject() || target.isRoot())
+            {
+                errors.reject(ERROR_MSG, "Cannot move project/root Containers.");
+            }
+
+            Path parentPath = Path.parse(pPath);
+            parent = ContainerManager.getForPath(parentPath);
+
+            if (null == parent)
+            {
+                errors.reject(ERROR_MSG, "Parent container '" + pPath + "' does not exist.");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            // Prepare aliases
+            JSONObject object = form.getJsonObject();
+            Boolean addAlias = (Boolean) object.get("addAlias");
+            
+            List<String> aliasList = new ArrayList<String>();
+            aliasList.addAll(Arrays.asList(ContainerManager.getAliasesForContainer(target)));
+            aliasList.add(target.getPath());
+            
+            // Perform move
+            ContainerManager.move(target, parent, getViewContext().getUser());
+
+            Container afterMoveTarget = ContainerManager.getForId(target.getId());
+            if (null != afterMoveTarget)
+            {
+                // Save aliases
+                if (addAlias)
+                    ContainerManager.saveAliasesForContainer(afterMoveTarget, aliasList);
+
+                // Prepare response
+                Map<String, Object> response = new HashMap<String, Object>();
+                response.put("success", true);
+                response.put("newPath", afterMoveTarget.getPath());
+                return new ApiSimpleResponse(response);                
+            }
+            return new ApiSimpleResponse();
+        }
+    }
+
     @RequiresPermissionClass(InsertPermission.class)
     public class CreateWorkbookAction extends SimpleViewAction<CreateWorkbookBean>
     {
@@ -973,7 +1052,7 @@ public class CoreController extends SpringActionController
             props.put("id", c.getRowId());
             props.put("text", c.getName());
             props.put("containerPath", c.getPath());
-            props.put("leaf", !c.hasChildren());
+            //props.put("leaf", !c.hasChildren());
             return props;
         }
     }
@@ -1053,6 +1132,8 @@ public class CoreController extends SpringActionController
                 if (_move)
                     props.put("hidden", true);
             }
+
+            props.put("isProject", c.isProject());
 
             if (ContainerManager.getHomeContainer().equals(c) || ContainerManager.getSharedContainer().equals(c) ||
                     ContainerManager.getRoot().equals(c))
@@ -1147,7 +1228,7 @@ public class CoreController extends SpringActionController
             if (newParent.hasChild(wb.getName()))
                 throw new RuntimeException("Can't move workbook '" + wb.getTitle() + "' because another workbook or subfolder in the target folder has the same name.");
 
-            ContainerManager.move(wb, newParent);
+            ContainerManager.move(wb, newParent, getViewContext().getUser());
 
             return new ApiSimpleResponse("moved", true);
         }

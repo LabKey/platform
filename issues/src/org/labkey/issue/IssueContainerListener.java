@@ -38,6 +38,11 @@ public class IssueContainerListener implements ContainerListener
         IssueManager.purgeContainer(c);
     }
 
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {        
+    }
+
     public void propertyChange(PropertyChangeEvent event)
     {
     }

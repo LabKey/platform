@@ -42,6 +42,11 @@ public class SearchContainerListener implements ContainerListener
             ss.deleteContainer(c.getId());
     }
 
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {        
+    }
+
     public void propertyChange(PropertyChangeEvent evt)
     {
     }
