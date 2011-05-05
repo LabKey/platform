@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import com.google.common.primitives.Ints;
 import org.apache.log4j.Logger;
+import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.query.QueryService;
@@ -28,11 +29,14 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.StringExpression;
 
 import java.io.InputStream;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.GregorianCalendar;
+import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -97,7 +101,7 @@ public class Parameter
     private boolean _constant = false;
     
     private PreparedStatement _stmt;
-    private final int[] _indexes;
+    private int[] _indexes;
 
 
     public Parameter(PreparedStatement stmt, int index)
@@ -136,7 +140,7 @@ public class Parameter
     {
         _name = name;
         _uri = uri;
-        _indexes = indexes;
+        _indexes = null==indexes ? new int[0] : indexes;
         _type = type;
     }
 
@@ -334,6 +338,11 @@ public class Parameter
 
         public ParameterMap(PreparedStatement stmt, Collection<Parameter> parameters, Map<String,String> remap)
         {
+            init(stmt, parameters, remap);
+        }
+        
+        private void init(PreparedStatement stmt, Collection<Parameter> parameters, Map<String,String> remap)
+        {
             _map = new CaseInsensitiveHashMap<Parameter>(parameters.size() * 2);
             for (Parameter p : parameters)
             {
@@ -357,6 +366,39 @@ public class Parameter
                 }
             }
             _stmt = stmt;
+        }
+
+
+        /**
+         *  sql bound to constants or Parameters, compute the index array for each named Parameter
+         */
+        public ParameterMap(Connection conn, SQLFragment sql, Map<String,String> remap) throws SQLException
+        {
+            PreparedStatement stmt = conn.prepareStatement(sql.getSQL());
+
+            IdentityHashMap<Parameter, IntegerArray> paramMap = new IdentityHashMap<Parameter,IntegerArray>();
+            List<Object> paramList = sql.getParams();
+            List<Parameter> parameters = new ArrayList<Parameter>(paramList.size());
+
+            for (int i=0 ; i<paramList.size() ; i++)
+            {
+                Object o = paramList.get(i);
+                if (!(o instanceof Parameter))
+                {
+                    new Parameter(stmt, i).setValue(o);
+                    continue;
+                }
+                Parameter p = (Parameter)o;
+                if (!paramMap.containsKey(p))
+                    paramMap.put(p, new IntegerArray());
+                paramMap.get(p).add(i+1);
+            }
+            for (Map.Entry<Parameter, IntegerArray> e : paramMap.entrySet())
+            {
+                e.getKey()._indexes = e.getValue().toArray(null);
+                parameters.add(e.getKey());
+            }
+            init(stmt, parameters, remap);
         }
 
 

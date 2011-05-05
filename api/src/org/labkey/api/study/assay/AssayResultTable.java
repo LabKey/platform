@@ -24,6 +24,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.RawValueColumn;
@@ -335,6 +336,18 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
     {
-        return QueryService.get().insertStatement(conn, user, this);
+        return Table.insertStatement(conn, user, this);
+    }
+
+    @Override
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+    {
+        throw new UnsupportedOperationException();
     }
 }

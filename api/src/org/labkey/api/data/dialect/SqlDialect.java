@@ -319,6 +319,8 @@ public abstract class SqlDialect
 
     public abstract String execute(DbSchema schema, String procedureName, String parameters);
 
+    public abstract SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters);
+
     public abstract String concatenate(String... args);
 
     public abstract SQLFragment concatenate(SQLFragment... args);

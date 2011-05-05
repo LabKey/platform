@@ -1034,8 +1034,21 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
     {
-        return QueryService.get().insertStatement(conn, user, this);
+        return Table.insertStatement(conn, user, this);
     }
+
+    @Override
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+    {
+        return Table.deleteStatement(conn, this);
+    }
+
 
     /** Move an existing column to a different spot in the ordered list */
     public void setColumnIndex(ColumnInfo c, int i)

@@ -15,7 +15,9 @@
  */
 package org.labkey.api.data.dialect;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableChange;
@@ -25,6 +27,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -138,6 +141,102 @@ public abstract class SimpleSqlDialect extends SqlDialect
     public String execute(DbSchema schema, String procedureName, String parameters)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @NotNull
+    @Override
+    protected String getReservedWords()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    protected String getProductName()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public SQLFragment limitRows(SQLFragment sql, int rowCount)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean treatCatalogsAsSchemas()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean supportsOffset()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public String concatenate(String... args)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public SQLFragment concatenate(SQLFragment... args)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean isSystemSchema(String schemaName)
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    protected String getSIDQuery()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public JdbcHelper getJdbcHelper()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override

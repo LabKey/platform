@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -89,5 +90,22 @@ public interface UpdateableTableInfo
     @Nullable
     CaseInsensitiveHashSet skipProperties();
 
+    /** persist one row in the database
+     *
+     * Does not touch files/attachments
+     * Does not check security
+     * Does not do validation (beyond what the database will do)
+     *
+     * The ParameterMap (better name?) should act pretty much like a PreparedStatement with
+     * names parameters (rather than ordinal parameters).  Might actually execute java code
+     * but that shouldn't make a difference to the caller.
+     * 
+     * @param conn
+     * @param user
+     * @return
+     * @throws SQLException
+     */
     Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException;
+    Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException;
+    Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException;
 }
