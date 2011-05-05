@@ -16,16 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
+<%@ page import="org.labkey.api.security.roles.RoleManager"%>
 <%@ page import="org.labkey.api.util.ContainerTreeSelected"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.core.admin.AdminController.*"%>
-<%@ page import="java.util.List"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.security.roles.RoleManager" %>
+<%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm"%>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -33,11 +31,8 @@
     final ViewContext ctx = me.getViewContext();
     final Container c = ctx.getContainer();
     final ActionURL currentUrl = ctx.cloneActionURL();
-    final ContainerTreeSelected ct = new ContainerTreeSelected(c.getProject().getName(), ctx.getUser(), AdminPermission.class, currentUrl, "managefolders");
-    Container parent = c.getParent();
     Container project = c.getProject();
-    List<Container> siblings = parent == null ? null : parent.getChildren();
-    boolean hasSiblings = siblings != null && siblings.size() > 1;
+    final ContainerTreeSelected ct = new ContainerTreeSelected(project.getName(), ctx.getUser(), AdminPermission.class, currentUrl, "managefolders");
 
     ct.setCurrent(c);
     ct.setInitialLevel(1);
@@ -77,16 +72,28 @@
                 dataUrl : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
                 baseParams : {requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>}
             }),
-            root : new Ext.tree.AsyncTreeNode({
+
+            root : {
                 id : <%= PageFlowUtil.jsString(Integer.toString(project.getParent().getRowId()))%>,
+                nodeType : 'async',
                 expanded : true,
                 editable : true,
                 expandable : true,
+                draggable : false,
                 text : <%=PageFlowUtil.jsString(project.getParent().getName())%>
                 <%=project.equals(c) ? ", cls : 'x-tree-node-current'" : ""%>
-            }),
+            },
+
+            listeners : {
+                dblclick       : onDblClick,
+                beforenodedrop : onBeforeNodeDrop,
+                nodedragover   : onNodeDragOver
+            },
+            
             rootVisible: false,
-            enableDrag: false,
+            enableDD: true,
+            containerScroll : true,
+            animate : true,
             useArrows : true,
             autoScroll: true,
             border: true,
@@ -170,6 +177,55 @@
         folderTree.rename.setDisabled(selectedFolder.attributes.notModifiable);
         folderTree.move.setDisabled(selectedFolder.attributes.notModifiable);
         folderTree.remove.setDisabled(selectedFolder.attributes.notModifiable);        
+    }
+
+    function onSuccess(){
+    }
+
+    function onFailure(){
+    }
+
+    function onDblClick(e){
+        var attr = e.attributes;
+        for (var a in attr) {
+            if (!Ext.isObject(attr[a]) && !Ext.isArray(attr[a])) {
+                console.info(a + ": " + attr[a]);
+            }
+        }
+    }
+
+    function onBeforeNodeDrop(e){
+        var s = e.dropNode;
+
+        var d = e.target.leaf ? e.target.parentNode : e.target;
+
+        if (s.parentNode == d) { return false; }
+
+        e.confirmed = undefined;
+        e.oldParent = s.parentNode;
+
+        // Make move request
+        LABKEY.Security.moveContainer({
+            container : s.attributes.containerPath,
+            parent    : d.attributes.containerPath,
+            success   : function(response){
+                if (response.success) {
+                    s.attributes.containerPath = response.newPath;
+                }
+
+                // reload the subtree
+                folderTree.getLoader().load(s);
+
+                onSuccess(response);
+            },
+            failure   : onFailure
+        });
+    }
+
+    // The event is cancelled if the drag is invalid.
+    function onNodeDragOver(e) {
+        if (e.dropNode.attributes.isProject || e.dropNode.attributes.notModifiable) { e.cancel = true; }
+        //console.info("Cancel? " + e.cancel);
     }
 
     Ext.onReady(init);
