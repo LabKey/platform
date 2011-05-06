@@ -38,6 +38,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -62,9 +63,11 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -2917,19 +2920,30 @@ public class StudyManager
             s.setSubjectNounSingular("Subject");
             s.setSecurityType(SecurityType.BASIC_WRITE);
             _study = StudyManager.getInstance().createStudy(_context.getUser(), s);
+
+            MvUtil.assignMvIndicators(_c,
+                    new String[] {"X", "Y", "Z"},
+                    new String[] {"XXX", "YYY", "ZZZ"});
         }
 
 
-        DataSetDefinition createDataset() throws Exception
+        DataSet createDataset() throws Exception
         {
+            _manager.createDataSetDefinition(_context.getUser(), _study.getContainer(), 100);
+            DataSetDefinition dd = _manager.getDataSetDefinition(_study, 100);
+            dd = dd.createMutable();
             // create DatasetDefinition and empty Domain
             // probably easier way to do this
-            DataSetDefinition dd = new DataSetDefinition((StudyImpl)_study, 100, "Name", "Label", "Category", null);
-            _manager.createDataSetDefinition(_context.getUser(), _c, 100);
-            String domainURI = StudyManager.getInstance().getDomainURI(_study.getContainer(), null, dd);
-            OntologyManager.ensureDomainDescriptor(domainURI, dd.getName(), _study.getContainer());
-            dd.setTypeURI(domainURI);
+//            DataSetDefinition dd = new DataSetDefinition((StudyImpl)_study, 100, "Name", "Label", "Category", null);
+//            _manager.createDataSetDefinition(_context.getUser(), _c, 100);
+            dd.setName("Name");
+            dd.setLabel("Label");
+            dd.setCategory("Category");
             dd.setEntityId(GUID.makeGUID());
+            dd.setKeyPropertyName("Measure");
+            String domainURI = StudyManager.getInstance().getDomainURI(_study.getContainer(), null, dd);
+            dd.setTypeURI(domainURI);
+            OntologyManager.ensureDomainDescriptor(domainURI, dd.getName(), _study.getContainer());
             StudyManager.getInstance().updateDataSetDefinition(null, dd);
 
             // define columns
@@ -2937,53 +2951,95 @@ public class StudyManager
 
             DomainProperty measure = domain.addProperty();
             measure.setName("Measure");
+            measure.setPropertyURI(domain.getTypeURI()+"#"+measure.getName());
             measure.setRangeURI(PropertyType.STRING.getTypeUri());
+            measure.setRequired(true);
 
             DomainProperty value = domain.addProperty();
             value.setName("Value");
+            value.setPropertyURI(domain.getTypeURI()+"#"+value.getName());
             value.setRangeURI(PropertyType.DOUBLE.getTypeUri());
             value.setMvEnabled(true);
 
-            dd.save(_context.getUser());
-            return dd;
+            domain.save(_context.getUser());
+
+            return _study.getDataSet(100);
         }
 
 
         @Test
         public void testDatasetImportDateBased() throws Throwable
         {
+            int counter=1;
             ResultSet rs = null;
             try
             {
                 createStudy();
-                DataSetDefinition def = createDataset();
+                DataSet def = createDataset();
 
                 StudyQuerySchema ss = new StudyQuerySchema((StudyImpl)_study, _context.getUser(), false);
                 TableInfo tt = ss.getTable(def.getName());
                 QueryUpdateService qus = tt.getUpdateService();
-                List<Map<String,Object>> rows = new ArrayList<Map<String,Object>>();
-                Map<String,Object> row = new HashMap<String,Object>();
-                row.put("SubjectId","A1");
-                row.put("Date",new Date(DateUtil.parseDateTime("1/1/2011")));
-                row.put("Measure","Test1");
-                row.put("Value",1.0);
-                rows.add(row);
-                qus.insertRows(
-                        _context.getUser(),
-                        _study.getContainer(),
-                        rows,
-                        new HashMap<String,Object>()
-                );
+                assertNotNull(qus);
+
+                Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
+                List rows = new ArrayList();
+
+                // insert one row
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter++), "Value", 1.0));
+                qus.insertRows(_context.getUser(), _study.getContainer(), rows, null);
                 rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                 assertTrue(rs.next());
+
+                //TODO missing built-in field
+
+                // missing required property field
+                rows.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", null, "Value", 1.0));
+                try
+                {
+                    qus.insertRows(_context.getUser(), _study.getContainer(), rows, null);
+                    fail("measure is null");
+                }
+                catch (BatchValidationException x)
+                {
+                    //study:Label: Row 1 does not contain required field Measure.
+                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("does not contain required field Measure"));
+                }
+
+                // legal MV indicator
+                rows.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter++), "Value", "X"));
+                qus.insertRows(_context.getUser(), _study.getContainer(), rows, null);
+
+                // illegal MV indicator
+                rows.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter++), "Value", "N/A"));
+                try
+                {
+                    qus.insertRows(_context.getUser(), _study.getContainer(), rows, null);
+                }
+                catch (BatchValidationException x)
+                {
+                    //study:Label: Could not convert 'N/A' for field Value, should be of type Double
+                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("should be of type Double"));
+                }
+
+            }
+            catch (BatchValidationException x)
+            {
+                List<ValidationException> l = x.getRowErrors();
+                if (null != l && l.size() > 0)
+                    throw l.get(0);
+                throw x;
             }
             catch (Throwable t)
             {
-                tearDown();
                 throw t;
             }
             finally
             {
+                tearDown();
                 ResultSetUtil.close(rs);
             }
         }
