@@ -22,6 +22,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -53,6 +54,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -378,5 +380,37 @@ public class AssayManager implements AssayService.Interface
             task.addResource(r, SearchService.PRIORITY.item);
         }
     }
-}
 
+    @Override
+    /** Recurse through the container tree, upgrading any assay protocols that live there */
+    public void upgradeAssayDefinitions(User user, double targetVersion)
+    {
+        upgradeAssayDefinitions(user, ContainerManager.getRoot(), targetVersion);
+    }
+
+    private void upgradeAssayDefinitions(User user, Container c, double targetVersion)
+    {
+        try
+        {
+            for (ExpProtocol protocol : ExperimentService.get().getExpProtocols(c))
+            {
+                AssayProvider provider = AssayManager.get().getProvider(protocol);
+                if (provider != null)
+                {
+                    // Upgrade is AssayProvider dependent
+                    provider.upgradeAssayDefinitions(user, protocol, targetVersion);
+                }
+            }
+
+            // Recurse through the children
+            for (Container child : c.getChildren())
+            {
+                upgradeAssayDefinitions(user, child, targetVersion);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+}

@@ -2151,8 +2151,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             // Property columns
-            ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, def.getContainer(), null);
-            columns.addAll(Arrays.asList(columnsLookup));
+            columns.addAll(def.getDomain().getColumns(this, getColumn("LSID"), null));
 
             // HACK reset colMap
             colMap = null;

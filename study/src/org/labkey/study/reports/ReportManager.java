@@ -19,7 +19,6 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -41,7 +40,6 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.*;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.sql.ResultSet;
@@ -278,18 +276,16 @@ public class ReportManager implements StudyManager.DataSetListener
 
         // UNDONE: use def.getTableInfo()
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData(study, ctx.getUser());
-        ColumnInfo[] propertyColumns = OntologyManager.getColumnsForType(typeURI, tinfo, "LSID", ctx.getContainer(), ctx.getUser());
-        if (propertyColumns == null || propertyColumns.length == 0)
+        List<ColumnInfo> propertyColumns = def.getDomain().getColumns(tinfo, tinfo.getColumn("LSID"), ctx.getUser());
+        if (propertyColumns == null || propertyColumns.isEmpty())
             throw new IllegalArgumentException("No columns for type: " + typeURI);
 
         ArrayList<ColumnInfo> columns = new ArrayList<ColumnInfo>();
         columns.add(tinfo.getColumn("ParticipantId"));
         columns.add(tinfo.getColumn("SequenceNum"));
-        columns.addAll(Arrays.asList(propertyColumns));
+        columns.addAll(propertyColumns);
 
-        Results rs;
-        rs = Table.selectForDisplay(tinfo, columns, null, filter, null, 0, 0);
-        return rs;
+        return Table.selectForDisplay(tinfo, columns, null, filter, null, 0, 0);
     }
 
 

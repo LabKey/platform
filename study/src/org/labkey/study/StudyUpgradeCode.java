@@ -17,22 +17,18 @@ package org.labkey.study;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.study.assay.AssayManager;
 import org.labkey.study.model.DataSetDefinition;
 
 import javax.servlet.ServletContext;
@@ -75,7 +71,7 @@ public class StudyUpgradeCode implements UpgradeCode
             @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {
-                upgradeAssayResults(moduleContext.getUpgradeUser(), ContainerManager.getRoot(), 11.1);
+                AssayService.get().upgradeAssayDefinitions(moduleContext.getUpgradeUser(), 11.1);
             }
         });
     }
@@ -93,36 +89,9 @@ public class StudyUpgradeCode implements UpgradeCode
             @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {
-                upgradeAssayResults(moduleContext.getUpgradeUser(), ContainerManager.getRoot(), 11.101);
+                AssayService.get().upgradeAssayDefinitions(moduleContext.getUpgradeUser(), 11.101);
             }
         });
-    }
-
-    /** Recurse through the container tree, upgrading any assay protocols that live there */
-    private void upgradeAssayResults(User user, Container c, double targetVersion)
-    {
-        try
-        {
-            for (ExpProtocol protocol : ExperimentService.get().getExpProtocols(c))
-            {
-                AssayProvider provider = AssayManager.get().getProvider(protocol);
-                if (provider != null)
-                {
-                    // Upgrade is AssayProvider dependent
-                    provider.materializeAssayResults(user, protocol, targetVersion);
-                }
-            }
-
-            // Recurse through the children
-            for (Container child : c.getChildren())
-            {
-                upgradeAssayResults(user, child, targetVersion);
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
     }
 
     /**

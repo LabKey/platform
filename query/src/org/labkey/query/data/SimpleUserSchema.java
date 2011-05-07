@@ -197,7 +197,7 @@ public class SimpleUserSchema extends UserSchema
                 for (DomainProperty dp : domain.getProperties())
                 {
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
-                    ColumnInfo propColumn = new PropertyColumn(pd, _objectUriCol, getContainer().getId(), _userSchema.getUser());
+                    ColumnInfo propColumn = new PropertyColumn(pd, _objectUriCol, getContainer(), _userSchema.getUser());
                     if (getColumn(propColumn.getName()) == null)
                     {
                         addColumn(propColumn);

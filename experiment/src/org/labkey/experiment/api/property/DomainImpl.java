@@ -24,6 +24,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
@@ -32,6 +33,7 @@ import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -51,6 +53,7 @@ import org.labkey.experiment.controllers.property.PropertyController;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -429,17 +432,20 @@ public class DomainImpl implements Domain
         return null;
     }
 
-    public ColumnInfo[] getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, User user)
+    public List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, User user)
     {
-        DomainProperty[] domainProperties = getProperties();
-        ColumnInfo[] columns = new ColumnInfo[domainProperties.length];
-        for (int i=0; i<domainProperties.length; i++)
+        List<ColumnInfo> result = new ArrayList<ColumnInfo>();
+        for (DomainProperty property : getProperties())
         {
-            DomainProperty property = domainProperties[i];
             ColumnInfo column = new PropertyColumn(property.getPropertyDescriptor(), lsidColumn, null, user);
-            columns[i] = column;
+            result.add(column);
+            if (property.isMvEnabled())
+            {
+                column.setMvColumnName(column.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                result.addAll(MVDisplayColumnFactory.createMvColumns(column, property.getPropertyDescriptor(), lsidColumn));
+            }
         }
-        return columns;
+        return result;
     }
 
     private DomainDescriptor edit()

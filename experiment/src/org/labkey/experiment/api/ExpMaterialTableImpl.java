@@ -347,7 +347,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         for (DomainProperty dp : ss.getPropertiesForType())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
-            ColumnInfo propColumn = new PropertyColumn(pd, lsidColumn, _schema.getContainer().getId(), _schema.getUser());
+            ColumnInfo propColumn = new PropertyColumn(pd, lsidColumn, _schema.getContainer(), _schema.getUser());
             if (isIdCol(ss, pd))
             {
                 propColumn.setNullable(false);
