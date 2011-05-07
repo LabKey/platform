@@ -74,6 +74,11 @@ public class StudySchema
         return getSchema().getTable("Visit");
     }
 
+    public TableInfo getTableInfoVisitAliases()
+    {
+        return getSchema().getTable("VisitAliases");
+    }
+
     public TableInfo getTableInfoDataSet()
     {
         return getSchema().getTable("DataSet");
@@ -241,5 +246,4 @@ public class StudySchema
     {
         return getSchema().getTable("SampleAvailabilityRule");
     }
-
 }

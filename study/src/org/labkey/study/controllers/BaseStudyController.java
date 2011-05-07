@@ -191,7 +191,8 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _appendManageStudy(NavTree root)
     {
-        try {
+        try
+        {
             Study study = getStudy();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
             root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
@@ -215,7 +216,8 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _appendNavTrail(NavTree root, CohortFilter cohortFilter)
     {
-        try {
+        try
+        {
             Study study = getStudy();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
             ActionURL overviewURL = getStudyOverviewURL();

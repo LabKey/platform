@@ -2319,6 +2319,7 @@ study/resources/schemas/dbscripts/postgresql/study-10.31-10.32.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.32-10.33.sql -text
 study/resources/schemas/dbscripts/postgresql/study-10.39-10.391.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.10-11.101.sql -text
+study/resources/schemas/dbscripts/postgresql/study-11.101-11.11.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.10-9.20.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.20-9.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.201-9.30.sql -text
@@ -2467,6 +2468,7 @@ study/resources/schemas/dbscripts/sqlserver/study-10.31-10.32.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-10.32-10.33.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-10.39-10.391.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.10-11.101.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-11.101-11.11.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.10-9.20.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.20-9.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.201-9.30.sql -text
@@ -2856,6 +2858,7 @@ study/src/org/labkey/study/view/importDataType.jsp -text
 study/src/org/labkey/study/view/importDataset.jsp -text
 study/src/org/labkey/study/view/importStudy.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
+study/src/org/labkey/study/view/importVisitAliases.jsp -text
 study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
 study/src/org/labkey/study/view/manageComments.jsp -text
@@ -2921,6 +2924,7 @@ study/src/org/labkey/study/view/updateQCState.jsp -text
 study/src/org/labkey/study/view/uploadAttachmentReport.jsp -text
 study/src/org/labkey/study/view/uploadVisitMap.jsp -text
 study/src/org/labkey/study/view/viewPreferences.jsp -text
+study/src/org/labkey/study/view/visitImportMapping.jsp -text
 study/src/org/labkey/study/view/visitOrder.jsp -text
 study/src/org/labkey/study/view/visitVisibility.jsp -text
 study/src/org/labkey/study/visitmanager/AbsoluteDateVisitManager.java -text

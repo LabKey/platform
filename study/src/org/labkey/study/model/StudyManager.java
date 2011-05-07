@@ -30,6 +30,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -39,6 +40,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -68,7 +70,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
@@ -600,6 +601,187 @@ public class StudyManager
         VisitImpl visit = new VisitImpl(study.getContainer(), visitId, label, type);
         createVisit(study, user, visit);
     }
+
+
+    public int insertVisitAliases(final Study study, User user, DataLoader loader) throws SQLException, IOException, ValidationException
+    {
+        SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
+        DbScope scope = tinfo.getSchema().getScope();
+
+        // TODO: ETL changes should eliminate need for this thing
+        OntologyManager.UpdateableTableImportHelper helper = new OntologyManager.UpdateableTableImportHelper() {
+            @Override
+            public void afterImportObject(Map<String, Object> map) throws SQLException
+            {
+            }
+
+            @Override
+            public void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target)
+            {
+                target.put("Container", study.getContainer());
+            }
+
+            @Override
+            public String beforeImportObject(Map<String, Object> map) throws SQLException
+            {
+                return null;
+            }
+
+            @Override
+            public void afterBatchInsert(int currentRow) throws SQLException
+            {
+            }
+
+            @Override
+            public void updateStatistics(int currentRow) throws SQLException
+            {
+            }
+        };
+
+        try
+        {
+            // We want delete and bulk insert in the same transaction
+            scope.beginTransaction();
+            Table.delete(tinfo, containerFilter);
+            OntologyManager.insertTabDelimited(tinfo, study.getContainer(), user, helper, loader.load(), null);
+            scope.commitTransaction();
+            return 0;
+        }
+        finally
+        {
+           scope.closeConnection();
+        }
+    }
+
+
+    public void clearVisitAliases(Study study) throws SQLException
+    {
+        SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try
+        {
+            scope.beginTransaction();
+            Table.delete(tinfo, containerFilter);
+            scope.commitTransaction();
+        }
+        finally
+        {
+           scope.closeConnection();
+        }
+    }
+
+
+    public Map<String, Double> getVisitImportMap(Study study, boolean includeStandardMapping) throws SQLException
+    {
+        VisitAlias[] aliases = getVisitAliasesArray(study, null);
+
+        Map<String, Double> map = new CaseInsensitiveHashMap<Double>(aliases.length * 3 / 4);
+
+        for (VisitAlias alias : aliases)
+            map.put(alias.getName(), alias.getSequenceNum());
+
+        if (includeStandardMapping)
+        {
+            // TODO
+        }
+
+        return map;
+    }
+
+
+    // Return the custom import mapping (optinally provided by the admin), ordered by sequence num.  Ordering is nice
+    // for UI and export, but unnecessary for importing data.
+    public Collection<VisitAlias> getCustomVisitImportMapping(Study study) throws SQLException
+    {
+        VisitAlias[] aliases = getVisitAliasesArray(study, new Sort("SequenceNum"));
+        return Arrays.asList(aliases);
+    }
+
+
+    private VisitAlias[] getVisitAliasesArray(Study study, @Nullable Sort sort) throws SQLException
+    {
+        SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
+
+        return Table.select(tinfo, tinfo.getColumns("Name, SequenceNum"), containerFilter, sort, VisitAlias.class);
+    }
+
+
+    // Return the standard import mapping (generated from Visit.Label -> Visit.SequenceNumMin), ordered by sequence
+    // num for display purposes.  Include VisitAliases that won't be used, but mark them as overridden.
+    public Collection<VisitAlias> getStandardVisitImportMapping(Study study) throws SQLException
+    {
+        List<VisitAlias> list = new LinkedList<VisitAlias>();
+        Set<String> labels = new CaseInsensitiveHashSet();
+        Map<String, Double> customMap = getVisitImportMap(study, false);
+
+        Visit[] visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
+
+        for (Visit visit : visits)
+        {
+            String label = visit.getLabel();
+
+            if (null != visit.getLabel())
+            {
+                boolean overridden = labels.contains(label) || customMap.containsKey(label);
+                list.add(new VisitAlias(label, visit.getSequenceNumMin(), overridden));
+
+                if (!overridden)
+                    labels.add(label);
+            }
+        }
+
+        return list;
+    }
+
+
+    public static class VisitAlias
+    {
+        private String _name;
+        private double _sequenceNum;
+        private boolean _overridden;  // For display purposes -- we show all visits and gray out the ones that are not used
+
+        public VisitAlias()
+        {
+        }
+
+        public VisitAlias(String name, double sequenceNum, boolean overridden)
+        {
+            _name = name;
+            _sequenceNum = sequenceNum;
+            _overridden = overridden;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public double getSequenceNum()
+        {
+            return _sequenceNum;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSequenceNum(double sequenceNum)
+        {
+            _sequenceNum = sequenceNum;
+        }
+
+        public boolean isOverridden()
+        {
+            return _overridden;
+        }
+    }
+
 
     public void createCohort(Study study, User user, CohortImpl cohort) throws SQLException
     {
@@ -1739,6 +1921,8 @@ public class StudyManager
             //assert deletedTables.add(StudySchema.getInstance().getTableInfoStudyData(null));
             Table.delete(StudySchema.getInstance().getTableInfoParticipantVisit(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantVisit());
+            Table.delete(StudySchema.getInstance().getTableInfoVisitAliases(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitAliases());
             Table.delete(_tableInfoParticipant, containerFilter);
             assert deletedTables.add(_tableInfoParticipant);
             Table.delete(StudySchema.getInstance().getTableInfoCohort(), containerFilter);

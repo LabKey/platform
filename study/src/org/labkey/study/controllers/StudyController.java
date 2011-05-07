@@ -85,6 +85,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
@@ -257,6 +258,12 @@ public class StudyController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
+    protected NavTree _appendNavTrailVisitAdmin(NavTree root)
+    {
+        _appendManageStudy(root);
+        return root.addChild("Manage " + getVisitLabelPlural(), new ActionURL(ManageVisitsAction.class, getContainer()));
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
@@ -313,7 +320,7 @@ public class StudyController extends BaseStudyController
                 errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
             if (null != form.getDataSetId())
             {
-                DataSet dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId().intValue());
+                DataSet dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId());
                 if (null != dsd)
                     errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDataSetId());
             }
@@ -944,7 +951,7 @@ public class StudyController extends BaseStudyController
 
             if (isAssayDataset)
             {
-                protocol = ExperimentService.get().getExpProtocol(def.getProtocolId().intValue());
+                protocol = ExperimentService.get().getExpProtocol(def.getProtocolId());
                 if (protocol == null)
                     isAssayDataset = false;
             }
@@ -1286,6 +1293,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            _appendNavTrailVisitAdmin(root);
             return root.addChild("Create New Study: Visit Map Upload");
         }
     }
@@ -1573,8 +1581,8 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            return root.addChild("Manage " + getVisitLabelPlural());
+            _appendNavTrailVisitAdmin(root);
+            return root;
         }
 
         private String _jspName() throws ServletException
@@ -1863,8 +1871,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            root.addChild("Manage " + getVisitLabelPlural(), new ActionURL(ManageVisitsAction.class, getContainer()));
+            _appendNavTrailVisitAdmin(root);
             return root.addChild(_v.getLabel());
         }
     }
@@ -1997,8 +2004,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            root.addChild("Manage " + getVisitLabelPlural(), new ActionURL(ManageVisitsAction.class, getContainer()));
+            _appendNavTrailVisitAdmin(root);
             return root.addChild("Create New " + getVisitLabel());
         }
     }
@@ -3003,9 +3009,9 @@ public class StudyController extends BaseStudyController
             _visit.setLabel(getLabel());
 
             if (null != getSequenceNumMax())
-                _visit.setSequenceNumMax(getSequenceNumMax().doubleValue());
+                _visit.setSequenceNumMax(getSequenceNumMax());
             if (null != getSequenceNumMin())
-                _visit.setSequenceNumMin(getSequenceNumMin().doubleValue());
+                _visit.setSequenceNumMin(getSequenceNumMin());
 
             _visit.setCohortId(getCohortId());
             _visit.setVisitDateDatasetId(getVisitDateDatasetId());
@@ -4370,10 +4376,8 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            root.addChild("Manage Visits", new ActionURL(ManageVisitsAction.class, getContainer()));
-            root.addChild("Recalculate Visit Dates");
-            return root;
+            _appendNavTrailVisitAdmin(root);
+            return root.addChild("Recalculate Visit Dates");
         }
     }
 
@@ -4388,10 +4392,8 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            root.addChild("Manage Visits", new ActionURL(ManageVisitsAction.class, getContainer()));
-            root.addChild("Visit Order");
-            return root;
+            _appendNavTrailVisitAdmin(root);
+            return root.addChild("Visit Order");
         }
 
         public void validateCommand(VisitReorderForm target, Errors errors) {}
@@ -4480,10 +4482,8 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            root.addChild("Manage Visits", new ActionURL(ManageVisitsAction.class, getContainer()));
-            root.addChild("Properties");
-            return root;
+            _appendNavTrailVisitAdmin(root);
+            return root.addChild("Properties");
         }
 
         public void validateCommand(VisitPropertyForm target, Errors errors) {}
@@ -5289,9 +5289,7 @@ public class StudyController extends BaseStudyController
                     schema.getScope().rollbackTransaction();
             }
 
-            if (errors.hasErrors())
-                return false;
-            return true;
+            return !errors.hasErrors();
         }
 
         public ActionURL getSuccessURL(StudySnapshotForm queryForm)
@@ -6589,6 +6587,99 @@ public class StudyController extends BaseStudyController
         public void setMode(boolean mode)
         {
             this.mode = mode;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ShowVisitImportMappingAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<ImportMappingBean>("/org/labkey/study/view/visitImportMapping.jsp", new ImportMappingBean(getStudy()));
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendNavTrailVisitAdmin(root);
+            return root.addChild("Visit Import Mapping");
+        }
+    }
+
+
+    public static class ImportMappingBean
+    {
+        private final Collection<StudyManager.VisitAlias> _customMapping;
+        private final Collection<StudyManager.VisitAlias> _standardMapping;
+
+        public ImportMappingBean(Study study) throws SQLException
+        {
+            _customMapping = StudyManager.getInstance().getCustomVisitImportMapping(study);
+            _standardMapping = StudyManager.getInstance().getStandardVisitImportMapping(study);
+        }
+
+        public Collection<StudyManager.VisitAlias> getCustomMapping()
+        {
+            return _customMapping;
+        }
+
+        public Collection<StudyManager.VisitAlias> getStandardMapping()
+        {
+            return _standardMapping;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ImportVisitAliasesAction extends FormViewAction<VisitAliasesForm>
+    {
+        @Override
+        public URLHelper getSuccessURL(VisitAliasesForm form)
+        {
+            return new ActionURL(ShowVisitImportMappingAction.class, getContainer());
+        }
+
+        @Override
+        public void validateCommand(VisitAliasesForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(VisitAliasesForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/study/view/importVisitAliases.jsp");
+        }
+
+        @Override
+        public boolean handlePost(VisitAliasesForm form, BindException errors) throws Exception
+        {
+            StudyManager.getInstance().insertVisitAliases(getStudy(), getUser(), new TabLoader(form.getTsv()));
+            return true;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendNavTrailVisitAdmin(root);
+            return root.addChild("Import Visit Alises");
+        }
+    }
+
+
+    public static class VisitAliasesForm
+    {
+        private String _tsv;
+
+        public String getTsv()
+        {
+            return _tsv;
+        }
+
+        public void setTsv(String tsv)
+        {
+            _tsv = tsv;
         }
     }
 }

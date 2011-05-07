@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.study.controllers.StudyController.*" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <table>
 <%
@@ -25,26 +26,30 @@
 %>
     <tr>
         <td>Visit ordering affects the study view, reports, and cohort determinations.</td>
-        <td><%= textLink("Change Visit Order", "visitOrder.view")%></td>
+        <td><%= textLink("Change Visit Order", VisitOrderAction.class)%></td>
     </tr>
     <tr>
         <td>Visit visibility and label can be changed.</td>
-        <td><%= textLink("Change Properties", "visitVisibility.view")%></td>
+        <td><%= textLink("Change Properties", VisitVisibilityAction.class)%></td>
     </tr>
 <%
     }
 %>
     <tr>
         <td>New visits can be defined for this study at any time.</td>
-        <td><%= textLink("Create New Visit", "createVisit.view")%></td>
+        <td><%= textLink("Create New Visit", CreateVisitAction.class)%></td>
     </tr>
     <tr>
         <td>Recalculate visit dates</td>
-        <td><%= textLink("Recalculate Visit Dates", "updateParticipantVisits.view")%></td>
+        <td><%= textLink("Recalculate Visit Dates", UpdateParticipantVisitsAction.class)%></td>
     </tr>
     <tr>
         <td>Import a visit map to quickly define a study</td>
-        <td><%= textLink("Import Visit Map", "uploadVisitMap.view") %></td>
+        <td><%= textLink("Import Visit Map", UploadVisitMapAction.class) %></td>
+    </tr>
+    <tr>
+        <td>Visit import mapping allows data containing visit names instead of numbers</td>
+        <td><%= textLink("Visit Import Mapping", ShowVisitImportMappingAction.class) %></td>
     </tr>
 
 </table>

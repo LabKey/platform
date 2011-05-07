@@ -140,6 +140,14 @@
       </ns:column>
     </ns:columns>
   </ns:table>
+  <ns:table tableName="VisitAliases" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="SequenceNum"/>
+    </ns:columns>
+  </ns:table>
   <ns:table tableName="Visit" tableDbType="TABLE">
     <ns:description>Contains one row per defined visit in a study.</ns:description>
     <ns:columns>
