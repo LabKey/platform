@@ -32,17 +32,16 @@ import java.util.Map;
 public class PropertyColumn extends LookupColumn
 {
     protected PropertyDescriptor _pd;
-    protected String _containerId;
+    protected Container _container;
     protected boolean _mvIndicator = false;
     protected boolean _parentIsObjectId = false;
 
-    public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, String containerId, User user)
+    public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, Container container, User user)
     {
-        this(pd, tinfoParent.getColumn(parentLsidColumn), containerId, user);
+        this(pd, tinfoParent.getColumn(parentLsidColumn), container, user);
     }
 
-
-    public PropertyColumn(PropertyDescriptor pd, ColumnInfo lsidColumn, String containerId, User user)
+    public PropertyColumn(PropertyDescriptor pd, ColumnInfo lsidColumn, Container container, User user)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
         setName(pd.getName());
@@ -52,7 +51,7 @@ public class PropertyColumn extends LookupColumn
         setSqlTypeName(getPropertySqlType(pd,OntologyManager.getSqlDialect()));
 
         _pd = pd;
-        _containerId = containerId;
+        _container = container;
     }
 
 
@@ -151,27 +150,8 @@ public class PropertyColumn extends LookupColumn
 
     private static String getPropertySqlType(PropertyDescriptor pd, SqlDialect dialect)
     {
-        return dialect.sqlTypeNameFromSqlType(getPropertySqlTypeInt(pd));
+        return dialect.sqlTypeNameFromSqlType(pd.getPropertyType().getSqlType());
     }
-
-
-    private static int getPropertySqlTypeInt(PropertyDescriptor pd)
-    {
-        return pd.getPropertyType().getSqlType();
-    }
-
-
-    private String getPropertySqlType(SqlDialect dialect)
-    {
-        return dialect.sqlTypeNameFromSqlType(getPropertySqlTypeInt());
-    }
-
-    
-    private int getPropertySqlTypeInt()
-    {
-        return _pd.getPropertyType().getSqlType();
-    }
-
 
     static private String getPropertyCol(PropertyDescriptor pd)
     {
@@ -223,18 +203,18 @@ public class PropertyColumn extends LookupColumn
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         SQLFragment strJoinNoContainer = super.getJoinCondition(tableAliasName);
-        if (_containerId == null)
+        if (_container == null)
         {
             return strJoinNoContainer;
         }
 
-        strJoinNoContainer.append(" AND " + tableAliasName + ".Container = '" + _containerId + "'");
+        strJoinNoContainer.append(" AND " + tableAliasName + ".Container = '" + _container.getId() + "'");
         return strJoinNoContainer;
     }
 
     public String getTableAlias(String baseAlias)
     {
-        if (_containerId == null)
+        if (_container == null)
             return super.getTableAlias(baseAlias);
         return super.getTableAlias(baseAlias) + "_C";
     }

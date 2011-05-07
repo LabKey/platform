@@ -729,7 +729,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         if (controller == null)
         {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server controller registered to handle request: " + url.getPageFlow());
             return;
         }
 

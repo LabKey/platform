@@ -25,6 +25,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 
+import java.util.List;
 import java.util.Map;
 
 public interface Domain extends IPropertyType
@@ -49,7 +50,7 @@ public interface Domain extends IPropertyType
 
     DomainProperty addProperty();
 
-    ColumnInfo[] getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, User user);
+    List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, User user);
 
     void delete(User user) throws DomainNotFoundException;
     void save(User user) throws ChangePropertyDescriptorException;

@@ -1697,5 +1697,5 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new DefaultDataTransformer();
     }
 
-    public void materializeAssayResults(User user, ExpProtocol protocol, double targetVersion) throws SQLException {}
+    public void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException {}
 }

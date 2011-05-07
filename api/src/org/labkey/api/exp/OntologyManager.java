@@ -32,7 +32,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.Parameter;
@@ -480,9 +479,9 @@ public class OntologyManager
 
     public interface ImportHelper
 	{
-		/** return LSID for new or existing Object
-         *
+		/**
          * may modify map
+         * @return LSID for new or existing Object
          */
 		String beforeImportObject(Map<String, Object> map) throws SQLException;
 
@@ -1950,16 +1949,15 @@ public class OntologyManager
             {
                 ret.put(dd.getDomainURI(), dd);
             }
-        }
-
-        if (!project.equals(ContainerManager.getSharedContainer()))
-        {
-            DomainDescriptor[] dds = Table.executeQuery(getExpSchema(), sql, new Object[] { ContainerManager.getSharedContainer().getId()}, DomainDescriptor.class);
-            for (DomainDescriptor dd : dds)
+            if (!project.equals(ContainerManager.getSharedContainer()))
             {
-                if (!ret.containsKey(dd.getDomainURI()))
+                DomainDescriptor[] projectDDs = Table.executeQuery(getExpSchema(), sql, new Object[] { ContainerManager.getSharedContainer().getId()}, DomainDescriptor.class);
+                for (DomainDescriptor dd : projectDDs)
                 {
-                    ret.put(dd.getDomainURI(), dd);
+                    if (!ret.containsKey(dd.getDomainURI()))
+                    {
+                        ret.put(dd.getDomainURI(), dd);
+                    }
                 }
             }
         }
@@ -2064,36 +2062,6 @@ public class OntologyManager
 				getExpSchema().getScope().closeConnection();
 		}
 	}
-
-
-	public static ColumnInfo[] getColumnsForType(String typeURI, TableInfo parentTable, String parentCol, Container c, User user)
-	{
-		PropertyDescriptor[] pdArray = getPropertiesForType(typeURI, c);
-		if (null == pdArray)
-			return null;
-
-		List<ColumnInfo> cols = new ArrayList<ColumnInfo>(pdArray.length);
-		for (PropertyDescriptor prop : pdArray)
-        {
-			ColumnInfo col = new PropertyColumn(prop, parentTable, parentCol, c.getId(), user);
-            cols.add(col);
-            if (prop.isMvEnabled())
-            {
-                col.setMvColumnName(col.getName() + MvColumn.MV_INDICATOR_SUFFIX);
-                ColumnInfo[] qcColumns = MVDisplayColumnFactory.createMvColumns(col, prop, parentTable, parentCol);
-                cols.addAll(Arrays.asList(qcColumns));
-            }
-        }
-
-		return cols.toArray(new ColumnInfo[cols.size()]);
-	}
-
-
-	public static ColumnInfo[] getColumnsForType(String typeURI, TableInfo parentTable, Container c, User user)
-	{
-		return getColumnsForType(typeURI, parentTable, "LSID", c, user);
-	}
-
 
 	public static PropertyDescriptor insertOrUpdatePropertyDescriptor(PropertyDescriptor pd, DomainDescriptor dd, int sortOrder)
 			throws SQLException
@@ -2226,15 +2194,6 @@ public class OntologyManager
 		propDescCache.put(getCacheKey(pd), pd);
 		return pd;
 	}
-
-
-    public static DomainDescriptor insertDomainDescriptor(DomainDescriptor dd) throws SQLException
-    {
-        assert dd.getDomainId() == 0;
-        dd = Table.insert(null, getTinfoDomainDescriptor(), dd);
-        domainDescCache.put(getCacheKey(dd),dd);
-        return dd;
-    }
 
 
     public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd) throws SQLException
@@ -2722,7 +2681,7 @@ public class OntologyManager
 
             Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa");
             Container fldr1b = ContainerManager.ensureContainer(p1Path + "Fb");
-            Container fldr2c = ContainerManager.ensureContainer(p2Path + "Fc");
+            ContainerManager.ensureContainer(p2Path + "Fc");
             Container fldr1aa = ContainerManager.ensureContainer(p1Path + "Fa/Faa");
             Container fldr1aaa = ContainerManager.ensureContainer(p1Path + "Fa/Faa/Faaa");
 
@@ -2731,7 +2690,7 @@ public class OntologyManager
             defineCrossFolderProperties(fldr1aa, fldr1b);
             defineCrossFolderProperties(fldr1aaa, fldr1b);
 
-            String p = fldr1a.getProject().getPath();
+            fldr1a.getProject().getPath();
             String f = fldr1a.getPath();
             String propId = f + "PD1";
             assertNull(OntologyManager.getPropertyDescriptor(propId, proj2));
@@ -2998,7 +2957,6 @@ public class OntologyManager
             String domURIa = new Lsid("Junit", "DD", "Domain1").toString();
             String strPropURI = new Lsid("Junit", "PD", "Domain1.stringProp").toString();
             String intPropURI = new Lsid("Junit", "PD", "Domain1.intProp").toString();
-            String datePropURI = new Lsid("Junit", "PD", "Domain1.dateProp").toString();
 
             DomainDescriptor dd = ensureDomainDescriptor(domURIa, "Domain1", c);
             assertNotNull(dd);

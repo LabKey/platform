@@ -63,6 +63,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
         combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory());
 
         ColumnInfo wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
+        wrappedNumberColumn.setPropertyURI(null);
         wrappedNumberColumn.setLabel(caption + " " + NUMBER_COLUMN_SUFFIX);
 
         SQLFragment inRangeSQL = new SQLFragment("CASE WHEN ");

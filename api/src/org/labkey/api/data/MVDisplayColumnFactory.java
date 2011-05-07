@@ -25,7 +25,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -51,19 +53,13 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
         return new MVDisplayColumn(colInfo, qcColumn);
     }
 
-    public static ColumnInfo[] createMvColumns(ColumnInfo valueColumn, PropertyDescriptor pd, TableInfo table, String parentLsidColumn)
+    public static List<ColumnInfo> createMvColumns(ColumnInfo valueColumn, PropertyDescriptor pd, ColumnInfo lsidColumn)
     {
-        ColumnInfo mvColumn = new MvColumn(pd, table, parentLsidColumn);
-
-        ColumnInfo rawValueCol = new RawValueColumn(table, valueColumn);
-
+        ColumnInfo mvColumn = new MvColumn(pd, lsidColumn);
+        ColumnInfo rawValueCol = new RawValueColumn(lsidColumn.getParentTable(), valueColumn);
         valueColumn.setDisplayColumnFactory(new MVDisplayColumnFactory());
 
-        ColumnInfo[] result = new ColumnInfo[2];
-        result[0] = mvColumn;
-        result[1] = rawValueCol;
-
-        return result;
+        return Arrays.asList(mvColumn, rawValueCol);
     }
     
 

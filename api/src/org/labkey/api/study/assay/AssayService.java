@@ -100,5 +100,7 @@ public class AssayService
         public ExpExperiment findBatch(ExpRun run);
 
         public void indexAssays(SearchService.IndexTask task, Container c);
+
+        void upgradeAssayDefinitions(User upgradeUser, double targetVersion);
     }
 }

@@ -2174,9 +2174,10 @@ public class Table
         
         Timestamp ts = new Timestamp(System.currentTimeMillis());
         Parameter containerParameter = null;
+        Parameter objecturiParameter = null;
 
         String comma = "";
-        Set done = Sets.newCaseInsensitiveHashSet();
+        Set<String> done = Sets.newCaseInsensitiveHashSet();
 
         String objectIdVar = d.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
         String setKeyword = d.isPostgreSQL() ? "" : "SET ";
@@ -2208,12 +2209,12 @@ public class Table
                 String parameterName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
                         ? updatable.getObjectURIColumnName()
                         : "objecturi";
-                Parameter uriParameter = new Parameter(parameterName,JdbcType.VARCHAR);
+                objecturiParameter = new Parameter(parameterName,JdbcType.VARCHAR);
                 sqlfObject.append("INSERT INTO exp.Object (container, objecturi) ");
                 sqlfObject.append("VALUES(");
                 appendParameterOrVariable(sqlfObject, d, useVariables, containerParameter, parameterToVariable);
                 sqlfObject.append(",");
-                appendParameterOrVariable(sqlfObject, d, useVariables, uriParameter, parameterToVariable);
+                appendParameterOrVariable(sqlfObject, d, useVariables, objecturiParameter, parameterToVariable);
                 sqlfObject.append(");\n");
                 sqlfObject.append(setKeyword + objectIdVar + " = (");
                 appendSelectAutoIncrement(d, sqlfObject,DbSchema.get("exp").getTable("object"),"objectid");
@@ -2302,6 +2303,11 @@ public class Table
             if (column.getName().equalsIgnoreCase(objectIdColumnName))
             {
                 values.append(comma).append(objectIdVar);
+            }
+            else if (column.getName().equalsIgnoreCase(updatable.getObjectURIColumnName()) && null != objecturiParameter)
+            {
+                values.append(comma);
+                appendParameterOrVariable(values, d, useVariables, objecturiParameter, parameterToVariable);
             }
             else
             {
@@ -2395,6 +2401,7 @@ public class Table
                 fn.append(" -- " + p.getName());
                 drop.append(comma).append(type);
                 call.append(comma).append("?");
+                call.add(p);
                 comma = ",";
             }
             fn.append("\n) RETURNS void AS $$\n");
@@ -2417,7 +2424,7 @@ public class Table
                 }
                 catch (SQLException x)
                 {
-                    Category.getInstance(Table.class).error("Error dropping temp function", x);
+                    Logger.getLogger(Table.class).error("Error dropping temp function", x);
                 }
             }});
         }

@@ -35,7 +35,7 @@
     </tr>
     <tr>
         <td></td>
-        <td><div id="ThawListDiv-TextArea" style="display:<%= textType ? "block" : "none" %>;"><textarea name="<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %>" rows="4" cols="50"><%= h(ctx.get(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME)) %></textarea></div></td>
+        <td><div id="ThawListDiv-TextArea" style="display:<%= textType ? "block" : "none" %>;"><textarea id=<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %> name="<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %>" rows="4" cols="50"><%= h(ctx.get(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME)) %></textarea></div></td>
     </tr>
     <tr>
         <td><input type="radio" name="<%= ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME %>" <%= listType ? "checked='true'" : "" %> value="<%= ThawListResolverType.LIST_NAMESPACE_SUFFIX %>" onClick="document.getElementById('ThawListDiv-List').style.display='block'; document.getElementById('ThawListDiv-TextArea').style.display='none';"></td>
@@ -53,3 +53,8 @@
         </td>
     </tr>
 </table>
+
+<script type="text/javascript">
+    // Allow tabs in the TSV text area
+    Ext.EventManager.on('<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %>', 'keydown', handleTabsInTextArea);
+</script>

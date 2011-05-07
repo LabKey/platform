@@ -99,7 +99,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     @Override
     public abstract FilteredTable createDataTable(AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns);
 
-    public void materializeAssayResults(User user, ExpProtocol protocol, double targetVersion) throws SQLException
+    public void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException
     {
         // Due to a bug in the original implementation, this upgrade is handled in two separate pieces.
         if (targetVersion == 11.1)
