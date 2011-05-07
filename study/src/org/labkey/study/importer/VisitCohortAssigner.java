@@ -70,7 +70,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
             try
             {
-                records = vmFormat.getReader().getRecords(contents);
+                records = vmFormat.getReader(contents).getVisitMapRecords();
             }
             catch (Exception e)
             {

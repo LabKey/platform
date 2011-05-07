@@ -27,16 +27,23 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.*;
+import org.labkey.api.study.Site;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.GUID;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.study.samples.settings.RepositorySettings;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: brittp

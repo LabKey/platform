@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.core.admin.AdminController.DeleteCustomStylesheetAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.ResetFaviconAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.ResetLogoAction" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -50,7 +52,7 @@
     <td>
         <% if (null != bean.customLogo)
         { %>
-            Currently using a custom logo. <%=textLink("reset logo to default", "resetLogo.view")%>
+            Currently using a custom logo. <%=textLink("reset logo to default", ResetLogoAction.class)%>
         <% } else { %>
             Currently using the default logo.
         <% } %>
@@ -66,7 +68,7 @@
     <td>
         <% if (null != bean.customFavIcon)
         { %>
-            Currently using a custom favorite icon. <%=textLink("reset favorite icon to default", "resetFavicon.view")%>
+            Currently using a custom favorite icon. <%=textLink("reset favorite icon to default", ResetFaviconAction.class)%>
         <% } else { %>
             Currently using the default favorite icon.
         <% } %>
@@ -82,7 +84,7 @@
     <td>
         <% if (null != bean.customStylesheet)
         { %>
-            Currently using a custom stylesheet. <%=textLink("delete custom stylesheet", "deleteCustomStylesheet.view")%>
+            Currently using a custom stylesheet. <%=textLink("delete custom stylesheet", DeleteCustomStylesheetAction.class)%>
         <% } else { %>
             No custom stylesheet.
         <% } %>

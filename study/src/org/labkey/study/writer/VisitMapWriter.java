@@ -17,11 +17,11 @@ package org.labkey.study.writer;
 
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * User: adam
@@ -35,7 +35,7 @@ class VisitMapWriter implements InternalStudyWriter
         return "Visit Map";
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException, SQLException
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return;
@@ -43,12 +43,12 @@ class VisitMapWriter implements InternalStudyWriter
         if (ctx.useOldFormats())
         {
             DataFaxVisitMapWriter writer = new DataFaxVisitMapWriter();
-            writer.write(study.getVisits(Visit.Order.DISPLAY), ctx, vf);
+            writer.write(study, ctx, vf);
         }
         else
         {
             XmlVisitMapWriter writer = new XmlVisitMapWriter();
-            writer.write(study.getVisits(Visit.Order.DISPLAY), ctx, vf);
+            writer.write(study, ctx, vf);
         }
     }
 }

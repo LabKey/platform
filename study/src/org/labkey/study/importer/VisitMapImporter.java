@@ -19,6 +19,7 @@ package org.labkey.study.importer;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -50,9 +51,9 @@ public class VisitMapImporter
     public enum Format
     {
         DataFax {
-            public VisitMapReader getReader()
+            public VisitMapReader getReader(String contents)
             {
-                return new DataFaxVisitMapReader();
+                return new DataFaxVisitMapReader(contents);
             }
 
             public String getExtension()
@@ -62,9 +63,9 @@ public class VisitMapImporter
 
         @SuppressWarnings({"UnusedDeclaration"})
         Xml {
-            public VisitMapReader getReader()
+            public VisitMapReader getReader(String contents) throws VisitMapParseException
             {
-                return new XmlVisitMapReader();
+                return new XmlVisitMapReader(contents);
             }
 
             public String getExtension()
@@ -72,7 +73,7 @@ public class VisitMapImporter
                 return ".xml";
             }};
 
-        abstract public VisitMapReader getReader();
+        abstract public VisitMapReader getReader(String contents) throws VisitMapParseException;
         abstract public String getExtension();
 
         static Format getFormat(File visitMapFile)
@@ -87,7 +88,7 @@ public class VisitMapImporter
         }
     }
 
-    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException
+    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException, IOException, ValidationException
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
         {
@@ -101,10 +102,13 @@ public class VisitMapImporter
         }
 
         List<VisitMapRecord> records;
+        List<StudyManager.VisitAlias> aliases;
 
         try
         {
-            records = format.getReader().getRecords(content);
+            VisitMapReader reader = format.getReader(content);
+            records = reader.getVisitMapRecords();
+            aliases = reader.getVisitImportAliases();
         }
         catch (VisitMapParseException x)
         {
@@ -125,6 +129,7 @@ public class VisitMapImporter
             saveDataSets(user, study, records);
             saveVisits(user, study, records);
             saveVisitMap(user, study, records);
+            saveImportAliases(user, study, aliases);
             scope.commitTransaction();
             return true;
         }
@@ -135,11 +140,14 @@ public class VisitMapImporter
         }
         finally
         {
-            if (scope != null)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 
+    private void saveImportAliases(User user, Study study, List<StudyManager.VisitAlias> aliases) throws ValidationException, IOException, SQLException
+    {
+        StudyManager.getInstance().importVisitAliases(study, user, aliases);
+    }
 
     private void saveVisits(User user, StudyImpl study, List<VisitMapRecord> records) throws SQLException
     {

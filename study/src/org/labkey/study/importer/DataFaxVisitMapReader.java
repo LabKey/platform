@@ -15,14 +15,17 @@
  */
 package org.labkey.study.importer;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.Filter;
 import org.labkey.api.iterator.IteratorUtil;
+import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -33,9 +36,16 @@ import java.util.Map;
  */
 public class DataFaxVisitMapReader implements VisitMapReader
 {
-    public List<VisitMapRecord> getRecords(String content) throws IOException, VisitMapParseException
+    private final String _content;
+
+    public DataFaxVisitMapReader(String content)
     {
-        String tsv = content.replace('|','\t');
+        _content = content;
+    }
+
+    public List<VisitMapRecord> getVisitMapRecords() throws IOException, VisitMapParseException
+    {
+        String tsv = _content.replace('|','\t');
 
         try
         {
@@ -74,5 +84,13 @@ public class DataFaxVisitMapReader implements VisitMapReader
         {
             throw new VisitMapParseException("Error parsing data fax format visit map", x);
         }
+    }
+
+    @Override
+    @NotNull
+    public List<StudyManager.VisitAlias> getVisitImportAliases()
+    {
+        // This format does not support import aliases
+        return Collections.emptyList();
     }
 }

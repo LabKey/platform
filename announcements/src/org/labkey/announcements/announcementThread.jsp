@@ -99,13 +99,13 @@ if (!bean.print && null != discussionSrc)
 
 if (false && !bean.print && null != discussionSrc)
 {
-    %><%=textLink("view in context", discussionSrc.getLocalURIString())%>&nbsp;<%
+    %><%=textLink("view in context", discussionSrc)%>&nbsp;<%
 }
 
 if (bean.perm.allowUpdate(announcementModel) && !bean.print)
 {
     ActionURL update = AnnouncementsController.getUpdateURL(c, announcementModel.getEntityId(), bean.currentURL);
-    %><%=textLink("edit", update.getLocalURIString())%><%
+    %><%=textLink("edit", update)%><%
 }
 %>&nbsp;<%=h(DateUtil.formatDateTime(announcementModel.getCreated()))%></td>
 </tr>
@@ -189,12 +189,12 @@ if (0 < announcementModel.getResponses().size())
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {
                     ActionURL update = AnnouncementsController.getUpdateURL(c, r.getEntityId(), bean.currentURL);
-                    %><%=textLink("edit", update.getLocalURIString())%><%
+                    %><%=textLink("edit", update)%><%
                     }
                     if (bean.perm.allowDeleteMessage(r) && !bean.print)
                     {
                         ActionURL deleteResponse = AnnouncementsController.getDeleteResponseURL(c, r.getEntityId(), bean.currentURL);
-                %>&nbsp;<%=textLink("delete", deleteResponse.getLocalURIString())%><%
+                %>&nbsp;<%=textLink("delete", deleteResponse)%><%
                 }
                 %>&nbsp;<%=h(DateUtil.formatDateTime(r.getCreated()))%></td>
             </tr><%

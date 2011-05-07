@@ -17,16 +17,17 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
+<%@ page import="org.labkey.api.exp.OntologyManager"%>
+<%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.controllers.StudyController.BulkImportDataTypesAction" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
-<%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -114,7 +115,7 @@
     {
         if (dataset.getTypeURI() == null)
         {
-            %><%=textLink("Bulk import dataset schemas", "bulkImportDataTypes.view?")%><%
+            %><%=textLink("Bulk import dataset schemas", BulkImportDataTypesAction.class)%><%
         }
     }
 %>

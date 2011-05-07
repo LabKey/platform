@@ -18,22 +18,27 @@
 <%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.study.Study"%>
+<%@ page import="org.labkey.api.study.StudyService"%>
+<%@ page import="org.labkey.api.study.Visit"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.study.controllers.StudyController"%>
-<%@ page import="org.labkey.study.model.*"%>
-<%@ page import="java.util.Map"%>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.model.QCStateSet" %>
+<%@ page import="org.labkey.study.CohortFilter"%>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.study.CohortFilter" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.QCStateSet" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.study.model.VisitMapKey" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -72,7 +77,7 @@
     if (selectedQCStateSet != null)
         basePage += "QCState=" + selectedQCStateSet.getFormValue() + "&";
 
-%><%= bean.canManage ? textLink("Manage Study", "manageStudy.view") : ""%>
+%><%= bean.canManage ? textLink("Manage Study", ManageStudyAction.class) : ""%>
 &nbsp;<%= textLink("Views", new ActionURL(ReportsController.BeginAction.class, container))%>&nbsp;
 &nbsp;<%= textLink("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
 <%

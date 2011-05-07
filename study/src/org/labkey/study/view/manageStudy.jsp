@@ -26,6 +26,11 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageReloadAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageSitesAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyPropertiesAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
@@ -71,17 +76,17 @@
     <tr>
         <th align="left">Study Label</th>
         <td><%= h(study.getLabel()) %></td>
-        <td><%= textLink("Change Label", "manageStudyProperties.view") %></td>
+        <td><%= textLink("Change Label", ManageStudyPropertiesAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Reloading</th>
         <td><%= h(intervalLabel) %></td>
-        <td><%= textLink("Manage Reloading", "manageReload.view") %></td>
+        <td><%= textLink("Manage Reloading", ManageReloadAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Additional Properties</th>
         <td>This study has <%=numProperties%> additional <%=propString%></td>
-        <td><%= textLink("Edit Definition", new ActionURL(StudyDefinitionController.EditStudyDefinitionAction.class, c)) %></td>
+        <td><%= textLink("Edit Definition", StudyDefinitionController.EditStudyDefinitionAction.class) %></td>
     </tr>
 
     <% if (numProperties > 0)
@@ -102,19 +107,19 @@
     <tr>
         <th align="left">Datasets</th>
         <td>This study defines <%= getDataSets().size() %> Datasets</td>
-        <td><%= textLink("Manage Datasets", "manageTypes.view") %></td>
+        <td><%= textLink("Manage Datasets", ManageTypesAction.class) %></td>
     </tr>
     <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
     <tr>
         <th align="left"><%= visitLabel %></th>
         <td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%></td>
-        <td><%= textLink("Manage " + visitLabel, "manageVisits.view") %></td>
+        <td><%= textLink("Manage " + visitLabel, ManageVisitsAction.class) %></td>
     </tr>
     <% } %>
     <tr>
         <th align="left">Locations</th>
         <td>This study references <%= getSites().length %> labs/sites/repositories</td>
-        <td><%= textLink("Manage Labs/Sites", "manageSites.view") %></td>
+        <td><%= textLink("Manage Labs/Sites", ManageSitesAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Cohorts</th>

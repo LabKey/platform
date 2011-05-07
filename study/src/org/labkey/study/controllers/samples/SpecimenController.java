@@ -340,7 +340,7 @@ public class SpecimenController extends BaseStudyController
 
     public static final class SpecimenHeaderBean
     {
-        private String _otherViewURL;
+        private ActionURL _otherViewURL;
         private ViewContext _viewContext;
         private boolean _showingVials;
         private Set<Pair<String, String>> _filteredPtidVisits;
@@ -406,13 +406,13 @@ public class SpecimenController extends BaseStudyController
             if (null != params.get(SpecimenQueryView.PARAMS.excludeRequestedBySite.name()))
                 otherView.replaceParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name(),
                         params.get(SpecimenQueryView.PARAMS.excludeRequestedBySite.name())[0]);
-            _otherViewURL = otherView.getLocalURIString();
+            _otherViewURL = otherView;
             _viewContext = context;
             _showingVials = view.isShowingVials();
             _filteredPtidVisits = filteredPtidVisits;
         }
 
-        public String getOtherViewURL()
+        public ActionURL getOtherViewURL()
         {
             return _otherViewURL;
         }

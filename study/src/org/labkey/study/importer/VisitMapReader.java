@@ -15,6 +15,9 @@
  */
 package org.labkey.study.importer;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.study.model.StudyManager;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -25,5 +28,6 @@ import java.util.List;
  */
 public interface VisitMapReader
 {
-    List<VisitMapRecord> getRecords(String content) throws VisitMapParseException, IOException;
+    List<VisitMapRecord> getVisitMapRecords() throws VisitMapParseException, IOException;
+    @NotNull List<StudyManager.VisitAlias> getVisitImportAliases();
 }

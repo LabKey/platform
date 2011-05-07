@@ -19,12 +19,17 @@ package org.labkey.study.importer;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DatasetType;
 import org.labkey.study.xml.VisitMapDocument;
+import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases;
+import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases.Alias;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -34,14 +39,15 @@ import java.util.List;
  */
 public class XmlVisitMapReader implements VisitMapReader
 {
-    public List<VisitMapRecord> getRecords(String xml) throws VisitMapParseException
-    {
-        VisitMapDocument doc;
+    private final VisitMapDocument.VisitMap _visitMapXml;
 
+    public XmlVisitMapReader(String xml) throws VisitMapParseException
+    {
         try
         {
-            doc = VisitMapDocument.Factory.parse(xml, XmlBeansUtil.getDefaultParseOptions());
+            VisitMapDocument doc = VisitMapDocument.Factory.parse(xml, XmlBeansUtil.getDefaultParseOptions());
             XmlBeansUtil.validateXmlDocument(doc);
+            _visitMapXml = doc.getVisitMap();
         }
         catch (XmlException x)
         {
@@ -53,8 +59,11 @@ public class XmlVisitMapReader implements VisitMapReader
         {
             throw new VisitMapParseException("visit map XML file is not valid: it does not conform to visitMap.xsd", e);
         }
+    }
 
-        VisitMapDocument.VisitMap.Visit[] visitsXml = doc.getVisitMap().getVisitArray();
+    public List<VisitMapRecord> getVisitMapRecords() throws VisitMapParseException
+    {
+        VisitMapDocument.VisitMap.Visit[] visitsXml = _visitMapXml.getVisitArray();
         List<VisitMapRecord> visits = new ArrayList<VisitMapRecord>(visitsXml.length);
 
         for (VisitMapDocument.VisitMap.Visit visitXml : visitsXml)
@@ -85,5 +94,24 @@ public class XmlVisitMapReader implements VisitMapReader
         }
 
         return visits;
+    }
+
+
+    @Override
+    @NotNull
+    public List<StudyManager.VisitAlias> getVisitImportAliases()
+    {
+        List<StudyManager.VisitAlias> ret = new LinkedList<StudyManager.VisitAlias>();
+        ImportAliases importAliasesXml = _visitMapXml.getImportAliases();
+
+        if (null != importAliasesXml)
+        {
+            Alias[] alises = importAliasesXml.getAliasArray();
+
+            for (Alias alias : alises)
+                ret.add(new StudyManager.VisitAlias(alias.getName(), alias.getSequenceNum()));
+        }
+
+        return ret;
     }
 }

@@ -16,8 +16,11 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.xml.DatasetType;
@@ -25,6 +28,8 @@ import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.VisitMapDocument;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -32,7 +37,7 @@ import java.util.List;
  * Date: Apr 15, 2009
  * Time: 10:57:56 AM
  */
-public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContext>
+public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
 {
     public static final String FILENAME = "visit_map.xml";
 
@@ -41,8 +46,9 @@ public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContext
         return null;
     }
 
-    public void write(VisitImpl[] visits, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException, SQLException
     {
+        VisitImpl[] visits = study.getVisits(Visit.Order.DISPLAY);
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
         visitsXml.setFile(FILENAME);
@@ -73,7 +79,7 @@ public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContext
                 visitXml.setCohort(visit.getCohort().getLabel());
 
             if (null != visit.getVisitDateDatasetId() && ctx.isExportedDataset(visit.getVisitDateDatasetId()))
-                visitXml.setVisitDateDatasetId(visit.getVisitDateDatasetId().intValue());
+                visitXml.setVisitDateDatasetId(visit.getVisitDateDatasetId());
 
             if (visit.getDisplayOrder() > 0)
                 visitXml.setDisplayOrder(visit.getDisplayOrder());
@@ -97,6 +103,16 @@ public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContext
                     }
                 }
             }
+        }
+
+        VisitMapDocument.VisitMap.ImportAliases ia = visitMapXml.addNewImportAliases();
+        Collection<StudyManager.VisitAlias> aliases = StudyManager.getInstance().getCustomVisitImportMapping(study);
+
+        for (StudyManager.VisitAlias alias : aliases)
+        {
+            VisitMapDocument.VisitMap.ImportAliases.Alias aliasXml = ia.addNewAlias();
+            aliasXml.setName(alias.getName());
+            aliasXml.setSequenceNum(alias.getSequenceNum());
         }
 
         vf.saveXmlBean(FILENAME, visitMapDoc);

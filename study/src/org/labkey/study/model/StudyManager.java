@@ -76,6 +76,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.MapLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RoleAssignment;
@@ -603,7 +604,24 @@ public class StudyManager
     }
 
 
-    public int insertVisitAliases(final Study study, User user, DataLoader loader) throws SQLException, IOException, ValidationException
+    // TODO: Should be able to send List<Bean> to builk insert method, so we don't have to translate like this
+    public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws IOException, ValidationException, SQLException
+    {
+        List<Map<String, Object>> maps = new LinkedList<Map<String, Object>>();
+
+        for (VisitAlias alias : aliases)
+        {
+            Map<String, Object> map = new HashMap<String, Object>();
+            map.put("Name", alias.getName());
+            map.put("SequenceNum", alias.getSequenceNum());
+            maps.add(map);
+        }
+
+        importVisitAliases(study, user, new MapLoader(maps));
+    }
+
+
+    public int importVisitAliases(final Study study, User user, DataLoader loader) throws SQLException, IOException, ValidationException
     {
         SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
@@ -639,18 +657,29 @@ public class StudyManager
             }
         };
 
+        boolean startedTransaction = false;
+
         try
         {
             // We want delete and bulk insert in the same transaction
-            scope.beginTransaction();
+            if (!scope.isTransactionActive())
+            {
+                scope.beginTransaction();
+                startedTransaction = true;
+            }
+
             Table.delete(tinfo, containerFilter);
-            OntologyManager.insertTabDelimited(tinfo, study.getContainer(), user, helper, loader.load(), null);
-            scope.commitTransaction();
-            return 0;
+            List<String> keys = OntologyManager.insertTabDelimited(tinfo, study.getContainer(), user, helper, loader.load(), null);
+
+            if (startedTransaction)
+                scope.commitTransaction();
+
+            return keys.size();
         }
         finally
         {
-           scope.closeConnection();
+            if (startedTransaction)
+                scope.closeConnection();
         }
     }
 
@@ -669,7 +698,7 @@ public class StudyManager
         }
         finally
         {
-           scope.closeConnection();
+            scope.closeConnection();
         }
     }
 
@@ -696,8 +725,7 @@ public class StudyManager
     // for UI and export, but unnecessary for importing data.
     public Collection<VisitAlias> getCustomVisitImportMapping(Study study) throws SQLException
     {
-        VisitAlias[] aliases = getVisitAliasesArray(study, new Sort("SequenceNum"));
-        return Arrays.asList(aliases);
+        return Arrays.asList(getVisitAliasesArray(study, new Sort("SequenceNum")));
     }
 
 
@@ -744,6 +772,7 @@ public class StudyManager
         private double _sequenceNum;
         private boolean _overridden;  // For display purposes -- we show all visits and gray out the ones that are not used
 
+        @SuppressWarnings({"UnusedDeclaration"}) // Constructed by reflection by the Table layer
         public VisitAlias()
         {
         }
@@ -753,6 +782,11 @@ public class StudyManager
             _name = name;
             _sequenceNum = sequenceNum;
             _overridden = overridden;
+        }
+
+        public VisitAlias(String name, double sequenceNum)
+        {
+            this(name, sequenceNum, false);
         }
 
         public String getName()

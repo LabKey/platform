@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.*" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -109,30 +110,25 @@
                     }
                 %>
             </td>
-            <td><%= textLink("Define Dataset Schemas", "manageUndefinedTypes.view")%></td>
+            <td><%= textLink("Define Dataset Schemas", ManageUndefinedTypesAction.class)%></td>
         </tr><%
     }
     if (!datasets.isEmpty())
     {
     %><tr>
         <td>Datasets can be displayed in any order.</td>
-        <td><%= textLink("Change Display Order", "dataSetDisplayOrder.view")%></td>
+        <td><%= textLink("Change Display Order", DataSetDisplayOrderAction.class)%></td>
     </tr><%
     }
 
 %>
     <tr>
         <td>Dataset visibility, label, and category can all be changed.</td>
-        <td><%= textLink("Change Properties", "dataSetVisibility.view")%></td>
+        <td><%= textLink("Change Properties", DataSetVisibilityAction.class)%></td>
     </tr>
-
-    <%
-        ActionURL bulkDeleteAction = new ActionURL(DatasetController.BulkDatasetDeleteAction.class, study.getContainer());
-        String bulkDeleteLink = bulkDeleteAction.getLocalURIString();
-    %>
     <tr>
         <td>Datasets may be deleted by an administrator.</td>
-        <td><%= textLink("Delete Multiple Datasets", bulkDeleteLink)%></td>
+        <td><%= textLink("Delete Multiple Datasets", DatasetController.BulkDatasetDeleteAction.class)%></td>
     </tr>
 
     <tr>

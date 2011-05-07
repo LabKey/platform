@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.UpdateParticipantVisitsAction" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -38,11 +39,11 @@
 <table>
     <tr>
         <td>New visits can be defined for this study at any time.</td>
-        <td><%= textLink("Create New Timepoint", "createVisit.view")%></td>
+        <td><%= textLink("Create New Timepoint", CreateVisitAction.class)%></td>
     </tr>
     <tr>
         <td>Assign data to the correct timepoint</td>
-        <td><%= textLink("Recompute Timepoints", "updateParticipantVisits.view")%></td>
+        <td><%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%></td>
     </tr>
 </table>
 
@@ -68,7 +69,7 @@
 </form>
 <%WebPartView.endTitleFrame(out);%>
 <%WebPartView.startTitleFrame(out, "Timepoints", null, "600", null);%>
-NOTE: If you edit the day range of timepoints, use the <%= textLink("Recompute Timepoints", "updateParticipantVisits.view")%> action to
+NOTE: If you edit the day range of timepoints, use the <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> action to
 assign dataset data to the correct timepoints.
 <table>
     <tr>

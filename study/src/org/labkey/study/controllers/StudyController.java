@@ -3739,7 +3739,7 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ManageUndefinedTypes extends SimpleViewAction
+    public class ManageUndefinedTypesAction extends SimpleViewAction
     {
         Study study;
 
@@ -6655,7 +6655,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(VisitAliasesForm form, BindException errors) throws Exception
         {
-            StudyManager.getInstance().insertVisitAliases(getStudy(), getUser(), new TabLoader(form.getTsv()));
+            StudyManager.getInstance().importVisitAliases(getStudy(), getUser(), new TabLoader(form.getTsv()));
             return true;
         }
 

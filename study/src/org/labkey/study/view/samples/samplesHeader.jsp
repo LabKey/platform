@@ -16,17 +16,16 @@
  */
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
+<%@ page import="org.labkey.api.study.StudyService"%>
 <%@ page import="org.labkey.api.util.Pair"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController.AutoReportListAction" %>
 <%@ page import="java.util.Iterator" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<script>LABKEY.requiresScript('util.js');</script>
-<script>LABKEY.requiresClientAPI();</script>
 <%
     JspView<SpecimenController.SpecimenHeaderBean> me = (JspView<SpecimenController.SpecimenHeaderBean>) HttpView.currentView();
     SpecimenController.SpecimenHeaderBean bean = me.getModelBean();
@@ -36,6 +35,8 @@
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
     String subjectNounPlural = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
 %>
+<script>LABKEY.requiresScript('util.js');</script>
+<script>LABKEY.requiresClientAPI();</script>
 <script>
     var CREATE_REQUEST_BASE_LINK = '<%= createRequestURL.getLocalURIString() %>';
     LABKEY.requiresScript('sampleRequest.js');
@@ -47,14 +48,14 @@
     if (bean.getViewContext().getContainer().hasPermission(bean.getViewContext().getUser(), AdminPermission.class))
     {
 %>
-<%=this.textLink("Manage Study",
-        new ActionURL(StudyController.ManageStudyAction.class, bean.getViewContext().getContainer()))%>&nbsp;
+<%=textLink("Manage Study",
+        new ActionURL(ManageStudyAction.class, bean.getViewContext().getContainer()))%>&nbsp;
 <%
     }
 %>
-<%= this.textLink(vialLinkText, bean.getOtherViewURL())%>&nbsp;
-<%= this.textLink("Search", "showSearch.view?showVials=" + (bean.isShowingVials() ? "true" : "false"))%>&nbsp;
-<%= this.textLink("Reports", "autoReportList.view") %>
+<%=textLink(vialLinkText, bean.getOtherViewURL())%>&nbsp;
+<%=textLink("Search", "showSearch.view?showVials=" + (bean.isShowingVials() ? "true" : "false"))%>&nbsp;
+<%=textLink("Reports", AutoReportListAction.class) %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())
     {

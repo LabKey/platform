@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.StudyImportException;
@@ -35,7 +36,7 @@ import java.util.List;
  */
 class VisitImporter
 {
-    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImportException
+    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImportException, ValidationException
     {
         // Visit map
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();

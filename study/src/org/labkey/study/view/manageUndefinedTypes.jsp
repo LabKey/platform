@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.study.controllers.StudyController.BulkImportDataTypesAction"%>
 <%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="java.util.List"%>
 <%@ page import="java.util.ArrayList"%>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     List<DataSetDefinition> undefined = new ArrayList<DataSetDefinition>();
@@ -37,7 +37,7 @@
 <%
     }
 %>
-<%= textLink("Bulk Import Schemas", "bulkImportDataTypes.view")%>&nbsp;
+<%= textLink("Bulk Import Schemas", BulkImportDataTypesAction.class)%>&nbsp;
 
 <%
     if (!undefined.isEmpty())
