@@ -2345,7 +2345,7 @@ public class Table
                         sqlfObjectProperty.append("dateTimeValue");
                         break;
                     case 'f':
-                        sqlfObjectProperty.append("doubleValue");
+                        sqlfObjectProperty.append("floatValue");
                         break;
                     default:
                         throw new IllegalArgumentException("Unknown property type: " + propertyType);
