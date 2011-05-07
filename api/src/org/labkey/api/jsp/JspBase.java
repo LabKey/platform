@@ -163,12 +163,12 @@ abstract public class JspBase extends JspContext implements HasViewContext
     /**
      * Given the Class of an action in a Spring controller, returns the view URL to the action.
      *
-     * @param action Action in a Spring controller
+     * @param actionClass Action class in a Spring controller
      * @return view url
      */
-    public ActionURL urlFor(Class<? extends Controller> action)
+    public ActionURL urlFor(Class<? extends Controller> actionClass)
     {
-        return new ActionURL(action, getViewContext().getContainer());
+        return new ActionURL(actionClass, getViewContext().getContainer());
     }
 
     /**
@@ -183,11 +183,13 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.urlProvider(inter);
     }
 
-    public String textLink(String text, String href, String id)
+    // Link to a different action in the current container (no params)
+    public String textLink(String text, Class<? extends Controller> action)
     {
-        return PageFlowUtil.textLink(text, href, id);
+        return textLink(text, urlFor(action));
     }
 
+    @Deprecated  // Use textLink(text, actionClass) or textLink(text, url) instead
     public String textLink(String text, String href)
     {
         return PageFlowUtil.textLink(text, href, null, null);
