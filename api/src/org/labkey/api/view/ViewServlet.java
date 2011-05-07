@@ -157,7 +157,7 @@ public class ViewServlet extends HttpServlet
         Module module = ModuleLoader.getInstance().getModuleForController(url.getPageFlow());
         if (module == null)
         {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server module registered to handle request for controller: " + url.getPageFlow());
             return;
         }
 
@@ -499,7 +499,7 @@ public class ViewServlet extends HttpServlet
             Module module = ModuleLoader.getInstance().getModuleForController(url.getPageFlow());
             if (module == null)
             {
-                throw new NotFoundException();
+                throw new NotFoundException("Unknown controller: " + url.getPageFlow());
             }
             module.dispatch(request, mockResponse, url);
             return mockResponse;

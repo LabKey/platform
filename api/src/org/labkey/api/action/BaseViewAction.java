@@ -580,7 +580,15 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         Container c = context.getContainer();
         if (null == c)
         {
-            throw new NotFoundException();
+            String containerPath = context.getActionURL().getExtraPath();
+            if (containerPath != null && containerPath.indexOf("/") != -1)
+            {
+                throw new NotFoundException("No such folder or workbook: " + containerPath);
+            }
+            else
+            {
+                throw new NotFoundException("No such project: " + containerPath);
+            }
         }
 
         User user = context.getUser();

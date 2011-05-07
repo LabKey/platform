@@ -295,7 +295,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             action = resolveAction(url.getAction());
             if (null == action)
             {
-                throw new NotFoundException();
+                throw new NotFoundException("Unable to find action to handle request: " + url.getAction());
             }
 
             ActionURL redirectURL = getUpgradeMaintenanceRedirect(request, action);
