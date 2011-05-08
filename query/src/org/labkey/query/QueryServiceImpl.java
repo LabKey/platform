@@ -1162,22 +1162,31 @@ public class QueryServiceImpl extends QueryService
         if (null == selectColumns)
             selectColumns = table.getColumns();
 
+        // Check incoming columns to ensure they come from table
+        assert checkAllColumns(table, selectColumns);
+
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         ArrayList<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(selectColumns);
         allColumns = (ArrayList<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null);
+
+        // Check columns again: ensureRequiredColumns() may have added new columns
+        assert checkAllColumns(table, allColumns);
+
         Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, allColumns);
         boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
         SQLFragment outerSelect = new SQLFragment("SELECT *");
         SQLFragment selectFrag = new SQLFragment("SELECT");
         String strComma = "\n";
         String tableName = table.getName();
+
         if (tableName == null)
         {
             // This shouldn't happen, but if it's null we'll blow up later without enough context to give a good error
             // message
             throw new NullPointerException("Null table name from " + table);
         }
+
         String tableAlias = AliasManager.makeLegalName(tableName, table.getSchema().getSqlDialect());
 
         if (allColumns.isEmpty())
@@ -1188,7 +1197,6 @@ public class QueryServiceImpl extends QueryService
         {
             for (ColumnInfo column : allColumns)
             {
-                assert columnParentCheck(table, column);
                 column.declareJoins(tableAlias, joins);
                 selectFrag.append(strComma);
                 selectFrag.append(column.getValueSql(tableAlias));
@@ -1266,31 +1274,31 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    private boolean columnParentCheck(TableInfo table, ColumnInfo column)
+    private boolean checkAllColumns(TableInfo table, Collection<ColumnInfo> columns)
     {
-        boolean success = column.getParentTable() == table;
+        Logger log = Logger.getLogger(QueryServiceImpl.class);
+        int bad = 0;
 
-        if (!success)
+        for (ColumnInfo column : columns)
         {
-            Logger log = Logger.getLogger(QueryServiceImpl.class);
-            log.warn("Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
-            int bad = 0;
-
-            // Check all the columns in the TableInfo to determine if the TableInfo is corrupt or if ensureRequiredColumns() is at fault
-            for (ColumnInfo col : table.getColumns())
+            if (column.getParentTable() != table)
             {
-                if (col.getParentTable() != table)
-                {
-                    log.warn("In underlying TableInfo: Column " + col.getName() + " is from the wrong table: " + col.getParentTable() + " instead of " + table);
-                    bad++;
-                }
+                log.warn("Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
+                bad++;
             }
-
-            if (0 == bad)
-                log.warn("");
         }
 
-        // TODO: Should return success
+        // Check all the columns in the TableInfo to determine if the TableInfo is corrupt
+        for (ColumnInfo column : table.getColumns())
+        {
+            if (column.getParentTable() != table)
+            {
+                log.warn("In underlying TableInfo: Column " + column.getName() + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
+                bad++;
+            }
+        }
+
+        // TODO: Should return 0 == bad
         return true;
     }
 
