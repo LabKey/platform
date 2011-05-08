@@ -28,32 +28,21 @@ import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
@@ -76,7 +65,14 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -97,11 +93,8 @@ import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1195,7 +1188,7 @@ public class QueryServiceImpl extends QueryService
         {
             for (ColumnInfo column : allColumns)
             {
-                assert column.getParentTable() == table : "Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table;
+                assert columnParentCheck(table, column);
                 column.declareJoins(tableAlias, joins);
                 selectFrag.append(strComma);
                 selectFrag.append(column.getValueSql(tableAlias));
@@ -1273,7 +1266,36 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-	private static Sort createDefaultSort(Collection<ColumnInfo> columns)
+    private boolean columnParentCheck(TableInfo table, ColumnInfo column)
+    {
+        boolean success = column.getParentTable() == table;
+
+        if (!success)
+        {
+            Logger log = Logger.getLogger(QueryServiceImpl.class);
+            log.warn("Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
+            int bad = 0;
+
+            // Check all the columns in the TableInfo to determine if the TableInfo is corrupt or if ensureRequiredColumns() is at fault
+            for (ColumnInfo col : table.getColumns())
+            {
+                if (col.getParentTable() != table)
+                {
+                    log.warn("In underlying TableInfo: Column " + col.getName() + " is from the wrong table: " + col.getParentTable() + " instead of " + table);
+                    bad++;
+                }
+            }
+
+            if (0 == bad)
+                log.warn("");
+        }
+
+        // TODO: Should return success
+        return true;
+    }
+
+
+    private static Sort createDefaultSort(Collection<ColumnInfo> columns)
 	{
 		Sort sort = new Sort();
 		addSortableColumns(sort, columns, true);
