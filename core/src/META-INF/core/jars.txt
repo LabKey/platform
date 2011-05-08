@@ -31,6 +31,9 @@ junit-4.1.jar|JUnit|4.1|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://w
 jxl.jar|Java Excel|2.6.8|{link:Java Excel API|http://jexcelapi.sourceforge.net//}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|adam|Import/Export Excel files
 kaptcha-2.3.jar|Captcha generator|2.3|{link:kaptcha|http://code.google.com/p/kaptcha/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|User signup forms
 log4j-1.2.16.jar|Log4j|1.2.16|{link:Apache|http://logging.apache.org/log4j/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
+poi-3.7.jar|POI|3.7|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
+poi-ooxml-3.7.jar|POI|3.7|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
+poi-ooxml-schemas-3.7.jar|POI|3.7|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
 radeox-api.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 radeox.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 spring-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-mock.jar dependency

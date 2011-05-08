@@ -52,7 +52,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     public static final AssayDataType DATA_TYPE;
     static
     {
-        FileType fileType = new FileType(Arrays.asList(".tsv", ".xls", ".txt"), ".tsv");
+        FileType fileType = new FileType(Arrays.asList(".tsv", ".xls", ".xlsx", ".txt"), ".tsv");
         fileType.setExtensionsMutuallyExclusive(false);
         DATA_TYPE = new AssayDataType("AssayRunTSVData", fileType);
     }
@@ -109,7 +109,8 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         try
         {
 
-            if (dataFile.getName().toLowerCase().endsWith(".xls"))
+            if (dataFile.getName().toLowerCase().endsWith(".xls") ||
+                dataFile.getName().toLowerCase().endsWith(".xlsx"))
             {
                 loader = new ExcelLoader(dataFile, true);
             }
