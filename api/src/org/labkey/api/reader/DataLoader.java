@@ -95,7 +95,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     {
         String filename = file.getName();
 
-        if (filename.endsWith("xls"))
+        if (filename.endsWith("xls") || filename.endsWith("xlsx"))
         {
             return new ExcelLoader(file, true, mvIndicatorContainer);
         }
@@ -110,7 +110,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             return loader;
         }
 
-        throw new ServletException("Unknown file type. File must have a suffix of .xls, .txt, .tsv or .csv.");
+        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv or .csv.");
     }
 
     public boolean isThrowOnErrors()

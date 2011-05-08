@@ -627,6 +627,7 @@ api/src/org/labkey/api/query/snapshot/QuerySnapshotService.java -text
 api/src/org/labkey/api/query/textExportOptions.jsp -text
 api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
+api/src/org/labkey/api/reader/ExcelFactory.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
 api/src/org/labkey/api/reader/FastaLoader.java -text
 api/src/org/labkey/api/reader/Loader.java -text
@@ -634,6 +635,10 @@ api/src/org/labkey/api/reader/MapLoader.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text
 api/src/org/labkey/api/reader/TestRow.java -text
 api/src/org/labkey/api/reader/XMLStreamReaderWrapper.java -text
+api/src/org/labkey/api/reader/jxl/JxlCell.java -text
+api/src/org/labkey/api/reader/jxl/JxlRow.java -text
+api/src/org/labkey/api/reader/jxl/JxlSheet.java -text
+api/src/org/labkey/api/reader/jxl/JxlWorkbook.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngine.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngineDefinition.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngineFactory.java -text

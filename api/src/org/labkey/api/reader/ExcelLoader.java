@@ -15,15 +15,16 @@
  */
 package org.labkey.api.reader;
 
-import jxl.Cell;
-import jxl.Sheet;
-import jxl.Workbook;
-import jxl.WorkbookSettings;
-import jxl.read.biff.BiffException;
 import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.settings.AppProps;
@@ -67,11 +68,9 @@ public class ExcelLoader extends DataLoader
 
         try
         {
-            WorkbookSettings ws = new WorkbookSettings();
-            ws.setGCDisabled(true);
-            workbook = Workbook.getWorkbook(file, ws);
+            workbook = ExcelFactory.create(file);
         }
-        catch (BiffException e)
+        catch (InvalidFormatException e)
         {
             throw new IOException(e.getMessage());
         }
@@ -79,7 +78,11 @@ public class ExcelLoader extends DataLoader
 
     public List<String> getSheetNames()
     {
-        return Arrays.asList(workbook.getSheetNames());
+        List<String> names = new ArrayList<String>();
+
+        for (int i=0; i < workbook.getNumberOfSheets(); i++)
+            names.add(workbook.getSheetName(i));
+        return names;
     }
 
     public void setSheetName(String sheetName)
@@ -94,7 +97,7 @@ public class ExcelLoader extends DataLoader
             if (sheetName != null)
                 return workbook.getSheet(sheetName);
             else
-                return workbook.getSheet(0);
+                return workbook.getSheetAt(0);
         }
         catch (ArrayIndexOutOfBoundsException e)
         {
@@ -107,25 +110,38 @@ public class ExcelLoader extends DataLoader
         Sheet sheet = getSheet();
 
         List<String[]> cells = new ArrayList<String[]>();
-        int numCols = sheet.getColumns();
-        int numRows = Math.min(sheet.getRows(), n);
+        int numRows = Math.min(sheet.getLastRowNum(), n);
         for (int row = 0; row < numRows; row++)
         {
-            String[] rowData = new String[numCols];
+            List<String> rowData = new ArrayList<String>();
 
             // Excel can report back more rows than exist. If we find no data at all,
             // we should not add a row.
             boolean foundData = false;
-            for (int column = 0; column < numCols; column++)
+            Row currentRow = sheet.getRow(row);
+            if (currentRow != null)
             {
-                Cell cell = sheet.getCell(column, row);
-                String data = cell.getContents();
-                if (data != null && !"".equals(data))
-                    foundData = true;
-                rowData[column] = cell.getContents();
+                if (currentRow.getPhysicalNumberOfCells() != 0)
+                {
+                    for (int column = 0; column < currentRow.getLastCellNum(); column++)
+                    {
+                        Cell cell = currentRow.getCell(column);
+                        if (cell != null)
+                        {
+                            String data = String.valueOf(PropertyType.getFromExcelCell(cell));
+
+                            if (data != null && !"".equals(data))
+                                foundData = true;
+
+                            rowData.add(data != null ? data : "");
+                        }
+                        else
+                            rowData.add("");
+                    }
+                    if (foundData)
+                        cells.add(rowData.toArray(new String[rowData.size()]));
+                }
             }
-            if (foundData)
-                cells.add(rowData);
         }
         return cells.toArray(new String[cells.size()][]);
     }
@@ -142,30 +158,30 @@ public class ExcelLoader extends DataLoader
         }
     }
 
+/*
     public void finalize() throws Throwable
     {
         workbook.close();
         super.finalize();
     }
+*/
 
     public void close()
     {
-        workbook.close();
+//        workbook.close();
     }
 
     private class ExcelIterator extends DataLoaderIterator
     {
         private final Sheet sheet;
         private final int numRows;
-        private final int numCols;
 
         public ExcelIterator() throws IOException
         {
             super(_skipLines == -1 ? 1 : _skipLines, true);
 
             sheet = getSheet();
-            numRows = sheet.getRows();
-            numCols = sheet.getColumns();
+            numRows = sheet.getLastRowNum() + 1;
         }
 
         @Override
@@ -178,32 +194,41 @@ public class ExcelLoader extends DataLoader
             Iterator<ColumnDescriptor> columnIter = new ArrayIterator<ColumnDescriptor>(allColumns);
             Object[] fields = new Object[_activeColumns.length];
 
-            for (int columnIndex = 0, fieldIndex = 0; columnIndex < allColumns.length; columnIndex++)
+            Row row = sheet.getRow(lineNum());
+            if (row != null)
             {
-                boolean loadThisColumn = ((columnIter.hasNext() && columnIter.next().load));
-
-                if (loadThisColumn)
+                int numCols = row.getLastCellNum();
+                for (int columnIndex = 0, fieldIndex = 0; columnIndex < allColumns.length; columnIndex++)
                 {
-                    ColumnDescriptor column = _activeColumns[fieldIndex];
-                    Object contents;
+                    boolean loadThisColumn = ((columnIter.hasNext() && columnIter.next().load));
 
-                    if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist
+                    if (loadThisColumn)
                     {
-                        Cell cell = sheet.getCell(columnIndex, lineNum());
-                        if (column.clazz.equals(String.class))
+                        ColumnDescriptor column = _activeColumns[fieldIndex];
+                        Object contents;
+
+                        if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist
                         {
-                            contents = cell.getContents();
+                            Cell cell = row.getCell(columnIndex);
+                            if (cell == null)
+                            {
+                                contents = "";
+                            }
+                            else if (column.clazz.equals(String.class))
+                            {
+                                contents = ExcelFactory.getCellStringValue(cell);
+                            }
+                            else
+                            {
+                                contents = PropertyType.getFromExcelCell(cell);
+                            }
                         }
                         else
                         {
-                            contents = PropertyType.getFromExcelCell(cell);
+                            contents = "";
                         }
+                        fields[fieldIndex++] = contents;
                     }
-                    else
-                    {
-                        contents = "";
-                    }
-                    fields[fieldIndex++] = contents;
                 }
             }
             return fields;

@@ -56,7 +56,7 @@ import java.util.*;
 public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvider implements PlateBasedAssayProvider
 {
     public static final String ASSAY_DOMAIN_SAMPLE_WELLGROUP = ExpProtocol.ASSAY_DOMAIN_PREFIX + "SampleWellGroup";
-    public static final AssayDataType SAMPLE_METADATA_FILE_TYPE = new AssayDataType("SampleMetadataFile", new FileType(".xls"));
+    public static final AssayDataType SAMPLE_METADATA_FILE_TYPE = new AssayDataType("SampleMetadataFile", new FileType(Arrays.asList(".xls", ".xlsx"), ".xls"));
     private static final String SAMPLE_METADATA_INPUT_ROLE = "Sample Metadata";
 
     public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, AssayTableMetadata tableMetadata)

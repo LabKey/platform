@@ -16,10 +16,13 @@
 
 package org.labkey.api.exp;
 
-import jxl.*;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.ExcelFactory;
 
 import java.io.File;
 import java.text.DateFormat;
@@ -37,11 +40,11 @@ import java.util.TimeZone;
  */
 public enum PropertyType
 {
-    BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, CellType.BOOLEAN, Boolean.class)
+    BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, Cell.CELL_TYPE_BOOLEAN, Boolean.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            return ((BooleanCell)cell).getValue();
+            return cell.getBooleanCellValue();
         }
 
         @Override
@@ -55,11 +58,11 @@ public enum PropertyType
             return boolValue;
         }
     },
-    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 100, null, CellType.LABEL, String.class)
+    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 100, null, Cell.CELL_TYPE_STRING, String.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            return cell.getContents();
+            return cell.getStringCellValue();
         }
         @Override
         public Object convert(Object value) throws ConversionException
@@ -70,11 +73,11 @@ public enum PropertyType
                 return ConvertUtils.convert(value);
         }
     },
-    MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 1000, "textarea", CellType.LABEL, String.class)
+    MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 1000, "textarea", Cell.CELL_TYPE_STRING, String.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            return cell.getContents();
+            return cell.getStringCellValue();
         }
         @Override
         public Object convert(Object value) throws ConversionException
@@ -85,11 +88,11 @@ public enum PropertyType
                 return ConvertUtils.convert(value);
         }
     },
-    RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 100, null, CellType.LABEL, Identifiable.class)
+    RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 100, null, Cell.CELL_TYPE_STRING, Identifiable.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            return cell.getContents();
+            return cell.getStringCellValue();
         }
         @Override
         public Object convert(Object value) throws ConversionException
@@ -102,11 +105,11 @@ public enum PropertyType
                 return value.toString();
         }
     },
-    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, CellType.NUMBER, Integer.class, Long.class)
+    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, Cell.CELL_TYPE_NUMERIC, Integer.class, Long.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            return (int)((NumberCell)cell).getValue();
+            return (int)cell.getNumericCellValue();
         }
         @Override
         public Object convert(Object value) throws ConversionException
@@ -119,11 +122,11 @@ public enum PropertyType
                 return ConvertUtils.convert(value.toString(), Integer.class);
         }
     },
-    FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 100, "file", CellType.LABEL, File.class)
+    FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 100, "file", Cell.CELL_TYPE_STRING, File.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            return cell.getContents();
+            return cell.getStringCellValue();
         }
         @Override
         public Object convert(Object value) throws ConversionException
@@ -136,11 +139,11 @@ public enum PropertyType
                 return String.valueOf(value);
         }
     },
-    ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', JdbcType.VARCHAR, 100, "file", CellType.LABEL, File.class)
+    ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', JdbcType.VARCHAR, 100, "file", Cell.CELL_TYPE_STRING, File.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            return cell.getContents();
+            return cell.getStringCellValue();
         }
         @Override
         public Object convert(Object value) throws ConversionException
@@ -153,11 +156,11 @@ public enum PropertyType
                 return String.valueOf(value);
         }
     },
-    DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', JdbcType.TIMESTAMP, 100, null, CellType.DATE, Date.class)
+    DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', JdbcType.TIMESTAMP, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            Date date = ((DateCell) cell).getDate();
+            Date date = cell.getDateCellValue();
             if (date != null)
             {
                 DateFormat format = new SimpleDateFormat("MM/dd/yyyy GG HH:mm:ss.SSS");
@@ -188,11 +191,11 @@ public enum PropertyType
                 return ConvertUtils.convert(value.toString(), Date.class);
         }
     },
-    DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, CellType.NUMBER, Double.class, Float.class)
+    DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, Cell.CELL_TYPE_NUMERIC, Double.class, Float.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            return ((NumberCell)cell).getValue();
+            return cell.getNumericCellValue();
         }
         @Override
         public Object convert(Object value) throws ConversionException
@@ -205,11 +208,11 @@ public enum PropertyType
                 return ConvertUtils.convert(String.valueOf(value), Double.class);
         }
     },
-    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 100, null, CellType.LABEL, null)
+    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 100, null, Cell.CELL_TYPE_STRING, null)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
-            return cell.getContents();
+            return cell.getStringCellValue();
         }
         @Override
         public Object convert(Object value) throws ConversionException
@@ -224,7 +227,7 @@ public enum PropertyType
     private String typeURI;
     private String xarName;
     private char storageType;
-    private CellType excelCellType;
+    private int excelCellType;
     private JdbcType jdbcType;
     private int scale;
     private String inputType;
@@ -240,7 +243,7 @@ public enum PropertyType
                  JdbcType jdbcType,
                  int scale,
                  String inputType,
-                 CellType excelCellType,
+                 int excelCellType,
                  Class javaType,
                  Class... additionalTypes)
     {
@@ -390,17 +393,22 @@ public enum PropertyType
 
     public static Object getFromExcelCell(Cell cell) throws ConversionException
     {
-        // special handling for the "number type": prefer double.
-        // Without this, we'd default to integer
-        if (CellType.NUMBER.equals(cell.getType()))
+        if (Cell.CELL_TYPE_NUMERIC == cell.getCellType())
         {
-            return DOUBLE.convertExcelValue(cell);
+            // Ugly, the POI implementation doesn't expose an explicit date type
+            if (DateUtil.isCellDateFormatted(cell))
+                return DATE_TIME.convertExcelValue(cell);
+            else
+                // special handling for the "number type": prefer double.
+                // Without this, we'd default to integer
+                return DOUBLE.convertExcelValue(cell);
         }
+
         for (PropertyType t : values())
         {
-            if (t.excelCellType.equals(cell.getType()))
+            if (t.excelCellType == cell.getCellType())
                 return t.convertExcelValue(cell);
         }
-        return cell.getContents();
+        return ExcelFactory.getCellStringValue(cell);
     }
 }
