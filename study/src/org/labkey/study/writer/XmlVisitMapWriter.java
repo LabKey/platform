@@ -26,6 +26,9 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.xml.DatasetType;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.VisitMapDocument;
+import org.labkey.study.xml.VisitMapDocument.VisitMap;
+import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases;
+import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases.Alias;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -54,11 +57,11 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
         visitsXml.setFile(FILENAME);
 
         VisitMapDocument visitMapDoc = VisitMapDocument.Factory.newInstance();
-        VisitMapDocument.VisitMap visitMapXml = visitMapDoc.addNewVisitMap();
+        VisitMap visitMapXml = visitMapDoc.addNewVisitMap();
 
         for (VisitImpl visit : visits)
         {
-            VisitMapDocument.VisitMap.Visit visitXml = visitMapXml.addNewVisit();
+            VisitMap.Visit visitXml = visitMapXml.addNewVisit();
 
             if (null != visit.getLabel())
                 visitXml.setLabel(visit.getLabel());
@@ -91,13 +94,13 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
 
             if (!vds.isEmpty())
             {
-                VisitMapDocument.VisitMap.Visit.Datasets datasetsXml = visitXml.addNewDatasets();
+                VisitMap.Visit.Datasets datasetsXml = visitXml.addNewDatasets();
 
                 for (VisitDataSet vd : vds)
                 {
                     if (ctx.isExportedDataset(vd.getDataSetId()))
                     {
-                        VisitMapDocument.VisitMap.Visit.Datasets.Dataset datasetXml = datasetsXml.addNewDataset();
+                        VisitMap.Visit.Datasets.Dataset datasetXml = datasetsXml.addNewDataset();
                         datasetXml.setId(vd.getDataSetId());
                         datasetXml.setType(vd.isRequired() ? DatasetType.REQUIRED : DatasetType.OPTIONAL);
                     }
@@ -105,14 +108,18 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
             }
         }
 
-        VisitMapDocument.VisitMap.ImportAliases ia = visitMapXml.addNewImportAliases();
         Collection<StudyManager.VisitAlias> aliases = StudyManager.getInstance().getCustomVisitImportMapping(study);
 
-        for (StudyManager.VisitAlias alias : aliases)
+        if (!aliases.isEmpty())
         {
-            VisitMapDocument.VisitMap.ImportAliases.Alias aliasXml = ia.addNewAlias();
-            aliasXml.setName(alias.getName());
-            aliasXml.setSequenceNum(alias.getSequenceNum());
+            ImportAliases ia = visitMapXml.addNewImportAliases();
+
+            for (StudyManager.VisitAlias alias : aliases)
+            {
+                Alias aliasXml = ia.addNewAlias();
+                aliasXml.setName(alias.getName());
+                aliasXml.setSequenceNum(alias.getSequenceNum());
+            }
         }
 
         vf.saveXmlBean(FILENAME, visitMapDoc);
