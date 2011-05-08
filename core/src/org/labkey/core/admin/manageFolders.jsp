@@ -89,7 +89,7 @@
                 beforenodedrop : onBeforeNodeDrop,
                 nodedragover   : onNodeDragOver
             },
-            
+
             rootVisible: false,
             enableDD: true,
             containerScroll : true,
@@ -180,9 +180,19 @@
     }
 
     function onSuccess(){
+        unmask();
     }
 
     function onFailure(){
+        unmask();
+    }
+
+    function mask(message) {
+        Ext.get('folderdiv').mask(message ? message : 'Moving Folders...');
+    }
+
+    function unmask() {
+        Ext.get('folderdiv').unmask();
     }
 
     function onDblClick(e){
@@ -197,13 +207,16 @@
     function onBeforeNodeDrop(e){
         var s = e.dropNode;
 
-        var d = e.target.leaf ? e.target.parentNode : e.target;
+        var target = calculateTarget(e);
+        var d = target.leaf ? target.parentNode : target;
 
         if (s.parentNode == d) { return false; }
 
         e.confirmed = undefined;
         e.oldParent = s.parentNode;
 
+        mask();
+        
         // Make move request
         LABKEY.Security.moveContainer({
             container : s.attributes.containerPath,
@@ -224,8 +237,52 @@
 
     // The event is cancelled if the drag is invalid.
     function onNodeDragOver(e) {
-        if (e.dropNode.attributes.isProject || e.dropNode.attributes.notModifiable) { e.cancel = true; }
-        //console.info("Cancel? " + e.cancel);
+        var node = e.dropNode;
+        if (node.attributes.isProject || node.attributes.notModifiable) {
+            console.info('Failed on isProject/notModifiable');
+            e.cancel = true;
+        }
+
+        target = calculateTarget(e);
+        
+        // Check matching name FIX so it works as reorder in same subfolder
+        var children = target.childNodes;
+        var nodeName = node.text.toLowerCase();
+        for (var i = 0; i < children.length; i++) {
+            if (children[i].text.toLowerCase() == nodeName) {
+                console.info('Failed on matching child name.');
+                e.cancel = true;
+            }
+        }
+    }
+
+    // Gives the correct target folder based on the drag/drop action. This should be used by all methods
+    // that incorporate drag/drop in folder tree.
+    function calculateTarget(e) {
+
+        if (!e.target) {
+            console.error('Target not provided by event.');
+            e.cancel = true; // attempt to salvage event
+            return null;
+        }
+        
+        var target = e.target;
+        
+        // Use event.point to determine correct target node
+        var pt = e.point;
+        if (pt) {
+            if (pt == 'above' || pt == 'below'){
+                // check if same parent, check if root node -- cannot elevate to project
+                if (target.parentNode) {
+                    target = target.parentNode;
+                    console.info('Target set to ' + target.attributes.containerPath);
+                    if (target.attributes.containerPath === undefined) { e.cancel = true; }
+                }
+                // different parent equates to move (and reorder?)
+            }
+        }
+
+        return target;
     }
 
     Ext.onReady(init);

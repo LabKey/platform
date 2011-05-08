@@ -757,46 +757,88 @@ public class CoreController extends SpringActionController
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
             JSONObject object = form.getJsonObject();
-            String targetPath = object.getString("container");
+            String targetIdentifier = object.getString("container");
 
-            if (null == targetPath)
+            if (null == targetIdentifier)
             {
                 errors.reject(ERROR_MSG, "A target container must be specified for move operation.");
+                return;
             }
 
-            String pPath = object.getString("parent");
+            String parentIdentifier = object.getString("parent");
 
-            if (null == pPath)
+            if (null == parentIdentifier)
             {
                 errors.reject(ERROR_MSG, "A parent container must be specified for move operation.");
+                return;
             }
 
             // Worry about escaping
-            Path path = Path.parse(targetPath);
-            target = ContainerManager.getForPath(path);
+            Path path = Path.parse(targetIdentifier);
+            target = ContainerManager.getForPath(path);            
 
             if (null == target)
             {
-                errors.reject(ERROR_MSG, "Conatiner '" + targetPath + "' does not exist.");
+                target = ContainerManager.getForId(targetIdentifier);
+                if (null == target)
+                {
+                    errors.reject(ERROR_MSG, "Conatiner '" + targetIdentifier + "' does not exist.");
+                    return;
+                }
             }
 
             if (target.isProject() || target.isRoot())
             {
                 errors.reject(ERROR_MSG, "Cannot move project/root Containers.");
+                return;
             }
 
-            Path parentPath = Path.parse(pPath);
+            Path parentPath = Path.parse(parentIdentifier);
             parent = ContainerManager.getForPath(parentPath);
 
             if (null == parent)
             {
-                errors.reject(ERROR_MSG, "Parent container '" + pPath + "' does not exist.");
+                parent = ContainerManager.getForId(parentIdentifier);
+                if (null == parent)
+                {
+                    errors.reject(ERROR_MSG, "Parent container '" + parentIdentifier + "' does not exist.");
+                    return;
+                }
+            }
+
+            // Check children
+            if (parent.hasChildren())
+            {
+                List<Container> children = parent.getChildren();
+                for (Container child : children)
+                {
+                    if (child.getName().toLowerCase().equals(target.getName().toLowerCase()))
+                    {
+                        errors.reject(ERROR_MSG, "Subfolder of '" + parent.getPath() + "' with name '" +
+                                target.getName() + "' already exists.");
+                        return;
+                    }
+                }
+            }
+
+            // Make sure not attempting to make parent a child. Might need to do this with permission bypass.
+            Set<Container> children = ContainerManager.getAllChildren(target, getUser()); // assumes read permission
+            if (children.contains(parent))
+            {
+                errors.reject(ERROR_MSG, "The container '" + parentIdentifier + "' is not a valid parent folder.");
+                return;
             }
         }
 
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
+            // Check if parent is unchanged
+            if (target.getParent().getPath().equals(parent.getPath()))
+            {
+                return new ApiSimpleResponse("success", true);
+            }
+
             // Prepare aliases
             JSONObject object = form.getJsonObject();
             Boolean addAlias = (Boolean) object.get("addAlias");
