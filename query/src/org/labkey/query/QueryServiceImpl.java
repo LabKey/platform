@@ -839,6 +839,7 @@ public class QueryServiceImpl extends QueryService
                 names.add(field.getColumnName());
 
         ArrayList<ColumnInfo> ret = null;
+
         for (String name : names)
         {
             if (StringUtils.isEmpty(name))
@@ -853,9 +854,12 @@ public class QueryServiceImpl extends QueryService
 
             if (column != null)
             {
+                assert checkColumn(table, column, "ensureRequiredColumns():");
+                assert field.getTable() == null || columnMap.containsKey(field);
+
                 if (null == ret)
                     ret = new ArrayList<ColumnInfo>(columns);
-                assert field.getTable() == null || columnMap.containsKey(field);
+
                 ret.add(column);
             }
             else
@@ -1276,30 +1280,35 @@ public class QueryServiceImpl extends QueryService
 
     private boolean checkAllColumns(TableInfo table, Collection<ColumnInfo> columns)
     {
-        Logger log = Logger.getLogger(QueryServiceImpl.class);
         int bad = 0;
 
         for (ColumnInfo column : columns)
-        {
-            if (column.getParentTable() != table)
-            {
-                log.warn("Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
+            if (!checkColumn(table, column, "ColumnInfo collection:"))
                 bad++;
-            }
-        }
 
         // Check all the columns in the TableInfo to determine if the TableInfo is corrupt
         for (ColumnInfo column : table.getColumns())
-        {
-            if (column.getParentTable() != table)
-            {
-                log.warn("In underlying TableInfo: Column " + column.getName() + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
+            if (!checkColumn(table, column, "Underlying TableInfo:"))
                 bad++;
-            }
-        }
 
         // TODO: Should return 0 == bad
         return true;
+    }
+
+
+    private boolean checkColumn(TableInfo table, ColumnInfo column, String prefix)
+    {
+        Logger log = Logger.getLogger(QueryServiceImpl.class);
+
+        if (column.getParentTable() != table)
+        {
+            log.warn(prefix + " Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
 
 
