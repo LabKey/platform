@@ -67,6 +67,8 @@
 
         Ext.QuickTips.init();
 
+        Ext.Ajax.timeout = 300000; // 5 minutes.
+
         folderTree = new Ext.tree.TreePanel({           
             loader : new Ext.tree.TreeLoader({
                 dataUrl : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
@@ -85,10 +87,39 @@
             },
 
             listeners : {
+                contextmenu    : onRightClick,
                 dblclick       : onDblClick,
                 beforenodedrop : onBeforeNodeDrop,
                 nodedragover   : onNodeDragOver
             },
+
+            contextMenu : new Ext.menu.Menu({
+                cls   : 'extContainer',
+                items : [{
+                    text : 'Delete'
+                },{
+                    id      : 'sort-alpha',
+                    text    : 'Display Subfolders Alphabetically',
+                    handler : function(item, e) {
+                        var node = item.parentMenu.contextNode;
+                        if (node && node.childNodes.length) {
+
+                            mask('Reordering Folders...');
+                            Ext.Ajax.request({
+                                url     : LABKEY.ActionURL.buildURL('admin', 'reorderFolders.api', node.childNodes[0].attributes.containerPath),
+                                method  : 'POST',
+                                params  : {resetToAlphabetical : true},
+                                success : function(){
+                                    folderTree.getLoader().load(node);
+                                    unmask();
+                                },
+                                failure : function(){ unmask(); }
+                            });
+                            
+                        }
+                    }
+                }]
+            }),
 
             rootVisible: false,
             enableDD: true,
@@ -188,11 +219,21 @@
     }
 
     function mask(message) {
-        Ext.get('folderdiv').mask(message ? message : 'Moving Folders...');
+        if (message) {
+            Ext.get('folderdiv').mask(message);
+        }
+        else { Ext.get('folderdiv').mask('Moving Folders. This could take a few minutes...'); }
     }
 
     function unmask() {
         Ext.get('folderdiv').unmask();
+    }
+
+    function onRightClick(node, e){
+        node.select();
+        var c = folderTree.contextMenu;
+        c.contextNode = node;
+        c.showAt(e.getXY());
     }
 
     function onDblClick(e){
@@ -210,29 +251,68 @@
         var target = calculateTarget(e);
         var d = target.leaf ? target.parentNode : target;
 
-        if (s.parentNode == d) { return false; }
-
         e.confirmed = undefined;
         e.oldParent = s.parentNode;
 
         mask();
-        
-        // Make move request
-        LABKEY.Security.moveContainer({
-            container : s.attributes.containerPath,
-            parent    : d.attributes.containerPath,
-            success   : function(response){
-                if (response.success) {
-                    s.attributes.containerPath = response.newPath;
+
+        // Reorder
+        if (target == s.parentNode) {
+
+            var eTarget = e.target;
+            var order = "";
+            var sep = "";
+            
+            // The event contains the above/below nodes so that should give correct order
+            for (var j = 0; j < target.childNodes.length; j++) {
+                if (target.childNodes[j] == s) { continue; }
+                if (target.childNodes[j] == eTarget) {
+                    if (e.point == 'above') {
+                        order += sep + s.text + ";" + eTarget.text;                       
+                    }
+                    else if (e.point == 'below') {
+                        order += sep + eTarget.text + ";" + s.text;
+                    }
+                    else { return false; /* shouldn't ever get here. */ }
                 }
+                else { order += sep + target.childNodes[j].text; }
+                sep = ";";
+            }
+            
+            console.info('Order: ' + order);
+            Ext.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('admin', 'reorderFolders.api', s.containerPath),
+                method  : 'POST',
+                params  : {order : order, resetToAlphabetical : false},
+                success : function() {
+                    unmask();
+                },
+                failure     : function() {
+                    alert('Failed to Reorder.');
+                    unmask();
+                }
+            });
+        }
+        else {
 
-                // reload the subtree
-                folderTree.getLoader().load(s);
+            // Make move request
+            LABKEY.Security.moveContainer({
+                container : s.attributes.containerPath,
+                parent    : d.attributes.containerPath,
+                success   : function(response){
+                    if (response.success) {
+                        s.attributes.containerPath = response.newPath;
+                    }
 
-                onSuccess(response);
-            },
-            failure   : onFailure
-        });
+                    // reload the subtree
+                    folderTree.getLoader().load(s);
+
+                    onSuccess(response);
+                },
+                failure   : onFailure
+            });
+
+        }
     }
 
     // The event is cancelled if the drag is invalid.
@@ -250,6 +330,10 @@
         var nodeName = node.text.toLowerCase();
         for (var i = 0; i < children.length; i++) {
             if (children[i].text.toLowerCase() == nodeName) {
+                if (target == node.parentNode) {
+                    console.info('Attempt to reorder.');
+                    return;
+                }
                 console.info('Failed on matching child name.');
                 e.cancel = true;
             }
@@ -267,6 +351,7 @@
         }
         
         var target = e.target;
+        console.info('Target is ' + target.attributes.containerPath);
         
         // Use event.point to determine correct target node
         var pt = e.point;
@@ -276,7 +361,10 @@
                 if (target.parentNode) {
                     target = target.parentNode;
                     console.info('Target set to ' + target.attributes.containerPath);
-                    if (target.attributes.containerPath === undefined) { e.cancel = true; }
+                    if (target.attributes.containerPath === undefined) {
+                        console.info('ContainerPath undefined.');
+                        e.cancel = true;
+                    }
                 }
                 // different parent equates to move (and reorder?)
             }
