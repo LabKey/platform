@@ -28,7 +28,7 @@ import org.antlr.runtime.TokenStream;
 import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -62,7 +62,7 @@ import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored","ThrowableInstanceNeverThrown"})
 public class SqlParser
 {
-	private static Category _log = Category.getInstance(SqlParser.class);
+	private static Logger _log = Logger.getLogger(SqlParser.class);
 
     ArrayList<Exception> _parseErrors;
     QNode _root;
