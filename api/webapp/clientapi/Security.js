@@ -463,8 +463,10 @@ LABKEY.Security = new function()
         /**
          * Moves an existing container, which may be a folder or workbook to be the subfolder of another folder and/or project.
          * @param config A configuration object with the following properties
-         * @param {string} config.containerPath The current container path of the container that is going to be moved.
-         * @param {string} config.parent The container path of destination parent.
+         * @param {string} config.containerPath The current container path of the container that is going to be moved. Additionally, the container
+         * entity id is also valid.
+         * @param {string} config.destinantionParent The container path of destination parent. Additionally, the destination parent entity id
+         * is also valid.
          * @param {boolean} [config.addAlias] Add alias of current container path to container that is being moved (defaults to True).
          * @param {function} [config.success] A reference to a function to call with the API results. This function will
          * be passed the following parameters:
@@ -484,7 +486,7 @@ LABKEY.Security = new function()
 
             var params = {};
             params.container = config.container || config.containerPath;
-            params.parent = config.parent || config.parentPath;
+            params.parent = config.destinationParent || config.parent || config.parentPath;
             params.addAlias = true;
 
             if (!config.container) {
