@@ -854,7 +854,7 @@ public class QueryServiceImpl extends QueryService
 
             if (column != null)
             {
-                assert checkColumn(table, column, "ensureRequiredColumns():");
+                assert Table.checkColumn(table, column, "ensureRequiredColumns():");
                 assert field.getTable() == null || columnMap.containsKey(field);
 
                 if (null == ret)
@@ -1167,7 +1167,7 @@ public class QueryServiceImpl extends QueryService
             selectColumns = table.getColumns();
 
         // Check incoming columns to ensure they come from table
-        assert checkAllColumns(table, selectColumns);
+        assert Table.checkAllColumns(table, selectColumns, "getSelectSQL() selectColumns");
 
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
@@ -1175,7 +1175,7 @@ public class QueryServiceImpl extends QueryService
         allColumns = (ArrayList<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null);
 
         // Check columns again: ensureRequiredColumns() may have added new columns
-        assert checkAllColumns(table, allColumns);
+        assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()");
 
         Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, allColumns);
         boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
@@ -1278,40 +1278,6 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    private boolean checkAllColumns(TableInfo table, Collection<ColumnInfo> columns)
-    {
-        int bad = 0;
-
-        for (ColumnInfo column : columns)
-            if (!checkColumn(table, column, "ColumnInfo collection:"))
-                bad++;
-
-        // Check all the columns in the TableInfo to determine if the TableInfo is corrupt
-        for (ColumnInfo column : table.getColumns())
-            if (!checkColumn(table, column, "Underlying TableInfo:"))
-                bad++;
-
-        // TODO: Should return 0 == bad
-        return true;
-    }
-
-
-    private boolean checkColumn(TableInfo table, ColumnInfo column, String prefix)
-    {
-        Logger log = Logger.getLogger(QueryServiceImpl.class);
-
-        if (column.getParentTable() != table)
-        {
-            log.warn(prefix + " Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-
-
     private static Sort createDefaultSort(Collection<ColumnInfo> columns)
 	{
 		Sort sort = new Sort();
@@ -1324,6 +1290,7 @@ public class QueryServiceImpl extends QueryService
 
 		return sort;
 	}
+
 
 	private static void addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
 	{
@@ -1375,7 +1342,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    static private class QAliasedColumn extends AliasedColumn
+    private static class QAliasedColumn extends AliasedColumn
     {
         public QAliasedColumn(FieldKey key, String alias, ColumnInfo column, boolean forceKeepLabel)
         {
@@ -1391,7 +1358,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    static ThreadLocal<HashMap<Environment,Object>> environments = new ThreadLocal<HashMap<Environment, Object>>()
+    private static ThreadLocal<HashMap<Environment,Object>> environments = new ThreadLocal<HashMap<Environment, Object>>()
     {
         @Override
         protected HashMap<Environment, Object> initialValue()
