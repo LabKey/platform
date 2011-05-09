@@ -15,12 +15,15 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.io.IOUtils;
 import org.labkey.api.security.Crypt;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -81,17 +84,52 @@ public class GUID implements Serializable
         //
         // Get unique string representing this machine
         //
-        String netDigest;
 
+        String netIdentity = networkIdentifier();
+
+        //
+        // get unique value representing this process
+        //
+
+        int pid = getPid();
+
+        // preformat all this e.g. f082cbdab574
+        String netDigest = Crypt.MD5.digest(netIdentity);
+        pid = 0x0000ffff & (pid*Integer.valueOf(netDigest.substring(8,15),16));
+        return String.format("%s%04x", netDigest.substring(0, 8), pid);
+    }
+
+
+    private static String networkIdentifier()
+    {
+        StringBuilder sbSource = new StringBuilder();
+        Process p = null;
+
+        try
         {
-            StringBuilder sbSource = new StringBuilder();
+            ProcessBuilder cmd = new ProcessBuilder("ipconfig.exe", "/all");
+            cmd.redirectErrorStream(true);
+            p = cmd.start();
+        }
+        catch (Throwable t) {;}
+        if (null == p)
+        {
             try
             {
-                ProcessBuilder cmd = new ProcessBuilder("ipconfig.exe", "/all");
+                ProcessBuilder cmd = new ProcessBuilder("ifconfig", "-a");
                 cmd.redirectErrorStream(true);
-                Process p = cmd.start();
-                Pattern pattern = Pattern.compile(".*(\\p{XDigit}\\p{XDigit}-\\p{XDigit}\\p{XDigit}-\\p{XDigit}\\p{XDigit}-\\p{XDigit}\\p{XDigit}-\\p{XDigit}\\p{XDigit}-\\p{XDigit}\\p{XDigit}).*");
-                InputStream str = p.getInputStream();
+                p = cmd.start();
+            }
+            catch (Throwable t) {;}
+        }
+
+        if (null != p)
+        {
+            InputStream str = null;
+            try
+            {
+                Pattern pattern = Pattern.compile(".*(\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}).*");
+                str = p.getInputStream();
                 BufferedReader in = new BufferedReader(new InputStreamReader(str));
                 String line;
                 while (null != (line = in.readLine()))
@@ -100,48 +138,57 @@ public class GUID implements Serializable
                     if (!m.find())
                         continue;
                     String mac = m.group(1);
-                    sbSource.append(mac);
+                    sbSource.append(mac).append("\n");
                 }
+            }
+            catch (IOException x)
+            {
+                ;
+            }
+            finally
+            {
+                IOUtils.closeQuietly(str);
                 p.destroy();
-                str.close();
+            }
+        }
+
+        if (0 == sbSource.length())
+        {
+            try
+            {
+                byte[] addr = InetAddress.getLocalHost().getAddress();
+                sbSource.append((0x00ff & (int) addr[0])).append('.')
+                        .append((0x00ff & (int) addr[1])).append('.')
+                        .append((0x00ff & (int) addr[2])).append('.')
+                        .append((0x00ff & (int) addr[3]));
             }
             catch (Throwable t)
             {
-                // unix... ifconfig -a eth0...
+                ;
             }
-
-            if (0 == sbSource.length())
-            {
-                try
-                {
-                    byte[] addr = InetAddress.getLocalHost().getAddress();
-                    sbSource.append((0x00ff & (int) addr[0])).append('.')
-                            .append((0x00ff & (int) addr[1])).append('.')
-                            .append((0x00ff & (int) addr[2])).append('.')
-                            .append((0x00ff & (int) addr[3]));
-                }
-                catch (Throwable t)
-                {
-                    ;
-                }
-            }
-
-            if (0 == sbSource.length())
-                sbSource.append(Long.toHexString(rand.nextLong()));
-
-            netDigest = Crypt.MD5.digest(sbSource.toString());
         }
 
-        //
-        // get unique value representing this process
-        //
+        if (0 == sbSource.length())
+            sbSource.append(Long.toHexString(rand.nextLong()));
 
-        // remove JNI dependency
-        // int pid = 0x0000ffff & JNI.getPid();
-        int pid = 0x0000ffff & rand.nextInt();
+        return sbSource.toString();
+    }
 
-        // preformat all this e.g. f082cbdab574
-        return String.format("%s%04x", netDigest.substring(0, 8), pid);
+    private static int getPid()
+    {
+        int pid = rand.nextInt();
+        try
+        {
+            String procName = ManagementFactory.getRuntimeMXBean().getName();
+            int at=procName.indexOf('@');
+            if (at > 0)
+                pid = Integer.valueOf(procName.substring(0,at));
+        }
+        catch (Exception x)
+        {
+            ;
+        }
+        return pid;
     }
 
 
