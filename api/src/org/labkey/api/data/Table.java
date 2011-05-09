@@ -19,7 +19,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Category;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -235,7 +234,7 @@ public class Table
                 {
                     isInvalid = value.equals(Double.NaN);
                     if (!isInvalid)
-                        value = ResultSetUtil.mapJavaDoubleToDatabaseDouble(((Double) value).doubleValue());
+                        value = ResultSetUtil.mapJavaDoubleToDatabaseDouble(((Double) value));
                 }
 
                 if (isInvalid)
@@ -479,10 +478,8 @@ public class Table
         return executeSingleton(table, col, filter, sort, c);
     }
 
-    /**
-     * return a result from a one row one column resultset or null.
-     * K should be a string or number type.
-     */
+    // return a result from a one row one column resultset or null.
+    // K should be a string or number type.
     // TODO: why is there a sort parameter here?
     public static <K> K executeSingleton(TableInfo table, ColumnInfo column, Filter filter, Sort sort, Class<K> c)
     {
@@ -501,10 +498,8 @@ public class Table
         }
     }
 
-    /**
-     * return a result from a one row one column resultset
-     * does not distinguish between not found, and set NULL
-     */
+    // return a result from a one row one column resultset
+    // does not distinguish between not found, and set NULL
     public static <K> K executeSingleton(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {
         Connection conn = null;
@@ -1419,8 +1414,11 @@ public class Table
     private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log)
             throws SQLException
     {
+        assert Table.checkAllColumns(table, select, "selectForDisplay() select columns");
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
+        assert Table.checkAllColumns(table, columns.values(), "selectForDisplay() results of getDisplayColumnsList()");
         ensureRequiredColumns(table, columns, filter, sort, null);
+        assert Table.checkAllColumns(table, columns.values(), "selectForDisplay() after ensureRequiredColumns");
 
         long queryOffset = offset, scrollOffset = 0;
         int queryRowCount = rowCount;
@@ -2442,6 +2440,39 @@ public class Table
         return ret;
     }
 
+
+    public static boolean checkAllColumns(TableInfo table, Collection<ColumnInfo> columns, String prefix)
+    {
+        int bad = 0;
+
+        for (ColumnInfo column : columns)
+            if (!checkColumn(table, column, prefix))
+                bad++;
+
+        // Check all the columns in the TableInfo to determine if the TableInfo is corrupt
+        for (ColumnInfo column : table.getColumns())
+            if (!checkColumn(table, column, "Underlying TableInfo for " + prefix))
+                bad++;
+
+        // TODO: Should return 0 == bad
+        return true;
+    }
+
+
+    public static boolean checkColumn(TableInfo table, ColumnInfo column, String prefix)
+    {
+        Logger log = Logger.getLogger(Table.class);
+
+        if (column.getParentTable() != table)
+        {
+            log.warn(prefix + ": Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 
 
     public static Parameter.ParameterMap deleteStatement(Connection conn, TableInfo tableDelete /*, Set<String> columns */) throws SQLException
