@@ -66,6 +66,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
+import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.BatchValidationException;
@@ -143,6 +144,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -3149,17 +3151,17 @@ public class StudyManager
         }
 
 
-        DataSet createDataset() throws Exception
+        int counterDatasetId = 100;
+
+        DataSet createDataset(String name) throws Exception
         {
-            _manager.createDataSetDefinition(_context.getUser(), _study.getContainer(), 100);
-            DataSetDefinition dd = _manager.getDataSetDefinition(_study, 100);
+            int id = counterDatasetId++;
+            _manager.createDataSetDefinition(_context.getUser(), _study.getContainer(), id);
+            DataSetDefinition dd = _manager.getDataSetDefinition(_study, id);
             dd = dd.createMutable();
-            // create DatasetDefinition and empty Domain
-            // probably easier way to do this
-//            DataSetDefinition dd = new DataSetDefinition((StudyImpl)_study, 100, "Name", "Label", "Category", null);
-//            _manager.createDataSetDefinition(_context.getUser(), _c, 100);
-            dd.setName("Name");
-            dd.setLabel("Label");
+
+            dd.setName(name);
+            dd.setLabel(name);
             dd.setCategory("Category");
             dd.setEntityId(GUID.makeGUID());
             dd.setKeyPropertyName("Measure");
@@ -3199,17 +3201,18 @@ public class StudyManager
             // save
             domain.save(_context.getUser());
             
-            return _study.getDataSet(100);
+            return _study.getDataSet(id);
         }
 
 
         @Test
-        public void testDatasetUpdateService() throws Throwable
+        public void test() throws Throwable
         {
             try
             {
                 createStudy();
                 _testDatsetUpdateService();
+                _testImportDatasetData();
             }
             catch (BatchValidationException x)
             {
@@ -3237,7 +3240,7 @@ public class StudyManager
             try
             {
                 StudyQuerySchema ss = new StudyQuerySchema((StudyImpl)_study, _context.getUser(), false);
-                DataSet def = createDataset();
+                DataSet def = createDataset("A");
                 TableInfo tt = ss.getTable(def.getName());
                 QueryUpdateService qus = tt.getUpdateService();
                 assertNotNull(qus);
@@ -3282,8 +3285,8 @@ public class StudyManager
 
                 // duplicates in batch
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "X"));
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter), "Value", "X"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter), "Value", 1.0));
                 try
                 {
                     qus.insertRows(_context.getUser(), _study.getContainer(), rows, null);
@@ -3378,6 +3381,136 @@ public class StudyManager
                 rows.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter), "Value", 1, "Number", 99));
                 qus.insertRows(_context.getUser(), _study.getContainer(), rows, null);
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
+
+        
+        private void _import(DataSet def, final List rows, List<String> errors) throws Exception
+        {
+            DataLoader dl = new MapLoader(rows);
+            Map<String,String> columnMap = new CaseInsensitiveHashMap<String>();
+
+            for (ColumnInfo c : def.getTableInfo(_context.getUser()).getColumns())
+            {
+                columnMap.put(c.getName(), c.getPropertyURI());
+            }
+            
+            StudyManager.getInstance().importDatasetData(
+                    _study, _context.getUser(),
+                    (DataSetDefinition)def, dl, 0, columnMap,
+                    errors, true, false, null, null);
+        }
+
+
+        private void _testImportDatasetData() throws Throwable
+        {
+            int counter=0;
+            ResultSet rs = null;
+
+            try
+            {
+                StudyQuerySchema ss = new StudyQuerySchema((StudyImpl)_study, _context.getUser(), false);
+                DataSet def = createDataset("B");
+                TableInfo tt = ss.getTable(def.getName());
+
+                Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
+                Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
+                List rows = new ArrayList();
+                List<String> errors = new ArrayList<String>(){
+                    @Override
+                    public boolean add(String s)
+                    {
+                        return super.add(s);    //To change body of overridden methods use File | Settings | File Templates.
+                    }
+                };
+
+                // insert one row
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
+                _import(def, rows, errors);
+                rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
+                assertTrue(rs.next());
+
+                // duplicate row
+                _import(def, rows, errors);
+                //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
+                assertTrue(-1 != errors.get(0).indexOf("Duplicates were found"));
+
+                // different participant
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counter), "Value", 2.0));
+                _import(def, rows, errors);
+
+                // different date
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(counter), "Value", "X"));
+                _import(def, rows, errors);
+
+                // different measure
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "X"));
+                _import(def, rows, errors);
+
+                // duplicates in batch
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter), "Value", 1.0));
+                _import(def, rows, errors);
+                //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test3
+                assertTrue(-1 != errors.get(0).indexOf("Duplicates were found in the database or imported data"));
+
+                // missing participantid
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
+                _import(def, rows, errors);
+                //Row 1 does not contain required field SubjectID.
+                assertTrue(-1 != errors.get(0).indexOf("required field SubjectID"));
+
+                // missing date
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counter), "Value", 1.0));
+                _import(def, rows, errors);
+                //study:Label: Row 1 does not contain required field date.
+                assertTrue(-1 != errors.get(0).indexOf("does not contain required field date"));
+
+                // missing required property field
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", null, "Value", 1.0));
+                _import(def, rows, errors);
+                //study:Label: Row 1 does not contain required field Measure.
+                assertTrue(-1 != errors.get(0).indexOf("does not contain required field Measure"));
+
+                // legal MV indicator
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "X"));
+                _import(def, rows, errors);
+
+                // illegal MV indicator
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "N/A"));
+                _import(def, rows, errors);
+                //Row 1 data type error for field Value.
+                assertTrue(-1 != errors.get(0).indexOf("data type error for field Value"));
+
+                // conversion test
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "100"));
+                _import(def, rows, errors);
+
+                // validation test
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1, "Number", 101));
+                _import(def, rows, errors);
+                //study:Label: Value '101.0' for field 'Number' is invalid.
+                assertTrue(-1 != errors.get(0).indexOf("is invalid"));
+
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter), "Value", 1, "Number", 99));
+                _import(def, rows, errors);
             }
             finally
             {
