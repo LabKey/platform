@@ -175,11 +175,6 @@ public class Parameter
         return _name;
     }
 
-    public int[] getIndexes()
-    {
-        return _indexes;
-    }
-
     public JdbcType getType()
     {
         return _type;
@@ -336,7 +331,7 @@ public class Parameter
 
     public static class ParameterMap
     {
-        PreparedStatement _stmt;
+        PreparedStatement _stmt;                                                                                
         CaseInsensitiveHashMap<Parameter> _map;
 
         public ParameterMap(PreparedStatement stmt, Collection<Parameter> parameters)
