@@ -133,7 +133,10 @@ public class MapLoader extends DataLoader
                 for (int i = 0; i < columns.length; i++)
                 {
                     if (columns[i].load)
-                        values.add(parsedValues[i]);
+                    {
+                        Object parsedValue = i<parsedValues.length ? parsedValues[i] : null;
+                        values.add(parsedValue);
+                    }
                 }
 
                 assert values.size() == _activeColumns.length;
