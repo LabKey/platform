@@ -304,18 +304,22 @@ public class DataRegion extends DisplayElement
 
 
 
+    @SuppressWarnings({"AssertWithSideEffects"})
     public LinkedHashMap<FieldKey, ColumnInfo> getSelectColumns()
     {
+        TableInfo table = getTable();
         List<DisplayColumn> displayCols = getDisplayColumns();
 
         // includes old DisplayColumn.addQueryColumns()
-        List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(displayCols, getTable());
+        List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(displayCols, table);
 
         // allow DataRegion subclass to add columns (yuck)
         LinkedHashSet<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>(originalColumns);
         addQueryColumns(columns);
 
-        LinkedHashMap<FieldKey, ColumnInfo> ret = QueryService.get().getColumns(getTable(), Collections.<FieldKey>emptySet(), columns);
+        LinkedHashMap<FieldKey, ColumnInfo> ret = QueryService.get().getColumns(table, Collections.<FieldKey>emptySet(), columns);
+
+        assert Table.checkAllColumns(table, columns, "DataRegion.getSelectColumns()");
 
         return ret;
     }

@@ -2451,10 +2451,15 @@ public class Table
 
         // Check all the columns in the TableInfo to determine if the TableInfo is corrupt
         for (ColumnInfo column : table.getColumns())
-            if (!checkColumn(table, column, "Underlying TableInfo for " + prefix))
+            if (!checkColumn(table, column, "TableInfo.getColumns() for " + prefix))
                 bad++;
 
-        // TODO: Should return 0 == bad
+        // Check the pk columns in the TableInfo
+        for (ColumnInfo column : table.getPkColumns())
+            if (!checkColumn(table, column, "TableInfo.getPkColumns() for " + prefix))
+                bad++;
+
+        // TODO: Should return (0 == bad)
         return true;
     }
 
