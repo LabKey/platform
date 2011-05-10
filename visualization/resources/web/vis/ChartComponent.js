@@ -165,6 +165,43 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         LABKEY.vis.XYChartComponent.superclass.initComponent.call(this);
     },
 
+    initSeries: function() {
+         var chartComponent = this;
+         var seriesIndex = 0;
+         this.series.forEach(function (series) {
+            series.style = series.style || LABKEY.vis.SeriesStyleMap[series.caption] || {};
+            var style = series.style;
+            Ext.applyIf(style, chartComponent.seriesStyle);
+            if (!style.markColor)
+                style.markColor = chartComponent.style.seriesColors(series.caption).alpha(style.markAlpha);
+            if (!style.shape)
+                style.shape = LABKEY.vis.Shapes[seriesIndex % LABKEY.vis.Shapes.length];
+            LABKEY.vis.SeriesStyleMap[series.caption] = style; //Stash this away for later
+
+             if (series.xProperty && !series.getX)
+                 series.getX = chartComponent.createGetter(series.xProperty, false);
+             if (series.yProperty && !series.getY)
+                 series.getY = chartComponent.createGetter(series.yProperty, false);
+
+             if (!series.getTitle)
+                series.getTitle = function (d) {return series.caption + ": " + series.getX(d) + ",  " + series.getY(d)};
+
+            //The graphing doesn't work with missing values, so we strip them out of the series in the first place.
+            //Consider, replace series data with static x/y values so don't have to call the getter so often
+            var cleanData = [];
+            series.data.forEach(function (d) {
+                var x = series.getX(d);
+                var y = series.getY(d);
+
+                if (null != x && !isNaN(x) && null != y && !isNaN(y))
+                    cleanData.push(d);
+            });
+            series.data = cleanData;
+
+            seriesIndex++;
+         });  
+    },
+
     render : function (container, position) {
        LABKEY.vis.XYChartComponent.superclass.render.call(this, container, position);
 
@@ -488,6 +525,15 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         };
     },
 
+    //In the case of logs, we pin all values to things that are in scale when we draw them.
+    //scale._min gets stashed by getScale if we need to pin
+    pinMin: function(scale, value) {
+        if ("_min" in scale && value < scale._min)
+            return 0;
+        else
+            return scale(value);
+    },
+
     // if there is a left axes, set the leftMargin style value
     setLeftMargin: function() {
         var newMarginVal = 90;
@@ -539,22 +585,14 @@ LABKEY.vis.ScatterChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        //To get z ordering right we add the dataPanel after rules etc have been drawn.
        var dataPanel = this.addDataPanel();
 
-       //In the case of logs, we pin all values to things that are in scale when we draw them.
-       //scale._min gets stashed by getScale if we need to pin
-       function pinMin(scale, value) {
-           if ("_min" in scale && value < scale._min)
-            return 0;
-           else
-            return scale(value);
-       }
-       
+       var chartComponent = this;
        this.series.forEach(function (s) {
            var style = s.style;
            var color = style.markColor;
            dataPanel.add(pv.Dot)
             .data(s.data)
             .left(function (d) {return bottom(s.getX(d))})
-            .bottom(function (d) {return pinMin(s.axis == "right" ? right : left, s.getY(d))})
+            .bottom(function (d) {return chartComponent.pinMin(s.axis == "right" ? right : left, s.getY(d))})
             .strokeStyle(color)
             .fillStyle(color)
             .size(style.shape.markSize)
@@ -566,45 +604,7 @@ LABKEY.vis.ScatterChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        this.drawLegend();
        this.rootVisPanel.render();
 
-   },
-
-    initSeries: function() {
-         var chartComponent = this;
-         var seriesIndex = 0;
-         this.series.forEach(function (series) {
-            series.style = series.style || LABKEY.vis.SeriesStyleMap[series.caption] || {};
-            var style = series.style;
-            Ext.applyIf(style, chartComponent.seriesStyle);
-            if (!style.markColor)
-                style.markColor = chartComponent.style.seriesColors(series.caption).alpha(style.markAlpha);
-            if (!style.shape)
-                style.shape = LABKEY.vis.Shapes[seriesIndex % LABKEY.vis.Shapes.length];
-            LABKEY.vis.SeriesStyleMap[series.caption] = style; //Stash this away for later
-             
-             if (series.xProperty && !series.getX)
-                 series.getX = chartComponent.createGetter(series.xProperty, false);
-             if (series.yProperty && !series.getY)
-                 series.getY = chartComponent.createGetter(series.yProperty, false);
-
-             if (!series.getTitle)
-                series.getTitle = function (d) {return series.caption + ": " + series.getX(d) + ",  " + series.getY(d)};
-
-            //The graphing doesn't work with missing values, so we strip them out of the series in the first place.
-            //Consider, replace series data with static x/y values so don't have to call the getter so often
-            var cleanData = [];
-            series.data.forEach(function (d) {
-                var x = series.getX(d);
-                var y = series.getY(d);
-
-                if (null != x && !isNaN(x) && null != y && !isNaN(y))
-                    cleanData.push(d);
-            });
-            series.data = cleanData;
-
-            seriesIndex++;
-     });
-    }
-
+   }
 });
 
 LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
@@ -648,15 +648,7 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        //To get z ordering right we add the dataPanel after rules etc have been drawn.
        var dataPanel = this.addDataPanel();
 
-       //In the case of logs, we pin all values to things that are in scale when we draw them.
-       //scale._min gets stashed by getScale if we need to pin
-       function pinMin(scale, value) {
-           if ("_min" in scale && value < scale._min)
-            return 0;
-           else
-            return scale(value);
-       }
-
+       var chartComponent = this;
        var seriesIndex;
        this.series.forEach(function (s) {
            var style = s.style;
@@ -664,7 +656,7 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
            var lines = dataPanel.add(pv.Line)
              .data(s.data)
             .left(function (d) { return bottom(s.getX(d))})
-            .bottom(function (d) { return pinMin(s.axis == "right" ? right : left, s.getY(d))})
+            .bottom(function (d) { return chartComponent.pinMin(s.axis == "right" ? right : left, s.getY(d))})
             .strokeStyle(color)
             .lineWidth(style.lineWidth);
             if(!style.shape.hidden){
@@ -681,42 +673,6 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
 
        this.drawLegend();
        this.rootVisPanel.render();
-   },
-
-   initSeries: function() {
-        var chartComponent = this;
-       var seriesIndex = 0;
-        this.series.forEach(function (series) {
-            series.style = series.style || LABKEY.vis.SeriesStyleMap[series.caption] || {};
-            var style = series.style;
-            Ext.applyIf(style, chartComponent.seriesStyle);
-            if (!style.markColor)
-                style.markColor = chartComponent.style.seriesColors(series.caption).alpha(style.markAlpha);
-            if (!style.shape)
-                style.shape = LABKEY.vis.Shapes[seriesIndex % LABKEY.vis.Shapes.length];
-            LABKEY.vis.SeriesStyleMap[series.caption] = style; //Stash this away for later
-
-            if (series.xProperty && !series.getX)
-                series.getX = chartComponent.createGetter(series.xProperty, false);
-            if (series.yProperty && !series.getY)
-                series.getY = chartComponent.createGetter(series.yProperty, false);
-
-            if (!series.getTitle)
-                series.getTitle = function (d) {return series.caption + ": " + series.getX(d) + ",  " + series.getY(d)};
-
-            //The graphing doesn't work with missing values, so we strip them out of the series in the first place.
-            //Consider, replace series data with static x/y values so don't have to call the getter so often
-            var cleanData = [];
-            series.data.forEach(function (d) {  
-                var x = series.getX(d);
-                var y = series.getY(d);
-
-                if (null != x && !isNaN(x) && null != y && !isNaN(y))
-                    cleanData.push(d);
-            });
-            series.data = cleanData;
-            seriesIndex++;
-    });
    }
 });
 
