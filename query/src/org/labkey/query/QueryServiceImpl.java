@@ -762,6 +762,8 @@ public class QueryServiceImpl extends QueryService
     @NotNull
     public LinkedHashMap<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields, Collection<ColumnInfo> existingColumns)
     {
+        assert Table.checkAllColumns(table, existingColumns, "QueryServiceImpl.getColumns() existingColums");
+
         AliasManager manager = new AliasManager(table, existingColumns);
         LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey,ColumnInfo>();
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<FieldKey,ColumnInfo>();
@@ -781,6 +783,8 @@ public class QueryServiceImpl extends QueryService
                     ret.put(field, column);
             }
         }
+
+        assert Table.checkAllColumns(table, ret.values(), "QueryServiceImpl.getColumns() ret");
 
         return ret;
     }
