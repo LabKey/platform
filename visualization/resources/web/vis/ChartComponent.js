@@ -321,7 +321,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
             if(edge == "right")
                 label.left(this.width - (2 * this.style.smallMargin) - this.style.legendWidth - this.style.axisLabelHeight);
             if (edge == "bottom")
-                label.bottom(this.style.smallMargin).top(null);
+                label.bottom(this.style.smallMargin).top(null).left((this.chartWidth / 2) + this.style.leftMargin);
         }
 
     },
