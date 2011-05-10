@@ -213,11 +213,11 @@ public class RenderContext extends BoundMap // extends ViewContext
 
         Set<FieldKey> detailsUrlKeys = tinfo.getDetailsURLKeys();
         keys.addAll(detailsUrlKeys);
-
         Collection<ColumnInfo> infoCollection = QueryService.get().getColumns(tinfo, keys, ret).values();
         ret.addAll(infoCollection);
 
         List<ColumnInfo> pkColumns = tinfo.getPkColumns();
+
         if (null != pkColumns)
         {
             //always need to select pks
@@ -225,11 +225,14 @@ public class RenderContext extends BoundMap // extends ViewContext
         }
 
         String versionCol = tinfo.getVersionColumnName();
+
         if (null != versionCol)
         {
             ColumnInfo col = tinfo.getColumn(versionCol);
             ret.add(col);
         }
+
+        Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret");
 
         return new ArrayList<ColumnInfo>(ret);
     }

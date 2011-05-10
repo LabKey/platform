@@ -303,7 +303,6 @@ public class DataRegion extends DisplayElement
     }
 
 
-
     @SuppressWarnings({"AssertWithSideEffects"})
     public LinkedHashMap<FieldKey, ColumnInfo> getSelectColumns()
     {
