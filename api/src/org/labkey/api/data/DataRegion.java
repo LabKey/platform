@@ -313,9 +313,13 @@ public class DataRegion extends DisplayElement
         // includes old DisplayColumn.addQueryColumns()
         List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(displayCols, table);
 
+        assert Table.checkAllColumns(table, originalColumns, "DataRegion.getSelectColumns() originalColumns");
+
         // allow DataRegion subclass to add columns (yuck)
         LinkedHashSet<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>(originalColumns);
         addQueryColumns(columns);
+
+        assert Table.checkAllColumns(table, columns, "DataRegion.getSelectColumns() columns");
 
         LinkedHashMap<FieldKey, ColumnInfo> ret = QueryService.get().getColumns(table, Collections.<FieldKey>emptySet(), columns);
 
