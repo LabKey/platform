@@ -611,28 +611,28 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             WebdavService s = new WebdavService();
             s.setResolver(new ModuleStaticResolverImpl());
 
-            WebdavResource rUtils = s.lookup(new Path("utils"));
-            assertNotNull(rUtils);
-            assertTrue(rUtils.isCollection());
+            WebdavResource rIcons = s.lookup(new Path("_icons"));
+            assertNotNull(rIcons);
+            assertTrue(rIcons.isCollection());
 
-            WebdavResource utilsJs = s.lookup(new Path("utils","dialogBox.js"));
-            assertTrue(utilsJs.isFile());
+            WebdavResource rIcon = s.lookup(new Path("_icons","folder.gif"));
+            assertTrue(rIcon.isFile());
             
-            WebdavResource rU = s.lookup(new Path("U"));
-            assertTrue(rU == null || !rU.exists());
+            WebdavResource rI = s.lookup(new Path("I"));
+            assertTrue(rI == null || !rI.exists());
             
             // This test depends on knowing some existing webapp directories
-            s.addLink(new Path("U"), new Path("utils"));
-            rU = s.lookup(new Path("U"));
-            assertNotNull(rU);
-            assertTrue(rU.isCollection());
+            s.addLink(new Path("I"), new Path("_icons"));
+            rI = s.lookup(new Path("I"));
+            assertNotNull(rI);
+            assertTrue(rI.isCollection());
 
-            utilsJs = s.lookup(new Path("U","dialogBox.js"));
-            assertTrue(utilsJs.isFile());
+            rIcon = s.lookup(new Path("I","folder.gif"));
+            assertTrue(rIcon.isFile());
 
-            s.removeLink(new Path("U"));
-            utilsJs = s.lookup(new Path("U","dialogBox.js"));
-            assertTrue(utilsJs == null || !utilsJs.exists());
+            s.removeLink(new Path("I"));
+            rIcon = s.lookup(new Path("I","folder.gif"));
+            assertTrue(rIcon == null || !rIcon.exists());
         }
     }
 }
