@@ -28,11 +28,6 @@
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
-<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("util");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
-
 <%
     JspView<ReportsController.CreateQueryReportBean> me = (JspView<org.labkey.study.controllers.reports.ReportsController.CreateQueryReportBean>) HttpView.currentView();
     ReportsController.CreateQueryReportBean bean = me.getModelBean();
@@ -42,20 +37,26 @@
 <script type="text/javascript">
     function verifyLabel()
     {
-        var labelElem = document.getElementById("label");
-        var viewName = YAHOO.util.Dom.get('viewName');
-        if (!labelElem.value)
+
+        var labelElem = Ext.DomQuery.selectNode('#label');
+        var viewName = Ext.DomQuery.selectNode('#viewName');
+        var labelValue = '';
+
+        if (labelElem.value)
+            labelValue =  labelElem.value.replace(/^\s+|\s+$/g, '');  //regexp to match leading and trailing whitespace, same as the missing String.trim() method
+
+        if (labelValue.length === 0)
         {
-            alert("Label cannot be empty.");
+            alert("Label cannot be empty");
             return false;
         }
-        viewName.value = labelElem.value;
+        viewName.value = labelValue;
         return true;
     }
 
     function onUpdateDataset()
     {
-        var selection = YAHOO.util.Dom.get('datasetSelection');
+        var selection = Ext.DomQuery.selectNode('#datasetSelection')
         var value = selection.value;
         if (value)
         {
@@ -79,7 +80,9 @@
             }
         }
     }
-    YAHOO.util.Event.addListener(window, "load", onUpdateDataset);
+
+    Ext.onReady(onUpdateDataset);
+
 </script>
 
 <form action="saveReportView.post" method="POST">

@@ -36,8 +36,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
-<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
+
 <%
     JspView<Report> me = (JspView<Report>) HttpView.currentView();
     Report bean = me.getModelBean();
@@ -98,12 +97,14 @@
         var buttonDiv = document.getElementById("selectionButtons");
         buttonDiv.style.display = useExplicit ? "inline" : "none";
     }
-    YAHOO.util.Event.addListener(window, "load", updateDisplay);
+
+    Ext.onReady(updateDisplay);
+
 </script>
 
 <h3><%= bean.getDescriptor().getReportName() %></h3>
 
-    <p>This page provides for explicitly setting permissions to access this <%=isAttachmentReport ? "report" : "view"%>.</p>
+    <p>This page enables you to fine-tune permissions for this <%=isAttachmentReport ? "report" : "view"%>.</p>
     <p>You can choose the default behavior as described.  Alternately, you can explicitly set permissions
     group by group.  As always, if you don't have read permission on this folder, you don't get to see anything, regardless of any other settings.</p>
 

@@ -28,9 +28,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!-- saveReportView.jsp -->
-<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
 
 <%
     JspView<ReportsController.SaveReportViewForm> me = (JspView<ReportsController.SaveReportViewForm>) HttpView.currentView();
@@ -45,10 +42,10 @@
 
     function validateForm()
     {
-        var reportName = YAHOO.util.Dom.get('reportName');
-        if (reportName && (reportName.value==null || reportName.value.length == 0))
+        var reportName = Ext.DomQuery.selectNode('#reportName');
+        if ((!reportName) || (reportName.value.length === 0))
         {
-            alert("View name cannot be blank");
+            alert("View name cannot be blank.");
             return false;
         }
         return true;

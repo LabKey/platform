@@ -23,9 +23,6 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
-<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 
 <%
@@ -90,8 +87,10 @@
         notifyStart.disabled = false;
     }
 
-    YAHOO.util.Event.addListener(window, "load", updateSuccessNotifyInterval);
-    YAHOO.util.Event.addListener(window, "load", updateFailureNotifyInterval);
+    Ext.onReady(updateSuccessNotifyInterval);
+    Ext.onReady(updateFailureNotifyInterval);
+
+
 </script>
 
 <form action="updateEmailNotification.view" method="post">

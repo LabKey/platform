@@ -33,6 +33,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
+
 <%
     JspView<StudyController.StudySnapshotForm> me = (JspView<StudyController.StudySnapshotForm>) HttpView.currentView();
     StudyController.StudySnapshotForm bean = me.getModelBean();
@@ -55,11 +56,9 @@
 
 %>
 
-<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
-
 <labkey:errors/>
+
+
 
 <form action="" method="post" onsubmit="validateForm();">
 <table>
@@ -85,12 +84,15 @@
         <%
             if (!bean.isEdit())
             {
-                out.println(PageFlowUtil.generateSubmitButton("Edit Dataset Definition", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
+                out.println(PageFlowUtil.generateSubmitButton("Edit Dataset Definition", "this.form.action.value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
                 out.print("&nbsp;");
             }
+
             out.println(generateSubmitButton(bean.isEdit() ? "Save" : "Create Snapshot"));
             out.print("&nbsp;");
-            out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Done" : "Cancel", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
+
+            out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Done" : "Cancel", "this.form.action.value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
+
         %>
     </table>
     <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean, null)) { %>
@@ -105,11 +107,11 @@
 
 <script type="text/javascript">
 
+    var manualUpdate = Ext.DomQuery.selectNode('#manualUpdate');
+    var updateDelay = Ext.DomQuery.selectNode('#updateDelay');
+
     function onAutoUpdate()
     {
-        var manualUpdate = YAHOO.util.Dom.get('manualUpdate');
-        var updateDelay = YAHOO.util.Dom.get('updateDelay');
-
         if (manualUpdate.checked)
             updateDelay.style.display = "none";
         else
@@ -118,14 +120,12 @@
 
     function validateForm()
     {
-        var manualUpdate = YAHOO.util.Dom.get('manualUpdate');
-        var updateDelay = YAHOO.util.Dom.get('updateDelay');
-
         if (manualUpdate.checked)
             updateDelay.value = "0";
     }
 
-    YAHOO.util.Event.addListener(window, "load", onAutoUpdate)
+    Ext.onReady(onAutoUpdate);
+
 </script>
 
 <%!

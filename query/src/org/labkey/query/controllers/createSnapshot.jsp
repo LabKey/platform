@@ -57,8 +57,8 @@
 
     function onAutoUpdate()
     {
-        var manualUpdate = YAHOO.util.Dom.get('manualUpdate');
-        var updateDelay = YAHOO.util.Dom.get('updateDelay');
+        var manualUpdate = Ext.DomQuery.selectNode('#manualUpdate');
+        var updateDelay = Ext.DomQuery.selectNode('#updateDelay');
 
         if (manualUpdate.checked)
             updateDelay.style.display = "none";

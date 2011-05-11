@@ -51,10 +51,6 @@
     }
 %>
 
-<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("connection");</script>
-
 <form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context.getContainer()))%>">
     <table>
         <tr>
@@ -90,8 +86,9 @@
 
 <script type="text/javascript">
 
-    function getSectionNames(element)
+    function getSectionNames()
     {
+        var element = document.getElementById('reportId');
         // ajax call to get report section names
         if (element)
         {
@@ -99,9 +96,13 @@
 
             url = url.concat("&<%=ReportDescriptor.Prop.reportId.name()%>=");
             url = url.concat(element.value);
-            url = url.concat("&<%=Report.renderParam.showSection.name()%>=<%=PageFlowUtil.encode(pm.get(Report.renderParam.showSection.name()))%>")
+            url = url.concat("&<%=Report.renderParam.showSection.name()%>=<%=PageFlowUtil.encode(pm.get(Report.renderParam.showSection.name()))%>");
 
-            YAHOO.util.Connect.asyncRequest("GET", url, {success : handleSuccess});
+            Ext.Ajax.request({
+                method: "GET",
+                url: url,
+                success : handleSuccess
+            });
         }
     }
 
@@ -158,6 +159,6 @@
             showSection.disabled = checked;
     }
 
-    YAHOO.util.Event.addListener(window, "load", getSectionNames(document.getElementById('reportId')));
+    Ext.onReady(getSectionNames);
 
 </script>
