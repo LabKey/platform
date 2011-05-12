@@ -159,6 +159,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         this(SpringActionController.getActionName(action) + ".view", caption, displayModes, actionType);
     }
 
+    @Deprecated /** Use version that takes an action class instead */
     public ActionButton(String actionName, String caption, int displayModes, Action actionType)
     {
         this(actionName, caption);
