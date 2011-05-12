@@ -559,7 +559,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
-    public DataExchangeHandler getDataExchangeHandler()
+    public DataExchangeHandler createDataExchangeHandler()
     {
         return new ModuleDataExchangeHandler();
     }

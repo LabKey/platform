@@ -39,7 +39,7 @@
     <%
     Study study = getStudy();
 
-    String cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer()).getLocalURIString();
+    ActionURL cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer());
 
     for (DataSet def : study.getDataSets())
     {
@@ -60,7 +60,7 @@
     }
         
 %>
-</table>
+</table>t
 <%=PageFlowUtil.generateSubmitButton("Delete Selected",
         "if (confirm('Delete selected datasets?')){" +
             "Ext.get(this).replaceClass('labkey-button', 'labkey-disabled-button');" +

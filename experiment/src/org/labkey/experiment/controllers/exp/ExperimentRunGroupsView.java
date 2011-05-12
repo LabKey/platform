@@ -62,7 +62,7 @@ public class ExperimentRunGroupsView extends VBox
         Collapsible collapsible = new WebPartCollapsible("experimentRunGroup");
         NavTreeManager.applyExpandState(collapsible, getViewContext());
         enableExpandCollapse("experimentRunGroup", !collapsible.isCollapsed());
-        setTitle("Run Groups");
+        setTitle("Run Group Memberships");
 
         setTitlePopupHelp("Run Groups", "Run groups let you define sets of runs that are related. For example, you might create separate groups\n" +
                 "for your case and controls, so that you can easily select them.");

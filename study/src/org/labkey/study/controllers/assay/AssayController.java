@@ -746,7 +746,7 @@ public class AssayController extends SpringActionController
         {
             ExpProtocol protocol = form.getProtocol(true);
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            DataExchangeHandler handler = ((AbstractAssayProvider)provider).getDataExchangeHandler();
+            DataExchangeHandler handler = ((AbstractAssayProvider)provider).createDataExchangeHandler();
 
             if (handler != null)
             {

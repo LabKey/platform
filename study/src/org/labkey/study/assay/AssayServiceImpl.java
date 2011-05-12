@@ -233,7 +233,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
         ExpData data = ExperimentService.get().createData(getContainer(), provider.getDataType());
         ExperimentDataHandler handler = data.findDataHandler();
-        result.setAllowValidationScript(provider.getDataExchangeHandler() != null);
+        result.setAllowValidationScript(provider.createDataExchangeHandler() != null);
         result.setAllowTransformationScript(handler instanceof TransformDataHandler);
 
         return result;

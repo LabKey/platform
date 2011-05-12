@@ -56,6 +56,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
@@ -826,7 +827,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunGraphAction extends AbstractShowRunAction
     {
-        protected HttpView createLowerView(ExpRunImpl experimentRun, BindException errors)
+        protected VBox createLowerView(ExpRunImpl experimentRun, BindException errors)
         {
             return new VBox(
                     new ToggleRunView(experimentRun, false, true, true),
@@ -896,16 +897,64 @@ public class ExperimentController extends SpringActionController
             CustomPropertiesView cpv = new CustomPropertiesView(_experimentRun.getLSID(), getContainer());
 
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, cpv));
+            VBox lowerView = createLowerView(_experimentRun, errors);
+            lowerView.setFrame(WebPartView.FrameType.PORTAL);
+            lowerView.setTitle("Run Details");
+            NavTree tree = new NavTree("");
+            File runRoot = _experimentRun.getFilePathRoot();
+            if (runRoot != null && NetworkDrive.exists(runRoot))
+            {
+                if (!runRoot.isDirectory())
+                {
+                    runRoot = runRoot.getParentFile();
+                }
+                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(_experimentRun.getContainer());
+                if (pipelineRoot != null)
+                {
+                    if (pipelineRoot.isUnderRoot(runRoot))
+                    {
+                        String path = pipelineRoot.relativePath(runRoot);
+                        tree.addChild("View Files", PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(_experimentRun.getContainer(), null, path));
+                    }
+                }
+            }
+            NavTree downloadFiles = new NavTree("Download all files");
+
+            downloadFiles.setScript("exportFiles();");
+
+            tree.addChild(downloadFiles);
+
+            lowerView.setNavMenu(tree);
+            lowerView.setIsWebPart(false);
+
+            vbox.addView(lowerView);
             vbox.addView(new ExperimentRunGroupsView(getUser(), getContainer(), _experimentRun, getViewContext().getActionURL()));
-            vbox.addView(createLowerView(_experimentRun, errors));
+
+            StringBuilder html = new StringBuilder();
+            html.append("<form id=\"exportFilesForm\" method=\"post\" action=\"");
+            html.append(new ActionURL(ExportRunFilesAction.class, _experimentRun.getContainer()));
+            html.append("\"><input type=\"hidden\" value=\"ExportSingleRun\" name=\"");
+            html.append(DataRegionSelection.DATA_REGION_SELECTION_KEY);
+            html.append("\" /><input type=\"hidden\" name=\"");
+            html.append(DataRegion.SELECT_CHECKBOX_NAME);
+            html.append("\" value=\"");
+            html.append(_experimentRun.getRowId());
+            html.append("\" /><input type=\"hidden\" name=\"zipFileName\" value=\"");
+            html.append(PageFlowUtil.filter(_experimentRun.getName()));
+            html.append(".zip\" /></form>");
+            html.append("<script>function exportFiles() { document.getElementById('exportFilesForm').submit(); }</script>");
+
+            HtmlView hiddenFormView = new HtmlView(html.toString());
+            vbox.addView(hiddenFormView);
+
             return vbox;
         }
 
-        protected abstract HttpView createLowerView(ExpRunImpl experimentRun, BindException errors);
+        protected abstract VBox createLowerView(ExpRunImpl experimentRun, BindException errors);
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Experiment Run " + _experimentRun.getName());
+            return appendRootNavTrail(root).addChild(_experimentRun.getName());
         }
     }
 
@@ -998,69 +1047,38 @@ public class ExperimentController extends SpringActionController
         {
             super(null);
             StringBuilder sb = new StringBuilder();
-            if (showGraphSummary)
-            {
-                sb.append(PageFlowUtil.textLink("graph summary view", ExperimentUrlsImpl.get().getRunGraphURL(expRun)) + " ");
-            }
-            else
-            {
-                sb.append("<strong>graph summary view</strong> ");
-            }
-            if (showGraphDetail)
-            {
-                sb.append(PageFlowUtil.textLink("graph detail view", ExperimentUrlsImpl.get().getRunGraphDetailURL(expRun)) + " ");
-            }
-            else
-            {
-                sb.append("<strong>graph detail view</strong> ");
-            }
-            if (showText)
-            {
-                sb.append(PageFlowUtil.textLink("text view", ExperimentUrlsImpl.get().getRunTextURL(expRun)) + " ");
-            }
-            else
-            {
-                sb.append("<strong>text view</strong> ");
-            }
-            File runRoot = expRun.getFilePathRoot();
-            if (runRoot != null && NetworkDrive.exists(runRoot))
-            {
-                if (!runRoot.isDirectory())
-                {
-                    runRoot = runRoot.getParentFile();
-                }
-                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(expRun.getContainer());
-                if (pipelineRoot != null)
-                {
-                    if (pipelineRoot.isUnderRoot(runRoot))
-                    {
-                        String path = pipelineRoot.relativePath(runRoot);
-                        sb.append(PageFlowUtil.textLink("files view", PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(expRun.getContainer(), null, path)) + " ");
-                    }
-                }
-            }
 
-            sb.append(PageFlowUtil.textLink("download all files", "", "document.getElementById('exportFilesForm').submit(); return false;", ""));
-            sb.append("<form id=\"exportFilesForm\" method=\"post\" action=\"");
-            sb.append(new ActionURL(ExportRunFilesAction.class, expRun.getContainer()));
-            sb.append("\"><input type=\"hidden\" value=\"ExportSingleRun\" name=\"");
-            sb.append(DataRegionSelection.DATA_REGION_SELECTION_KEY);
-            sb.append("\" /><input type=\"hidden\" name=\"");
-            sb.append(DataRegion.SELECT_CHECKBOX_NAME);
-            sb.append("\" value=\"");
-            sb.append(expRun.getRowId());
-            sb.append("\" /><input type=\"hidden\" name=\"zipFileName\" value=\"");
-            sb.append(PageFlowUtil.filter(expRun.getName()));
-            sb.append(".zip\" /></form>");
+            sb.append("<table class=\"labkey-tab-strip\"><tr>");
+            addSpace(sb);
+            addTab("Graph Summary View", ExperimentUrlsImpl.get().getRunGraphURL(expRun), !showGraphSummary, sb);
+            addSpace(sb);
+            addTab("Graph Detail View", ExperimentUrlsImpl.get().getRunGraphDetailURL(expRun), !showGraphDetail, sb);
+            addSpace(sb);
+            addTab("Text View", ExperimentUrlsImpl.get().getRunTextURL(expRun), !showText, sb);
+            sb.append("<td class=\"labkey-tab-space\" width=\"100%\"></td>");
+            addSpace(sb);
+            sb.append("</tr></table>");
 
             setHtml(sb.toString());
+        }
+
+        private void addTab(String text, ActionURL url, boolean selected, StringBuilder sb)
+        {
+            sb.append("<td class=\"labkey-tab" + (selected ? "-selected" : "" ) + "\" style=\"margin-bottom: 0px;\"><a href=\"" + url + "\">" + PageFlowUtil.filter(text) + "</a></td>");
+        }
+
+        private void addSpace(StringBuilder sb)
+        {
+            sb.append("<td class=\"labkey-tab-space\"><img width=\"5\" src=\"");
+            sb.append(AppProps.getInstance().getContextPath());
+            sb.append("/_.gif\"></td>");
         }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunTextAction extends AbstractShowRunAction
     {
-        protected HttpView createLowerView(ExpRunImpl expRun, BindException errors)
+        protected VBox createLowerView(ExpRunImpl expRun, BindException errors)
         {
             JspView<ExpRun> applicationsView = new JspView<ExpRun>("/org/labkey/experiment/ProtocolApplications.jsp", expRun);
             applicationsView.setFrame(WebPartView.FrameType.TITLE);
@@ -1124,7 +1142,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunGraphDetailAction extends AbstractShowRunAction
     {
-        protected HttpView createLowerView(ExpRunImpl run, BindException errors)
+        protected VBox createLowerView(ExpRunImpl run, BindException errors)
         {
             ExperimentRunGraphView gw = new ExperimentRunGraphView(run, true);
             if (null != getViewContext().getActionURL().getParameter("focus"))
