@@ -17,6 +17,7 @@ package org.labkey.api.reader;
 
 import org.apache.poi.hssf.OldExcelFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.format.CellFormat;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -70,14 +71,7 @@ public class ExcelFactory
     {
         if (cell != null)
         {
-            switch (cell.getCellType())
-            {
-                case Cell.CELL_TYPE_BOOLEAN:
-                    return String.valueOf(cell.getBooleanCellValue());
-                case Cell.CELL_TYPE_NUMERIC:
-                    return String.valueOf(cell.getNumericCellValue());
-            }
-            return cell.getStringCellValue();
+            return CellFormat.getInstance(cell.getCellStyle().getDataFormatString()).apply(cell).text;
         }
         return "";
     }

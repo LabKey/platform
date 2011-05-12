@@ -42,7 +42,7 @@ public interface DataExchangeHandler
     public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception;
 
     public File createTransformationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception;
-    public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo) throws ValidationException;
+    public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo, ExpRun run, File scriptFile) throws ValidationException;
 
     public DataSerializer getDataSerializer();
     

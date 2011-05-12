@@ -15,6 +15,7 @@
  */
 package org.labkey.api.qc;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -35,6 +36,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.*;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -81,6 +83,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     private static final Logger LOG = Logger.getLogger(TsvDataExchangeHandler.class);
     private DataSerializer _serializer = new TsvDataSerializer();
 
+    /** Files that shouldn't be considered part of the run's output, such as the transform script itself */
+    private Set<File> _filesToIgnore = new HashSet<File>();
+
     public DataSerializer getDataSerializer()
     {
         return _serializer;
@@ -89,6 +94,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public File createValidationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception
     {
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
+        _filesToIgnore.add(runProps);
         PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
 
         // Hack to get TSV values to be properly quoted if they include tabs
@@ -111,6 +117,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append(set.getKey());
                 pw.append('\t');
                 pw.println(sampleData.getAbsolutePath());
+                _filesToIgnore.add(sampleData);
             }
 
             // errors file location
@@ -119,11 +126,14 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append('\t');
             pw.println(errorFile.getAbsolutePath());
 
+            _filesToIgnore.add(errorFile);
+
             // transformed run properties file location
             File transformedRunPropsFile = new File(scriptDir, TRANSFORMED_RUN_INFO_FILE);
             pw.append(Props.transformedRunPropertiesFile.name());
             pw.append('\t');
             pw.println(transformedRunPropsFile.getAbsolutePath());
+            _filesToIgnore.add(transformedRunPropsFile);
 
             return runProps;
         }
@@ -173,14 +183,16 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append('\t');
                 pw.append(data.getAbsolutePath());
                 pw.append('\n');
+                _filesToIgnore.add(data);
 
                 Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, LOG, xarContext);
                 File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
 
                 for (Map.Entry<DataType, List<Map<String, Object>>> dataEntry : dataMap.entrySet())
                 {
-                    File runData = File.createTempFile(Props.runDataFile.name(), ".tsv", scriptDir);
+                    File runData = new File(scriptDir, Props.runDataFile + ".tsv");
                     getDataSerializer().exportRunData(context.getProtocol(), dataEntry.getValue(), runData);
+                    _filesToIgnore.add(runData);
 
                     pw.append(Props.runDataFile.name());
                     pw.append('\t');
@@ -220,7 +232,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
         {
             ExpData data = entry.getKey();
-            File runData = File.createTempFile(Props.runDataFile.name(), ".tsv", scriptDir);
+            File runData = new File(scriptDir, Props.runDataFile + ".tsv");
             // ask the data serializer to write the data map out to the temp file
             getDataSerializer().exportRunData(context.getProtocol(), entry.getValue(), runData);
 
@@ -478,9 +490,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
-    public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo) throws ValidationException
+    protected boolean isIgnoreableOutput(File file)
+    {
+        return _filesToIgnore.contains(file);
+    }
+
+    public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo, ExpRun run, File scriptFile) throws ValidationException
     {
         DefaultTransformResult result = new DefaultTransformResult();
+        _filesToIgnore.add(scriptFile);
 
         // check to see if any errors were generated
         processValidationOutput(runInfo);
@@ -500,9 +518,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     Object data = row.get("transformedData");
                     if (data != null)
                     {
-                        File transformed = new File(data.toString());
-                        if (transformed.exists())
-                            transformedData.put(String.valueOf(row.get("type")), new File(data.toString()));
+                        File transformedFile = new File(data.toString());
+                        if (transformedFile.exists())
+                        {
+                            transformedData.put(String.valueOf(row.get("type")), transformedFile);
+                            _filesToIgnore.add(transformedFile);
+                        }
                     }
                     else if (String.valueOf(row.get("name")).equalsIgnoreCase(Props.transformedRunPropertiesFile.name()))
                     {
@@ -511,6 +532,41 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     else if (String.valueOf(row.get("name")).equalsIgnoreCase(Props.runDataUploadedFile.name()))
                     {
                         runDataUploadedFile = new File(row.get("value").toString());
+                    }
+                }
+
+                // Look through all of the files that are left after running the transform script
+                for (File file : runInfo.getParentFile().listFiles())
+                {
+                        if (!isIgnoreableOutput(file) && runDataUploadedFile != null)
+                    {
+                        int extensionIndex = runDataUploadedFile.getName().lastIndexOf(".");
+                        String baseName = extensionIndex >= 0 ? runDataUploadedFile.getName().substring(0, extensionIndex) : runDataUploadedFile.getName();
+
+                        // Figure out a unique file name
+                        File targetFile;
+                        int index = 0;
+                        do
+                        {
+                            targetFile = new File(runDataUploadedFile.getParentFile(), baseName + (index == 0 ? "" : ("-" + index)) + "." + file.getName());
+                            index++;
+                        }
+                        while (targetFile.exists());
+
+                        // Copy the file to the same directory as the original data file
+                        FileUtils.moveFile(file, targetFile);
+
+                        // Add the file as an output to the run
+                        Pair<ExpData,String> outputData = AbstractAssayProvider.createdRelatedOutputData(context.getContainer(), Collections.<AssayDataType>emptyList(), baseName, targetFile);
+                        for (ExpProtocolApplication protocolApplication : run.getProtocolApplications())
+                        {
+                            if (protocolApplication.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
+                            {
+                                outputData.getKey().setSourceApplication(protocolApplication);
+                                outputData.getKey().save(context.getUser());
+                                protocolApplication.addDataInput(context.getUser(), outputData.getKey(), outputData.getValue());
+                            }
+                        }
                     }
                 }
 

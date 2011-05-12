@@ -43,6 +43,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine
     public static final String PARAM_REPLACEMENT_MAP = "external.script.engine.replacementMap";
     public static final String PARAM_SCRIPT = "scriptFile";
     public static final String SCRIPT_PATH = "scriptPath";
+    /** The location of the post-replacement script file */
+    public static final String REWRITTEN_SCRIPT_FILE = "rewrittenScriptFile";
 
     public static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
     private static final Pattern scriptCmdPattern = Pattern.compile("'([^']+)'|\\\"([^\\\"]+)\\\"|(^[^\\s]+)|(\\s[^\\s^'^\\\"]+)");
@@ -98,6 +100,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine
             else
                 scriptFile = new File(getWorkingDir(context), "script." + extensions.get(0));
 
+            bindings.put(REWRITTEN_SCRIPT_FILE, scriptFile);
+
             try {
                 if (!isBinaryScript)
                 {
@@ -125,9 +129,10 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
             StringBuffer output = new StringBuffer();
 
-            if (runProcess(context, pb, output) != 0)
+            int exitCode = runProcess(context, pb, output);
+            if (exitCode != 0)
             {
-                throw new ScriptException(StringUtils.defaultIfEmpty(output.toString(), "An Unknown error occurred running the script"));
+                throw new ScriptException(StringUtils.defaultIfEmpty(output.toString(), "An unknown error occurred running the script (exit code: " + exitCode + ")"));
             }
             else
                 return output.toString();

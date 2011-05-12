@@ -545,6 +545,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                 {
                                     out.print("<a href=\"" + linkHref + "\">" + linkText + "</a>");                                
                                 }
+                                else if (link.getScript() != null)
+                                {
+                                    out.print("<a onClick=" + PageFlowUtil.jsString(link.getScript()) + ">" + linkText + "</a>");                                
+                                }
                             }
                             out.print("</div>");
                         }

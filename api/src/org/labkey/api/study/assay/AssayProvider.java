@@ -213,7 +213,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /**
      * Return the helper to handle data exchange between the server and external scripts.
      */
-    DataExchangeHandler getDataExchangeHandler();
+    DataExchangeHandler createDataExchangeHandler();
 
     DataTransformer getDataTransformer();
     DataValidator getDataValidator();

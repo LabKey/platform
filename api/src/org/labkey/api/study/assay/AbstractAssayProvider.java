@@ -339,37 +339,43 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 for (File relatedFile : relatedFiles)
                 {
-                    String roleName = null;
-                    DataType dataType = null;
-                    for (AssayDataType inputType : knownRelatedDataTypes)
-                    {
-                        // Check if we recognize it as a specially handled file type
-                        if (inputType.getFileType().isMatch(relatedFile.getName(), baseName))
-                        {
-                            roleName = inputType.getRole();
-                            dataType = inputType;
-                            break;
-                        }
-                    }
-                    // If not, make up a new type and role for it
-                    if (roleName == null)
-                    {
-                        roleName = relatedFile.getName().substring(baseName.length());
-                        while (roleName.length() > 0 && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
-                        {
-                            roleName = roleName.substring(1);
-                        }
-                        if ("".equals(roleName))
-                        {
-                            roleName = null;
-                        }
-                        dataType = RELATED_FILE_DATA_TYPE;
-                    }
-                    ExpData imageData = createData(container, relatedFile, relatedFile.getName(), dataType);
-                    outputDatas.put(imageData, roleName);
+                    Pair<ExpData, String> dataOutput = createdRelatedOutputData(container, knownRelatedDataTypes, baseName, relatedFile);
+                    outputDatas.put(dataOutput.getKey(), dataOutput.getValue());
                 }
             }
         }
+    }
+
+    /** Create an ExpData object for the file, and figure out what its role name should be */
+    public static Pair<ExpData, String> createdRelatedOutputData(Container container, List<AssayDataType> knownRelatedDataTypes, String baseName, File relatedFile)
+    {
+        String roleName = null;
+        DataType dataType = null;
+        for (AssayDataType inputType : knownRelatedDataTypes)
+        {
+            // Check if we recognize it as a specially handled file type
+            if (inputType.getFileType().isMatch(relatedFile.getName(), baseName))
+            {
+                roleName = inputType.getRole();
+                dataType = inputType;
+                break;
+            }
+        }
+        // If not, make up a new type and role for it
+        if (roleName == null)
+        {
+            roleName = relatedFile.getName().substring(baseName.length());
+            while (roleName.length() > 0 && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
+            {
+                roleName = roleName.substring(1);
+            }
+            if ("".equals(roleName))
+            {
+                roleName = null;
+            }
+            dataType = RELATED_FILE_DATA_TYPE;
+        }
+        return new Pair<ExpData, String>(createData(container, relatedFile, relatedFile.getName(), dataType), roleName);
     }
 
     public AssayTableMetadata getTableMetadata()
@@ -1064,6 +1070,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         dataLinkColumn.setLabel("Assay Id");
         dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
         dataLinkColumn.setURL(new DetailsURL(new ActionURL(AssayDetailRedirectAction.class, schema.getContainer()), Collections.singletonMap("runId", "rowId")));
+
+        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
+        visibleColumns.remove(FieldKey.fromParts(ExpRunTable.Column.Protocol));
+        runTable.setDefaultVisibleColumns(visibleColumns);
+        
         return runTable;
     }
     
@@ -1673,7 +1684,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     /**
      * Return the helper to handle data exchange between the server and external scripts.
      */
-    public DataExchangeHandler getDataExchangeHandler()
+    public DataExchangeHandler createDataExchangeHandler()
     {
         return null;
     }

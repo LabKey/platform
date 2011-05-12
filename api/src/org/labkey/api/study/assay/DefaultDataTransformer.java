@@ -74,7 +74,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                     File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
                     try
                     {
-                        DataExchangeHandler dataHandler = context.getProvider().getDataExchangeHandler();
+                        DataExchangeHandler dataHandler = context.getProvider().createDataExchangeHandler();
                         if (dataHandler != null)
                         {
                             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
@@ -165,7 +165,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                     File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
                     try
                     {
-                        DataExchangeHandler dataHandler = context.getProvider().getDataExchangeHandler();
+                        DataExchangeHandler dataHandler = context.getProvider().createDataExchangeHandler();
                         if (dataHandler != null)
                         {
                             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
@@ -182,8 +182,18 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
 
                             Object output = engine.eval(script);
 
+                            File rewrittenScriptFile;
+                            if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
+                            {
+                                rewrittenScriptFile = (File)bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
+                            }
+                            else
+                            {
+                                rewrittenScriptFile = scriptFile;
+                            }
+
                             // process any output from the transformation script
-                            result = dataHandler.processTransformationOutput(context, runInfo);
+                            result = dataHandler.processTransformationOutput(context, runInfo, run, rewrittenScriptFile);
                         }
                     }
                     catch (ValidationException e)
