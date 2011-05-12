@@ -25,14 +25,15 @@
 <%
     JspView<StudyController.ImportMappingBean> me = (JspView<StudyController.ImportMappingBean>) HttpView.currentView();
     StudyController.ImportMappingBean bean = me.getModelBean();
+    boolean hasCustomMapping = !bean.getCustomMapping().isEmpty();
 %>
 <form action="" method="post">
     <table width="80%">
         <tr><th colspan="2" align="left">Custom Mapping</th></tr>
-        <tr><td>&nbsp;</td></tr><%
-            if (bean.getCustomMapping().isEmpty())
+        <tr><td colspan="2">&nbsp;</td></tr><%
+            if (!hasCustomMapping)
             {
-                out.print("<tr><td>The custom mapping is currently empty</td></tr>");
+                out.print("<tr><td colspan=\"2\">The custom mapping is currently empty</td></tr>");
             }
             else
             {
@@ -46,11 +47,15 @@
             }
         %>
         <tr><td>&nbsp;</td></tr>
+        <tr>
+            <td colspan="2"><%=generateButton((hasCustomMapping ? "Replace" : "Import") + " Custom Mapping", StudyController.ImportVisitAliasesAction.class)%><%=hasCustomMapping ? "&nbsp;" + generateButton("Clear Custom Mapping", StudyController.ClearVisitAliasesAction.class) : ""%></td>
+        </tr>
+        <tr><td colspan="2">&nbsp;</td></tr>
         <tr><th colspan="2" align="left">Standard Mapping</th></tr>
-        <tr><td>&nbsp;</td></tr><%
+        <tr><td colspan="2">&nbsp;</td></tr><%
             if (bean.getStandardMapping().isEmpty())
             {
-                out.print("<tr><td>The standard mapping is currently empty</td></tr>");
+                out.print("<tr><td colspan=\"2\">The standard mapping is currently empty</td></tr>");
             }
             else
             {
@@ -65,8 +70,7 @@
         %>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td><%=generateButton("Import Visit Aliases", StudyController.ImportVisitAliasesAction.class)%>&nbsp;<%=generateButton("Done", ManageVisitsAction.class)%></td>
+            <td colspan="2"><%=generateButton("Done", ManageVisitsAction.class)%></td>
         </tr>
-        <tr><td>&nbsp;</td></tr>
     </table>
 </form>

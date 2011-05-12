@@ -3234,7 +3234,7 @@ public class StudyManager
 
         private void _testDatsetUpdateService() throws Throwable
         {
-            int counter=0;
+            int counter = 0;
             ResultSet rs = null;
 
             try

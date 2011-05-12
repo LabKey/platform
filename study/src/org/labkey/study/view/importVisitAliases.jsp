@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.*" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ShowVisitImportMappingAction" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <form action="" method="post">
     <table width="80%">
+        <%=formatMissedErrorsInTable("form", 1)%>
         <tr>
             <td>Paste in a tab-delimited file that includes two columns, Name and SequenceNum. The mapping you provide
                 will replace the existing mapping.</td>

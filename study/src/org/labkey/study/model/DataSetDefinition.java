@@ -72,7 +72,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.StudyQuerySchema;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.Connection;
 import java.sql.ResultSet;

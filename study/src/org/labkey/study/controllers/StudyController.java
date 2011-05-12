@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -51,6 +52,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
@@ -120,9 +122,9 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -6649,13 +6651,34 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(VisitAliasesForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView("/org/labkey/study/view/importVisitAliases.jsp");
+            return new JspView<Object>("/org/labkey/study/view/importVisitAliases.jsp", null, errors);
         }
 
         @Override
         public boolean handlePost(VisitAliasesForm form, BindException errors) throws Exception
         {
-            StudyManager.getInstance().importVisitAliases(getStudy(), getUser(), new TabLoader(form.getTsv()));
+            boolean hadCustomMapping = !StudyManager.getInstance().getCustomVisitImportMapping(getStudy()).isEmpty();
+
+            try
+            {
+                StudyManager.getInstance().importVisitAliases(getStudy(), getUser(), new TabLoader(form.getTsv()));
+            }
+            catch (SQLException e)
+            {
+                if (SqlDialect.isConstraintException(e))
+                {
+                    errors.reject(ERROR_MSG, "The visit import mapping includes duplicate visit names: " + e.getMessage());
+                    return false;
+                }
+                else
+                {
+                    throw e;
+                }
+            }
+
+            // TODO: Change to audit log
+            _log.info("The visit import custom mapping was " + (hadCustomMapping ? "replaced" : "imported"));
+
             return true;
         }
 
@@ -6677,9 +6700,42 @@ public class StudyController extends BaseStudyController
             return _tsv;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setTsv(String tsv)
         {
             _tsv = tsv;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ClearVisitAliasesAction extends ConfirmAction
+    {
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
+        {
+            return new HtmlView("Are you sure you want to delete the visit import custom mapping for this study?");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            StudyManager.getInstance().clearVisitAliases(getStudy());
+            // TODO: Change to audit log
+            _log.info("The visit import custom mapping was cleared");
+
+            return true;
+        }
+
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return new ActionURL(ShowVisitImportMappingAction.class, getContainer());
         }
     }
 }
