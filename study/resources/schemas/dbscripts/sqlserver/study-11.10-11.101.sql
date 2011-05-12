@@ -15,7 +15,7 @@
  */
 
 -- NOTE: this script was deployed as a late patch to 11.1. Therefore,
--- we should do the 11.2 rollup script as 11.101-11.20 instead of the normal
+-- we should do 11.2 rollup as 11.101-11.20 in addition to the normal
 -- 11.10-11.20.
 
 EXEC core.executeJavaUpgradeCode 'renameObjectIdToRowId'
