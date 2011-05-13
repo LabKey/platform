@@ -47,21 +47,7 @@
     }
 </style>
 <div id="folderdiv" class="extContainer"></div>
-<script type="text/javascript">
-
-    var folderTree;
-    var selectedFolder;
-    var _init = false;
-
-    var actions = {
-        alias  : 'folderAliases',
-        create : 'createFolder',
-        move   : 'showMoveFolderTree',
-        order  : 'reorderFolders',
-        remove : 'deleteFolder',
-        rename : 'renameFolder',
-        reorder: 'reorderFolders'
-    };
+<script type="text/javascript">    
     
     function init() {
 
@@ -69,7 +55,39 @@
 
         Ext.Ajax.timeout = 300000; // 5 minutes.
 
-        folderTree = new Ext.tree.TreePanel({           
+        var selectedFolder;
+        
+        var actions = {
+            alias  : 'folderAliases',
+            create : 'createFolder',
+            move   : 'showMoveFolderTree',
+            order  : 'reorderFolders',
+            remove : 'deleteFolder',
+            rename : 'renameFolder',
+            reorder: 'reorderFolders'
+        };
+
+        /*
+        LABKEY.ext.FMTreeNodeUI = Ext.extend(Ext.tree.TreeNodeUI, {
+            appendDDGhost : function(ghostNode) {
+                var ghostEl = document.createElement('div');
+                ghostEl.innerHTML = "<p>CREATE ME GHOST</p>";
+                ghostNode.appendChild(ghostEl);
+            }
+        });
+
+        var loader = new Ext.tree.TreeLoader({
+            createNode : function(attr) {
+                attr.uiProvider = LABKEY.ext.FMTreeNodeUI;
+                return Ext.tree.TreeLoader.prototype.createNode.call(this, attr);
+            },
+            dataUrl    : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
+            baseParams : {requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>}
+        });
+        */
+
+        var folderTree = new Ext.tree.TreePanel({
+            // loader : loader
             loader : new Ext.tree.TreeLoader({
                 dataUrl : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
                 baseParams : {requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>}
@@ -82,21 +100,28 @@
                 editable : true,
                 expandable : true,
                 draggable : false,
-                text : <%=PageFlowUtil.jsString(project.getParent().getName())%>
+                text : 'LabKey Server Projects'
                 <%=project.equals(c) ? ", cls : 'x-tree-node-current'" : ""%>
             },
-
+            
             listeners : {
                 contextmenu    : onRightClick,
+                expandnode     : select_node,
+                click          : validateFolder,
                 dblclick       : onDblClick,
                 beforenodedrop : onBeforeNodeDrop,
-                nodedragover   : onNodeDragOver
+                nodedragover   : onNodeDragOver,
+                nodedrop       : function() { folderTree.info.update(''); },
+                enddrag        : function() { folderTree.info.update(''); }
             },
 
             contextMenu : new Ext.menu.Menu({
                 cls   : 'extContainer',
                 items : [{
-                    text : 'Delete'
+                    text    : 'Create Subfolder',
+                    handler : function(item, e) {
+                        action('create');
+                    }
                 },{
                     id      : 'sort-alpha',
                     text    : 'Display Subfolders Alphabetically',
@@ -106,34 +131,66 @@
 
                             mask('Reordering Folders...');
                             Ext.Ajax.request({
-                                url     : LABKEY.ActionURL.buildURL('admin', 'reorderFolders.api', node.childNodes[0].attributes.containerPath),
+                                url     : LABKEY.ActionURL.buildURL('admin', 'reorderFoldersApi.api', node.childNodes[0].attributes.containerPath),
                                 method  : 'POST',
                                 params  : {resetToAlphabetical : true},
                                 success : function(){
                                     folderTree.getLoader().load(node);
+                                    node.expand();
                                     unmask();
                                 },
                                 failure : function(){ unmask(); }
                             });
-                            
+
                         }
                     }
-                }]
+                },{
+                    text      : 'Rename',
+                    sensitive : true,
+                    handler   : function(item, e){
+                        action('rename');
+                    }
+                },{
+                    text : 'Delete',
+                    sensitive : true,
+                    handler : function(item, e){                        
+                        action('remove');
+                    }
+                }],
+                listeners : {
+                    beforeshow : function(menu) {
+                        var node = menu.contextNode;
+                        var items = menu.items;
+                        items.each(function(item, idx, len){
+                            if (node.attributes.notModifiable){
+                                item.setDisabled(item.sensitive);
+                            }
+                            else { item.enable(); }
+                            return true;
+                        }, this);
+                    }
+                }
             }),
 
-            rootVisible: false,
+            rootVisible: true,
             enableDD: true,
             containerScroll : true,
             animate : true,
             useArrows : true,
             autoScroll: true,
             border: true,
-            tbar : [new Ext.Button({text: 'Rename', ref: '../rename', handler : function(){ action('rename'); }}),
-                    new Ext.Button({text: 'Move', ref: '../move', handler : function(){ action('move'); }}),
-                    new Ext.Button({text: 'Create Subfolder', ref: '../create', handler : function(){ action('create'); }}),
-                    new Ext.Button({text: 'Delete', ref: '../remove', handler : function(){ action('remove'); }}),
-                    new Ext.Button({text: 'Aliases', ref: '../alias', handler : function(){ action('alias'); }}),
-                    new Ext.Button({text: 'Change Display Order', ref: '../reorder', handler : function(){ action('reorder'); }})]
+            tbar : [{text: 'Rename', ref: '../rename', handler : function(){ action('rename'); }},
+                    {text: 'Move', ref: '../move', handler : function(){ action('move'); }},
+                    {text: 'Create Subfolder', ref: '../create', handler : function(){ action('create'); }},
+                    {text: 'Delete', ref: '../remove', handler : function(){ action('remove'); }},
+                    {text: 'Aliases', ref: '../alias', handler : function(){ action('alias'); }}],
+                    //{text: 'Change Display Order', ref: '../reorder', handler : function(){ action('reorder'); }}]
+            buttonAlign : 'left',
+            fbar : [{
+                xtype  : 'box',
+                ref    : '../info',
+                autoEl : { tag: 'div', html : '&nbsp;' }
+            }]
         });
         
         /*
@@ -149,14 +206,11 @@
                 }
             });
         }
-        
-        folderTree.on('expandnode', select_node);
-        folderTree.on('click', validateFolder);
 
         var folderPanel = new Ext.Panel({
+            renderTo: 'folderdiv',
             layout : 'fit',
             border : false,
-            renderTo: 'folderdiv',
             items : [folderTree]
         });
 
@@ -170,207 +224,217 @@
                 height : Math.max(100,h-xy[1]-padding[1])};
             folderPanel.setSize(size);
             folderPanel.doLayout();
-            if (selectedFolder){ ensureVisible(selectedFolder); }            
+            if (selectedFolder){ ensureVisible(selectedFolder); }
         };
 
         Ext.EventManager.onWindowResize(_resize);
         Ext.EventManager.fireWindowResize();
 
-        _init = true;
-    }
+        function action(actionType) {
+            if (selectedFolder && actionType) {
+                actionType = actionType.toLowerCase();
+                if (actions[actionType]) {
+                    window.location = LABKEY.ActionURL.buildURL('admin', actions[actionType], selectedFolder.attributes.containerPath);
+                }
+                else {
+                    console.error("'" + actionType + "' is not a valid action.");
+                }
+            }
+        }
 
-    function ensureVisible(node){
-        node.ensureVisible(function(){
+        function ensureVisible(node){
+            node.ensureVisible(function(){
+                node.select();
+                validateFolder(node);
+            });
+        }
+
+        function validateFolder(folder) {
+
+            if (folder)
+                selectedFolder = folder;
+            else
+                console.error("Failed to retrieve the selected folder.");
+
+            folderTree.rename.setDisabled(selectedFolder.attributes.notModifiable);
+            folderTree.move.setDisabled(selectedFolder.attributes.notModifiable);
+            folderTree.remove.setDisabled(selectedFolder.attributes.notModifiable);
+        }
+
+        function onSuccess(){
+            unmask();
+        }
+
+        function onFailure(){
+            unmask();
+        }
+
+        function mask(message) {
+            if (message) {
+                Ext.get('folderdiv').mask(message);
+            }
+            else { Ext.get('folderdiv').mask('Moving Folders. This could take a few minutes...'); }
+            folderTree.info.update('');
+        }
+
+        function unmask() {
+            Ext.get('folderdiv').unmask();
+            folderTree.info.update('');
+        }
+
+        function onRightClick(node, e){
             node.select();
-            validateFolder(node);
-        });
-    }
-    
-    function action(actionType) {
-        if (_init && selectedFolder && actionType) {
-            actionType = actionType.toLowerCase();
-            if (actions[actionType]) {
-                window.location = LABKEY.ActionURL.buildURL('admin', actions[actionType], selectedFolder.attributes.containerPath);
+            var c = folderTree.contextMenu;
+            c.contextNode = node;
+            c.showAt(e.getXY());
+        }
+
+        function onDblClick(e){
+            var attr = e.attributes;
+            for (var a in attr) {
+                if (!Ext.isObject(attr[a]) && !Ext.isArray(attr[a])) {
+                    console.info(a + ": " + attr[a]);
+                }
+            }
+        }
+
+        function onBeforeNodeDrop(e){
+            var s = e.dropNode;
+
+            var target = calculateTarget(e);
+            var d = target.leaf ? target.parentNode : target;
+
+            e.confirmed = undefined;
+            e.oldParent = s.parentNode;
+
+            mask();
+
+            // Reorder
+            if (target == s.parentNode) {
+
+                var eTarget = e.target;
+                var order = "";
+                var sep = "";
+
+                // The event contains the above/below nodes so that should give correct order
+                for (var j = 0; j < target.childNodes.length; j++) {
+                    if (target.childNodes[j] == s) { continue; }
+                    if (target.childNodes[j] == eTarget) {
+                        if (e.point == 'above') {
+                            order += sep + s.text + ";" + eTarget.text;
+                        }
+                        else if (e.point == 'below') {
+                            order += sep + eTarget.text + ";" + s.text;
+                        }
+                        else { return false; /* shouldn't ever get here. */ }
+                    }
+                    else { order += sep + target.childNodes[j].text; }
+                    sep = ";";
+                }
+
+                console.info('Order: ' + order + " for " + s.attributes.containerPath);
+                Ext.Ajax.request({
+                    url     : LABKEY.ActionURL.buildURL('admin', 'reorderFoldersApi.api', s.attributes.containerPath),
+                    method  : 'POST',
+                    params  : {order : order, resetToAlphabetical : false},
+                    success : function(x, y, z) {
+                        // reload the subtree
+                        if (s.attributes.isProject) {
+                            folderTree.getLoader().load(s.parentNode);
+                            folderTree.getRootNode().expand();
+                        }
+                        unmask();
+                    },
+                    failure : function() {
+                        Ext.Msg.alert('Error Reordering.', 'Failed to Reorder.');
+                        unmask();
+                    }
+                });
             }
             else {
-                console.error("'" + actionType + "' is not a valid action.");
+
+                // Make move request
+                LABKEY.Security.moveContainer({
+                    container : s.attributes.containerPath,
+                    parent    : d.attributes.containerPath,
+                    success   : function(response){
+                        if (response.success) {
+                            s.attributes.containerPath = response.newPath;
+                        }
+
+                        // reload the subtree
+                        folderTree.getLoader().load(s);
+
+                        onSuccess(response);
+                    },
+                    failure   : onFailure
+                });
+
             }
         }
-    }
 
-    function validateFolder(folder) {
-
-        if (folder)
-            selectedFolder = folder;
-        else
-            console.error("Failed to retrieve the selected folder.");
-
-        folderTree.rename.setDisabled(selectedFolder.attributes.notModifiable);
-        folderTree.move.setDisabled(selectedFolder.attributes.notModifiable);
-        folderTree.remove.setDisabled(selectedFolder.attributes.notModifiable);        
-    }
-
-    function onSuccess(){
-        unmask();
-    }
-
-    function onFailure(){
-        unmask();
-    }
-
-    function mask(message) {
-        if (message) {
-            Ext.get('folderdiv').mask(message);
-        }
-        else { Ext.get('folderdiv').mask('Moving Folders. This could take a few minutes...'); }
-    }
-
-    function unmask() {
-        Ext.get('folderdiv').unmask();
-    }
-
-    function onRightClick(node, e){
-        node.select();
-        var c = folderTree.contextMenu;
-        c.contextNode = node;
-        c.showAt(e.getXY());
-    }
-
-    function onDblClick(e){
-        var attr = e.attributes;
-        for (var a in attr) {
-            if (!Ext.isObject(attr[a]) && !Ext.isArray(attr[a])) {
-                console.info(a + ": " + attr[a]);
-            }
-        }
-    }
-
-    function onBeforeNodeDrop(e){
-        var s = e.dropNode;
-
-        var target = calculateTarget(e);
-        var d = target.leaf ? target.parentNode : target;
-
-        e.confirmed = undefined;
-        e.oldParent = s.parentNode;
-
-        mask();
-
-        // Reorder
-        if (target == s.parentNode) {
-
-            var eTarget = e.target;
-            var order = "";
-            var sep = "";
-            
-            // The event contains the above/below nodes so that should give correct order
-            for (var j = 0; j < target.childNodes.length; j++) {
-                if (target.childNodes[j] == s) { continue; }
-                if (target.childNodes[j] == eTarget) {
-                    if (e.point == 'above') {
-                        order += sep + s.text + ";" + eTarget.text;                       
-                    }
-                    else if (e.point == 'below') {
-                        order += sep + eTarget.text + ";" + s.text;
-                    }
-                    else { return false; /* shouldn't ever get here. */ }
-                }
-                else { order += sep + target.childNodes[j].text; }
-                sep = ";";
-            }
-            
-            console.info('Order: ' + order);
-            Ext.Ajax.request({
-                url     : LABKEY.ActionURL.buildURL('admin', 'reorderFolders.api', s.containerPath),
-                method  : 'POST',
-                params  : {order : order, resetToAlphabetical : false},
-                success : function() {
-                    unmask();
-                },
-                failure     : function() {
-                    alert('Failed to Reorder.');
-                    unmask();
-                }
-            });
-        }
-        else {
-
-            // Make move request
-            LABKEY.Security.moveContainer({
-                container : s.attributes.containerPath,
-                parent    : d.attributes.containerPath,
-                success   : function(response){
-                    if (response.success) {
-                        s.attributes.containerPath = response.newPath;
-                    }
-
-                    // reload the subtree
-                    folderTree.getLoader().load(s);
-
-                    onSuccess(response);
-                },
-                failure   : onFailure
-            });
-
-        }
-    }
-
-    // The event is cancelled if the drag is invalid.
-    function onNodeDragOver(e) {
-        var node = e.dropNode;
-        if (node.attributes.isProject || node.attributes.notModifiable) {
-            console.info('Failed on isProject/notModifiable');
-            e.cancel = true;
-        }
-
-        target = calculateTarget(e);
-        
-        // Check matching name FIX so it works as reorder in same subfolder
-        var children = target.childNodes;
-        var nodeName = node.text.toLowerCase();
-        for (var i = 0; i < children.length; i++) {
-            if (children[i].text.toLowerCase() == nodeName) {
-                if (target == node.parentNode) {
-                    console.info('Attempt to reorder.');
-                    return;
-                }
-                console.info('Failed on matching child name.');
+        // The event is cancelled if the drag is invalid.
+        function onNodeDragOver(e) {
+            var node = e.dropNode;
+            if (node.attributes.isProject || node.attributes.notModifiable) {
+                folderTree.info.update('');
                 e.cancel = true;
             }
-        }
-    }
 
-    // Gives the correct target folder based on the drag/drop action. This should be used by all methods
-    // that incorporate drag/drop in folder tree.
-    function calculateTarget(e) {
+            target = calculateTarget(e);
 
-        if (!e.target) {
-            console.error('Target not provided by event.');
-            e.cancel = true; // attempt to salvage event
-            return null;
-        }
-        
-        var target = e.target;
-        console.info('Target is ' + target.attributes.containerPath);
-        
-        // Use event.point to determine correct target node
-        var pt = e.point;
-        if (pt) {
-            if (pt == 'above' || pt == 'below'){
-                // check if same parent, check if root node -- cannot elevate to project
-                if (target.parentNode) {
-                    target = target.parentNode;
-                    console.info('Target set to ' + target.attributes.containerPath);
-                    if (target.attributes.containerPath === undefined) {
-                        console.info('ContainerPath undefined.');
-                        e.cancel = true;
+            // Check matching name FIX so it works as reorder in same subfolder
+            var children = target.childNodes;
+            var nodeName = node.text.toLowerCase();
+            for (var i = 0; i < children.length; i++) {
+                if (children[i].text.toLowerCase() == nodeName) {
+                    if (target == node.parentNode && !node.attributes.isProject) {
+                        folderTree.info.update('Change display order of /' + nodeName + ' in ' + node.parentNode.attributes.containerPath);
+                        return;
                     }
+                    folderTree.info.update('/' + nodeName + ' already exists in ' + node.parentNode.attributes.containerPath);
+                    e.cancel = true;
                 }
-                // different parent equates to move (and reorder?)
+            }
+
+            if (node.attributes.isProject && target == node.parentNode && (e.point == 'above' || e.point == 'below')) {
+                folderTree.info.update('Change display order of /' + nodeName + ' in LabKey Server Projects.');
+                e.cancel = false;
             }
         }
 
-        return target;
+        // Gives the correct target folder based on the drag/drop action. This should be used by all methods
+        // that incorporate drag/drop in folder tree.
+        function calculateTarget(e) {
+
+            if (!e.target) {
+                console.error('Target not provided by event.');
+                e.cancel = true; // attempt to salvage event
+                return null;
+            }
+
+            var target = e.target;
+            folderTree.info.update('Move to ' + target.attributes.containerPath);
+
+            // Use event.point to determine correct target node
+            var pt = e.point;
+            if (pt) {
+                if (pt == 'above' || pt == 'below'){
+                    // check if same parent, check if root node -- cannot elevate to project
+                    if (target.parentNode) {
+                        target = target.parentNode;
+                        console.info('Target set to ' + target.attributes.containerPath);
+                        if (target.attributes.containerPath === undefined) {
+                            folderTree.info.update('');
+                            e.cancel = true;
+                        }
+                    }
+                    // different parent equates to move (and reorder?)
+                }
+            }
+
+            return target;
+        }
     }
 
     Ext.onReady(init);

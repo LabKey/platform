@@ -1196,7 +1196,7 @@ public class CoreController extends SpringActionController
                         if (accessType != AccessType.none)
                         {
                             JSONObject childProps = getContainerProps(child);
-                            childProps.put("expanded", true);
+                            //childProps.put("expanded", true);
                             if (accessType == AccessType.indirect)
                             {
                                 // Disable so they can't act on it directly, since they have no permission

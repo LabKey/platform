@@ -34,6 +34,7 @@ import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasValidator;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -3827,26 +3828,7 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(FolderReorderForm form, BindException errors) throws Exception
         {
-            Container parent = getContainer().isRoot() ? getContainer() : getContainer().getParent();
-            if (form.isResetToAlphabetical())
-                ContainerManager.setChildOrderToAlphabetical(parent);
-            else if (form.getOrder() != null)
-            {
-                List<Container> children = parent.getChildren();
-                String[] order = form.getOrder().split(";");
-                Map<String, Container> nameToContainer = new HashMap<String, Container>();
-                for (Container child : children)
-                    nameToContainer.put(child.getName(), child);
-                List<Container> sorted = new ArrayList<Container>(children.size());
-                for (String childName : order)
-                {
-                    Container child = nameToContainer.get(childName);
-                    sorted.add(child);
-                }
-                ContainerManager.setChildOrder(parent, sorted);
-            }
-
-            return true;
+            return ReorderFolders(form, errors);
         }
 
         public ActionURL getSuccessURL(FolderReorderForm folderReorderForm)
@@ -3864,6 +3846,39 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ReorderFoldersApiAction extends MutatingApiAction<FolderReorderForm>
+    {
+        @Override
+        public ApiResponse execute(FolderReorderForm form, BindException errors) throws Exception
+        {
+            return new ApiSimpleResponse("success", ReorderFolders(form, errors));
+        }
+    }
+
+    private boolean ReorderFolders(FolderReorderForm form, BindException errors)
+    {
+        Container parent = getContainer().isRoot() ? getContainer() : getContainer().getParent();
+        if (form.isResetToAlphabetical())
+            ContainerManager.setChildOrderToAlphabetical(parent);
+        else if (form.getOrder() != null)
+        {
+            List<Container> children = parent.getChildren();
+            String[] order = form.getOrder().split(";");
+            Map<String, Container> nameToContainer = new HashMap<String, Container>();
+            for (Container child : children)
+                nameToContainer.put(child.getName(), child);
+            List<Container> sorted = new ArrayList<Container>(children.size());
+            for (String childName : order)
+            {
+                Container child = nameToContainer.get(childName);
+                sorted.add(child);
+            }
+            ContainerManager.setChildOrder(parent, sorted);
+        }
+
+        return true;
+    }
 
     public static class FolderReorderForm
     {
@@ -3971,7 +3986,7 @@ public class AdminController extends SpringActionController
         {
             if(null != form.getTo())
             {
-                LookAndFeelProperties props = LookAndFeelProperties.getInstance(getViewContext().getContainer());
+                LookAndFeelProperties props = LookAndFeelProperties.getInstance(getContainer());
                 MailHelper.ViewMessage msg = MailHelper.createMessage(props.getSystemEmailAddress(), form.getTo());
                 msg.setSubject("Test email message sent from " + props.getShortName());
                 msg.setText(PageFlowUtil.filter(form.getBody()));
@@ -4002,7 +4017,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getViewContext().getContainer()).getLocalURIString());
+            root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getContainer()).getLocalURIString());
             return root.addChild("Test Email Configuration");
         }
     }
@@ -4128,7 +4143,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getViewContext().getContainer()).getLocalURIString());
+            root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getContainer()).getLocalURIString());
             return root.addChild("View Event Log");
         }
     }
