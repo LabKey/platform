@@ -74,7 +74,7 @@ public class StudyDesignsWebPart extends GridView
                     studyFolderUrl.setContainer(c);
                     Map<String, String> style = new HashMap<String, String>();
                     style.put("style", "white-space:nowrap");
-                    out.write(PageFlowUtil.textLink("Go To Study Folder", studyFolderUrl.getLocalURIString(), "", "", style));
+                    out.write(PageFlowUtil.textLink("Go To Study Folder", studyFolderUrl, "", "", style));
                 }
                 else
                 {

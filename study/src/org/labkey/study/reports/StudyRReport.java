@@ -21,7 +21,6 @@ import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
@@ -45,6 +44,7 @@ import java.util.List;
 public class StudyRReport extends RReport
 {
     public static final String TYPE = "Study.rReport";
+    public static final String PARTICIPANT_KEY = "participantId";
 
     public String getType()
     {
@@ -66,10 +66,10 @@ public class StudyRReport extends RReport
 
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
-        // Special handling for study R report -- from StudyRunRReportView
+        // Special handling for study R report -- from old StudyRunRReportView
         HttpView reportView = super.getRunReportView(context);
 
-        boolean isParticipantChart = StudyRunRReportView.PARTICIPANT_KEY.equals(getDescriptor().getProperty(ReportDescriptor.Prop.filterParam));
+        boolean isParticipantChart = PARTICIPANT_KEY.equals(getDescriptor().getProperty(ReportDescriptor.Prop.filterParam));
 
         if (!isParticipantChart)
             return reportView;
@@ -123,7 +123,7 @@ public class StudyRReport extends RReport
         if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
         {
             return getRunReportURL(context).
-                    addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE).
+                    addParameter(TabStripView.TAB_PARAM, TAB_SOURCE).
                     addParameter("redirectUrl", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
         }
         return null;

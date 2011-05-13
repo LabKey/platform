@@ -73,7 +73,7 @@ import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportDesignerSessionCache;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.reports.report.view.RunRReportView;
+import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -863,7 +863,7 @@ public class ReportsController extends SpringActionController
             if (null == form.getReportId())
             {
                 // report not saved yet, get state from the cache
-                String key = getViewContext().getActionURL().getParameter(RunRReportView.CACHE_PARAM);
+                String key = getViewContext().getActionURL().getParameter(RunReportView.CACHE_PARAM);
                 if (key != null && ReportDesignerSessionCache.isCacheValid(key, context))
                     ReportDesignerSessionCache.populateBeanFromCache(form, key, context);
                 report = form.getReport();

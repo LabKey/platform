@@ -19,12 +19,13 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.user.UserController.ChangeEmailBean" %>
+<%@ page import="org.labkey.core.user.UserController.ChangeEmailAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ChangeEmailBean> me = (JspView<ChangeEmailBean>) HttpView.currentView();
     ChangeEmailBean bean = me.getModelBean();
 %>
-<form method="post" action="showChangeEmail.post"><labkey:csrf/>
+<form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
 <input type="hidden" name="userId" value="<%=bean.userId%>">
 <table><%=formatMissedErrorsInTable("form", 2)%>
     <tr>

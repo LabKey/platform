@@ -149,7 +149,7 @@ public class UserController extends SpringActionController
         {
             int userId = ctx.getViewContext().getUser().getUserId();
             Integer rowId = (Integer) ctx.getRow().get("userId");
-            return  (userId != rowId.intValue());
+            return  (userId != rowId);
         }
     }
 
@@ -168,6 +168,7 @@ public class UserController extends SpringActionController
         List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(getUserColumnNames(user, c));
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
         final String requiredFields = UserManager.getRequiredUserFields();
+
         for (ColumnInfo col : cols)
         {
             if (isColumnRequired(col.getName(), requiredFields))
@@ -176,10 +177,12 @@ public class UserController extends SpringActionController
                 displayColumns.add(required.getRenderer());
             }
             else
+            {
                 displayColumns.add(col.getRenderer());
+            }
         }
-        rgn.setDisplayColumns(displayColumns);
 
+        rgn.setDisplayColumns(displayColumns);
         SimpleDisplayColumn accountDetails = new UrlColumn(new UserUrlsImpl().getUserDetailsURL(c, currentURL) + "userId=${UserId}", "details");
         accountDetails.setDisplayModes(DataRegion.MODE_GRID);
         rgn.addDisplayColumn(0, accountDetails);
@@ -197,11 +200,13 @@ public class UserController extends SpringActionController
         {
             rgn.setShowRecordSelectors(true);
         }
-        populateUserGridButtonBar(gridButtonBar, isSiteAdmin, isAnyAdmin);
 
+        populateUserGridButtonBar(gridButtonBar, isSiteAdmin, isAnyAdmin);
         rgn.setButtonBar(gridButtonBar, DataRegion.MODE_GRID);
 
-        ActionButton showGrid = new ActionButton("showUsers.view?.lastFilter=true", c.isRoot() ? "Show All Users" : "Show Project Users");
+        ActionURL showUsersURL = new ActionURL(ShowUsersAction.class, c);
+        showUsersURL.addParameter(".lastFilter", true);
+        ActionButton showGrid = new ActionButton(showUsersURL, c.isRoot() ? "Show All Users" : "Show Project Users");
         showGrid.setActionType(ActionButton.Action.LINK);
 
         ButtonBar detailsButtonBar = new ButtonBar();
@@ -298,6 +303,7 @@ public class UserController extends SpringActionController
             return _userId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setUserId(Integer[] userId)
         {
             _userId = userId;
@@ -309,6 +315,7 @@ public class UserController extends SpringActionController
             return _redirUrl;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setRedirUrl(String redirUrl)
         {
             _redirUrl = redirUrl;
@@ -336,8 +343,8 @@ public class UserController extends SpringActionController
             {
                 for (Integer userId : form.getUserId())
                 {
-                    if (null != userId && userId.intValue() != user.getUserId())
-                        bean.addUser(UserManager.getUser(userId.intValue()));
+                    if (null != userId && userId != user.getUserId())
+                        bean.addUser(UserManager.getUser(userId));
                 }
             }
             else
@@ -369,8 +376,8 @@ public class UserController extends SpringActionController
             User curUser = getViewContext().getUser();
             for (Integer userId : form.getUserId())
             {
-                if (null != userId && userId.intValue() != curUser.getUserId())
-                    UserManager.setUserActive(curUser, userId.intValue(), _active);
+                if (null != userId && userId != curUser.getUserId())
+                    UserManager.setUserActive(curUser, userId, _active);
             }
             return true;
         }
@@ -424,8 +431,8 @@ public class UserController extends SpringActionController
             {
                 for (Integer userId : form.getUserId())
                 {
-                    if (null != userId && userId.intValue() != user.getUserId())
-                        bean.addUser(UserManager.getUser(userId.intValue()));
+                    if (null != userId && userId != user.getUserId())
+                        bean.addUser(UserManager.getUser(userId));
                 }
             }
             else
@@ -458,8 +465,8 @@ public class UserController extends SpringActionController
 
             for (Integer userId : form.getUserId())
             {
-                if (null != userId && userId.intValue() != curUser.getUserId())
-                    UserManager.deleteUser(userId.intValue());
+                if (null != userId && userId != curUser.getUserId())
+                    UserManager.deleteUser(userId);
             }
             return true;
         }
@@ -499,11 +506,7 @@ public class UserController extends SpringActionController
 
     private static boolean isColumnRequired(String column, String requiredColumns)
     {
-        if (requiredColumns != null)
-        {
-            return requiredColumns.toLowerCase().indexOf(column.toLowerCase()) != -1;
-        }
-        return false;
+        return requiredColumns != null && requiredColumns.toLowerCase().indexOf(column.toLowerCase()) != -1;
     }
 
     public static class ShowUsersForm extends QueryViewAction.QueryExportForm
@@ -515,6 +518,7 @@ public class UserController extends SpringActionController
             return _inactive;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setInactive(boolean inactive)
         {
             _inactive = inactive;
@@ -855,8 +859,16 @@ public class UserController extends SpringActionController
     {
         private String[] _requiredFields = new String[0];
 
-        public void setRequiredFields(String[] requiredFields){_requiredFields = requiredFields;}
-        public String[] getRequiredFields(){return _requiredFields;}
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setRequiredFields(String[] requiredFields)
+        {
+            _requiredFields = requiredFields;
+        }
+
+        public String[] getRequiredFields()
+        {
+            return _requiredFields;
+        }
     }
 
     private void buildAccessDetailList(MultiMap<Container, Container> containerTree, Container parent,
@@ -938,15 +950,18 @@ public class UserController extends SpringActionController
                     throw new NotFoundException();
                 }
             }
+
             if (_userId == null)
             {
                 _userId = form.getUserId();
             }
-            User requestedUser = UserManager.getUser(_userId.intValue());
+
+            User requestedUser = UserManager.getUser(_userId);
+
             if (requestedUser == null)
                 throw new NotFoundException("User not found");
-            List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
 
+            List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
             Container c = getContainer();
             MultiMap<Container, Container> containerTree =  c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.getContainerTree(c.getProject());
             Map<Container, Group[]> projectGroupCache = new HashMap<Container, Group[]>();
@@ -1003,7 +1018,7 @@ public class UserController extends SpringActionController
         if (null == userId)
             root.addChild("User Details");
         else
-            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(c, getViewContext().getActionURL()).addParameter("userId", userId.intValue()));
+            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(c, getViewContext().getActionURL()).addParameter("userId", userId));
     }
 
 
@@ -1049,8 +1064,8 @@ public class UserController extends SpringActionController
 
             if (isSiteAdmin)
             {
-                // Never display "Reset/Create Password" button for LDAP users... or for admin's own record.
-                if (!isOwnRecord && !SecurityManager.isLdapEmail(detailsEmail))
+                // Always display "Reset/Create Password" button (even for LDAP and OpenSSO users)... except for admin's own record.
+                if (!isOwnRecord)
                 {
                     // Allow admins to create a logins entry if it doesn't exist.  Addresses scenario of user logging
                     // in with SSO and later needing to use database authentication.
@@ -1072,7 +1087,7 @@ public class UserController extends SpringActionController
                     bb.add(reset);
                 }
 
-                ActionURL changeEmailURL = getViewContext().cloneActionURL().setAction(ShowChangeEmail.class);
+                ActionURL changeEmailURL = getViewContext().cloneActionURL().setAction(ChangeEmailAction.class);
                 ActionButton changeEmail = new ActionButton(changeEmailURL, "Change Email");
                 changeEmail.setActionType(ActionButton.Action.LINK);
                 bb.add(changeEmail);
@@ -1168,10 +1183,10 @@ public class UserController extends SpringActionController
             User user = getUser();
             int userId = user.getUserId();
             if (null == form.getPkVal())
-                form.setPkVal(new Integer(userId));
+                form.setPkVal(userId);
 
-            boolean isOwnRecord = ((Integer) form.getPkVal()).intValue() == userId;
-            HttpView view = null;
+            boolean isOwnRecord = ((Integer) form.getPkVal()) == userId;
+            HttpView view;
 
             if (user.isAdministrator() || isOwnRecord)
             {
@@ -1237,6 +1252,7 @@ public class UserController extends SpringActionController
     public static boolean requiresUpdate(User user) throws SQLException
     {
         final String required = UserManager.getRequiredUserFields();
+
         if (user != null && required != null && required.length() > 0)
         {
             DataRegion rgn = new DataRegion();
@@ -1250,6 +1266,7 @@ public class UserController extends SpringActionController
 			List<ColumnInfo> select = new ArrayList<ColumnInfo>(columns);
 			select.add(CoreSchema.getInstance().getTableInfoUsers().getColumn("userId"));
             Table.TableResultSet trs = Table.select(info, select, filter, null);
+
             try
 			{
                 // this should really only return one row
@@ -1261,11 +1278,12 @@ public class UserController extends SpringActionController
                 trs.close();
             }
         }
+
         return false;
     }
 
     @RequiresSiteAdmin @CSRF
-    public class ShowChangeEmail extends FormViewAction<UserForm>
+    public class ChangeEmailAction extends FormViewAction<UserForm>
     {
         private int _userId;
 
@@ -1295,6 +1313,7 @@ public class UserController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Invalid email address");
             }
+
             return !errors.hasErrors();
         }
 
@@ -1320,7 +1339,7 @@ public class UserController extends SpringActionController
         private ChangeEmailBean(Integer userId, String message)
         {
             this.userId = userId;
-            this.currentEmail  = UserManager.getEmailForId(userId);
+            this.currentEmail = UserManager.getEmailForId(userId);
             this.message = message;
         }
     }
@@ -1338,33 +1357,42 @@ public class UserController extends SpringActionController
         {
             super.validateBind(errors);
             Integer userId = (Integer) getPkVal();
+
             if (userId == null)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "User Id cannot be null");
                 return;
             }
-            String displayName = (String) this.getTypedValue("DisplayName");
+
+            String displayName = (String) getTypedValue("DisplayName");
+
             if (displayName != null)
             {
                 //ensure that display name is unique
                 User user = UserManager.getUserByDisplayName(displayName);
                 //if there's a user with this display name and it's not the user currently being edited
-                if (user != null && user.getUserId() != userId.intValue())
+                if (user != null && user.getUserId() != userId)
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' field conflicts with another value in the database. Please enter a different value");
                 }
             }
+
             String phoneNum = PageFlowUtil.formatPhoneNo((String) getTypedValue("phone"));
+
             if (phoneNum.length() > 64)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Phone number greater than 64 characters: " + phoneNum);
             }
+
             phoneNum = PageFlowUtil.formatPhoneNo((String) getTypedValue("mobile"));
+
             if (phoneNum.length() > 64)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Mobile number greater than 64 characters: " + phoneNum);
             }
+
             phoneNum = PageFlowUtil.formatPhoneNo((String) getTypedValue("pager"));
+
             if (phoneNum.length() > 64)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Pager number greater than 64 characters: " + phoneNum);
@@ -1375,10 +1403,12 @@ public class UserController extends SpringActionController
         {
             ColumnInfo info = super.getColumnByFormFieldName(name);
             final String requiredFields = UserManager.getRequiredUserFields();
+
             if (isColumnRequired(name, requiredFields))
             {
                 return new RequiredColumn(info);
             }
+
             return info;
         }
     }
@@ -1386,29 +1416,30 @@ public class UserController extends SpringActionController
 
     public static class UserForm extends ReturnUrlForm
     {
-        private int userId;
-        private String newEmail;
+        private int _userId;
+        private String _newEmail;
         private String _message = null;
         private boolean _renderInHomeTemplate = true;
 
         public String getNewEmail()
         {
-            return newEmail;
+            return _newEmail;
         }
 
         public void setNewEmail(String newEmail)
         {
-            this.newEmail = newEmail;
+            _newEmail = newEmail;
         }
 
         public int getUserId()
         {
-            return userId;
+            return _userId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setUserId(int userId)
         {
-            this.userId = userId;
+            _userId = userId;
         }
 
         public void setRenderInHomeTemplate(boolean renderInHomeTemplate){_renderInHomeTemplate = renderInHomeTemplate;}
@@ -1507,13 +1538,16 @@ public class UserController extends SpringActionController
 
                 //get users in given group/role name
                 Integer groupId = form.getGroupId();
+
                 if (null == groupId)
                     groupId = SecurityManager.getGroupId(container.getProject(), form.getGroup(), false);
+
                 if (null == groupId)
                     throw new IllegalArgumentException("The group '" + form.getGroup() + "' does not exist in the project '"
                             + project.getPath() + "'");
 
-                Group group = SecurityManager.getGroup(groupId.intValue());
+                Group group = SecurityManager.getGroup(groupId);
+
                 if (null == group)
                     throw new RuntimeException("Could not get group for group id " + groupId);
 
@@ -1539,6 +1573,7 @@ public class UserController extends SpringActionController
                 //trim name filter to empty so we are guaranteed a non-null string
                 //and conver to lower-case for the compare below
                 String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
+
                 if (nameFilter.length() > 0)
                     response.put("name", nameFilter);
                 
@@ -1621,6 +1656,7 @@ public class UserController extends SpringActionController
             return _email;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setEmail(String email)
         {
             _email = email;
@@ -1680,8 +1716,7 @@ public class UserController extends SpringActionController
     {
         public ApiResponse execute(ShowWarningMessagesForm form, BindException errors) throws Exception
         {
-            getViewContext().getSession().setAttribute(TemplateHeaderView.SHOW_WARNING_MESSAGES_SESSION_PROP,
-                    form.isShowMessages());
+            getViewContext().getSession().setAttribute(TemplateHeaderView.SHOW_WARNING_MESSAGES_SESSION_PROP, form.isShowMessages());
             return new ApiSimpleResponse("success", true);
         }
     }

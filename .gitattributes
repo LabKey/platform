@@ -2738,7 +2738,6 @@ study/src/org/labkey/study/reports/StudyQueryReport.java -text
 study/src/org/labkey/study/reports/StudyRReport.java -text
 study/src/org/labkey/study/reports/StudyReportUIProvider.java -text
 study/src/org/labkey/study/reports/StudyRunChartReportView.java -text
-study/src/org/labkey/study/reports/StudyRunRReportView.java -text
 study/src/org/labkey/study/reports/configureExportExcel.jsp -text
 study/src/org/labkey/study/requirements/DefaultActor.java -text
 study/src/org/labkey/study/requirements/DefaultRequirement.java -text
