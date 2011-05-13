@@ -2809,12 +2809,11 @@ public class DavController extends SpringActionController
 
 
     Path extPath = new Path(PageFlowUtil.extJsRoot());
-    Path yuiPath = new Path("_yui");
-    Path mcePath = new Path("timymce3");
+    Path mcePath = new Path("timymce");
     
     boolean alwaysCacheFile(Path p)
     {
-        return p.startsWith(extPath) || p.startsWith(yuiPath) || p.startsWith(mcePath);
+        return p.startsWith(extPath) || p.startsWith(mcePath);
     }
     
 

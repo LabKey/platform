@@ -64,8 +64,6 @@
                 -side-panel
     module specific (alphabetical)
     GWT
-    yui
-
     Ext
 
     */
@@ -488,29 +486,6 @@ td.labkey-ms1-filter
 .gwt-TabBar .gwt-TabBarItem-selected
 {
     background: transparent;
-}
-
-/* YUI */
-div.yuimenu h6, div.yuimenubar h6
-{
-    color:#<%= link %>;
-}
-
-div.yuimenu li a, div.yuimenubar li a
-{
-    color:#<%= link %>;
-}
-
-div.yuimenu li.selected, div.yuimenubar li.selected
-{
-    background-color:#<%= grid %>;
-}
-
-div.yuimenu li.selected a.selected,
-div.yuimenu li.selected em.selected,
-div.yuimenubar li.selected a.selected
-{
-    color:#<%= link %>;
 }
 
 /* ExtJS */
