@@ -31,6 +31,7 @@ import java.util.Map;
 * Date: Jan 14, 2011
 * Time: 10:28:07 AM
 */
+@Deprecated //
 public class ReportDesignerSessionCache
 {
     public static final String SCRIPT_REPORT_CACHE_PREFIX = "ScriptReportCache/";

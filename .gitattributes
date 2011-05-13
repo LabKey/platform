@@ -703,9 +703,7 @@ api/src/org/labkey/api/reports/report/view/ReportDesignerSessionCache.java -text
 api/src/org/labkey/api/reports/report/view/ReportQueryView.java -text
 api/src/org/labkey/api/reports/report/view/ReportUtil.java -text
 api/src/org/labkey/api/reports/report/view/RunChartReportView.java -text
-api/src/org/labkey/api/reports/report/view/RunRReportView.java -text
 api/src/org/labkey/api/reports/report/view/RunReportView.java -text
-api/src/org/labkey/api/reports/report/view/RunScriptReportView.java -text
 api/src/org/labkey/api/reports/report/view/ScriptReportBean.java -text
 api/src/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp -text
 api/src/org/labkey/api/reports/report/view/ajaxScriptReportDesigner.jsp -text
@@ -713,10 +711,8 @@ api/src/org/labkey/api/reports/report/view/javaScriptReport.jsp -text
 api/src/org/labkey/api/reports/report/view/javaScriptReportExample.jsp -text
 api/src/org/labkey/api/reports/report/view/javaScriptReportHelp.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportDesignerSyntaxRef.jsp -text
-api/src/org/labkey/api/reports/report/view/rReportRenderBackground.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportTabHandler.jsp -text
 api/src/org/labkey/api/reports/report/view/reportHeader.jsp -text
-api/src/org/labkey/api/reports/report/view/scriptReportDesigner.jsp -text
 api/src/org/labkey/api/resource/AbstractResource.java -text
 api/src/org/labkey/api/resource/AbstractResourceCollection.java -text
 api/src/org/labkey/api/resource/ClassResource.java -text

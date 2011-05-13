@@ -1264,9 +1264,11 @@ public class PageFlowUtil
                 ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
     }
 
+    @Deprecated
     public static String textLink(String text, String href, String onClickScript, String id, Map<String, String> properties)
     {
         String additions = "";
+
         for (Map.Entry<String, String> entry : properties.entrySet())
         {
             additions += entry.getKey() + "=\"" + entry.getValue() + "\" ";
@@ -1280,7 +1282,19 @@ public class PageFlowUtil
 
     public static String textLink(String text, ActionURL url, String onClickScript, String id)
     {
-        return "<a class='labkey-text-link' href=\"" + filter(url) + "\"" +
+        return textLink(text, url, onClickScript, id, Collections.<String, String>emptyMap());
+    }
+
+    public static String textLink(String text, ActionURL url, String onClickScript, String id, Map<String, String> properties)
+    {
+        String additions = "";
+
+        for (Map.Entry<String, String> entry : properties.entrySet())
+        {
+            additions += entry.getKey() + "=\"" + entry.getValue() + "\" ";
+        }
+
+        return "<a class='labkey-text-link' " + additions + "href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                 ">" + filter(text) + "<span class='css-arrow-right'></span></a>";

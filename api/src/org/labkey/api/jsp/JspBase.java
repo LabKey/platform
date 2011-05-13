@@ -200,9 +200,15 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, href, null, null);
     }
 
+    @Deprecated  // Use textLink(test, urs, onClickScript, id) instead
     public String textLink(String text, String href, String onClickScript, String id)
     {
         return PageFlowUtil.textLink(text, href, onClickScript, id);
+    }
+
+    public String textLink(String text, ActionURL url, String onClickScript, String id)
+    {
+        return PageFlowUtil.textLink(text, url, onClickScript, id);
     }
 
     public String textLink(String text, String href, String onClickScript, String id, Map<String, String> props)
@@ -210,11 +216,6 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, href, onClickScript, id, props);
     }
     
-    public String textLink(String text, ActionURL url, String onClickScript, String id)
-    {
-        return PageFlowUtil.textLink(text, url, onClickScript, id);
-    }
-
     public String textLink(String text, ActionURL url)
     {
         return PageFlowUtil.textLink(text, url);

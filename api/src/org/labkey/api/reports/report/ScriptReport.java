@@ -28,7 +28,6 @@ import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
 import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -45,6 +44,8 @@ import java.util.List;
 */
 public abstract class ScriptReport extends AbstractReport
 {
+    public static final String TAB_SOURCE = "Source";
+
     /**
      * Create the query view used to generate the result set that this report operates on.
      */
@@ -110,7 +111,7 @@ public abstract class ScriptReport extends AbstractReport
     {
         if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
         {
-            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
+            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, TAB_SOURCE);
         }
         return null;
     }
@@ -129,7 +130,7 @@ public abstract class ScriptReport extends AbstractReport
         // if tab == "Source" then use update mode, which lets developers edit the source
         // otherwise, if we're a webpart then use view mode
         // otherwise, use viewAndUpdate, which means show the view tab first, but let developers edit the source 
-        Mode mode = ("Source".equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
+        Mode mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
 
         return new AjaxRunScriptReportView(this, mode);
     }

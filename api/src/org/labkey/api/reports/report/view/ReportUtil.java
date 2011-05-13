@@ -71,7 +71,7 @@ public class ReportUtil
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateScriptReport(context.getContainer());
         url.addParameters(context.getActionURL().getParameters());
-        url.replaceParameter(TabStripView.TAB_PARAM, RunScriptReportView.TAB_SOURCE);
+        url.replaceParameter(TabStripView.TAB_PARAM, ScriptReport.TAB_SOURCE);
 
         return _getChartDesignerURL(url, bean);
     }
@@ -81,7 +81,7 @@ public class ReportUtil
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateScriptReport(context.getContainer());
         url.addParameters(context.getActionURL().getParameters());
         url.replaceParameter(ScriptReportDescriptor.Prop.scriptExtension.name(), bean.getScriptExtension());
-        url.replaceParameter(TabStripView.TAB_PARAM, RunScriptReportView.TAB_SOURCE);
+        url.replaceParameter(TabStripView.TAB_PARAM, ScriptReport.TAB_SOURCE);
 
         return _getChartDesignerURL(url, bean);
     }

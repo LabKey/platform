@@ -241,7 +241,7 @@ public class UserManager
     }
 
 
-    /** Includes users that have logged in during any server session */
+    /** Includes users who have logged in during any server session */
     public static int getActiveUserCount(Date since)
     {
         try
@@ -254,7 +254,7 @@ public class UserManager
         }
     }
 
-    /** Returns users that have logged in during this server session */
+    /** Returns all users who have logged in during this server session since the specified interval */
     public static List<Pair<String, Long>> getActiveUsers(long since)
     {
         synchronized(ACTIVE_USERS)
@@ -314,10 +314,11 @@ public class UserManager
         if (userId == null)
             return null;
 
-        if(User.guest.getUserId() == userId.intValue())
+        if (User.guest.getUserId() == userId)
             return "Guest";
 
-        User user = getUser(userId.intValue());
+        User user = getUser(userId);
+
         if (user == null)
         {
             if (userIdIfDeleted)
@@ -335,7 +336,7 @@ public class UserManager
         if (userId == null)
             return null;
 
-        if(User.guest.getUserId() == userId.intValue())
+        if (User.guest.getUserId() == userId)
             return "Guest";
 
         User user = getUser(userId);
@@ -570,7 +571,7 @@ public class UserManager
     {
         try
         {
-            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin=? WHERE UserId=?", new Object[]{new Date(), new Integer(user.getUserId())});
+            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin=? WHERE UserId=?", new Object[]{new Date(), user.getUserId()});
         }
         catch (SQLException e)
         {
@@ -588,6 +589,7 @@ public class UserManager
         clearUserList(currentUser.getUserId());
 
         User principal = UserManager.getUser((Integer)pkVal);
+
         if (principal != null)
         {
             addToUserHistory(principal, "Contact information for " + principal.getEmail() + " was updated");
@@ -599,9 +601,6 @@ public class UserManager
     {
         if (null != getUser(newEmail))
             return newEmail + " already exists.";
-
-        if (SecurityManager.isLdapEmail(oldEmail) != SecurityManager.isLdapEmail(newEmail))
-            return "Can't switch between LDAP and non-LDAP users.";
 
         try
         {
@@ -676,12 +675,12 @@ public class UserManager
             return;
 
         //no-op if active state is not actually changed
-        if(userToAdjust.isActive() == active)
+        if (userToAdjust.isActive() == active)
             return;
 
         removeActiveUser(userToAdjust);
 
-        Integer userId = new Integer(userToAdjust.getUserId());
+        Integer userId = userToAdjust.getUserId();
 
         List<Throwable> errors = active ? fireUserEnabled(userToAdjust) : fireUserDisabled(userToAdjust);
 

@@ -22,7 +22,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ExceptionUtil;
@@ -226,7 +225,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
     {
         if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
         {
-            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
+            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, TAB_SOURCE);
         }
         return null;
     }

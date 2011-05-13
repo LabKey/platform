@@ -63,7 +63,7 @@ public class RunListDetailsQueryView extends RunListQueryView
                     ActionURL url = new ActionURL(_detailsActionClass, ctx.getContainer()).addParameter(_detailsIdColumn, "" + runId);
                     Map<String, String> map = new HashMap<String, String>();
                     map.put("title", "View run details");
-                    out.write(PageFlowUtil.textLink("run details", url.getLocalURIString(), null, null, map));
+                    out.write(PageFlowUtil.textLink("run details", url, null, null, map));
                 }
             }
         });

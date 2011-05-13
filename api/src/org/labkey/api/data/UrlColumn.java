@@ -42,6 +42,7 @@ public class UrlColumn extends SimpleDisplayColumn
     {
         Object value = getValue(ctx);
         String url = renderURL(ctx);
+
         if (value != null && url != null)
         {
             Map<String, String> props;
