@@ -583,7 +583,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         }
 
         if (0 == numProps)
-            errors.add("You must create at least one Property.");
+            errors.add("You must create at least one field.");
 
         if (_isPlateBased && _assay.getSelectedPlateTemplate() == null)
             errors.add("You must select a plate template from the list, or create one first.");
