@@ -37,7 +37,6 @@ public class StaticContentCachingFilter implements Filter
         HttpServletRequest request = (HttpServletRequest)servletRequest;
         String path = null != request.getServletPath() ? request.getServletPath().toLowerCase() : "";
         boolean cachableJsFile = path.contains("/ext-")
-                                || path.contains("/_yui/")
                                 || path.contains("/tiny_mce/")
                                 || path.contains("/tinymce3/");
 

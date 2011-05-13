@@ -12,7 +12,6 @@ if (typeof LABKEY == "undefined")
     LABKEY.contextPath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath;
     LABKEY.imagePath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath + "/_images";
     LABKEY.devMode = false;
-    LABKEY.yahooRoot = "_yui/build";
     LABKEY.extJsRoot = "ext-3.2.2";
     LABKEY.verbose = false;
     LABKEY.widget = {};
@@ -223,17 +222,6 @@ LABKEY.requiresCss = function(file)
 };
 
 
-LABKEY.requiresYahoo = function(script, immediate)
-{
-    if (arguments.length < 2) immediate = true;
-
-    var dir = script == "container_core" ? "container" : script;
-    var base=LABKEY.yahooRoot + "/" + dir + "/" + script;
-    var expanded = LABKEY.devMode ? (LABKEY.verbose ? base+"-debug.js" : base+".js") : base+"-min.js";
-    LABKEY.requiresScript(expanded, immediate);
-};
-
-
 LABKEY.requiresExtJs = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
@@ -289,18 +277,6 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);
 };
 
-
-LABKEY.requiresMenu = function()
-{
-    //LABKEY.requiresCss(LABKEY.yahooRoot + '/menu/assets/menu.css');
-    LABKEY.requiresYahoo('yahoo', true);
-    LABKEY.requiresYahoo('event', true);
-    if (LABKEY.devMode)
-        LABKEY.requiresYahoo('logger', true);
-    LABKEY.requiresYahoo('dom', true);
-    LABKEY.requiresYahoo('container', true);
-    LABKEY.requiresYahoo('menu', true);
-};
 
 /** Pull in the required JS files and invoke the callback when they're loaded */
 LABKEY.initializeViewDesigner = function(dependenciesCallback, scope)
