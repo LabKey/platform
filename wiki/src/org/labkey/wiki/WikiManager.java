@@ -215,6 +215,8 @@ public class WikiManager implements WikiService
         DbScope scope = comm.getSchema().getScope();
         Container c = wikiNew.lookupContainer();
         boolean uncacheAll = true;
+        boolean rename = true;
+        Wiki wikiOld = null;
 
         try
         {
@@ -224,11 +226,12 @@ public class WikiManager implements WikiService
             //if name, title, parent, & sort order are all still the same,
             //we don't need to uncache all wikis, only the wiki being updated
             //NOTE: getWikiByEntityId does not use the cache, so we'll get a fresh copy from the database
-            Wiki wikiOld = getWikiByEntityId(c, wikiNew.getEntityId());
+            wikiOld = getWikiByEntityId(c, wikiNew.getEntityId());
             WikiVersion versionOld = wikiOld.getLatestVersion();
             String oldTitle = StringUtils.trimToEmpty(versionOld.getTitle().getSource());
-            
-            uncacheAll = !wikiOld.getName().equals(wikiNew.getName())
+            rename = !wikiOld.getName().equals(wikiNew.getName());
+
+            uncacheAll = rename
                     || wikiOld.getParent() != wikiNew.getParent()
                     || wikiOld.getDisplayOrder() != wikiNew.getDisplayOrder()
                     || (null != versionNew && !oldTitle.equals(versionNew.getTitle().getSource()));
@@ -260,10 +263,20 @@ public class WikiManager implements WikiService
             if (scope != null)
                 scope.closeConnection();
 
-            WikiCache.uncache(c, wikiNew, uncacheAll);
+            // TODO: unindexWiki()... especially in rename case?
 
-            indexWiki(wikiNew);
+            if (null != wikiNew)
+            {
+                // Always uncache the new one (even in rename case -- we've probably cached a miss under the new name)
+                WikiCache.uncache(c, wikiNew, false);
+                indexWiki(wikiNew);
+            }
+
+            // Uncache the old wiki in the case of a rename #12249
+            if (null != wikiOld)
+                WikiCache.uncache(c, wikiOld, uncacheAll);
         }
+
         return true;
     }
 
