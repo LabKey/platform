@@ -508,6 +508,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
             org.labkey.api.data.Table.TestCase.class,
+            Table.DataIteratorTestCase.class,
             org.labkey.api.data.DbSchema.TestCase.class,
             org.labkey.api.data.TableViewFormTestCase.class,
             ActionURL.TestCase.class,
