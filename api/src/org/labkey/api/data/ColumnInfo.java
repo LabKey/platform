@@ -131,6 +131,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         this.fieldKey = new FieldKey(null,name);
     }
 
+    public ColumnInfo(String name, JdbcType t)
+    {
+        if (null == name)
+            return;
+//        assert -1 == name.indexOf('/');
+        this.fieldKey = new FieldKey(null,name);
+        jdbcType = t;
+    }
+    
     public ColumnInfo(ResultSetMetaData rsmd, int col) throws SQLException
     {
         this.fieldKey = new FieldKey(null, rsmd.getColumnName(col));

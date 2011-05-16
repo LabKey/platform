@@ -405,9 +405,21 @@ public class Parameter
         }
 
 
+        public int size()
+        {
+            return _map.size();
+        }
+
+
         public boolean containsKey(String name)
         {
             return _map.containsKey(name);
+        }
+
+
+        public Parameter getParameter(String name)
+        {
+            return _map.get(name);
         }
         
 

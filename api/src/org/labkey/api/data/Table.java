@@ -44,10 +44,12 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.TestContext;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.rowset.CachedRowSet;
@@ -1591,6 +1593,8 @@ public class Table
     {
         public boolean isComplete();
 
+//        public boolean supportsGetRowMap();
+        
         public Map<String, Object> getRowMap() throws SQLException;
 
         public Iterator<Map<String, Object>> iterator();
@@ -1707,6 +1711,12 @@ public class Table
         {
             return "Displaying only the first " + maxRows + " rows.";
         }
+
+//        @Override
+//        public boolean supportsGetRowMap()
+//        {
+//            return false;
+//        }
 
         public Map<String, Object> getRowMap()
         {
@@ -2576,5 +2586,278 @@ public class Table
         sqlfDelete.append(sqlfDeleteTable);
 
         return new Parameter.ParameterMap(conn, sqlfDelete, updatable.remapSchemaColumns());
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**************
+    *
+    *
+    * prototype DataIterator
+    *
+    *
+    *
+    */
+
+    /*
+    * error handler may throw error or collect all errors,
+    * or collect some up to a limit, then throw...
+    */
+
+    static class ErrorCollection extends Exception
+    {
+        List<Pair<Integer,String>> errors = new ArrayList<Pair<Integer,String>>();
+        void addError(int row, String msg)
+        {
+            errors.add(new Pair(row,msg));
+        }
+        Collection<Pair<Integer, String>> getErrors()
+        {
+            return errors;
+        }
+    }
+
+
+    /* sticking with the jdbc style 1-based indexing */
+    interface DataIterator
+    {
+        int getColumnCount();
+        ColumnInfo getColumnInfo(int i);
+        // column 0 is row index (as determined by initial data source)
+        boolean next() throws ErrorCollection;
+        Object get(int i);
+    }
+
+
+    static class ParameterMapPump implements Runnable
+    {
+        protected Parameter.ParameterMap stmt;
+        final ErrorCollection errors;
+        final DataIterator data;
+        final User user;
+        final Container c;
+
+        ParameterMapPump(Container c, User user, DataIterator data, Parameter.ParameterMap map, ErrorCollection errors)
+        {
+            this.c = c;
+            this.user = user;
+            this.data = data;
+            this.stmt = map;
+            this.errors = errors;
+        }
+
+        @Override
+        public void run()
+        {
+            try
+            {
+                Parameter containerParameter = stmt.getParameter("Container");
+
+                // map from source to target
+                ArrayList<Pair<Integer,Parameter>> bindings = new ArrayList<Pair<Integer, Parameter>>(stmt.size());
+                // by name
+                for (int i=1 ; i<=data.getColumnCount() ; i++)
+                {
+                    String name = data.getColumnInfo(i).getName();
+                    Parameter p = stmt.getParameter(name);
+                    if (null != name && null != p)
+                    {
+                        bindings.add(new Pair<Integer,Parameter>(i, p));
+                        if (p == containerParameter)
+                            containerParameter = null;
+                    }
+                }
+
+                while (data.next())
+                {
+                    stmt.clearParameters();
+                    for (Pair<Integer,Parameter> binding : bindings)
+                        binding.getValue().setValue(data.get(binding.getKey()));
+                    if (null != containerParameter)
+                        containerParameter.setValue(c.getId());    
+                    stmt.execute();
+                }
+            }
+            catch (ErrorCollection x)
+            {
+                assert x == errors;
+            }
+            catch (SQLException x)
+            {
+                //errors.addException(x);
+                throw new RuntimeSQLException(x);
+            }
+        }
+    }
+
+
+    public static class TableLoaderPump extends ParameterMapPump
+    {
+        final UpdateableTableInfo table;
+
+        TableLoaderPump(Container c, User user, DataIterator data, UpdateableTableInfo table, ErrorCollection errors)
+        {
+            super(c, user, data, null, errors);
+            this.table = table;
+        }
+
+        @Override
+        public void run()
+        {
+            DbScope scope = null;
+            Connection conn = null
+                    ;
+            try
+            {
+                try
+                {
+                    scope = table.getSchemaTableInfo().getSchema().getScope();
+                    conn = scope.getConnection();
+                    stmt = table.insertStatement(conn, user);
+                    super.run();
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+            }
+            finally
+            {
+                if (null != stmt)
+                    try {stmt.close();}catch (SQLException x){}
+                if (null != conn)
+                    scope.releaseConnection(conn);
+            }
+        }
+    }
+
+
+    public static class TestDataIterator implements DataIterator
+    {
+        String guid = GUID.makeGUID();
+        Date date = new Date();
+
+        Object[][] _data = new Object[][]
+        {
+            new Object[] {1, "One", 1001, true, date, guid},
+            new Object[] {2, "Two", 1002, true, date, guid},
+            new Object[] {3, "Three", 1003, true, date, guid}
+        };
+
+        static class _ColumnInfo extends ColumnInfo
+        {
+            _ColumnInfo(String name, JdbcType type)
+            {
+                super(name, type);
+                setReadOnly(true);
+            }
+        }
+
+        static ColumnInfo[] _cols = new ColumnInfo[]
+        {
+            new _ColumnInfo("_row", JdbcType.INTEGER),
+            new _ColumnInfo("Text", JdbcType.VARCHAR),
+            new _ColumnInfo("IntNotNull", JdbcType.INTEGER),
+            new _ColumnInfo("BitNotNull", JdbcType.BOOLEAN),
+            new _ColumnInfo("DateTimeNotNull", JdbcType.TIMESTAMP),
+            new _ColumnInfo("EntityId", JdbcType.VARCHAR)
+        };
+
+        int currentRow = -1;
+
+        public void setErrorHandler(ErrorCollection errors)
+        {
+
+        }
+
+        @Override
+        public int getColumnCount()
+        {
+            return _cols.length-1;
+        }
+
+        @Override
+        public ColumnInfo getColumnInfo(int i)
+        {
+            return _cols[i];
+        }
+
+        @Override
+        public boolean next() throws ErrorCollection
+        {
+            return ++currentRow < _data.length;
+        }
+
+        @Override
+        public Object get(int i)
+        {
+            return _data[currentRow][i];
+        }
+    }
+
+    public static class DataIteratorTestCase extends Assert
+    {
+        @Test
+        public void test() throws Exception
+        {
+            TableInfo test = DbSchema.get("test").getTable("TestTable");
+            TableLoaderPump pump = new TableLoaderPump(
+                    JunitUtil.getTestContainer(),
+                    TestContext.get().getUser(),
+                    new TestDataIterator(),
+                    (UpdateableTableInfo)test,
+                    new ErrorCollection()
+            );
+            pump.run();
+            Table.execute(test.getSchema(), "delete from test.testtable", null);
+        }
     }
 }
