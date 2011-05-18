@@ -34,7 +34,7 @@ public class WebTheme
     private final String _borderTitleColor;
     private final String _webpartColor;
 
-    private boolean _editable = false;
+    private boolean _editable = true;
 
     WebTheme(String friendlyName, String textColor, String linkColor, String gridColor, String primaryBackgroundColor,
              String secondaryBackgroundColor, String borderTitleColor, String webPartColor)

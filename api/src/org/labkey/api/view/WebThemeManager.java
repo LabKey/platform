@@ -35,12 +35,12 @@ import java.util.TreeMap;
  */
 public class WebThemeManager
 {
-    private static final WebTheme BLUE  =   new WebTheme("Blue",    "212121", "21309A", "E4E6EA", "F4F4F4", "FFFFFF", "3441A1", "D0DBEE");
-    private static final WebTheme BROWN =   new WebTheme("Brown",   "212121", "682B16", "EBE2DB", "F4F4F4", "FFFFFF", "682B16", "DFDDD9");
-    private static final WebTheme HARVEST = new WebTheme("Harvest", "212121", "892405", "F5E2BB", "F4F4F4", "FFFFFF", "892405", "DBD8D2");
-    private static final WebTheme SAGE  =   new WebTheme("Sage",    "212121", "0F4F0B", "D4E4D3", "F4F4F4", "FFFFFF", "386135", "E1E5E1");
-    private static final WebTheme SEATTLE = new WebTheme("Seattle", "000000", "126495", "E7EFF4", "F8F8F8", "FFFFFF", "676767", "E0E6EA");
-    private static final WebTheme MADISON = new WebTheme("Madison", "212121", "990000", "FFECB0", "FFFCF8", "FFFFFF", "CCCCCC", "EEEBE0");
+    private static final WebTheme BLUE  =   new WebTheme("Blue",    "212121", "21309A", "E4E6EA", "F4F4F4", "FFFFFF", "3441A1", "D0DBEE", false);
+    private static final WebTheme BROWN =   new WebTheme("Brown",   "212121", "682B16", "EBE2DB", "F4F4F4", "FFFFFF", "682B16", "DFDDD9", false);
+    private static final WebTheme HARVEST = new WebTheme("Harvest", "212121", "892405", "F5E2BB", "F4F4F4", "FFFFFF", "892405", "DBD8D2", false);
+    private static final WebTheme SAGE  =   new WebTheme("Sage",    "212121", "0F4F0B", "D4E4D3", "F4F4F4", "FFFFFF", "386135", "E1E5E1", false);
+    private static final WebTheme SEATTLE = new WebTheme("Seattle", "000000", "126495", "E7EFF4", "F8F8F8", "FFFFFF", "676767", "E0E6EA", false);
+    private static final WebTheme MADISON = new WebTheme("Madison", "212121", "990000", "FFECB0", "FFFCF8", "FFFFFF", "CCCCCC", "EEEBE0", false);
     
     // handle Web Theme color management
     private static final String THEME_NAMES_KEY = "themeNames";
