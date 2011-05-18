@@ -284,6 +284,7 @@
 
         function onRightClick(node, e){
             node.select();
+            validateFolder(node); // 12264: Right-click doesn't select in manage folders tree
             var c = folderTree.contextMenu;
             c.contextNode = node;
             c.showAt(e.getXY());
