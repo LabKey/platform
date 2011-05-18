@@ -40,7 +40,7 @@ spring-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.
 spring-mock-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
 spring-webmvc-2.5.5.jar|Spring Web MVC Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 tar.jar|Java Tar|2.5|{link:Ice Engineering|http://www.trustice.com/java/tar/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|adam|Reading SEQUEST/Comet tar.gz files
-jtidy-r938.jar|Java Tidy|r938|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
+jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
 xbean.jar|XMLBeans|2.5.0|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|peter|Reading/writing XML
 xercesImpl.jar|Xerces|2.6.2|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
 {table}
