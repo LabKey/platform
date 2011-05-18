@@ -1256,12 +1256,15 @@ public class PageFlowUtil
                 ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
     }
 
+    @Deprecated
     public static String textLink(String text, String href, String onClickScript, String id)
     {
-        return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
-                (id != null ? " id=\"" + id + "\"" : "") +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
+        return textLink(text, href, onClickScript, id, Collections.<String, String>emptyMap());
+    }
+
+    public static String textLink(String text, ActionURL url, String onClickScript, String id)
+    {
+        return textLink(text, url, onClickScript, id, Collections.<String, String>emptyMap());
     }
 
     @Deprecated
@@ -1278,11 +1281,6 @@ public class PageFlowUtil
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                 ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
-    }
-
-    public static String textLink(String text, ActionURL url, String onClickScript, String id)
-    {
-        return textLink(text, url, onClickScript, id, Collections.<String, String>emptyMap());
     }
 
     public static String textLink(String text, ActionURL url, String onClickScript, String id, Map<String, String> properties)
@@ -1518,11 +1516,20 @@ public class PageFlowUtil
             tidy.setErrout(new PrintWriter(err));
             tidy.parse(new ByteArrayInputStream(html.getBytes("UTF-8")), out);
             tidy.getErrout().close();
-            for (String error : err.toString().split("\n"))
+            String errorString = err.toString();
+
+            for (String error : errorString.split("\n"))
             {
                 if (error.contains("Error:"))
                     errors.add(error.trim());
             }
+
+            // Provide a generic error when JTidy flips out and doesn't report the actual error
+            String genericError = "This document has errors that must be fixed";
+
+            if (errors.isEmpty() && errorString.contains(genericError))
+                errors.add(genericError);
+
             return new String(out.toByteArray(), "UTF-8");
         }
         catch (UnsupportedEncodingException x)
