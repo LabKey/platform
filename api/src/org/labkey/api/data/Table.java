@@ -2309,6 +2309,8 @@ public class Table
         {
             if (column.isAutoIncrement())
                 continue;
+            if (column.isVersionColumn())
+                continue;
             if (done.contains(column.getName()))
                 continue;
             done.add(column.getName());
