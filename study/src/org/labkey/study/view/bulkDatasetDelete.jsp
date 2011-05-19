@@ -60,7 +60,7 @@
     }
         
 %>
-</table>t
+</table>
 <%=PageFlowUtil.generateSubmitButton("Delete Selected",
         "if (confirm('Delete selected datasets?')){" +
             "Ext.get(this).replaceClass('labkey-button', 'labkey-disabled-button');" +
