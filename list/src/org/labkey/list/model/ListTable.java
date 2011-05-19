@@ -293,7 +293,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
     {
-        return Table.insertStatement(conn, user, this);
+        return Table.insertStatement(conn, this, getContainer(), user, true);
     }
 
 
