@@ -39,6 +39,12 @@ public enum JdbcType
                 {
                     return n.longValue();
                 }
+
+                @Override
+                protected Object _fromString(String s)
+                {
+                    return new Long(s);
+                }
             },
 
     BINARY(Types.BINARY, ByteBuffer.class),
@@ -62,6 +68,12 @@ public enum JdbcType
                 {
                     return _toBigDecimal(n);
                 }
+
+                @Override
+                protected Object _fromString(String s)
+                {
+                    return new BigDecimal(s);
+                }
             },
 
     DOUBLE(Types.DOUBLE, Double.class, "numberfield")
@@ -71,6 +83,12 @@ public enum JdbcType
                 {
                     return n.doubleValue();
                 }
+
+                @Override
+                protected Object _fromString(String s)
+                {
+                    return new Double(s);
+                }
             },
 
     INTEGER(Types.INTEGER, Integer.class, "numberfield")
@@ -79,6 +97,12 @@ public enum JdbcType
                 protected Object _fromNumber(Number n)
                 {
                     return _toInt(n);
+                }
+
+                @Override
+                protected Object _fromString(String s)
+                {
+                    return new Integer(s);
                 }
             },
 
@@ -93,6 +117,12 @@ public enum JdbcType
                 {
                     return n.floatValue();
                 }
+
+                @Override
+                protected Object _fromString(String s)
+                {
+                    return new Float(s);
+                }
             },
 
     SMALLINT(Types.SMALLINT, Short.class, "numberfield")
@@ -101,6 +131,13 @@ public enum JdbcType
                 protected Object _fromNumber(Number n)
                 {
                     return _toShort(n);
+                }
+
+
+                @Override
+                protected Object _fromString(String s)
+                {
+                    return new Short(s);
                 }
             },
 
@@ -117,6 +154,12 @@ public enum JdbcType
                 {
                     return _toShort(n);
                 }
+
+                @Override
+                protected Object _fromString(String s)
+                {
+                    return new Short(s);
+                }
             },
 
     VARBINARY(Types.VARBINARY, ByteBuffer.class),
@@ -132,6 +175,7 @@ public enum JdbcType
     public final Class cls;
     public final String xtype;
     public final String json;
+    private final org.apache.commons.beanutils.Converter converter;
 
 
     JdbcType(int type, Class cls)
@@ -145,6 +189,7 @@ public enum JdbcType
         this.cls = cls;
         this.xtype = xtype;
         this.json = DisplayColumn.getJsonTypeName(cls);
+        this.converter = ConvertUtils.lookup(cls);
     }
 
     public static JdbcType valueOf(int type)
@@ -178,6 +223,17 @@ public enum JdbcType
             case Types.LONGVARBINARY : return LONGVARBINARY;
             default : return OTHER;
         }
+    }
+
+
+    public static JdbcType valueOf(Class cls)
+    {
+        for (JdbcType t : JdbcType.values())
+        {
+            if (t.cls == cls)
+                return t;
+        }
+        return null;
     }
 
 
@@ -221,12 +277,12 @@ public enum JdbcType
         return java.util.Date.class.isAssignableFrom(this.cls);
     }
     
-    public Object convert(Object o)
+    public Object convert(Object o) throws ConversionException
     {
         if (null == o)
             return null;
 
-        if (cls == o.getClass())
+        if (cls.isAssignableFrom(o.getClass()))
             return o;
 
         if (o instanceof Number)
@@ -234,21 +290,36 @@ public enum JdbcType
             Object r = _fromNumber((Number)o);
             if (null != r)
                 return r;
-            // fall through
         }
 
         String s = o instanceof String ? (String)o : ConvertUtils.convert(o);
         if (cls == String.class)
             return s;
-        return ConvertUtils.convert(s, cls);
-    }
 
+        try
+        {
+            Object r = _fromString(s);
+            if (null != r)
+                return r;
+        }
+        catch (NumberFormatException x)
+        {
+            throw new ConversionException(x);
+        }
+
+        // CONSIDER: convert may return default values instead of ConversionException
+        return converter.convert(cls, s);
+    }
 
     protected Object _fromNumber(Number n)
     {
-        return null; // fall through
+        return null;
     }
 
+    protected Object _fromString(String s)
+    {
+        return null;
+    }
 
     private static Boolean _toBoolean(Number n)
     {

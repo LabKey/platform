@@ -34,6 +34,8 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Join;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -42,6 +44,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -2157,12 +2160,9 @@ public class Table
      * NOTE: this is currently fairly expensive for updating one row into an Ontology stored relationship on Postgres.
      * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
      * to provisioned tables for major datatypes.
-     *
-     * NOTE: does not currently provide for manually setting built-in columns.  Wouldn't be hard to add.
      */
-    public static Parameter.ParameterMap insertStatement(Connection conn, User user, TableInfo tableInsert) throws SQLException
+    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo tableInsert, Container c, User user, boolean autoFillDefaultColumns) throws SQLException
     {
-        // TODO Does not provide for overriding the built-in fields (CreatedBy, ModifiedBy etc)
         if (!(tableInsert instanceof UpdateableTableInfo))
             throw new IllegalArgumentException();
 
@@ -2214,6 +2214,8 @@ public class Table
                 useVariables = d.isPostgreSQL();
                 sqlfDeclare.append("DECLARE " + objectIdVar + " INT;\n");
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
+                if (autoFillDefaultColumns && null != c)
+                    containerParameter.setValue(c.getId(), true);
                 String parameterName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
                         ? updatable.getObjectURIColumnName()
                         : "objecturi";
@@ -2243,13 +2245,17 @@ public class Table
         {
             cols.append(comma).append("Container");
             if (null == containerParameter)
+            {
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
+                if (autoFillDefaultColumns && null != c)
+                    containerParameter.setValue(c.getId(), true);
+            }
             appendParameterOrVariable(values, d, useVariables, containerParameter, parameterToVariable);
             done.add("Container");
             comma = ",";
         }
         col = table.getColumn("Owner");
-        if (null != col && null != user)
+        if (autoFillDefaultColumns && null != col && null != user)
         {
             cols.append(comma).append("Owner");
             values.append(comma).append(user.getUserId());
@@ -2257,7 +2263,7 @@ public class Table
             comma = ",";
         }
         col = table.getColumn("CreatedBy");
-        if (null != col && null != user)
+        if (autoFillDefaultColumns && null != col && null != user)
         {
             cols.append(comma).append("CreatedBy");
             values.append(comma).append(user.getUserId());
@@ -2265,7 +2271,7 @@ public class Table
             comma = ",";
         }
         col = table.getColumn("Created");
-        if (null != col)
+        if (autoFillDefaultColumns && null != col)
         {
             cols.append(comma).append("Created");
             values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
@@ -2273,7 +2279,7 @@ public class Table
             comma = ",";
         }
         ColumnInfo colModifiedBy = table.getColumn("Modified");
-        if (null != colModifiedBy && null != user)
+        if (autoFillDefaultColumns && null != colModifiedBy && null != user)
         {
             cols.append(comma).append("ModifiedBy");
             values.append(comma).append(user.getUserId());
@@ -2281,7 +2287,7 @@ public class Table
             comma = ",";
         }
         ColumnInfo colModified = table.getColumn("Modified");
-        if (null != colModified)
+        if (autoFillDefaultColumns && null != colModified)
         {
             cols.append(comma).append("Modified");
             values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
@@ -2289,7 +2295,7 @@ public class Table
             comma = ",";
         }
         ColumnInfo colVersion = table.getVersionColumn();
-        if (null != colVersion && !done.contains(colVersion.getName()) && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
+        if (autoFillDefaultColumns && null != colVersion && !done.contains(colVersion.getName()) && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
         {
             cols.append(comma).append(colVersion.getSelectName());
             values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
@@ -2647,45 +2653,16 @@ public class Table
     *
     */
 
-    /*
-    * error handler may throw error or collect all errors,
-    * or collect some up to a limit, then throw...
-    */
-
-    static class ErrorCollection extends Exception
-    {
-        List<Pair<Integer,String>> errors = new ArrayList<Pair<Integer,String>>();
-        void addError(int row, String msg)
-        {
-            errors.add(new Pair(row,msg));
-        }
-        Collection<Pair<Integer, String>> getErrors()
-        {
-            return errors;
-        }
-    }
-
-
-    /* sticking with the jdbc style 1-based indexing */
-    interface DataIterator
-    {
-        int getColumnCount();
-        ColumnInfo getColumnInfo(int i);
-        // column 0 is row index (as determined by initial data source)
-        boolean next() throws ErrorCollection;
-        Object get(int i);
-    }
-
 
     static class ParameterMapPump implements Runnable
     {
         protected Parameter.ParameterMap stmt;
-        final ErrorCollection errors;
+        final ValidationException errors;
         final DataIterator data;
         final User user;
         final Container c;
 
-        ParameterMapPump(Container c, User user, DataIterator data, Parameter.ParameterMap map, ErrorCollection errors)
+        ParameterMapPump(Container c, User user, DataIterator data, Parameter.ParameterMap map, ValidationException errors)
         {
             this.c = c;
             this.user = user;
@@ -2720,13 +2697,17 @@ public class Table
                 {
                     stmt.clearParameters();
                     for (Pair<Integer,Parameter> binding : bindings)
-                        binding.getValue().setValue(data.get(binding.getKey()));
+                    {
+                        Integer fromIndex = binding.getKey();
+                        Parameter toParameter = binding.getValue();
+                        toParameter.setValue(data.get(fromIndex));
+                    }
                     if (null != containerParameter)
                         containerParameter.setValue(c.getId());    
                     stmt.execute();
                 }
             }
-            catch (ErrorCollection x)
+            catch (ValidationException x)
             {
                 assert x == errors;
             }
@@ -2741,9 +2722,9 @@ public class Table
 
     public static class TableLoaderPump extends ParameterMapPump
     {
-        final UpdateableTableInfo table;
+        final TableInfo table;
 
-        TableLoaderPump(Container c, User user, DataIterator data, UpdateableTableInfo table, ErrorCollection errors)
+        TableLoaderPump(Container c, User user, DataIterator data, TableInfo table, ValidationException errors)
         {
             super(c, user, data, null, errors);
             this.table = table;
@@ -2759,9 +2740,11 @@ public class Table
             {
                 try
                 {
-                    scope = table.getSchemaTableInfo().getSchema().getScope();
+                    scope = ((UpdateableTableInfo)table).getSchemaTableInfo().getSchema().getScope();
                     conn = scope.getConnection();
-                    stmt = table.insertStatement(conn, user);
+                    stmt = Table.insertStatement(conn, (TableInfo)table, null, null, false);
+                    // UNDONE: insertStatement(fillDefaultFields=false)
+                    // stmt = table.insertStatement(conn, user);
                     super.run();
                 }
                 catch (SQLException x)
@@ -2787,9 +2770,9 @@ public class Table
 
         Object[][] _data = new Object[][]
         {
-            new Object[] {1, "One", 1001, true, date, guid},
-            new Object[] {2, "Two", 1002, true, date, guid},
-            new Object[] {3, "Three", 1003, true, date, guid}
+            new Object[] {1, "One", 101, true, date, guid},
+            new Object[] {2, "Two", 102, true, date, guid},
+            new Object[] {3, "Three", 103, true, date, guid}
         };
 
         static class _ColumnInfo extends ColumnInfo
@@ -2813,7 +2796,7 @@ public class Table
 
         int currentRow = -1;
 
-        public void setErrorHandler(ErrorCollection errors)
+        public void setErrorHandler(ValidationException errors)
         {
 
         }
@@ -2831,7 +2814,7 @@ public class Table
         }
 
         @Override
-        public boolean next() throws ErrorCollection
+        public boolean next() throws ValidationException
         {
             return ++currentRow < _data.length;
         }
@@ -2843,21 +2826,31 @@ public class Table
         }
     }
 
+
     public static class DataIteratorTestCase extends Assert
     {
         @Test
         public void test() throws Exception
         {
-            TableInfo test = DbSchema.get("test").getTable("TestTable");
-            TableLoaderPump pump = new TableLoaderPump(
+            TableInfo testTable = DbSchema.get("test").getTable("TestTable");
+
+            ValidationException errors = new ValidationException();
+            TestDataIterator extract = new TestDataIterator();
+            SimpleTranslator translate = new SimpleTranslator(extract, errors);
+            translate.selectAll();
+            translate.addBuiltinColumns(JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable);
+
+            TableLoaderPump load = new TableLoaderPump(
                     JunitUtil.getTestContainer(),
                     TestContext.get().getUser(),
-                    new TestDataIterator(),
-                    (UpdateableTableInfo)test,
-                    new ErrorCollection()
+                    translate,
+                    testTable,
+                    errors
             );
-            pump.run();
-            Table.execute(test.getSchema(), "delete from test.testtable", null);
+            load.run();
+            assertFalse(errors.hasErrors());
+            
+            Table.execute(testTable.getSchema(), "delete from test.testtable where entityid = '" + extract.guid + "'", null);
         }
     }
 }

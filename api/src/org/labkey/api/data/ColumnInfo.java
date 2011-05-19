@@ -163,7 +163,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public ColumnInfo(ColumnInfo from)
     {
-        this(from.getFieldKey(), from.getParentTable());
+        this(from, from.getParentTable());
     }
 
 
@@ -248,7 +248,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setNullable(col.isNullable());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
-        setSqlTypeName(col.getSqlTypeName());
+        this.sqlTypeName = col.sqlTypeName;
         this.jdbcType = col.jdbcType;
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
@@ -378,7 +378,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public String getPropertyURI()
     {
-        if (null == propertyURI)
+        if (null == propertyURI && null != getParentTable())
             propertyURI = DEFAULT_PROPERTY_URI_PREFIX + getParentTable().getSchema().getName() + "#" + getParentTable().getName() + "." + PageFlowUtil.encode(getName());
         return propertyURI;
     }
@@ -1302,6 +1302,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public String getSqlTypeName()
     {
+        if (null == sqlTypeName && null != jdbcType)
+        {
+            SqlDialect d;
+            if (getParentTable() == null)
+                d = CoreSchema.getInstance().getSqlDialect();
+            else
+                d = getParentTable().getSqlDialect();
+            sqlTypeName = d.sqlTypeNameFromSqlType(jdbcType.sqlType);
+        }
         return sqlTypeName;
     }
 
@@ -1313,9 +1322,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
+    public void setJdbcType(JdbcType type)
+    {
+        this.jdbcType = type;
+        this.sqlTypeName = null;
+    }
+
+
     public JdbcType getJdbcType()
     {
-        if (jdbcType == null)
+        if (null == jdbcType && null != sqlTypeName)
         {
             SqlDialect d;
             if (getParentTable() == null)

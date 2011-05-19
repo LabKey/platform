@@ -1034,7 +1034,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
     {
-        return Table.insertStatement(conn, user, this);
+        return Table.insertStatement(conn, this, null, user, true);
     }
 
     @Override

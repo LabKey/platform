@@ -43,6 +43,7 @@ public class MultiValuedLookupColumn extends LookupColumn
         copyAttributesFrom(display);
         copyURLFrom(display, parentPkColumn.getFieldKey(), null);
         setFieldKey(fieldKey);
+        setJdbcType(JdbcType.VARCHAR);
     }
 
     // We don't traverse FKs from a multi-valued column
@@ -186,11 +187,5 @@ public class MultiValuedLookupColumn extends LookupColumn
     {
         // Can't sort because we need to make sure that all of the multi-value columns come back in the same order 
         return getSqlDialect().getGroupConcat(sql, false, false);
-    }
-
-    @Override  // Must match the type of the aggregate function specified above.
-    public String getSqlTypeName()
-    {
-        return "varchar";
     }
 }

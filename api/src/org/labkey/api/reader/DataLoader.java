@@ -22,12 +22,17 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.etl.DataBuilder;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.iterator.IteratorUtil;
+import org.labkey.api.query.ValidationException;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -49,7 +54,7 @@ import java.util.Set;
  */
 
 // Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
-public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader
+public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader, DataBuilder
 {
     private static final Logger _log = Logger.getLogger(DataLoader.class);
 
@@ -678,6 +683,69 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             super.finalize();
             // assert _closed;  TODO: Uncomment to force all callers to close iterator.
+        }
+    }
+
+
+    /**
+     * It might be nice to go one level lower in the parser
+     * (pre conversion, missing value) but this is a quick way to
+     * get all the DataLoaders to play with the newer ETL code
+     */
+
+    @Override
+    public DataIterator getDataIterator(final ValidationException errors)
+    {
+        return new _DataIterator(errors);
+    }
+
+
+    private class _DataIterator implements DataIterator
+    {
+        final ValidationException _errors;
+        final DataLoaderIterator _it;
+        ArrayListMap<String,Object> _row;
+
+        _DataIterator(ValidationException errors)
+        {
+            _errors = errors;
+            _it = (DataLoaderIterator)iterator();
+        }
+
+        @Override
+        public int getColumnCount()
+        {
+            return _it._activeColumns.length;
+        }
+
+        @Override
+        public ColumnInfo getColumnInfo(int i)
+        {
+            if (i == 0)
+                return new ColumnInfo("_lineNumber", JdbcType.INTEGER);
+            ColumnDescriptor d = _it._activeColumns[i+1];
+            JdbcType type = JdbcType.valueOf(d.clazz);
+            if (null == type)
+                type = JdbcType.VARCHAR;
+            return new ColumnInfo(d.name, type);
+        }
+
+        @Override
+        public boolean next() throws ValidationException
+        {
+            _row = null;
+            boolean hasNext = _it.hasNext();
+            if (hasNext)
+                _row = (ArrayListMap)_it.next();
+            return _it.hasNext();
+        }
+
+        @Override
+        public Object get(int i)
+        {
+            if (i == 0)
+                return _it.lineNum();
+            return _row.get(i-1);
         }
     }
 }

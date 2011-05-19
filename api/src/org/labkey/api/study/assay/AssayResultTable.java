@@ -39,7 +39,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 
 import java.sql.Connection;
@@ -336,7 +335,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
     {
-        return Table.insertStatement(conn, user, this);
+        return Table.insertStatement(conn, this, getContainer(), user, true);
     }
 
     @Override
