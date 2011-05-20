@@ -678,7 +678,18 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public @Nullable Attachment getAttachment(AttachmentParent parent, String name)
     {
-        return AttachmentCache.getAttachments(parent).get(name);
+        if (parent instanceof AttachmentDirectory)
+        {
+            for (Attachment attachment : getAttachments(parent))
+                if (name.equals(attachment.getName()))
+                    return attachment;
+
+            return null;
+        }
+        else
+        {
+            return AttachmentCache.getAttachments(parent).get(name);
+        }
     }
 
 

@@ -30,6 +30,8 @@ import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -490,6 +492,15 @@ public class QueryManager
         if (null == table)
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaName + "'!");
 
+        Collection<QueryService.ParameterDecl> params = table.getNamedParameters();
+        Map<String,Object> parameters = new HashMap<String,Object>();
+        for (QueryService.ParameterDecl p : params)
+        {
+            if (!p.isRequired())
+                continue;
+            parameters.put(p.getName(), null);
+        }
+
         //get the set of columns
         List<ColumnInfo> cols = null;
         if (testAllColumns)
@@ -505,9 +516,9 @@ public class QueryManager
         {
             //use selectForDisplay to mimic the behavior one would get in the UI
             if (testAllColumns)
-                results = Table.selectForDisplay(table, Table.ALL_COLUMNS, null, null, null, Table.NO_ROWS, 0);
+                results = Table.selectForDisplay(table, Table.ALL_COLUMNS, parameters, null, null, Table.NO_ROWS, 0);
             else
-                results = Table.selectForDisplay(table, cols, null, null, null, Table.NO_ROWS, 0);
+                results = Table.selectForDisplay(table, cols, parameters, null, null, Table.NO_ROWS, 0);
         }
         finally
         {

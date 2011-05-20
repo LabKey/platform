@@ -344,9 +344,9 @@ public class CBCAssayController extends SpringActionController
             while (iter.hasNext())
             {
                 DisplayColumn column = iter.next();
-                if (column.getCaption().contains("Target Study"))
+                if (column.getColumnInfo() != null && !column.getColumnInfo().isShownInUpdateView())
                     iter.remove();
-                if (column.getCaption().indexOf("Copied to ") == 0 && column.getCaption().endsWith("Study"))
+                if (column.getCaption().contains("Target Study"))
                     iter.remove();
                 if (!column.isEditable() || column.getColumnInfo() instanceof LookupColumn)
                     iter.remove();

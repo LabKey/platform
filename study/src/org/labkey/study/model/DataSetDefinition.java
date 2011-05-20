@@ -1618,10 +1618,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 new SQLFragment("participantid"));
         if (getKeyPropertyName() != null)
         {
+            // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
+            // so use COALESCE to get rid of NULLs
             sql = StudyManager.getSchema().getSqlDialect().concatenate(
                     sql, 
                     new SQLFragment("'.'"),
-                    new SQLFragment("\"" + getKeyPropertyName().toLowerCase() + "\""));
+                    new SQLFragment("COALESCE(CAST(\"" + getKeyPropertyName().toLowerCase() + "\" AS VARCHAR), '')"));
         }
         return sql;
     }

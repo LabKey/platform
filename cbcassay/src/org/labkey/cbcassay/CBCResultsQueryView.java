@@ -102,6 +102,8 @@ public final class CBCResultsQueryView extends ResultsQueryView
         FieldKey propertiesKey = FieldKey.fromString("Properties");
         Container container = context.getContainer();
 
+        FieldKey oldSampleIdKey = new FieldKey(propertiesKey, sampleIdKey.getName());
+
         ListIterator<DisplayColumn> iter = columns.listIterator();
         while (iter.hasNext())
         {
@@ -115,7 +117,7 @@ public final class CBCResultsQueryView extends ResultsQueryView
             if (info != null && info.getFieldKey() != null)
             {
                 FieldKey fieldKey = info.getFieldKey();
-                if (editable && fieldKey.equals(sampleIdKey))
+                if (editable && (fieldKey.equals(sampleIdKey) || fieldKey.equals(oldSampleIdKey)))
                 {
                     iter.set(new SampleIdInputColumn(provider, info));
                 }
