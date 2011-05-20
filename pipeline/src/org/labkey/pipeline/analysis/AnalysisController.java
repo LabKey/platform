@@ -66,8 +66,15 @@ public class AnalysisController extends SpringActionController
 
         public ModelAndView getView(AnalyzeForm analyzeForm, BindException errors) throws Exception
         {
-            _taskPipeline = PipelineJobService.get().getTaskPipeline(new TaskId(analyzeForm.getTaskId()));
-            return new JspView<ActionURL>("/org/labkey/pipeline/analysis/analyze.jsp", PageFlowUtil.urlProvider(PipelineUrls.class).urlReferer(getContainer()));
+            try
+            {
+                _taskPipeline = PipelineJobService.get().getTaskPipeline(new TaskId(analyzeForm.getTaskId()));
+                return new JspView<ActionURL>("/org/labkey/pipeline/analysis/analyze.jsp", PageFlowUtil.urlProvider(PipelineUrls.class).urlReferer(getContainer()));
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new NotFoundException("Could not find task pipeline: " + analyzeForm.getTaskId());
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)

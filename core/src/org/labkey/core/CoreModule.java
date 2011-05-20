@@ -224,23 +224,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             File projectRoot = new File(root);
             if (projectRoot.exists())
             {
-                try
-                {
-                    AppProps.getInstance().setProjectRoot(projectRoot.getCanonicalPath());
+                AppProps.getInstance().setProjectRoot(FileUtil.getAbsoluteCaseSensitiveFile(projectRoot).toString());
 
-                    root = AppProps.getInstance().getProjectRoot();
-                    ResourceFinder api = new ResourceFinder("API", root + "/server/api", root + "/build/modules/api");
-                    ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", api);
-                    ResourceFinder internal = new ResourceFinder("Internal", root + "/server/internal", root + "/build/modules/internal");
-                    ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", internal);
+                root = AppProps.getInstance().getProjectRoot();
+                ResourceFinder api = new ResourceFinder("API", root + "/server/api", root + "/build/modules/api");
+                ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", api);
+                ResourceFinder internal = new ResourceFinder("Internal", root + "/server/internal", root + "/build/modules/internal");
+                ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", internal);
 
-                    // set the root only once
-                    break;
-                }
-                catch (IOException e)
-                {
-                    // ignore
-                }
+                // set the root only once
+                break;
             }
         }
     }
