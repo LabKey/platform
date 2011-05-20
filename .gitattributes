@@ -285,6 +285,8 @@ api/src/org/labkey/api/defaults/SetDefaultValuesListAction.java -text
 api/src/org/labkey/api/etl/DataBuilder.java -text
 api/src/org/labkey/api/etl/DataIterator.java -text
 api/src/org/labkey/api/etl/SimpleTranslator.java -text
+api/src/org/labkey/api/etl/StringTestIterator.java -text
+api/src/org/labkey/api/etl/ValidatorIterator.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text
 api/src/org/labkey/api/exp/DomainDescriptor.java -text
