@@ -16,11 +16,16 @@
 
 package org.labkey.api.security;
 
+import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.AddressException;
 import javax.mail.Address;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import java.util.Map;
 
 /**
  * User: adam
@@ -29,7 +34,7 @@ import javax.mail.Address;
  */
 public class ValidEmail
 {
-    private InternetAddress _internetAddress;
+    private final InternetAddress _internetAddress;
 
     public ValidEmail(String rawEmail) throws InvalidEmailException
     {
@@ -45,16 +50,19 @@ public class ValidEmail
                 // Email addresses are always lowercase.  Convert here (vs. normalize) so we don't touch the personal name.
                 _internetAddress.setAddress(_internetAddress.getAddress().toLowerCase());
 
+                // Can only happen when default domain is empty?
                 if (hasNameAndDomain())
                     return;
+
+                throw new InvalidEmailException(rawEmail, "email addresses must be complete, for example: employee@domain.com");
             }
             catch (AddressException e)
             {
-                //
+                throw new InvalidEmailException(rawEmail, "email addresses must not contain illegal characters", e);
             }
         }
 
-        throw new InvalidEmailException(rawEmail);
+        throw new InvalidEmailException(rawEmail, "email addresses must not be blank");
     }
 
 
@@ -85,22 +93,22 @@ public class ValidEmail
     // Normalize an email address entered in the UI -- trim whitespace and add default domain
     private String normalize(String rawEmail)
     {
-        if (null == rawEmail)
+        // Trim extra spaces
+        String trimmed = StringUtils.trimToNull(rawEmail);
+
+        if (null == trimmed)
             return null;
 
-        // Trim extra spaces
-        StringBuilder sb = new StringBuilder(rawEmail.trim());
-
         // If no domain, add the default domain
-        if (sb.indexOf("@") == -1)
+        if (trimmed.indexOf("@") == -1)
         {
             String domain = getDefaultDomain();
 
             if (null != domain && domain.length() > 0)
-                sb.append("@").append(domain);
+                return trimmed + "@" + domain;
         }
 
-        return sb.toString();
+        return trimmed;
     }
 
 
@@ -122,15 +130,86 @@ public class ValidEmail
     {
         private final String _badEmail;
 
-        public InvalidEmailException(String badEmail)
+        public InvalidEmailException(String badEmail, String issue)
         {
-            super("'" + badEmail + "' does not appear to be a valid email address!");
+            super(message(badEmail, issue));
             _badEmail = badEmail;
+        }
+
+        public InvalidEmailException(String badEmail, String issue, Throwable cause)
+        {
+            super(message(badEmail, issue), cause);
+            _badEmail = badEmail;
+        }
+
+        private static String message(String badEmail, String issue)
+        {
+           return "'" + badEmail + "' is not a valid email address; " + issue + ".";
         }
 
         public String getBadEmail()
         {
             return _badEmail;
+        }
+
+        @Override
+        public String getMessage()
+        {
+            Throwable t = getCause();
+
+            return super.getMessage() + (null != t ? " Details: " + t.getMessage() : "");
+        }
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testValidEmail() throws InvalidEmailException
+        {
+            String[] validEmails = new String[]{
+                    "xxx@test.com",
+                    "   xxx@test.com    ",
+                    "xxx@test.test.com"};
+
+            for (String valid : validEmails)
+                verifyValid(valid);
+
+            Map<String, String> invalidEmails = PageFlowUtil.map(
+                    null, "must not be blank",
+                    "", "must not be blank",
+                    "    ", "must not be blank",
+                    " \t  \n   \t  \n ", "must not be blank",
+                    "xxx @test.com", "must not contain illegal characters",
+                    "xxx@test .com", "must not contain illegal characters",
+                    "xxx@test@test.com", "must not contain illegal characters",
+                    "xxx@test$.com", "must not contain illegal characters",
+                    "x$xx@test$.com", "must not contain illegal characters",
+                    "xxx@test\".com", "must not contain illegal characters",
+                    "\"xxx@test.com", "must not contain illegal characters",
+                    "xxx@test.com\u200E", "must not contain illegal characters"   // Left-to-right mark, see #12276
+            );
+
+            for (Map.Entry<String, String> invalid : invalidEmails.entrySet())
+                verifyInvalid(invalid.getKey(), invalid.getValue());
+        }
+
+        private void verifyValid(String valid) throws InvalidEmailException
+        {
+            new ValidEmail(valid);
+        }
+
+        private void verifyInvalid(String invalid, String expectedMessage)
+        {
+            try
+            {
+                new ValidEmail(invalid);
+                fail("Expected InvalidEmailException for '" + invalid + "'");
+            }
+            catch (InvalidEmailException e)
+            {
+                assertTrue("Incorrect error message for invalid email '" + invalid + "'", e.getMessage().contains(expectedMessage));
+            }
         }
     }
 }
