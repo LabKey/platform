@@ -29,7 +29,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.DataView;
 
 import javax.mail.MessagingException;
 import java.io.ByteArrayInputStream;
@@ -167,6 +166,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
                     data = PageFlowUtil.toQueryString(a);
                 }
             }
+
             return data;
         }
         catch (Exception e)
@@ -217,6 +217,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
             for (PropertyInfo pInfo : properties)
             {
                 DomainProperty prop = existingProps.remove(pInfo.name);
+
                 if (prop == null)
                 {
                     dirty = true;
@@ -241,6 +242,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
                     throw new RuntimeSQLException(se);
                 }
             }
+
             if (dirty)
                 domain.save(user);
 
