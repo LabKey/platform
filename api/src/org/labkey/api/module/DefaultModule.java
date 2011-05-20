@@ -864,32 +864,32 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             {
                 File f = new File(source);
                 if (f.isDirectory())
-                    dirs.add(FileUtil.canonicalFile(f));
+                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
 
                 f = new File(new File(source), "resources");
                 if (f.isDirectory())
-                    dirs.add(FileUtil.canonicalFile(f));
+                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
 
                 f = new File(new File(source), "src");
                 if (f.isDirectory())
-                    dirs.add(FileUtil.canonicalFile(f));
+                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
 
 
                 if (new File(source).isDirectory())
                 {
-                    dirs.add(FileUtil.canonicalFile(new File(source)));
+                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(new File(source)));
                 }
             }
             if (null != build)
             {
                 File f = new File(build);
                 if (f.isDirectory())
-                    dirs.add(FileUtil.canonicalFile(f));
+                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
             }
         }
         if (exploded != null && exploded.isDirectory())
         {
-            dirs.add(FileUtil.canonicalFile(exploded));
+            dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(exploded));
         }
 
         return dirs;

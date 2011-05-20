@@ -172,7 +172,9 @@ public class LsidManager
         if (null == handlerMap)
             return null;
 
-        return handlerMap.get(lsid.getNamespacePrefix());
+        // ConcurrentHashMap doesn't allow null for keys, so avoid NPE
+        String namespacePrefix = lsid.getNamespacePrefix();
+        return namespacePrefix == null ? null : handlerMap.get(namespacePrefix);
     }
 
 

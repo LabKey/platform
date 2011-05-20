@@ -41,6 +41,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -237,7 +238,7 @@ public class ModuleLoader implements Filter
         // Register BeanUtils converters
         ConvertHelper.registerHelpers();
 
-        _webappDir = new File(servletCtx.getRealPath(".")).getCanonicalFile();
+        _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath(".")));
 
         List<File> explodedModuleDirs;
 
