@@ -1866,14 +1866,14 @@ LABKEY.DataRegion._filterUI =
             {
                 c = new Ext.form.DateField({id: id, width:180, renderTo:inputDiv, altFormats: "m/d/Y|n/j/Y|n/j/y|m/j/y|n/d/y|m/j/Y|n/d/Y|m-d-y|m-d-Y|m/d|m-d|md|mdy|mdY|d|Y-m-d|j-M-Y|j M Y|j-M-y|j M y"});
             }
-            else if ("INT" == mappedType)
-            {
-                c = new Ext.form.NumberField({id: id, width:180, renderTo:inputDiv, allowDecimals:false});
-            }
-            else if ("DECIMAL" == mappedType)
-            {
-                c = new Ext.form.NumberField({id: id, width:180, renderTo:inputDiv, decimalPrecision:15});
-            }
+//            else if ("INT" == mappedType)
+//            {
+//                c = new Ext.form.NumberField({id: id, width:180, renderTo:inputDiv, allowDecimals:false});
+//            }
+//            else if ("DECIMAL" == mappedType)
+//            {
+//                c = new Ext.form.NumberField({id: id, width:180, renderTo:inputDiv, decimalPrecision:15});
+//            }
             else
             {
                 c = new Ext.form.TextField({id: id, width:180, renderTo:inputDiv});

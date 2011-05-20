@@ -50,6 +50,8 @@ public class ExperimentRunListView extends QueryView
         _selectedType = selectedType;
         setShowDetailsColumn(false);
         setShowExportButtons(true);
+        // The file export panel that we add later requires record selectors
+        setShowRecordSelectors(true);
     }
 
     public static QuerySettings getRunListQuerySettings(UserSchema schema, ViewContext model, String tableName, boolean allowCustomizations)
@@ -77,7 +79,7 @@ public class ExperimentRunListView extends QueryView
     {
         _showAddToExperimentButton = showAddToExperimentButton;
     }
-    
+
     public void setShowMoveRunsButton(boolean showMoveRunsButton)
     {
         _showMoveRunsButton = showMoveRunsButton;

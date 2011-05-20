@@ -432,6 +432,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
                 (sqlType == Types.SMALLINT) ||
                 (sqlType == Types.BIGINT) ||
                 (sqlType == Types.FLOAT) ||
+                (sqlType == Types.REAL) ||
                 (sqlType == Types.NUMERIC) ||
                 (sqlType == Types.TINYINT);
     }

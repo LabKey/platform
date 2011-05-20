@@ -307,7 +307,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return PipelineJobService.get().getTaskFactory(getActiveTaskId());
     }
 
-    protected PipeRoot getPipeRoot()
+    public PipeRoot getPipeRoot()
     {
         return _pipeRoot;
     }
