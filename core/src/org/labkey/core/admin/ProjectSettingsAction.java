@@ -136,19 +136,9 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             SecurityManager.setNewSubfoldersInheritPermissions(c, getViewContext().getUser(), form.getShouldInherit());
         }
 
-        // Need to strip out any extraneous characters from the email address.
-        // E.g. "LabKey <info@labkey.com>" -> "info@labkey.com"
         try
         {
-            // TODO: Shouldn't the preliminary validation checks be moved to ValidEmail?
-            String address = StringUtils.trimToEmpty(form.getSystemEmailAddress());
-            // Manually check for a space or a quote, as these will later
-            // fail to send via JavaMail.
-            if (address.contains(" ") || address.contains("\""))
-                throw new ValidEmail.InvalidEmailException(address);
-
-            // this will throw an InvalidEmailException for some types
-            // of invalid email addresses
+            // this will throw an InvalidEmailException for invalid email addresses
             ValidEmail email = new ValidEmail(form.getSystemEmailAddress());
             props.setSystemEmailAddress(email);
         }

@@ -69,6 +69,7 @@ import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -544,7 +545,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             StorageProvisioner.TestCase.class,
             ArrayListMap.TestCase.class,
             DbScope.KeywordTestCase.class,
-            RhinoService.TestCase.class
+            RhinoService.TestCase.class,
+            ValidEmail.TestCase.class
             //,RateLimiter.TestCase.class
         ));
 
