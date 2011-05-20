@@ -229,7 +229,7 @@ public class WikiSelectManager
         return wc.getWikiTrees(tree);
     }
 
-    // Singel WikiTree
+    // Single WikiTree
     public static WikiTree getWikiTree(Container c, HString name)
     {
         return getWikiCollections(c).getWikiTree(name);

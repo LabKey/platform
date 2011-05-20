@@ -105,45 +105,34 @@ public class WikiManager implements WikiService
     private CommSchema comm = CommSchema.getInstance();
     private CoreSchema core = CoreSchema.getInstance();
 
-    private AttachmentService.Service _attachmentService;
-    private SearchService _searchService;
-    private DiscussionService.Service _discussionService;
-    private ContainerService _containerService;
-
-    synchronized AttachmentService.Service getAttachmentService()
-    {
-        if (null == _attachmentService)
-            _attachmentService = ServiceRegistry.get(AttachmentService.Service.class);
-        return _attachmentService;
-    }
-
-    synchronized SearchService getSearchService()
-    {
-        if (null == _searchService)
-            _searchService = ServiceRegistry.get(SearchService.class);
-        return _searchService;
-    }
-
-    synchronized DiscussionService.Service getDiscussionService()
-    {
-        if (null == _discussionService)
-            _discussionService = ServiceRegistry.get(DiscussionService.Service.class);
-        return _discussionService;
-    }
-
-    synchronized ContainerService getContainerService()
-    {
-        if (null == _containerService)
-            _containerService = ServiceRegistry.get(ContainerService.class);
-        return _containerService;
-    }
-    /* service dependencies */
-
+    private final AttachmentService.Service _attachmentService = ServiceRegistry.get(AttachmentService.Service.class);
+    private final SearchService _searchService = ServiceRegistry.get(SearchService.class);
+    private final DiscussionService.Service _discussionService = ServiceRegistry.get(DiscussionService.Service.class);
+    private final ContainerService _containerService = ServiceRegistry.get(ContainerService.class);
 
     private WikiManager()
     {
     }
 
+    AttachmentService.Service getAttachmentService()
+    {
+        return _attachmentService;
+    }
+
+    SearchService getSearchService()
+    {
+        return _searchService;
+    }
+
+    DiscussionService.Service getDiscussionService()
+    {
+        return _discussionService;
+    }
+
+    ContainerService getContainerService()
+    {
+        return _containerService;
+    }
 
     // Used to verify that entityId is a wiki and belongs in the specified container
     public Wiki getWikiByEntityId(Container c, String entityId) throws SQLException
@@ -164,7 +153,7 @@ public class WikiManager implements WikiService
 
 
     public boolean insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files)
-            throws SQLException, IOException, AttachmentService.DuplicateFilenameException
+            throws SQLException, IOException
     {
         DbScope scope = comm.getSchema().getScope();
 
@@ -205,6 +194,7 @@ public class WikiManager implements WikiService
 
             indexWiki(wikiInsert);
         }
+
         return true;
     }
 
@@ -214,8 +204,7 @@ public class WikiManager implements WikiService
     {
         DbScope scope = comm.getSchema().getScope();
         Container c = wikiNew.lookupContainer();
-        boolean uncacheAll = true;
-        boolean rename = true;
+        boolean uncacheAllContent = true;
         Wiki wikiOld = null;
 
         try
@@ -229,9 +218,9 @@ public class WikiManager implements WikiService
             wikiOld = getWikiByEntityId(c, wikiNew.getEntityId());
             WikiVersion versionOld = wikiOld.getLatestVersion();
             String oldTitle = StringUtils.trimToEmpty(versionOld.getTitle().getSource());
-            rename = !wikiOld.getName().equals(wikiNew.getName());
+            boolean rename = !wikiOld.getName().equals(wikiNew.getName());
 
-            uncacheAll = rename
+            uncacheAllContent = rename
                     || wikiOld.getParent() != wikiNew.getParent()
                     || wikiOld.getDisplayOrder() != wikiNew.getDisplayOrder()
                     || (null != versionNew && !oldTitle.equals(versionNew.getTitle().getSource()));
@@ -272,9 +261,9 @@ public class WikiManager implements WikiService
                 indexWiki(wikiNew);
             }
 
-            // Uncache the old wiki in the case of a rename #12249
+            // Uncache the old wiki #12249
             if (null != wikiOld)
-                WikiCache.uncache(c, wikiOld, uncacheAll);
+                WikiCache.uncache(c, wikiOld, uncacheAllContent);
         }
 
         return true;

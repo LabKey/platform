@@ -35,7 +35,7 @@ public class WikiCache
     private static final StringKeyCache<Object> WIKI_CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Wikis and Wiki Collections");
     private static final BlockingCache<String, Object> BLOCKING_CACHE = new BlockingCache<String, Object>(WIKI_CACHE);        // TODO: BlockingStringKeyCache?  Need removeUsingPrefix().
 
-    // Always passing in Container as "argument" eliminates need to create loader instances when caching collections (but doesn't help with wikis)
+    // Passing in Container as "argument" eliminates need to create loader instances when caching collections (but doesn't help with individual wikis)
     public abstract static class WikiCacheLoader<V> implements CacheLoader<String, V>
     {
         abstract V load(String key, Container c);
