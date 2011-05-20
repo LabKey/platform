@@ -17,7 +17,6 @@
 package org.labkey.study;
 
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;

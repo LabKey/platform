@@ -93,7 +93,9 @@ public class TypesController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public static class BeginAction extends SimpleViewAction
     {
+        @SuppressWarnings({"UnusedDeclaration"}) // Constructed via reflection
         public BeginAction(){}
+
         public BeginAction(ViewContext c){setViewContext(c);}
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -179,7 +181,9 @@ public class TypesController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public static class TypesAction extends SimpleViewAction
     {
+        @SuppressWarnings({"UnusedDeclaration"}) // Constructed via reflection
         public TypesAction(){}
+
         public TypesAction(ViewContext c){setViewContext(c);}
 
         public ModelAndView getView(Object o, BindException errors) throws Exception

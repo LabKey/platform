@@ -196,7 +196,8 @@ public enum PasswordRule
         return isValidToStore(password1, user, messages);
     }
 
-    // We check the password rule at each login and when storing in the database.  The rule can
+    // We check the password rule at each login and when storing in the database.  The rules may differ.
+
     abstract boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages);
 
     abstract boolean isValidToStore(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages);

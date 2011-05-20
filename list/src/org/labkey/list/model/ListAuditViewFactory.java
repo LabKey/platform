@@ -44,7 +44,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.list.view.ListController;
 
