@@ -1,0 +1,329 @@
+/*
+ * Copyright (c) 2010 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.api.reader.jxl;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Color;
+import org.apache.poi.ss.usermodel.Font;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: May 20, 2011
+ * Time: 1:45:20 PM
+ */
+public class JxlCellStyle implements CellStyle
+{
+    private jxl.Cell _cell;
+    private jxl.format.CellFormat _format;
+    private static final String DEFAULT_FORMAT = "General";
+
+    public JxlCellStyle(jxl.Cell cell)
+    {
+        _cell = cell;
+        _format = cell.getCellFormat();
+    }
+
+    @Override
+    public short getIndex()
+    {
+        return 0;
+    }
+
+    @Override
+    public void setDataFormat(short fmt)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getDataFormat()
+    {
+        return 0;
+    }
+
+    @Override
+    public String getDataFormatString()
+    {
+        if (_format != null)
+            return StringUtils.defaultIfBlank(_format.getFormat().getFormatString(), DEFAULT_FORMAT);
+
+        return DEFAULT_FORMAT;
+    }
+
+    @Override
+    public void setFont(Font font)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getFontIndex()
+    {
+        return 0;
+    }
+
+    @Override
+    public void setHidden(boolean hidden)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public boolean getHidden()
+    {
+        return _cell.isHidden();
+    }
+
+    @Override
+    public void setLocked(boolean locked)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public boolean getLocked()
+    {
+        return _format != null && _format.isLocked();
+    }
+
+    @Override
+    public void setAlignment(short align)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getAlignment()
+    {
+        if (_format != null)
+            return (short)_format.getAlignment().getValue();
+        return 0;
+    }
+
+    @Override
+    public void setWrapText(boolean wrapped)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public boolean getWrapText()
+    {
+        return _format != null && _format.getWrap();
+    }
+
+    @Override
+    public void setVerticalAlignment(short align)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getVerticalAlignment()
+    {
+        if (_format != null)
+            return (short)_format.getVerticalAlignment().getValue();
+        return 0;
+    }
+
+    @Override
+    public void setRotation(short rotation)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getRotation()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setIndention(short indent)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getIndention()
+    {
+        if (_format != null)
+            return (short)_format.getIndentation();
+        return 0;
+    }
+
+    @Override
+    public void setBorderLeft(short border)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getBorderLeft()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setBorderRight(short border)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getBorderRight()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setBorderTop(short border)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getBorderTop()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setBorderBottom(short border)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getBorderBottom()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setLeftBorderColor(short color)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getLeftBorderColor()
+    {
+        if (_format != null)
+            return (short)_format.getBorderColour(jxl.format.Border.LEFT).getValue();
+        return 0;
+    }
+
+    @Override
+    public void setRightBorderColor(short color)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getRightBorderColor()
+    {
+        if (_format != null)
+            return (short)_format.getBorderColour(jxl.format.Border.RIGHT).getValue();
+        return 0;
+    }
+
+    @Override
+    public void setTopBorderColor(short color)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getTopBorderColor()
+    {
+        if (_format != null)
+            return (short)_format.getBorderColour(jxl.format.Border.TOP).getValue();
+        return 0;
+    }
+
+    @Override
+    public void setBottomBorderColor(short color)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getBottomBorderColor()
+    {
+        if (_format != null)
+            return (short)_format.getBorderColour(jxl.format.Border.BOTTOM).getValue();
+        return 0;
+    }
+
+    @Override
+    public void setFillPattern(short fp)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getFillPattern()
+    {
+        if (_format != null)
+            return (short)_format.getPattern().getValue();
+        return 0;
+    }
+
+    @Override
+    public void setFillBackgroundColor(short bg)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getFillBackgroundColor()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Color getFillBackgroundColorColor()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setFillForegroundColor(short bg)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public short getFillForegroundColor()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Color getFillForegroundColorColor()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void cloneStyleFrom(CellStyle source)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+}

@@ -30,6 +30,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
@@ -50,6 +51,20 @@ public class JxlWorkbook implements Workbook
 
         try {
             _workbook = jxl.Workbook.getWorkbook(dataFile, settings);
+        }
+        catch (BiffException e)
+        {
+            throw new InvalidFormatException(e.getMessage());
+        }
+    }
+
+    public JxlWorkbook(InputStream data) throws IOException, InvalidFormatException
+    {
+        WorkbookSettings settings = new WorkbookSettings();
+        settings.setGCDisabled(true);
+
+        try {
+            _workbook = jxl.Workbook.getWorkbook(data, settings);
         }
         catch (BiffException e)
         {

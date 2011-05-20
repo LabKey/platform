@@ -205,7 +205,7 @@ public class JxlCell implements Cell
     @Override
     public CellStyle getCellStyle()
     {
-        throw new UnsupportedOperationException("method not yet supported");
+        return new JxlCellStyle(_cell);
     }
 
     @Override

@@ -42,6 +42,9 @@ import java.util.HashMap;
  */
 public class DefaultDataTransformer implements DataTransformer, DataValidator
 {
+    public static final String RUN_INFO_REPLACEMENT = "runInfo";
+    public static final String SRC_DIR_REPLACEMENT = "srcDirectory";
+
     public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
         boolean isDefault = isDefault(context.getProtocol());
@@ -86,7 +89,10 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
 
                             Map<String, String> paramMap = new HashMap<String, String>();
 
-                            paramMap.put("runInfo", runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
+                            paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
+                            File srcDir = scriptFile.getParentFile();
+                            if (srcDir != null && srcDir.exists())
+                                paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
                             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
                             Object output = engine.eval(script);
@@ -177,8 +183,11 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
 
                             Map<String, String> paramMap = new HashMap<String, String>();
 
-                            paramMap.put("runInfo", runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
+                            paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
                             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
+                            File srcDir = scriptFile.getParentFile();
+                            if (srcDir != null && srcDir.exists())
+                                paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
 
                             Object output = engine.eval(script);
 
