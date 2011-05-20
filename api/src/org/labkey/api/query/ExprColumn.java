@@ -34,7 +34,7 @@ public class ExprColumn extends ColumnInfo
     {
         super(key, parent);
         setAlias(AliasManager.makeLegalName(key.toString(), parent.getSqlDialect()));
-        setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(type.sqlType));
+        setJdbcType(type);
         _sql = sql;
         for (ColumnInfo dependentColumn : dependentColumns)
         {
