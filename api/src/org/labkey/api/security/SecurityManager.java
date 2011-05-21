@@ -715,15 +715,9 @@ public class SecurityManager
         User newUser;
         DbScope scope = core.getSchema().getScope();
 
-        boolean startedTransaction = false;
-
         try
         {
-            if (!scope.isTransactionActive())
-            {
-                scope.beginTransaction();
-                startedTransaction = true;
-            }
+            scope.ensureTransaction();
 
             if (createLogin && !status.isLdapEmail())
             {
@@ -806,8 +800,7 @@ public class SecurityManager
             if (null == newUser)
                 throw new UserManagementException(email, "Couldn't create user.");
 
-            if (startedTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
 
             status.setUser(newUser);
 
@@ -819,8 +812,7 @@ public class SecurityManager
         }
         finally
         {
-            if (startedTransaction && scope.isTransactionActive())
-                scope.rollbackTransaction();
+            scope.closeConnection();
         }
     }
 
@@ -1974,15 +1966,9 @@ public class SecurityManager
     public static void savePolicy(@NotNull MutableSecurityPolicy policy)
     {
         DbScope scope = core.getSchema().getScope();
-        boolean startedTran = false;
         try
         {
-            //start a transaction
-            if(!scope.isTransactionActive())
-            {
-                scope.beginTransaction();
-                startedTran = true;
-            }
+            scope.ensureTransaction();
 
             //if the policy to save has a version, check to see if it's the current one
             //(note that this may be a new policy so there might not be an existing one)
@@ -2017,8 +2003,7 @@ public class SecurityManager
             }
 
             //commit transaction
-            if(startedTran)
-                scope.commitTransaction();
+            scope.commitTransaction();
 
             //remove the resource-oriented policy from cache
             DbCache.remove(table, cacheNameForResourceId(policy.getResourceId()));
@@ -2026,25 +2011,20 @@ public class SecurityManager
         }
         catch(SQLException e)
         {
-            //rollback transaction if started
-            if(startedTran)
-                scope.rollbackTransaction();
             throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            scope.closeConnection();
         }
     }
 
     public static void deletePolicy(@NotNull SecurableResource resource)
     {
         DbScope scope = core.getSchema().getScope();
-        boolean startedTran = false;
         try
         {
-            //start a transaction
-            if(!scope.isTransactionActive())
-            {
-                scope.beginTransaction();
-                startedTran = true;
-            }
+            scope.ensureTransaction();
 
             TableInfo table = core.getTableInfoRoleAssignments();
 
@@ -2054,8 +2034,7 @@ public class SecurityManager
             Table.delete(core.getTableInfoPolicies(), filter);
 
             //commit transaction
-            if(startedTran)
-                scope.commitTransaction();
+            scope.commitTransaction();
 
             //remove the resource-oriented policy from cache
             DbCache.remove(table, cacheName(resource));
@@ -2064,12 +2043,12 @@ public class SecurityManager
         }
         catch(SQLException e)
         {
-            //rollback transaction if started
-            if(startedTran)
-                scope.rollbackTransaction();
             throw new RuntimeSQLException(e);
         }
-
+        finally
+        {
+            scope.closeConnection();
+        }
     }
 
     /**

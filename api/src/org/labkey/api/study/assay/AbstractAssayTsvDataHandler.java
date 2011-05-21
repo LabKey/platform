@@ -103,9 +103,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData) throws ExperimentException
     {
-        boolean transaction = false;
         try
         {
+            ExperimentService.get().ensureTransaction();
             Container container = data.getContainer();
             ParticipantVisitResolver resolver = createResolver(user, run, protocol, provider, container);
 
@@ -113,6 +113,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (allowEmptyData())
                 {
+                    ExperimentService.get().commitTransaction();
                     return;
                 }
                 else
@@ -132,12 +133,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             Map<String, DomainProperty> propertyNameToDescriptor = dataDomain.createImportMap(true);
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
 
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                transaction = true;
-            }
-
             insertRowData(data, user, container, dataDomain, fileData, provider.createDataTable(AssayService.get().createSchema(user, container), protocol, true));
 
             if (shouldAddInputMaterials())
@@ -145,11 +140,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 AbstractAssayProvider.addInputMaterials(run, user, inputMaterials);
             }
 
-            if (transaction)
-            {
-                ExperimentService.get().commitTransaction();
-                transaction = false;
-            }
+            ExperimentService.get().commitTransaction();
         }
         catch (ValidationException ve)
         {
@@ -165,10 +156,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
         finally
         {
-            if (transaction)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
     }
 

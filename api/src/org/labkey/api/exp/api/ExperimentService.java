@@ -156,11 +156,9 @@ public class ExperimentService
 
         DataType getDataType(String namespacePrefix);
 
-        boolean isTransactionActive();
-        void beginTransaction();
+        void ensureTransaction();
         void commitTransaction();
         void closeTransaction();
-        void rollbackTransaction();
 
         ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
 

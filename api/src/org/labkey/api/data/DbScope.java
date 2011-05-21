@@ -193,6 +193,20 @@ public class DbScope
         return _driverVersion;
     }
 
+    public Connection ensureTransaction() throws SQLException
+    {
+        if (isTransactionActive())
+        {
+            Transaction transaction = getCurrentTransaction();
+            transaction._count++;
+            return transaction.getConnection();
+        }
+        else
+        {
+            return beginTransaction();
+        }
+    }
+
     public Connection beginTransaction() throws SQLException
     {
         if (isTransactionActive())
@@ -219,20 +233,38 @@ public class DbScope
     public void commitTransaction() throws SQLException
     {
         Transaction t = _transaction.get();
-        assert null != t;
-        Connection conn = t.getConnection();
-        conn.commit();
-        conn.setAutoCommit(true);
-        conn.close();
-        _transaction.remove();
-        t.runCommitTasks();
+        if (t == null)
+        {
+            throw new IllegalStateException("No transaction is associated with this thread");
+        }
+        if (t._aborted)
+        {
+            throw new SQLException("Transaction has already been rolled back");
+        }
+
+        t._closesToIgnore++;
+        if (t.decrementCount())
+        {
+            Connection conn = t.getConnection();
+            conn.commit();
+            conn.setAutoCommit(true);
+            conn.close();
+            _transaction.remove();
+            t.runCommitTasks();
+        }
     }
 
 
-    public void rollbackTransaction()
+    private void rollbackTransaction()
     {
         Transaction t = _transaction.get();
-        assert null != t;
+        if (t == null)
+        {
+            throw new IllegalStateException("No transaction is associated with this thread");
+        }
+
+        t._aborted = true;
+        t._closesToIgnore++;
         Connection conn = t.getConnection();
         try
         {
@@ -242,23 +274,26 @@ public class DbScope
         {
             _log.error(x);
         }
-        try
+        if (t.decrementCount())
         {
-            conn.setAutoCommit(true);
+            try
+            {
+                conn.setAutoCommit(true);
+            }
+            catch (SQLException x)
+            {
+                _log.error(x);
+            }
+            try
+            {
+                conn.close();
+            }
+            catch (SQLException x)
+            {
+                _log.error(x);
+            }
+            _transaction.remove();
         }
-        catch (SQLException x)
-        {
-            _log.error(x);
-        }
-        try
-        {
-            conn.close();
-        }
-        catch (SQLException x)
-        {
-            _log.error(x);
-        }
-        _transaction.remove();
         t.clearCommitTasks();
     }
 
@@ -432,19 +467,35 @@ public class DbScope
         Transaction t = _transaction.get();
         if (null != t)
         {
-            Connection conn = t.getConnection();
-
-            try
+            if (t._closesToIgnore == 0)
             {
-                conn.close();
-            }
-            catch (SQLException e)
-            {
-                _log.error("Failed to close connection", e);
-            }
+                if (!t.decrementCount())
+                {
+                    t._aborted = true;
+                }
+                
+                Connection conn = t.getConnection();
 
-            t.closeCaches();
-            _transaction.remove();
+                try
+                {
+                    conn.close();
+                }
+                catch (SQLException e)
+                {
+                    _log.error("Failed to close connection", e);
+                }
+
+                t.closeCaches();
+                _transaction.remove();
+            }
+            else
+            {
+                t._closesToIgnore--;
+            }
+            if (t._closesToIgnore < 0)
+            {
+                throw new IllegalStateException("Popped too many closes from the stack");
+            }
         }
     }
 
@@ -876,6 +927,9 @@ public class DbScope
         private final Connection _conn;
         private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<DatabaseCache<?>, StringKeyCache<?>>(20);
         private final LinkedList<Runnable> _commitTasks = new LinkedList<Runnable>();
+        private int _count = 1;
+        private boolean _aborted = false;
+        private int _closesToIgnore = 0;
 
         Transaction(Connection conn)
         {
@@ -920,6 +974,18 @@ public class DbScope
         {
             for (StringKeyCache<?> cache : _caches.values())
                 cache.close();
+        }
+
+        /** @return whether we've reach zero and should therefore commit if that's the request, or false if we should defer to a future call*/
+        public boolean decrementCount()
+        {
+            _count--;
+            if (_count < 0)
+            {
+                throw new IllegalStateException("Transaction count should not be negative but is " + _count);
+            }
+
+            return _count == 0;
         }
     }
 

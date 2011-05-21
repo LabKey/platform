@@ -93,7 +93,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                 List<Map<String, File>> allFiles =
                         new ArrayList<Map<String, File>>(collector.getFileQueue(form));
                 boolean success = false;
-                ExperimentService.get().beginTransaction();
+                ExperimentService.get().ensureTransaction();
                 try
                 {
                     AssayDataCollector.AdditionalUploadType additionalStatus;

@@ -436,7 +436,7 @@ public class Portal
                     newPartIds.add(newPart.getRowId());
             }
 
-            getSchema().getScope().beginTransaction();
+            getSchema().getScope().ensureTransaction();
 
             // delete any removed webparts:
             for (Integer oldId : oldPartIds)

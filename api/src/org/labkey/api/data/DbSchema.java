@@ -476,7 +476,7 @@ public class DbSchema
             m.put("IntNotNull", 1);
             m = Table.update(ctx.getUser(), testTable, m, rowId);
             assertTrue("Update is consistent in transaction?", (Integer) m.get("IntNotNull") == 1);
-            testSchema.getScope().rollbackTransaction();
+            testSchema.getScope().closeConnection();
 
             //noinspection unchecked
             Map<String, Object>[] maps = (Map<String, Object>[]) Table.select(testTable, Table.ALL_COLUMNS, filter, null, Map.class);
@@ -535,7 +535,7 @@ public class DbSchema
             rowId = ((Integer) m.get("RowId"));
             String key2 = "RowId" + rowId;
             DbCache.put(testTable, key2, m);
-            testSchema.getScope().rollbackTransaction();
+            testSchema.getScope().closeConnection();
             m2 = (Map) DbCache.get(testTable, key2);
             assertNull(m2);
         }

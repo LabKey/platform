@@ -79,12 +79,10 @@ public class StorageProvisioner
     {
         assert create.start();
         Connection conn = null;
-        boolean outerTransaction = scope.isTransactionActive();
 
         try
         {
-            if (!outerTransaction)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             // reselect in a transaction
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId(), true);
@@ -143,16 +141,12 @@ public class StorageProvisioner
             scope.releaseConnection(conn);
             conn = null;
 
-            if (!outerTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
             return tableName;
         }
         finally
         {
-            if (null != conn)
-                scope.releaseConnection(conn);
-            if (!outerTransaction && scope.isTransactionActive())
-                scope.rollbackTransaction();
+            scope.closeConnection();
             assert create.stop();
         }
     }
@@ -306,7 +300,7 @@ public class StorageProvisioner
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
-        // should be in a trasaction with propertydescriptor changes
+        // should be in a transaction with propertydescriptor changes
         assert scope.isTransactionActive();
 
         String tableName = domain.getStorageTableName();

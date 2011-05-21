@@ -469,13 +469,10 @@ public class ContainerManager
             return ret;
         }
 
-        boolean startTransaction = !CORE.getSchema().getScope().isTransactionActive();
         try
         {
-            if (startTransaction)
-            {
-                CORE.getSchema().getScope().beginTransaction();
-            }
+            CORE.getSchema().getScope().ensureTransaction();
+
             synchronized (DATABASE_QUERY_LOCK)
             {
                 Container[] children = Table.executeQuery(CORE.getSchema(),
@@ -485,6 +482,8 @@ public class ContainerManager
                 if (children.length == 0)
                 {
                     CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), emptyStringArray);
+                    // No database changes to commit, but need to decrement the counter
+                    CORE.getSchema().getScope().commitTransaction();
                     return Collections.emptyMap();
                 }
                 Map<String, Container> ret = new CaseInsensitiveTreeMap<Container>();
@@ -497,7 +496,8 @@ public class ContainerManager
                     ret.put(c.getName(), c);
                 }
                 CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), childIds);
-                // No need to commit, SELECT only
+                // No database changes to commit, but need to decrement the counter
+                CORE.getSchema().getScope().commitTransaction();
                 return ret;
             }
         }
@@ -507,10 +507,7 @@ public class ContainerManager
         }
         finally
         {
-            if (startTransaction)
-            {
-                CORE.getSchema().getScope().closeConnection();
-            }
+            CORE.getSchema().getScope().closeConnection();
         }
     }
 
@@ -553,22 +550,21 @@ public class ContainerManager
         if (null != id && !GUID.isGUID(id))
             return null;
 
-        boolean startTransaction = !CORE.getSchema().getScope().isTransactionActive();
         try
         {
-            if (startTransaction)
-            {
-                CORE.getSchema().getScope().beginTransaction();
-            }
+            CORE.getSchema().getScope().ensureTransaction();
+
             synchronized (DATABASE_QUERY_LOCK)
             {
                 Container[] ret = Table.executeQuery(
                         CORE.getSchema(),
                         "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?",
                         new Object[]{id}, Container.class);
+                // No database changes to commit, but need to decrement the counter
+                CORE.getSchema().getScope().commitTransaction();
+
                 if (ret == null || ret.length == 0)
                     return null;
-                // No need to commit, SELECT only
                 return _addToCache(ret[0]);
             }
         }
@@ -578,10 +574,7 @@ public class ContainerManager
         }
         finally
         {
-            if (startTransaction)
-            {
-                CORE.getSchema().getScope().closeConnection();
-            }
+            CORE.getSchema().getScope().closeConnection();
         }
     }
 
@@ -616,13 +609,10 @@ public class ContainerManager
         {
             if (path.equals(Path.rootPath))
             {
-                boolean startTransaction = !CORE.getSchema().getScope().isTransactionActive();
                 try
                 {
-                    if (startTransaction)
-                    {
-                        CORE.getSchema().getScope().beginTransaction();
-                    }
+                    CORE.getSchema().getScope().ensureTransaction();
+
                     synchronized (DATABASE_QUERY_LOCK)
                     {
                         // Special case for ROOT.  Never return null -- either database error or corrupt database
@@ -640,16 +630,14 @@ public class ContainerManager
                             throw new RootContainerException("Root container is NULL");
 
                         _addToCache(ret[0]);
-                        // No need to commit, SELECT only
+                        // No database changes to commit, but need to decrement the counter
+                        CORE.getSchema().getScope().commitTransaction();
                         return ret[0];
                     }
                 }
                 finally
                 {
-                    if (startTransaction)
-                    {
-                        CORE.getSchema().getScope().closeConnection();
-                    }
+                    CORE.getSchema().getScope().closeConnection();
                 }
             }
             else
@@ -690,7 +678,7 @@ public class ContainerManager
 
     public static void saveAliasesForContainer(Container container, List<String> aliases) throws SQLException
     {
-        CORE.getSchema().getScope().beginTransaction();
+        CORE.getSchema().getScope().ensureTransaction();
 
         try
         {
@@ -1025,7 +1013,7 @@ public class ContainerManager
         try
         {
             // Synchronize the transaction, but not the listeners -- see #9901
-            CORE.getSchema().getScope().beginTransaction();
+            CORE.getSchema().getScope().ensureTransaction();
             synchronized (DATABASE_QUERY_LOCK)
             {
                 Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET Parent=? WHERE EntityId=?", new Object[]{newParent.getId(), c.getId()});
@@ -1039,8 +1027,6 @@ public class ContainerManager
                 clearCache();  // Clear the entire cache, since containers cache their full paths
             }
 
-            Container newContainer = getForId(c.getId());
-            fireMoveContainer(newContainer, oldParent, user);
         }
         catch (SQLException e)
         {
@@ -1050,6 +1036,9 @@ public class ContainerManager
         {
             CORE.getSchema().getScope().closeConnection();
         }
+
+        Container newContainer = getForId(c.getId());
+        fireMoveContainer(newContainer, oldParent, user);
 
         return changedProjects;
     }
@@ -1066,13 +1055,10 @@ public class ContainerManager
         if (oldName.equals(name))
             return;
 
-        boolean startTransaction = !CORE.getSchema().getScope().isTransactionActive();
         try
         {
-            if (startTransaction)
-            {
-                CORE.getSchema().getScope().beginTransaction();
-            }
+            CORE.getSchema().getScope().ensureTransaction();
+
             synchronized (DATABASE_QUERY_LOCK)
             {
                 Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", new Object[]{name, c.getId()});
@@ -1081,10 +1067,7 @@ public class ContainerManager
                 c = getForId(c.getId());
                 fireRenameContainer(c, oldName);
             }
-            if (startTransaction)
-            {
-                CORE.getSchema().getScope().commitTransaction();
-            }
+            CORE.getSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -1092,10 +1075,7 @@ public class ContainerManager
         }
         finally
         {
-            if (startTransaction)
-            {
-                CORE.getSchema().getScope().closeConnection();
-            }
+            CORE.getSchema().getScope().closeConnection();
         }
     }
 
@@ -1124,7 +1104,7 @@ public class ContainerManager
         DbSchema schema = CORE.getSchema();
         try
         {
-            schema.getScope().beginTransaction();
+            schema.getScope().ensureTransaction();
             synchronized (DATABASE_QUERY_LOCK)
             {
                 for (int index = 0; index < siblings.size(); index++)
@@ -1144,21 +1124,16 @@ public class ContainerManager
         }
         finally
         {
-            if (schema.getScope().isTransactionActive())
-                schema.getScope().rollbackTransaction();
+            schema.getScope().closeConnection();
         }
     }
 
     // Delete a container from the database.
     public static boolean delete(Container c, User user)
     {
-        boolean startTransaction = !CORE.getSchema().getScope().isTransactionActive();
         try
         {
-            if (startTransaction)
-            {
-                CORE.getSchema().getScope().beginTransaction();
-            }
+            CORE.getSchema().getScope().ensureTransaction();
             ResultSet rs = null;
 
             try
@@ -1201,10 +1176,7 @@ public class ContainerManager
                 {
                     _removeFromCache(c);
                 }
-                if (startTransaction)
-                {
-                    CORE.getSchema().getScope().commitTransaction();
-                }
+                CORE.getSchema().getScope().commitTransaction();
             }
         }
         catch (SQLException x)
@@ -1213,10 +1185,7 @@ public class ContainerManager
         }
         finally
         {
-            if (startTransaction)
-            {
-                CORE.getSchema().getScope().closeConnection();
-            }
+            CORE.getSchema().getScope().closeConnection();
         }
         return true;
     }

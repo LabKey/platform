@@ -578,30 +578,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> result = new ArrayList<Pair<Domain, Map<DomainProperty, Object>>>();
-        boolean transaction = false;
         try
         {
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                transaction = true;
-            }
+            ExperimentService.get().ensureTransaction();
 
             result.add(createBatchDomain(c, user));
             result.add(createRunDomain(c, user));
 
-            if (transaction)
-            {
-                ExperimentService.get().commitTransaction();
-                transaction = false;
-            }
+            ExperimentService.get().commitTransaction();
         }
         finally
         {
-            if (transaction)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
 
         return result;
@@ -749,12 +737,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
         try
         {
             boolean saveBatchProps = false;
-            if (transactionOwner)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             // Save the batch first
             if (batch == null)
@@ -846,7 +832,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                 for (ExpData insertedData : insertedDatas)
                 {
-                    insertedData.findDataHandler().importFile(ExperimentService.get().getExpData(insertedData.getRowId()), insertedData.getFile(), info, LOG, xarContext);
+                    insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, LOG, xarContext);
                 }
             }
             else
@@ -873,8 +859,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
             validate(context, run);
 
-            if (transactionOwner)
-                scope.commitTransaction();
+            scope.commitTransaction();
 
             return new Pair<ExpRun, ExpExperiment>(run, batch);
         }
@@ -884,8 +869,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         finally
         {
-            if (transactionOwner)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 

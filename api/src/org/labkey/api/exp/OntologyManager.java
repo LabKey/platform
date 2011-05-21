@@ -784,7 +784,6 @@ public class OntologyManager
     //todo:  review this.  this doesn't delete the underlying data objects.  should it?
     public static void deleteObjectsOfType(String domainURI, Container container) throws SQLException
     {
-        boolean ownTransaction = !getExpSchema().getScope().isTransactionActive();
         DomainDescriptor dd = null;
         if (null!= domainURI)
             dd = getDomainDescriptor(domainURI, container);
@@ -796,8 +795,7 @@ public class OntologyManager
 
         try
         {
-            if (ownTransaction)
-                getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
 
             // until we set a domain on objects themselves, we need to create a list of objects to
             // delete based on existing entries in ObjectProperties before we delete the objectProperties
@@ -874,22 +872,16 @@ public class OntologyManager
             }
             // whew!
             clearCaches();
-            if (ownTransaction)
-            {
-                getExpSchema().getScope().commitTransaction();
-                ownTransaction = false;
-            }
+            getExpSchema().getScope().commitTransaction();
         }
         finally
         {
-            if (ownTransaction)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
     public static void deleteDomain(String domainURI, Container container) throws DomainNotFoundException
     {
-        boolean ownTransaction = !getExpSchema().getScope().isTransactionActive();
         DomainDescriptor dd = getDomainDescriptor(domainURI, container);
         String msg;
 
@@ -909,8 +901,7 @@ public class OntologyManager
         }
         try
         {
-            if (ownTransaction)
-                getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
 
             String selectPDsToDelete = "SELECT DISTINCT PDM.PropertyId " +
                             " FROM " + getTinfoPropertyDomain() + " PDM " +
@@ -957,11 +948,7 @@ public class OntologyManager
             Table.execute(getExpSchema(), deleteDD, new Object[]{dd.getDomainId()});
             clearCaches();
 
-            if (ownTransaction)
-            {
-                getExpSchema().getScope().commitTransaction();
-                ownTransaction = false;
-            }
+            getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -969,8 +956,7 @@ public class OntologyManager
         }
         finally
         {
-            if (ownTransaction)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -982,12 +968,9 @@ public class OntologyManager
         if (null==projectContainer)
                 projectContainer = c;
 
-        boolean ownTransaction = !getExpSchema().getScope().isTransactionActive();
-        //ownTransaction=false;
         try
 		{
-			if (ownTransaction)
-				getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
             if (!c.equals(projectContainer))
             {
                 copyDescriptors(c, projectContainer);
@@ -1022,15 +1005,11 @@ public class OntologyManager
             Table.execute(getExpSchema(), deletePropSql, new Object[]{containerid});
 
 			clearCaches();
-			if (ownTransaction)
-			{
-				getExpSchema().getScope().commitTransaction();
-			}
+            getExpSchema().getScope().commitTransaction();
         }
 		finally
 		{
-			if (ownTransaction)
-				getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
 		}
 	}
 
@@ -1182,11 +1161,9 @@ public class OntologyManager
         ResultSet rsMyObjsThatRefProjProps=null;
         ResultSet rsPropsRefdByMe=null;
 
-        boolean ownTransaction = !getExpSchema().getScope().isTransactionActive();
         try
         {
-            if (ownTransaction)
-                getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
 
             clearCaches();
 
@@ -1197,7 +1174,10 @@ public class OntologyManager
             Table.execute(getExpSchema(), sql , new Object[]{newProject.getId(), c.getId()});
 
             if (null==oldProject) // if container was a project & demoted I'm done
+            {
+                getExpSchema().getScope().commitTransaction();
                 return;
+            }
 
             // this method makes sure I'm not getting rid of descriptors used by another folder
             // it is shared by ContainerDelete
@@ -1290,11 +1270,7 @@ public class OntologyManager
 
             }
 
-            if (ownTransaction)
-            {
-                getExpSchema().getScope().commitTransaction();
-                ownTransaction = false;
-            }
+            getExpSchema().getScope().commitTransaction();
         }
         catch (ValidationException ve)
         {
@@ -1308,8 +1284,7 @@ public class OntologyManager
             if (null != rsPropsRefdByMe)
                     rsPropsRefdByMe.close();
 
-            if (ownTransaction)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -1741,8 +1716,6 @@ public class OntologyManager
 
     public static void deletePropertyDescriptor(PropertyDescriptor pd) throws SQLException
     {
-        boolean fTransStarted = false;
-
         int propId= pd.getPropertyId();
         String key = getCacheKey(pd);
 
@@ -1752,36 +1725,25 @@ public class OntologyManager
 
         try
         {
-            if (!getExpSchema().getScope().isTransactionActive())
-            {
-                getExpSchema().getScope().beginTransaction();
-                fTransStarted = true;
-            }
+            getExpSchema().getScope().ensureTransaction();
 
             Table.execute(getExpSchema(), deleteObjPropSql, new Object[]{propId});
             Table.execute(getExpSchema(), deletePropDomSql, new Object[]{propId});
             Table.execute(getExpSchema(), deletePropSql, new Object[]{propId});
             propDescCache.remove(key);
-            if (fTransStarted)
-            {
-                getExpSchema().getScope().commitTransaction();
-                fTransStarted = false;
-            }
+            getExpSchema().getScope().commitTransaction();
         }
         finally
         {
-            if (fTransStarted)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
     public static void insertProperties(Container container, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
-        boolean ownTransaction = !getExpSchema().getScope().isTransactionActive();
         try
         {
-            if (ownTransaction)
-                getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
 
             Integer parentId = ownerObjectLsid == null ? null : ensureObject(container, ownerObjectLsid);
             for (ObjectProperty oprop : properties)
@@ -1790,11 +1752,7 @@ public class OntologyManager
             }
             insertProperties(container, properties);
 
-            if (ownTransaction)
-            {
-                getExpSchema().getScope().commitTransaction();
-                ownTransaction = false;
-            }
+            getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException x)
         {
@@ -1802,8 +1760,7 @@ public class OntologyManager
         }
         finally
         {
-            if (ownTransaction)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -2037,20 +1994,14 @@ public class OntologyManager
         if (null==domainURI)
             return;
 
-        boolean ownTransaction = !getExpSchema().getScope().isTransactionActive();
 		try
 		{
-			if (ownTransaction)
-				getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
 
 			deleteObjectsOfType(domainURI, c);
             deleteDomain(domainURI, c);
 
-            if (ownTransaction)
-			{
-				getExpSchema().getScope().commitTransaction();
-				ownTransaction = false;
-			}
+            getExpSchema().getScope().commitTransaction();
 		}
         catch (SQLException e)
         {
@@ -2058,8 +2009,7 @@ public class OntologyManager
         }
         finally
 		{
-			if (ownTransaction)
-				getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
 		}
 	}
 
@@ -2879,7 +2829,7 @@ public class OntologyManager
                 }
                 finally
                 {
-                    OntologyManager.getExpSchema().getScope().rollbackTransaction();
+                    OntologyManager.getExpSchema().getScope().closeConnection();
                 }
 
                 assertEquals(0L, OntologyManager.getObjectCount(c));
@@ -2904,7 +2854,7 @@ public class OntologyManager
                 }
                 finally
                 {
-                    OntologyManager.getExpSchema().getScope().rollbackTransaction();
+                    OntologyManager.getExpSchema().getScope().closeConnection();
                 }
 
                 oChild = OntologyManager.getOntologyObject(c, childObjectLsid);

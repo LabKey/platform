@@ -1656,7 +1656,7 @@ public class QueryView extends WebPartView<Object>
 
                 try
                 {
-                    scope.beginTransaction();
+                    scope.ensureTransaction();
                     scope.getConnection().setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
                     scope.getConnection().setAutoCommit(false);
                     doExport(response, isExportAsWebPage);
