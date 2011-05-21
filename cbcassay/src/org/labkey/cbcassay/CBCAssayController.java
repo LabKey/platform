@@ -194,14 +194,9 @@ public class CBCAssayController extends SpringActionController
 
             assert sampleIdPd != null;
 
-            boolean transaction = false;
             try
             {
-                if (!ExperimentService.get().isTransactionActive())
-                {
-                    ExperimentService.get().beginTransaction();
-                    transaction = true;
-                }
+                ExperimentService.get().ensureTransaction();
 
                 int[] objectIds = form.getObjectId();
                 String[] sampleIds = form.getSampleId();
@@ -219,11 +214,7 @@ public class CBCAssayController extends SpringActionController
                     Table.execute(DbSchema.get(resultDomain.getDomainKind().getStorageSchemaName()), sql);
                 }
 
-                if (transaction)
-                {
-                    ExperimentService.get().commitTransaction();
-                    transaction = false;
-                }
+                ExperimentService.get().commitTransaction();
             }
             catch (Exception e)
             {
@@ -232,8 +223,7 @@ public class CBCAssayController extends SpringActionController
             }
             finally
             {
-                if (transaction)
-                    ExperimentService.get().rollbackTransaction();
+                ExperimentService.get().closeTransaction();
             }
 
             return true;
@@ -389,14 +379,9 @@ public class CBCAssayController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
-            boolean transaction = false;
             try
             {
-                if (!ExperimentService.get().isTransactionActive())
-                {
-                    ExperimentService.get().beginTransaction();
-                    transaction = true;
-                }
+                ExperimentService.get().ensureTransaction();
 
                 List<FieldKey> visibleColumns = new ArrayList<FieldKey>(quf.getTable().getDefaultVisibleColumns());
                 visibleColumns.add(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
@@ -460,11 +445,7 @@ public class CBCAssayController extends SpringActionController
                 QueryUpdateService updateService = quf.getTable().getUpdateService();
                 updateService.updateRows(getUser(), getContainer(), Collections.singletonList(newValues), Collections.singletonList(oldValues), null);
 
-                if (transaction)
-                {
-                    ExperimentService.get().commitTransaction();
-                    transaction = false;
-                }
+                ExperimentService.get().commitTransaction();
             }
             catch (Exception e)
             {
@@ -473,8 +454,7 @@ public class CBCAssayController extends SpringActionController
             }
             finally
             {
-                if (transaction)
-                    ExperimentService.get().rollbackTransaction();
+                ExperimentService.get().closeTransaction();
             }
 
             return true;

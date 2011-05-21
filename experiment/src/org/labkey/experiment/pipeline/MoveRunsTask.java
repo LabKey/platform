@@ -100,7 +100,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         exporter.dumpXML(bOut);
 
-        ExperimentServiceImpl.get().getSchema().getScope().beginTransaction();
+        ExperimentServiceImpl.get().getSchema().getScope().ensureTransaction();
         try
         {
             Map<String,Integer> dataFiles = new HashMap<String,Integer>();

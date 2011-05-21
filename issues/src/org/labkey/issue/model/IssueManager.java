@@ -662,22 +662,16 @@ public class IssueManager
 
     public static void purgeContainer(Container c)
     {
-        boolean startTransaction = !_issuesSchema.getSchema().getScope().isTransactionActive();
         try
         {
-            if (startTransaction)
-            {
-                _issuesSchema.getSchema().getScope().beginTransaction();
-            }
+            _issuesSchema.getSchema().getScope().ensureTransaction();
             String deleteComments = "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)";
             Table.execute(_issuesSchema.getSchema(), deleteComments, new Object[]{c.getId()});
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
-            if (startTransaction)
-            {
-                _issuesSchema.getSchema().getScope().commitTransaction();
-            }
+
+            _issuesSchema.getSchema().getScope().commitTransaction();
         }
         catch (SQLException x)
         {
@@ -685,10 +679,7 @@ public class IssueManager
         }
         finally
         {
-            if (startTransaction)
-            {
-                _issuesSchema.getSchema().getScope().closeConnection();
-            }
+            _issuesSchema.getSchema().getScope().closeConnection();
         }
     }
 
@@ -699,7 +690,7 @@ public class IssueManager
 
         try
         {
-            _issuesSchema.getSchema().getScope().beginTransaction();
+            _issuesSchema.getSchema().getScope().ensureTransaction();
             String deleteComments =
                     "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container NOT IN (SELECT EntityId FROM core.Containers))";
             int commentsDeleted = Table.execute(_issuesSchema.getSchema(), deleteComments, null);
@@ -714,8 +705,7 @@ public class IssueManager
         }
         finally
         {
-            if (_issuesSchema.getSchema().getScope().isTransactionActive())
-                _issuesSchema.getSchema().getScope().rollbackTransaction();
+            _issuesSchema.getSchema().getScope().closeConnection();
         }
 
         return message;

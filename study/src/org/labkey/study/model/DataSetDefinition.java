@@ -1222,11 +1222,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         filter.addInClause("LSID", rowLSIDs);
 
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
-        boolean startTransaction = !scope.isTransactionActive();
         try
         {
-            if (startTransaction)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             char sep = ' ';
             StringBuilder sb = new StringBuilder();
@@ -1240,8 +1238,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), new SQLFragment(sb.toString(), paramList), c, false);
             Table.delete(data, filter);
 
-            if (startTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
 
             StudyManager.fireDataSetChanged(this);
         }
@@ -1251,8 +1248,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
         finally
         {
-            if (startTransaction)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 
@@ -1466,15 +1462,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             throws SQLException
     {
         DbScope scope = ExperimentService.get().getSchema().getScope();
-        boolean startedTransaction = false;
 
         try
         {
-            if (!scope.isTransactionActive())
-            {
-                startedTransaction = true;
-                scope.beginTransaction();
-            }
+            scope.ensureTransaction();
 
             if (needToHandleQCState)
             {
@@ -1568,13 +1559,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             long end = System.currentTimeMillis();
             _log.info("imported " + getName() + " : " + DateUtil.formatDuration(end-start));
 
-            if (startedTransaction)
-            {
-                if (logger != null) logger.debug("starting commit...");
-                scope.commitTransaction();
-                startedTransaction = false;
-                if (logger != null) logger.debug("commit complete");
-            }
+            if (logger != null) logger.debug("starting commit (may effectively no-op if wrapped in larger transaction)...");
+            scope.commitTransaction();
+            if (logger != null) logger.debug("commit complete");
             StudyManager.fireDataSetChanged(this);
             return imported;
         }
@@ -1586,10 +1573,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
         finally
         {
-            if (startedTransaction)
-            {
-                scope.closeConnection();
-            }
+            scope.closeConnection();
         }
     }
 

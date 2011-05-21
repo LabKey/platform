@@ -452,16 +452,12 @@ public class StudyManager
 
     public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition) throws SQLException
     {
-        boolean fTransaction=false;
         DbScope scope = getSchema().getScope();
 
         try
         {
-            if (!scope.isTransactionActive())
-            {
-                scope.beginTransaction();
-                fTransaction=true;
-            }
+            scope.ensureTransaction();
+
             DataSetDefinition old = getDataSetDefinition(dataSetDefinition.getStudy(), dataSetDefinition.getDataSetId());
             if (null == old)
                 throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
@@ -501,16 +497,11 @@ public class StudyManager
                 QueryService.get().updateCustomViewsAfterRename(dataSetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME,
                         old.getLabel(), dataSetDefinition.getLabel());
             }
-            if (fTransaction)
-            {
-                scope.commitTransaction();
-                fTransaction = false;
-            }
+            scope.commitTransaction();
         }
         finally
         {
-            if (fTransaction)
-                scope.rollbackTransaction();
+            scope.closeConnection();
 
             uncache(dataSetDefinition);
         }
@@ -657,29 +648,21 @@ public class StudyManager
             }
         };
 
-        boolean startedTransaction = false;
-
         try
         {
             // We want delete and bulk insert in the same transaction
-            if (!scope.isTransactionActive())
-            {
-                scope.beginTransaction();
-                startedTransaction = true;
-            }
+            scope.ensureTransaction();
 
             Table.delete(tinfo, containerFilter);
             List<String> keys = OntologyManager.insertTabDelimited(tinfo, study.getContainer(), user, helper, loader.load(), null);
 
-            if (startedTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
 
             return keys.size();
         }
         finally
         {
-            if (startedTransaction)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 
@@ -692,7 +675,7 @@ public class StudyManager
 
         try
         {
-            scope.beginTransaction();
+            scope.ensureTransaction();
             Table.delete(tinfo, containerFilter);
             scope.commitTransaction();
         }
@@ -842,7 +825,7 @@ public class StudyManager
         StudySchema schema = StudySchema.getInstance();
         try
         {
-            schema.getSchema().getScope().beginTransaction();
+            schema.getSchema().getScope().ensureTransaction();
 
             for (DataSetDefinition def : study.getDataSets())
             {
@@ -879,8 +862,7 @@ public class StudyManager
         }
         finally
         {
-            if (schema.getSchema().getScope().isTransactionActive())
-                schema.getSchema().getScope().rollbackTransaction();
+            schema.getSchema().getScope().closeConnection();
         }
     }
 
@@ -1175,7 +1157,6 @@ public class StudyManager
     public void updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, QCState newState, String comments) throws SQLException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
         Study study = getStudy(container);
         DataSetDefinition def = getDataSetDefinition(study, datasetId);
 
@@ -1227,8 +1208,7 @@ public class StudyManager
 
         try
         {
-            if (transactionOwner)
-                scope.beginTransaction();
+            scope.ensureTransaction();
             // TODO fix updating across study data
             SQLFragment sql = new SQLFragment("UPDATE " + def.getStorageTableInfo().getSelectName() + "\n" +
                     "SET QCState = ");
@@ -1279,16 +1259,11 @@ public class StudyManager
 
             clearCaches(container, false);
 
-            if (transactionOwner)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         finally
         {
-            if (transactionOwner)
-            {
-                if (scope.isTransactionActive())
-                    scope.rollbackTransaction();
-            }
+            scope.closeConnection();
         }
     }
     
@@ -1908,15 +1883,13 @@ public class StudyManager
             dsds = study.getDataSets();
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean localTransaction = !scope.isTransactionActive();
 
         HashSet<TableInfo> deletedTables = new HashSet<TableInfo>();
         SimpleFilter containerFilter = new SimpleFilter("Container", c.getId());
 
         try
         {
-            if (localTransaction)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             if (deleteStudyDesigns)
                 StudyDesignManager.get().deleteStudyDesigns(c, deletedTables);
@@ -1993,16 +1966,12 @@ public class StudyManager
                 fireDataSetChanged(dsd);
             }
 
-            if (localTransaction)
-            {
-                scope.commitTransaction();
-            }
+            scope.commitTransaction();
 
         }
         finally
         {
-            if (localTransaction)
-                scope.closeConnection();
+            scope.closeConnection();
         }
 
         //

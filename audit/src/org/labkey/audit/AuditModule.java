@@ -95,15 +95,11 @@ public class AuditModule extends DefaultModule
      */
     private void convertAuditDataMaps()
     {
-        boolean startedTransaction = false;
         DbSchema schema = AuditSchema.getInstance().getSchema();
 
         try {
-            if (!schema.getScope().isTransactionActive())
-            {
-                schema.getScope().beginTransaction();
-                startedTransaction = true;
-            }
+            schema.getScope().ensureTransaction();
+
             Container objectContainer = ContainerManager.getSharedContainer();
             SimpleFilter filter = new SimpleFilter();
             filter.addWhereClause("(Lsid IS NOT NULL) AND (EventType = ? OR EventType = ?)", new Object[]{"ListAuditEvent", "DatasetAuditEvent"});
@@ -132,8 +128,7 @@ public class AuditModule extends DefaultModule
                 }
             }
 
-            if (startedTransaction)
-                schema.getScope().commitTransaction();
+            schema.getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -141,8 +136,7 @@ public class AuditModule extends DefaultModule
         }
         finally
         {
-            if (startedTransaction && schema.getScope().isTransactionActive())
-                schema.getScope().rollbackTransaction();
+            schema.getScope().closeConnection();
         }
     }
 }

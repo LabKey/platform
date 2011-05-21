@@ -90,7 +90,6 @@ public class UploadSamplesHelper
     {
         MaterialSource source;
         List<ExpMaterial> materials = Collections.emptyList();
-        boolean ownTransaction = !ExperimentService.get().isTransactionActive();
         try
         {
             DataLoader loader = _form.getLoader();
@@ -102,8 +101,7 @@ public class UploadSamplesHelper
             if (source == null && !_form.isCreateNewSampleSet())
                 throw new ExperimentException("Can't create new Sample Set '" + _form.getName() + "'");
 
-            if (ownTransaction)
-                ExperimentService.get().getSchema().getScope().beginTransaction();
+            ExperimentService.get().getSchema().getScope().ensureTransaction();
 
             ColumnDescriptor[] columns = loader.getColumns();
 
@@ -348,11 +346,8 @@ public class UploadSamplesHelper
             }
             materials = insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), source, reusedMaterialLSIDs);
             _form.getSampleSet().onSamplesChanged(_form.getUser(), null);
-            if (ownTransaction)
-            {
-                ExperimentService.get().getSchema().getScope().commitTransaction();
-                ownTransaction = false;
-            }
+
+            ExperimentService.get().getSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -364,8 +359,7 @@ public class UploadSamplesHelper
         }
         finally
         {
-            if (ownTransaction)
-                ExperimentService.get().getSchema().getScope().closeConnection();
+            ExperimentService.get().getSchema().getScope().closeConnection();
         }
 
         return new Pair<MaterialSource, List<ExpMaterial>>(source, materials);

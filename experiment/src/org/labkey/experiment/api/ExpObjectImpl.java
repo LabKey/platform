@@ -107,14 +107,9 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     {
         if (pd.getPropertyType() == PropertyType.RESOURCE)
             throw new IllegalArgumentException("PropertyType resource is NYI in this method");
-        boolean fTrans = false;
         try
         {
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                fTrans = true;
-            }
+            ExperimentService.get().ensureTransaction();
 
             OntologyManager.deleteProperty(getLSID(), pd.getPropertyURI(), getContainer(), pd.getContainer());
 
@@ -124,18 +119,11 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
                 oprop.setPropertyId(pd.getPropertyId());
                 OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
             }
-            if (fTrans)
-            {
-                ExperimentService.get().commitTransaction();
-                fTrans = false;
-            }
+            ExperimentService.get().commitTransaction();
         }
         finally
         {
-            if (fTrans)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
     }
 

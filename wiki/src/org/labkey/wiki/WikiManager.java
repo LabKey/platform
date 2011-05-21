@@ -159,7 +159,7 @@ public class WikiManager implements WikiService
 
         try
         {
-            scope.beginTransaction();
+            scope.ensureTransaction();
 
             //transact insert of wiki page, new version, and any attachments
             wikiInsert.beforeInsert(user, c.getId());
@@ -210,7 +210,7 @@ public class WikiManager implements WikiService
         try
         {
             //transact wiki update and version insert
-            scope.beginTransaction();
+            scope.ensureTransaction();
 
             //if name, title, parent, & sort order are all still the same,
             //we don't need to uncache all wikis, only the wiki being updated
@@ -281,7 +281,7 @@ public class WikiManager implements WikiService
         try
         {
             //transact deletion of wiki, version, attachments, and discussions
-            scope.beginTransaction();
+            scope.ensureTransaction();
 
             wiki.setPageVersionId(null);
             Table.update(user, comm.getTableInfoPages(), wiki, wiki.getEntityId());
@@ -378,13 +378,11 @@ public class WikiManager implements WikiService
         WikiCache.uncache(c);
 
         DbScope scope = comm.getSchema().getScope();
-        boolean startTransaction = !scope.isTransactionActive();
+
         try
         {
-            if (startTransaction)
-            {
-                scope.beginTransaction();
-            }
+            scope.ensureTransaction();
+
             Object[] params = { c.getId() };
             Table.execute(comm.getSchema(), "UPDATE " + comm.getTableInfoPages() + " SET PageVersionId = NULL WHERE Container = ?", params);
             Table.execute(comm.getSchema(), "DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)", params);
@@ -396,15 +394,11 @@ public class WikiManager implements WikiService
 
             ContainerUtil.purgeTable(comm.getTableInfoPages(), c, null);
 
-            if (startTransaction)
-            {
-                scope.commitTransaction();
-            }
+            scope.commitTransaction();
         }
         finally
         {
-            if (startTransaction)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 

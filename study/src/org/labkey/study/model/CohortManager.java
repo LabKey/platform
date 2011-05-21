@@ -72,11 +72,9 @@ public class CohortManager
         Participant[] participants = StudyManager.getInstance().getParticipants(study);
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
         try
         {
-            if (transactionOwner)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             if (!study.isManualCohortAssignment())
             {
@@ -104,16 +102,11 @@ public class CohortManager
                     Table.execute(StudySchema.getInstance().getSchema(), ptidVisitSql);
                 }
             }
-            if (transactionOwner)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         finally
         {
-            if (transactionOwner)
-            {
-                if (scope.isTransactionActive())
-                    scope.rollbackTransaction();
-            }
+            scope.closeConnection();
         }
     }
 
@@ -226,11 +219,9 @@ public class CohortManager
             return;
         }
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
         try
         {
-            if (transactionOwner)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             DataSetDefinition dataset = null;
             if (study.getParticipantCohortDataSetId() != null)
@@ -278,8 +269,7 @@ public class CohortManager
 
                     updateCohorts(user, study, tableParticipant, dataset, cohortLabelCol);
 
-                    if (transactionOwner)
-                        scope.commitTransaction();
+                    scope.commitTransaction();
 
                     // aggressively uncache study data (including cached participants) whenever
                     // cohorts may have changed:
@@ -289,10 +279,7 @@ public class CohortManager
         }
         finally
         {
-            if (transactionOwner)
-            {
-                scope.closeConnection();
-            }
+            scope.closeConnection();
         }
     }
 

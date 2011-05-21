@@ -63,7 +63,7 @@ public class MothershipManager
     public void insertException(ExceptionStackTrace stackTrace, ExceptionReport report) throws SQLException
     {
         DbScope scope = getSchema().getScope();
-        scope.beginTransaction();
+        scope.ensureTransaction();
         try
         {
             stackTrace.hashStackTrace();
@@ -221,7 +221,7 @@ public class MothershipManager
     public synchronized ServerSession updateServerSession(ServerSession session, ServerInstallation installation, Container container) throws SQLException
     {
         DbScope scope = getSchema().getScope();
-        scope.beginTransaction();
+        scope.ensureTransaction();
         try
         {
             ServerInstallation existingInstallation = getServerInstallation(installation.getServerInstallationGUID(), container.getId());

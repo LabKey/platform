@@ -119,14 +119,9 @@ public class ListItemImpl implements ListItem
     {
         if (isNew())
             return;
-        boolean fTransaction = false;
         try
         {
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                fTransaction = true;
-            }
+            ExperimentService.get().ensureTransaction();
             ensureProperties();
             
             if (!isBulkLoad)
@@ -138,18 +133,12 @@ public class ListItemImpl implements ListItem
             filter.addCondition("ListId", _itm.getListId());
             Table.delete(_list.getIndexTable(), filter);
             deleteListItemContents(_itm, c, user);
-            if (fTransaction)
-            {
-                ExperimentService.get().commitTransaction();
-                fTransaction = false;
-            }
+
+            ExperimentService.get().commitTransaction();
         }
         finally
         {
-            if (fTransaction)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
     }
 
@@ -242,14 +231,9 @@ public class ListItemImpl implements ListItem
 
     public void save(User user, boolean bulkLoad) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
     {
-        boolean fTransaction = false;
         try
         {
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                fTransaction = true;
-            }
+            ExperimentService.get().ensureTransaction();
 
             String oldRecord = null;
             String newRecord = null;
@@ -342,18 +326,11 @@ public class ListItemImpl implements ListItem
                         _itm.getEntityId(), oldRecord, newRecord);
             }
 
-            if (fTransaction)
-            {
-                ExperimentService.get().commitTransaction();
-                fTransaction = false;
-            }
+            ExperimentService.get().commitTransaction();
         }
         finally
         {
-            if (fTransaction)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
     }
 

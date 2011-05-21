@@ -184,7 +184,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
         try
         {
-            scope.beginTransaction();
+            scope.ensureTransaction();
         }
         catch (SQLException x)
         {
@@ -229,8 +229,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         }
         finally
         {
-            if (scope.isTransactionActive())
-                scope.rollbackTransaction();
+            scope.closeConnection();
         }
         return new ArrayList<String>(); // GWT error Collections.emptyList();
     }

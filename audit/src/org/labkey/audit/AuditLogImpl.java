@@ -406,15 +406,10 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
     {
-        boolean startedTransaction = false;
         DbSchema schema = AuditSchema.getInstance().getSchema();
 
         try {
-            if (!schema.getScope().isTransactionActive())
-            {
-                schema.getScope().beginTransaction();
-                startedTransaction = true;
-            }
+            schema.getScope().ensureTransaction();
 
             event = addEvent(event);
             if (event != null)
@@ -429,8 +424,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
                 addEventProperties(parentLsid, domainURI, dataMap);
             }
-            if (startedTransaction)
-                schema.getScope().commitTransaction();
+            schema.getScope().commitTransaction();
 
             return event;
         }
@@ -440,8 +434,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         }
         finally
         {
-            if (startedTransaction && schema.getScope().isTransactionActive())
-                schema.getScope().rollbackTransaction();
+            schema.getScope().closeConnection();
         }
     }
 

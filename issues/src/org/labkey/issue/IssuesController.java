@@ -523,11 +523,9 @@ public class IssuesController extends SpringActionController
             ChangeSummary changeSummary;
 
             DbScope scope = IssuesSchema.getInstance().getSchema().getScope();
-            boolean ownsTransaction = !scope.isTransactionActive();
             try
             {
-                if (ownsTransaction)
-                    scope.beginTransaction();
+                scope.ensureTransaction();
                 // for new issues, the original is always the default.
                 Issue orig = new Issue();
                 orig.open(getContainer(), getUser());
@@ -535,8 +533,7 @@ public class IssuesController extends SpringActionController
                 changeSummary = createChangeSummary(_issue, orig, null, user, form.getAction(), form.getComment(), getColumnCaptions(), getUser());
                 IssueManager.saveIssue(user, c, _issue);
                 AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
-                if (ownsTransaction)
-                    scope.commitTransaction();
+                scope.commitTransaction();
             }
             catch (Exception x)
             {
@@ -550,8 +547,7 @@ public class IssuesController extends SpringActionController
             }
             finally
             {
-                if (ownsTransaction)
-                    scope.closeConnection();
+                scope.closeConnection();
             }
 
             ActionURL url = new DetailsAction(_issue, getViewContext()).getURL();
@@ -664,12 +660,10 @@ public class IssuesController extends SpringActionController
 
             ChangeSummary changeSummary;
             DbScope scope = IssuesSchema.getInstance().getSchema().getScope();
-            boolean ownsTransaction = !scope.isTransactionActive();
 
             try
             {
-                if (ownsTransaction)
-                    scope.beginTransaction();
+                scope.ensureTransaction();
                 detailsUrl = new DetailsAction(issue, getViewContext()).getURL();
 
                 if (ResolveAction.class.equals(form.getAction()))
@@ -693,8 +687,7 @@ public class IssuesController extends SpringActionController
                     IssueManager.saveIssue(user, c, duplicateOf);
                 }
 
-                if (ownsTransaction)
-                    scope.commitTransaction();
+                scope.commitTransaction();
             }
             catch (IOException x)
             {
@@ -704,8 +697,7 @@ public class IssuesController extends SpringActionController
             }
             finally
             {
-                if (ownsTransaction)
-                    scope.closeConnection();
+                scope.closeConnection();
             }
 
             // Send update email...

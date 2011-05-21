@@ -221,12 +221,10 @@ public class AssayPublishManager implements AssayPublishService.Service
         StudyImpl targetStudy = StudyManager.getInstance().getStudy(targetContainer);
         assert verifyRequiredColumns(dataMaps, targetStudy.getTimepointType());
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean ownsTransaction = !scope.isTransactionActive();
 
         try
         {
-            if (ownsTransaction)
-                scope.beginTransaction();
+            scope.ensureTransaction();
             DataSetDefinition[] datasets = StudyManager.getInstance().getDataSetDefinitions(targetStudy);
             DataSetDefinition dataset = null;
             for (int i = 0; i < datasets.length && dataset == null; i++)
@@ -288,8 +286,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             List<Map<String, Object>> convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
             // in 'ensurePropertyDescriptors'.
-            if (ownsTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
             if (schemaChanged)
                 StudyManager.getInstance().uncache(dataset);
             dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
@@ -347,8 +344,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         }
         finally
         {
-            if (ownsTransaction)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 
@@ -575,15 +571,10 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData, ExpProtocol protocol) throws SQLException
     {
-        boolean ownTransaction = false;
         DbSchema schema = StudySchema.getInstance().getSchema();
         try
         {
-            if (!schema.getScope().isTransactionActive())
-            {
-                schema.getScope().beginTransaction();
-                ownTransaction = true;
-            }
+            schema.getScope().ensureTransaction();
 
             if (null == datasetId)
                 datasetId = Table.executeSingleton(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", new Object[] {study.getContainer().getId(), MIN_ASSAY_ID}, Integer.class);
@@ -597,17 +588,12 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             StudyManager.getInstance().createDataSetDefinition(user, newDataSet);
 
-            if (ownTransaction)
-            {
-                schema.getScope().commitTransaction();
-                ownTransaction = false;
-            }
+            schema.getScope().commitTransaction();
             return newDataSet;
         }
         finally
         {
-            if (ownTransaction)
-                schema.getScope().rollbackTransaction();
+            schema.getScope().closeConnection();
         }
     }
 

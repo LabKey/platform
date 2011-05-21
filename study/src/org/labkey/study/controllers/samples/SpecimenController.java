@@ -1595,7 +1595,7 @@ public class SpecimenController extends BaseStudyController
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             try
             {
-                scope.beginTransaction();
+                scope.ensureTransaction();
 
                 _sampleRequest = SampleManager.getInstance().createRequest(getUser(), _sampleRequest, true);
                 List<Specimen> samples;
@@ -1650,8 +1650,7 @@ public class SpecimenController extends BaseStudyController
             }
             finally
             {
-                if (scope.isTransactionActive())
-                    scope.rollbackTransaction();
+                scope.closeConnection();
             }
 
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))

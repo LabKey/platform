@@ -172,19 +172,14 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     {
         R[] requirements = getRequirements(owner);
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = false;
         try
         {
-            if (!scope.isTransactionActive())
-            {
-                scope.beginTransaction();
-                transactionOwner = true;
-            }
+            scope.ensureTransaction();
+
             for (R requirement : requirements)
                 requirement.delete();
 
-            if (transactionOwner)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         catch (SQLException e)
         {
@@ -192,8 +187,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         }
         finally
         {
-            if (transactionOwner)
-                scope.closeConnection();
+            scope.closeConnection();
         }
 
     }

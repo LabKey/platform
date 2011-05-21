@@ -345,7 +345,7 @@ public class PlateManager implements PlateService.Service
             throw new UnsupportedOperationException("Resaving of plate templates is not supported.");
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        scope.beginTransaction();
+        scope.ensureTransaction();
         try
         {
             String plateInstanceLsid = getLsid(plate, Plate.class, true);
@@ -499,7 +499,7 @@ public class PlateManager implements PlateService.Service
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         try
         {
-            scope.beginTransaction();
+            scope.ensureTransaction();
             AttachmentService.get().deleteAttachments(plate);
             OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
             Table.delete(StudySchema.getInstance().getTableInfoWell(), plateIdFilter);

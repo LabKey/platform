@@ -115,31 +115,21 @@ public class ListManager implements SearchService.DocumentProvider
         if (null == c)
             throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
-        boolean fTransaction=false;
         DbScope scope = getSchema().getScope();
         ListDef ret;
         try
         {
-            if (!scope.isTransactionActive())
-            {
-                scope.beginTransaction();
-                fTransaction = true;                
-            }
+            scope.ensureTransaction();
             ListDef old = getList(c, def.getRowId());
             ret = Table.update(user, getTinfoList(), def, def.getRowId());
             if (!old.getName().equals(ret.getName()))
                 QueryService.get().updateCustomViewsAfterRename(c, ListSchema.NAME, old.getName(), def.getName());
 
-            if (fTransaction)
-            {
-                scope.commitTransaction();
-                fTransaction = false;
-            }
+            scope.commitTransaction();
         }
         finally
         {
-            if (fTransaction)
-                scope.rollbackTransaction();
+            scope.closeConnection();
         }
 
         // schedules a scan (doesn't touch db)

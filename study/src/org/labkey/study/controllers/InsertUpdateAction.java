@@ -242,11 +242,9 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         assert qus != null;
 
         DbSchema dbschema = schema.getDbSchema();
-        boolean ownTransaction = !dbschema.getScope().isTransactionActive();
         try
         {
-            if (ownTransaction)
-                dbschema.getScope().beginTransaction();
+            dbschema.getScope().ensureTransaction();
 
             Map<String,Object> data = updateForm.getTypedColumns();
 
@@ -287,11 +285,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                     return false;
             }
 
-            if (ownTransaction)
-            {
-                dbschema.getScope().commitTransaction();
-                ownTransaction = false;
-            }
+            dbschema.getScope().commitTransaction();
         }
         catch (SQLException x)
         {
@@ -305,8 +299,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
         finally
         {
-            if (ownTransaction)
-                dbschema.getScope().closeConnection();
+            dbschema.getScope().closeConnection();
         }
 
         if (errors.hasErrors())

@@ -81,7 +81,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
         try
         {
-            ExperimentService.get().beginTransaction();
+            ExperimentService.get().ensureTransaction();
             batch = handleBatch(batchJsonObject, protocol, provider);
 
             ExperimentService.get().commitTransaction();

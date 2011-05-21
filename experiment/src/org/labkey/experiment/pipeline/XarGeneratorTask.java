@@ -198,9 +198,9 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         }
         finally
         {
-            if (ExperimentService.get().isTransactionActive())
+            if (ExperimentService.get().getSchema().getScope().isTransactionActive())
             {
-                ExperimentService.get().rollbackTransaction();
+                ExperimentService.get().closeTransaction();
             }
         }
         return new RecordedActionSet();
@@ -263,7 +263,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
             synchronized (ExperimentService.get().getImportLock())
             {
-                ExperimentService.get().beginTransaction();
+                ExperimentService.get().getSchema().getScope().ensureTransaction();
                 // Build up the sequence of steps for this pipeline definition, which gets turned into a protocol
                 for (TaskId taskId : getJob().getTaskPipeline().getTaskProgression())
                 {
@@ -290,14 +290,14 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 ExpProtocol parentProtocol = ensureProtocol(protocolCache, protocolSequence, parentProtocolLSID, getJob().getTaskPipeline().getProtocolShortDescription());
 
                 // Break the protocol insertion and run insertion into two separate transactions
-                ExperimentService.get().commitTransaction();
-                ExperimentService.get().beginTransaction();
+                ExperimentService.get().getSchema().getScope().commitTransaction();
+                ExperimentService.get().getSchema().getScope().ensureTransaction();
 
                 run = insertRun(actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles, parentProtocol);
 
                 writeXarToDisk(run);
 
-                ExperimentService.get().commitTransaction();
+                ExperimentService.get().getSchema().getScope().commitTransaction();
             }
             ExperimentRunGraph.clearCache(run.getContainer());
         }

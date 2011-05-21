@@ -138,11 +138,9 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void addRuns(User user, ExpRun... newRuns)
     {
-        boolean containingTrans = ExperimentServiceImpl.get().getExpSchema().getScope().isTransactionActive();
         try
         {
-            if (!containingTrans)
-                ExperimentServiceImpl.get().getExpSchema().getScope().beginTransaction();
+            ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction();
 
             ExpRun[] existingRunIds = getRuns();
             Set<Integer> newRunIds = new HashSet<Integer>();
@@ -166,8 +164,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                 Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getRowId(), runId});
             }
 
-            if (!containingTrans)
-                ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
+            ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -175,8 +172,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         }
         finally
         {
-            if (!containingTrans)
-                ExperimentServiceImpl.get().getExpSchema().getScope().closeConnection();
+            ExperimentServiceImpl.get().getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -193,12 +189,10 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
             {
                 throw new IllegalStateException("Not permitted");
             }
-            boolean containingTrans = ExperimentServiceImpl.get().getExpSchema().getScope().isTransactionActive();
 
             try
             {
-                if (!containingTrans)
-                    ExperimentServiceImpl.get().getExpSchema().getScope().beginTransaction();
+                ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction();
 
                 // If we're a batch, delete all the runs too
                 if (_object.getBatchProtocolId() != null)
@@ -223,13 +217,11 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                         + " AND Container = ? ";
                 Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getContainer().getId()});
 
-                if (!containingTrans)
-                    ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
+                ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
             }
             finally
             {
-                if (!containingTrans)
-                    ExperimentServiceImpl.get().getExpSchema().getScope().closeConnection();
+                ExperimentServiceImpl.get().getExpSchema().getScope().closeConnection();
             }
         }
         catch (SQLException e)

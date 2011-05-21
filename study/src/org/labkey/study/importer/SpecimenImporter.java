@@ -643,8 +643,7 @@ public class SpecimenImporter
         }
         finally
         {
-            if (schema.getScope().isTransactionActive())
-                schema.getScope().rollbackTransaction();
+            schema.getScope().closeConnection();
             StudyManager.getInstance().clearCaches(container, false);
             SampleManager.getInstance().clearCaches(container);
         }

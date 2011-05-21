@@ -31,9 +31,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -104,10 +102,7 @@ public class StudyServiceImpl implements StudyService.Service
         if (defaultQcStateId != null)
              defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
 
-        // Start a transaction, so that we can rollback if our insert fails
-        boolean transactionOwner = !isTransactionActive();
-        if (transactionOwner)
-            beginTransaction();
+        ensureTransaction();
         try
         {
             Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
@@ -149,22 +144,22 @@ public class StudyServiceImpl implements StudyService.Service
                 // Update failed
                 return null;
             }
-            // Successfully updated
-            if(transactionOwner)
-                commitTransaction();
 
             // lsid is not in the updated map by default since it is not editable,
             // however it can be changed by the update
-            newData.put("lsid", result.get(0));
+            String newLSID = result.get(0);
+            newData.put("lsid", newLSID);
 
             addDatasetAuditEvent(u, c, def, oldData, newData);
 
-            return result.get(0);
+            // Successfully updated
+            commitTransaction();
+
+            return newLSID;
         }
         finally
         {
-            if(transactionOwner)
-                rollbackTransaction();
+            closeConnection();
         }
     }
 
@@ -257,11 +252,9 @@ public class StudyServiceImpl implements StudyService.Service
 
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(study);
 
-        boolean transactionOwner = !isTransactionActive();
         try
         {
-            if (transactionOwner)
-                beginTransaction();
+            ensureTransaction();
 
             List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, data, def);
 
@@ -275,9 +268,7 @@ public class StudyServiceImpl implements StudyService.Service
                 auditDataMap.put("lsid", result.get(0));
                 addDatasetAuditEvent(u, c, def, null, auditDataMap);
 
-                if (transactionOwner)
-                    commitTransaction();
-                transactionOwner = false;    
+                commitTransaction();
 
                 return result.get(0);
             }
@@ -289,8 +280,7 @@ public class StudyServiceImpl implements StudyService.Service
         // WTF?
         finally
         {
-            if (transactionOwner)
-                rollbackTransaction();
+            closeConnection();
         }
     }
 
@@ -302,23 +292,19 @@ public class StudyServiceImpl implements StudyService.Service
         // Need to fetch the old item in order to log the deletion
         Map<String, Object> oldData = getDatasetRow(u, c, datasetId, lsid);
 
-        boolean transactionOwner = !isTransactionActive();
         try
         {
-            if (transactionOwner)
-                beginTransaction();
+            ensureTransaction();
 
             def.deleteRows(u, Collections.singletonList(lsid));
 
             addDatasetAuditEvent(u, c, def, oldData, null);
 
-            if (transactionOwner)
-                commitTransaction();
+            commitTransaction();
         }
         finally
         {
-            if (transactionOwner)
-                rollbackTransaction();
+            closeConnection();
         }
     }
 
@@ -477,30 +463,22 @@ public class StudyServiceImpl implements StudyService.Service
         return DatasetAuditViewFactory.encodeForDataMap(stringMap, true);
     }
 
-    public void beginTransaction() throws SQLException
+    public void ensureTransaction() throws SQLException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        if(!scope.isTransactionActive())
-            scope.beginTransaction();
+        scope.ensureTransaction();
     }
 
     public void commitTransaction() throws SQLException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        if(scope.isTransactionActive())
-            scope.commitTransaction();
+        scope.commitTransaction();
     }
 
-    public void rollbackTransaction()
+    public void closeConnection()
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        if(scope.isTransactionActive())
-            scope.rollbackTransaction();
-    }
-
-    public boolean isTransactionActive()
-    {
-        return StudySchema.getInstance().getSchema().getScope().isTransactionActive();
+        scope.closeConnection();
     }
 
     public void applyDefaultQCStateFilter(DataView view)

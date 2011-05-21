@@ -247,14 +247,10 @@ public class DomainImpl implements Domain
     // TODO: throws SQLException instead of RuntimeSQLException (e.g., constraint violation due to duplicate domain name) 
     public void save(User user) throws ChangePropertyDescriptorException
     {
-        boolean transaction = false;
         try
         {
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                transaction = true;
-            }
+            ExperimentService.get().ensureTransaction();
+
             boolean keyColumnsChanged = false;
             if (isNew())
             {
@@ -338,11 +334,7 @@ public class DomainImpl implements Domain
                 }
             }
 
-            if (transaction)
-            {
-                ExperimentService.get().commitTransaction();
-                transaction = false;
-            }
+            ExperimentService.get().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -350,10 +342,7 @@ public class DomainImpl implements Domain
         }
         finally
         {
-            if (transaction)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
     }
 

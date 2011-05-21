@@ -481,7 +481,7 @@ public class TypesController extends SpringActionController
 
         try
         {
-            expSchema.getScope().beginTransaction();
+            expSchema.getScope().ensureTransaction();
 
             Map propertyMap = Table.executeValueMap(ExperimentService.get().getSchema(),
                     "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " " + expSchema.getSqlDialect().concatenate("?", "'#%'"),

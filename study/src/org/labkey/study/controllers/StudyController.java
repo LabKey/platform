@@ -2558,8 +2558,7 @@ public class StudyController extends BaseStudyController
 
             // Operate on each individually for audit logging purposes, but transact the whole thing
             DbScope scope =  StudySchema.getInstance().getSchema().getScope();
-            scope.beginTransaction();
-            boolean inTransaction = true;
+            scope.ensureTransaction();
 
             try
             {
@@ -2577,13 +2576,11 @@ public class StudyController extends BaseStudyController
                 qus.deleteRows(getViewContext().getUser(), getContainer(), keys, null);
 
                 scope.commitTransaction();
-                inTransaction = false;
                 return true;
             }
             finally
             {
-                if (inTransaction)
-                    scope.rollbackTransaction();
+                scope.closeConnection();
             }
         }
 
@@ -4322,7 +4319,7 @@ public class StudyController extends BaseStudyController
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try
                 {
-                    scope.beginTransaction();
+                    scope.ensureTransaction();
                     int numRowsDeleted = StudyManager.getInstance().purgeDataset(getStudy(), dataset, getUser());
                     scope.commitTransaction();
 
@@ -4332,8 +4329,7 @@ public class StudyController extends BaseStudyController
                 }
                 finally
                 {
-                    if (scope.isTransactionActive())
-                        scope.rollbackTransaction();
+                    scope.closeConnection();
                 }
                 DataRegionSelection.clearAll(getViewContext());
             }
@@ -4714,15 +4710,14 @@ public class StudyController extends BaseStudyController
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             try
             {
-                scope.beginTransaction();
+                scope.ensureTransaction();
                 StudyManager.getInstance().deleteDataset(getStudy(), getUser(), ds);
                 scope.commitTransaction();
                 throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
             }
             finally
             {
-                if (scope.isTransactionActive())
-                    scope.rollbackTransaction();
+                scope.closeConnection();
             }
         }
 
@@ -4979,7 +4974,6 @@ public class StudyController extends BaseStudyController
             }
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            boolean ownsTransaction = !scope.isTransactionActive();
 
             List<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>();
 
@@ -4987,8 +4981,7 @@ public class StudyController extends BaseStudyController
             {
                 try
                 {
-                    if (ownsTransaction)
-                        scope.beginTransaction();
+                    scope.ensureTransaction();
 
                     for (JSONObject jdataset : jsonDatasets.toJSONObjectArray())
                     {
@@ -5016,13 +5009,11 @@ public class StudyController extends BaseStudyController
                         OntologyManager.ensureDomainDescriptor(dataset.getTypeURI(), dataset.getName(), study.getContainer());
                         datasets.add(dataset);
                     }
-                    if (ownsTransaction)
-                        scope.commitTransaction();
+                    scope.commitTransaction();
                 }
                 finally
                 {
-                    if (ownsTransaction)
-                        scope.closeConnection();
+                    scope.closeConnection();
                 }
             }
 
@@ -5255,14 +5246,9 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(StudySnapshotForm form, BindException errors) throws Exception
         {
             DbSchema schema = StudyManager.getSchema();
-            boolean startedTransaction = false;
 
             try {
-                if (!schema.getScope().isTransactionActive())
-                {
-                    schema.getScope().beginTransaction();
-                    startedTransaction = true;
-                }
+                schema.getScope().ensureTransaction();
 
                 if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
                 {
@@ -5282,13 +5268,11 @@ public class StudyController extends BaseStudyController
                         _successURL = new ActionURL(PageFlowUtil.decode(redirect));
                 }
 
-                if (startedTransaction)
-                    schema.getScope().commitTransaction();
+                schema.getScope().commitTransaction();
             }
             finally
             {
-                if (startedTransaction && schema.getScope().isTransactionActive())
-                    schema.getScope().rollbackTransaction();
+                schema.getScope().closeConnection();
             }
 
             return !errors.hasErrors();

@@ -125,7 +125,7 @@ public class VisitMapImporter
 
         try
         {
-            scope.beginTransaction();
+            scope.ensureTransaction();
             saveDataSets(user, study, records);
             saveVisits(user, study, records);
             saveVisitMap(user, study, records);

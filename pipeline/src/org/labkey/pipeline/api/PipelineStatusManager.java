@@ -441,7 +441,7 @@ public class PipelineStatusManager
 
     public static void completeStatus(User user, int[] rowIds) throws SQLException, Container.ContainerException
     {
-        PipelineSchema.getInstance().getSchema().getScope().beginTransaction();
+        PipelineSchema.getInstance().getSchema().getScope().ensureTransaction();
         try
         {
             for (int rowId : rowIds)
@@ -603,7 +603,7 @@ public class PipelineStatusManager
         if (!active)
         {
             if(scope.isTransactionActive())
-               scope.rollbackTransaction();
+               scope.closeConnection();
          }
     }
 

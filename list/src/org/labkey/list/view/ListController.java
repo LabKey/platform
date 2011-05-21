@@ -362,16 +362,11 @@ public class ListController extends SpringActionController
             //if (errors.hasErrors())
             //    return false;
 
-            boolean transaction = false;
             ListItem item = null;
 
             try
             {
-                if (!ExperimentService.get().isTransactionActive())
-                {
-                    ExperimentService.get().beginTransaction();
-                    transaction = true;
-                }
+                ExperimentService.get().ensureTransaction();
 
                 BatchValidationException batchErrors = new BatchValidationException();
 
@@ -455,11 +450,7 @@ public class ListController extends SpringActionController
                 if (errors.hasErrors())
                     return false;
 
-                if (transaction)
-                {
-                    ExperimentService.get().commitTransaction();
-                    transaction = false;
-                }
+                ExperimentService.get().commitTransaction();
 
                 _returnURL = form.getReturnURLHelper();
 
@@ -498,10 +489,7 @@ public class ListController extends SpringActionController
             }
             finally
             {
-                if (transaction)
-                {
-                    ExperimentService.get().rollbackTransaction();
-                }
+                ExperimentService.get().closeTransaction();
             }
 
             return false;

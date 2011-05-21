@@ -190,14 +190,10 @@ public class ListDefinitionImpl implements ListDefinition
 
     public void save(User user) throws Exception
     {
-        boolean fTransaction = false;
         try
         {
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                fTransaction = true;
-            }
+            ExperimentService.get().ensureTransaction();
+
             if (_new)
             {
                 _domain.save(user);
@@ -211,18 +207,12 @@ public class ListDefinitionImpl implements ListDefinition
                 _defOld = null;
                 addAuditEvent(user, String.format("The definition of the list %s was modified", _def.getName()));
             }
-            if (fTransaction)
-            {
-                ExperimentService.get().commitTransaction();
-                fTransaction = false;
-            }
+
+            ExperimentService.get().commitTransaction();
         }
         finally
         {
-            if (fTransaction)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
         ListManager.get().enumerateDocuments(null, getContainer(), null);
     }
@@ -265,14 +255,9 @@ public class ListDefinitionImpl implements ListDefinition
 
     public void deleteListItems(User user, Collection keys) throws SQLException
     {
-        boolean fTransaction = false;
         try
         {
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                fTransaction = true;
-            }
+            ExperimentService.get().ensureTransaction();
             for (Object key : keys)
             {
                 ListItem item = getListItem(key);
@@ -281,31 +266,20 @@ public class ListDefinitionImpl implements ListDefinition
                     item.delete(user, getContainer());
                 }
             }
-            if (fTransaction)
-            {
-                ExperimentService.get().commitTransaction();
-                fTransaction = false;
-            }
+            ExperimentService.get().commitTransaction();
         }
         finally
         {
-            if (fTransaction)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
     }
 
     public void delete(User user) throws SQLException, DomainNotFoundException
     {
-        boolean fTransaction = false;
         try
         {
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                fTransaction = true;
-            }
+            ExperimentService.get().ensureTransaction();
+
             SimpleFilter lstItemFilter = new SimpleFilter("ListId", getListId());
             ListItm[] itms = Table.select(getIndexTable(), Table.ALL_COLUMNS, lstItemFilter, null, ListItm.class);
             Table.delete(getIndexTable(), lstItemFilter);
@@ -319,18 +293,12 @@ public class ListDefinitionImpl implements ListDefinition
             ServiceRegistry.get(SearchService.class).deleteResource("list:" + _def.getEntityId());
             Domain domain = getDomain();
             domain.delete(user);
-            if (fTransaction)
-            {
-                ExperimentService.get().commitTransaction();
-                fTransaction = false;
-            }
+
+            ExperimentService.get().commitTransaction();
         }
         finally
         {
-            if (fTransaction)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
     }
 
@@ -541,15 +509,9 @@ public class ListDefinitionImpl implements ListDefinition
 
     private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, DomainProperty> properties, List<Map<String, Object>> rows, @Nullable File attachmentDir, List<String> errors, @Nullable ListImportProgress progress)
     {
-        boolean transaction = false;
-
         try
         {
-            if (!ExperimentService.get().isTransactionActive())
-            {
-                ExperimentService.get().beginTransaction();
-                transaction = true;
-            }
+            ExperimentService.get().ensureTransaction();
 
             // There's a disconnect here between the PropertyService api and OntologyManager...
             ArrayList<DomainProperty> used = new ArrayList<DomainProperty>(properties.size());
@@ -568,11 +530,8 @@ public class ListDefinitionImpl implements ListDefinition
             PropertyDescriptor[] pds = propSet.toArray(new PropertyDescriptor[propSet.size()]);
             List<String> inserted = OntologyManager.insertTabDelimited(getContainer(), user, null, helper, pds, rows, true);
             addAuditEvent(user, "Bulk inserted " + inserted.size() + " rows to list.");
-            if (transaction)
-            {
-                ExperimentService.get().commitTransaction();
-                transaction = false;
-            }
+
+            ExperimentService.get().commitTransaction();
         }
         catch (ValidationException ve)
         {
@@ -585,10 +544,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
         finally
         {
-            if (transaction)
-            {
-                ExperimentService.get().rollbackTransaction();
-            }
+            ExperimentService.get().closeTransaction();
         }
     }
 

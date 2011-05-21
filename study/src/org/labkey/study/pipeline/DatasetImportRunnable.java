@@ -116,9 +116,10 @@ public class DatasetImportRunnable implements Runnable
             return;
         }
 
+        boolean needToClose = true;
         try
         {
-            scope.beginTransaction();
+            scope.ensureTransaction();
 
             final String visitDatePropertyURI = getVisitDateURI(pj.getUser());
             boolean useCutoff =
@@ -204,17 +205,20 @@ public class DatasetImportRunnable implements Runnable
         }
         catch (Exception x)
         {
-            // If we have an active transaction, we need to roll it back
+            // If we have an active transaction, we need to close it
             // before we log the error or the logging will take place inside the transaction
-            if (scope.isTransactionActive())
-                scope.rollbackTransaction();
+            scope.closeConnection();
+            needToClose = false;
 
             _task.logError("Exception while importing file: " + _tsv, x);
         }
         finally
         {
-            if (scope.isTransactionActive())
-                scope.rollbackTransaction();
+            if (needToClose)
+            {
+                scope.closeConnection();
+            }
+
             boolean debug = false;
             assert debug = true;
             if (debug)

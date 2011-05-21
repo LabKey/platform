@@ -162,19 +162,14 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     public void delete()
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = false;
         try
         {
-            if (!scope.isTransactionActive())
-            {
-                scope.beginTransaction();
-                transactionOwner = true;
-            }
+            scope.ensureTransaction();
+
             deleteAllGroups();
             Table.delete(getTableInfo(), getPrimaryKey());
 
-            if (transactionOwner)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         catch (SQLException e)
         {
@@ -182,8 +177,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         }
         finally
         {
-            if (transactionOwner)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 

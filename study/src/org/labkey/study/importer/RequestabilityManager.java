@@ -655,11 +655,9 @@ public class RequestabilityManager
     {
         TableInfo ruleTableInfo = StudySchema.getInstance().getTableInfoSampleAvailabilityRule();
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
         try
         {
-            if (transactionOwner)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             Table.delete(ruleTableInfo, new SimpleFilter("Container", container.getId()));
 
@@ -671,13 +669,11 @@ public class RequestabilityManager
                 Table.insert(user, ruleTableInfo, bean);
             }
 
-            if (transactionOwner)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         finally
         {
-            if (transactionOwner && scope.isTransactionActive())
-                scope.rollbackTransaction();
+            scope.closeConnection();
         }
     }
 

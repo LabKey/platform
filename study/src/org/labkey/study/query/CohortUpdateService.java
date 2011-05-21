@@ -107,9 +107,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
 
         // Start a transaction, so that we can rollback if our insert fails
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
-        if (transactionOwner)
-            scope.beginTransaction();
+        scope.ensureTransaction();
         try
         {
 
@@ -125,13 +123,11 @@ public class CohortUpdateService extends AbstractQueryUpdateService
             cohort.savePropertyBag(row);
 
             // Successfully updated
-            if(transactionOwner)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         finally
         {
-            if(transactionOwner)
-                scope.rollbackTransaction();
+            scope.closeConnection();
         }
 
 

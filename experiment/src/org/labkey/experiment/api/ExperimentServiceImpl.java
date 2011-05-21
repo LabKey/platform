@@ -838,11 +838,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void beginTransaction()
+    public void ensureTransaction()
     {
         try
         {
-            getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
         }
         catch (SQLException e)
         {
@@ -865,16 +865,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public void closeTransaction()
     {
         getExpSchema().getScope().closeConnection();
-    }
-
-    public boolean isTransactionActive()
-    {
-        return getExpSchema().getScope().isTransactionActive();
-    }
-
-    public void rollbackTransaction()
-    {
-        getExpSchema().getScope().rollbackTransaction();
     }
 
     public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type)
@@ -1433,8 +1423,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             throw new SQLException("Attempting to remove Runs from an Experiment that does not exist");
         }
 
-        boolean containingTrans = getExpSchema().getScope().isTransactionActive();
-
         String runIds = StringUtils.join(toIntegers(selectedRunIds), ",");
 
         String sql = " DELETE FROM " + getTinfoRunList() + " WHERE ExperimentId = ? "
@@ -1442,18 +1430,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try
         {
-            if (!containingTrans)
-                getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
 
             Table.execute(getExpSchema(), sql, new Object[] {exp.getRowId()} );
 
-            if (!containingTrans)
-                getExpSchema().getScope().commitTransaction();
+            getExpSchema().getScope().commitTransaction();
         }
         finally
         {
-            if (!containingTrans)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -1462,15 +1447,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (selectedRunIds == null || selectedRunIds.length == 0)
             return;
 
-        boolean containingTrans = getExpSchema().getScope().isTransactionActive();
-
         try
         {
 
             for (int runId : selectedRunIds)
             {
-                if (!containingTrans)
-                    getExpSchema().getScope().beginTransaction();
+                getExpSchema().getScope().ensureTransaction();
              
                 // Grab these to delete after we've deleted the Data rows
                 ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
@@ -1482,8 +1464,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     ExperimentDataHandler handler = data.findDataHandler();
                     handler.deleteData(data, container, user);
                 }
-                if (!containingTrans)
-                    getExpSchema().getScope().commitTransaction();
+                getExpSchema().getScope().commitTransaction();
             }
         }
         catch (SQLException e)
@@ -1492,8 +1473,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         finally
         {
-            if (!containingTrans)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -1588,12 +1568,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             sql += " OR ParentProtocolId IN (" + protocolIds + ") );";
             Integer[] actionIds = Table.executeArray(getExpSchema(), sql, new Object[]{}, Integer.class);
 
-            boolean containingTrans = getExpSchema().getScope().isTransactionActive();
-
             try
             {
-                if (!containingTrans)
-                    getExpSchema().getScope().beginTransaction();
+                getExpSchema().getScope().ensureTransaction();
 
                 for (Protocol protocol : protocols)
                 {
@@ -1644,13 +1621,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 int[] orphanedProtocolIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
                 deleteProtocolByRowIds(c, user, orphanedProtocolIds);
 
-                if (!containingTrans)
-                    getExpSchema().getScope().commitTransaction();
+                getExpSchema().getScope().commitTransaction();
             }
             finally
             {
-                if (!containingTrans)
-                    getExpSchema().getScope().closeConnection();
+                getExpSchema().getScope().closeConnection();
             }
         }
         catch (SQLException e)
@@ -1691,12 +1666,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (selectedMaterialIds.length == 0)
             return;
 
-        boolean containingTrans = getExpSchema().getScope().isTransactionActive();
-
         try
         {
-            if (!containingTrans)
-                getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
 
             for (int from = 0, to; from < selectedMaterialIds.length; from = to)
             {
@@ -1736,8 +1708,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
             }
 
-            if (!containingTrans)
-                getExpSchema().getScope().commitTransaction();
+            getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -1745,8 +1716,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         finally
         {
-            if (!containingTrans)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -1755,11 +1725,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (selectedDataIds.length == 0)
             return;
 
-        boolean containingTrans = getExpSchema().getScope().isTransactionActive();
         try
         {
-            if (!containingTrans)
-                getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
 
             for (int from = 0, to; from < selectedDataIds.length; from = to)
             {
@@ -1788,8 +1756,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 Table.execute(getExpSchema(), sql, new Object[]{});
             }
 
-            if (!containingTrans)
-                getExpSchema().getScope().commitTransaction();
+            getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -1797,8 +1764,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         finally
         {
-            if (!containingTrans)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -1807,7 +1773,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (null == c)
             return;
 
-        boolean startTransaction = !getExpSchema().getScope().isTransactionActive();
         try
         {
             String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
@@ -1819,10 +1784,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
             int[] protIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
 
-            if (startTransaction)
-            {
-                getExpSchema().getScope().beginTransaction();
-            }
+            getExpSchema().getScope().ensureTransaction();
+            
             // first delete the runs in the container, as that should be fast.  Deletes all Materials, Data,
             // and protocol applications and associated properties and parameters that belong to the run
             for (int runId : runIds)
@@ -1867,10 +1830,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             int[] dataIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
             deleteDataByRowIds(c, dataIds);
 
-            if (startTransaction)
-            {
-                getExpSchema().getScope().commitTransaction();
-            }
+            getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -1878,10 +1838,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         finally
         {
-            if (startTransaction)
-            {
-                getExpSchema().getScope().closeConnection();
-            }
+            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -1892,8 +1849,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try
         {
-            getExpSchema().getScope().beginTransaction();
-
+            getExpSchema().getScope().ensureTransaction();
 
             OntologyManager.moveContainer(c, oldParent, newParent);
 
@@ -2085,12 +2041,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new ExperimentException("Trying to delete a SampleSet from a different container");
         }
-        boolean containingTrans = getExpSchema().getScope().isTransactionActive();
-
         try
         {
-            if (!containingTrans)
-                getExpSchema().getScope().beginTransaction();
+            getExpSchema().getScope().ensureTransaction();
 
             for (ExpRun run : getRunsUsingSampleSets(source))
             {
@@ -2131,8 +2084,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             Table.delete(getTinfoMaterialSource(), rowId);
 
-            if (!containingTrans)
-                getExpSchema().getScope().commitTransaction();
+            getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -2140,8 +2092,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         finally
         {
-            if (!containingTrans)
-                getExpSchema().getScope().closeConnection();
+            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -2705,9 +2656,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             try
             {
-                boolean transactionOwner = !getSchema().getScope().isTransactionActive();
-                if (transactionOwner)
-                    getSchema().getScope().beginTransaction();
+                getSchema().getScope().ensureTransaction();
 
                 try
                 {
@@ -2835,13 +2784,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     addDataInputs(outputDatas, protApp3, user);
                     addMaterialInputs(outputMaterials, protApp3, user);
 
-                    if (transactionOwner)
-                        getSchema().getScope().commitTransaction();
+                    getSchema().getScope().commitTransaction();
                 }
                 finally
                 {
-                    if (transactionOwner)
-                        getSchema().getScope().closeConnection();
+                    getSchema().getScope().closeConnection();
                 }
 
                 if (loadDataFiles)
@@ -3085,24 +3032,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             source.setParentCol(parentUri);
 
         ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
-        boolean transactionOwner = false;
         try
         {
-            transactionOwner = !isTransactionActive();
-            if (transactionOwner)
-                beginTransaction();
+            ensureTransaction();
 
             domain.save(u);
             ss.save(u);
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
-            if (transactionOwner)
-                commitTransaction();
+            commitTransaction();
         }
         finally
         {
-            if (transactionOwner)
-                closeTransaction();
+            closeTransaction();
         }
 
         return ss;
@@ -3190,9 +3132,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             try
             {
-                boolean transactionOwner = !getSchema().getScope().isTransactionActive();
-                if (transactionOwner)
-                    getSchema().getScope().beginTransaction();
+                getSchema().getScope().ensureTransaction();
                 Protocol baseProtocol = ((ExpProtocolImpl)wrappedProtocol).getDataObject();
                 try
                 {
@@ -3286,14 +3226,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                     insertProtocolPredecessor(user, action3.getRowId(), action2.getRowId());
 
-                    if (transactionOwner)
-                        getSchema().getScope().commitTransaction();
+                    getSchema().getScope().commitTransaction();
                     return wrappedProtocol;
                 }
                 finally
                 {
-                    if (transactionOwner)
-                        getSchema().getScope().closeConnection();
+                    getSchema().getScope().closeConnection();
                 }
             }
             catch (SQLException e)

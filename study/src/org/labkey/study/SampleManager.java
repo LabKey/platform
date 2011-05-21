@@ -433,11 +433,9 @@ public class SampleManager
     public void updateRequest(User user, SampleRequest request) throws SQLException, RequestabilityManager.InvalidRuleException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean ownTransaction = !scope.isTransactionActive();
         try
         {
-            if (ownTransaction)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             _requestHelper.update(user, request);
 
@@ -448,13 +446,11 @@ public class SampleManager
                 SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
                 updateSpecimenStatus(specimens, user, status.isSpecimensLocked());
             }
-            if (ownTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         finally
         {
-            if (ownTransaction && scope.isTransactionActive())
-                scope.rollbackTransaction();
+            scope.closeConnection();
         }
     }
 
@@ -1220,11 +1216,9 @@ public class SampleManager
             return;
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean ownTransaction = !scope.isTransactionActive();
         try
         {
-            if (ownTransaction)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             synchronized (REQUEST_ADDITION_LOCK)
             {
@@ -1256,13 +1250,11 @@ public class SampleManager
                 updateSpecimenStatus(specimens.toArray(new Specimen[specimens.size()]), user, status.isSpecimensLocked());
             }
 
-            if (ownTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         finally
         {
-            if (ownTransaction && scope.isTransactionActive())
-                scope.rollbackTransaction();
+            scope.closeConnection();
         }
     }
 
@@ -1283,11 +1275,9 @@ public class SampleManager
     public void deleteRequest(User user, SampleRequest request) throws SQLException, RequestabilityManager.InvalidRuleException
     {
         DbScope scope = _requestHelper.getTableInfo().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
         try
         {
-            if (transactionOwner)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             Specimen[] specimens = request.getSpecimens();
             int[] specimenIds = new int[specimens.length];
@@ -1303,13 +1293,11 @@ public class SampleManager
             deleteRequestEvents(user, request);
             _requestHelper.delete(request);
 
-            if (transactionOwner)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         finally
         {
-            if (transactionOwner)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 
@@ -1327,11 +1315,9 @@ public class SampleManager
         }
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean ownTransaction = !scope.isTransactionActive();
         try
         {
-            if (ownTransaction)
-                scope.beginTransaction();
+            scope.ensureTransaction();
 
             SimpleFilter filter = new SimpleFilter("SampleRequestId", request.getRowId());
             filter.addCondition("Container", request.getContainer().getId());
@@ -1345,13 +1331,11 @@ public class SampleManager
 
             updateSpecimenStatus(specimens, user, false);
 
-            if (ownTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         finally
         {
-            if (ownTransaction && scope.isTransactionActive())
-                scope.rollbackTransaction();
+            scope.closeConnection();
         }
     }
 
@@ -2550,13 +2534,11 @@ public class SampleManager
     {
         TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
         DbScope scope = commentTable.getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
         SpecimenComment comment = getSpecimenCommentForVial(vial);
         boolean clearComment = commentText == null && !qualityControlFlag && !qualityControlFlagForced;
         try
         {
-            if (transactionOwner)
-                scope.beginTransaction();
+            scope.ensureTransaction();
             if (clearComment)
             {
                 if (comment != null)
@@ -2564,8 +2546,7 @@ public class SampleManager
                     Table.delete(commentTable, comment.getRowId());
                     auditSpecimenComment(user, vial, comment.getComment(), null, comment.isQualityControlFlag(), false);
                 }
-                if (transactionOwner)
-                    scope.commitTransaction();
+                scope.commitTransaction();
                 return null;
             }
             else
@@ -2580,8 +2561,7 @@ public class SampleManager
                     comment.beforeUpdate(user);
                     SpecimenComment updated = Table.update(user, commentTable, comment, comment.getRowId());
                     auditSpecimenComment(user, vial, prevComment, updated.getComment(), prevConflictState, updated.isQualityControlFlag());
-                    if (transactionOwner)
-                        scope.commitTransaction();
+                    scope.commitTransaction();
                     return updated;
                 }
                 else
@@ -2595,16 +2575,14 @@ public class SampleManager
                     comment.beforeInsert(user, vial.getContainer().getId());
                     SpecimenComment inserted = Table.insert(user, commentTable, comment);
                     auditSpecimenComment(user, vial, null, inserted.getComment(), false, comment.isQualityControlFlag());
-                    if (transactionOwner)
-                        scope.commitTransaction();
+                    scope.commitTransaction();
                     return inserted;
                 }
             }
         }
         finally
         {
-            if (transactionOwner)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 

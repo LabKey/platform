@@ -456,7 +456,7 @@ public class DatasetController extends BaseStudyController
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try
                 {
-                    scope.beginTransaction();
+                    scope.ensureTransaction();
                     StudyManager.getInstance().deleteDataset(getStudy(), getUser(), def);
                     scope.commitTransaction();
                 }

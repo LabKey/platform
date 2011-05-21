@@ -224,24 +224,20 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             throw new RuntimeException("Can't delete a report that is not stored in the database!");
 
         DbScope scope = getTable().getSchema().getScope();
-        boolean ownsTransaction = !scope.isTransactionActive();
 
         try
         {
-            if (ownsTransaction)
-                scope.beginTransaction();
+            scope.ensureTransaction();
             report.beforeDelete(context);
 
             final ReportDescriptor descriptor = report.getDescriptor();
             _deleteReport(context.getContainer(), reportId.getRowId());
             org.labkey.api.security.SecurityManager.deletePolicy(descriptor);
-            if (ownsTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
         }
         finally
         {
-            if (ownsTransaction)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 
@@ -270,24 +266,20 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private ReportDB _saveReport(ContainerUser context, String key, Report report) throws SQLException
     {
         DbScope scope = getTable().getSchema().getScope();
-        boolean ownsTransaction = !scope.isTransactionActive();
         try
         {
-            if (ownsTransaction)
-                scope.beginTransaction();
+            scope.ensureTransaction();
             report.getDescriptor().setContainer(context.getContainer().getId());
             report.beforeSave(context);
 
             final ReportDescriptor descriptor = report.getDescriptor();
             final ReportDB r = _saveReport(context.getUser(), context.getContainer(), key, descriptor);
-            if (ownsTransaction)
-                scope.commitTransaction();
+            scope.commitTransaction();
             return r;
         }
         finally
         {
-            if (ownsTransaction)
-                scope.closeConnection();
+            scope.closeConnection();
         }
     }
 

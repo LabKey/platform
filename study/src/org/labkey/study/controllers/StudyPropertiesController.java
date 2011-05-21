@@ -114,7 +114,7 @@ public class StudyPropertiesController extends BaseStudyController
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            scope.beginTransaction();
+            scope.ensureTransaction();
             try
             {
                 if (newLabel != null && !study.getLabel().equals(newLabel))
@@ -126,8 +126,7 @@ public class StudyPropertiesController extends BaseStudyController
 
                 study.savePropertyBag(dataMap);
 
-                if (scope.isTransactionActive())
-                    scope.commitTransaction();
+                scope.commitTransaction();
                 return true;
             }
             catch (ValidationException e)
@@ -138,8 +137,7 @@ public class StudyPropertiesController extends BaseStudyController
             }
             finally
             {
-                if (scope.isTransactionActive())
-                    scope.rollbackTransaction();
+                scope.closeConnection();
             }
         }
 

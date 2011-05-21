@@ -142,7 +142,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
         DbSchema schema = StudyManager.getSchema();
-        boolean startedTransaction = false;
 
         try
         {
@@ -153,11 +152,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
             tsvWriter.write(sb);
 
-            if (!schema.getScope().isTransactionActive())
-            {
-                schema.getScope().beginTransaction();
-                startedTransaction = true;
-            }
+            schema.getScope().ensureTransaction();
+
             // create the dataset definition
             Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
 
@@ -185,8 +181,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 if (!errors.hasErrors())
                 {
-                    if (startedTransaction)
-                        schema.getScope().commitTransaction();
+                    schema.getScope().commitTransaction();
 
                     return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
                             addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
@@ -196,8 +191,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
         finally
         {
-            if (startedTransaction && schema.getScope().isTransactionActive())
-                schema.getScope().rollbackTransaction();
+            schema.getScope().closeConnection();
         }
     }
 
@@ -257,7 +251,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             if (dsDef != null)
             {
                 DbSchema schema = StudyManager.getSchema();
-                boolean startedTransaction = false;
 
                 try
                 {
@@ -279,11 +272,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
                     tsvWriter.write(sb);
 
-                    if (!schema.getScope().isTransactionActive())
-                    {
-                        schema.getScope().beginTransaction();
-                        startedTransaction = true;
-                    }
+                    schema.getScope().ensureTransaction();
 
                     int numRowsDeleted;
                     List<String> newRows;
@@ -302,13 +291,15 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     if (errors.hasErrors())
                         return null;
 
-                    if (startedTransaction)
-                        schema.getScope().commitTransaction();
+                    schema.getScope().commitTransaction();
 
                     ViewContext context = form.getViewContext();
                     StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
                             "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.size() + " rows.", null);
 
+                    def.setLastUpdated(new Date());
+                    def.save(form.getViewContext().getUser(), form.getViewContext().getContainer());
+                    
                     return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
                             addParameter(DataSetDefinition.DATASETKEY, dsDef.getDataSetId());
                 }
@@ -320,13 +311,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 }
                 finally
                 {
-                    if (startedTransaction && schema.getScope().isTransactionActive())
-                        schema.getScope().rollbackTransaction();
-                    else
-                    {
-                        def.setLastUpdated(new Date());
-                        def.save(form.getViewContext().getUser(), form.getViewContext().getContainer());
-                    }
+                    schema.getScope().closeConnection();
                 }
             }
         }

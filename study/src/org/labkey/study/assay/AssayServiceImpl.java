@@ -317,11 +317,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         if (replaceIfExisting)
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
-            boolean transactionOwner = !schema.getScope().isTransactionActive();
             try
             {
-                if (transactionOwner)
-                    schema.getScope().beginTransaction();
+                schema.getScope().ensureTransaction();
 
                 ExpProtocol protocol;
                 if (assay.getProtocolId() == null)
@@ -434,8 +432,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 if (errors.length() > 0)
                     throw new AssayException(errors.toString());
 
-                if (transactionOwner)
-                    schema.getScope().commitTransaction();
+                schema.getScope().commitTransaction();
 
                 return getAssayDefinition(assay.getProtocolId(), false);
             }
@@ -454,8 +451,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
             finally
             {
-                if (transactionOwner && schema.getScope().isTransactionActive())
-                    schema.getScope().rollbackTransaction();
+                schema.getScope().closeConnection();
             }
         }
         else

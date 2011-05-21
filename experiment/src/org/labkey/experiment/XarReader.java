@@ -190,15 +190,11 @@ public class XarReader extends AbstractXarImporter
 
     private void loadDoc(boolean deleteExistingRuns) throws ExperimentException
     {
-        boolean existingTransaction = ExperimentService.get().getSchema().getScope().isTransactionActive();
         try
         {
             synchronized(ExperimentService.get().getImportLock())
             {
-                if (!existingTransaction)
-                {
-                    ExperimentService.get().getSchema().getScope().beginTransaction();
-                }
+                ExperimentService.get().getSchema().getScope().ensureTransaction();
 
                 ExperimentArchiveType.ExperimentRuns experimentRuns = _experimentArchive.getExperimentRuns();
                 // Start by clearing out existing things that we're going to be importing
@@ -293,10 +289,7 @@ public class XarReader extends AbstractXarImporter
                     }
                 }
 
-                if (!existingTransaction)
-                {
-                    ExperimentService.get().getSchema().getScope().commitTransaction();
-                }
+                ExperimentService.get().getSchema().getScope().commitTransaction();
             }
 
             ExperimentRunGraph.clearCache(getContainer());
@@ -312,10 +305,7 @@ public class XarReader extends AbstractXarImporter
         }
         finally
         {
-            if (!existingTransaction)
-            {
-                ExperimentService.get().getSchema().getScope().closeConnection();
-            }
+            ExperimentService.get().getSchema().getScope().closeConnection();
         }
     }
 

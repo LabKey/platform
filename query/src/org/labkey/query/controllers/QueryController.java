@@ -1812,19 +1812,13 @@ public class QueryController extends SpringActionController
             }
 
             DbSchema dbSchema = table.getSchema();
-            boolean ownTransaction = !dbSchema.getScope().isTransactionActive();
             try
             {
-                if (ownTransaction)
-                    dbSchema.getScope().beginTransaction();
+                dbSchema.getScope().ensureTransaction();
 
                 updateService.deleteRows(getUser(), getContainer(), keyValues, null);
 
-                if (ownTransaction)
-                {
-                    dbSchema.getScope().commitTransaction();
-                    ownTransaction = false;
-                }
+                dbSchema.getScope().commitTransaction();
 
                 _url = forward;
             }
@@ -1846,8 +1840,7 @@ public class QueryController extends SpringActionController
             }
             finally
             {
-                if (ownTransaction)
-                    dbSchema.getScope().closeConnection();
+                dbSchema.getScope().closeConnection();
             }
             
             return true;
@@ -1941,11 +1934,9 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
 
             DbSchema dbschema = table.getSchema();
-            boolean ownTransaction = !dbschema.getScope().isTransactionActive();
             try
             {
-                if (ownTransaction)
-                    dbschema.getScope().beginTransaction();
+                dbschema.getScope().ensureTransaction();
                 
                 if (insert)
                 {
@@ -1963,11 +1954,7 @@ public class QueryController extends SpringActionController
                     qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
                 }
 
-                if (ownTransaction)
-                {
-                    dbschema.getScope().commitTransaction();
-                    ownTransaction = false;
-                }
+                dbschema.getScope().commitTransaction();
             }
             catch (SQLException x)
             {
@@ -1986,8 +1973,7 @@ public class QueryController extends SpringActionController
             }
             finally
             {
-                if (ownTransaction)
-                    dbschema.getScope().closeConnection();
+                dbschema.getScope().closeConnection();
             }
         }
     }
@@ -2687,9 +2673,9 @@ public class QueryController extends SpringActionController
             //override this by sending a "transacted" property set to false
             // 11741: A transaction may already be active if we're trying to
             // insert/update/delete from within a transformation/validation script.
-            boolean transacted = allowTransaction && json.optBoolean("transacted", true) && !table.getSchema().getScope().isTransactionActive();
+            boolean transacted = allowTransaction && json.optBoolean("transacted", true);
             if (transacted)
-                table.getSchema().getScope().beginTransaction();
+                table.getSchema().getScope().ensureTransaction();
 
             //setup the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
@@ -2821,9 +2807,7 @@ public class QueryController extends SpringActionController
 
                 // 11741: A transaction may already be active if we're trying to
                 // insert/update/delete from within a transformation/validation script.
-                transacted = !scope.isTransactionActive();
-                if (transacted)
-                    scope.beginTransaction();
+                scope.ensureTransaction();
             }
 
             try

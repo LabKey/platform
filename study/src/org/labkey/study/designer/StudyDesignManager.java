@@ -242,22 +242,18 @@ public class StudyDesignManager
         version.setContainer(designInfo.getContainer());
 
         //Synchronize?
-        boolean ownTransaction = !getSchema().getScope().isTransactionActive();
         try
         {
-            if (ownTransaction)
-                getSchema().getScope().beginTransaction();
+            getSchema().getScope().ensureTransaction();
             version = Table.insert(user, getStudyVersionTable(), version);
             designInfo.setPublicRevision(version.getRevision());
             designInfo.setLabel(version.getLabel());
             Table.update(user, getStudyDesignTable(), designInfo, designInfo.getStudyId());
-            if (ownTransaction)
-                getSchema().getScope().commitTransaction();
+            getSchema().getScope().commitTransaction();
         }
         finally
         {
-            if (ownTransaction && getSchema().getScope().isTransactionActive())
-                getSchema().getScope().rollbackTransaction();
+            getSchema().getScope().closeConnection();
         }
 
         return version;

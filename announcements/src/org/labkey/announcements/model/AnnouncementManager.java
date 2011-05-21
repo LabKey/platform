@@ -382,17 +382,13 @@ public class AnnouncementManager
     public static void deleteAnnouncement(Container c, int rowId) throws SQLException
     {
         DbSchema schema = _comm.getSchema();
-        boolean startedTransaction = false;
 
         AnnouncementModel ann = null;
 
         try
         {
-            if (!schema.getScope().isTransactionActive())
-            {
-                schema.getScope().beginTransaction();
-                startedTransaction = true;
-            }
+            schema.getScope().ensureTransaction();
+
             ann = getAnnouncement(c, rowId, INCLUDE_RESPONSES);
             if (ann != null)
             {
@@ -410,13 +406,11 @@ public class AnnouncementManager
                 }
             }
 
-            if (startedTransaction)
-                schema.getScope().commitTransaction();
+            schema.getScope().commitTransaction();
         }
         finally
         {
-            if (startedTransaction && schema.getScope().isTransactionActive())
-                schema.getScope().rollbackTransaction();
+            schema.getScope().closeConnection();
         }
 
        unindexThread(ann);
