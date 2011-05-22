@@ -34,6 +34,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.UpgradeUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;

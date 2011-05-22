@@ -160,7 +160,7 @@ LABKEY.requiresScript = function(file, immediate, callback, scope)
             }
         }
         else
-            document.write('\n<script type="text/javascript" language="javascript" src="' + src + '"></script>\n');
+            document.write('\n<script type="text/javascript" src="' + src + '"></script>\n');
     }
 };
 
