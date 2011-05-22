@@ -931,6 +931,7 @@ public class UserController extends SpringActionController
         public ModelAndView getView(UserForm form, BindException errors) throws Exception
         {
             String email = form.getNewEmail();
+
             if (email != null)
             {
                 try

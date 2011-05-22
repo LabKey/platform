@@ -17,7 +17,11 @@ package org.labkey.study;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.UpgradeUtils;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.ModuleContext;
@@ -41,6 +45,25 @@ import java.sql.SQLException;
  */
 public class StudyUpgradeCode implements UpgradeCode
 {
+    /* called at 11.11->11.12, PostgreSQL only, to move to case-insensitive UNIQUE INDEXes */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void uniquifyDatasetNamesAndLabels(ModuleContext moduleContext)
+    {
+        if (moduleContext.isNewInstall())
+            return;
+
+        try
+        {
+            TableInfo datasets = DbSchema.get("study").getTable("Dataset");
+            UpgradeUtils.uniquifyValues(datasets.getColumn("Name"), new Sort("DatasetId"), false, true);
+            UpgradeUtils.uniquifyValues(datasets.getColumn("Label"), new Sort("DatasetId"), false, true);
+        }
+        catch (SQLException se)
+        {
+            throw UnexpectedException.wrap(se);
+        }
+    }
+
     /* called at 10.20->10.21 */
     @SuppressWarnings({"UnusedDeclaration"})
     public void materializeDatasets(ModuleContext moduleContext)

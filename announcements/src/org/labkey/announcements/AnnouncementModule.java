@@ -34,6 +34,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
@@ -87,7 +88,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     public double getVersion()
     {
-        return 11.10;
+        return 11.11;
     }
 
     protected void init()
@@ -134,6 +135,12 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     public boolean hasScripts()
     {
         return true;
+    }
+
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new CommUpgradeCode();
     }
 
     public String getTabName(ViewContext context)

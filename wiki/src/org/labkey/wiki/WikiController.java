@@ -90,7 +90,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
@@ -655,8 +654,10 @@ public class WikiController extends SpringActionController
             JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
 
-            getPageConfig().setTemplate(PageConfig.Template.None);
-            return new PrintTemplate(v, "Print all pages in " + getContainer().getPath());
+            getPageConfig().setTemplate(PageConfig.Template.Print);
+            getPageConfig().setTitle("Print all pages in " + getContainer().getPath());
+
+            return v;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -685,8 +686,10 @@ public class WikiController extends SpringActionController
             JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
 
-            getPageConfig().setTemplate(PageConfig.Template.None);
-            return new PrintTemplate(v, "Print of " + rootWiki.getLatestVersion().getTitle() + " and Descendants");
+            getPageConfig().setTemplate(PageConfig.Template.Print);
+            getPageConfig().setTitle("Print of " + rootWiki.getLatestVersion().getTitle() + " and Descendants");
+
+            return v;
         }
         
         public NavTree appendNavTrail(NavTree root)
@@ -724,9 +727,10 @@ public class WikiController extends SpringActionController
             Set<WikiTree> wikis = Collections.singleton(tree);
             JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikis));
             v.setFrame(WebPartView.FrameType.NONE);
-            getPageConfig().setTemplate(PageConfig.Template.None);
+            getPageConfig().setTemplate(PageConfig.Template.Print);
+            getPageConfig().setTitle("Print Page '" + name + "'");
 
-            return new PrintTemplate(v, "Print Page '" + name + "'");
+            return v;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -745,9 +749,10 @@ public class WikiController extends SpringActionController
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
             JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
-            getPageConfig().setTemplate(PageConfig.Template.None);
+            getPageConfig().setTemplate(PageConfig.Template.Print);
+            getPageConfig().setTitle("Print All Pages");
 
-            return new PrintTemplate(v, "Print All Pages");
+            return v;
         }
 
         public NavTree appendNavTrail(NavTree root)

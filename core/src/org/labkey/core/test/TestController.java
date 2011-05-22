@@ -20,14 +20,24 @@ import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -52,13 +62,33 @@ import java.util.ArrayList;
  */
 public class TestController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(TestController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TestController.class);
 
     public TestController() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
+
+
+    // Test action
+    @RequiresPermissionClass(ReadPermission.class)
+    public class TestAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            // Add code here
+
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
 
     private ActionURL actionURL(Class<? extends Controller> actionClass)
     {

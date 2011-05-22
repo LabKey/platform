@@ -595,7 +595,7 @@ public class StudyManager
     }
 
 
-    // TODO: Should be able to send List<Bean> to builk insert method, so we don't have to translate like this
+    // TODO: Should be able to send List<Bean> to bulk insert method, so we don't have to translate like this
     public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws IOException, ValidationException, SQLException
     {
         List<Map<String, Object>> maps = new LinkedList<Map<String, Object>>();
@@ -653,7 +653,7 @@ public class StudyManager
             // We want delete and bulk insert in the same transaction
             scope.ensureTransaction();
 
-            Table.delete(tinfo, containerFilter);
+            clearVisitAliases(study);
             List<String> keys = OntologyManager.insertTabDelimited(tinfo, study.getContainer(), user, helper, loader.load(), null);
 
             scope.commitTransaction();
