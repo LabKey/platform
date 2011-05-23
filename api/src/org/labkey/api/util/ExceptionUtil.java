@@ -164,15 +164,8 @@ public class ExceptionUtil
 
         ex = unwrapException(ex);
 
-        if (ex == null ||
-                null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
-                ex instanceof SkipMothershipLogging ||
-                isClientAbortException(ex) ||
-                _jobRunner.getJobCount() > 10)
-        {
-            // Don't log these
+        if (isIgnoreable(ex))
             return;
-        }
 
         _log.error("Exception detected and logged to mothership", ex);
 
@@ -288,6 +281,17 @@ public class ExceptionUtil
         }
     }
 
+    public static boolean isIgnoreable(Throwable ex)
+    {
+        Map<Enum,String> decorations = getExceptionDecorations(ex);
+        
+        return ex == null ||
+                null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
+                ex instanceof SkipMothershipLogging ||
+                isClientAbortException(ex) ||
+                _jobRunner.getJobCount() > 10;
+    }
+
     static class WebPartErrorView extends WebPartView
     {
         private final ErrorRenderer _renderer;
@@ -333,7 +337,7 @@ public class ExceptionUtil
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
     public static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, String message, boolean startupFailure)
     {
-        DbScope.rollbackAllTransactions();
+        DbScope.closeAllConnections();
 
         // First, get rid of RuntimeException, InvocationTargetException, etc. wrappers
         ex = unwrapException(ex);

@@ -2247,8 +2247,8 @@ public class Table
             if (null == containerParameter)
             {
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
-                if (autoFillDefaultColumns && null != c)
-                    containerParameter.setValue(c.getId(), true);
+//                if (autoFillDefaultColumns && null != c)
+//                    containerParameter.setValue(c.getId(), true);
             }
             appendParameterOrVariable(values, d, useVariables, containerParameter, parameterToVariable);
             done.add("Container");

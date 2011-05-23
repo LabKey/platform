@@ -255,49 +255,6 @@ public class DbScope
     }
 
 
-    private void rollbackTransaction()
-    {
-        Transaction t = _transaction.get();
-        if (t == null)
-        {
-            throw new IllegalStateException("No transaction is associated with this thread");
-        }
-
-        t._aborted = true;
-        t._closesToIgnore++;
-        Connection conn = t.getConnection();
-        try
-        {
-            conn.rollback();
-        }
-        catch (SQLException x)
-        {
-            _log.error(x);
-        }
-        if (t.decrementCount())
-        {
-            try
-            {
-                conn.setAutoCommit(true);
-            }
-            catch (SQLException x)
-            {
-                _log.error(x);
-            }
-            try
-            {
-                conn.close();
-            }
-            catch (SQLException x)
-            {
-                _log.error(x);
-            }
-            _transaction.remove();
-        }
-        t.clearCommitTasks();
-    }
-
-
     public boolean isTransactionActive()
     {
         return getCurrentTransaction() != null;
@@ -473,19 +430,9 @@ public class DbScope
                 {
                     t._aborted = true;
                 }
-                
-                Connection conn = t.getConnection();
 
-                try
-                {
-                    conn.close();
-                }
-                catch (SQLException e)
-                {
-                    _log.error("Failed to close connection", e);
-                }
+                t.closeConnection();
 
-                t.closeCaches();
                 _transaction.remove();
             }
             else
@@ -792,21 +739,22 @@ public class DbScope
         }
     }
 
-    public static void rollbackAllTransactions()
+    public static void closeAllConnections()
     {
         synchronized (_scopes)
         {
             for (DbScope scope : _scopes.values())
             {
-                if (scope.isTransactionActive())
+                Transaction t = _transaction.get();
+                if (t != null)
                 {
                     try
                     {
-                        scope.rollbackTransaction();
+                        t.closeConnection();
                     }
                     catch (Exception x)
                     {
-                        _log.error("Rollback All Transactions", x);
+                        _log.error("Failure forcing connection close on " + scope, x);
                     }
                 }
             }
@@ -986,6 +934,24 @@ public class DbScope
             }
 
             return _count == 0;
+        }
+
+        private void closeConnection()
+        {
+            _aborted = true;
+            Connection conn = getConnection();
+
+            try
+            {
+                conn.close();
+            }
+            catch (SQLException e)
+            {
+                _log.error("Failed to close connection", e);
+            }
+
+            closeCaches();
+            clearCommitTasks();
         }
     }
 
