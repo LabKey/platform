@@ -2214,8 +2214,8 @@ public class Table
                 useVariables = d.isPostgreSQL();
                 sqlfDeclare.append("DECLARE " + objectIdVar + " INT;\n");
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
-                if (autoFillDefaultColumns && null != c)
-                    containerParameter.setValue(c.getId(), true);
+//                if (autoFillDefaultColumns && null != c)
+//                    containerParameter.setValue(c.getId(), true);
                 String parameterName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
                         ? updatable.getObjectURIColumnName()
                         : "objecturi";
