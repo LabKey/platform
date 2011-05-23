@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
@@ -923,7 +924,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return false;
         if (str.equals("1") || str.equalsIgnoreCase("true"))
             return true;
-        return (Boolean)ConvertUtils.convert(str, Boolean.class);
+        try
+        {
+            return (Boolean)ConvertUtils.convert(str, Boolean.class);
+        }
+        catch (ConversionException e)
+        {
+            return false;
+        }
     }
 
 
