@@ -23,6 +23,7 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.model.Issue;
+import org.labkey.issue.model.IssueManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,9 +36,9 @@ import java.util.Set;
 public class IssueUpdateEmailTemplate extends EmailTemplate
 {
     protected static final String DEFAULT_SUBJECT =
-            "Issue #^issueId^, \"^title^,\" has been ^action^";
+            "^itemName^ #^issueId^, \"^title^,\" has been ^action^";
     protected static final String DEFAULT_BODY =
-            "You can review this issue here: ^detailsURL^\n" +
+            "You can review this ^itemNameLowerCase^ here: ^detailsURL^\n" +
             "Modified by: ^user^\n" +
             "^modifiedFields^\n" +
             "^comment^";
@@ -69,6 +70,22 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         _replacements.add(new ReplacementParam("action", "Description of the type of action, like 'opened' or 'resolved'")
         {
             public String getValue(Container c) {return _change;}
+        });
+        _replacements.add(new ReplacementParam("itemName", "Potentially customized singular item name, typically 'Issue'")
+        {
+            public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).singularName.toString();}
+        });
+        _replacements.add(new ReplacementParam("itemNameLowerCase", "Potentially customized singular item name in lower case, typically 'issue'")
+        {
+            public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).singularName.toString().toLowerCase();}
+        });
+        _replacements.add(new ReplacementParam("itemNamePlural", "Potentially customized plural item name, typically 'Issues'")
+        {
+            public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).pluralName.toString();}
+        });
+        _replacements.add(new ReplacementParam("itemNamePluralLowerCase", "Potentially customized plural item name in lower case, typically 'issues'")
+        {
+            public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).pluralName.toString().toLowerCase();}
         });
         _replacements.add(new UserIdReplacementParam("user", "The display name of the user performing the operation")
         {

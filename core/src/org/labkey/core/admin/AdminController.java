@@ -476,6 +476,10 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
+            if (!getUser().isAdministrator())
+            {
+                getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            }
             getPageConfig().setTemplate(Template.Dialog);
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
             String content = "This site is currently undergoing maintenance.";

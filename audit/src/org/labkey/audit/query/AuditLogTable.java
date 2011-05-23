@@ -19,6 +19,7 @@ package org.labkey.audit.query;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditDisplayColumnFactory;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
@@ -65,6 +66,7 @@ public class AuditLogTable extends FilteredTable
         super(tInfo, schema.getContainer());
 
         _viewFactory = AuditLogService.get().getAuditViewFactory(viewFactoryName);
+        setInsertURL(AbstractTableInfo.LINK_DISABLER);
 
         ColumnInfo createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));
         createdBy.setFk(new UserIdForeignKey());
