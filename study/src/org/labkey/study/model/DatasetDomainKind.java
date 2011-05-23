@@ -16,31 +16,20 @@
 
 package org.labkey.study.model;
 
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -175,48 +164,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     }
 
 
-
-    // consider move into StudyManager
-    private static Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(1000, CacheManager.DAY, "Domain->Dataset map");
-
-    private CacheLoader<String, Pair<String, Integer>> loader = new CacheLoader<String, Pair<String, Integer>>()
-    {
-        @Override
-        public Pair<String, Integer> load(String domainURI, Object argument)
-        {
-            SQLFragment sql = new SQLFragment();
-            sql.append("SELECT container, datasetid FROM study.Dataset WHERE TypeURI=?");
-            sql.add(domainURI);
-            ResultSet rs = null;
-            try
-            {
-                rs = Table.executeQuery(StudySchema.getInstance().getSchema(),sql);
-                if (!rs.next())
-                    return null;
-                else
-                    return new Pair<String, Integer>(rs.getString(1), rs.getInt(2));
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
-        }
-    };
-
-
     DataSetDefinition getDatasetDefinition(String domainURI)
     {
-        Pair<String,Integer> p = domainCache.get(domainURI, null, loader);
-        if (null == p)
-            return null;
-
-        Container c = ContainerManager.getForId(p.first);
-        Study study = StudyManager.getInstance().getStudy(c);
-        return StudyManager.getInstance().getDataSetDefinition(study, p.second);
+        return StudyManager.getInstance().getDatasetDefinition(domainURI);
     }
 
 

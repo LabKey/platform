@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
@@ -101,6 +102,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -260,6 +262,7 @@ public class StudyManager
         //_tableInfoStudyData = StudySchema.getInstance().getTableInfoStudyData(null);
         _tableInfoUploadLog = StudySchema.getInstance().getTableInfoUploadLog();
     }
+
 
     class DataSetHelper extends QueryHelper<DataSetDefinition>
     {
@@ -1569,6 +1572,64 @@ public class StudyManager
         }
     }
 
+
+    // domainURI -> <Container,DatasetId>
+    private static Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(1000, CacheManager.DAY, "Domain->Dataset map");
+
+    private CacheLoader<String, Pair<String, Integer>> loader = new CacheLoader<String, Pair<String, Integer>>()
+    {
+        @Override
+        public Pair<String, Integer> load(String domainURI, Object argument)
+        {
+            SQLFragment sql = new SQLFragment();
+            sql.append("SELECT container, datasetid FROM study.Dataset WHERE TypeURI=?");
+            sql.add(domainURI);
+            ResultSet rs = null;
+            try
+            {
+                rs = Table.executeQuery(StudySchema.getInstance().getSchema(),sql);
+                if (!rs.next())
+                    return null;
+                else
+                    return new Pair<String, Integer>(rs.getString(1), rs.getInt(2));
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
+    };
+
+
+    @Nullable
+    DataSetDefinition getDatasetDefinition(String domainURI)
+    {
+        for (int retry=0 ; retry < 2 ; retry++)
+        {
+            Pair<String,Integer> p = domainCache.get(domainURI, null, loader);
+            if (null == p)
+                return null;
+
+            Container c = ContainerManager.getForId(p.first);
+            Study study = StudyManager.getInstance().getStudy(c);
+            if (null != c && null != study)
+            {
+                DataSetDefinition ret = StudyManager.getInstance().getDataSetDefinition(study, p.second);
+                if (null != ret && StringUtils.equalsIgnoreCase(ret.getDomain().getTypeURI(), domainURI))
+                    return ret;
+            }
+            domainCache.remove(domainURI);
+        }
+        return null;
+    }
+
+
+
+
     public List<String> getDatasetLSIDs(User user, DataSetDefinition def) throws ServletException, SQLException
     {
         TableInfo tInfo = def.getTableInfo(user, true);
@@ -1585,9 +1646,13 @@ public class StudyManager
         return lsids;
     }
 
+
     public void uncache(DataSetDefinition def)
     {
         _dataSetHelper.clearCache(def);
+        String uri = def.getTypeURI();
+        if (null != uri)
+            domainCache.remove(uri);
     }
 
 
