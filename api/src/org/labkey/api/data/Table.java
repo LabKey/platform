@@ -1279,7 +1279,7 @@ public class Table
     public static Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort)
             throws SQLException
     {
-        return 	QueryService.get().select(table, columns, filter, sort);
+        return QueryService.get().select(table, columns, filter, sort);
     }
 
 

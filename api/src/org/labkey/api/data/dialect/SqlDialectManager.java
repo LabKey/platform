@@ -50,8 +50,12 @@ public class SqlDialectManager
         String driverClassName = props.getDriverClassName();
 
         for (SqlDialectFactory factory : _factories)
-            if (factory.claimsDriverClassName(driverClassName))
-                return factory.create();
+        {
+            SqlDialect dialect = factory.createFromDriverClassName(driverClassName);
+
+            if (null != dialect)
+                return dialect;
+        }
 
         throw new SqlDialectNotSupportedException("The database driver \"" + props.getDriverClassName() + "\" specified in data source \"" + props.getDataSourceName() + "\" is not supported in your installation.");
     }
@@ -66,8 +70,12 @@ public class SqlDialectManager
     public static SqlDialect getFromProductName(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         for (SqlDialectFactory factory : _factories)
-            if (factory.claimsProductNameAndVersion(dataBaseProductName, databaseProductVersion, jdbcDriverVersion, logWarnings))
-                return factory.create();
+        {
+            SqlDialect dialect = factory.createFromProductNameAndVersion(dataBaseProductName, databaseProductVersion, jdbcDriverVersion, logWarnings);
+
+            if (null != dialect)
+                return dialect;
+        }
 
         throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + databaseProductVersion.toString() + " -- is not supported by your LabKey installation.");
     }

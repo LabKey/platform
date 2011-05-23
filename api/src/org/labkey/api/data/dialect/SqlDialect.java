@@ -478,20 +478,14 @@ public abstract class SqlDialect
         Set<String> shouldAdd = new TreeSet<String>();
         Set<String> shouldRemove = new TreeSet<String>();
 
+        // First, test the test: execute the test SQL with an identifier that definitely isn't a keyword.  If this
+        // fails, there's a syntax issue with the test SQL.
+        if (isKeyword(conn, "abcdefghi"))
+            throw new IllegalStateException("Legitimate keyword generated an error on " + getProductName());
+
         for (String candidate : candidates)
         {
-            boolean reserved;
-            String sql = getIdentifierTestSql(candidate);
-
-            try
-            {
-                Table.execute(conn, sql, null);
-                reserved = false;
-            }
-            catch (SQLException e)
-            {
-                reserved = true;
-            }
+            boolean reserved = isKeyword(conn, candidate);
 
             if (isReserved(candidate) != reserved)
             {
@@ -520,6 +514,22 @@ public abstract class SqlDialect
     }
 
 
+    protected boolean isKeyword(Connection conn, String candidate)
+    {
+        String sql = getIdentifierTestSql(candidate);
+
+        try
+        {
+            Table.execute(conn, sql, null);
+            return false;
+        }
+        catch (SQLException e)
+        {
+            return true;
+        }
+    }
+
+
     public void testKeywordCandidates(Connection conn) throws IOException, SQLException
     {
         Set<String> jdbcKeywords = getJdbcKeywords(conn);
@@ -532,9 +542,14 @@ public abstract class SqlDialect
     }
 
 
-    protected String getIdentifierTestSql(String id)
+    protected String getIdentifierTestSql(String candidate)
     {
-        return "SELECT " + id + " FROM (SELECT 1 AS " + id + ") x ORDER BY " + id;
+        String keyword = getTempTableKeyword();
+        String name = getTempTablePrefix() + candidate;
+
+        return "SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
+               "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
+               "DROP TABLE " + name + ";";
     }
 
 
