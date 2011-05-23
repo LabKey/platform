@@ -86,12 +86,11 @@ public class FlagColumnRenderer extends DataColumn
         out.write("<img height=\"16\" width=\"16\" src=\"");
         out.write(h(src));
         out.write("\"");
-        if (comment != null)
-        {
-            out.write(" title=\"");
-            out.write(h(comment));
-            out.write("\"");
-        }
+        if (comment == null)
+            comment = "Flag for review";
+        out.write(" title=\"");
+        out.write(h(comment));
+        out.write("\"");
         out.write(" flagId=\"");
         out.write(h(objectId));
         out.write("\"");

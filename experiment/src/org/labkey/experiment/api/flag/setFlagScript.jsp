@@ -15,66 +15,62 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.exp.api.ExperimentUrls"%>
-<%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<% 
-    ActionURL setFlagUrl = urlProvider(ExperimentUrls.class).getSetFlagURL(getViewContext().getContainer());
-%>
-
 <script type="text/javascript">
-    var defaultComment = "Flagged for review";
+
+    /* This method is called when a flag field is clicked */
     function setFlag(flagId)
     {
-        var urlSet = <%=q(setFlagUrl.toString())%> + '&lsid=' + escape(flagId);
-        var images = [];
-        var allImages = document.images;
-        var allImageCount = allImages.length;
-        for (var i = 0; i < allImageCount; i++)
-        {
-            var image = allImages[i];
-            if (image.getAttribute("flagId") == flagId)
-            {
-                images[images.length] = image;
-            }
-        }
-        if (images.length == 0)
-            return false;
-        var comment = images[0].getAttribute("title");
-        if (!comment)
-            comment = defaultComment;
-        var imgSrc = images[0].src;
-        var newComment = window.prompt("Enter a comment", comment ? comment : defaultComment);
-        if (newComment != null)
-        {
-            if (newComment)
-                defaultComment = newComment;
-            urlSet += "&comment=" + escape(newComment) + "&unique=" + new Date().getTime();
-        }
-        for (var j = 0; j < images.length; j++)
-        {
-            var img = images[j];
-            img.src = <%=q(AppProps.getInstance().getContextPath() + "/Experiment/flagWait.gif")%>;
-            
-            if (newComment == null)
-            {
-                // user canceled; restore original img src
-                img.src = imgSrc;
-            }
-            else
-            {
-                img.src = urlSet;
-                if (newComment)
-                {
-                    img.setAttribute("title", newComment);
-                }
-                else
-                {
-                    img.removeAttribute("title");
+        Ext.onReady(function(){
+
+            var defaultComment = "Flagged for review";
+
+            Ext.QuickTips.init();
+
+            var allImages = document.images, w;
+            for (var i = 0; i < allImages.length; i ++) {
+                if (allImages[i].getAttribute("flagId") == flagId) {
+                    if (allImages[i].title != "Flag for review") defaultComment = allImages[i].title || defaultComment;
+                    w = allImages[i];
                 }
             }
-        }
+
+            var el = Ext.get(w);
+            var box = Ext.MessageBox.show({
+                title   : 'Review',
+                prompt  : true,
+                msg     : 'Enter a comment',
+                value   : defaultComment,
+                width   : 300,
+                fn      : function(btnId, value) {
+                    if (btnId == 'ok'){
+                        Ext.Ajax.request({
+                            url    : LABKEY.ActionURL.buildURL('experiment', 'setFlag.api'),
+                            params : {
+                                lsid    : flagId,
+                                comment : value,
+                                unique  : new Date().getTime()
+                            },
+                            success : function() {
+                                if (value.length) {
+                                    w.src = LABKEY.contextPath + "/Experiment/flagDefault.gif";
+                                    w.title = value;
+                                }
+                                else {
+                                    w.src = LABKEY.contextPath + "/Experiment/unflagDefault.gif";
+                                    w.title = "Flag for review";
+                                }
+                            },
+                            failure : function() { alert("Failure!"); }
+                        });
+                    }
+                },
+                buttons : Ext.MessageBox.OKCANCEL
+            });
+
+            box.getDialog().setPosition(el.getAnchorXY()[0]-75, el.getAnchorXY()[1]-75);
+        });
+
         return false;
     }
 </script>
