@@ -420,7 +420,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
         }
         else
-            _log.info("Failed checking dependecies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
+            _log.info("Failed checking dependencies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
+
         return new ArrayList<QuerySnapshotDefinition>(dependencies.values());
     }
 

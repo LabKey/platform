@@ -17,6 +17,7 @@
 package org.labkey.core;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
@@ -47,48 +48,52 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     }
 
     @Override
-    public boolean claimsDriverClassName(String driverClassName)
+    public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return "org.postgresql.Driver".equals(driverClassName);
+        if ("org.postgresql.Driver".equals(driverClassName))
+            return new PostgreSql83Dialect();
+        else
+            return null;
     }
 
     private final String _recommended = getProductName() + " 9.0 is the recommended version.";
 
     @Override
-    public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
         if (!getProductName().equals(dataBaseProductName))
-            return false;
+            return null;
 
         int version = databaseProductVersion.getVersionInt();
 
         // Version 8.3 or greater is allowed...
         if (version >= 83)
         {
-            if (logWarnings)
+            if (83 == version)
             {
                 // ...but warn for anything less than 8.3.7
-                if (83 == version && databaseProductVersion.getRevisionAsInt() < 7)
-                {
+                if (logWarnings && databaseProductVersion.getRevisionAsInt() < 7)
                     _log.warn("LabKey Server has known issues with " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
-                }
-                // ...or greater than 9.0
-                else if (version > 90)
-                {
-                    _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
-                }
+
+                return new PostgreSql83Dialect();
             }
 
-            return true;
+            if (84 == version)
+                return new PostgreSql84Dialect();
+
+            if (90 == version)
+                return new PostgreSql90Dialect();
+
+            if (version > 90)
+            {
+                if (logWarnings)
+                    _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
+
+                return new PostgreSql91Dialect();
+            }
         }
 
         throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.  You must upgrade your database server installation; " + _recommended);
-    }
-
-    @Override
-    public SqlDialect create()
-    {
-        return new PostgreSqlDialect();
     }
 
 
@@ -109,8 +114,11 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             // 8.2 or lower should result in bad version number
             badVersion("PostgreSQL", 0.0, 8.2, null);
 
-            //  >= 8.3 should be good
-            good("PostgreSQL", 8.3, 11.0, "", PostgreSqlDialect.class);
+            // >= 8.3 should be good
+            good("PostgreSQL", 8.3, 8.4, "", PostgreSql83Dialect.class);
+            good("PostgreSQL", 8.4, 8.5, "", PostgreSql84Dialect.class);
+            good("PostgreSQL", 9.0, 9.1, "", PostgreSql90Dialect.class);
+            good("PostgreSQL", 9.1, 11.0, "", PostgreSql91Dialect.class);
         }
     }
 
@@ -139,7 +147,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
 
             try
             {
-                SqlDialect dialect = new PostgreSqlDialect();
+                SqlDialect dialect = new PostgreSql83Dialect();
                 TestUpgradeCode good = new TestUpgradeCode();
                 dialect.runSql(null, goodSql, good, null);
                 assertEquals(4, good.getCounter());
@@ -160,7 +168,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
         @Test
         public void testJdbcHelper()
         {
-            SqlDialect dialect = new PostgreSqlDialect();
+            SqlDialect dialect = new PostgreSql83Dialect();
             JdbcHelper helper = dialect.getJdbcHelper();
 
             try

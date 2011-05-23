@@ -27,6 +27,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
@@ -45,6 +46,27 @@ public class MySqlDialect extends SimpleSqlDialect
     {
         return "accessible, add, all, alter, analyze, and, as, asc, asensitive, before, between, bigint, binary, blob, both, by, call, cascade, case, change, char, character, check, collate, column, condition, constraint, continue, convert, create, cross, current_date, current_time, current_timestamp, current_user, cursor, database, databases, day_hour, day_microsecond, day_minute, day_second, dec, decimal, declare, default, delayed, delete, desc, describe, deterministic, distinct, distinctrow, div, double, drop, dual, each, else, elseif, enclosed, end-exec, escaped, exists, exit, explain, false, fetch, float, float4, float8, for, force, foreign, from, fulltext, grant, group, having, high_priority, hour_microsecond, hour_minute, hour_second, if, ignore, in, index, infile, inner, inout, insensitive, insert, int, int1, int2, int3, int4, int8, integer, interval, into, is, iterate, join, key, keys, kill, leading, leave, left, like, limit, linear, lines, load, localtime, localtimestamp, lock, long, longblob, longtext, loop, low_priority, master_ssl_verify_server_cert, match, maxvalue, mediumblob, mediumint, mediumtext, middleint, minute_microsecond, minute_second, mod, modifies, natural, no_write_to_binlog, not, null, numeric, on, optimize, option, optionally, or, order, out, outer, outfile, precision, primary, procedure, purge, range, read, read_write, reads, real, references, regexp, release, rename, repeat, replace, require, resignal, restrict, return, revoke, right, rlike, schema, schemas, second_microsecond, select, sensitive, separator, set, show, signal, smallint, spatial, specific, sql, sql_big_result, sql_calc_found_rows, sql_small_result, sqlexception, sqlstate, sqlwarning, ssl, starting, straight_join, table, terminated, then, tinyblob, tinyint, tinytext, to, trailing, trigger, true, undo, union, unique, unlock, unsigned, update, usage, use, using, utc_date, utc_time, utc_timestamp, values, varbinary, varchar, varcharacter, varying, when, where, while, with, write, xor, year_month, zerofill";
     }
+
+    @Override
+    // MySQL doesn't like executing multiple statements at once, so break it into separate calls.
+    protected boolean isKeyword(Connection conn, String candidate)
+    {
+        String tableName = getTempTablePrefix() + candidate;
+
+        try
+        {
+            Table.execute(conn, "SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";", null);
+            Table.execute(conn, "CREATE TEMPORARY TABLE mysql." + tableName + " (" + candidate + " VARCHAR(50));", null);
+            Table.execute(conn, "DROP TEMPORARY TABLE mysql." + tableName + ";", null);
+
+            return false;
+        }
+        catch (SQLException e)
+        {
+            return true;
+        }
+    }
+
 
     @Override
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
@@ -199,4 +221,16 @@ public class MySqlDialect extends SimpleSqlDialect
     {
         return "`" + id.replaceAll("`", "``") + "`";
     }
+
+    @Override
+    public String getTempTableKeyword()
+    {
+        return "TEMPORARY";
+    }
+
+    @Override
+    public String getTempTablePrefix()
+    {
+        return "";
+    }  
 }

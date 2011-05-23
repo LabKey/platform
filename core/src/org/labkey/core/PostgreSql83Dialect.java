@@ -66,27 +66,28 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for PostgreSQL
-class PostgreSqlDialect extends SqlDialect
+class PostgreSql83Dialect extends SqlDialect
 {
-    private static final Logger _log = Logger.getLogger(PostgreSqlDialect.class);
+    private static final Logger _log = Logger.getLogger(PostgreSql83Dialect.class);
 
     private final Map<String, Integer> _userDefinedTypeScales = new ConcurrentHashMap<String, Integer>();
 
     @Override
     protected @NotNull String getReservedWords()
     {
-        return  "all, analyse, analyze, and, any, array, as, asc, asymmetric, authorization, binary, both, case, cast, check, " +
-                "collate, column, concurrently, constraint, create, cross, default, deferrable, desc, distinct, do, else, " +
-                "end, end-exec, except, fetch, for, foreign, freeze, from, full, grant, group, having, ilike, in, initially, " +
-                "inner, intersect, into, is, isnull, join, leading, left, like, limit, natural, not, notnull, null, offset, " +
-                "on, only, or, order, outer, over, overlaps, placing, primary, references, returning, right, select, similar, " +
-                "some, symmetric, table, then, to, trailing, union, unique, user, using, variadic, verbose, when, where, window, " +
-                "with" +
+        return  "all, analyse, analyze, and, any, array, as, asc, asymmetric, authorization, binary, both, case, cast, " +
+                "check, collate, column, concurrently, constraint, create, cross, current_catalog, current_date, " +
+                "current_role, current_schema, current_time, current_timestamp, current_user, default, deferrable, desc, " +
+                "distinct, do, else, end, end-exec, except, fetch, for, foreign, freeze, from, full, grant, group, having, " +
+                "ilike, in, initially, inner, intersect, into, is, isnull, join, leading, left, like, limit, localtime, " +
+                "localtimestamp, natural, not, notnull, null, offset, on, only, or, order, outer, over, overlaps, placing, " +
+                "primary, references, returning, right, select, session_user, similar, some, symmetric, table, then, to, " +
+                "trailing, union, unique, user, using, variadic, verbose, when, where, window, with" +
 
                 // for <= PostgreSQL 8.4
                 ", between, new, off, old" +
 
-                // For <= PostgreSQL 8.3
+                // For = PostgreSQL 8.3
                 ", false, true";
     }
 
@@ -419,16 +420,19 @@ class PostgreSqlDialect extends SqlDialect
         return Boolean.toString(b);
     }
 
+    @Override
     public String getTempTableKeyword()
     {
         return "TEMPORARY";
     }
 
+    @Override
     public String getTempTablePrefix()
     {
         return "";
     }
 
+    @Override
     public String getGlobalTempTablePrefix()
     {
         return "temp.";

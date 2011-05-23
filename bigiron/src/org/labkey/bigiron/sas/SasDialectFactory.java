@@ -16,6 +16,8 @@
 
 package org.labkey.bigiron.sas;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.util.VersionNumber;
@@ -28,7 +30,7 @@ import java.util.Collections;
 * Date: Nov 26, 2010
 * Time: 10:25:16 PM
 */
-public class Sas91DialectFactory extends SqlDialectFactory
+public class SasDialectFactory extends SqlDialectFactory
 {
     private String getProductName()
     {
@@ -36,22 +38,25 @@ public class Sas91DialectFactory extends SqlDialectFactory
     }
 
     @Override
-    public boolean claimsDriverClassName(String driverClassName)
+    public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return false;    // Only used to create a new database, which we never do on SAS
+        return null;    // Only used to create a new database, which we never do on SAS
     }
 
     // SAS/SHARE driver throws when invoking DatabaseMetaData database version methods, so use the jdbcDriverVersion to determine dialect version
     @Override
-    public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings)
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
-        return dataBaseProductName.equals(getProductName()) && jdbcDriverVersion.startsWith("9.1");
-    }
+        if (!getProductName().equals(dataBaseProductName))
+            return null;
 
-    @Override
-    public SqlDialect create()
-    {
-        return new Sas91Dialect();
+        if (jdbcDriverVersion.startsWith("9.1"))
+            return new Sas91Dialect();
+
+        if (jdbcDriverVersion.startsWith("9.2"))
+            return new Sas92Dialect();
+
+        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
     }
 
     @Override

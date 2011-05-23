@@ -21,11 +21,9 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.bigiron.mssql.MicrosoftSqlServer2000DialectFactory;
-import org.labkey.bigiron.mssql.MicrosoftSqlServer2005DialectFactory;
+import org.labkey.bigiron.mssql.MicrosoftSqlServerDialectFactory;
 import org.labkey.bigiron.mysql.MySqlDialectFactory;
-import org.labkey.bigiron.sas.Sas91DialectFactory;
-import org.labkey.bigiron.sas.Sas92DialectFactory;
+import org.labkey.bigiron.sas.SasDialectFactory;
 import org.labkey.bigiron.sas.SasExportScriptFactory;
 
 import java.util.Collection;
@@ -55,11 +53,9 @@ public class BigIronModule extends DefaultModule
 
     protected void init()
     {
-        SqlDialectManager.register(new MicrosoftSqlServer2000DialectFactory());
-        SqlDialectManager.register(new MicrosoftSqlServer2005DialectFactory());
+        SqlDialectManager.register(new MicrosoftSqlServerDialectFactory());
         SqlDialectManager.register(new MySqlDialectFactory());
-        SqlDialectManager.register(new Sas91DialectFactory());
-        SqlDialectManager.register(new Sas92DialectFactory());
+        SqlDialectManager.register(new SasDialectFactory());
 
         QueryView.register(new SasExportScriptFactory());
     }

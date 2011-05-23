@@ -1513,7 +1513,7 @@ public class StudyManager
         try
         {
             SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
-            filter.addCondition("Label", label);
+            filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, "Label");
 
             DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
             if (defs != null && defs.length == 1)
@@ -1555,7 +1555,7 @@ public class StudyManager
         try
         {
             SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
-            filter.addCondition("Name", name);
+            filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, "Name");
 
             DataSet[] defs = _dataSetHelper.get(s.getContainer(), filter);
             if (defs != null && defs.length == 1)

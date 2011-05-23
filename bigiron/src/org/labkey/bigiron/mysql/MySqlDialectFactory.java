@@ -17,6 +17,7 @@
 package org.labkey.bigiron.mysql;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
@@ -40,16 +41,16 @@ public class MySqlDialectFactory extends SqlDialectFactory
     }
 
     @Override
-    public boolean claimsDriverClassName(String driverClassName)
+    public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return false;    // Only used to create a new database, which we never do on MySQL
+        return null;    // Only used to create a new database, which we never do on MySQL
     }
 
     @Override
-    public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
         if (!getProductName().equals(dataBaseProductName))
-            return false;
+            return null;
 
         int version = databaseProductVersion.getVersionInt();
 
@@ -58,18 +59,12 @@ public class MySqlDialectFactory extends SqlDialectFactory
         {
             // ...but warn for anything greater than 5.5
             if (logWarnings && version > 55)
-                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ".  " +  getProductName() + " 5.5 is the recommended version.");
+                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " +  getProductName() + " 5.5 is the recommended version.");
 
-            return true;
+            return new MySqlDialect();
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 5.1 or greater.");
-    }
-
-    @Override
-    public SqlDialect create()
-    {
-        return new MySqlDialect();
+        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation to " + getProductName() + " version 5.1 or greater.");
     }
 
     @Override

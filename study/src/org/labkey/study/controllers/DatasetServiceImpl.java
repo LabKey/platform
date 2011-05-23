@@ -115,7 +115,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             Integer protocolRowId = dd.getProtocolId();
             if (protocolRowId != null)
             {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolRowId.intValue());
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolRowId);
                 if (protocol != null)
                 {
                     ds.setSourceAssayName(protocol.getName());
@@ -251,6 +251,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             if (!def.getLabel().equals(updated.getLabel()))
             {
                 DataSet existing = studyManager.getDataSetDefinition(study, updated.getLabel());
+
                 if (existing != null)
                 {
                     errors.add("A Dataset already exists with the label \"" + updated.getLabel() +"\"");
@@ -261,6 +262,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             if (!def.getName().equals(updated.getName()))
             {
                 DataSet existing = studyManager.getDataSetDefinitionByName(study, updated.getName());
+
                 if (existing != null)
                 {
                     errors.add("A Dataset already exists with the name \"" + updated.getName() +"\"");

@@ -17,9 +17,11 @@
 package org.labkey.bigiron.mssql;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
+import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
@@ -36,32 +38,45 @@ import java.util.Collection;
 * Date: Nov 26, 2010
 * Time: 9:51:40 PM
 */
-public class MicrosoftSqlServer2000DialectFactory extends SqlDialectFactory
+public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
 {
-    private static final Logger _log = Logger.getLogger(MicrosoftSqlServer2000DialectFactory.class);
+    private static final Logger _log = Logger.getLogger(MicrosoftSqlServerDialectFactory.class);
 
-    @Override
-    public boolean claimsDriverClassName(String driverClassName)
+    private String getProductName()
     {
-        return "net.sourceforge.jtds.jdbc.Driver".equals(driverClassName);
+        return "Microsoft SQL Server";
     }
 
     @Override
-    public boolean claimsProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings)
+    public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
+        if ("net.sourceforge.jtds.jdbc.Driver".equals(driverClassName))
+            return new MicrosoftSqlServer2000Dialect();
+        else
+            return null;
+    }
+
+    @Override
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    {
+        if (!dataBaseProductName.equals(getProductName()))
+            return null;
+
         int version = databaseProductVersion.getVersionInt();
-        boolean ret = dataBaseProductName.equals("Microsoft SQL Server") && (version < 90);
 
-        if (ret && logWarnings)
-            _log.warn("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");
+        if (version < 90)
+        {
+            if (logWarnings)
+                _log.warn("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");
 
-        return ret;
-    }
+            return new MicrosoftSqlServer2000Dialect();
+        }
 
-    @Override
-    public SqlDialect create()
-    {
-        return new MicrosoftSqlServer2000Dialect();
+        if (version >= 90)
+            return new MicrosoftSqlServer2005Dialect();
+
+        // Not possible to reach here at this point
+        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
     }
 
     @Override
