@@ -148,7 +148,7 @@ public class StudyService
         /**
          * Returns the set of containers which have ever had data copied from the provided protocol
          */
-        public Set<Container> getStudyContainersForAssayProtocol(int protocolId);
+        public List<DataSet> getDatasetsForAssayProtocol(int protocolId);
 
         public List<SecurableResource> getSecurableResources(Container container, User user);
 

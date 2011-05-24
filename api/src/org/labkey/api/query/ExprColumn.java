@@ -46,6 +46,8 @@ public class ExprColumn extends ColumnInfo
         // Since these are typically calculated columns, it doesn't make sense to show them in update or insert views
         setShownInUpdateView(false);
         setShownInInsertView(false);
+        // Unless otherwise configured, guess that it might be nullable
+        setNullable(true);
         _dependentColumns = dependentColumns;
     }
 

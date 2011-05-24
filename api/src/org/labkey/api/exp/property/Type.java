@@ -15,7 +15,10 @@
  */
 package org.labkey.api.exp.property;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
 * User: adam
@@ -26,8 +29,8 @@ import java.util.Date;
 public enum Type
 {
     StringType("Text (String)", "xsd:string", "varchar", String.class),
-    IntType("Integer", "xsd:int", "integer", Integer.class, Integer.TYPE),
-    DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
+    IntType("Integer", "xsd:int", "integer", Integer.class, Integer.TYPE, Short.class, Short.TYPE, Byte.class, Byte.TYPE),
+    DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE, Float.class, Float.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
     DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class),
     BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE),
     AttachmentType("Attachment", "xsd:attachment", "varchar", String.class);
@@ -35,20 +38,16 @@ public enum Type
     private String label;
     private String xsd;
     private Class clazz;
-    private Class type;
+    private Set<Class> allClasses = new HashSet<Class>();
     private String sqlTypeName;
 
-    Type(String label, String xsd, String sqlTypeName, Class clazz)
-    {
-        this(label, xsd, sqlTypeName,clazz,  null);
-    }
-
-    Type(String label, String xsd, String sqlTypeName, Class clazz, Class type)
+    Type(String label, String xsd, String sqlTypeName, Class clazz, Class... additionalClasses)
     {
         this.label = label;
         this.xsd = xsd;
         this.clazz = clazz;
-        this.type = type;
+        this.allClasses.add(clazz);
+        this.allClasses.addAll(Arrays.asList(additionalClasses));
         this.sqlTypeName = sqlTypeName;
     }
 
@@ -67,9 +66,9 @@ public enum Type
         return clazz;
     }
 
-    public Class getJavaType()
+    public boolean matches(Class clazz)
     {
-        return type;
+        return allClasses.contains(clazz);
     }
 
     public String getSqlTypeName()
@@ -106,13 +105,7 @@ public enum Type
     {
         for (Type type : values())
         {
-            if (type.getJavaClass().equals(clazz))
-                return type;
-
-            Class typeClass = type.getJavaType();
-
-            // Double.TYPE is supported because manually created datasets with required doubles return Double.TYPE as Class
-            if (null != typeClass && typeClass.equals(clazz))
+            if (type.matches(clazz))
                 return type;
         }
         return null;

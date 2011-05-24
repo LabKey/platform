@@ -27,7 +27,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 
@@ -121,36 +120,28 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
      */
     public void renameObjectIdDatasetColumn(User user, ExpProtocol protocol) throws SQLException
     {
-        Set<Container> studyContainers = StudyService.get().getStudyContainersForAssayProtocol(protocol.getRowId());
+        List<DataSet> dataSets = StudyService.get().getDatasetsForAssayProtocol(protocol.getRowId());
         // Iterate through all of the studies that contain a dataset created by copying from this assay
-        for (Container studyContainer : studyContainers)
+        for (DataSet dataSet : dataSets)
         {
-            Study study = StudyService.get().getStudy(studyContainer);
-            // Find the relevant dataset
-            for (DataSet dataSet : study.getDataSets())
+            Domain domain = dataSet.getDomain();
+            DomainProperty property = domain.getPropertyByName("ObjectId");
+            // Check if we have the old property name - datasets created with 11.1 won't
+            if (property != null)
             {
-                if (dataSet.getProtocolId() != null && dataSet.getProtocolId().intValue() == protocol.getRowId())
+                try
                 {
-                    Domain domain = dataSet.getDomain();
-                    DomainProperty property = domain.getPropertyByName("ObjectId");
-                    // Check if we have the old property name - datasets created with 11.1 won't
-                    if (property != null)
-                    {
-                        try
-                        {
-                            // Rename it to be "RowId"
-                            property.setName("RowId");
-                            property.setLabel("RowId");
-                            domain.save(user);
-                            // Update the key property name too
-                            dataSet.setKeyPropertyName("RowId");
-                            dataSet.save(user);
-                        }
-                        catch (ChangePropertyDescriptorException e)
-                        {
-                            throw new UnexpectedException(e);
-                        }
-                    }
+                    // Rename it to be "RowId"
+                    property.setName("RowId");
+                    property.setLabel("RowId");
+                    domain.save(user);
+                    // Update the key property name too
+                    dataSet.setKeyPropertyName("RowId");
+                    dataSet.save(user);
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw new UnexpectedException(e);
                 }
             }
         }
@@ -174,6 +165,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         Container container = protocol.getContainer();
         AssaySchema schema = AssayService.get().createSchema(user, container);
 
+        @SuppressWarnings({"deprecation"})
         RunDataTable fromTable = new RunDataTable(schema, protocol, true);
         fromTable.setContainerFilter(ContainerFilter.EVERYTHING);
 
@@ -236,29 +228,22 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         ModuleUpgrader.getLogger().info(insertInto.toString());
         Table.execute(toTable.getSchema(), insertInto);
 
-        Set<Container> studyContainers = StudyService.get().getStudyContainersForAssayProtocol(protocol.getRowId());
-        for (Container studyContainer : studyContainers)
+        List<DataSet> dataSets = StudyService.get().getDatasetsForAssayProtocol(protocol.getRowId());
+        for (DataSet dataSet : dataSets)
         {
-            Study study = StudyService.get().getStudy(studyContainer);
-            for (DataSet dataSet : study.getDataSets())
-            {
-                if (dataSet.getProtocolId() != null && dataSet.getProtocolId().intValue() == protocol.getRowId())
-                {
-                    Domain dataSetDomain = dataSet.getDomain();
-                    SQLFragment updateKeysSQL = new SQLFragment("UPDATE " + DATASET_SCHEMA_NAME + "." + dataSetDomain.getStorageTableName());
-                    updateKeysSQL.append(" SET _key = (SELECT RowId FROM ");
-                    updateKeysSQL.append(ASSAY_SCHEMA_NAME + "." + toTable.getName());
-                    updateKeysSQL.append(" WHERE CAST(_key AS INT) = " + OBJECT_ID_UPGRADE + ")");
+            Domain dataSetDomain = dataSet.getDomain();
+            SQLFragment updateKeysSQL = new SQLFragment("UPDATE " + DATASET_SCHEMA_NAME + "." + dataSetDomain.getStorageTableName());
+            updateKeysSQL.append(" SET _key = (SELECT RowId FROM ");
+            updateKeysSQL.append(ASSAY_SCHEMA_NAME + "." + toTable.getName());
+            updateKeysSQL.append(" WHERE CAST(_key AS INT) = " + OBJECT_ID_UPGRADE + ")");
 
-                    int copyFixupCount = Table.execute(toTable.getSchema(), updateKeysSQL);
+            int copyFixupCount = Table.execute(toTable.getSchema(), updateKeysSQL);
 
-                    SQLFragment updateObjectIdSQL = new SQLFragment("UPDATE " + DATASET_SCHEMA_NAME + "." + dataSetDomain.getStorageTableName());
-                    updateObjectIdSQL.append(" SET ObjectId = CAST(_key AS INT)");
-                    Table.execute(toTable.getSchema(), updateObjectIdSQL);
+            SQLFragment updateObjectIdSQL = new SQLFragment("UPDATE " + DATASET_SCHEMA_NAME + "." + dataSetDomain.getStorageTableName());
+            updateObjectIdSQL.append(" SET ObjectId = CAST(_key AS INT)");
+            Table.execute(toTable.getSchema(), updateObjectIdSQL);
 
-                    ModuleUpgrader.getLogger().info("Migrated ObjectId to RowId for " + copyFixupCount + " in " + dataSet.getContainer().getPath() + "." + dataSet.getName());
-                }
-            }
+            ModuleUpgrader.getLogger().info("Migrated ObjectId to RowId for " + copyFixupCount + " in " + dataSet.getContainer().getPath() + "." + dataSet.getName());
         }
 
         // Remove the temporary objectId column from the new assay results table

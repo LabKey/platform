@@ -88,7 +88,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayDetailRedirectAction;
@@ -1481,23 +1480,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Set<String> visibleColumnNames = new HashSet<String>();
         int datasetIndex = 0;
         Set<String> usedColumnNames = new HashSet<String>();
-        for (final Container studyContainer : StudyService.get().getStudyContainersForAssayProtocol(protocol.getRowId()))
+        for (final DataSet assayDataSet : StudyService.get().getDatasetsForAssayProtocol(protocol.getRowId()))
         {
-            if (!studyContainer.hasPermission(user, ReadPermission.class))
-                continue;
-
-            Study study = StudyService.get().getStudy(studyContainer);
-            DataSet assayDataSet = null;
-            for (DataSet dataSet : study.getDataSets())
-            {
-                if (dataSet.getProtocolId() != null && protocol.getRowId() == dataSet.getProtocolId().intValue())
-                {
-                    assayDataSet = dataSet;
-                    break;
-                }
-            }
-
-            if (assayDataSet == null || !assayDataSet.canRead(user))
+            if (!assayDataSet.getContainer().hasPermission(user, ReadPermission.class) || !assayDataSet.canRead(user))
             {
                 continue;
             }
@@ -1511,7 +1496,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
                 "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
 
-            String studyName = StudyService.get().getStudyName(studyContainer);
+            String studyName = assayDataSet.getStudy().getLabel();
             if (studyName == null)
                 continue; // No study in that folder
             String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);

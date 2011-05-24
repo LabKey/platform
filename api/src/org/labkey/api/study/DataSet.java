@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -54,6 +55,14 @@ public interface DataSet extends StudyEntity
 
     boolean isDemographicData();
 
+    /**
+     * @return true if this dataset is backed by assay data within LabKey Server. Note that if a dataset happens
+     * to contain assay data but isn't linked to an assay provider in the server, this method will return false. 
+     */
+    boolean isAssayData();
+
+    ExpProtocol getAssayProtocol();
+
     Study getStudy();
 
     Integer getCohortId();
@@ -67,8 +76,6 @@ public interface DataSet extends StudyEntity
     void setKeyPropertyName(String name);
 
     void save(User user) throws SQLException;
-
-    Integer getProtocolId();
 
     public boolean canRead(User user);
 
