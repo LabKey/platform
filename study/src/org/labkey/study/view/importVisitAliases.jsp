@@ -27,7 +27,7 @@
         </tr>
         <tr>
             <td>
-                <textarea name="tsv" rows="30" cols="30"></textarea>
+                <textarea id="tsv" name="tsv" rows="30" cols="40"></textarea>
             </td>
         </tr>
         <tr>
@@ -38,3 +38,7 @@
         </tr>
     </table>
 </form>
+<script type="text/javascript">
+    Ext.EventManager.on('tsv', 'keydown', handleTabsInTextArea);
+</script>
+

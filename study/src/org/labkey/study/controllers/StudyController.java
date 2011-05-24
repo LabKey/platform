@@ -6635,6 +6635,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(VisitAliasesForm form, boolean reshow, BindException errors) throws Exception
         {
+            getPageConfig().setFocusId("tsv");
             return new JspView<Object>("/org/labkey/study/view/importVisitAliases.jsp", null, errors);
         }
 
