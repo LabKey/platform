@@ -88,7 +88,7 @@ public class StudyExportContext extends AbstractContext
 
         for (DataSetDefinition dataset : study.getDataSets())
         {
-            if ((null == dataset.getProtocolId() && includeCRF) || (null != dataset.getProtocolId() && includeAssay))
+            if ((!dataset.isAssayData() && includeCRF) || (dataset.isAssayData() && includeAssay))
             {
                 _datasets.add(dataset);
                 _datasetIds.add(dataset.getDataSetId());

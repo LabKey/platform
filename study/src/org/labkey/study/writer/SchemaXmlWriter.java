@@ -27,6 +27,9 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.IOException;
 import java.util.List;
@@ -58,9 +61,11 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
         TablesDocument.Tables tablesXml = tablesDoc.addNewTables();
 
+        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+
         for (DataSetDefinition def : definitions)
         {
-            TableInfo ti = def.getTableInfo(ctx.getUser());
+            TableInfo ti = new DataSetTable(schema, def);
             TableType tableXml = tablesXml.addNewTable();
             DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, _defaultDateFormat);
             w.writeTable(tableXml);

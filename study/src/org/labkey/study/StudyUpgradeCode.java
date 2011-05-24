@@ -139,7 +139,7 @@ public class StudyUpgradeCode implements UpgradeCode
             {
                 for (DataSet dataSet : study.getDataSets())
                 {
-                    if (dataSet.getProtocolId() != null)
+                    if (dataSet.isAssayData())
                     {
                         Domain domain = dataSet.getDomain();
                         for (org.labkey.api.exp.property.DomainProperty prop : domain.getProperties())

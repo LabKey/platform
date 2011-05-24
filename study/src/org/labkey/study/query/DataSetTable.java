@@ -23,7 +23,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
@@ -244,7 +243,7 @@ public class DataSetTable extends FilteredTable
         visitRowId.setMeasure(false);
         addColumn(visitRowId);
 
-        if (_dsd.getProtocolId() != null)
+        if (_dsd.isAssayData())
         {
             TableInfo assayResultTable = createAssayResultTable();
             if (assayResultTable != null)
@@ -274,7 +273,7 @@ public class DataSetTable extends FilteredTable
                         defaultVisibleCols.add(fieldKey);
                     }
                 }
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId().intValue());
+                ExpProtocol protocol = _dsd.getAssayProtocol();
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
                 defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
@@ -293,60 +292,57 @@ public class DataSetTable extends FilteredTable
 
         FieldKey fieldKey = null;
 
-        if (_dsd.getProtocolId() != null)
+        // Be backwards compatible with the old field keys for these properties.
+        // We used to flatten all of the different domains/tables on the assay side into a row in the dataset,
+        // so transform to do a lookup instead
+        ExpProtocol protocol = _dsd.getAssayProtocol();
+        if (protocol != null)
         {
-            // Be backwards compatible with the old field keys for these properties.
-            // We used to flatten all of the different domains/tables on the assay side into a row in the dataset,
-            // so transform to do a lookup instead 
-            ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId());
-            if (protocol != null)
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            FieldKey runFieldKey = provider.getTableMetadata().getRunFieldKeyFromResults();
+            if (name.toLowerCase().startsWith("run"))
             {
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                FieldKey runFieldKey = provider.getTableMetadata().getRunFieldKeyFromResults();
-                if (name.toLowerCase().startsWith("run"))
+                String runProperty = name.substring("run".length()).trim();
+                if (runProperty.length() > 0)
                 {
-                    String runProperty = name.substring("run".length()).trim();
-                    if (runProperty.length() > 0)
-                    {
-                        fieldKey = new FieldKey(runFieldKey, runProperty);
-                    }
+                    fieldKey = new FieldKey(runFieldKey, runProperty);
                 }
-                else if (name.toLowerCase().startsWith("batch"))
+            }
+            else if (name.toLowerCase().startsWith("batch"))
+            {
+                String batchPropertyName = name.substring("batch".length()).trim();
+                if (batchPropertyName.length() > 0)
                 {
-                    String batchPropertyName = name.substring("batch".length()).trim();
-                    if (batchPropertyName.length() > 0)
-                    {
-                        fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
-                    }
+                    fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
                 }
-                else if (name.toLowerCase().startsWith("analyte"))
+            }
+            else if (name.toLowerCase().startsWith("analyte"))
+            {
+                String analytePropertyName = name.substring("analyte".length()).trim();
+                if (analytePropertyName.length() > 0)
                 {
-                    String analytePropertyName = name.substring("analyte".length()).trim();
-                    if (analytePropertyName.length() > 0)
+                    fieldKey = FieldKey.fromParts("Analyte", analytePropertyName);
+                    Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
+                    result = columns.get(fieldKey);
+                    if (result != null)
                     {
-                        fieldKey = FieldKey.fromParts("Analyte", analytePropertyName);
-                        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
-                        result = columns.get(fieldKey);
-                        if (result != null)
-                        {
-                            return result;
-                        }
-                        fieldKey = FieldKey.fromParts("Analyte", "Properties", analytePropertyName);
+                        return result;
                     }
+                    fieldKey = FieldKey.fromParts("Analyte", "Properties", analytePropertyName);
                 }
-                else
+            }
+            else
+            {
+                // Check the name to prevent infinite recursion
+                if (!name.equalsIgnoreCase("Properties"))
                 {
-                    // Check the name to prevent infinite recursion
-                    if (!name.equalsIgnoreCase("Properties"))
+                    // Try looking for it as a NAb specimen property
+                    fieldKey = FieldKey.fromParts("Properties", "SpecimenLsid", "Property", name);
+                    Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
+                    result = columns.get(fieldKey);
+                    if (result != null)
                     {
-                        // Try looking for it as a NAb specimen property
-                        fieldKey = FieldKey.fromParts("Properties", "SpecimenLsid", "Property", name);
-                        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
-                        result = columns.get(fieldKey);
-                        if (result != null)
-                        {
-                            return result;
-                        }
+                        return result;
                     }
                 }
             }
@@ -390,7 +386,7 @@ public class DataSetTable extends FilteredTable
         from.append("\nFROM ").append(super.getFromSQL("DS")).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
                 " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = '" + _schema.getContainer().getId() + "') AS ").append(alias);
 
-        if (_dsd.getProtocolId() != null)
+        if (_dsd.isAssayData())
         {
             // Join in Assay-side data to make it appear as if it's in the dataset table itself 
             String assayResultAlias = getAssayResultAlias(alias);
@@ -409,7 +405,7 @@ public class DataSetTable extends FilteredTable
 
     private TableInfo createAssayResultTable()
     {
-        ExpProtocol protocol = ExperimentService.get().getExpProtocol(_dsd.getProtocolId().intValue());
+        ExpProtocol protocol = _dsd.getAssayProtocol();
         if (protocol == null)
         {
             return null;
@@ -491,7 +487,7 @@ public class DataSetTable extends FilteredTable
     {
         // If this is a server-managed key, or an assay-backed dataset, don't include the key column in the default
         // set of visible columns
-        if ((_dsd.getKeyManagementType() != DataSet.KeyManagementType.None || _dsd.getProtocolId() != null) &&
+        if ((_dsd.getKeyManagementType() != DataSet.KeyManagementType.None || _dsd.isAssayData()) &&
                 col.getName().equals(_dsd.getKeyPropertyName()))
             return false;
         return (!col.isHidden() && !col.isUnselectable() && !defaultHiddenCols.contains(col.getName()));

@@ -34,6 +34,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -503,6 +504,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return _demographicData;
     }
 
+    @Override
+    public boolean isAssayData()
+    {
+        return _protocolId != null;
+    }
 
     public void setDemographicData(boolean demographicData)
     {
@@ -1200,6 +1206,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public Integer getProtocolId()
     {
         return _protocolId;
+    }
+
+    public ExpProtocol getAssayProtocol()
+    {
+        return _protocolId == null ? null : ExperimentService.get().getExpProtocol(_protocolId.intValue());
     }
 
     public void setProtocolId(Integer protocolId)

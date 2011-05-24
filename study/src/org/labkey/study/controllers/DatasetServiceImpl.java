@@ -112,17 +112,13 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             ds.setVisitDateMap(visitDateMap);
 
 
-            Integer protocolRowId = dd.getProtocolId();
-            if (protocolRowId != null)
+            ExpProtocol protocol = dd.getAssayProtocol();
+            if (protocol != null)
             {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolRowId);
-                if (protocol != null)
-                {
-                    ds.setSourceAssayName(protocol.getName());
+                ds.setSourceAssayName(protocol.getName());
 
-                    ActionURL assayURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(protocol.getContainer(), protocol);
-                    ds.setSourceAssayURL(assayURL.getLocalURIString());
-                }
+                ActionURL assayURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(protocol.getContainer(), protocol);
+                ds.setSourceAssayURL(assayURL.getLocalURIString());
             }
 
 

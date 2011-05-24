@@ -852,7 +852,7 @@ public class StudyController extends BaseStudyController
             queryView.setForExport(export != null);
             queryView.disableContainerFilterSelection();
             boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel()) &&
-                def.getProtocolId() == null;
+                !def.isAssayData();
             queryView.setShowEditLinks(showEditLinks);
 
             final ActionURL url = context.getActionURL();
@@ -948,12 +948,12 @@ public class StudyController extends BaseStudyController
             User user = getUser();
             boolean canWrite = def.canWrite(user) && def.getContainer().getPolicy().hasPermission(user, UpdatePermission.class);
             boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel());
-            boolean isAssayDataset = def.getProtocolId() != null;
+            boolean isAssayDataset = def.isAssayData();
             ExpProtocol protocol = null;
 
             if (isAssayDataset)
             {
-                protocol = ExperimentService.get().getExpProtocol(def.getProtocolId());
+                protocol = def.getAssayProtocol();
                 if (protocol == null)
                     isAssayDataset = false;
             }
@@ -2476,12 +2476,9 @@ public class StudyController extends BaseStudyController
                     event.setKey1(getContainer().getId());
 
                     String assayName = def.getLabel();
-                    if (def.getProtocolId() != null)
-                    {
-                        ExpProtocol protocol = ExperimentService.get().getExpProtocol(def.getProtocolId().intValue());
-                        if (protocol != null)
-                            assayName = protocol.getName();
-                    }
+                    ExpProtocol protocol = def.getAssayProtocol();
+                    if (protocol != null)
+                        assayName = protocol.getName();
 
                     event.setIntKey1(NumberUtils.toInt(protocolId));
                     Collection<String> lsids = entry.getValue();

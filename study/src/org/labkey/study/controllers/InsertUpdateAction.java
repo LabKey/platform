@@ -224,7 +224,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         {
             throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
-        if (ds.getProtocolId() != null)
+        if (ds.isAssayData())
         {
             throw new UnauthorizedException("This dataset comes from an assay. You cannot update it directly");
         }

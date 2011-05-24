@@ -566,19 +566,20 @@ public class StudyServiceImpl implements StudyService.Service
         return result;
     }
 
-    public Set<Container> getStudyContainersForAssayProtocol(int protocolId)
+    public List<DataSet> getDatasetsForAssayProtocol(int protocolId)
     {
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
-        SimpleFilter filter = new SimpleFilter("protocolid", new Integer(protocolId));
-        Set<Container> containers = new HashSet<Container>();
+        SimpleFilter filter = new SimpleFilter("protocolid", protocolId);
+        List<DataSet> result = new ArrayList<DataSet>();
         ResultSet rs = null;
         try
         {
-            rs = Table.select(datasetTable, new CsvSet("container,protocolid"), filter, null);
+            rs = Table.select(datasetTable, new CsvSet("container,protocolid,datasetid"), filter, null);
             while (rs.next())
             {
-                String containerId = rs.getString("container");
-                containers.add(ContainerManager.getForId(containerId));
+                Container container = ContainerManager.getForId(rs.getString("container"));
+                int datasetId = rs.getInt("datasetid");
+                result.add(getDataSet(container, datasetId));
             }
         }
         catch (SQLException e)
@@ -589,7 +590,7 @@ public class StudyServiceImpl implements StudyService.Service
         {
             if (rs != null) try {rs.close();} catch (SQLException se) {}
         }
-        return containers;
+        return result;
     }
 
     public List<SecurableResource> getSecurableResources(Container container, User user)

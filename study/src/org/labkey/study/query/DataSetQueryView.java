@@ -96,13 +96,9 @@ public class DataSetQueryView extends QueryView
         _visit = visit;
         _cohortFilter = cohortFilter;
 
-        Integer protocolId = _dataset.getProtocolId();
-        if (protocolId != null)
-        {
-            _protocol = ExperimentService.get().getExpProtocol(protocolId.intValue());
-            if (_protocol != null)
-                _provider = AssayService.get().getProvider(_protocol);
-        }
+        _protocol = _dataset.getAssayProtocol();
+        if (_protocol != null)
+            _provider = AssayService.get().getProvider(_protocol);
     }
 
     public DataView createDataView()
@@ -185,8 +181,7 @@ public class DataSetQueryView extends QueryView
 
     private boolean hasUsefulDetailsPage()
     {
-        Integer protocolId = _dataset.getProtocolId();
-        if (protocolId == null)
+        if (!_dataset.isAssayData())
             return true; // we don't have a protocol at all, so we don't know if we have useful details
 
         if (_protocol == null)

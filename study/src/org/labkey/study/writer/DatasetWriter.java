@@ -30,6 +30,8 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
@@ -38,6 +40,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -162,10 +165,12 @@ class DatasetWriter implements InternalStudyWriter
                 "default.importAllMatches=TRUE");
         writer.close();
 
+        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+
         // Write out all the dataset .tsv files
         for (DataSetDefinition def : datasets)
         {
-            TableInfo ti = def.getTableInfo(ctx.getUser());
+            TableInfo ti = new DataSetTable(schema, def);
             Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false);
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
@@ -191,6 +196,11 @@ class DatasetWriter implements InternalStudyWriter
         ColumnInfo ptidColumn = null; String ptidURI = DataSetDefinition.getParticipantIdURI();
         ColumnInfo sequenceColumn = null; String sequenceURI = DataSetDefinition.getSequenceNumURI();
         ColumnInfo qcStateColumn = null; String qcStateURI = DataSetDefinition.getQCStateURI();
+
+        if (def.isAssayData())
+        {
+            inColumns = new ArrayList<ColumnInfo>(QueryService.get().getColumns(tinfo, tinfo.getDefaultVisibleColumns(), inColumns).values());
+        }
 
         for (ColumnInfo in : inColumns)
         {
@@ -240,11 +250,38 @@ class DatasetWriter implements InternalStudyWriter
                 else
                 {
                     outColumns.add(in);
+                    ColumnInfo displayField = in.getDisplayField();
+                    // For assay datasets only, include both the display value and raw value for FKs if they differ
+                    if (def.isAssayData() && displayField != null && displayField != in)
+                    {
+                        boolean foundMatch = false;
+                        for (ColumnInfo existingColumns : inColumns)
+                        {
+                            if (existingColumns.getFieldKey().equals(displayField.getFieldKey()))
+                            {
+                                foundMatch = true;
+                                break;
+                            }
+                        }
+                        if (!foundMatch)
+                        {
+                            outColumns.add(displayField);
+                        }
+                    }
 
                     // If the column is MV enabled, export the data in the indicator column as well
                     if (!metaData && in.isMvEnabled())
                         outColumns.add(tinfo.getColumn(in.getMvColumnName()));
                 }
+            }
+        }
+
+        // Handle lookup columns which have "/" in their names by mapping them to "."
+        for (ColumnInfo outColumn : outColumns)
+        {
+            if (outColumn.getName().indexOf("/") != -1)
+            {
+                outColumn.setName(outColumn.getName().replace('/', '.'));
             }
         }
 
