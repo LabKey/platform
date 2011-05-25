@@ -201,14 +201,12 @@ public class CustomViewXmlReader
         }
         catch (IOException ioe)
         {
-            UnexpectedException.rethrow(ioe);
+            throw new UnexpectedException(ioe);
         }
         finally
         {
             if (is != null) try { is.close(); } catch (IOException e) { }
         }
-
-        return null;
     }
 
     public static CustomViewXmlReader loadDefinition(File f) throws XmlValidationException
@@ -221,14 +219,12 @@ public class CustomViewXmlReader
         }
         catch (IOException ioe)
         {
-            UnexpectedException.rethrow(ioe);
+            throw new UnexpectedException(ioe);
         }
         finally
         {
             if (is != null) try { is.close(); } catch (IOException e) { }
         }
-
-        return null;
     }
 
     private static CustomViewXmlReader loadDefinition(InputStream is, String path) throws XmlValidationException
