@@ -851,8 +851,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         expData.save(context.getUser());
 
                         run.getOutputProtocolApplication().addDataInput(context.getUser(), expData, "Data");
+                        // Add to the cached list of outputs 
+                        run.getDataOutputs().add(expData);
 
-                        ((TransformDataHandler)handler).importTransformDataMap(expData, context.getUser(), run, run.getProtocol(), this, entry.getValue());
+                        ((TransformDataHandler)handler).importTransformDataMap(expData, context, run, entry.getValue());
                     }
                 }
             }

@@ -254,11 +254,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         try
         {
-            Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>(context.getRunProperties());
-            for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
-                _formFields.put(entry.getKey().getName(), entry.getValue());
-
-            runProperties.putAll(context.getBatchProperties());
+            Map<DomainProperty, String> runProperties = getRunProperties(context);
 
             // serialize the run properties to a tsv
             for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
@@ -284,6 +280,16 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             throw new ValidationException(e.getMessage());
         }
+    }
+
+    public Map<DomainProperty, String> getRunProperties(AssayRunUploadContext context) throws ExperimentException
+    {
+        Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>(context.getRunProperties());
+        for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
+            _formFields.put(entry.getKey().getName(), entry.getValue());
+
+        runProperties.putAll(context.getBatchProperties());
+        return runProperties;
     }
 
     private Map<String, String> getContextProperties(AssayRunUploadContext context, File scriptDir)
@@ -602,7 +608,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     Map<DomainProperty, String> batchProps = new HashMap<DomainProperty, String>();
                     boolean runPropTransformed = false;
                     boolean batchPropTransformed = false;
-                    for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
+                    for (Map.Entry<DomainProperty, String> entry : getRunProperties(context).entrySet())
                     {
                         String propName = entry.getKey().getName();
                         if (transformedProps.containsKey(propName))

@@ -22,6 +22,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunUploadContext;
 
 import java.util.Map;
 import java.util.List;
@@ -36,5 +37,5 @@ public interface TransformDataHandler extends ValidationDataHandler
     /**
      * Imports the data map which may have been transformed by an external script.
      */
-    public void importTransformDataMap(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> dataMap) throws ExperimentException;
+    public void importTransformDataMap(ExpData data, AssayRunUploadContext context, ExpRun run, List<Map<String, Object>> dataMap) throws ExperimentException;
 }
