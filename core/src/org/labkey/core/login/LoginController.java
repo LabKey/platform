@@ -763,7 +763,7 @@ public class LoginController extends SpringActionController
             if (errors.hasErrors())
             {
                 if (_unrecoverableError)
-                    _log.error("Verification failed: " + form.getEmail() + " " + form.getVerification());
+                    _log.warn("Verification failed: " + form.getEmail() + " " + form.getVerification());
                 else
                     _log.warn("Password entry error: " + form.getEmail());
             }
