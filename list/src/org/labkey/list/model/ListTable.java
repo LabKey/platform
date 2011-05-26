@@ -34,6 +34,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -293,7 +294,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     }
 
     @Override
-    public int persistRows(DataIterator data, ValidationException errors)
+    public int persistRows(DataIterator data, BatchValidationException errors)
     {
         Table.TableLoaderPump pump = new Table.TableLoaderPump(data, this, errors);
         pump.run();

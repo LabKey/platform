@@ -630,6 +630,9 @@ public class StudyManager
             Table.StandardETL etl = new Table.StandardETL(tinfo, loader, study.getContainer(), user);
             etl.run();
 
+            if (etl.getErrors().hasErrors())
+                throw etl.getErrors().getRowErrors().get(0);
+
             scope.commitTransaction();
 
             return etl.getRowCount();

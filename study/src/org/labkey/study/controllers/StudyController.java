@@ -6643,7 +6643,7 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                StudyManager.getInstance().importVisitAliases(getStudy(), getUser(), new TabLoader(form.getTsv()));
+                StudyManager.getInstance().importVisitAliases(getStudy(), getUser(), new TabLoader(form.getTsv(), true));
             }
             catch (SQLException e)
             {

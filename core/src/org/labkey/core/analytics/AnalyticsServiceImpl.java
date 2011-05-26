@@ -120,7 +120,7 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
         if (!container.hasPermission(UserManager.getGuestUser(), ReadPermission.class))
         {
             actionUrl.deleteParameters();
-            actionUrl.setExtraPath("Folder-" + container.getRowId());
+            actionUrl.setExtraPath(container.getId());
         }
         // Add the server GUID to the URL.  Remove the "-" because they are problematic for Google Analytics regular
         // expressions.
