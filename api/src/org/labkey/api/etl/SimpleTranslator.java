@@ -468,7 +468,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     assertTrue(errors.hasErrors());
                 }
                 assertFalse(t.next());
-                assertEquals(errors.getRowErrors(), 3);
+                assertEquals(errors.getRowErrors().size(), 3);
             }
 
             // missing values
