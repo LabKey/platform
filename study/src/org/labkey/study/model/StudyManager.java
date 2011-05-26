@@ -41,7 +41,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -50,6 +49,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
@@ -617,39 +617,8 @@ public class StudyManager
 
     public int importVisitAliases(final Study study, User user, DataLoader loader) throws SQLException, IOException, ValidationException
     {
-        SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
         DbScope scope = tinfo.getSchema().getScope();
-
-        // TODO: ETL changes should eliminate need for this thing
-        OntologyManager.UpdateableTableImportHelper helper = new OntologyManager.UpdateableTableImportHelper() {
-            @Override
-            public void afterImportObject(Map<String, Object> map) throws SQLException
-            {
-            }
-
-            @Override
-            public void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target)
-            {
-                target.put("Container", study.getContainer());
-            }
-
-            @Override
-            public String beforeImportObject(Map<String, Object> map) throws SQLException
-            {
-                return null;
-            }
-
-            @Override
-            public void afterBatchInsert(int currentRow) throws SQLException
-            {
-            }
-
-            @Override
-            public void updateStatistics(int currentRow) throws SQLException
-            {
-            }
-        };
 
         try
         {
@@ -657,11 +626,13 @@ public class StudyManager
             scope.ensureTransaction();
 
             clearVisitAliases(study);
-            List<String> keys = OntologyManager.insertTabDelimited(tinfo, study.getContainer(), user, helper, loader.load(), null);
+
+            Table.StandardETL etl = new Table.StandardETL(tinfo, loader, study.getContainer(), user);
+            etl.run();
 
             scope.commitTransaction();
 
-            return keys.size();
+            return etl.getRowCount();
         }
         finally
         {

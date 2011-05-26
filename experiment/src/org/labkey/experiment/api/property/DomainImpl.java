@@ -102,10 +102,13 @@ public class DomainImpl implements Domain
         return _dd.getContainer();
     }
 
-    public DomainKind getDomainKind()
+    private DomainKind _kind = null;
+
+    public synchronized DomainKind getDomainKind()
     {
-        DomainKind kind = PropertyService.get().getDomainKind(getTypeURI());
-        return kind;
+        if (null == _kind)
+            _kind = PropertyService.get().getDomainKind(getTypeURI());
+        return _kind;
     }
 
     public String getName()

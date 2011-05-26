@@ -28,6 +28,7 @@ import org.labkey.api.data.Parameter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -37,6 +38,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.list.view.AttachmentDisplayColumn;
@@ -288,6 +290,14 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         if (!_list.getKeyName().isEmpty())
             return new CaseInsensitiveHashSet(_list.getKeyName());
         return null;
+    }
+
+    @Override
+    public int persistRows(DataIterator data, ValidationException errors)
+    {
+        Table.TableLoaderPump pump = new Table.TableLoaderPump(data, this, errors);
+        pump.run();
+        return pump.getRowCount();
     }
 
     @Override
