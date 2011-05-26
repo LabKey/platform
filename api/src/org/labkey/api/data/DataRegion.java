@@ -805,6 +805,11 @@ public class DataRegion extends DisplayElement
                 sqlx = x;
                 headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
             }
+            catch (RuntimeSQLException x)
+            {
+                sqlx = x.getSQLException();
+                headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
+            }
 
 
             if (showParameterForm)
@@ -2440,7 +2445,7 @@ public class DataRegion extends DisplayElement
         }
         catch (SQLException x)
         {
-            throw new RuntimeException(x);
+            throw new RuntimeSQLException(x);
         }
         finally
         {

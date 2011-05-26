@@ -32,6 +32,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -634,7 +635,7 @@ public enum CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    // fall through
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to an integer"));
                 }
             }
 
@@ -646,7 +647,7 @@ public enum CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    //fall through
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a long"));
                 }
             }
 
@@ -659,10 +660,9 @@ public enum CompareType
                 }
                 catch (Exception e)
                 {
-                    //Just leave as string...
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a boolean"));
                 }
             }
-            break;
 
             case Types.TIMESTAMP:
             case Types.DATE:
@@ -674,7 +674,7 @@ public enum CompareType
                 }
                 catch (ConversionException e)
                 {
-                    //Just leave as string...
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a date"));
                 }
             }
 
@@ -691,10 +691,9 @@ public enum CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    // Just keep it as a string
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a number"));
                 }
             }
-            break;
         }
 
         return paramVal;

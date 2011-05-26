@@ -110,6 +110,9 @@ public class AsyncQueryRequest<T>
             {
                 if (_exception instanceof QueryService.NamedParameterNotProvided)
                     throw (QueryService.NamedParameterNotProvided)_exception;
+
+                if (_exception instanceof RuntimeSQLException)
+                    _exception = ((RuntimeSQLException)_exception).getSQLException();
                 if (_exception instanceof SQLException)
                 {
                     SQLException sqlE = (SQLException) _exception;
