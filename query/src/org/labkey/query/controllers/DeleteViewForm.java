@@ -24,7 +24,6 @@ public class DeleteViewForm extends QueryForm
 
     public DeleteViewForm()
     {
-        super(null);
     }
 
     /**

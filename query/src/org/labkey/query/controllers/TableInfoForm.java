@@ -33,10 +33,9 @@ public class TableInfoForm extends QueryForm
     boolean _isDesign = false;
     FieldKey[] _tableKeys = null;
     FieldKey[] _fieldKeys = null;
-    
+
     public TableInfoForm()
     {
-        super(null);
     }
 
     protected BindException doBindParameters(PropertyValues in)
