@@ -1009,16 +1009,16 @@ public class Table
     }
 
 
-    public static <K> K update(User user, TableInfo table, K fieldsIn, Object rowId) throws SQLException
+    public static <K> K update(User user, TableInfo table, K fieldsIn, Object pkVals) throws SQLException
     {
-        return update(user, table, fieldsIn, rowId, null);
+        return update(user, table, fieldsIn, pkVals, null);
     }
 
 
-    public static <K> K update(User user, TableInfo table, K fieldsIn, Object rowId, @Nullable Filter filter) throws SQLException
+    public static <K> K update(User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter) throws SQLException
     {
         assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): (table.getName() + " is not in the physical database.");
-        assert null != rowId;
+        assert null != pkVals;
 
         // _executeTriggers(table, previous, fields);
 
@@ -1028,18 +1028,17 @@ public class Table
         ArrayList<Object> parametersWhere = new ArrayList<Object>();
         String comma = "";
 
-        // NOTE: no multi-column primary keys?
         // UNDONE -- rowVersion
         List<ColumnInfo> columnPK = table.getPkColumns();
-        Object[] pkVals;
+        Object[] pkValsArray;
 
         assert null != columnPK;
-        assert columnPK.size() == 1 || ((Object[]) rowId).length == columnPK.size();
+        assert columnPK.size() == 1 || ((Object[]) pkVals).length == columnPK.size();
 
-        if (columnPK.size() == 1 && !rowId.getClass().isArray())
-            pkVals = new Object[]{rowId};
+        if (columnPK.size() == 1 && !pkVals.getClass().isArray())
+            pkValsArray = new Object[]{pkVals};
         else
-            pkVals = (Object[]) rowId;
+            pkValsArray = (Object[]) pkVals;
 
         String whereAND = "WHERE ";
 
@@ -1056,7 +1055,7 @@ public class Table
             whereSQL.append(whereAND);
             whereSQL.append(columnPK.get(i).getSelectName());
             whereSQL.append("=?");
-            parametersWhere.add(pkVals[i]);
+            parametersWhere.add(pkValsArray[i]);
             whereAND = " AND ";
         }
 

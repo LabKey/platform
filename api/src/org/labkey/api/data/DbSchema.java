@@ -195,7 +195,9 @@ public class DbSchema
         // When querying table metadata we must use the name from the database
         String metaDataTableName = _metaDataTableNames.get(tableName);
 
-        assert null != metaDataTableName;
+        if (null == metaDataTableName)
+            throw new IllegalStateException("Expected to find metaDataTableName for " + tableName + " in schema " + getName());
+
         SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
         TableType xmlTable = _tableXmlMap.get(tableName);
 

@@ -1027,6 +1027,21 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     static public class SchemaForeignKey implements ForeignKey
     {
+        private final DbScope _scope;
+        private final String _dbSchemaName;
+        private final String _tableName;
+        private final String _lookupKey;
+        private final boolean _joinWithContainer;
+
+        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer)
+        {
+            _scope = foreignKey.getParentTable().getSchema().getScope();
+            _dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
+            _tableName = tableName;
+            _lookupKey = lookupKey;
+            _joinWithContainer = joinWithContainer;
+        }
+
         public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
         {
             TableInfo lookupTable = getLookupTableInfo();
@@ -1055,26 +1070,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         public TableInfo getLookupTableInfo()
         {
-            DbSchema schema = DbSchema.get(_dbSchemaName);
+            DbSchema schema = _scope.getSchema(_dbSchemaName);
             return schema.getTable(_tableName);
         }
 
         public StringExpression getURL(ColumnInfo parent)
         {
             return null;
-        }
-
-        final String _dbSchemaName;
-        final String _tableName;
-        final String _lookupKey;
-        final boolean _joinWithContainer;
-
-        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer)
-        {
-            _dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
-            _tableName = tableName;
-            _lookupKey = lookupKey;
-            _joinWithContainer = joinWithContainer;
         }
 
         public boolean isJoinWithContainer()

@@ -18,10 +18,12 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -143,31 +145,12 @@ public class UpgradeUtils
 
                 value = candidateValue;
 
-                // Create UPDATE SQL
-                List<String> pkNames = table.getPkColumnNames();
+                ArrayList<Object> pkVals = new ArrayList<Object>(table.getPkColumnNames().size());
 
-                SQLFragment updateSQL = new SQLFragment();
-                updateSQL.append("UPDATE ");
-                updateSQL.append(table, "t");
-                updateSQL.append(" SET ");
-                updateSQL.append(columnName);
-                updateSQL.append(" = ? WHERE Container = ?");  // Might be a PK column as well, but duplication won't hurt
+                for (String pkName : table.getPkColumnNames())
+                    pkVals.add(map.get(pkName));
 
-                updateSQL.add(value);
-                updateSQL.add(cid);
-
-                for (String pkName : pkNames)
-                {
-                    updateSQL.append(" AND ");
-                    updateSQL.append(pkName);
-                    updateSQL.append(" = ?");
-                    updateSQL.add(map.get(pkName));
-                }
-
-                int rows = Table.execute(table.getSchema(), updateSQL);
-
-                if (rows != 1)
-                    throw new IllegalStateException(rows + " rows were updated, but expected 1");
+                Table.update(null, table, PageFlowUtil.map(columnName, value), pkVals.toArray(), filter);
             }
 
             newValues.add(value);
