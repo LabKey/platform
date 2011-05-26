@@ -35,6 +35,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -335,7 +336,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     }
 
     @Override
-    public int persistRows(DataIterator data, ValidationException errors)
+    public int persistRows(DataIterator data, BatchValidationException errors)
     {
         Table.TableLoaderPump pump = new Table.TableLoaderPump(data, this, errors);
         pump.run();

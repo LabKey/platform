@@ -17,6 +17,7 @@
 package org.labkey.api.etl;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 
 import java.io.Closeable;
@@ -44,7 +45,7 @@ public interface DataIterator extends Closeable
      * Iterators should usually just add errors to a shared ValidationException,
      * however, they may throw to force processing to stop.
      */
-    boolean next() throws ValidationException;
+    boolean next() throws BatchValidationException;
 
     /*
      * get the value for column i, the returned object may be one of

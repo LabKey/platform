@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
@@ -108,7 +109,7 @@ public interface UpdateableTableInfo
      * @param data
      * @param errors
      */
-    int persistRows(DataIterator data, ValidationException errors);
+    int persistRows(DataIterator data, BatchValidationException errors);
 
 
     /** persist one row in the database

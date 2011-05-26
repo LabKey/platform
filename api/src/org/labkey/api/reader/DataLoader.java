@@ -32,6 +32,7 @@ import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.iterator.IteratorUtil;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 
 import javax.servlet.ServletException;
@@ -694,7 +695,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      */
 
     @Override
-    public DataIterator getDataIterator(final ValidationException errors)
+    public DataIterator getDataIterator(final BatchValidationException errors)
     {
         return new _DataIterator(errors);
     }
@@ -702,11 +703,11 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
     private class _DataIterator implements DataIterator
     {
-        final ValidationException _errors;
+        final BatchValidationException _errors;
         final DataLoaderIterator _it;
         ArrayListMap<String,Object> _row;
 
-        _DataIterator(ValidationException errors)
+        _DataIterator(BatchValidationException errors)
         {
             _errors = errors;
             _it = (DataLoaderIterator)iterator();
@@ -731,7 +732,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         }
 
         @Override
-        public boolean next() throws ValidationException
+        public boolean next() throws BatchValidationException
         {
             _row = null;
             boolean hasNext = _it.hasNext();

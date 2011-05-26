@@ -2,7 +2,7 @@ package org.labkey.api.etl;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.BatchValidationException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,15 +17,16 @@ import java.util.Set;
  * Date: May 23, 2011
  * Time: 5:01:51 PM
  */
-public class MapDataIterator implements DataIterator
+public class MapDataIterator extends AbstractDataIterator implements DataIterator
 {
-    String _debugName = "MapIterator";
     List<ColumnInfo> _cols = new ArrayList<ColumnInfo>();
     final List<Map<String,Object>> _rows;
     int _currentRow = -1;
     
+
     public MapDataIterator(List<ColumnInfo> cols, List<Map<String,Object>> rows)
     {
+        super(null);
         cols.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
         cols.addAll(cols);
         _rows = initRows(rows);
@@ -33,17 +34,13 @@ public class MapDataIterator implements DataIterator
     
     public MapDataIterator(Set<String> colNames, List<Map<String,Object>> rows)
     {
+        super(null);
         _cols.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
         for (String name : colNames)
             _cols.add(new ColumnInfo(name));
         _rows = initRows(rows);
     }
 
-    void setDebugName(String name)
-    {
-        _debugName = name;
-    }
-    
     private List<Map<String,Object>> initRows(List<Map<String,Object>> rows)
     {
         boolean debug = false;
@@ -75,7 +72,7 @@ public class MapDataIterator implements DataIterator
     }
 
     @Override
-    public boolean next() throws ValidationException
+    public boolean next() throws BatchValidationException
     {
         return ++_currentRow < _rows.size();
     }

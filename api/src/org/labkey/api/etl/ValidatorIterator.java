@@ -29,6 +29,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.*;
@@ -49,19 +50,18 @@ import java.util.Map;
  *
  * This is a pass-through iterator, it does not change any of the data, it only create errors
  */
-public class ValidatorIterator implements DataIterator
+public class ValidatorIterator extends AbstractDataIterator implements DataIterator
 {
-    final ValidationException _errors;
     boolean failFast = true;
     final DataIterator _data;
     final ValidatorContext validatorContext;
     final ArrayList<ArrayList<Validator>> _validators = new ArrayList<ArrayList<Validator>>();
     int _rowCount = 0;
 
-    public ValidatorIterator(DataIterator data, ValidationException errors, Container c, User user)
+    public ValidatorIterator(DataIterator data, BatchValidationException errors, Container c, User user)
     {
+        super(errors);
         _data = data;
-        _errors = errors;
         validatorContext = new ValidatorContext(c, user);
     }
 
@@ -229,7 +229,7 @@ checkRequired:
 
 
     @Override
-    public boolean next() throws ValidationException
+    public boolean next() throws BatchValidationException
     {
         if (!_data.next())
             return false;
@@ -246,7 +246,7 @@ checkRequired:
                 String msg = v.validate();
                 if (null != msg)
                 {
-                    _errors.addFieldError(_data.getColumnInfo(i).getName(), msg);
+                    getRowError().addFieldError(_data.getColumnInfo(i).getName(), msg);
                     validRow = false;
                     break;
                 }
@@ -261,8 +261,7 @@ checkRequired:
                 String msg = v.validate();
                 if (null != msg)
                 {
-                    _errors.setRowNumber((Integer)_data.get(0));
-                    _errors.addGlobalError(msg);
+                    getRowError().addGlobalError(msg);
                     validRow = false;
                     break;
                 }

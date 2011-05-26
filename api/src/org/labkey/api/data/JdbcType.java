@@ -304,7 +304,7 @@ public enum JdbcType
         }
         catch (NumberFormatException x)
         {
-            throw new ConversionException(x);
+            throw new ConversionException("Expected decimal value", x);
         }
 
         // CONSIDER: convert may return default values instead of ConversionException

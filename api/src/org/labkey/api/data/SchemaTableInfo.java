@@ -1033,7 +1033,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
-    public int persistRows(DataIterator data, ValidationException errors)
+    public int persistRows(DataIterator data, BatchValidationException errors)
     {
         Table.TableLoaderPump pump = new Table.TableLoaderPump(data, this, errors);
         pump.run();

@@ -2,6 +2,7 @@ package org.labkey.api.etl;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 
 import java.io.IOException;
@@ -45,7 +46,7 @@ class StringTestIterator implements DataIterator
     }
 
     @Override
-    public boolean next() throws ValidationException
+    public boolean next() throws BatchValidationException
     {
         return ++row < data.size();
     }

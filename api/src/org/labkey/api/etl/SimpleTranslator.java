@@ -17,6 +17,7 @@
 package org.labkey.api.etl;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -32,8 +33,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.gwt.client.util.StringUtils;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
@@ -55,23 +55,20 @@ import java.util.concurrent.Callable;
  *
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
  */
-public class SimpleTranslator implements DataIterator
+public class SimpleTranslator extends AbstractDataIterator implements DataIterator
 {
-    final ValidationException _errors;
     final DataIterator _data;
     final ArrayList<Pair<ColumnInfo,Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo,Callable>>();
     boolean _failFast = true;
     Map<String,String> _missingValues = Collections.emptyMap();
     Map<String,Integer> _inputNameMap = null;
 
-
-    public SimpleTranslator(DataIterator source, ValidationException errors)
+    public SimpleTranslator(DataIterator source, BatchValidationException errors)
     {
+        super(errors);
         this._data = source;
-        this._errors = errors;
         _outputColumns.add(new Pair(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
     }
-
 
     public void setMvContainer(Container c)
     {
@@ -154,7 +151,7 @@ public class SimpleTranslator implements DataIterator
             if (null != mv)
             {
                 if (v != null && !v.equals(mv))
-                    _errors.addFieldError(_data.getColumnInfo(index).getName(), "Column has value and missing-value indicator");
+                    getRowError().addFieldError(_data.getColumnInfo(index).getName(), "Column has value and missing-value indicator");
                 return new MvFieldWrapper(v, String.valueOf(mv));
             }
 
@@ -191,7 +188,7 @@ public class SimpleTranslator implements DataIterator
             Object v = _map.get(k);
             if (null != v || !_strict || _map.containsKey(k))
                 return v;
-            _errors.addFieldError(_data.getColumnInfo(_index).getName(), "Couldn't not transalte value: " + String.valueOf(k));
+            getRowError().addFieldError(_data.getColumnInfo(_index).getName(), "Couldn't not transalte value: " + String.valueOf(k));
             return null;
         }
     }
@@ -330,8 +327,9 @@ public class SimpleTranslator implements DataIterator
     }
 
     @Override
-    public boolean next() throws ValidationException
+    public boolean next() throws BatchValidationException
     {
+        _rowError = null;
         if (_failFast && _errors.hasErrors())
             return false;
         return _data.next();
@@ -346,7 +344,8 @@ public class SimpleTranslator implements DataIterator
         }
         catch (ConversionException x)
         {
-            _errors.addFieldError(_outputColumns.get(i).getKey().getName(), x.getMessage());
+            String msg = StringUtils.defaultString(x.getMessage(), x.toString());
+            getRowError().addFieldError(_outputColumns.get(i).getKey().getName(), msg);
             return null;
         }
         catch (RuntimeException x)
@@ -356,7 +355,7 @@ public class SimpleTranslator implements DataIterator
         catch (Exception x)
         {
             // undone source field name???
-            _errors.addFieldError(_outputColumns.get(i).getKey().getName(), x.getMessage());
+            getRowError().addFieldError(_outputColumns.get(i).getKey().getName(), x.getMessage());
             return null;
         }
     }
@@ -395,7 +394,7 @@ public class SimpleTranslator implements DataIterator
         @Test
         public void passthroughTest() throws Exception
         {
-            ValidationException errors = new ValidationException();
+            BatchValidationException errors = new BatchValidationException();
             simpleData.reset();
             SimpleTranslator t = new SimpleTranslator(simpleData, errors);
             t.selectAll();
@@ -418,7 +417,7 @@ public class SimpleTranslator implements DataIterator
         {
             // w/o errors
             {
-                ValidationException errors = new ValidationException();
+                BatchValidationException errors = new BatchValidationException();
                 simpleData.reset();
                 SimpleTranslator t = new SimpleTranslator(simpleData, errors);
                 t.addConvertColumn("IntNotNull", 1, JdbcType.INTEGER, false);
@@ -436,7 +435,7 @@ public class SimpleTranslator implements DataIterator
 
             // w/ errors failfast==true
             {
-                ValidationException errors = new ValidationException();
+                BatchValidationException errors = new BatchValidationException();
                 simpleData.reset();
                 SimpleTranslator t = new SimpleTranslator(simpleData, errors);
                 t.setFailFast(true);
@@ -453,7 +452,7 @@ public class SimpleTranslator implements DataIterator
 
             // w/ errors failfast==false
             {
-                ValidationException errors = new ValidationException();
+                BatchValidationException errors = new BatchValidationException();
                 simpleData.reset();
                 SimpleTranslator t = new SimpleTranslator(simpleData, errors);
                 t.setFailFast(false);
@@ -469,7 +468,7 @@ public class SimpleTranslator implements DataIterator
                     assertTrue(errors.hasErrors());
                 }
                 assertFalse(t.next());
-                assertEquals(errors.getErrors().size(), 3);
+                assertEquals(errors.getRowErrors(), 3);
             }
 
             // missing values

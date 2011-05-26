@@ -39,16 +39,13 @@ import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.ValidatorIterator;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
@@ -60,7 +57,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
-import sun.rmi.server.InactiveGroupException;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.rowset.CachedRowSet;
@@ -2621,7 +2617,7 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
 {
     final DataIteratorBuilder _inputBuilder;
     final TableInfo _target;
-    ValidationException _errors;
+    BatchValidationException _errors;
     final Container _c;
     final User _user;
     boolean _failFast = true;
@@ -2644,7 +2640,7 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
     public void run()
     {
         if (null == _errors)
-            _errors = new ValidationException();
+            _errors = new BatchValidationException();
         DataIterator data = getDataIterator(_errors);
         _rowCount = ((UpdateableTableInfo)_target).persistRows(data, _errors);
     }
@@ -2656,14 +2652,14 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
     }
 
 
-    public ValidationException getErrors()
+    public BatchValidationException getErrors()
     {
         return _errors;
     }
 
 
     @Override
-    public DataIterator getDataIterator(ValidationException errors)
+    public DataIterator getDataIterator(BatchValidationException errors)
     {
         if (null != _it)
             return _it;
@@ -2723,7 +2719,7 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
         //
         // match up the columns, validate that there is no more than one source column that matches the target column
         //
-
+        ValidationException setupError = new ValidationException();
         IdentityHashMap<Pair,Object> used = new IdentityHashMap();
 
         ArrayList<Pair<ColumnInfo,DomainProperty>> targetCols = new ArrayList<Pair<ColumnInfo, DomainProperty>>(input.getColumnCount()+1);
@@ -2738,7 +2734,7 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
             if (null != to)
             {
                 if (used.containsKey(to))
-                    errors.addGlobalError("Two columns mapped to target column: " + to.getKey().getName());
+                    setupError.addGlobalError("Two columns mapped to target column: " + to.getKey().getName());
                 used.put(to,null);
                 targetCols.add(to);
             }
@@ -2749,6 +2745,8 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
 
         // TODO : required columns that were not found
 
+        if (setupError.hasErrors())
+            errors.addRowError(setupError);
 
         //
         //  CONVERT and VALIDATE iterators
@@ -2843,11 +2841,11 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
     static class ParameterMapPump implements Runnable
     {
         protected Parameter.ParameterMap stmt;
-        final ValidationException errors;
+        final BatchValidationException errors;
         final DataIterator data;
         int _rowCount = 0;
 
-        ParameterMapPump(DataIterator data, Parameter.ParameterMap map, ValidationException errors)
+        ParameterMapPump(DataIterator data, Parameter.ParameterMap map, BatchValidationException errors)
         {
             this.data = data;
             this.stmt = map;
@@ -2889,11 +2887,13 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
                         Parameter toParameter = binding.getValue();
                         toParameter.setValue(data.get(fromIndex));
                     }
+                    if (errors.hasErrors())
+                        continue;
                     stmt.execute();
                     _rowCount++;
                 }
             }
-            catch (ValidationException x)
+            catch (BatchValidationException x)
             {
                 assert x == errors;
             }
@@ -2910,7 +2910,7 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
     {
         final TableInfo table;
 
-        public TableLoaderPump(DataIterator data, TableInfo table, ValidationException errors)
+        public TableLoaderPump(DataIterator data, TableInfo table, BatchValidationException errors)
         {
             super(data, null, errors);
             this.table = table;
@@ -2998,7 +2998,7 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
         }
 
         @Override
-        public boolean next() throws ValidationException
+        public boolean next() throws BatchValidationException
         {
             return ++currentRow < _data.length;
         }
@@ -3023,7 +3023,7 @@ public static class StandardETL implements DataIteratorBuilder, Runnable
         {
             TableInfo testTable = DbSchema.get("test").getTable("TestTable");
 
-            ValidationException errors = new ValidationException();
+            BatchValidationException errors = new BatchValidationException();
             TestDataIterator extract = new TestDataIterator();
             SimpleTranslator translate = new SimpleTranslator(extract, errors);
             translate.selectAll();

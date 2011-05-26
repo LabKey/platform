@@ -16,6 +16,7 @@
 
 package org.labkey.api.etl;
 
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 
 /**
@@ -27,7 +28,7 @@ import org.labkey.api.query.ValidationException;
 
 public interface DataIteratorBuilder
 {
-    DataIterator getDataIterator(ValidationException x);
+    DataIterator getDataIterator(BatchValidationException x);
 
 
     public static class Wrapper implements DataIteratorBuilder
@@ -40,7 +41,7 @@ public interface DataIteratorBuilder
         }
 
         @Override
-        public DataIterator getDataIterator(ValidationException x)
+        public DataIterator getDataIterator(BatchValidationException x)
         {
             return di;
         }

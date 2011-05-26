@@ -94,7 +94,9 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         writer.writeProperty("schemaName", _schemaName);
         writer.writeProperty("queryName", _queryName);
         writer.writeProperty("formatVersion", getFormatVersion());
+        // see Ext.data.JsonReader
         writer.writeProperty("metaData", getMetaData());
+        // see Ext.data.ColumnModel
         writer.writeProperty("columnModel", getColumnModel());
         Map<String,String> qcInfo = getQcInfo();
         if (qcInfo != null)
@@ -161,13 +163,17 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return null;
     }
 
+
+    // see Ext.data.JsonReader (response.metaData)
     protected Map<String,Object> getMetaData() throws Exception
     {
-        Map<String,Object> mdata = new HashMap<String,Object>();
+        Map<String,Object> metaData = new HashMap<String,Object>();
+
+        // see Ext.data.Field
         ArrayList<Map<String,Object>> fields = getFieldsMetaData(_displayColumns, _includeLookupInfo);
 
-        mdata.put("root", "rows");
-        mdata.put("totalProperty", "rowCount");
+        metaData.put("root", "rows");
+        metaData.put("totalProperty", "rowCount");
 
         if (null != _viewContext && null != _viewContext.getRequest())
         {
@@ -183,18 +189,18 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                 Map<String, String> sortInfo = new HashMap<String, String>();
                 sortInfo.put("field", sort);
                 sortInfo.put("direction", dir);
-                mdata.put("sortInfo", sortInfo);
+                metaData.put("sortInfo", sortInfo);
             }
         }
 
         //include an id property set to the pk column name if there is one (and only one)
         List<ColumnInfo> pkCols = _tinfo.getPkColumns();
         if (null != pkCols && 1 == pkCols.size())
-            mdata.put("id", pkCols.get(0).getName());
+            metaData.put("id", pkCols.get(0).getName());
 
-        mdata.put("fields", fields);
+        metaData.put("fields", fields);
 
-        return mdata;
+        return metaData;
     }
 
     
@@ -251,40 +257,45 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return cols;
     }
 
+
     protected Map<String,Object> getColModel(DisplayColumn dc) throws Exception
     {
-        Map<String,Object> colModel = new HashMap<String,Object>();
+        Map<String,Object> extGridColumn = new HashMap<String,Object>();
         ColumnInfo colInfo = dc.getColumnInfo();
 
-        colModel.put("dataIndex", colInfo.getName());
-        colModel.put("sortable", dc.isSortable());
-        colModel.put("editable", !"file".equals(colInfo.getInputType()) && isEditable(dc));
-        colModel.put("required", !colInfo.isNullable());
-        colModel.put("hidden", colInfo.isHidden() || colInfo.isAutoIncrement()); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
+        // see  Ext.grid.ColumnModel Ext.grid.Column
+        extGridColumn.put("dataIndex", colInfo.getName());
+        extGridColumn.put("sortable", dc.isSortable());
+        extGridColumn.put("editable", !"file".equals(colInfo.getInputType()) && isEditable(dc));
+        extGridColumn.put("hidden", colInfo.isHidden() || colInfo.isAutoIncrement()); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
         if(dc.getTextAlign() != null)
-            colModel.put("align", dc.getTextAlign());
+            extGridColumn.put("align", dc.getTextAlign());
         if (dc.getCaption() != null)
-            colModel.put("header", dc.getCaption(_ctx, false));
+            extGridColumn.put("header", dc.getCaption(_ctx, false));
         if (dc.getDescription() != null)
-            colModel.put("tooltip", dc.getDescription());
+            extGridColumn.put("tooltip", dc.getDescription());
         if (dc.getWidth() != null)
         {
             try
             {
                 //try to parse as integer (which is what Ext wants)
-                colModel.put("width", Integer.parseInt(dc.getWidth()));
+                extGridColumn.put("width", Integer.parseInt(dc.getWidth()));
             }
             catch(NumberFormatException e)
             {
                 //include it as a string
-                colModel.put("width", dc.getWidth());
+                extGridColumn.put("width", dc.getWidth());
             }
         }
+
+        /** These are not part of Ext.Grid.Column, don't know why they are hear (MAB) */
+        extGridColumn.put("required", !colInfo.isNullable());
         if(isEditable(dc) && null != colInfo.getDefaultValue())
-            colModel.put("defaultValue", colInfo.getDefaultValue());
-        colModel.put("scale", dc.getColumnInfo().getScale());
-        return colModel;
+            extGridColumn.put("defaultValue", colInfo.getDefaultValue());
+        extGridColumn.put("scale", dc.getColumnInfo().getScale());
+        return extGridColumn;
     }
+
 
     protected void writeRowset(ApiResponseWriter writer) throws Exception
     {
