@@ -780,6 +780,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 //                        continue;
 
                     i = _runQueue.poll(30, TimeUnit.SECONDS);
+
                     if (null != i)
                     {
                         while (!_shuttingDown && _itemQueue.size() > 1000)
@@ -788,17 +789,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         }
                         i._run.run();
                     }
+
                     if (_runQueue.isEmpty())
                     {
                         HashSet<Pair<String,String>> ptids = null;
+
                         synchronized (_ptidsLock)
                         {
                             if (!_ptids.isEmpty())
                             {
                                 ptids = _ptids;
-                                _ptids = new HashSet<Pair<String,String>>();
+                                _ptids = new HashSet<Pair<String, String>>();
                             }
                         }
+
                         if (null != ptids)
                             indexPtids(ptids);
                         //_itemQueue.add(_commitItem);
