@@ -242,6 +242,27 @@ public class ConvertHelper implements PropertyEditorRegistrar
     }
 
 
+    /* Date-only sql type */
+    public static class LenientSqlDateConverter implements Converter
+    {
+        public Object convert(Class clss, Object o)
+        {
+            if (o instanceof String)
+                o = StringUtils.trimToNull((String)o);
+            if (null == o)
+                return null;
+
+            if (o instanceof java.sql.Date)
+                return o;
+
+            if (o instanceof java.util.Date)
+                return new java.sql.Date(((java.util.Date)o).getTime());
+
+            return new java.sql.Date(DateUtil.parseDateTime(o.toString()));
+        }
+    }
+
+
     public static class DateFriendlyStringConverter implements Converter
     {
         private static Converter _stringConverter = new StringConverter();

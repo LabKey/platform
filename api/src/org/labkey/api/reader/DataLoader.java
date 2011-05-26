@@ -26,7 +26,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.etl.DataBuilder;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -54,7 +54,7 @@ import java.util.Set;
  */
 
 // Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
-public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader, DataBuilder
+public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader, DataIteratorBuilder
 {
     private static final Logger _log = Logger.getLogger(DataLoader.class);
 
@@ -723,7 +723,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             if (i == 0)
                 return new ColumnInfo("_lineNumber", JdbcType.INTEGER);
-            ColumnDescriptor d = _it._activeColumns[i+1];
+            ColumnDescriptor d = _it._activeColumns[i-1];
             JdbcType type = JdbcType.valueOf(d.clazz);
             if (null == type)
                 type = JdbcType.VARCHAR;
@@ -737,7 +737,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             boolean hasNext = _it.hasNext();
             if (hasNext)
                 _row = (ArrayListMap)_it.next();
-            return _it.hasNext();
+            return hasNext;
         }
 
         @Override
@@ -746,6 +746,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             if (i == 0)
                 return _it.lineNum();
             return _row.get(i-1);
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            DataLoader.this.close();
         }
     }
 }

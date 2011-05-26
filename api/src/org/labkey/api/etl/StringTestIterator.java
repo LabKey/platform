@@ -4,6 +4,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.ValidationException;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -55,5 +56,10 @@ class StringTestIterator implements DataIterator
         if (0==i)
             return row+1;
         return data.get(row)[i-1];
+    }
+
+    @Override
+    public void close() throws IOException
+    {
     }
 }

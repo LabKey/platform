@@ -27,6 +27,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -39,6 +40,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.sql.Connection;
@@ -330,6 +332,14 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     public CaseInsensitiveHashSet skipProperties()
     {
         return null;
+    }
+
+    @Override
+    public int persistRows(DataIterator data, ValidationException errors)
+    {
+        Table.TableLoaderPump pump = new Table.TableLoaderPump(data, this, errors);
+        pump.run();
+        return pump.getRowCount();
     }
 
     @Override

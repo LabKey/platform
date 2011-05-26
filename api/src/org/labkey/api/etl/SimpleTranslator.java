@@ -18,9 +18,11 @@ package org.labkey.api.etl;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -28,17 +30,21 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.MvFieldWrapper;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -46,6 +52,8 @@ import java.util.concurrent.Callable;
  * User: matthewb
  * Date: May 16, 2011
  * Time: 2:03:45 PM
+ *
+ * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
  */
 public class SimpleTranslator implements DataIterator
 {
@@ -117,13 +125,17 @@ public class SimpleTranslator implements DataIterator
     private class MissingValueConvertColumn extends SimpleConvertColumn
     {
         final int indicator;
-        final Object missingValue;
 
-        MissingValueConvertColumn(int index, int indexIndicator, Object missing, JdbcType to)
+        MissingValueConvertColumn(int index,JdbcType to)
+        {
+            super(index, to);
+            indicator = 0;
+        }
+
+        MissingValueConvertColumn(int index, int indexIndicator, JdbcType to)
         {
             super(index, to);
             indicator = indexIndicator;
-            this.missingValue = missing;
         }
 
         @Override
@@ -155,6 +167,34 @@ public class SimpleTranslator implements DataIterator
             return type.convert(v);
         }
     }
+
+
+    private class RemapColumn implements Callable
+    {
+        final int _index;
+        final Map<Object,Object> _map;
+        final boolean _strict;
+
+        RemapColumn(int index, Map<Object,Object> map, boolean strict)
+        {
+            _index = index;
+            _map = map;
+            _strict = strict;
+        }
+
+        @Override
+        public Object call() throws Exception
+        {
+            Object k = _data.get(_index);
+            if (null == k)
+                return null;
+            Object v = _map.get(k);
+            if (null != v || !_strict || _map.containsKey(k))
+                return v;
+            _errors.addFieldError(_data.getColumnInfo(_index).getName(), "Couldn't not transalte value: " + String.valueOf(k));
+            return null;
+        }
+    }
     
 
     /* use same value for all rows, set value on first usage */
@@ -184,7 +224,9 @@ public class SimpleTranslator implements DataIterator
     }
 
 
-    /** configure **/
+    /*
+     * CONFIGURE methods
+     */
 
     public void selectAll()
     {
@@ -196,25 +238,49 @@ public class SimpleTranslator implements DataIterator
     }
 
 
-    public void addColumn(String name, int fromIndex)
+    public int addColumn(String name, int fromIndex)
     {
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         _outputColumns.add(new Pair<ColumnInfo, Callable>(col, new PassthroughColumn(fromIndex)));
+        return _outputColumns.size()-1;
     }
 
 
-    public void convertColumn(String name, int fromIndex, JdbcType toType)
+    public int addConvertColumn(String name, int fromIndex, JdbcType toType, boolean mv)
     {
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         col.setJdbcType(toType);
-        _outputColumns.add(new Pair<ColumnInfo, Callable>(col, new SimpleConvertColumn(fromIndex, toType)));
+        if (mv)
+            _outputColumns.add(new Pair<ColumnInfo, Callable>(col, new SimpleConvertColumn(fromIndex, toType)));
+        else
+            _outputColumns.add(new Pair<ColumnInfo, Callable>(col, new MissingValueConvertColumn(fromIndex, toType)));
+        return _outputColumns.size()-1;
     }
 
 
-    /* container, {versinoColumn}, owner, createdby, created, modifiedby, modified */
-    public void addBuiltinColumns(@NotNull Container c, @NotNull User user, @NotNull TableInfo target)
+    public int addConvertColumn(String name, int fromIndex, PropertyDescriptor pd, PropertyType pt)
+    {
+/*
+        Pair<Object,String> p = new Pair<Object,String>(value,null);
+        convertValuePair(pd, propertyTypes[i], p);
+        parameterMap.put(key, p.first);
+        if (null != p.second)
+        {
+            String mvName = col.getMvColumnName();
+            if (mvName != null)
+            {
+                parameterMap.put(mvName, p.second);
+            }
+        }
+*/
+        return _outputColumns.size()-1;
+    }
+
+
+    /* container, owner, createdby, created, modifiedby, modified */
+    public void addBuiltinColumns(@Nullable Container c, @NotNull User user, @NotNull TableInfo target)
     {
         final String containerId = null==c ? null : c.getId();
         final Integer userId = null==user ? 0 : user.getUserId();
@@ -223,24 +289,29 @@ public class SimpleTranslator implements DataIterator
         Callable userCallable = new Callable(){public Object call() {return userId;}};
         Callable tsCallable = new TimestampColumn();
 
-        // container
-        if (null != target.getColumn("Container") && !getColumnNameMap().containsKey("Container"))
-            _outputColumns.add(new Pair(new ColumnInfo("Container", JdbcType.VARCHAR), containerCallable));
-        // user
-        if (null != target.getColumn("Owner") && !getColumnNameMap().containsKey("Owner"))
-            _outputColumns.add(new Pair(new ColumnInfo("Owner", JdbcType.INTEGER), userCallable));
-        if (null != target.getColumn("CreatedBy") && !getColumnNameMap().containsKey("CreatedBy"))
-            _outputColumns.add(new Pair(new ColumnInfo("CreatedBy", JdbcType.INTEGER), userCallable));
-        if (null != target.getColumn("ModifiedBy") && !getColumnNameMap().containsKey("ModifiedBy"))
-            _outputColumns.add(new Pair(new ColumnInfo("ModifiedBy", JdbcType.INTEGER), userCallable));
-        // timestamp
-        if (null != target.getColumn("Created") && !getColumnNameMap().containsKey("Created"))
-            _outputColumns.add(new Pair(new ColumnInfo("Created", JdbcType.TIMESTAMP), tsCallable));
-        if (null != target.getColumn("Modified") && !getColumnNameMap().containsKey("Modified"))
-            _outputColumns.add(new Pair(new ColumnInfo("Modified", JdbcType.TIMESTAMP), tsCallable));
-        ColumnInfo version = target.getVersionColumn();
-        if (null != version && version.getJdbcType() == JdbcType.TIMESTAMP && !getColumnNameMap().containsKey(version.getColumnName()))
-            _outputColumns.add(new Pair(new ColumnInfo(version), tsCallable));
+        Map<String, Integer> inputCols = getColumnNameMap();
+        Set<String> outputNames = new CaseInsensitiveHashSet();
+        for (int i=1 ; i<_outputColumns.size() ; i++)
+            outputNames.add(_outputColumns.get(i).getKey().getName());
+
+        addBuiltinColumn("Container", target, inputCols, outputNames, containerCallable);
+        addBuiltinColumn("Owner", target, inputCols, outputNames, userCallable);
+        addBuiltinColumn("CreatedBy", target, inputCols, outputNames, userCallable);
+        addBuiltinColumn("ModifiedBy", target, inputCols, outputNames, userCallable);
+        addBuiltinColumn("Created", target, inputCols, outputNames, tsCallable);
+        addBuiltinColumn("Modified", target, inputCols, outputNames, tsCallable);
+    }
+
+
+    private void addBuiltinColumn(String name, TableInfo target, Map<String,Integer> inputCols, Set<String> outputNames, Callable c)
+    {
+        ColumnInfo col = target.getColumn(name);
+        if (null==col || outputNames.contains(name))
+            return;
+        if (inputCols.containsKey(name))
+            addColumn(name, inputCols.get(name));
+        else
+            _outputColumns.add(new Pair(new ColumnInfo(name, col.getJdbcType()), c));
     }
     
 
@@ -291,9 +362,15 @@ public class SimpleTranslator implements DataIterator
     }
 
 
+    @Override
+    public void close() throws IOException
+    {
+        _data.close();
+    }
+
     /*
-     * Tests
-     */
+    * Tests
+    */
 
 
 
@@ -344,7 +421,7 @@ public class SimpleTranslator implements DataIterator
                 ValidationException errors = new ValidationException();
                 simpleData.reset();
                 SimpleTranslator t = new SimpleTranslator(simpleData, errors);
-                t.convertColumn("IntNotNull", 1, JdbcType.INTEGER);
+                t.addConvertColumn("IntNotNull", 1, JdbcType.INTEGER, false);
                 assertEquals(1, t.getColumnCount());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
@@ -363,7 +440,7 @@ public class SimpleTranslator implements DataIterator
                 simpleData.reset();
                 SimpleTranslator t = new SimpleTranslator(simpleData, errors);
                 t.setFailFast(true);
-                t.convertColumn("Text", 2, JdbcType.INTEGER);
+                t.addConvertColumn("Text", 2, JdbcType.INTEGER, false);
                 assertEquals(t.getColumnCount(), 1);
                 assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
                 assertEquals(t.getColumnInfo(1).getJdbcType(), JdbcType.INTEGER);
@@ -380,7 +457,7 @@ public class SimpleTranslator implements DataIterator
                 simpleData.reset();
                 SimpleTranslator t = new SimpleTranslator(simpleData, errors);
                 t.setFailFast(false);
-                t.convertColumn("Text", 2, JdbcType.INTEGER);
+                t.addConvertColumn("Text", 2, JdbcType.INTEGER, false);
                 assertEquals(t.getColumnCount(), 1);
                 assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
                 assertEquals(t.getColumnInfo(1).getJdbcType(), JdbcType.INTEGER);

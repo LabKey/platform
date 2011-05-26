@@ -19,16 +19,20 @@ package org.labkey.api.etl;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.ValidationException;
 
+import java.io.Closeable;
+
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 16, 2011
  * Time: 1:51:48 PM
  *
- *  sticking with the jdbc style 1-based indexing
+ *  Sticking with the jdbc style 1-based indexing
+ *
+ *  Column 0 is the row number, used for error reporting
  */
 
-public interface DataIterator
+public interface DataIterator extends Closeable
 {
     /* count of colums, columns are indexed 1-columnCount */
     int getColumnCount();
@@ -49,7 +53,7 @@ public interface DataIterator
      * b) real value (e.g. 5.0, or "name")
      * c) MvFieldWrapper
      *
-     * MSInspectFeatursDataHanlder uses error values as well, but that's what ValidationException is for
+     * MSInspectFeatursDataHandler uses error values as well, but that's what ValidationException is for
      */
     Object get(int i);
 }

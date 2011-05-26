@@ -35,13 +35,20 @@ import org.labkey.api.collections.Join;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.etl.ValidatorIterator;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
@@ -53,6 +60,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
+import sun.rmi.server.InactiveGroupException;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.rowset.CachedRowSet;
@@ -2596,14 +2604,191 @@ public class Table
     }
 
 
+/**
+ * Helper for code that does not use QueryUpdateService
+ *
+ *      -- convert basic types
+ *      -- handle missing values for property columns
+ *      -- required and property validation
+ *      -- built-in columns
+ *
+ *  TODO
+ *      -- handle missing values for non-property columns
+ */
 
 
+public static class StandardETL implements DataIteratorBuilder, Runnable
+{
+    final DataIteratorBuilder _inputBuilder;
+    final TableInfo _target;
+    ValidationException _errors;
+    final Container _c;
+    final User _user;
+    boolean _failFast = true;
+    int _rowCount = 0;
+
+    ValidatorIterator _it;
+
+    public StandardETL(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user)
+    {
+        if (!(target instanceof UpdateableTableInfo))
+            throw new IllegalArgumentException("Must implement UpdateableTableInfo");
+        _inputBuilder = in;
+        _target = target;
+        _c = c;
+        _user = user;
+    }
 
 
+    @Override
+    public void run()
+    {
+        if (null == _errors)
+            _errors = new ValidationException();
+        DataIterator data = getDataIterator(_errors);
+        _rowCount = ((UpdateableTableInfo)_target).persistRows(data, _errors);
+    }
 
 
+    public int getRowCount()
+    {
+        return _rowCount;
+    }
 
 
+    public ValidationException getErrors()
+    {
+        return _errors;
+    }
+
+
+    @Override
+    public DataIterator getDataIterator(ValidationException errors)
+    {
+        if (null != _it)
+            return _it;
+
+        DbScope scope = _target.getSchema().getScope();
+        Domain d = _target.getDomain();
+
+        assert scope.isTransactionActive();
+
+        Map<String, DomainProperty> propertiesMap = new HashMap<String, DomainProperty>();
+        if (null != d)
+        {
+            for (DomainProperty dp : d.getProperties())
+                propertiesMap.put(dp.getPropertyURI(), dp);
+        }
+
+        DataIterator input = _inputBuilder.getDataIterator(errors);
+
+        //
+        // pass through all the source columns
+        // associate each with a target column if possible and handle convert, validate
+        //
+        // NOTE: although some columns may be matched by propertyURI, I assumie that create/modified etc are bound by name
+        //
+        
+        if (!(input instanceof SimpleTranslator))
+        {
+            input = new SimpleTranslator(input, errors);
+            ((SimpleTranslator)input).selectAll();;
+        }
+        ((SimpleTranslator)input).addBuiltinColumns(_c, _user, _target);
+
+        /*
+         * NOTE: sbouldn't really need DomainProperty here,
+         * but not all information is available on the ColumnInfo
+         * notably we need PropertyValidators
+         * notably we need PropertyValidators
+         */
+        List<ColumnInfo> cols = _target.getColumns();
+        Map<String, Pair<ColumnInfo,DomainProperty>> targetMap = new CaseInsensitiveHashMap<Pair<ColumnInfo,DomainProperty>>(cols.size()*4);
+        for (ColumnInfo col : cols)
+        {
+            if (col.isMvIndicatorColumn() || col.isRawValueColumn()) //TODO col.isNotUpdatableForSomeReasonSoContinue()
+                continue;
+            DomainProperty dp = propertiesMap.get(col.getPropertyURI());
+            Pair<ColumnInfo,DomainProperty> p = new Pair<ColumnInfo,DomainProperty>(col,dp);
+            String name = col.getName();
+            targetMap.put(name, p);
+            String uri = col.getPropertyURI();
+            if (null != uri && !targetMap.containsKey(uri))
+                targetMap.put(uri, p);
+            for (String alias : col.getImportAliasSet())
+                if (!targetMap.containsKey(alias))
+                    targetMap.put(alias, p);
+        }
+
+        //
+        // match up the columns, validate that there is no more than one source column that matches the target column
+        //
+
+        IdentityHashMap<Pair,Object> used = new IdentityHashMap();
+
+        ArrayList<Pair<ColumnInfo,DomainProperty>> targetCols = new ArrayList<Pair<ColumnInfo, DomainProperty>>(input.getColumnCount()+1);
+        targetCols.add(new Pair(null,null));
+        for (int i=1 ; i<=input.getColumnCount() ; i++)
+        {
+            ColumnInfo from = input.getColumnInfo(i);
+            Pair<ColumnInfo,DomainProperty> to = targetMap.get(from.getName());
+            if (null == to && null != from.getPropertyURI())
+                to = targetMap.get(from.getPropertyURI());
+
+            if (null != to)
+            {
+                if (used.containsKey(to))
+                    errors.addGlobalError("Two columns mapped to target column: " + to.getKey().getName());
+                used.put(to,null);
+                targetCols.add(to);
+            }
+            else
+                targetCols.add(new Pair(null,null));
+        }
+
+
+        // TODO : required columns that were not found
+
+
+        //
+        //  CONVERT and VALIDATE iterators
+        //
+        // set up a SimpleTranslator for conversion and missing-value handling
+        //
+
+        SimpleTranslator convert = new SimpleTranslator(input, errors);
+        convert.setFailFast(_failFast);
+        convert.setMvContainer(_c);
+        ValidatorIterator validate = new ValidatorIterator(convert, errors, _c, _user);
+
+        for (int i=1 ; i<= input.getColumnCount() ; i++)
+        {
+            Pair<ColumnInfo, DomainProperty> pair = targetCols.get(i);
+            ColumnInfo col = pair.getKey();
+            DomainProperty dp = pair.getValue();
+            if (null == col)
+            {
+                convert.addColumn(input.getColumnInfo(i).getName(), i);
+                continue;
+            }
+            boolean supportsMV = null != col.getMvColumnName() || (null != dp && dp.isMvEnabled());
+            if (null == dp)
+                convert.addConvertColumn(col.getName(), i, col.getJdbcType(), supportsMV);
+            else
+                convert.addConvertColumn(col.getName(), i, dp.getPropertyDescriptor(), dp.getPropertyDescriptor().getPropertyType());
+
+            if (!col.isNullable())
+                validate.addRequired(i, false);
+            else if (null != dp && dp.isRequired())
+                validate.addRequired(i, true);
+
+            if (null != dp)
+                validate.addPropertyValidator(i, dp.getPropertyDescriptor());
+        }
+
+        return validate;
+    }
+}
 
 
 
@@ -2660,16 +2845,18 @@ public class Table
         protected Parameter.ParameterMap stmt;
         final ValidationException errors;
         final DataIterator data;
-        final User user;
-        final Container c;
+        int _rowCount = 0;
 
-        ParameterMapPump(Container c, User user, DataIterator data, Parameter.ParameterMap map, ValidationException errors)
+        ParameterMapPump(DataIterator data, Parameter.ParameterMap map, ValidationException errors)
         {
-            this.c = c;
-            this.user = user;
             this.data = data;
             this.stmt = map;
             this.errors = errors;
+        }
+
+        public int getRowCount()
+        {
+            return _rowCount;
         }
 
         @Override
@@ -2677,8 +2864,6 @@ public class Table
         {
             try
             {
-                Parameter containerParameter = stmt.getParameter("Container");
-
                 // map from source to target
                 ArrayList<Pair<Integer,Parameter>> bindings = new ArrayList<Pair<Integer, Parameter>>(stmt.size());
                 // by name
@@ -2689,13 +2874,14 @@ public class Table
                     if (null != name && null != p)
                     {
                         bindings.add(new Pair<Integer,Parameter>(i, p));
-                        if (p == containerParameter)
-                            containerParameter = null;
                     }
                 }
 
                 while (data.next())
                 {
+                    if (Thread.currentThread().isInterrupted())
+                        throw new CancellationException();
+
                     stmt.clearParameters();
                     for (Pair<Integer,Parameter> binding : bindings)
                     {
@@ -2703,9 +2889,8 @@ public class Table
                         Parameter toParameter = binding.getValue();
                         toParameter.setValue(data.get(fromIndex));
                     }
-                    if (null != containerParameter)
-                        containerParameter.setValue(c.getId());    
                     stmt.execute();
+                    _rowCount++;
                 }
             }
             catch (ValidationException x)
@@ -2725,9 +2910,9 @@ public class Table
     {
         final TableInfo table;
 
-        TableLoaderPump(Container c, User user, DataIterator data, TableInfo table, ValidationException errors)
+        public TableLoaderPump(DataIterator data, TableInfo table, ValidationException errors)
         {
-            super(c, user, data, null, errors);
+            super(data, null, errors);
             this.table = table;
         }
 
@@ -2735,8 +2920,8 @@ public class Table
         public void run()
         {
             DbScope scope = null;
-            Connection conn = null
-                    ;
+            Connection conn = null;
+
             try
             {
                 try
@@ -2744,8 +2929,6 @@ public class Table
                     scope = ((UpdateableTableInfo)table).getSchemaTableInfo().getSchema().getScope();
                     conn = scope.getConnection();
                     stmt = Table.insertStatement(conn, (TableInfo)table, null, null, false);
-                    // UNDONE: insertStatement(fillDefaultFields=false)
-                    // stmt = table.insertStatement(conn, user);
                     super.run();
                 }
                 catch (SQLException x)
@@ -2756,7 +2939,7 @@ public class Table
             finally
             {
                 if (null != stmt)
-                    try {stmt.close();}catch (SQLException x){}
+                    try {stmt.close();} catch (SQLException x){}
                 if (null != conn)
                     scope.releaseConnection(conn);
             }
@@ -2825,6 +3008,11 @@ public class Table
         {
             return _data[currentRow][i];
         }
+
+        @Override
+        public void close() throws IOException
+        {
+        }
     }
 
 
@@ -2842,8 +3030,8 @@ public class Table
             translate.addBuiltinColumns(JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable);
 
             TableLoaderPump load = new TableLoaderPump(
-                    JunitUtil.getTestContainer(),
-                    TestContext.get().getUser(),
+//                    JunitUtil.getTestContainer(),
+//                    TestContext.get().getUser(),
                     translate,
                     testTable,
                     errors

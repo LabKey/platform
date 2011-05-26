@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.BatchValidationException;
@@ -1029,6 +1030,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public CaseInsensitiveHashSet skipProperties()
     {
         return null;
+    }
+
+    @Override
+    public int persistRows(DataIterator data, ValidationException errors)
+    {
+        Table.TableLoaderPump pump = new Table.TableLoaderPump(data, this, errors);
+        pump.run();
+        return pump.getRowCount();
     }
 
     @Override

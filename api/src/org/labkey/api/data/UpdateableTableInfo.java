@@ -18,6 +18,8 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.sql.Connection;
@@ -89,6 +91,25 @@ public interface UpdateableTableInfo
      */
     @Nullable
     CaseInsensitiveHashSet skipProperties();
+
+
+    /**
+     * Insert multiple rows into the database
+     *
+     * The default behavior will just match up columns in the data iterator to parameters from insertStatement().
+     * Conversion, Validation, and default values should be setup before calling this method.  Most special cases
+     * can be handled by the default implementation which will look at skipProperties() and remapSchemaColumns().
+     * 
+     * If there are idiosyncratic column mapping problems (hidden columns?) etc, you can override this method.
+     * Try to use generic code paths to get the input data iterator to match the parameters when possible.
+     *
+     * This method is _NOT_ usually called directly. See TableInfo.getUpdateService().
+     * 
+     * @param data
+     * @param errors
+     */
+    int persistRows(DataIterator data, ValidationException errors);
+
 
     /** persist one row in the database
      *

@@ -25,7 +25,24 @@ import org.labkey.api.query.ValidationException;
  * Time: 1:47 PM
  */
 
-public interface DataBuilder
+public interface DataIteratorBuilder
 {
     DataIterator getDataIterator(ValidationException x);
+
+
+    public static class Wrapper implements DataIteratorBuilder
+    {
+        final DataIterator di;
+
+        public Wrapper(DataIterator d)
+        {
+            this.di = d;
+        }
+
+        @Override
+        public DataIterator getDataIterator(ValidationException x)
+        {
+            return di;
+        }
+    }
 }

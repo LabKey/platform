@@ -23,7 +23,10 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.query.ValidationError;
@@ -31,9 +34,12 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.*;
 import org.labkey.api.util.GUID;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,8 +48,6 @@ import java.util.List;
  * Time: 1:24 PM
  *
  * This is a pass-through iterator, it does not change any of the data, it only create errors
- *
- * Should all columns be validated or just those that are asked for?
  */
 public class ValidatorIterator implements DataIterator
 {
@@ -52,9 +56,9 @@ public class ValidatorIterator implements DataIterator
     final DataIterator _data;
     final ValidatorContext validatorContext;
     final ArrayList<ArrayList<Validator>> _validators = new ArrayList<ArrayList<Validator>>();
+    int _rowCount = 0;
 
-
-    ValidatorIterator(DataIterator data, ValidationException errors, Container c, User user)
+    public ValidatorIterator(DataIterator data, ValidationException errors, Container c, User user)
     {
         _data = data;
         _errors = errors;
@@ -169,6 +173,45 @@ checkRequired:
     }
 
 
+    private void addValidator(int i, Validator v)
+    {
+        while (_validators.size() < i)
+            _validators.add(new ArrayList<Validator>());
+        _validators.get(i).add(v);
+    }
+
+
+    /*
+     * Add validator methods
+     */
+
+    public void addRequired(int i, boolean allowMv)
+    {
+
+    }
+
+    public void addPropertyValidator(int i, PropertyDescriptor pd)
+    {
+        IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(pd);
+        if (null == validators || 0 == validators.length)
+            return;
+        for (IPropertyValidator v : validators)
+        {
+
+        }
+    }
+
+    void initPropertyValidators(Domain d)
+    {
+        // cache all the property validators for this upload
+//        Map<String, IPropertyValidator[]> validatorMap = new HashMap<String, IPropertyValidator[]>();
+//        for (DomainProperty dp : properties)
+//        {
+//            propertiesMap.put(dp.getPropertyURI(), dp);
+//            if (validators.length > 0)
+//                validatorMap.put(dp.getPropertyURI(), validators);
+//        }
+    }
 
     /* DataIterator */
 
@@ -184,6 +227,7 @@ checkRequired:
         return _data.getColumnInfo(i);
     }
 
+
     @Override
     public boolean next() throws ValidationException
     {
@@ -193,8 +237,7 @@ checkRequired:
         boolean validRow = true;
 
         // first the column validators
-        int count = _data.getColumnCount();
-        for (int i=1 ; i<=count ; i++)
+        for (int i=1 ; i<=_validators.size() ; i++)
         {
             List<Validator> l = _validators.get(i);
             if (null == l) continue;
@@ -210,7 +253,7 @@ checkRequired:
             }
         }
         // row validators
-        List<Validator> l = _validators.get(0);
+        List<Validator> l = _validators.isEmpty() ? null : _validators.get(0);
         if (null != l)
         {
             for (Validator v : l)
@@ -226,19 +269,28 @@ checkRequired:
             }
         }
 
-        return validRow || !failFast;
+        boolean hasNext = validRow || !failFast;
+        if (hasNext)
+            _rowCount++;
+        return hasNext;
     }
+
 
     @Override
     public Object get(int i)
     {
-        return _data.getColumnInfo(i);
+        return _data.get(i);
+    }
+
+    @Override
+    public void close() throws IOException
+    {
     }
 
 
     /*
-     * Tests
-     */
+    * Tests
+    */
 
     private static String[] as(String... arr)
     {
