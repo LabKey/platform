@@ -64,21 +64,32 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     private String _queryViewActionURL;
     private String _dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
 
+    // Allow URL parameters to bind schemaName, queryName, viewName, and dataRegionName.
+    // If a derived class explicitly sets a schemaName and/or queryName (e.g. ListQueryForm or ChooseRunsToAnalyzeForm)
+    // it won't be overridden by a URL parameter.
+    // NOTE: Ideally we'd just use null to indicate the property has been set yet or not.  Unfortunately,
+    // binding doesn't always happen and when it does, our getters have the side-effect of creating QuerySettings
+    // with a copy the current queryName/viewName into querySettings.  Eventually, we should split out the
+    // form-binding parts from the createSchema() and createQuerySettings() parts into two classes.
+    private boolean _bindQueryName = true;
+    private boolean _bindSchemaName = true;
+    private boolean _bindDataRegionName = true;
+    private boolean _bindViewName = true;
+    private boolean _bound;
+
     protected PropertyValues _initParameters = null;
 
     public QueryForm()
     {
     }
 
-    public QueryForm(String dataRegionName)
-    {
-        _dataRegionName = dataRegionName;
-    }
-
     protected QueryForm(String schemaName, String queryName)
     {
         _schemaName = new IdentifierString(schemaName);
         _queryName = queryName;
+
+        _bindSchemaName = false;
+        _bindQueryName = false;
     }
 
     protected QueryForm(String schemaName, String queryName, String viewName)
@@ -86,6 +97,10 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         _schemaName = new IdentifierString(schemaName);
         _queryName = queryName;
         _viewName = viewName;
+
+        _bindSchemaName = false;
+        _bindQueryName = false;
+        _bindViewName = false;
     }
 
     public void setViewContext(ViewContext context)
@@ -118,22 +133,30 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     protected BindException doBindParameters(PropertyValues params)
     {
+        assert !_bound;
         _initParameters = params;
         String commandName = getDataRegionName() == null ? "form" : getDataRegionName();
 
         // Delete parameters we don't want to bind or that we want QuerySettings.init() to handle
         MutablePropertyValues bindParams = new MutablePropertyValues(params);
-        bindParams.removePropertyValue(QueryParam.dataRegionName.name());
-        bindParams.removePropertyValue(QueryParam.queryName.name());
-        bindParams.removePropertyValue(QueryParam.viewName.name());
+        if (!_bindDataRegionName)
+            bindParams.removePropertyValue(QueryParam.dataRegionName.name());
+        if (!_bindQueryName)
+            bindParams.removePropertyValue(QueryParam.queryName.name());
+        if (!_bindViewName)
+            bindParams.removePropertyValue(QueryParam.viewName.name());
+
         // don't override preset schemaName
-        IdentifierString schemaName = _schemaName;
-        
+        IdentifierString schemaName = null;
+        if (!_bindSchemaName)
+            schemaName = _schemaName;
+
         BindException errors = BaseViewAction.springBindParameters(this, commandName, bindParams);
         
         if (schemaName != null && !schemaName.isEmpty())
             _schemaName = schemaName;
 
+        _bound = true;
         return errors;
     }
 
@@ -220,9 +243,11 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     }
 
 
-    protected void setDataRegionName(String name)
+    public void setDataRegionName(String name)
     {
         if (_querySettings != null)
+            throw new IllegalStateException();
+        if (_dataRegionName != null)
             throw new IllegalStateException();
         _dataRegionName = name;
     }
@@ -237,6 +262,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public void setSchemaName(IdentifierString name)
     {
         if (_querySettings != null)
+            throw new IllegalStateException();
+        if (_schemaName != null)
             throw new IllegalStateException();
         _schemaName = name;
     }
@@ -259,6 +286,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public void setQueryName(String name)
     {
         if (_queryDef != null)
+            throw new IllegalStateException();
+        if (_queryName != null)
             throw new IllegalStateException();
         _queryName = name;
     }
@@ -306,6 +335,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public void setViewName(String name)
     {
         if (null != _customView || null != _querySettings)
+            throw new IllegalStateException();
+        if (_viewName != null)
             throw new IllegalStateException();
         _viewName = name;
     }
