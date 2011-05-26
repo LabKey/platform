@@ -49,8 +49,8 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
-import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.Lsid;
@@ -627,7 +627,7 @@ public class StudyManager
 
             clearVisitAliases(study);
 
-            Table.StandardETL etl = new Table.StandardETL(tinfo, loader, study.getContainer(), user);
+            StandardETL etl = new StandardETL(tinfo, loader, study.getContainer(), user);
             etl.run();
 
             if (etl.getErrors().hasErrors())
