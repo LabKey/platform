@@ -164,7 +164,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         File inputData = new File(getReportDir(), DATA_INPUT);
 
         /**
-         * for each included script, the source script is process for input/output replacements
+         * for each included script, the source script is processed for input/output replacements
          * and the result copied into this scripts working directory so it can be loaded via the source command
          */
         for (String includedReport : ((RReportDescriptor)getDescriptor()).getIncludedReports())
