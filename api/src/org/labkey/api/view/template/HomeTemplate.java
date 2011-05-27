@@ -76,7 +76,11 @@ public class HomeTemplate extends PrintTemplate
 
         WebPartView header = null;
         if (ModuleLoader.getInstance().isStartupComplete() && null != wikiService && null != c && null != c.getProject())
+        {
             header = wikiService.getView(c.getProject(), "_header", false);
+            if (null != header)
+                header.setFrame(FrameType.NONE); // 12336: Explicitly don't frame the _header override.
+        }
 
         if (null != header)
             setView("header", header);
