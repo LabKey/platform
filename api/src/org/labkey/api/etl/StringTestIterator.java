@@ -19,13 +19,11 @@ package org.labkey.api.etl;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.ValidationException;
 
 import java.io.IOException;
 import java.util.List;
 
 /**
-* Created by IntelliJ IDEA.
 * User: matthewb
 * Date: 2011-05-20
 * Time: 2:16 PM

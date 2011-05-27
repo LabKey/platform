@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 23, 2011
  * Time: 5:01:51 PM
@@ -77,7 +76,7 @@ public class MapDataIterator extends AbstractDataIterator implements DataIterato
     @Override
     public int getColumnCount()
     {
-        return _cols.size()-1;
+        return _cols.size() - 1;
     }
 
     @Override

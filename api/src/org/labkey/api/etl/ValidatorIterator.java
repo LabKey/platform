@@ -24,23 +24,19 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.*;
+import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
