@@ -13,6 +13,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.imagePath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath + "/_images";
     LABKEY.devMode = false;
     LABKEY.extJsRoot = "ext-3.2.2";
+    LABKEY.extJsRoot_40 = "ext-4.0.1";
     LABKEY.verbose = false;
     LABKEY.widget = {};
     LABKEY.hash = 0;
@@ -234,6 +235,23 @@ LABKEY.requiresExtJs = function(immediate)
     LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
 };
 
+LABKEY.requiresExt4Sandbox = function(immediate)
+{
+    if (arguments.length < 1) immediate = true;
+
+    LABKEY.requiresCss(LABKEY.extJsRoot_40 + '/resources/css/ext-sandbox.css', true);
+    LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
+};
+
+// adds the compatibility layer to be used on the Ext4 sandbox components
+LABKEY.requiresExtSandboxCompat = function(immediate)
+{
+    if (arguments.length < 1) immediate = true;
+
+    // compatibility layer
+    LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext3-sb-core-compat.js", immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext3-sb-compat.js", immediate);
+};
 
 LABKEY.requiresClientAPI = function(immediate)
 {
