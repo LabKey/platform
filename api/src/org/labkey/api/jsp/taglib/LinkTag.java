@@ -46,6 +46,6 @@ public class LinkTag extends SimpleTagBase
     public void doTag() throws JspException, IOException
     {
         JspWriter out = getOut();
-        out.write(PageFlowUtil.textLink(h(_text), h(_href)));
+        out.write(PageFlowUtil.textLink(_text, _href));
     }
 }
