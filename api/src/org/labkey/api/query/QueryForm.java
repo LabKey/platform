@@ -75,7 +75,9 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     private boolean _bindSchemaName = true;
     private boolean _bindDataRegionName = true;
     private boolean _bindViewName = true;
-    private boolean _bound;
+    private BindState _bindState = BindState.UNBOUND;
+
+    private enum BindState { UNBOUND, BINDING, BOUND }
 
     protected PropertyValues _initParameters = null;
 
@@ -133,7 +135,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     protected BindException doBindParameters(PropertyValues params)
     {
-        assert !_bound;
+        assert _bindState == BindState.UNBOUND;
         _initParameters = params;
         String commandName = getDataRegionName() == null ? "form" : getDataRegionName();
 
@@ -151,12 +153,13 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         if (!_bindSchemaName)
             schemaName = _schemaName;
 
+        _bindState = BindState.BINDING;
         BindException errors = BaseViewAction.springBindParameters(this, commandName, bindParams);
-        
+        _bindState = BindState.BOUND;
+
         if (schemaName != null && !schemaName.isEmpty())
             _schemaName = schemaName;
 
-        _bound = true;
         return errors;
     }
 
@@ -195,6 +198,9 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     protected UserSchema createSchema()
     {
+        // Don't side-effect until all URL parameters have been bound.
+        if (_bindState == BindState.BINDING)
+            return null;
         UserSchema ret = null;
         HString schemaName = getSchemaName();
 
@@ -222,6 +228,9 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     final public QuerySettings getQuerySettings()
     {
+        // Don't side-effect until all URL parameters have been bound.
+        if (_bindState == BindState.BINDING)
+            return null;
         if (_querySettings == null)
         {
             UserSchema schema = getSchema();
@@ -247,8 +256,6 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     {
         if (_querySettings != null)
             throw new IllegalStateException();
-        if (_dataRegionName != null)
-            throw new IllegalStateException();
         _dataRegionName = name;
     }
 
@@ -262,8 +269,6 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public void setSchemaName(IdentifierString name)
     {
         if (_querySettings != null)
-            throw new IllegalStateException();
-        if (_schemaName != null)
             throw new IllegalStateException();
         _schemaName = name;
     }
@@ -287,13 +292,14 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     {
         if (_queryDef != null)
             throw new IllegalStateException();
-        if (_queryName != null)
-            throw new IllegalStateException();
         _queryName = name;
     }
 
     public String getQueryName()
     {
+        // Don't side-effect until all URL parameters have been bound.
+        if (_bindState == BindState.BINDING)
+            return null;
         return getQuerySettings() != null ? getQuerySettings().getQueryName() : _queryName;
     }
     
@@ -336,18 +342,22 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     {
         if (null != _customView || null != _querySettings)
             throw new IllegalStateException();
-        if (_viewName != null)
-            throw new IllegalStateException();
         _viewName = name;
     }
 
     public String getViewName()
     {
+        // Don't side-effect until all URL parameters have been bound.
+        if (_bindState == BindState.BINDING)
+            return null;
         return getQuerySettings() != null ? getQuerySettings().getViewName() : _viewName;
     }
     
     public CustomView getCustomView()
     {
+        // Don't side-effect until all URL parameters have been bound.
+        if (_bindState == BindState.BINDING)
+            return null;
         if (_customView != null)
             return _customView;
         if (getQuerySettings() == null)
