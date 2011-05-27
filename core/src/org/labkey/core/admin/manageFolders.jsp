@@ -56,6 +56,7 @@
         Ext.Ajax.timeout = 300000; // 5 minutes.
 
         var selectedFolder;
+        var m = Ext.MessageBox.buttonText;
         
         var actions = {
             alias  : 'folderAliases',
@@ -117,46 +118,18 @@
 
             contextMenu : new Ext.menu.Menu({
                 cls   : 'extContainer',
-                items : [{
-                    text    : 'Create Subfolder',
-                    handler : function(item, e) {
-                        action('create');
-                    }
-                },{
-                    id      : 'sort-alpha',
-                    text    : 'Display Subfolders Alphabetically',
-                    handler : function(item, e) {
+                items : [
+                    {text: 'Aliases',          handler : function(i,e){ action('alias'); } },
+                    {text: 'Create Subfolder', handler : function(i,e){ action('create'); } },
+                    {text: 'Delete',           handler : function(i,e){ action('remove'); }, sensitive : true },
+                    {text: 'Display Subfolders Alphabetically', handler : function(item, e) {
                         var node = item.parentMenu.contextNode;
                         if (node && node.childNodes.length) {
-
-                            mask('Reordering Folders...');
-                            Ext.Ajax.request({
-                                url     : LABKEY.ActionURL.buildURL('admin', 'reorderFoldersApi.api', node.childNodes[0].attributes.containerPath),
-                                method  : 'POST',
-                                params  : {resetToAlphabetical : true},
-                                success : function(){
-                                    folderTree.getLoader().load(node);
-                                    node.expand();
-                                    unmask();
-                                },
-                                failure : function(){ unmask(); }
-                            });
-
+                            reorderFolders(node.childNodes[0], undefined, true, node);
                         }
-                    }
-                },{
-                    text      : 'Rename',
-                    sensitive : true,
-                    handler   : function(item, e){
-                        action('rename');
-                    }
-                },{
-                    text : 'Delete',
-                    sensitive : true,
-                    handler : function(item, e){                        
-                        action('remove');
-                    }
-                }],
+                    }, id: 'sort-alpha' },
+                    {text: 'Rename',           handler : function(i,e){ action('rename'); }, sensitive : true }
+                ],
                 listeners : {
                     beforeshow : function(menu) {
                         var node = menu.contextNode;
@@ -179,12 +152,14 @@
             useArrows : true,
             autoScroll: true,
             border: true,
-            tbar : [{text: 'Rename', ref: '../rename', handler : function(){ action('rename'); }},
-                    {text: 'Move', ref: '../move', handler : function(){ action('move'); }},
-                    {text: 'Create Subfolder', ref: '../create', handler : function(){ action('create'); }},
-                    {text: 'Delete', ref: '../remove', handler : function(){ action('remove'); }},
-                    {text: 'Aliases', ref: '../alias', handler : function(){ action('alias'); }}],
-                    //{text: 'Change Display Order', ref: '../reorder', handler : function(){ action('reorder'); }}]
+            tbar : [
+                {text: 'Aliases',              ref: '../alias',   handler : function(){ action('alias'); }},
+                {text: 'Change Display Order', ref: '../reorder', handler : function(){ action('reorder'); }},
+                {text: 'Create Subfolder',     ref: '../create',  handler : function(){ action('create'); }},
+                {text: 'Delete',               ref: '../remove',  handler : function(){ action('remove'); }},
+                {text: 'Move',                 ref: '../move',    handler : function(){ action('move'); }},
+                {text: 'Rename',               ref: '../rename',  handler : function(){ action('rename'); }}
+            ],
             buttonAlign : 'left',
             fbar : [{
                 xtype  : 'box',
@@ -236,9 +211,7 @@
                 if (actions[actionType]) {
                     window.location = LABKEY.ActionURL.buildURL('admin', actions[actionType], selectedFolder.attributes.containerPath);
                 }
-                else {
-                    console.error("'" + actionType + "' is not a valid action.");
-                }
+                else { console.error("'" + actionType + "' is not a valid action."); }
             }
         }
 
@@ -270,9 +243,7 @@
         }
 
         function mask(message) {
-            if (message) {
-                Ext.get('folderdiv').mask(message);
-            }
+            if (message) { Ext.get('folderdiv').mask(message); }
             else { Ext.get('folderdiv').mask('Moving Folders. This could take a few minutes...'); }
             folderTree.info.update('');
         }
@@ -306,9 +277,7 @@
             var d = target.leaf ? target.parentNode : target;
 
             e.confirmed = undefined;
-            e.oldParent = s.parentNode;
-
-            mask();
+            e.oldParent = s.parentNode;            
 
             // Reorder
             if (target == s.parentNode) {
@@ -333,44 +302,62 @@
                     sep = ";";
                 }
 
-                console.info('Order: ' + order + " for " + s.attributes.containerPath);
-                Ext.Ajax.request({
-                    url     : LABKEY.ActionURL.buildURL('admin', 'reorderFoldersApi.api', s.attributes.containerPath),
-                    method  : 'POST',
-                    params  : {order : order, resetToAlphabetical : false},
-                    success : function(x, y, z) {
-                        // reload the subtree
-                        if (s.attributes.isProject) {
-                            folderTree.getLoader().load(s.parentNode);
-                            folderTree.getRootNode().expand();
-                        }
-                        unmask();
-                    },
-                    failure : function() {
-                        Ext.Msg.alert('Error Reordering.', 'Failed to Reorder.');
-                        unmask();
-                    }
-                });
+                reorderFolders(s, order);
             }
             else {
 
-                // Make move request
-                LABKEY.Security.moveContainer({
-                    container : s.attributes.containerPath,
-                    parent    : d.attributes.containerPath,
-                    success   : function(response){
-                        if (response.success) {
-                            s.attributes.containerPath = response.newPath;
-                        }
+                s.bubble(function(ps){
+                    if (ps.attributes.isProject){
+                        d.bubble(function(pd){
+                            if (pd.attributes.isProject) {
+                                console.info(ps.attributes.containerPath + " is the project root.");
+                                console.info(pd.attributes.containerPath + " is the project target.");
 
-                        // reload the subtree
-                        folderTree.getLoader().load(s);
+                                function move(){
 
-                        onSuccess(response);
-                    },
-                    failure   : onFailure
+                                    // Make move request
+                                    mask("Moving Folders. This could take a few minutes...");
+                                    LABKEY.Security.moveContainer({
+                                        container : s.attributes.containerPath,
+                                        parent    : d.attributes.containerPath,
+                                        success   : function(response){
+                                            if (response.success) {
+                                                s.attributes.containerPath = response.newPath;
+                                            }
+
+                                            // reload the subtree
+                                            folderTree.getLoader().load(s);
+
+                                            onSuccess(response);
+                                        },
+                                        failure   : onFailure
+                                    });
+
+                                }
+
+                                if (ps.attributes.id == pd.attributes.id) { move(); }
+                                else {
+                                    m.yes = 'Confirm Move';
+                                    m.no  = 'Cancel';
+                                    Ext.Msg.confirm('Change Project', 'You are moving folder \'' + s.attributes.text + '\' from one project to another. ' +
+                                            'This will remove all permissions settings from this folder, any subfolders, and any other configurations. ' +
+                                            '<br/><b>This action cannot be undone.</b>', function(btn, text){
+                                        if (btn == 'yes'){ move(); }
+                                        else {
+                                            // Rollback
+                                            folderTree.getLoader().load(ps);
+                                            folderTree.getLoader().load(pd);
+                                            ps.expand();
+                                        }
+                                    });
+                                }
+
+                                return false; // stop bubble
+                            }
+                        });
+                        return false; // stop bubble
+                    }
                 });
-
             }
         }
 
@@ -435,6 +422,54 @@
             }
 
             return target;
+        }
+
+        function reorderFolders(s, order, alpha, alphaNode) {
+            mask();
+            m.yes = 'Confirm Reorder';
+            m.no  = 'Cancel';
+            Ext.Msg.confirm('Change Display Order', 'Please confirm that you would like to reorder.', function(btn, text, z){
+                if (btn == 'yes') {
+
+                    var params = {};
+                    if (order) {params.order = order;}
+                    if (alpha) {params.resetToAlphabetical = true;}
+                    
+                    Ext.Ajax.request({
+                        url     : LABKEY.ActionURL.buildURL('admin', 'reorderFoldersApi.api', s.attributes.containerPath),
+                        method  : 'POST',
+                        params  : params,
+                        success : function() {
+
+                            if (alpha) {
+                                folderTree.getLoader().load(alphaNode);
+                                alphaNode.expand();
+                            }
+                            else{
+                                if (s.attributes.isProject) {
+                                    folderTree.getLoader().load(s.parentNode);
+                                    folderTree.getRootNode().expand();
+                                }
+                            }
+                            unmask();
+                        },
+                        failure : function() {
+                            Ext.Msg.alert('Error Reordering.', 'Failed to Reorder.');
+                            unmask();
+                        }
+                    });
+
+                }
+                else {
+                    // Rollback UI movement
+                    if (s.parentNode) {
+                        var node = s.parentNode;
+                        folderTree.getLoader().load(node);
+                        node.expand();
+                    }
+                }
+                unmask();
+            });
         }
     }
 
