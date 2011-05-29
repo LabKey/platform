@@ -37,6 +37,8 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.model.VisitMapKey" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistic" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -62,6 +64,7 @@
     boolean showQCStates = manager.showQCStates(container);
     QCStateSet selectedQCStateSet = null;
     List<QCStateSet> qcStateSetOptions = null;
+
     if (showQCStates)
     {
         selectedQCStateSet = bean.qcStates;
@@ -72,6 +75,7 @@
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
     String basePage = "overview.view?";
+
     if (selectedCohort != null)
         basePage += "cohortId=" + selectedCohort.getRowId() + "&";
     if (selectedQCStateSet != null)
@@ -92,8 +96,6 @@
                 textLink("Show Hidden Data", basePage + "showAll=1");
         out.write(viewLink);
     }
-
-
 %>
 <form action="overview.view" name="changeFilterForm" method="GET">
     <input type="hidden" name="showAll" value="<%= bean.showAll ? "1" : "0" %>">
@@ -140,7 +142,6 @@
 <br><br>
 <table class="labkey-data-region labkey-show-borders"><colgroup><col><col>
     <%
-
         for (VisitImpl visit : visits)
         {
             if (!bean.showAll && !visit.isShowByDefault())
@@ -167,6 +168,7 @@
     VisitMapKey key = new VisitMapKey(0,0);
     String prevCategory = null;
     boolean useCategories = false;
+
     for (DataSetDefinition dataSet : datasets)
     {
         if (dataSet.getCategory() != null)
@@ -175,6 +177,7 @@
             break;
         }
     }
+
     Map<VisitMapKey,Boolean> requiredMap = StudyManager.getInstance().getRequiredMap(study);
 
     for (DataSetDefinition dataSet : datasets)
@@ -183,11 +186,13 @@
             continue;
 
         boolean userCanRead = dataSet.canRead(user);
+
         if (!userCanRead)
             cantReadOneOrMoreDatasets = true;
 
         row++;
         key.datasetId = dataSet.getDataSetId();
+
         if (useCategories)
         {
             String category = dataSet.getCategory();
@@ -211,12 +216,16 @@
         %></td>
         <td style="font-weight:bold;"><%
         int totalCount = 0;
+
         for (VisitImpl visit : visits)
         {
             key.visitRowId = visit.getRowId();
-            Integer c = bean.visitMapSummary.get(key);
-            totalCount += c == null ? 0 : c;
+            VisitStatistics stats = bean.visitMapSummary.get(key);
+
+            if (null != stats)
+                totalCount += stats.get(VisitStatistic.RowCount);
         }
+
         if (userCanRead)
         {
             ActionURL defaultReportURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, container);
@@ -240,30 +249,25 @@
                 continue;
 
             key.visitRowId = visit.getRowId();
-            Integer c = bean.visitMapSummary.get(key);
-            int count = c == null ? 0 : c;
-
-            String innerHtml;
+            VisitStatistics stats = bean.visitMapSummary.get(key);
             Boolean b = requiredMap.get(key);
             boolean isRequired = b == Boolean.TRUE;
             boolean isOptional = b == Boolean.FALSE;
+            String innerHtml = null;
 
-            if (isRequired)
+            for (VisitStatistic stat : bean.stats)
             {
-                innerHtml = ""  + count;
-            }
-            else if (isOptional)
-            {
-                innerHtml = ""  + count;
-            }
-            else
-            {
-                innerHtml = count == 0 ? "&nbsp;" : "" + count;
+                int count = null != stats ? stats.get(stat) : 0;
+
+                if (isRequired || isOptional || count > 0)
+                    innerHtml = (null == innerHtml ? "" + count : innerHtml + " / " + count);
             }
 
-            %><td align="center"><%
-
-            if ((isRequired || isOptional || count > 0) && userCanRead)
+            if (null == innerHtml)
+            {
+                innerHtml = "&nbsp;";
+            }
+            else if (userCanRead)
             {
                 ActionURL datasetLink = new ActionURL(StudyController.DatasetAction.class, container);
                 datasetLink.addParameter(VisitImpl.VISITKEY, visit.getRowId());
@@ -273,13 +277,10 @@
                 if (bean.qcStates != null)
                     datasetLink.addParameter(BaseStudyController.SharedFormParameters.QCState, bean.qcStates.getFormValue());
 
-                %><a href="<%= datasetLink.getLocalURIString() %>"><%= innerHtml %></a><%
+                innerHtml = "<a href=\"" + datasetLink.getLocalURIString() + "\">" + innerHtml + "</a>";
             }
-            else
-            {
-                %><%= innerHtml %><%
-            }
-            %></td><%
+            
+            %><td align="center" nowrap="true"><%=innerHtml%></td><%
         }
         %></tr>
     <%
@@ -289,6 +290,6 @@
 <%
     if (cantReadOneOrMoreDatasets)
     {
-        %><i>NOTE: user does not have read permission on one or more datasets.  Contact the study administrator for more information.<%
+        %><span style="font-style: italic;">NOTE: You do not have read permission to one or more datasets.  Contact the study administrator for more information.</span><%
     }
 %>

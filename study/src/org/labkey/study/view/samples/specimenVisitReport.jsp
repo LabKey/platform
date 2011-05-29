@@ -20,15 +20,11 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReport" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
-<%@ page import="org.labkey.study.model.CohortImpl" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="java.util.*" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
     SpecimenVisitReportParameters bean = me.getModelBean();
-    String contextPath = request.getContextPath();
 
     for (SpecimenVisitReport report : bean.getReports())
     {
@@ -76,6 +72,7 @@
             {
                 int rowIndex = 0;
                 String[] previousTitleHierarchy = null;
+
                 for (SpecimenVisitReport.Row row : (Collection<SpecimenVisitReport.Row>) report.getRows())
                 {
                     String[] currentTitleHierarchy = row.getTitleHierarchy();
@@ -85,6 +82,7 @@
                     {
                         String titleElement = currentTitleHierarchy[i];
                         boolean outputElement = previousTitleHierarchy == null;
+
                         for (int j = i; j >= 0 && !outputElement; j--)
                         {
                             String currentRow = currentTitleHierarchy[j];
@@ -104,6 +102,7 @@
                     }
 
                     previousTitleHierarchy = currentTitleHierarchy;
+
                     for (VisitImpl visit : visits)
                     {
                         %><td align="center"><%

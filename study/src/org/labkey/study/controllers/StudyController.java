@@ -200,6 +200,7 @@ import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.visitmanager.VisitManager;
+import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
 import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriter;
 import org.springframework.validation.BindException;
@@ -557,15 +558,19 @@ public class StudyController extends BaseStudyController
             bean.showAll = "1".equals(getViewContext().get("showAll"));
             bean.canManage = getContainer().hasPermission(getUser(), ManageStudyPermission.class);
             bean.showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
+            bean.stats = new VisitStatistic[]{VisitStatistic.ParticipantCount/*, VisitStatistic.RowCount*/};
+
             if (StudyManager.getInstance().showQCStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
+
             if (!bean.showCohorts)
                 bean.cohortFilter = null;
             else
                 bean.cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
 
             VisitManager visitManager = StudyManager.getInstance().getVisitManager(bean.study);
-            bean.visitMapSummary = visitManager.getVisitSummary(bean.cohortFilter, bean.qcStates);
+            bean.visitMapSummary = visitManager.getVisitSummary(bean.cohortFilter, bean.qcStates, bean.stats);
+
             return new StudyJspView<OverviewBean>(getStudy(), "overview.jsp", bean, errors);
         }
 
@@ -2639,12 +2644,13 @@ public class StudyController extends BaseStudyController
     public static class OverviewBean
     {
         public StudyImpl study;
-        public Map<VisitMapKey,Integer> visitMapSummary;
+        public Map<VisitMapKey, VisitManager.VisitStatistics> visitMapSummary;
         public boolean showAll;
         public boolean canManage;
         public CohortFilter cohortFilter;
         public boolean showCohorts;
         public QCStateSet qcStates;
+        public VisitStatistic[] stats;
     }
 
     /**

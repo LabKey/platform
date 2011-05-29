@@ -1,36 +1,43 @@
+/*
+ * Copyright (c) 2008-2011 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.labkey.study.visitmanager;
 
-import org.labkey.api.study.Study;
-import org.labkey.study.query.DataSetTable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.study.StudySchema;
+import org.labkey.api.study.Study;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.model.*;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DataSetTable;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Copyright (c) 2008-2010 LabKey Corporation
-* <p/>
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-* <p/>
-* http://www.apache.org/licenses/LICENSE-2.0
-* <p/>
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* <p/>
-* User: brittp
-* Created: Feb 29, 2008 11:23:56 AM
-*/
+ * User: brittp
+ * Created: Feb 29, 2008 11:23:56 AM
+ */
 public class SequenceVisitManager extends VisitManager
 {
     public SequenceVisitManager(StudyImpl study)
@@ -38,13 +45,11 @@ public class SequenceVisitManager extends VisitManager
         super(study);
     }
 
-    public Map<VisitMapKey, Integer> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates) throws SQLException
+    @Override
+    protected SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias)
     {
-        Map<VisitMapKey, Integer> visitSummary = new HashMap<VisitMapKey, Integer>();
-        DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), null);
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
-        ResultSet rows = null;
 
         // This query is too slow on postgres (8.1 anyway), do the join in code
 //        TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -56,83 +61,45 @@ public class SequenceVisitManager extends VisitManager
 //                new Object[] {study.getContainer().getId(), study.getContainer().getId()});
 
 // make it a sqlfragment and use studyDate.getFromSql
-        try
+
+        SQLFragment sql = new SQLFragment();
+
+        if (cohortFilter == null)
         {
-            SQLFragment sql = new SQLFragment();
-            if (cohortFilter == null)
-            {
-                 sql.append("SELECT DatasetId, SequenceNum, CAST(COUNT(*) AS INT)\n" +
-                    "FROM ").append(studyData.getFromSQL("SD") + "\n" +
-                     (qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
-                    "GROUP BY DatasetId, SequenceNum\n" +
-                    "ORDER BY 1, 2");
-            }
-            else
-            {
-                switch (cohortFilter.getType())
-                {
-                    case DATA_COLLECTION:
-                        sql.append("SELECT DatasetId, SD.SequenceNum, CAST(COUNT(*) AS INT)\n" +
-                                "FROM ").append(studyData.getFromSQL("SD") + "\n" +
-                                ", study.ParticipantVisit PV\n" +
-                                "WHERE SD.Container = ? AND \n" +
-                                "\tPV.ParticipantId = SD.ParticipantId AND \n" +
-                                "\tPV.SequenceNum = SD.SequenceNum AND\n" +
-                                "\tPV.Container = ? AND \n" +
-                                "\tPV.CohortID = ?\n" +
-                                (qcStates != null ? "\tAND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
-                                "GROUP BY DatasetId, SD.SequenceNum\n" +
-                                "ORDER BY 1, 2");
-                        sql.add(getStudy().getContainer());
-                        sql.add(cohortFilter.getCohortId());
-                        break;
-                    case PTID_CURRENT:
-                    case PTID_INITIAL:
-                        sql.append("SELECT DatasetId, SequenceNum, CAST(COUNT(*) AS INT)\n" +
-                            "FROM ").append(studyData.getFromSQL("SD")).append(", " + participantTable + " P\n" +
-                            "WHERE P.ParticipantId = SD.ParticipantId AND P.Container = ? AND P." +
-                                (cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId") + " = ?\n" +
-                            (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
-                            "GROUP BY DatasetId, SequenceNum\n" +
-                            "ORDER BY 1, 2");
-                        sql.add(getStudy().getContainer());
-                        sql.add(cohortFilter.getCohortId());
-                        break;
-                }
-            }
-            rows = Table.executeQuery(schema, sql, 0, false, false);
-
-            VisitMapKey key = null;
-            int cumulative = 0;
-            while (rows.next())
-            {
-                int datasetId = rows.getInt(1);
-                double sequenceNum = rows.getDouble(2);
-                int count = rows.getInt(3);
-                VisitImpl v = findVisitBySequence(sequenceNum);
-                if (null == v)
-                    continue;
-                int visitRowId = v.getRowId();
-
-                if (null == key || key.datasetId  != datasetId || key.visitRowId != visitRowId)
-                {
-                    if (key != null)
-                        visitSummary.put(key, cumulative);
-                    key = new VisitMapKey(datasetId, visitRowId);
-                    cumulative = 0;
-                }
-                cumulative += count;
-            }
-            if (key != null)
-                visitSummary.put(key, cumulative);
-
-            return visitSummary;
+            sql.append("SELECT DatasetId, SequenceNum").append(statsSql).append("\nFROM ").append(studyData.getFromSQL(alias))
+                .append("\n").append(qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                .append("GROUP BY DatasetId, SequenceNum\nORDER BY 1, 2");
         }
-        finally
+        else
         {
-            ResultSetUtil.close(rows);
+            switch (cohortFilter.getType())
+            {
+                case DATA_COLLECTION:
+                    sql.append("SELECT DatasetId, ").append(alias).append(".SequenceNum").append(statsSql).append("\nFROM ")
+                        .append(studyData.getFromSQL(alias)).append("\n, study.ParticipantVisit PV\nWHERE ").append(alias)
+                        .append(".Container = ? AND \n\tPV.ParticipantId = ").append(alias).append(".ParticipantId AND \n\tPV.SequenceNum = ")
+                        .append(alias).append(".SequenceNum AND\n\tPV.Container = ? AND \n" + "\tPV.CohortID = ?\n")
+                        .append(qcStates != null ? "\tAND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                        .append("GROUP BY DatasetId, ").append(alias).append(".SequenceNum\n" + "ORDER BY 1, 2");
+                    sql.add(getStudy().getContainer());
+                    sql.add(cohortFilter.getCohortId());
+                    break;
+                case PTID_CURRENT:
+                case PTID_INITIAL:
+                    sql.append("SELECT DatasetId, SequenceNum").append(statsSql).append("\nFROM ").append(studyData.getFromSQL(alias))
+                        .append(", ").append(participantTable.getFromSQL("P")).append("\n" + "WHERE P.ParticipantId = ").append(alias)
+                        .append(".ParticipantId AND P.Container = ? AND P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
+                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                        .append("GROUP BY DatasetId, SequenceNum\n" + "ORDER BY 1, 2");
+                    sql.add(getStudy().getContainer());
+                    sql.add(cohortFilter.getCohortId());
+                    break;
+            }
         }
+
+        return sql;
     }
+
 
     protected void updateParticipantVisitTable(User user)
     {

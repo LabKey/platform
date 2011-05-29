@@ -28,10 +28,12 @@ public class BtOverview extends Overview
     public BtOverview(User user, Container container)
     {
         super(user, container);
+
         setTitle("BioTrue Connector Dashboard");
         setExplanatoryHTML("The BioTrue connector allows periodically walking a BioTrue CDMS, and copying the files down to a file system.");
         BtServer[] servers = BtServer.getForContainer(container);
         Step step = new Step("Define Server", servers.length == 0 ? Step.Status.required : Step.Status.completed);
+
         if (servers.length == 0)
         {
             step.setStatusHTML("There are no servers defined in this folder.");
@@ -48,9 +50,8 @@ public class BtOverview extends Overview
                         servers.length + " servers</a> defined in this folder.");
             }
         }
+
         step.addAction(new Action("Define new server", new ActionURL(NewServerAction.class, getContainer())));
         addStep(step);
     }
-
-
 }

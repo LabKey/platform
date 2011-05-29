@@ -1,6 +1,23 @@
+/*
+ * Copyright (c) 2008-2011 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.labkey.study.visitmanager;
 
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
@@ -33,6 +50,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,23 +59,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
- * Copyright (c) 2008-2011 LabKey Corporation
-* <p/>
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-* <p/>
-* http://www.apache.org/licenses/LICENSE-2.0
-* <p/>
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* <p/>
-* User: brittp
-* Created: Feb 29, 2008 11:23:08 AM
-*/
+ * User: brittp
+ * Created: Feb 29, 2008 11:23:08 AM
+ */
 public abstract class VisitManager
 {
     protected StudyImpl _study;
@@ -92,7 +96,7 @@ public abstract class VisitManager
         // to the dataset that specifies the cohort
         if (!_study.isManualCohortAssignment() &&
                 cohortDatasetId != null &&
-                changedDatasets.contains(StudyManager.getInstance().getDataSetDefinition(_study, cohortDatasetId.intValue())))
+                changedDatasets.contains(StudyManager.getInstance().getDataSetDefinition(_study, cohortDatasetId)))
         {
             try
             {
@@ -136,7 +140,116 @@ public abstract class VisitManager
 
     protected abstract void updateParticipantVisitTable(User user);
     protected abstract void updateVisitTable(User user);
-    public abstract Map<VisitMapKey, Integer> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates) throws SQLException;
+
+    // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;
+    // it also needs to filter by cohort and qcstates.  Tables providing the statistics must be aliased using the provided alias.
+    protected abstract SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias);
+
+    public Map<VisitMapKey, VisitStatistics> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates, VisitStatistic... stats) throws SQLException
+    {
+        String alias = "SD";
+        StringBuilder statsSql = new StringBuilder();
+
+        for (VisitStatistic stat : stats)
+        {
+            statsSql.append(", ");
+            statsSql.append(stat.getSql(alias));
+        }
+
+        SQLFragment sql = getVisitSummarySql(cohortFilter, qcStates, statsSql.toString(), alias);
+        ResultSet rows = null;
+
+        try
+        {
+            rows = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, 0, false, false);
+
+            Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<VisitMapKey, VisitStatistics>();
+            VisitMapKey key = null;
+            VisitStatistics statistics = new VisitStatistics();
+
+            while (rows.next())
+            {
+                int datasetId = rows.getInt(1);
+                double sequenceNum = rows.getDouble(2);
+
+                VisitImpl v = findVisitBySequence(sequenceNum);
+
+                if (null == v)
+                    continue;
+
+                int visitRowId = v.getRowId();
+
+                if (null == key || key.datasetId != datasetId || key.visitRowId != visitRowId)
+                {
+                    if (key != null)
+                        visitSummary.put(key, statistics);
+                    key = new VisitMapKey(datasetId, visitRowId);
+                    statistics = new VisitStatistics();
+                }
+
+                // Accumulate all the statistics columns
+                int column = 3;
+
+                for (VisitStatistic stat : stats)
+                    statistics.add(stat, rows.getInt(column++));
+            }
+
+            if (key != null)
+                visitSummary.put(key, statistics);
+
+            return visitSummary;
+        }
+        finally
+        {
+            ResultSetUtil.close(rows);
+        }
+    }
+
+
+    public enum VisitStatistic
+    {
+        ParticipantCount
+        {
+            @Override
+            String getSql(@NotNull String alias)
+            {
+                return "CAST(COUNT(DISTINCT " + alias + ".ParticipantId) AS INT)";
+            }
+        },
+        RowCount
+        {
+            @Override
+            String getSql(@NotNull String alias)
+            {
+                return "CAST(COUNT(*) AS INT)";
+            }
+        };
+
+        abstract String getSql(@NotNull String alias);
+    }
+
+    public static class VisitStatistics
+    {
+        private final Map<VisitStatistic, Integer> _map;
+
+        protected VisitStatistics()
+        {
+            _map = new EnumMap<VisitStatistic, Integer>(VisitStatistic.class);
+
+            for (VisitStatistic stat : VisitStatistic.values())
+                _map.put(stat, 0);
+        }
+
+        public void add(VisitStatistic stat, int count)
+        {
+            _map.put(stat, _map.get(stat) + count);
+        }
+
+        public int get(VisitStatistic stat)
+        {
+            return _map.get(stat);
+        }
+    }
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
     protected abstract SQLFragment getDatasetSequenceNumsSQL(Study study);
@@ -233,7 +346,7 @@ public abstract class VisitManager
         sql.append(visit.getRowId()); //new visits will have a rowId of 0, which shouldn't conflict
 
         Integer overlaps = Table.executeSingleton(schema, sql.toString(), null, Integer.class);
-        return (null != overlaps && overlaps.intValue() != 0);
+        return (null != overlaps && overlaps != 0);
     }
 
     /** Update the Participants table to match the entries in StudyData. */

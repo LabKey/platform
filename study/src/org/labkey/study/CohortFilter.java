@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.study;
 
 import org.labkey.api.view.ActionURL;
@@ -28,11 +29,10 @@ import java.util.Map;
 import java.util.Collections;
 
 /**
- * Created by IntelliJ IDEA.
-* User: brittp
-* Date: Sep 10, 2009
-* Time: 10:32:54 AM
-*/
+ * User: brittp
+ * Date: Sep 10, 2009
+ * Time: 10:32:54 AM
+ */
 public class CohortFilter
 {
     public enum Type
@@ -52,6 +52,7 @@ public class CohortFilter
                 return FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), "Cohort", "rowid");
             }
         },
+
         DATA_COLLECTION("Cohort as of data collection")
         {
             public FieldKey getFilterColumn(Container container)
@@ -61,6 +62,7 @@ public class CohortFilter
         };
 
         private String _title;
+
         Type(String title)
         {
             _title = title;
@@ -111,6 +113,7 @@ public class CohortFilter
             throw new IllegalArgumentException("Cohort filter type must not be null");
         if (cohortId < 0)
             throw new IllegalArgumentException("Invalid cohort ID: " + cohortId);
+
         _type = type;
         _cohortId = cohortId;
     }
@@ -136,15 +139,6 @@ public class CohortFilter
     {
         cohortFilterType,
         cohortId
-    }
-
-    public boolean equalsURLFilter(ActionURL url)
-    {
-        Type type = getTypeFromURL(url);
-        Integer cohortId = getCohortIdFromURL(url);
-        if (type == null || cohortId == null)
-            return false;
-        return _type.equals(type) && _cohortId == cohortId.intValue();
     }
 
     public static ActionURL clearURLParameters(ActionURL url)
@@ -202,9 +196,9 @@ public class CohortFilter
         Integer cohortId = getCohortIdFromURL(url);
         if (type != null && cohortId != null)
         {
-            if (type == UNASSIGNED.getType() && cohortId.intValue() == UNASSIGNED.getCohortId())
+            if (type == UNASSIGNED.getType() && cohortId == UNASSIGNED.getCohortId())
                 return UNASSIGNED;
-            return new CohortFilter(type, cohortId.intValue());
+            return new CohortFilter(type, cohortId);
         }
         return null;
     }

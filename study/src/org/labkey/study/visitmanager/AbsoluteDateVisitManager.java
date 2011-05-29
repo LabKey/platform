@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.study.visitmanager;
 
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.security.User;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.model.QCStateSet;
@@ -50,9 +52,15 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
     }
 
     @Override
-    public Map<VisitMapKey, Integer> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates) throws SQLException
+    public Map<VisitMapKey, VisitStatistics> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates, VisitStatistic... stats) throws SQLException
     {
         return Collections.emptyMap();
+    }
+
+    @Override
+    protected SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias)
+    {
+        throw new IllegalStateException("Should not be called");
     }
 
     public VisitImpl findVisitBySequence(double seq)

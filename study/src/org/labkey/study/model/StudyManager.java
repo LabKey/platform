@@ -1257,8 +1257,10 @@ public class StudyManager
     {
         if (user == null)
             return false;
+
         if (user.isAdministrator())
             return true;
+
         StudyImpl study = StudyManager.getInstance().getStudy(container);
 
         if (study == null)
@@ -1273,12 +1275,15 @@ public class StudyManager
 
         // Automatic cohort assignment -- can the user read the source dataset?
         Integer cohortDatasetId = study.getParticipantCohortDataSetId();
+
         if (cohortDatasetId != null)
         {
             DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId.intValue());
+
             if (def != null)
                 return def.canRead(user);
         }
+
         return false;
     }
 

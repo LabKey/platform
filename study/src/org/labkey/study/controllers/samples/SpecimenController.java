@@ -2874,6 +2874,7 @@ public class SpecimenController extends BaseStudyController
     public abstract class SpecimenVisitReportAction<FormType extends SpecimenVisitReportParameters> extends SimpleViewAction<FormType>
     {
         private FormType _form;
+
         public SpecimenVisitReportAction(Class<FormType> beanClass)
         {
             super(beanClass);

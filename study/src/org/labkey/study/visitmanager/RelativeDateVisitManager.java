@@ -1,37 +1,46 @@
+/*
+ * Copyright (c) 2008-2011 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.labkey.study.visitmanager;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.study.model.QCStateSet;
-import org.labkey.study.StudySchema;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.DataSetTable;
-import org.labkey.study.model.*;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
-/**
- * Copyright (c) 2008-2010 LabKey Corporation
-* <p/>
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-* <p/>
-* http://www.apache.org/licenses/LICENSE-2.0
-* <p/>
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* <p/>
-* User: brittp
-* Created: Feb 29, 2008 11:23:37 AM
-*/
+/** 
+ * User: brittp
+ * Created: Feb 29, 2008 11:23:37 AM
+ */
 public class RelativeDateVisitManager extends VisitManager
 {
     public RelativeDateVisitManager(StudyImpl study)
@@ -51,84 +60,48 @@ public class RelativeDateVisitManager extends VisitManager
         return "Timepoints";
     }
     
-    public Map<VisitMapKey, Integer> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates) throws SQLException
+
+    @Override
+    protected SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias)
     {
-        Map<VisitMapKey, Integer> visitSummary = new HashMap<VisitMapKey, Integer>();
-        DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), null);
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
-        ResultSet rows = null;
 
-        try
+        SQLFragment sql = new SQLFragment();
+
+        if (cohortFilter == null)
         {
-            if (cohortFilter == null)
-            {
-                SQLFragment sqlf = new SQLFragment();
-                sqlf.append(
-                        "SELECT DatasetId, Day, CAST(COUNT(*) AS INT)\n" +
-                        "FROM ").append(studyData.getFromSQL("SD")).append("\n" +
-                        "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND ?=PV.Container\n" +
-                        (qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
-                        "GROUP BY DatasetId, Day\n" +
-                        "ORDER BY 1, 2");
-                sqlf.add(getStudy().getContainer());
-                rows = Table.executeQuery(schema, sqlf, 0, false, false);
-            }
-            else
-            {
-                SQLFragment sql = new SQLFragment();
-                switch (cohortFilter.getType())
-                {
-                    case DATA_COLLECTION:
-                        break;
-                    case PTID_CURRENT:
-                    case PTID_INITIAL:
-                        sql.append("SELECT DatasetId, Day, CAST(COUNT(*) AS INT)\n" +
-                            "FROM ").append(studyData.getFromSQL("SD")).append("\n" +
-                            "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND ?=PV.Container\n" +
-                            "JOIN " + participantTable + " P ON SD.ParticipantId=P.ParticipantId AND ?=P.Container\n" +
-                            "WHERE P." + (cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId") + " = ?\n" +
-                            (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
-                            "GROUP BY DatasetId, Day\n" +
-                            "ORDER BY 1, 2");
-                        sql.add(getStudy().getContainer());
-                        sql.add(getStudy().getContainer());
-                        sql.add(cohortFilter.getCohortId());
-                        break;
-                }
-                rows = Table.executeQuery(schema, sql, 0, false, false);
-            }
-            VisitMapKey key = null;
-            int cumulative = 0;
-            while (rows.next())
-            {
-                int datasetId = rows.getInt(1);
-                int day = rows.getInt(2);
-                int count = rows.getInt(3);
-                VisitImpl v = findVisitBySequence((double) day);
-                if (null == v)
-                    continue;
-                int visitRowId = v.getRowId();
-
-                if (null == key || key.datasetId  != datasetId || key.visitRowId != visitRowId)
-                {
-                    if (key != null)
-                        visitSummary.put(key, cumulative);
-                    key = new VisitMapKey(datasetId, visitRowId);
-                    cumulative = 0;
-                }
-                cumulative += count;
-            }
-            if (key != null)
-                visitSummary.put(key, cumulative);
-
-            return visitSummary;
+            sql.append("SELECT DatasetId, Day").append(statsSql).append("\n" + "FROM ").append(studyData.getFromSQL(alias))
+                .append("\n" + "JOIN ").append(participantVisit.getFromSQL("PV")).append(" ON ").append(alias)
+                .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container\n")
+                .append(qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                .append("GROUP BY DatasetId, Day\n" + "ORDER BY 1, 2");
+            sql.add(getStudy().getContainer());
         }
-        finally
+        else
         {
-            ResultSetUtil.close(rows);
+            switch (cohortFilter.getType())
+            {
+                case DATA_COLLECTION:
+                    break;
+                case PTID_CURRENT:
+                case PTID_INITIAL:
+                    sql.append("SELECT DatasetId, Day").append(statsSql).append("\n" + "FROM ").append(studyData.getFromSQL(alias))
+                        .append("\n" + "JOIN ").append(participantVisit.getFromSQL("PV")).append(" ON ").append(alias)
+                        .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container\n" + "JOIN ")
+                        .append(participantTable.getFromSQL("P")).append(" ON ").append(alias).append(".ParticipantId = P.ParticipantId AND ? = P.Container\n" + "WHERE P.")
+                        .append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
+                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                        .append("GROUP BY DatasetId, Day\n" + "ORDER BY 1, 2");
+                    sql.add(getStudy().getContainer());
+                    sql.add(getStudy().getContainer());
+                    sql.add(cohortFilter.getCohortId());
+                    break;
+            }
         }
+
+        return sql;
     }
 
 
@@ -248,6 +221,7 @@ public class RelativeDateVisitManager extends VisitManager
 
             List<Integer> days = new ArrayList<Integer>();
             Table.TableResultSet rs = Table.executeQuery(schema, sql);
+
             try
             {
                 while (rs.next())
