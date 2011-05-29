@@ -49,16 +49,9 @@ public class HomeTemplate extends PrintTemplate
     public HomeTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page, NavTree[] navTrail)
     {
         super("/org/labkey/api/view/template/CommonTemplate.jsp", page);
-        init(context, c, body, page, navTrail);
-    }
 
-
-    protected void init(ViewContext context, Container c, ModelAndView body, PageConfig page, NavTree[] navTrail)
-    {
         //show the header on the home template
-        getModelBean().setShowHeader(true);
-
-        setFrame(FrameType.NONE);
+        page.setShowHeader(true);
         page.setNavTrail(Arrays.asList(navTrail));
 
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
@@ -85,7 +78,7 @@ public class HomeTemplate extends PrintTemplate
         if (null != header)
             setView("header", header);
         else
-            setView("header", getHeaderView(getModelBean()));
+            setView("header", getHeaderView(page));
 
         setView("topmenu", new MenuBarView(context.getContainer()));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2010 LabKey Corporation
+ * Copyright (c) 2007-2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,15 +31,126 @@ import java.util.List;
  */
 public class Overview
 {
-    private User _user;
-    private Container _container;
+    private final User _user;
+    private final Container _container;
+    private final List<Step> _steps;
+    private final List<Action> _actions;
+    
     private String _title;
     private String _explanatoryHTML;
     private String _statusHTML;
-    private List<Step> _steps;
-    private List<Action> _actions;
-    
-    static public class Step
+
+    public Overview(User user, Container container)
+    {
+        _user = user;
+        _container = container;
+        _steps = new ArrayList<Step>();
+        _actions = new ArrayList<Action>();
+    }
+
+    static protected String h(Object text)
+    {
+        return PageFlowUtil.filter(text);
+    }
+
+    public String toString()
+    {
+        StringBuilder ret = new StringBuilder();
+        ret.append("<div class=\"labkey-overview\">\n");
+        if (!StringUtils.isEmpty(_title))
+        {
+            ret.append("<b>");
+            ret.append(h(_title));
+            ret.append("</b><br>\n");
+        }
+        if (!StringUtils.isEmpty(_explanatoryHTML))
+        {
+            ret.append("<i>");
+            ret.append(_explanatoryHTML);
+            ret.append("</i><br>\n");
+        }
+
+        if (!StringUtils.isEmpty(_statusHTML))
+        {
+            ret.append(_statusHTML);
+            ret.append("<br>");
+        }
+        if (_steps.size() != 0)
+        {
+            ret.append("<ol>");
+            for (Step step : _steps)
+            {
+                ret.append(step);
+            }
+            ret.append("</ol>");
+        }
+        for (Action miscAction : _actions)
+        {
+            ret.append(miscAction);
+            ret.append("<br>");
+        }
+        ret.append("</div>");
+        return ret.toString();
+    }
+
+    public void addStep(Step step)
+    {
+        _steps.add(step);
+    }
+
+    public void addAction(Action action)
+    {
+        _actions.add(action);
+    }
+
+    public boolean hasPermission(Class<? extends Permission> perm)
+    {
+        return _container.hasPermission(_user, perm);
+    }
+
+    public boolean isGlobalAdmin()
+    {
+        return getUser().isAdministrator();
+    }
+
+    public User getUser()
+    {
+        return _user;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    /**
+     * Sets the title.  The title appears at the top.
+     */
+    public void setTitle(String title)
+    {
+        _title = title;
+    }
+
+    /**
+     * Set the explanatory text which appears at the top.
+     * Explanatory text is text that is intended to be ignored by users that know what they're doing.  It is
+     * rendered in italics.
+     */
+    public void setExplanatoryHTML(String html)
+    {
+        _explanatoryHTML = html;
+    }
+
+    /**
+     * Set the status text which appears at the top.
+     * Status text sometimes changes and contains information that may be useful even to people who know how to use the product.
+     */
+    public void setStatusHTML(String html)
+    {
+        _statusHTML = html;
+    }
+
+    public static class Step
     {
         public enum Status
         {
@@ -50,16 +161,18 @@ public class Overview
             completed,
         }
 
-        String _title;
-        Status _status;
-        String _expanatoryHTML;
-        String _statusHTML;
-        List<Action> _actions;
+        private final String _title;
+        private final Status _status;
+        private final List<Action> _actions;
+
+        private String _expanatoryHTML;
+        private String _statusHTML;
+
         public Step(String title, Status status)
         {
             _title = title;
             _status = status;
-            _actions = new ArrayList();
+            _actions = new ArrayList<Action>();
         }
 
         public void setExplanatoryHTML(String html)
@@ -124,12 +237,14 @@ public class Overview
         }
     }
 
-    static public class Action
+    public static class Action
     {
-        String _label;
-        ActionURL _url;
-        String _explanatoryHTML;
-        String _descriptionHTML;
+        private final String _label;
+        private final ActionURL _url;
+
+        private String _explanatoryHTML;
+        private String _descriptionHTML;
+
         public Action(String label, ActionURL url)
         {
             _label = label;
@@ -145,6 +260,7 @@ public class Overview
         {
             _descriptionHTML = html;
         }
+
         public String toString()
         {
             StringBuilder ret = new StringBuilder();
@@ -172,115 +288,5 @@ public class Overview
             ret.append("</span></span>");
             return ret.toString();
         }
-    }
-
-    static protected String h(Object text)
-    {
-        return PageFlowUtil.filter(text);
-    }
-
-    public String toString()
-    {
-        StringBuilder ret = new StringBuilder();
-        ret.append("<div class=\"labkey-overview\">\n");
-        if (!StringUtils.isEmpty(_title))
-        {
-            ret.append("<b>");
-            ret.append(h(_title));
-            ret.append("</b><br>\n");
-        }
-        if (!StringUtils.isEmpty(_explanatoryHTML))
-        {
-            ret.append("<i>");
-            ret.append(_explanatoryHTML);
-            ret.append("</i><br>\n");
-        }
-
-        if (!StringUtils.isEmpty(_statusHTML))
-        {
-            ret.append(_statusHTML);
-            ret.append("<br>");
-        }
-        if (_steps.size() != 0)
-        {
-            ret.append("<ol>");
-            for (Step step : _steps)
-            {
-                ret.append(step);
-            }
-            ret.append("</ol>");
-        }
-        for (Action miscAction : _actions)
-        {
-            ret.append(miscAction);
-            ret.append("<br>");
-        }
-        ret.append("</div>");
-        return ret.toString();
-    }
-
-    public Overview(User user, Container container)
-    {
-        _user = user;
-        _container = container;
-        _steps = new ArrayList();
-        _actions = new ArrayList();
-    }
-
-    public void addStep(Step step)
-    {
-        _steps.add(step);
-    }
-
-    public void addAction(Action action)
-    {
-        _actions.add(action);
-    }
-
-    public boolean hasPermission(Class<? extends Permission> perm)
-    {
-        return _container.hasPermission(_user, perm);
-    }
-
-    public boolean isGlobalAdmin()
-    {
-        return getUser().isAdministrator();
-    }
-
-    public User getUser()
-    {
-        return _user;
-    }
-
-    public Container getContainer()
-    {
-        return _container;
-    }
-
-    /**
-     * Sets the title.  The title appears at the top.
-     */
-    public void setTitle(String title)
-    {
-        _title = title;
-    }
-
-    /**
-     * Set the explanatory text which appears at the top.
-     * Explanatory text is text that is intended to be ignored by users that know what they're doing.  It is
-     * rendered in italics.
-     */
-    public void setExplanatoryHTML(String html)
-    {
-        _explanatoryHTML = html;
-    }
-
-    /**
-     * Set the status text which appears at the top.
-     * Status text sometimes changes and contains information that may be useful even to people who know how to use the product.
-     */
-    public void setStatusHTML(String html)
-    {
-        _statusHTML = html;
     }
 }
