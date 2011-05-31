@@ -69,8 +69,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
             this.editorMeasurePanel = new LABKEY.vis.ChartEditorMeasurePanel({
                 disabled: true,
-                measure: this.chartInfo.measures[yAxisMeasureIndex].measure,
-                dimension: this.chartInfo.measures[yAxisMeasureIndex].dimension || null,
+                origMeasures: this.chartInfo.measures, 
                 filterUrl: this.chartInfo.filterUrl ? this.chartInfo.filterUrl : LABKEY.Visualization.getDataFilterFromURL(),
                 viewInfo: this.viewInfo,
                 listeners: {
@@ -118,7 +117,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
-            this.editorYAxisPanelVar = new LABKEY.vis.ChartEditorYAxisPanel({
+            this.editorYAxisPanel = new LABKEY.vis.ChartEditorYAxisPanel({
                 disabled: true,
                 axis: this.chartInfo.measures[yAxisMeasureIndex].axis,
                 listeners: {
@@ -173,7 +172,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.editorOverviewPanel,
                             this.editorMeasurePanel,
                             this.editorXAxisPanel,
-                            this.editorYAxisPanelVar,
+                            this.editorYAxisPanel,
                             this.editorChartsPanel
                         ]
                     })
@@ -317,7 +316,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     measureSelected: function(measure, userSelectedMeasure) {
         // if this is a measure selection from the "Change" or "Choose a Measure" button, then initialize the chartInfo object
-        if(userSelectedMeasure){
+        if(userSelectedMeasure){ // todo: this reset needs to be removed when we start adding multiple measures
             this.chartInfo = this.getInitializedChartInfo();
         }
 
@@ -325,33 +324,45 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
         var yAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
 
-        // enable the charteditor tabs in the tabPanel
-        this.editorMeasurePanel.enable();
-        this.editorXAxisPanel.enable();
-        this.editorYAxisPanelVar.enable();
-        this.editorChartsPanel.enable();
-
         // update chart definition information based on measure selection
-        this.editorMeasurePanel.measure = measure;
+        if(userSelectedMeasure){ // todo: changes to calls that shoudl only be made for userSelectedMeasures
+            this.editorMeasurePanel.addMeasure(measure);
+        }
+
+        // get the subject values for this measure's query
+        // todo: should this be reloaded when we start adding multiple measures?
         this.subjectSelector.getSubjectValues(measure.schemaName, measure.queryName, this.chartInfo.filterUrl);
 
-        // update chart editor form values based on selected measure
-        this.editorMeasurePanel.setMeasureLabel(measure.label + " from " + measure.queryName)
-        this.editorMeasurePanel.setDimensionStore(this.chartInfo.measures[yAxisMeasureIndex].dimension);
+        // todo: these things shouldn't be changed for each added measure
         this.editorXAxisPanel.setZeroDateStore(measure.schemaName);
-        this.editorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName);
-        this.editorXAxisPanel.setRange(this.chartInfo.measures[xAxisMeasureIndex].axis.range.type);
-        this.editorYAxisPanelVar.setRange(this.chartInfo.measures[yAxisMeasureIndex].axis.range.type);
-        this.editorYAxisPanelVar.setScale(this.chartInfo.measures[yAxisMeasureIndex].axis.scale);
         this.editorChartsPanel.setChartLayout(this.chartInfo.chartLayout);
         this.editorChartsPanel.disableDimensionOption((this.chartInfo.measures[yAxisMeasureIndex].dimension ? true : false));
+
+        // update chart editor form values based on selected measure
+        this.editorMeasurePanel.setDimensionStore(this.chartInfo.measures[yAxisMeasureIndex].dimension);
+        this.editorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName);
+        this.editorXAxisPanel.setRange(this.chartInfo.measures[xAxisMeasureIndex].axis.range.type);
+        this.editorYAxisPanel.setRange(this.chartInfo.measures[yAxisMeasureIndex].axis.range.type);
+        this.editorYAxisPanel.setScale(this.chartInfo.measures[yAxisMeasureIndex].axis.scale);
         if(userSelectedMeasure){
+            this.editorYAxisPanel.setLabel(measure.label);
+
+            // todo: these things shouldn't be changed for each added measure
             this.editorOverviewPanel.updateOverview(this.saveReportInfo);
-            this.editorYAxisPanelVar.setLabel(measure.label);
             this.editorChartsPanel.setMainTitle(measure.queryName);
             this.editorChartsPanel.setLineWidth(this.chartInfo.lineWidth);
             this.editorChartsPanel.setHideDataPoints(this.chartInfo.hideDataPoints);
         }
+
+        this.enableTabPanels();
+    },
+
+    enableTabPanels: function(){
+        // enable the charteditor tabs in the tabPanel
+        this.editorMeasurePanel.enable();
+        this.editorXAxisPanel.enable();
+        this.editorYAxisPanel.enable();
+        this.editorChartsPanel.enable();
     },
 
     isDirty : function() {
@@ -789,7 +800,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     measure: this.editorXAxisPanel.getMeasure()
                 },
                 { // y-axis information
-                    axis: this.editorYAxisPanelVar.getAxis(),
+                    axis: this.editorYAxisPanel.getAxis(),
                     measure: this.editorMeasurePanel.getMeasure(),
                     dimension: this.editorMeasurePanel.getDimension()
                 }
