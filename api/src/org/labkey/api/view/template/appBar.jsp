@@ -26,22 +26,32 @@
     if (null == bean)
         return;
 %>
-<table class="labkey-app-bar">
+<div class="labkey-app-bar">
+<table class="folder-header">
     <tr>
-        <td ><%=h(bean.getAppTitle())%></td>
-        <td>
-            <table class="labkey-app-button-bar labkey-no-spacing">
-                <td class="labkey-app-button-bar-left"><img alt="" src="<%=request.getContextPath()%>/_.gif" width="13"></td>
+        <td class="folder-title"><%=h(bean.getFolderTitle())%></td>
+        <td class="button-bar">
+            <ul class="labkey-tab-strip">
                 <%
                     for (NavTree navTree : bean.getButtons())
                     {
                 %>
-                        <td class="labkey-app-button-bar-button"><a href="<%=h(navTree.getValue())%>"><%=h(navTree.getKey())%></a></td>
+                        <li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getValue())%>"><%=h(navTree.getKey())%></a>
                 <%
                     }
                 %>
-                <td class="labkey-app-button-bar-right"><img alt="" src="<%=request.getContextPath()%>/_.gif" width="13"></td>
-            </table>
+            </ul>
         </td>
     </tr>
 </table>
+<%if(null != bean.getPageTitle()) {%>
+<table class="labkey-nav-trail">
+    <tr>
+    <td class="labkey-nav-page-header-container">
+    <span class="labkey-nav-page-header" id="labkey-nav-trail-current-page" style="visibility:hidden"><%=h(bean.getPageTitle())%></span>
+    </td>
+</tr>
+    </table>
+</div>
+<%}%>
+

@@ -51,7 +51,7 @@ public class MenuBarView extends JspView<List<Portal.WebPart>>
 
         if (laf.isMenuUIEnabled())
         {
-            Portal.WebPart[] allParts = Portal.getParts(project.getId());
+            Portal.WebPart[] allParts = Portal.getParts(project);
             MultiMap<String, Portal.WebPart> locationMap = Portal.getPartsByLocation(allParts);
             List<Portal.WebPart> menuParts = (List<Portal.WebPart>) locationMap.get("menubar");
 

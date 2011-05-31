@@ -15,10 +15,11 @@
  */
 package org.labkey.api.view.template;
 
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /*
@@ -28,18 +29,26 @@ import java.util.List;
 */
 public class AppBar extends NavTree
 {
-    public AppBar(String title, NavTree... buttons)
+    private String _pageTitle;
+
+    public AppBar(String folderTitle, NavTree... buttons)
     {
-        this(title, Arrays.asList(buttons));
+        this(folderTitle, Arrays.asList(buttons));
     }
 
-    public AppBar(String title, List<NavTree> buttons)
+    public AppBar(String folderTitle, List<NavTree> buttons)
     {
-        super(title);
+        super(folderTitle);
         addChildren(buttons);
     }
 
-    public String getAppTitle()
+    public AppBar(List<NavTree> navTrail, List<NavTree> buttons)
+    {
+        this(navTrail.size() > 0 ? navTrail.get(0).getKey(): "No Page Title...", buttons);
+        fixCrumbTrail(navTrail, null);
+    }
+
+    public String getFolderTitle()
     {
         return getKey();
     }
@@ -49,30 +58,76 @@ public class AppBar extends NavTree
         return getChildren();
     }
 
+    public void setPageTitle(String pageTitle)
+    {
+        _pageTitle = pageTitle;
+    }
+
+    public String getPageTitle()
+    {
+        return _pageTitle;     
+    }
+
+    public NavTree getSelected()
+    {
+        for (NavTree button : getButtons())
+            if (button.isSelected())
+                return button;
+
+        return null;
+    }
+
     /**
-     * Merges an existing NavTree into the app bar.
-     * If the NavTree has items that are in the AppBar those are "selected" in the AppBar
-     * This is basically a way to integrate navTrail-based code with appBar.
-     * If this works, all actions will be appBar-based
+     * Merges an existing NavTrail into the app bar, allows us to highlight the appBar based on existing NavTree code
+     * Some tab in the app bar must always be selected.
+     * Select the last tab with a matching name or link is on the navTrail
+     * If the name or url of a tab is the last thing on the navTrail, don't show a page title (just folder title)
+     * Otherwise, if the NavTrail is more than length 1, use the last thing on the navTrail as the page title
+     * If nothing on the NavTrail matches, set the last tab to selected
      * @param crumbTrail
      */
-    public List<NavTree> fixCrumbTrail(List<NavTree> crumbTrail)
+    public List<NavTree> fixCrumbTrail(List<NavTree> crumbTrail, ActionURL actionURL)
     {
-        if (null == crumbTrail || crumbTrail.size() <= 1)
-            return Collections.emptyList();
-        else
+        NavTree[] buttons = getButtons();
+        boolean hideTitle = crumbTrail.size() <= 1;
+
+        NavTree selected = getSelected();
+        if (null == selected && null != actionURL) //First try to match actionURL
         {
-            NavTree selected = null;
+            for (NavTree button : buttons)
+                if (button.getValue().equals(actionURL.toString()))
+                {
+                    selected = button;
+                    break;
+                }
+        }
+
+        if (null == selected)
             for (NavTree crumb : crumbTrail)
             {
-                for (NavTree button : getButtons())
-                    if (button.getValue().equalsIgnoreCase(crumb.getValue()))
+                for (NavTree button : buttons)
+                    if (button.getValue().equalsIgnoreCase(crumb.getValue()) || button.getKey().equalsIgnoreCase(crumb.getKey()))
                         selected = button;
             }
-            if (null != selected)
-                selected.setSelected(true);
 
-            return crumbTrail.subList(crumbTrail.size() - 1, crumbTrail.size());
+        if (null != selected)
+        {
+            if (selected == buttons[buttons.length -1])
+                hideTitle = true;
+            selected.setSelected(true);
+        }
+        else
+            buttons[buttons.length -1].setSelected(true);
+
+        if (hideTitle)
+        {
+            setPageTitle(null);
+            return new ArrayList<NavTree>(0);
+        }
+        else
+        {
+            setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getKey());
+            return crumbTrail.subList(crumbTrail.size() -1, crumbTrail.size());
         }
     }
 }

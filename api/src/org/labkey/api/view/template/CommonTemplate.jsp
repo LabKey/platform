@@ -132,16 +132,13 @@ if (bean.showHeader() != PageConfig.TrueFalse.False)
             </td>
             <% } %>
             <td class="labkey-proj">
+
+                <% if (null != me.getView("appbar"))
+                {%>
+                        <%me.include(me.getView("appbar"), out); %>
+              <%}%>
                 <!--content area-->
                 <table class="labkey-proj">
-                    <% if (null != me.getView("appbar"))
-                    {%>
-                    <tr>
-                        <td id="appbar" class="labkey-proj-nav-panel" colspan="2">
-                            <%me.include(me.getView("appbar"), out); %>
-                        </td>
-                    </tr>
-                  <%}%>
 <%    if (me.getView("nav") instanceof HttpView && ((HttpView)me.getView("nav")).isVisible())
           { %>
         <tr>

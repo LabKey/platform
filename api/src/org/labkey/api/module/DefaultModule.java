@@ -349,7 +349,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         boolean foundPart = false;
 
-        for (Portal.WebPart part : Portal.getParts(c.getId()))
+        for (Portal.WebPart part : Portal.getParts(c))
         {
             if (name.equals(part.getName()))
             {

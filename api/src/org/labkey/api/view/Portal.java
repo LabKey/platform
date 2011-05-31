@@ -83,7 +83,7 @@ public class Portal
 
         try
         {
-            Table.delete(getTableInfoPortalWebParts(), new SimpleFilter("PageId", c.getId()));
+            Table.delete(getTableInfoPortalWebParts(), new SimpleFilter("Container", c.getId()));
         }
         catch (SQLException e)
         {
@@ -94,6 +94,7 @@ public class Portal
 
     public static class WebPart implements Serializable
     {
+        Container container;
         String pageId;
         int rowId;
         int index = 999;
@@ -117,6 +118,7 @@ public class Portal
         public WebPart(WebPart copyFrom)
         {
             pageId = copyFrom.pageId;
+            container = copyFrom.container;
             index = copyFrom.index;
             rowId = copyFrom.rowId;
             name = copyFrom.name;
@@ -136,6 +138,16 @@ public class Portal
             this.pageId = pageId;
         }
 
+        public Container getContainer()
+        {
+            return container;
+        }
+
+        public void setContainer(Container container)
+        {
+            this.container = container;
+        }
+        
         public int getIndex()
         {
             return index;
@@ -253,13 +265,30 @@ public class Portal
     }
 
 
+    @Deprecated
     public static WebPart[] getParts(String id)
     {
         return getParts(id, false);
     }
 
 
+    @Deprecated
     public static WebPart[] getParts(String id, boolean force)
+    {
+        return getParts(ContainerManager.getForId(id), id, force);
+    }
+
+    public static WebPart[] getParts(Container c)
+    {
+        return getParts(c, c.getId(), false);
+    }
+
+    public static WebPart[] getParts(Container c, String id)
+    {
+        return getParts(c, id, false);
+    }
+
+    public static WebPart[] getParts(Container c, String id, boolean force)
     {
         String key = PORTAL_PREFIX + id;
         WebPart[] parts;
@@ -271,7 +300,8 @@ public class Portal
                 return parts;
         }
 
-        Filter filter = new SimpleFilter("PageId", id);
+        SimpleFilter filter = new SimpleFilter("PageId", id);
+        filter.addCondition("Container", c.getId());
         try
         {
             parts = Table.select(getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, new Sort("Index"), WebPart.class);
@@ -290,11 +320,12 @@ public class Portal
         return Table.selectObject(getTableInfoPortalWebParts(), webPartRowId, WebPart.class);
     }
 
-    public static WebPart getPart(String pageId, int index)
+    public static WebPart getPart(Container c, String pageId, int index)
     {
         try
         {
             SimpleFilter filter = new SimpleFilter("PageId", pageId);
+            filter.addCondition("Container", c.getId());
             filter.addCondition("index", index);
             WebPart[] webParts = Table.select(getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, null, WebPart.class);
             assert webParts.length == 0 || webParts.length == 1 : "Cannot have multiple web parts with the same page and index.";
@@ -326,6 +357,15 @@ public class Portal
     }
 
     /**
+     * Add a web part to a particular page at the end of the list
+     */
+    public static WebPart addPart(Container c, String pageId, WebPartFactory desc, String location)
+            throws SQLException
+    {
+        return addPart(c, pageId, desc, location, -1, null);
+    }
+
+    /**
      * Add a web part to the container at the end of the list, with properties
      */
     public static WebPart addPart(Container c, WebPartFactory desc, String location, Map<String, String> properties)
@@ -343,15 +383,21 @@ public class Portal
         return addPart(c, desc, location, partIndex, null);
     }
 
+    public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex, Map<String, String> properties)
+    {
+        return addPart(c, c.getId(), desc, location, partIndex, properties);
+    }
+
     /**
      * Add a web part to the container at the specified index, with properties
      */
-    public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex, Map<String, String> properties)
+    public static WebPart addPart(Container c, String pageId, WebPartFactory desc, String location, int partIndex, Map<String, String> properties)
     {
-        WebPart[] parts = getParts(c.getId());
+        WebPart[] parts = getParts(c, pageId, false);
 
         WebPart newPart = new Portal.WebPart();
-        newPart.setPageId(c.getId());
+        newPart.setContainer(c);
+        newPart.setPageId(pageId);
         newPart.setName(desc.getName());
         newPart.setIndex(partIndex >= 0 ? partIndex : parts.length);
         if (location == null)
@@ -393,7 +439,7 @@ public class Portal
             parts = partsNew;
         }
 
-        Portal.saveParts(c.getId(), parts);
+        Portal.saveParts(c, pageId, parts);
 
 //        Set<Module> activeModules = new HashSet<Module>(c.getActiveModules());
 //        if (!activeModules.contains(desc.getModule()))
@@ -405,7 +451,12 @@ public class Portal
         return newPart;
     }
 
-    public static void saveParts(String id, WebPart[] newParts)
+    public static void saveParts(Container c, WebPart[] newParts)
+    {
+        saveParts(c, c.getId(), newParts);
+    }
+
+    public static void saveParts(Container c, String id, WebPart[] newParts)
     {
         // make sure indexes are unique
         Arrays.sort(newParts, new Comparator<WebPart>()
@@ -421,11 +472,12 @@ public class Portal
             WebPart part = newParts[i];
             part.index = i + 1;
             part.pageId = id;
+            part.container = c;
         }
 
         try
         {
-            WebPart[] oldParts = getParts(id);
+            WebPart[] oldParts = getParts(c, id, false);
             Set<Integer> oldPartIds = new HashSet<Integer>();
             for (WebPart oldPart : oldParts)
                 oldPartIds.add(oldPart.getRowId());
@@ -543,7 +595,7 @@ public class Portal
             throws Exception
     {
         String contextPath = context.getContextPath();
-        WebPart[] parts = getParts(id, false);
+        WebPart[] parts = getParts(context.getContainer(), id, false);
 
         MultiMap<String, WebPart> locationMap = getPartsByLocation(parts);
         Collection<String> locations = locationMap.keySet();

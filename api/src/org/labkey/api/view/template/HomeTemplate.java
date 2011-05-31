@@ -137,7 +137,7 @@ public class HomeTemplate extends PrintTemplate
 
         //HACK to fix up navTrail to delete navBar items
         if (null != appBar)
-            page.setNavTrail(appBar.fixCrumbTrail(page.getNavTrail()));
+            page.setNavTrail(appBar.fixCrumbTrail(page.getNavTrail(), context.getActionURL()));
 
         if (null == appBar)
             return null;

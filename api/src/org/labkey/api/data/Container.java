@@ -716,7 +716,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
         if (hasForward)
         {
-            Portal.saveParts(getId(), partList.toArray(new Portal.WebPart[partList.size()]));
+            Portal.saveParts(this, partList.toArray(new Portal.WebPart[partList.size()]));
         }
     }
 
@@ -745,7 +745,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             //get set of all modules
             List<Module> allModules = ModuleLoader.getInstance().getModules();
             //get active web parts for this container
-            Portal.WebPart[] activeWebparts = Portal.getParts(getId());
+            Portal.WebPart[] activeWebparts = Portal.getParts(this);
             //remove forward from active web parts
             removeForward(activeWebparts);
 
