@@ -111,8 +111,9 @@ public class HomeTemplate extends PrintTemplate
         return links;
     }
 
-    //Keys for stashing away navtrails to use for nested modules
+    // Keys for stashing away navtrails to use for nested modules
     private static final String PARENT_TRAIL_INFO = HomeTemplate.class.getName() + ".PARENT_TRAIL_INFO";
+
     private static class ParentTrailInfo
     {
         ActionURL url;
