@@ -678,7 +678,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             ExpRunImpl run = getRun(oldRow);
             if (run != null)
@@ -690,19 +690,19 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     if (entry.getKey().equalsIgnoreCase(Column.Name.toString()))
                     {
                         String newName = entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class);
-                        sb.append(" Name changed from " + run.getName() + " to " + newName + ".");
+                        appendPropertyIfChanged(sb, "Name", run.getName(), newName);
                         run.setName(newName);
                     }
                     else if (entry.getKey().equalsIgnoreCase(Column.Comments.toString()))
                     {
                         String newComment = entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class);
-                        sb.append(" Comment changed from " + run.getComments() + " to " + newComment + ".");
+                        appendPropertyIfChanged(sb, "Comment", run.getComments(), newComment);
                         run.setComments(newComment);
                     }
                     else if (entry.getKey().equalsIgnoreCase(Column.Flag.toString()))
                     {
                         String newFlag = entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class);
-                        sb.append(" Flag changed from " + run.getComment() + " to " + newFlag + ".");
+                        appendPropertyIfChanged(sb, "Flag", run.getComment(), newFlag);
                         run.setComment(user, newFlag);
                     }
 
@@ -713,14 +713,45 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         PropertyColumn propColumn = (PropertyColumn)col;
                         PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();
                         Object oldValue = run.getProperty(propertyDescriptor);
-                        sb.append(" " + propertyDescriptor.getNonBlankCaption() + " changed from " + oldValue + " to " + entry.getValue() + ".");
                         run.setProperty(user, propertyDescriptor, entry.getValue());
+
+                        Object newValue = entry.getValue();
+                        TableInfo fkTableInfo = col.getFkTableInfo();
+                        if (fkTableInfo != null)
+                        {
+                            Map<String, Object> oldLookupTarget = Table.selectObject(fkTableInfo, oldValue, Map.class);
+                            if (oldLookupTarget != null)
+                            {
+                                oldValue = oldLookupTarget.get(fkTableInfo.getTitleColumn());
+                            }
+                            Map<String, Object> newLookupTarget = Table.selectObject(fkTableInfo, newValue, Map.class);
+                            if (newLookupTarget != null)
+                            {
+                                newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());
+                            }
+                        }
+                        appendPropertyIfChanged(sb, propertyDescriptor.getNonBlankCaption(), oldValue, newValue);
                     }
                 }
                 run.save(user);
                 ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, sb.toString());
             }
             return getRow(user, container, oldRow);
+        }
+
+        private StringBuilder appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
+        {
+            if (!PageFlowUtil.nullSafeEquals(oldValue, newValue))
+            {
+                sb.append(" ");
+                sb.append(label);
+                sb.append(" changed from ");
+                sb.append(oldValue == null ? "blank" : "'" + oldValue + "'");
+                sb.append(" to ");
+                sb.append(newValue == null ? "blank" : "'" + newValue + "'");
+                sb.append(".");
+            }
+            return sb;
         }
 
         private ExpRunImpl getRun(Map<String, Object> row)

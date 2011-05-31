@@ -34,6 +34,8 @@ public class FlagColumnRenderer extends DataColumn
     public FlagColumnRenderer(ColumnInfo colinfo)
     {
         super(colinfo);
+
+        setInputType(colinfo.getDisplayField().getInputType());
     }
 
     static private final String key_scriptrendered = "~~~~FlagColumnScriptRendered~~~";
