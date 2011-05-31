@@ -137,10 +137,16 @@
     </select>
     <%
     }
+
+    for (VisitStatistic stat : VisitStatistic.values())
+    {
+        boolean checked = bean.stats.contains(stat);
+        out.print("<input name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + (checked ? " checked" : "") + " onclick=\"document.changeFilterForm.submit()\">" + h(stat.getDisplayString()) + "\n");
+    }
     %>
 </form>
 <br><br>
-<table class="labkey-data-region labkey-show-borders"><colgroup><col><col>
+<table id="studyOverview" class="labkey-data-region labkey-show-borders"><colgroup><col><col>
     <%
         for (VisitImpl visit : visits)
         {

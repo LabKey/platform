@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistic" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Collections" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -35,7 +36,7 @@
 
     StudyManager manager = StudyManager.getInstance();
     VisitManager visitManager = manager.getVisitManager(study);
-    Map<VisitMapKey, VisitManager.VisitStatistics> summaryMap = visitManager.getVisitSummary(null, null, VisitStatistic.RowCount);
+    Map<VisitMapKey, VisitManager.VisitStatistics> summaryMap = visitManager.getVisitSummary(null, null, Collections.singleton(VisitStatistic.RowCount));
     int datasetRowCount = 0;
 
     for (Map.Entry<VisitMapKey, VisitManager.VisitStatistics> e : summaryMap.entrySet())

@@ -226,9 +226,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -501,6 +503,7 @@ public class StudyController extends BaseStudyController
             return _cohortId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setCohortId(Integer cohortId)
         {
             if (StudyManager.getInstance().showCohorts(HttpView.currentContext().getContainer(), HttpView.currentContext().getUser()))
@@ -546,11 +549,43 @@ public class StudyController extends BaseStudyController
         }
     }
 
+
+    public static class OverviewForm extends DatasetFilterForm
+    {
+        private String[] _visitStatistic = new String[0];
+
+        public String[] getVisitStatistic()
+        {
+            return _visitStatistic;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setVisitStatistic(String[] visitStatistic)
+        {
+            _visitStatistic = visitStatistic;
+        }
+
+        private Set<VisitStatistic> getVisitStatistics()
+        {
+            Set<VisitStatistic> set = EnumSet.noneOf(VisitStatistic.class);
+
+            for (String statName : _visitStatistic)
+                set.add(VisitStatistic.valueOf(statName));
+
+            if (set.isEmpty())
+                set.add(VisitStatistic.values()[0]);
+
+            return set;
+        }
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
-    public class OverviewAction extends SimpleViewAction<DatasetFilterForm>
+    public class OverviewAction extends SimpleViewAction<OverviewForm>
     {
         private StudyImpl _study;
-        public ModelAndView getView(DatasetFilterForm form, BindException errors) throws Exception
+
+        public ModelAndView getView(OverviewForm form, BindException errors) throws Exception
         {
             _study = getStudy();
             OverviewBean bean = new OverviewBean();
@@ -558,7 +593,7 @@ public class StudyController extends BaseStudyController
             bean.showAll = "1".equals(getViewContext().get("showAll"));
             bean.canManage = getContainer().hasPermission(getUser(), ManageStudyPermission.class);
             bean.showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
-            bean.stats = new VisitStatistic[]{VisitStatistic.ParticipantCount/*, VisitStatistic.RowCount*/};
+            bean.stats = form.getVisitStatistics();
 
             if (StudyManager.getInstance().showQCStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
@@ -579,6 +614,7 @@ public class StudyController extends BaseStudyController
             return root.addChild("Overview:" + _study.getLabel());
         }
     }
+
 
     static class QueryReportForm extends QueryViewAction.QueryExportForm
     {
@@ -2650,7 +2686,7 @@ public class StudyController extends BaseStudyController
         public CohortFilter cohortFilter;
         public boolean showCohorts;
         public QCStateSet qcStates;
-        public VisitStatistic[] stats;
+        public Set<VisitStatistic> stats;
     }
 
     /**

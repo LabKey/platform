@@ -79,6 +79,7 @@ public abstract class VisitManager
 
     /**
      * Updates the participant, visit, and participant visit tables. Also updates automatic cohort assignments.
+     * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      * @param potentiallyAddedParticipants optionally, the specific participants that may have been added to the study.
      * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
@@ -145,7 +146,7 @@ public abstract class VisitManager
     // it also needs to filter by cohort and qcstates.  Tables providing the statistics must be aliased using the provided alias.
     protected abstract SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias);
 
-    public Map<VisitMapKey, VisitStatistics> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates, VisitStatistic... stats) throws SQLException
+    public Map<VisitMapKey, VisitStatistics> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats) throws SQLException
     {
         String alias = "SD";
         StringBuilder statsSql = new StringBuilder();
@@ -206,8 +207,10 @@ public abstract class VisitManager
     }
 
 
+    @SuppressWarnings({"UnusedDeclaration"})  // Always used by enumerating values()
     public enum VisitStatistic
     {
+        // First enum value is the default (always selected if none are selected)
         ParticipantCount
         {
             @Override
@@ -215,7 +218,13 @@ public abstract class VisitManager
             {
                 return "CAST(COUNT(DISTINCT " + alias + ".ParticipantId) AS INT)";
             }
-        },
+
+            @Override
+            public String getDisplayString()
+            {
+                return "Participant Count";
+            }},
+
         RowCount
         {
             @Override
@@ -223,9 +232,16 @@ public abstract class VisitManager
             {
                 return "CAST(COUNT(*) AS INT)";
             }
+
+            @Override
+            public String getDisplayString()
+            {
+                return "Row Count";
+            }
         };
 
         abstract String getSql(@NotNull String alias);
+        public abstract String getDisplayString();
     }
 
     public static class VisitStatistics
@@ -259,6 +275,7 @@ public abstract class VisitManager
         SQLFragment sql = getDatasetSequenceNumsSQL(getStudy());
         ResultSet rs = null;
         Map<Integer, List<Double>> ret = new HashMap<Integer, List<Double>>();
+
         try
         {
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
@@ -283,7 +300,8 @@ public abstract class VisitManager
         {
             ResultSetUtil.close(rs);
         }
-      return ret;
+
+        return ret;
     }
     
     /**

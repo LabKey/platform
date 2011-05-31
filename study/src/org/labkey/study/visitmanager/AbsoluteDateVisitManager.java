@@ -27,6 +27,7 @@ import org.labkey.study.model.VisitMapKey;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -52,7 +53,7 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
     }
 
     @Override
-    public Map<VisitMapKey, VisitStatistics> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates, VisitStatistic... stats) throws SQLException
+    public Map<VisitMapKey, VisitStatistics> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats) throws SQLException
     {
         return Collections.emptyMap();
     }
