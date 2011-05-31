@@ -382,6 +382,7 @@ core/resources/schemas/dbscripts/postgresql/obsolete/prop-8.31-8.32.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/prop-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-0.00-8.30.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-10.10-10.20.sql -text
+core/resources/schemas/dbscripts/postgresql/portal-11.11-11.12.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-9.10.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-10.20-10.30.sql -text
@@ -485,6 +486,7 @@ core/resources/schemas/dbscripts/sqlserver/obsolete/prop-8.31-8.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/prop-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-0.00-8.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-10.10-10.20.sql -text
+core/resources/schemas/dbscripts/sqlserver/portal-11.11-11.12.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-9.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-10.20-10.30.sql -text
@@ -2532,6 +2534,7 @@ study/src/org/labkey/study/controllers/DatasetServiceImpl.java -text
 study/src/org/labkey/study/controllers/InsertUpdateAction.java -text
 study/src/org/labkey/study/controllers/StudyController.java -text
 study/src/org/labkey/study/controllers/StudyDefinitionController.java -text
+study/src/org/labkey/study/controllers/StudyPagesController.java -text
 study/src/org/labkey/study/controllers/StudyPropertiesController.java -text
 study/src/org/labkey/study/controllers/assay/AssayController.java -text
 study/src/org/labkey/study/controllers/assay/actions/AbstractAssayAPIAction.java -text

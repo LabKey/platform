@@ -230,17 +230,17 @@ span.css-arrow-down
 /* Used for tabs */
 .labkey-app-bar
 {
-    background-color:#<%= second %>;
+//    background-color:#<%= grid %>;
 }
 
 table.labkey-app-bar td
 {
-    background-color:#<%= second %>;
+//    background-color:#<%= grid %>;
 }
 
 td.labkey-app-button-bar-button a
 {
-    color:#<%= link %>;
+//    color:#<%= link %>;
 }
 
 .labkey-completion-highlight

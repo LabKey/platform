@@ -210,10 +210,26 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public static class PageForm
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        private String _pageId;
+
+        public String getPageId()
+        {
+            return _pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            _pageId = pageId;
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class BeginAction extends SimpleViewAction<PageForm>
+    {
+        public ModelAndView getView(PageForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
             if (null == c)
@@ -247,7 +263,7 @@ public class ProjectController extends SpringActionController
 
             HttpView template = new HomeTemplate(getViewContext(), c, new VBox(), page, new NavTree[0]);
 
-            Portal.populatePortalView(getViewContext(), c.getId(), template);
+            Portal.populatePortalView(getViewContext(), null != form.getPageId() ? form.getPageId() : c.getId(), template);
 
             getPageConfig().setTemplate(PageConfig.Template.None);
             return template;
@@ -383,7 +399,7 @@ public class ProjectController extends SpringActionController
             if (null == _desc)
                 return true;
 
-            _newPart = Portal.addPart(getContainer(), _desc, form.getLocation());
+            _newPart = Portal.addPart(getContainer(), form.getPageId(), _desc, form.getLocation());
             return true;
         }
 
@@ -467,7 +483,7 @@ public class ProjectController extends SpringActionController
         public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors) throws Exception
         {
             Portal.WebPart webPart = Portal.getPart(customizePortletForm.getWebPartId());
-            if (webPart != null && handleDeleteWebPart(webPart.getPageId(), webPart.getIndex()))
+            if (webPart != null && handleDeleteWebPart(getViewContext().getContainer(), webPart.getPageId(), webPart.getIndex()))
                 return getWebPartLayoutApiResponse(customizePortletForm.getPageId());
             else
                 throw new RuntimeException("Unable to delete the specified web part.  Please refresh the page and try again.");
@@ -483,7 +499,7 @@ public class ProjectController extends SpringActionController
         {
             Portal.WebPart webPart = Portal.getPart(movePortletForm.getWebPartId());
             if (webPart != null && handleMoveWebPart(webPart.getPageId(), webPart.getIndex(), movePortletForm.getDirection()))
-                return getWebPartLayoutApiResponse(movePortletForm.getPageId());
+                return getWebPartLayoutApiResponse(webPart.getPageId());
             else
                 throw new RuntimeException("Unable to move the specified web part.  Please refresh the page and try again.");
         }
@@ -502,7 +518,7 @@ public class ProjectController extends SpringActionController
 
     private ApiResponse getWebPartLayoutApiResponse(String pageId)
     {
-        Portal.WebPart[] parts = Portal.getParts(pageId);
+        Portal.WebPart[] parts = Portal.getParts(getViewContext().getContainer(), pageId);
         final Map<String, Object> properties = new HashMap<String, Object>();
         int lastIndex = -1;
         for (Portal.WebPart part : parts)
@@ -538,9 +554,9 @@ public class ProjectController extends SpringActionController
         };
     }
 
-    private boolean handleDeleteWebPart(String pageId, int index)
+    private boolean handleDeleteWebPart(Container c, String pageId, int index)
     {
-        Portal.WebPart[] parts = Portal.getParts(pageId);
+        Portal.WebPart[] parts = Portal.getParts(c, pageId, false);
         //Changed on us..
         if (null == parts || parts.length == 0)
             return true;
@@ -550,13 +566,13 @@ public class ProjectController extends SpringActionController
             if (part.getIndex() != index)
                 newParts.add(part);
 
-        Portal.saveParts(pageId, newParts.toArray(new Portal.WebPart[newParts.size()]));
+        Portal.saveParts(c, pageId, newParts.toArray(new Portal.WebPart[newParts.size()]));
         return true;
     }
 
     private boolean handleMoveWebPart(String pageId, int index, int direction)
     {
-        Portal.WebPart[] parts = Portal.getParts(pageId);
+        Portal.WebPart[] parts = Portal.getParts(getContainer(), pageId);
         if (null == parts)
             return true;
 
@@ -599,7 +615,7 @@ public class ProjectController extends SpringActionController
             }
         }
 
-        Portal.saveParts(pageId, parts);
+        Portal.saveParts(getContainer(), pageId, parts);
         return true;
     }
 
@@ -619,7 +635,7 @@ public class ProjectController extends SpringActionController
 
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
         {
-            return handleDeleteWebPart(form.getPageId(), form.getIndex());
+            return handleDeleteWebPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
         }
 
         public URLHelper getSuccessURL(CustomizePortletForm customizePortletForm)
@@ -730,7 +746,7 @@ public class ProjectController extends SpringActionController
 
         public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
         {
-            _webPart = Portal.getPart(form.getPageId(), form.getIndex());
+            _webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
             if (null == _webPart)
             {
                 if (errors.hasErrors())
@@ -753,7 +769,7 @@ public class ProjectController extends SpringActionController
 
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
         {
-            Portal.WebPart webPart = Portal.getPart(form.getPageId(), form.getIndex());
+            Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
             if (null == webPart)
             {
                 //the web part no longer exists--probably because another admin has deleted it
@@ -805,7 +821,7 @@ public class ProjectController extends SpringActionController
 
         public ActionURL getSuccessURL(CustomizePortletForm customizePortletForm)
         {
-            Portal.WebPart webPart = Portal.getPart(customizePortletForm.getPageId(), customizePortletForm.getIndex());
+            Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), customizePortletForm.getPageId(), customizePortletForm.getIndex());
             //TODO: This is a hack to get this working, should use returnUrl and pass through in webpart
             if ("menubar".equals(webPart.getLocation()))
             {

@@ -5045,7 +5045,7 @@ public class StudyController extends BaseStudyController
 
                     webParts.add(part);
                 }
-                Portal.saveParts(studyFolder.getId(), webParts.toArray(new Portal.WebPart[webParts.size()]));
+                Portal.saveParts(studyFolder, studyFolder.getId(), webParts.toArray(new Portal.WebPart[webParts.size()]));
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -6458,40 +6458,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-
-    @Override
-    public AppBar getAppBar(Controller action)
-    {
-        try
-        {
-            Study study = getStudy(true);
-            if (study == null)
-            {
-                List<NavTree> buttons;
-                if (getViewContext().hasPermission(AdminPermission.class))
-                    buttons = Collections.singletonList(new NavTree("Create Study", new ActionURL(CreateStudyAction.class, getContainer())));
-                else
-                    buttons = Collections.emptyList();
-                return new AppBar("Study: None", buttons);
-            }
-            else
-            {
-                List<NavTree> buttons = new ArrayList<NavTree>();
-                buttons.add(new NavTree("Overview", PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer())));
-                buttons.add(new NavTree(StudyService.get().getSubjectNounPlural(getContainer()), "#"));
-                buttons.add(new NavTree("View Data", new ActionURL(ViewDataAction.class, getContainer())));
-                if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                    buttons.add(new NavTree("Manage", new ActionURL(ManageStudyAction.class, getContainer())));
-
-                return new AppBar("Study: " + study.getLabel(), buttons);
-            }
-        }
-        catch (ServletException e)
-        {
-            _log.error("getAppBar", e);
-            return null;
-        }
-    }
 
 
     @RequiresPermissionClass(AdminPermission.class)

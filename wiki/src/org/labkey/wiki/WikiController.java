@@ -2291,7 +2291,7 @@ public class WikiController extends SpringActionController
             if (pageId != null && index > 0)
             {
                 //get web part referenced by page id and index
-                Portal.WebPart webPart = Portal.getPart(pageId, index);
+                Portal.WebPart webPart = Portal.getPart(c, pageId, index);
                 webPart.setProperty("webPartContainer", c.getId());
                 webPart.setProperty("name", wikiname.getSource());
                 Portal.updatePart(getUser(), webPart);
