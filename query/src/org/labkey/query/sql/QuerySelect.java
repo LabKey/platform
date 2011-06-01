@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -1361,6 +1362,15 @@ groupByLoop:
         return sc;
     }
 
+
+    @Override
+    public void setContainerFilter(ContainerFilter containerFilter)
+    {
+        for (QueryRelation queryRelation : _tables.values())
+        {
+            queryRelation.setContainerFilter(containerFilter);
+        }
+    }
 
     RelationColumn getLookupColumn(RelationColumn parentRelCol, ColumnType.Fk fk, String name)
     {

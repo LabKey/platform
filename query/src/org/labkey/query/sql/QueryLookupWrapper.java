@@ -254,6 +254,12 @@ public class QueryLookupWrapper extends QueryRelation
         return _source.getQueryText();
     }
 
+    @Override
+    public void setContainerFilter(ContainerFilter containerFilter)
+    {
+        _source.setContainerFilter(containerFilter);
+    }
+
 
     private static abstract class _WrapperColumn extends RelationColumn
     {

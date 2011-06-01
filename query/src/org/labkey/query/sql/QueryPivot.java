@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
@@ -639,6 +640,12 @@ public class QueryPivot extends QueryRelation
     String getQueryText()
     {
         return null;
+    }
+
+    @Override
+    public void setContainerFilter(ContainerFilter containerFilter)
+    {
+        _from.setContainerFilter(containerFilter);
     }
 
 

@@ -152,6 +152,7 @@ public abstract class QueryRelation
         return _parent.getNestingLevel() + 1;
     }
 
+    public abstract void setContainerFilter(ContainerFilter containerFilter);
 
     /**
      * Why RelationColumn??

@@ -78,6 +78,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     public void setContainerFilter(@NotNull ContainerFilter containerFilter)
     {
         _containerFilter = containerFilter;
+        _relation.setContainerFilter(containerFilter);
     }
 
     public boolean hasDefaultContainerFilter()

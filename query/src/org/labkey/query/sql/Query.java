@@ -435,7 +435,7 @@ public class Query
             if (null == _queryRoot)
                 throw new IllegalStateException("call parse first");
             TableInfo tinfo = _queryRoot.getTableInfo();
-            if (tinfo instanceof ContainerFilterable)
+            if (tinfo instanceof ContainerFilterable && getContainerFilter() != null)
                 ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
             return tinfo;
         }

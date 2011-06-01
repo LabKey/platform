@@ -17,6 +17,7 @@ package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -365,6 +366,14 @@ public class QueryUnion extends QueryRelation
 		return sb.toString();
     }
 
+    @Override
+    public void setContainerFilter(ContainerFilter containerFilter)
+    {
+        for (QueryRelation queryRelation : _termList)
+        {
+            queryRelation.setContainerFilter(containerFilter);
+        }
+    }
 
     class UnionColumn extends RelationColumn
     {
