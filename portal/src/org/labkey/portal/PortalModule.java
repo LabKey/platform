@@ -28,6 +28,7 @@ import org.labkey.api.view.WebPartFactory;
 import java.beans.PropertyChangeEvent;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 /**
  * User: migra
@@ -41,6 +42,12 @@ public class PortalModule extends DefaultModule
     public String getName()
     {
         return "Portal";
+    }
+
+    @Override
+    public Set<Class> getJUnitTests()
+    {
+        return Collections.singleton((Class) PortalJUnitTest.class);
     }
 
     // NOTE: the version number of the portal module does not govern the scripts run for the

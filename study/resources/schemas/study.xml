@@ -162,7 +162,7 @@
         <ns:description>An integer value used to sort visits in display order.</ns:description>
       </ns:column>
       <ns:column columnName="ShowByDefault">
-        <ns:description>Whether each visit should be displayed by default in study views and reports.</ns:description>
+        <ns:description>Whether each visit should be displayed by default in study views and queries.</ns:description>
       </ns:column>
       <ns:column columnName="VisitDateDatasetId">
         <ns:description>The ID of the study dataset that maps from study dates to study visit IDs.</ns:description>
@@ -214,7 +214,7 @@
         <ns:description>The display order of each dataset.</ns:description>
       </ns:column>
       <ns:column columnName="ShowByDefault">
-        <ns:description>Whether each dataset should be displayed by default in study reports.</ns:description>
+        <ns:description>Whether each dataset should be displayed by default in study queries.</ns:description>
       </ns:column>
       <ns:column columnName="EntityId">
         <ns:description>A unique string identifier for each dataset.</ns:description>
