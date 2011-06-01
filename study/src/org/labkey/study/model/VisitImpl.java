@@ -209,6 +209,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     // only 4 scale digits
     static NumberFormat sequenceFormat = new DecimalFormat("0.####");
+
     public static String formatSequenceNum(double d)
     {
         d = Math.round(d*10000) / 10000.0;

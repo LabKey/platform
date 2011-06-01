@@ -715,7 +715,7 @@ public class StudyManager
             if (null != visit.getLabel())
             {
                 boolean overridden = labels.contains(label) || customMap.containsKey(label);
-                list.add(new VisitAlias(label, visit.getSequenceNumMin(), overridden));
+                list.add(new VisitAlias(label, visit.getSequenceNumMin(), visit.getSequenceString(), overridden));
 
                 if (!overridden)
                     labels.add(label);
@@ -730,23 +730,25 @@ public class StudyManager
     {
         private String _name;
         private double _sequenceNum;
+        private String _sequenceString;
         private boolean _overridden;  // For display purposes -- we show all visits and gray out the ones that are not used
 
-        @SuppressWarnings({"UnusedDeclaration"}) // Constructed by reflection by the Table layer
+        @SuppressWarnings({"UnusedDeclaration"}) // Constructed via reflection by the Table layer
         public VisitAlias()
         {
         }
 
-        public VisitAlias(String name, double sequenceNum, boolean overridden)
+        public VisitAlias(String name, double sequenceNum, @Nullable String sequenceString, boolean overridden)
         {
             _name = name;
             _sequenceNum = sequenceNum;
+            _sequenceString = sequenceString;
             _overridden = overridden;
         }
 
         public VisitAlias(String name, double sequenceNum)
         {
-            this(name, sequenceNum, false);
+            this(name, sequenceNum, null, false);
         }
 
         public String getName()
@@ -773,6 +775,14 @@ public class StudyManager
         public boolean isOverridden()
         {
             return _overridden;
+        }
+
+        public String getSequenceString()
+        {
+            if (null == _sequenceString)
+                return VisitImpl.formatSequenceNum(_sequenceNum);
+            else
+                return _sequenceString;
         }
     }
 

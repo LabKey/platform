@@ -28,7 +28,7 @@
     boolean hasCustomMapping = !bean.getCustomMapping().isEmpty();
 %>
 <form action="" method="post">
-    <table width="80%">
+    <table id="customMapping" width="80%">
         <tr><th colspan="2" align="left">Custom Mapping</th></tr>
         <tr><td colspan="2">&nbsp;</td></tr><%
             if (!hasCustomMapping)
@@ -37,12 +37,12 @@
             }
             else
             {
-                out.print("<tr><th align=\"left\">Alias</th><th align=\"left\">Sequence Number</th></tr>");
+                out.print("<tr><th align=\"left\">Name</th><th align=\"left\">Sequence Number</th></tr>");
 
                 for (VisitAlias alias : bean.getCustomMapping())
                 {
         %>
-            <tr><td><%=h(alias.getName())%></td><td><%=alias.getSequenceNum()%></td></tr><%
+            <tr><td><%=h(alias.getName())%></td><td><%=alias.getSequenceString()%></td></tr><%
                 }
             }
         %>
@@ -59,12 +59,15 @@
             }
             else
             {
-                out.print("<tr><th align=\"left\">Label</th><th align=\"left\">Minimum Sequence Number</th></tr>");
+                out.print("<tr><th align=\"left\">Label</th><th align=\"left\">Sequence Number Range</th></tr>");
 
                 for (VisitAlias alias : bean.getStandardMapping())
                 {
         %>
-            <tr><td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=h(alias.getName())%></td><td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=alias.getSequenceNum()%></td></tr><%=alias.isOverridden() ? "</span>" : ""%><%
+            <tr>
+                <td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=h(alias.getName())%></td>
+                <td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=h(alias.getSequenceString())%></td>
+            </tr><%
                 }
             }
         %>

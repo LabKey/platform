@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 19, 2011
  * Time: 4:36:05 PM
