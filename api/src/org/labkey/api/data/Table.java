@@ -34,7 +34,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Join;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.AbstractDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableLoaderPump;
 import org.labkey.api.exp.MvColumn;
@@ -2598,7 +2598,7 @@ public class Table
     }
 
 
-    public static class TestDataIterator implements DataIterator
+    public static class TestDataIterator extends AbstractDataIterator
     {
         String guid = GUID.makeGUID();
         Date date = new Date();
@@ -2631,9 +2631,9 @@ public class Table
 
         int currentRow = -1;
 
-        public void setErrorHandler(ValidationException errors)
+        TestDataIterator()
         {
-
+            super(null);
         }
 
         @Override
@@ -2678,11 +2678,9 @@ public class Table
             TestDataIterator extract = new TestDataIterator();
             SimpleTranslator translate = new SimpleTranslator(extract, errors);
             translate.selectAll();
-            translate.addBuiltinColumns(JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable);
+            translate.addBuiltInColumns(JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable, false);
 
             TableLoaderPump load = new TableLoaderPump(
-//                    JunitUtil.getTestContainer(),
-//                    TestContext.get().getUser(),
                     translate,
                     testTable,
                     errors
