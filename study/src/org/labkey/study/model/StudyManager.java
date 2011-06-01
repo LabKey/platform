@@ -3453,6 +3453,9 @@ public class StudyManager
                 rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
                 _import(def, rows, errors);
+                if (errors.size() != 0)
+                    fail(errors.get(0));
+                assertEquals(0, errors.size());
                 rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                 assertTrue(rs.next());
 

@@ -295,6 +295,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
         catch (BatchValidationException x)
         {
+            errors.addAllErrors(errors);
             x.addToErrors(errors);
         }
         finally
