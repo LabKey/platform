@@ -23,7 +23,6 @@ import org.labkey.api.exp.api.ExpData;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 25, 2010
  * Time: 10:18:04 AM
