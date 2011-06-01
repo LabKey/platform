@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
@@ -53,11 +54,15 @@ public class QueryForeignKey implements ForeignKey
 
     public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
     {
-        TableInfo lookupTable = null;
+        TableInfo lookupTable;
 
         try
         {
             lookupTable = getLookupTableInfo();
+            if (foreignKey.getParentTable() instanceof ContainerFilterable && lookupTable instanceof ContainerFilterable)
+            {
+                ((ContainerFilterable)lookupTable).setContainerFilter(foreignKey.getParentTable().getContainerFilter());
+            }
         }
         catch (QueryParseException qpe)
         {
