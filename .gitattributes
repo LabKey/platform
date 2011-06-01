@@ -284,8 +284,10 @@ api/src/org/labkey/api/defaults/SetDefaultValuesAssayAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesDatasetAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesListAction.java -text
 api/src/org/labkey/api/etl/AbstractDataIterator.java -text
+api/src/org/labkey/api/etl/CachingDataIterator.java -text
 api/src/org/labkey/api/etl/DataIterator.java -text
 api/src/org/labkey/api/etl/DataIteratorBuilder.java -text
+api/src/org/labkey/api/etl/LoggingDataIterator.java -text
 api/src/org/labkey/api/etl/MapDataIterator.java -text
 api/src/org/labkey/api/etl/ParameterMapPump.java -text
 api/src/org/labkey/api/etl/SimpleTranslator.java -text

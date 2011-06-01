@@ -54,4 +54,18 @@ public abstract class AbstractDataIterator implements DataIterator
         }
         return _rowError;
     }
+
+    @Override
+    public boolean isScrollable()
+    {
+        return false;
+    }
+
+    @Override
+    public void beforeFirst()
+    {
+        if (isScrollable())
+            throw new UnsupportedOperationException("beforeFirst() needs to be implemented if true==isScrollable()");
+        throw new IllegalStateException("Iterator is not scrollabvle");
+    }
 }

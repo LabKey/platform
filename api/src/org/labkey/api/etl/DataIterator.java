@@ -35,7 +35,7 @@ import java.io.Closeable;
 
 public interface DataIterator extends Closeable
 {
-    /* count of colums, columns are indexed 1-columnCount */
+    /* count of colums, columns are indexed 1-_columnCount */
     int getColumnCount();
 
     /* description of column i */
@@ -57,4 +57,7 @@ public interface DataIterator extends Closeable
      * MSInspectFeatursDataHandler uses error values as well, but that's what ValidationException is for
      */
     Object get(int i);
+
+    boolean isScrollable();
+    void beforeFirst();
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.etl;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
@@ -53,9 +54,13 @@ class ParameterMapPump implements Runnable
             // by name
             for (int i=1 ; i<=data.getColumnCount() ; i++)
             {
-                String name = data.getColumnInfo(i).getName();
-                Parameter p = stmt.getParameter(name);
-                if (null != name && null != p)
+                ColumnInfo col = data.getColumnInfo(i);
+                Parameter p = null;
+                if (p == null && null != col.getPropertyURI())
+                    p = stmt.getParameter(col.getPropertyURI());
+                if (p == null)
+                    p = stmt.getParameter(col.getName());
+                if (null != p)
                 {
                     bindings.add(new Pair<Integer,Parameter>(i, p));
                 }

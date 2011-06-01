@@ -73,6 +73,17 @@ public class StandardETL implements DataIteratorBuilder, Runnable
     }
 
 
+    public StandardETL(TableInfo target, @NotNull DataIterator it, @Nullable Container c, @NotNull User user)
+    {
+        if (!(target instanceof UpdateableTableInfo))
+            throw new IllegalArgumentException("Must implement UpdateableTableInfo");
+        _inputBuilder = new DataIteratorBuilder.Wrapper(it);
+        _target = target;
+        _c = c;
+        _user = user;
+    }
+
+
     @Override
     public void run()
     {
@@ -122,12 +133,7 @@ public class StandardETL implements DataIteratorBuilder, Runnable
         // NOTE: although some columns may be matched by propertyURI, I assumie that create/modified etc are bound by name
         //
 
-        if (!(input instanceof SimpleTranslator))
-        {
-            input = new SimpleTranslator(input, errors);
-            ((SimpleTranslator)input).selectAll();;
-        }
-        ((SimpleTranslator)input).addBuiltinColumns(_c, _user, _target);
+        input = SimpleTranslator.wrapBuiltInColumns(input, errors, _c, _user, _target);
 
         /*
          * NOTE: sbouldn't really need DomainProperty here,
@@ -164,9 +170,11 @@ public class StandardETL implements DataIteratorBuilder, Runnable
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
             ColumnInfo from = input.getColumnInfo(i);
-            Pair<ColumnInfo,DomainProperty> to = targetMap.get(from.getName());
+            Pair<ColumnInfo,DomainProperty> to = null;
             if (null == to && null != from.getPropertyURI())
                 to = targetMap.get(from.getPropertyURI());
+            if (null == to)
+                to = targetMap.get(from.getName());
 
             if (null != to)
             {
@@ -208,7 +216,7 @@ public class StandardETL implements DataIteratorBuilder, Runnable
             }
             boolean supportsMV = null != col.getMvColumnName() || (null != dp && dp.isMvEnabled());
             if (null == dp)
-                convert.addConvertColumn(col.getName(), i, col.getJdbcType(), supportsMV);
+                convert.addConvertColumn(col, i, supportsMV);
             else
                 convert.addConvertColumn(col.getName(), i, dp.getPropertyDescriptor(), dp.getPropertyDescriptor().getPropertyType());
 
@@ -221,6 +229,6 @@ public class StandardETL implements DataIteratorBuilder, Runnable
                 validate.addPropertyValidator(i, dp.getPropertyDescriptor());
         }
 
-        return validate;
+        return LoggingDataIterator.wrap(validate);
     }
 }

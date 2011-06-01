@@ -17,6 +17,7 @@ package org.labkey.api.reader;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ArrayListMap;
@@ -33,7 +34,6 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.ValidationException;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -704,12 +704,26 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     private class _DataIterator implements DataIterator
     {
         final BatchValidationException _errors;
-        final DataLoaderIterator _it;
-        ArrayListMap<String,Object> _row;
+        DataLoaderIterator _it = null;
+        ArrayListMap<String,Object> _row = null;
 
         _DataIterator(BatchValidationException errors)
         {
             _errors = errors;
+            beforeFirst();
+        }
+
+        @Override
+        public boolean isScrollable()
+        {
+            return true;
+        }
+
+        @Override
+        public void beforeFirst()
+        {
+            if (null != _it)
+                IOUtils.closeQuietly(_it);
             _it = (DataLoaderIterator)iterator();
         }
 
@@ -752,6 +766,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         @Override
         public void close() throws IOException
         {
+            if (null != _it)
+                IOUtils.closeQuietly(_it);
             DataLoader.this.close();
         }
     }

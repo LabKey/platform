@@ -37,8 +37,10 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
+import sun.font.CreatedFontTracker;
 
 import java.io.IOException;
+import java.security.acl.Owner;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,7 +60,7 @@ import java.util.concurrent.Callable;
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator
 {
     final DataIterator _data;
-    final ArrayList<Pair<ColumnInfo,Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo,Callable>>();
+    protected final ArrayList<Pair<ColumnInfo,Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo,Callable>>();
     boolean _failFast = true;
     Map<String,String> _missingValues = Collections.emptyMap();
     Map<String,Integer> _inputNameMap = null;
@@ -68,6 +70,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         super(errors);
         this._data = source;
         _outputColumns.add(new Pair(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
+    }
+
+    protected DataIterator getInput()
+    {
+        return _data;
     }
 
     public void setMvContainer(Container c)
@@ -119,6 +126,35 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
+    public static class GuidColumn implements Callable
+    {
+        @Override
+        public Object call() throws Exception
+        {
+            return GUID.makeGUID();
+        }
+    }
+
+
+    public static class AutoIncrementColumn implements Callable
+    {
+        private int _autoIncrement = -1;
+
+        protected int getFirstValue()
+        {
+            return 0;
+        }
+
+        @Override
+        public Object call() throws Exception
+        {
+            if (_autoIncrement == -1)
+                _autoIncrement = getFirstValue();
+            return ++_autoIncrement;
+        }
+    }
+
+
     private class MissingValueConvertColumn extends SimpleConvertColumn
     {
         final int indicator;
@@ -162,6 +198,40 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
 
             return type.convert(v);
+        }
+    }
+
+
+    private class PropertyConvertColumn extends SimpleConvertColumn
+    {
+        PropertyDescriptor pd;
+        PropertyType pt;
+
+        PropertyConvertColumn(int fromIndex, PropertyDescriptor pd, PropertyType pt)
+        {
+            super(fromIndex, pt.getJdbcType());
+            this.pd = pd;
+            this.pt = pt;
+        }
+
+        @Override
+        public Object call() throws Exception
+        {
+            Object value = _data.get(index);
+
+            if (value instanceof MvFieldWrapper)
+                return value;
+
+            if (pd.isMvEnabled() && null != value)
+            {
+                if (MvUtil.isMvIndicator(value.toString(), pd.getContainer()))
+                    return new MvFieldWrapper(null, value.toString());
+            }
+
+            if (null != value && null != pt)
+                value = pt.convert(value);
+
+            return value;
         }
     }
 
@@ -235,14 +305,33 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
+    public void removeColumn(int index)
+    {
+        _outputColumns.remove(index);
+    }
+
+
+    public int addColumn(ColumnInfo col, Callable call)
+    {
+        _outputColumns.add(new Pair<ColumnInfo, Callable>(col, call));
+        return _outputColumns.size()-1;
+    }
+
+
     public int addColumn(String name, int fromIndex)
     {
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
-        _outputColumns.add(new Pair<ColumnInfo, Callable>(col, new PassthroughColumn(fromIndex)));
-        return _outputColumns.size()-1;
+        return addColumn(col, new PassthroughColumn(fromIndex));
     }
 
+    public int addConvertColumn(ColumnInfo col, int fromIndex, boolean mv)
+    {
+        if (mv)
+            return addColumn(col, new SimpleConvertColumn(fromIndex, col.getJdbcType()));
+        else
+            return addColumn(col, new MissingValueConvertColumn(fromIndex, col.getJdbcType()));
+    }
 
     public int addConvertColumn(String name, int fromIndex, JdbcType toType, boolean mv)
     {
@@ -250,34 +339,63 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         col.setName(name);
         col.setJdbcType(toType);
         if (mv)
-            _outputColumns.add(new Pair<ColumnInfo, Callable>(col, new SimpleConvertColumn(fromIndex, toType)));
+            return addColumn(col, new SimpleConvertColumn(fromIndex, toType));
         else
-            _outputColumns.add(new Pair<ColumnInfo, Callable>(col, new MissingValueConvertColumn(fromIndex, toType)));
-        return _outputColumns.size()-1;
+            return addColumn(col, new MissingValueConvertColumn(fromIndex, toType));
     }
-
 
     public int addConvertColumn(String name, int fromIndex, PropertyDescriptor pd, PropertyType pt)
     {
-/*
-        Pair<Object,String> p = new Pair<Object,String>(value,null);
-        convertValuePair(pd, propertyTypes[i], p);
-        parameterMap.put(key, p.first);
-        if (null != p.second)
-        {
-            String mvName = col.getMvColumnName();
-            if (mvName != null)
-            {
-                parameterMap.put(mvName, p.second);
-            }
-        }
-*/
-        return _outputColumns.size()-1;
+        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        col.setName(name);
+        col.setJdbcType(pt.getJdbcType());
+        return addColumn(col, new PropertyConvertColumn(fromIndex, pd, pt));
     }
 
 
-    /* container, owner, createdby, created, modifiedby, modified */
-    public void addBuiltinColumns(@Nullable Container c, @NotNull User user, @NotNull TableInfo target)
+    public static DataIterator wrapBuiltInColumns(DataIterator in , BatchValidationException errors, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
+    {
+        SimpleTranslator t;
+        if (in instanceof SimpleTranslator)
+            t = (SimpleTranslator)in;
+        else
+        {
+            t = new SimpleTranslator(in, errors);
+            t.selectAll();
+        }
+        t.addBuiltInColumns(c, user, target, false);
+        return t;
+    }
+
+
+    enum When
+    {
+        insert,
+        update,
+        both
+    }
+
+    enum SpecialColumn
+    {
+        Container(When.insert),
+        Owner(When.insert),
+        CreatedBy(When.insert),
+        Created(When.insert),
+        ModifiedBy(When.both),
+        Modified(When.both);
+
+        SpecialColumn(When w)
+        {
+        }
+    }
+
+
+    /**
+     * Provide values for common built-in columns.  Usually we do not allow the user to specify values for these columns,
+     * so matching columns in the input are ignored.
+     * @param allowPassThrough indicates that columns in the input iterator should not be ignored
+     */
+    public void addBuiltInColumns(@Nullable Container c, @NotNull User user, @NotNull TableInfo target, boolean allowPassThrough)
     {
         final String containerId = null==c ? null : c.getId();
         final Integer userId = null==user ? 0 : user.getUserId();
@@ -287,28 +405,47 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         Callable tsCallable = new TimestampColumn();
 
         Map<String, Integer> inputCols = getColumnNameMap();
-        Set<String> outputNames = new CaseInsensitiveHashSet();
+        Map<String, Integer> outputCols = new CaseInsensitiveHashMap<Integer>();
         for (int i=1 ; i<_outputColumns.size() ; i++)
-            outputNames.add(_outputColumns.get(i).getKey().getName());
+            outputCols.put(_outputColumns.get(i).getKey().getName(), i);
 
-        addBuiltinColumn("Container", target, inputCols, outputNames, containerCallable);
-        addBuiltinColumn("Owner", target, inputCols, outputNames, userCallable);
-        addBuiltinColumn("CreatedBy", target, inputCols, outputNames, userCallable);
-        addBuiltinColumn("ModifiedBy", target, inputCols, outputNames, userCallable);
-        addBuiltinColumn("Created", target, inputCols, outputNames, tsCallable);
-        addBuiltinColumn("Modified", target, inputCols, outputNames, tsCallable);
+        addBuiltinColumn(SpecialColumn.Container,  allowPassThrough, target, inputCols, outputCols, containerCallable);
+        addBuiltinColumn(SpecialColumn.Owner,      allowPassThrough, target, inputCols, outputCols, userCallable);
+        addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable);
+        addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable);
+        addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable);
+        addBuiltinColumn(SpecialColumn.Modified,   allowPassThrough, target, inputCols, outputCols, tsCallable);
     }
 
 
-    private void addBuiltinColumn(String name, TableInfo target, Map<String,Integer> inputCols, Set<String> outputNames, Callable c)
+    private int addBuiltinColumn(SpecialColumn e, boolean allowPassThrough, TableInfo target, Map<String,Integer> inputCols, Map<String,Integer> outputCols, Callable c)
     {
+        String name = e.name();
         ColumnInfo col = target.getColumn(name);
-        if (null==col || outputNames.contains(name))
-            return;
-        if (inputCols.containsKey(name))
-            addColumn(name, inputCols.get(name));
+        if (null==col)
+            return 0;
+
+        Integer indexOut = outputCols.get(name);
+        Integer indexIn = inputCols.get(name);
+
+        // not selected already
+        if (null == indexOut)
+        {
+            if (allowPassThrough && null != indexIn)
+                return addColumn(name, indexIn);
+            else
+            {
+                _outputColumns.add(new Pair(new ColumnInfo(name, col.getJdbcType()), c));
+                return _outputColumns.size()-1;
+            }
+        }
+        // selected already
         else
-            _outputColumns.add(new Pair(new ColumnInfo(name, col.getJdbcType()), c));
+        {
+            if (!allowPassThrough)
+                _outputColumns.set(indexOut, new Pair(new ColumnInfo(name, col.getJdbcType()), c));
+            return indexOut;
+        }
     }
     
 
@@ -360,6 +497,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+    @Override
+    public void beforeFirst()
+    {
+        _data.beforeFirst();
+    }
+
+    @Override
+    public boolean isScrollable()
+    {
+        return _data.isScrollable();
+    }
 
     @Override
     public void close() throws IOException
@@ -380,7 +528,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public static class TranslateTestCase extends Assert
     {
-        String guid = GUID.makeGUID();
         StringTestIterator simpleData = new StringTestIterator
         (
             Arrays.asList("IntNotNull", "Text", "EntityId", "Int"),
@@ -391,11 +538,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             )
         );
 
+        public TranslateTestCase()
+        {
+            simpleData.setScrollable(true);
+        }
+
+
         @Test
         public void passthroughTest() throws Exception
         {
             BatchValidationException errors = new BatchValidationException();
-            simpleData.reset();
+            simpleData.beforeFirst();
             SimpleTranslator t = new SimpleTranslator(simpleData, errors);
             t.selectAll();
             assert(t.getColumnCount() == simpleData.getColumnCount());
@@ -418,7 +571,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // w/o errors
             {
                 BatchValidationException errors = new BatchValidationException();
-                simpleData.reset();
+                simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, errors);
                 t.addConvertColumn("IntNotNull", 1, JdbcType.INTEGER, false);
                 assertEquals(1, t.getColumnCount());
@@ -436,7 +589,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // w/ errors failfast==true
             {
                 BatchValidationException errors = new BatchValidationException();
-                simpleData.reset();
+                simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, errors);
                 t.setFailFast(true);
                 t.addConvertColumn("Text", 2, JdbcType.INTEGER, false);
@@ -453,7 +606,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // w/ errors failfast==false
             {
                 BatchValidationException errors = new BatchValidationException();
-                simpleData.reset();
+                simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, errors);
                 t.setFailFast(false);
                 t.addConvertColumn("Text", 2, JdbcType.INTEGER, false);

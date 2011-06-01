@@ -28,19 +28,16 @@ import java.util.List;
 * Date: 2011-05-20
 * Time: 2:16 PM
 */
-class StringTestIterator implements DataIterator
+class StringTestIterator extends AbstractDataIterator
 {
     final List<String> columns;
     final List<String[]> data;
+    boolean isScrollable = false;
     int row = -1;
-
-    void reset()
-    {
-        row = -1;
-    }
 
     StringTestIterator(List<String> columns, List<String[]> data)
     {
+        super(null);
         this.columns = columns;
         this.data = data;
     }
@@ -76,5 +73,24 @@ class StringTestIterator implements DataIterator
     @Override
     public void close() throws IOException
     {
+    }
+
+    @Override
+    public boolean isScrollable()
+    {
+        return isScrollable;
+    }
+
+    public void setScrollable(boolean s)
+    {
+        isScrollable = s;
+    }
+
+    @Override
+    public void beforeFirst()
+    {
+        if (!isScrollable())
+            throw new IllegalStateException();
+        row = -1;
     }
 }

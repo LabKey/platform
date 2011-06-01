@@ -407,7 +407,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public boolean isStringType()
     {
         JdbcType type = getJdbcType();
-        return type.cls == String.class;
+        return null==type || type.cls == String.class;
     }
 
     public boolean isLongTextType()
