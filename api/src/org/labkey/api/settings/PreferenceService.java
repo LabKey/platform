@@ -56,6 +56,7 @@ public class PreferenceService
         return getPreferences(container).get(name);
     }
 
+    /** Uses a session-based set of properties if the user is a guest, and a database-backed set if authenticated */
     public String getProperty(String name, User user)
     {
         if (user == null || user.isGuest())
@@ -116,6 +117,7 @@ public class PreferenceService
         }
     }
 
+    /** Uses a session-based set of properties if the user is a guest, and a database-backed set if authenticated */
     public void setProperty(String name, String value, User user)
     {
         if (user.isGuest())

@@ -599,7 +599,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     public URLHelper replaceParameter(String key, String value)
     {
-        if (_readOnly) throw new java.lang.IllegalStateException();
+        if (_readOnly) throw new java.lang.IllegalStateException("This ActionURL is immutable");
         // could try preserve parameter order...
         deleteParameter(key);
         return addParameter(key, value);
