@@ -19,17 +19,19 @@ Ext.QuickTips.init();
 LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     constructor : function(config){
+        // properties for this panel
+        Ext.apply(config, {
+            layout: 'border',
+            isMasked: false,
+            maxCharts: 30
+        });
+
         Ext.apply(this, config);
 
         LABKEY.vis.TimeChartPanel.superclass.constructor.call(this);
     },
 
     initComponent : function() {
-        // properties for this panel
-        this.layout = 'border';
-        this.isMasked = false;
-        this.maxCharts = 30;
-
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         if(typeof this.chartInfo != "object") {
             this.chartInfo = this.getInitializedChartInfo();
@@ -37,14 +39,15 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         // hold on to the x and y axis measure index
         var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
-        var yAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
+        var firstYAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
 
         // add a listener to call measureSelected on render if this is a saved chart
         this.listeners = {
             scope: this,
             'render': function(){
                 if(typeof this.saveReportInfo == "object") {
-                    this.measureSelected(this.chartInfo.measures[yAxisMeasureIndex].measure, false);
+                    this.measureSelected(this.chartInfo.measures[firstYAxisMeasureIndex].measure, false);
+                    this.editorMeasurePanel.initializeDimensionStores();
                 }
             }
         };
@@ -99,9 +102,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
             this.editorXAxisPanel = new LABKEY.vis.ChartEditorXAxisPanel({
                 disabled: true,
-                axis: this.chartInfo.measures[xAxisMeasureIndex].axis,
-                dateOptions: this.chartInfo.measures[xAxisMeasureIndex].dateOptions,
-                measure: this.chartInfo.measures[xAxisMeasureIndex].measure,
+                axis: this.chartInfo.measures[xAxisMeasureIndex] ? this.chartInfo.measures[xAxisMeasureIndex].axis : {},
+                dateOptions: this.chartInfo.measures[xAxisMeasureIndex] ? this.chartInfo.measures[xAxisMeasureIndex].dateOptions : {},
+                measure: this.chartInfo.measures[xAxisMeasureIndex] ? this.chartInfo.measures[xAxisMeasureIndex].measure : {},
                 listeners: {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
@@ -119,7 +122,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
             this.editorYAxisPanel = new LABKEY.vis.ChartEditorYAxisPanel({
                 disabled: true,
-                axis: this.chartInfo.measures[yAxisMeasureIndex].axis,
+                axis: this.chartInfo.measures[firstYAxisMeasureIndex] ? this.chartInfo.measures[firstYAxisMeasureIndex].axis : {},
                 listeners: {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
@@ -315,45 +318,28 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     },
 
     measureSelected: function(measure, userSelectedMeasure) {
-        // if this is a measure selection from the "Change" or "Choose a Measure" button, then initialize the chartInfo object
-        if(userSelectedMeasure){ // todo: this reset needs to be removed when we start adding multiple measures
-            this.chartInfo = this.getInitializedChartInfo();
-        }
-
-        // get the axis measure index for easier access
-        var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
-        var yAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
-
-        // update chart definition information based on measure selection
-        if(userSelectedMeasure){ // todo: changes to calls that shoudl only be made for userSelectedMeasures
+        // add any user selected measures to the measure panel object
+        if(userSelectedMeasure){
             this.editorMeasurePanel.addMeasure(measure);
         }
 
-        // get the subject values for this measure's query
-        // todo: should this be reloaded when we start adding multiple measures?
-        this.subjectSelector.getSubjectValues(measure.schemaName, measure.queryName, this.chartInfo.filterUrl);
+        // these method calls should only be made for chart initialization
+        // (i.e. showing saved chart or first measure selected for new chart)
+        var numMeasures = this.editorMeasurePanel.getNumMeasures();
+        if(!userSelectedMeasure || numMeasures == 1){
+            this.subjectSelector.getSubjectValues(measure.schemaName, measure.queryName, this.chartInfo.filterUrl);
+            this.editorXAxisPanel.setZeroDateStore(measure.schemaName);
+            this.editorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName); // todo: should this be for each measure selection?
 
-        // todo: these things shouldn't be changed for each added measure
-        this.editorXAxisPanel.setZeroDateStore(measure.schemaName);
-        this.editorChartsPanel.setChartLayout(this.chartInfo.chartLayout);
-        this.editorChartsPanel.disableDimensionOption((this.chartInfo.measures[yAxisMeasureIndex].dimension ? true : false));
-
-        // update chart editor form values based on selected measure
-        this.editorMeasurePanel.setDimensionStore(this.chartInfo.measures[yAxisMeasureIndex].dimension);
-        this.editorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName);
-        this.editorXAxisPanel.setRange(this.chartInfo.measures[xAxisMeasureIndex].axis.range.type);
-        this.editorYAxisPanel.setRange(this.chartInfo.measures[yAxisMeasureIndex].axis.range.type);
-        this.editorYAxisPanel.setScale(this.chartInfo.measures[yAxisMeasureIndex].axis.scale);
-        if(userSelectedMeasure){
-            this.editorYAxisPanel.setLabel(measure.label);
-
-            // todo: these things shouldn't be changed for each added measure
-            this.editorOverviewPanel.updateOverview(this.saveReportInfo);
-            this.editorChartsPanel.setMainTitle(measure.queryName);
-            this.editorChartsPanel.setLineWidth(this.chartInfo.lineWidth);
-            this.editorChartsPanel.setHideDataPoints(this.chartInfo.hideDataPoints);
+            if(userSelectedMeasure){
+                this.editorYAxisPanel.setLabel(measure.label);
+                this.editorOverviewPanel.updateOverview(this.saveReportInfo);
+                this.editorChartsPanel.setMainTitle(measure.queryName);
+            }
         }
 
+        // these method calls should be made for each measure selected for a given chart
+        this.editorMeasurePanel.setDimensionStore(this.editorMeasurePanel.getMeasureIndex(measure));
         this.enableTabPanels();
     },
 
@@ -482,13 +468,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
-        var yAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
+        var firstYAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
         var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
-        if(yAxisMeasureIndex == -1){
-           Ext.Msg.alert("Error", "Could not find y-axis in chart measure information.");
+        if(firstYAxisMeasureIndex == -1){
+           this.maskChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
            return;
         }
-        else if(yAxisMeasureIndex == -1){
+        if(xAxisMeasureIndex == -1){
            Ext.Msg.alert("Error", "Could not find x-axis in chart measure information.");
            return;
         }
@@ -498,11 +484,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.viewGridBtn.show();
         this.loader = this.renderLineChart;
 
+        // todo: fix this to check all measures if > 1 measure selected
         if (force !== true) {
             var msg = ""; var sep = "";
             Ext.iterate(this.hasData, function(key, value, obj){
-                if (!value && key == this.chartInfo.measures[yAxisMeasureIndex].measure.name) {
-                    msg += sep + this.chartInfo.measures[yAxisMeasureIndex].measure.label + " (Y-Axis)";
+                if (!value && key == this.chartInfo.measures[firstYAxisMeasureIndex].measure.name) {
+                    msg += sep + this.chartInfo.measures[firstYAxisMeasureIndex].measure.label + " (Y-Axis)";
                     sep = ", ";
                 }
                 else if (!value && key == this.chartInfo.measures[xAxisMeasureIndex].measure.name) {
@@ -510,17 +497,26 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     sep = ", ";
                 }
             }, this);
-            if (msg.length > 0) { this.maskChartPanel("No data found in: " + msg + " for the selected " + this.viewInfo.subjectNounPlural + "."); return; }
+            if (msg.length > 0) {
+                this.maskChartPanel("No data found in: " + msg + " for the selected " + this.viewInfo.subjectNounPlural + ".");
+                return;
+            }
         }
 
-	    // one series per subject/measure/dimensionvalue combination
+	    // one series per y-axis subject/measure/dimensionvalue combination
 	    var seriesList = [];
-	    if(this.chartInfo.measures[yAxisMeasureIndex].dimension && this.chartInfo.measures[yAxisMeasureIndex].dimension.values) {
-	        seriesList = this.chartInfo.measures[yAxisMeasureIndex].dimension.values;
-	    }
-	    else {
-	        seriesList = [this.chartInfo.measures[yAxisMeasureIndex].measure.name];
-	    }
+        Ext.each(this.chartInfo.measures, function (md) {
+            if(md.axis.name == "y-axis"){
+                if(md.dimension && md.dimension.values) {
+                    Ext.each(md.dimension.values, function(val) {
+                        seriesList.push(val);
+                    });
+                }
+                else {
+                    seriesList.push(md.measure.name);
+                }
+            }
+        });
 
         var series = [];
         for(var j = 0; j < this.chartInfo.subject.values.length; j++)
@@ -531,7 +527,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 var subject = this.chartInfo.subject.values[j];
 
                 var caption = subject;
-                if(this.chartInfo.measures[yAxisMeasureIndex].dimension || this.chartInfo.chartLayout != "single"){
+                if(seriesList.length > 1 || this.chartInfo.chartLayout != "single"){
                     caption += " " + yAxisSeries;
                 }
 
@@ -577,7 +573,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             });
             this.autoAxisRange = {
                 x:LABKEY.vis.getAxisRange(allX, this.chartInfo.measures[xAxisMeasureIndex].axis.scale),
-                y:LABKEY.vis.getAxisRange(allY, this.chartInfo.measures[yAxisMeasureIndex].axis.scale)
+                y:LABKEY.vis.getAxisRange(allY, this.chartInfo.measures[firstYAxisMeasureIndex].axis.scale)
             };
         }
         else   //Use an undefined min & max so that chart computes it
@@ -640,7 +636,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     {
         // hold on to the x and y axis measure index
         var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
-        var yAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
+        var firstYAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
 
     	// if seriesFilter is not null, then create a sub-array for that filter
     	var tempSeries = [];
@@ -661,14 +657,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             height: size.height - 25,
             axes: {
                 y: {
-                    min: (typeof this.chartInfo.measures[yAxisMeasureIndex].axis.range.min == "number"
-                                ? this.chartInfo.measures[yAxisMeasureIndex].axis.range.min
+                    min: (typeof this.chartInfo.measures[firstYAxisMeasureIndex].axis.range.min == "number"
+                                ? this.chartInfo.measures[firstYAxisMeasureIndex].axis.range.min
                                 : this.autoAxisRange.y.min),
-                    max: (typeof this.chartInfo.measures[yAxisMeasureIndex].axis.range.max == "number"
-                                ? this.chartInfo.measures[yAxisMeasureIndex].axis.range.max
+                    max: (typeof this.chartInfo.measures[firstYAxisMeasureIndex].axis.range.max == "number"
+                                ? this.chartInfo.measures[firstYAxisMeasureIndex].axis.range.max
                                 : this.autoAxisRange.y.max),
-                    caption: this.chartInfo.measures[yAxisMeasureIndex].axis.label,
-                    scale: this.chartInfo.measures[yAxisMeasureIndex].axis.scale
+                    caption: this.chartInfo.measures[firstYAxisMeasureIndex].axis.label,
+                    scale: this.chartInfo.measures[firstYAxisMeasureIndex].axis.scale
                 },
                 x: {
                     min: (typeof this.chartInfo.measures[xAxisMeasureIndex].axis.range.min == "number"
@@ -772,10 +768,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     getInitializedChartInfo: function(){
         return {
-            measures: [
-                {axis: {multiSelect: "false", name: "x-axis", label: "", timeAxis: "true", range: {type: 'automatic'}}, dateOptions: {interval: 'Days'}, measure: {}},
-                {axis: {multiSelect: "false", name: "y-axis", label: "", scale: "linear", range: {type: 'automatic'}}, measure: {}}
-            ],
+            measures: [],
             chartLayout: 'single',
             lineWidth: 4,
             hideDataPoints: false,
@@ -787,27 +780,35 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     },
 
     getChartInfoFromEditorTabs: function(){
-        return {
+        var config = {
             title: this.editorChartsPanel.getMainTitle(),
             chartLayout: this.editorChartsPanel.getChartLayout(),
             lineWidth: this.editorChartsPanel.getLineWidth(),
             hideDataPoints: this.editorChartsPanel.getHideDataPoints(),
             subject: this.subjectSelector.getSubject(),
-            measures: [
-                { // x-axis information
-                    axis: this.editorXAxisPanel.getAxis(),
-                    dateOptions: this.editorXAxisPanel.getDateOptions(),
-                    measure: this.editorXAxisPanel.getMeasure()
-                },
-                { // y-axis information
-                    axis: this.editorYAxisPanel.getAxis(),
-                    measure: this.editorMeasurePanel.getMeasure(),
-                    dimension: this.editorMeasurePanel.getDimension()
-                }
-            ],
+            measures: [],
             filterUrl: this.editorMeasurePanel.getDataFilterUrl(),
             filterQuery: this.getFilterQuery()
+        };
+
+        // get the measure information for the x-axis
+        config.measures.push({
+            axis: this.editorXAxisPanel.getAxis(),
+            dateOptions: this.editorXAxisPanel.getDateOptions(),
+            measure: this.editorXAxisPanel.getMeasure()
+        });
+
+        // get the measure and dimension information for the y-axis (can be > 1 measure)
+        var yAxisMeauresDimensions = this.editorMeasurePanel.getMeasuresAndDimensions();
+        for(var i = 0; i < yAxisMeauresDimensions.length; i++){
+            config.measures.push({
+                axis: this.editorYAxisPanel.getAxis(),
+                measure: yAxisMeauresDimensions[i].measure,
+                dimension: yAxisMeauresDimensions[i].dimension
+            });
         }
+
+        return config;
     },
 
     getMeasureIndex: function(measures, axis){

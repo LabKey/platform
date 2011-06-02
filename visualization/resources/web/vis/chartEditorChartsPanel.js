@@ -33,7 +33,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             name: 'chart_layout',
             boxLabel: 'One Chart',
             inputValue: 'single',
-            checked: true,
+            checked: this.chartLayout == 'single',
             listeners: {
                 scope: this,
                 'check': function(field, checked) {
@@ -49,6 +49,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             name: 'chart_layout',
             boxLabel: 'One Chart for Each ' + this.subjectNounSingular,
             inputValue: 'per_subject',
+            checked: this.chartLayout == 'per_subject',
             listeners: {
                 scope: this,
                 'check': function(field, checked) {
@@ -64,6 +65,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             name: 'chart_layout',
             boxLabel: 'One Chart for Each Dimension',
             inputValue: 'per_dimension',
+            checked: this.chartLayout == 'per_dimension',
             listeners: {
                 scope: this,
                 'check': function(field, checked) {

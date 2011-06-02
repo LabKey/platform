@@ -19,6 +19,13 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             items: []
         });
 
+        // set axis defaults, if not a saved chart
+        Ext.applyIf(config.axis, {
+            name: "y-axis",
+            scale: "linear",
+            range: {type: "automatic"}
+        });
+
         this.addEvents('chartDefinitionChanged');
 
         LABKEY.vis.ChartEditorYAxisPanel.superclass.constructor.call(this, config);
@@ -72,7 +79,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             inputValue: 'automatic',
             boxLabel: 'Automatic',
             height: 1,
-            checked: true,
+            checked: this.axis.range.type == "automatic",
             listeners: {
                 scope: this,
                 'check': function(field, checked){
@@ -93,6 +100,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             boxLabel: 'Manual',
             width: 85,
             height: 1,
+            checked: this.axis.range.type == "manual",
             listeners: {
                 scope: this,
                 'check': function(field, checked){
@@ -109,7 +117,8 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             emptyText: 'Min',
             selectOnFocus: true,
             width: 75,
-            diabled: true,
+            disabled: this.axis.range.type == "automatic",
+            value: this.axis.range.min,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
@@ -132,7 +141,8 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             emptyText: 'Max',
             selectOnFocus: true,
             width: 75,
-            diabled: true,
+            disabled: this.axis.range.type == "automatic",
+            value: this.axis.range.max,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {

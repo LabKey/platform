@@ -19,6 +19,19 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             items: []
         });
 
+        // set axis defaults, if not a saved chart
+        Ext.applyIf(config.axis, {
+            name: "x-axis",
+            timeAxis: "true",
+            range: {type: "automatic"}
+        });
+
+        // set the axis dateOptions, if not a saved chart
+        Ext.applyIf(config.dateOptions,  {
+            interval: "Days",
+            zeroDateCol: {}
+        });
+
         this.addEvents(
             'chartDefinitionChanged',
             'measureMetadataRequestPending',
@@ -124,7 +137,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.axis.label = newLabel;
                     }
 
-                    this.dateOptions.zeroDateCol = record.data;
+                    Ext.apply(this.dateOptions.zeroDateCol, record.data);
                     this.fireEvent('chartDefinitionChanged', true);
                 }
             }
@@ -167,7 +180,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             inputValue: 'automatic',
             boxLabel: 'Automatic',
             height: 1,
-            checked: true,
+            checked: this.axis.range.type == "automatic",
             listeners: {
                 scope: this,
                 'check': function(field, checked){
@@ -188,6 +201,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             boxLabel: 'Manual',
             width: 85,
             height: 1,
+            checked: this.axis.range.type == "manual",
             listeners: {
                 scope: this,
                 'check': function(field, checked){
@@ -204,7 +218,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             emptyText: 'Min',
             selectOnFocus: true,
             width: 75,
-            diabled: true,
+            disabled: this.axis.range.type == "automatic",
+            value: this.axis.range.min,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
@@ -227,7 +242,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             emptyText: 'Max',
             selectOnFocus: true,
             width: 75,
-            diabled: true,
+            disabled: this.axis.range.type == "automatic",
+            value: this.axis.range.max,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
@@ -306,7 +322,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 'load': function(store, records, options) {
                     // if this is a saved report, we will have a zero date to select
                     var index = 0;
-                    if(this.dateOptions.zeroDateCol){
+                    if(this.dateOptions.zeroDateCol.name){
                         // need to get the index by the variable name and query name
                         index = store.findBy(function(record, id){
                             return (record.get('name') == this.dateOptions.zeroDateCol.name
@@ -326,7 +342,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
                     if(store.getAt(index)){
                         this.zeroDateCombo.setValue(store.getAt(index).get('longlabel'));
-                        this.dateOptions.zeroDateCol = store.getAt(index).data;
+                        Ext.apply(this.dateOptions.zeroDateCol, store.getAt(index).data);
                     }
 
                     // if this is not a saved chart and the interval value has loaded, then set the default axis label
