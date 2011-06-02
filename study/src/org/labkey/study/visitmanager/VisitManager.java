@@ -248,7 +248,7 @@ public abstract class VisitManager
     {
         private final Map<VisitStatistic, Integer> _map;
 
-        protected VisitStatistics()
+        public VisitStatistics()
         {
             _map = new EnumMap<VisitStatistic, Integer>(VisitStatistic.class);
 

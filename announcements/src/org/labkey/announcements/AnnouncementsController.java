@@ -61,7 +61,6 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.jsp.JspLoader;
@@ -124,7 +123,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -1993,7 +1991,7 @@ public class AnnouncementsController extends SpringActionController
 
             if (null != assignedTo)
             {
-                User assignedToUser = UserManager.getUser(assignedTo.intValue());
+                User assignedToUser = UserManager.getUser(assignedTo);
 
                 if (null == assignedToUser)
                 {
@@ -2305,7 +2303,7 @@ public class AnnouncementsController extends SpringActionController
                 SimpleFilter filter = getFilter(settings, perm, displayAll);
                 Pair<AnnouncementModel[], Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, settings.getSort(), 100);
 
-                init(c, url, user, settings, perm, displayAll, false, pair.second.booleanValue() ? 100 : 0);
+                init(c, url, user, settings, perm, displayAll, false, pair.second ? 100 : 0);
                 
                 announcementModels = pair.first;
                 listURL = getListURL(c);
@@ -2488,7 +2486,7 @@ public class AnnouncementsController extends SpringActionController
 
                 if (null != userId)
                 {
-                    User user = UserManager.getUser(userId.intValue());
+                    User user = UserManager.getUser(userId);
 
                     if (null != user)
                         return SecurityManager.getGroupList(ctx.getContainer(), user);
@@ -2692,35 +2690,4 @@ public class AnnouncementsController extends SpringActionController
             }
         }
     }
-
-    public static class GroupMembershipDisplayColumn extends SimpleDisplayColumn
-    {
-        private List<User> _memberList;
-
-        public GroupMembershipDisplayColumn(Container c)
-        {
-            super();
-            _memberList = SecurityManager.getProjectUsers(c.getProject(), false);
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            Map row = ctx.getRow();
-
-            Container c = (Container) ctx.get("container");
-            //resultset query represents union between two queries, so not all rows include container value
-            if (c == null)
-                out.write("Yes");
-            else
-            {
-                int userId = ((Integer)row.get("UserId")).intValue();
-
-                if (_memberList.contains(UserManager.getUser(userId)))
-                    out.write("Yes");
-                else
-                    out.write("No");
-            }
-        }
-    }
-
 }

@@ -157,7 +157,7 @@
         %></colgroup>
     <tr class="labkey-alternate-row labkey-col-header">
         <th class="labkey-data-region-title"><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></th>
-        <th style="font-weight:bold;">ALL</th><%
+        <th style="font-weight:bold;">&nbsp;ALL&nbsp;</th><%
 
         for (VisitImpl visit : visits)
         {
@@ -165,7 +165,6 @@
                 continue;
             String label = visit.getDisplayString();
             %><th align="center" valign="top"><%= h(label) %></th><%
-            //visitSummary.view?id=411.0
         }
         %>
     </tr>
@@ -184,7 +183,7 @@
         }
     }
 
-    Map<VisitMapKey,Boolean> requiredMap = StudyManager.getInstance().getRequiredMap(study);
+    Map<VisitMapKey, Boolean> requiredMap = StudyManager.getInstance().getRequiredMap(study);
 
     for (DataSetDefinition dataSet : datasets)
     {
@@ -212,7 +211,7 @@
         }
 
         String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
-        String className= row%2==0 ? "labkey-alternate-row" : "labkey-row";
+        String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
         %>
         <tr class="<%= className %>" ><td align="center" class="labkey-row-header"><%= h(dataSetLabel) %><%
         if (null != StringUtils.trimToNull(dataSet.getDescription()))
@@ -220,8 +219,8 @@
             %><%=PageFlowUtil.helpPopup(dataSetLabel, dataSet.getDescription())%><%
         }
         %></td>
-        <td style="font-weight:bold;"><%
-        int totalCount = 0;
+        <td style="font-weight:bold;" align="center" nowrap="true"><%
+        VisitStatistics all = new VisitStatistics();
 
         for (VisitImpl visit : visits)
         {
@@ -229,7 +228,18 @@
             VisitStatistics stats = bean.visitMapSummary.get(key);
 
             if (null != stats)
-                totalCount += stats.get(VisitStatistic.RowCount);
+                for (VisitStatistic stat : VisitStatistic.values())
+                    all.add(stat, stats.get(stat));
+        }
+
+        String innerHtml = "";
+
+        for (VisitStatistic stat : bean.stats)
+        {
+            if (!innerHtml.isEmpty())
+                innerHtml += " / ";
+
+            innerHtml += all.get(stat);
         }
 
         if (userCanRead)
@@ -241,11 +251,11 @@
             if (bean.qcStates != null)
                 defaultReportURL.addParameter("QCState", bean.qcStates.getFormValue());
 
-            %><a href="<%= defaultReportURL.getLocalURIString() %>"><%=totalCount%></a><%
+            %><a href="<%= defaultReportURL.getLocalURIString() %>"><%=innerHtml%></a><%
         }
         else
         {
-            %><%=totalCount%><%
+            %><%=innerHtml%><%
         }
         %></td><%
 
@@ -259,7 +269,7 @@
             Boolean b = requiredMap.get(key);
             boolean isRequired = b == Boolean.TRUE;
             boolean isOptional = b == Boolean.FALSE;
-            String innerHtml = null;
+            innerHtml = null;
 
             for (VisitStatistic stat : bean.stats)
             {

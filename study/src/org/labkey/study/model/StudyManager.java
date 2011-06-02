@@ -1239,7 +1239,7 @@ public class StudyManager
             event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
             event.setComment(auditComment);
 
-            Map<String,Object> dataMap = new HashMap<String,Object>();
+            Map<String, Object> dataMap = new HashMap<String, Object>();
             dataMap.put("oldRecordMap", SimpleAuditViewFactory.encodeForDataMap(oldQCStates, false));
             dataMap.put("newRecordMap", SimpleAuditViewFactory.encodeForDataMap(newQCStates, false));
             AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
@@ -1288,7 +1288,7 @@ public class StudyManager
 
         if (cohortDatasetId != null)
         {
-            DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId.intValue());
+            DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
 
             if (def != null)
                 return def.canRead(user);
@@ -1313,7 +1313,7 @@ public class StudyManager
             Integer cohortDatasetId = study.getParticipantCohortDataSetId();
             if (cohortDatasetId != null)
             {
-                DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId.intValue());
+                DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
                 if (def != null)
                 {
                     if (!def.canRead(user))

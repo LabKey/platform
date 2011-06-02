@@ -59,7 +59,7 @@
 
     if (!study.isAllowReload())
         intervalLabel = "This study is set to not reload";
-    else if (null == study.getReloadInterval() || 0 == study.getReloadInterval().intValue())
+    else if (null == study.getReloadInterval() || 0 == study.getReloadInterval())
         intervalLabel = "This study is set for manual reloading";
     else
         intervalLabel = "This study is scheduled to check for reload " + (StudyReload.ReloadInterval.Never != currentInterval ? currentInterval.getDescription() : "every " + study.getReloadInterval() + " seconds");
@@ -147,6 +147,12 @@
         <td>Manage <%= h(subjectNounSingle.toLowerCase()) %> and  <%= h(subjectNounSingle.toLowerCase()) %>/visit comments</td>
         <td><%= textLink("Manage Comments",
                 new ActionURL(SpecimenController.ManageSpecimenCommentsAction.class, c)) %></td>
+    </tr>
+    <tr>
+        <th align="left">Demo Mode</th>
+        <td>Demo mode obscures participant IDs on many pages</td>
+        <td><%=textLink("Demo Mode",
+                new ActionURL(StudyController.DemoModeAction.class, c)) %></td>
     </tr>
     <tr>
         <td colspan="3" class="labkey-announcement-title"><span>Specimen Repository Settings</span></td>

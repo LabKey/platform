@@ -30,6 +30,7 @@
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -105,11 +106,11 @@
 
     %>
         <tr>
-            <td><%= h(entry.getKey().getParticipantId()) %></td>
+            <td><%= h(id(entry.getKey().getParticipantId())) %></td>
             <td><%
                 if (!study.isManualCohortAssignment())
                 {
-                    org.labkey.api.study.Cohort cohort = entry.getValue();
+                    Cohort cohort = entry.getValue();
                     String label = cohort == null ? "" : cohort.getLabel();
                     %><%=h(label)%><%
                 }
@@ -152,6 +153,5 @@
         {
             %><%=generateSubmitButton("Save")%><%
         }
-
     %>
 </form>
