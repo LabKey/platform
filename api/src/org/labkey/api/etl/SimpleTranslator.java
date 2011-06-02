@@ -23,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -37,16 +36,13 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
-import sun.font.CreatedFontTracker;
 
 import java.io.IOException;
-import java.security.acl.Owner;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
