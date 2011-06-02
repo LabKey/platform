@@ -2106,7 +2106,13 @@ td.labkey-ms1-filter
 
 table.labkey-prot-annots
 {
-    border-collapse: separate; border-spacing: 10px;
+    border-collapse: collapse;
+}
+
+table.labkey-prot-annots td, table.labkey-prot-annots th
+{
+    border: 1px solid black;
+    padding: 10px;
 }
 
 /* Query */
