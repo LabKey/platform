@@ -19,6 +19,8 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 
 import java.util.Collections;
 import java.util.Map;
@@ -34,12 +36,12 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
 
     private boolean _uploadComplete = false;
 
-    public String getHTML(AssayRunUploadContext context)
+    public HttpView getView(AssayRunUploadContext context)
     {
-        return "<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
+        return new HtmlView("<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
                 "<script type=\"text/javascript\">\n" +
                 "    Ext.EventManager.on('" + FORM_ELEMENT_NAME + "', 'keydown', handleTabsInTextArea);\n" +
-                "</script>";
+                "</script>");
     }
 
     public String getShortName()

@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.view.HttpView;
 
 import java.util.Map;
 import java.io.File;
@@ -48,7 +49,7 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
         }
     }
 
-    public String getHTML(ContextType context) throws ExperimentException;
+    public HttpView getView(ContextType context) throws ExperimentException;
 
     public String getShortName();
 

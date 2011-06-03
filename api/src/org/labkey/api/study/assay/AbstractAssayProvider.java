@@ -156,6 +156,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected AssayTableMetadata _tableMetadata;
     protected final AssayDataType _dataType;
 
+    public int _maxFileInputs = 1;
+
     public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, AssayTableMetadata tableMetadata)
     {
         _dataType = dataType;
@@ -605,7 +607,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             if (uploadedFiles != null)
                 result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
-            result.add(new FileUploadDataCollector());
+            result.add(new FileUploadDataCollector(getMaxFileInputs()));
         }
         return result;
     }
@@ -1650,6 +1652,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public AssayDataType getDataType()
     {
         return _dataType;
+    }
+
+    public void setMaxFileInputs(int maxFileInputs)
+    {
+        _maxFileInputs = maxFileInputs;
+    }
+
+    public int getMaxFileInputs()
+    {
+        return _maxFileInputs;
     }
 
     /**

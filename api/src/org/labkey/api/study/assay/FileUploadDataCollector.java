@@ -19,12 +19,15 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -36,10 +39,16 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
 {
     private boolean _uploadComplete = false;
     private Set<String> _validExtensions = null;
+    private int _maxFileInputs = 1;
 
     public FileUploadDataCollector()
     {
 
+    }
+
+    public FileUploadDataCollector(int maxFileInputs)
+    {
+        _maxFileInputs = maxFileInputs; 
     }
 
     public FileUploadDataCollector(String... validExtensions)
@@ -48,9 +57,9 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
         _validExtensions.addAll(Arrays.asList(validExtensions));
     }
 
-    public String getHTML(ContextType context)
+    public HttpView getView(ContextType context)
     {
-        return "<input type=\"file\" size=\"40\" name=\"" + PRIMARY_FILE + "\" />";
+        return new JspView<FileUploadDataCollector>("/org/labkey/api/study/assay/fileUpload.jsp", this);
     }
 
     public String getShortName()
@@ -71,8 +80,18 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
 
         if (!(context.getRequest() instanceof MultipartHttpServletRequest))
             throw new IllegalStateException("Expected MultipartHttpServletRequest when posting files.");
-        
-        Map<String, File> files = savePostedFiles(context, Collections.singleton(PRIMARY_FILE));
+
+        Set<String> fileInputs = new HashSet<String>();
+        fileInputs.add(PRIMARY_FILE);
+
+        // if assay type allows for > 1 file, add thos inputs to the set as well
+        int fileInputIndex = 1;
+        while(fileInputIndex < getMaxFileInputs()){
+            fileInputs.add(PRIMARY_FILE + fileInputIndex);
+            fileInputIndex++;
+        }
+
+        Map<String, File> files = savePostedFiles(context, fileInputs);
         if (!files.containsKey(PRIMARY_FILE))
             throw new ExperimentException("No data file was uploaded. Please enter a file name.");
         return files;
@@ -86,5 +105,10 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
     public void uploadComplete(ContextType context)
     {
         _uploadComplete = true;
+    }
+
+    public int getMaxFileInputs()
+    {
+        return _maxFileInputs;
     }
 }

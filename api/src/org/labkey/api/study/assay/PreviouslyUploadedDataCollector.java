@@ -19,6 +19,8 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 
 import java.io.File;
@@ -49,7 +51,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
         _uploadedFiles = uploadedFiles;
     }
 
-    public String getHTML(AssayRunUploadContext context)
+    public HttpView getView(AssayRunUploadContext context)
     {
         StringBuilder sb = new StringBuilder();
         String separator = "";
@@ -69,7 +71,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
             sb.append(PageFlowUtil.encode(entry.getKey()));
             sb.append("\"/>");
         }
-        return sb.toString();
+        return new HtmlView(sb.toString());
     }
 
     public String getShortName()

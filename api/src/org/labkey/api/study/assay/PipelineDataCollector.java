@@ -22,6 +22,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;
@@ -37,6 +39,11 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
 {
     public PipelineDataCollector()
     {
+    }
+
+    public HttpView getView(ContextType context) throws ExperimentException
+    {
+        return new HtmlView(getHTML(context));
     }
 
     public String getHTML(ContextType context) throws ExperimentException
@@ -64,6 +71,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
             sb.append(additionalSets > 1 ? "s" : "");
             sb.append(" available)");
         }
+
         return sb.toString();
     }
 
