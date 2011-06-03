@@ -141,7 +141,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'check': function(field, checked) {
-                    if(checked) {
+                    if(checked && this.getSelectedMeasureIndex() != -1) {
                         this.removeDimension();
                         this.fireEvent('chartDefinitionChanged', true);
                         this.fireEvent('dimensionSelected', false);
@@ -162,7 +162,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 scope: this,
                 'check': function(field, checked){
                     // when this radio option is selected, enable the dimension combo box
-                    if(checked) {
+                    if(checked && this.getSelectedMeasureIndex() != -1) {
                         // enable the dimension and aggregate combo box
                         this.measureDimensionComboBox.enable();
                         this.dimensionAggregateLabel.enable();
@@ -204,14 +204,23 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'select': function(cmp, record, index) {
-                    this.measures[this.getSelectedMeasureIndex()].dimension = {
-                        label: record.data.label,
-                        name: record.data.name,
-                        queryName: record.data.queryName,
-                        schemaName: record.data.schemaName,
-                        type: record.data.type
-                    };
-                    this.measureDimensionSelected(this.measures[this.getSelectedMeasureIndex()].dimension, true);
+                    if(this.getSelectedMeasureIndex() != -1){
+                        this.measures[this.getSelectedMeasureIndex()].dimension = {
+                            label: record.data.label,
+                            name: record.data.name,
+                            queryName: record.data.queryName,
+                            schemaName: record.data.schemaName,
+                            type: record.data.type
+                        };
+
+                        // if the combo value is being changed, remove the selector panel from the previous value
+                        if(this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel){
+                            this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel.destroy();
+                            delete this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel;
+                        }
+
+                        this.measureDimensionSelected(this.getSelectedMeasureIndex(), true);
+                    }
                 }
             }
         });
@@ -253,8 +262,10 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'select': function(cmp, record, index) {
-                    this.setDimensionAggregate(cmp.getValue());
-                    this.fireEvent('chartDefinitionChanged', true);
+                    if(this.getSelectedMeasureIndex() != -1){
+                        this.setDimensionAggregate(cmp.getValue());
+                        this.fireEvent('chartDefinitionChanged', true);
+                    }
                 }
             }
         });
@@ -394,10 +405,13 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         if(this.measuresListsView.getSelectionCount() == 1){
             var index = this.measuresListsView.getSelectedIndexes()[0];
 
+            // remove the dimension selector panel, if necessary
+            if(this.measures[index].dimensionSelectorPanel){
+                this.measures[index].dimensionSelectorPanel.destroy();
+            }
+
             // remove the measure from this object
             this.measures.splice(index, 1);
-
-            // todo: remove dimension series selector tab, if needed
 
             // remove the measure from the listView and select the one before it
             this.measuresListsView.getStore().removeAt(index);
@@ -484,10 +498,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         }
     },
 
-    measureDimensionSelected: function(dimension, reloadChartData) {
-        // if there was a different dimension selection, remove that list view from the series selector
-        Ext.getCmp('series-selector-tabpanel').remove('dimension-series-selector-panel', true);
-        Ext.getCmp('series-selector-tabpanel').doLayout();
+    measureDimensionSelected: function(index, reloadChartData) {
+        var measure = this.measures[index].measure;
+        var dimension = this.measures[index].dimension;
 
         // get the dimension values for the selected dimension/grouping
         Ext.Ajax.request({
@@ -509,27 +522,24 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 var sm = new  Ext.grid.CheckboxSelectionModel({});
                 sm.on('selectionchange', function(selModel){
                     // add the selected dimension values to the chartInfo
-                    // todo: change to get the right dimension, not use the selected measure index
-                    this.measures[this.getSelectedMeasureIndex()].dimension.values = new Array();
+                    dimension.values = new Array();
                     var selectedRecords = selModel.getSelections();
                     for(var i = 0; i < selectedRecords.length; i++) {
-                        this.measures[this.getSelectedMeasureIndex()].dimension.values.push(selectedRecords[i].get('value'));
+                        dimension.values.push(selectedRecords[i].get('value'));
                     }
 
                     // sort the selected dimension array
-                    this.measures[this.getSelectedMeasureIndex()].dimension.values.sort();
+                    dimension.values.sort();
 
                     this.fireEvent('chartDefinitionChanged', true);
                 }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
-                var newSeriesSelectorPanel = new Ext.Panel({
-                    id: 'dimension-series-selector-panel',
+                this.measures[index].dimensionSelectorPanel = new Ext.Panel({
                     title: dimension.label,
                     autoScroll: true,
                     items: [
                         this.defaultDisplayField,
                         new Ext.grid.GridPanel({
-                            id: 'dimension-list-view',
                             autoHeight: true,
                             enableHdMenu: false,
                             store: new Ext.data.JsonStore({
@@ -593,12 +603,12 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                          })
                     ]
                 });
-                newSeriesSelectorPanel.on('activate', function(){
-                   newSeriesSelectorPanel.doLayout();
+                this.measures[index].dimensionSelectorPanel.on('activate', function(pnl){
+                   pnl.doLayout();
                 }, this);
 
-                Ext.getCmp('series-selector-tabpanel').add(newSeriesSelectorPanel);
-                Ext.getCmp('series-selector-tabpanel').activate('dimension-series-selector-panel');
+                Ext.getCmp('series-selector-tabpanel').add(this.measures[index].dimensionSelectorPanel);
+                Ext.getCmp('series-selector-tabpanel').activate(this.measures[index].dimensionSelectorPanel.getId());
                 Ext.getCmp('series-selector-tabpanel').doLayout();
             },
             failure: function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
@@ -607,7 +617,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
     },
 
     getMeasuresAndDimensions: function(){
-        console.log(this.measures);
         return this.measures;
     },
 
@@ -683,7 +692,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
             // if this is a saved chart with a dimension selected, show dimension selector tab
             if(dimension.name){
-                this.measureDimensionSelected(dimension, false);
+                this.measureDimensionSelected(index, false);
             }
         }
     },
@@ -716,7 +725,8 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         this.setDimensionAggregate("");
 
         // if there was a different dimension selection, remove that list view from the series selector
-        Ext.getCmp('series-selector-tabpanel').remove('dimension-series-selector-panel', true);
+        this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel.destroy();
+        delete this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel;
         Ext.getCmp('series-selector-tabpanel').doLayout();
     },
 

@@ -91,9 +91,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     },
                     'filterCleared': function () {
                         //measureMetadataRequestComplete should ensure full refresh after subject list is regenerated.
-                        var measure = this.editorMeasurePanel.measure;
-                        this.chartInfo.filterUrl = null;
-                        this.subjectSelector.getSubjectValues(measure.schemaName, measure.queryName, this.chartInfo.filterUrl);
+                        if(this.editorMeasurePanel.measures[0]){
+                            var measure = this.editorMeasurePanel.measures[0].measure;
+                            this.chartInfo.filterUrl = null;
+                            this.subjectSelector.getSubjectValues(measure.schemaName, measure.queryName, this.chartInfo.filterUrl);
+                        }
                     },
                     'measureMetadataRequestPending': this.measureMetadataRequestPending,
                     'measureMetadataRequestComplete': this.measureMetadataRequestComplete
@@ -383,6 +385,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
+
+        var firstYAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
+        if(firstYAxisMeasureIndex == -1){
+           this.maskChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
+           return;
+        }
+
         var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
         if(xAxisMeasureIndex == -1){
            Ext.Msg.alert("Error", "Could not find x-axis in chart measure information.");
@@ -468,12 +477,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
+
         var firstYAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
-        var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
         if(firstYAxisMeasureIndex == -1){
            this.maskChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
            return;
         }
+
+        var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
         if(xAxisMeasureIndex == -1){
            Ext.Msg.alert("Error", "Could not find x-axis in chart measure information.");
            return;
