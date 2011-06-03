@@ -18,9 +18,9 @@ package org.labkey.api.etl;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.util.Pair;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -29,8 +29,10 @@ class ParameterMapPump implements Runnable
 {
     protected Parameter.ParameterMap stmt;
     final BatchValidationException errors;
-    final DataIterator data;
+    DataIterator data;
     int _rowCount = 0;
+
+
 
     public ParameterMapPump(DataIterator data, Parameter.ParameterMap map, BatchValidationException errors)
     {
@@ -44,25 +46,40 @@ class ParameterMapPump implements Runnable
         return _rowCount;
     }
 
+    private static class Triple
+    {
+        Triple(int from, Parameter to, Parameter mv)
+        {
+            this.fromIndex = from;
+            this.to = to;
+            this.mv = mv;
+        }
+        int fromIndex;
+        Parameter to;
+        Parameter mv;
+    }
+
     @Override
     public void run()
     {
         try
         {
             // map from source to target
-            ArrayList<Pair<Integer,Parameter>> bindings = new ArrayList<Pair<Integer, Parameter>>(stmt.size());
+            ArrayList<Triple> bindings = new ArrayList<Triple>(stmt.size());
             // by name
             for (int i=1 ; i<=data.getColumnCount() ; i++)
             {
                 ColumnInfo col = data.getColumnInfo(i);
-                Parameter p = null;
-                if (p == null && null != col.getPropertyURI())
-                    p = stmt.getParameter(col.getPropertyURI());
-                if (p == null)
-                    p = stmt.getParameter(col.getName());
-                if (null != p)
+                Parameter to = null;
+                if (to == null && null != col.getPropertyURI())
+                    to = stmt.getParameter(col.getPropertyURI());
+                if (to == null)
+                    to = stmt.getParameter(col.getName());
+                if (null != to)
                 {
-                    bindings.add(new Pair<Integer,Parameter>(i, p));
+                    String mvName = col.getMvColumnName();
+                    Parameter mv = null==mvName ? null : stmt.getParameter(mvName);
+                    bindings.add(new Triple(i, to, mv));
                 }
             }
 
@@ -72,11 +89,20 @@ class ParameterMapPump implements Runnable
                     throw new CancellationException();
 
                 stmt.clearParameters();
-                for (Pair<Integer,Parameter> binding : bindings)
+                for (Triple binding : bindings)
                 {
-                    Integer fromIndex = binding.getKey();
-                    Parameter toParameter = binding.getValue();
-                    toParameter.setValue(data.get(fromIndex));
+                    Object value = data.get(binding.fromIndex);
+                    if (null == value)
+                        continue;
+                    if (value instanceof MvFieldWrapper)
+                    {
+                        if (null != binding.mv)
+                            binding.mv.setValue(((MvFieldWrapper) value).getMvIndicator());
+                    }
+                    else
+                    {
+                        binding.to.setValue(value);
+                    }
                 }
                 if (errors.hasErrors())
                     continue;

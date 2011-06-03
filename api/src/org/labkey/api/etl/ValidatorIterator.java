@@ -171,7 +171,7 @@ checkRequired:
 
     private void addValidator(int i, Validator v)
     {
-        while (_validators.size() < i)
+        while (_validators.size() <= i)
             _validators.add(new ArrayList<Validator>());
         _validators.get(i).add(v);
     }
@@ -183,30 +183,31 @@ checkRequired:
 
     public void addRequired(int i, boolean allowMv)
     {
-
+        RequiredValidator v = new RequiredValidator(i, allowMv);
+        addValidator(i, v);
     }
+
 
     public void addPropertyValidator(int i, PropertyDescriptor pd)
     {
         IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(pd);
         if (null == validators || 0 == validators.length)
             return;
-        for (IPropertyValidator v : validators)
+        for (IPropertyValidator pv : validators)
         {
-
+            ValidatorKindWrapper v = new ValidatorKindWrapper(i, pd, pv);
+            addValidator(i, v);
         }
     }
 
-    void initPropertyValidators(Domain d)
+    public boolean hasValidators()
     {
-        // cache all the property validators for this upload
-//        Map<String, IPropertyValidator[]> validatorMap = new HashMap<String, IPropertyValidator[]>();
-//        for (DomainProperty dp : properties)
-//        {
-//            propertiesMap.put(dp.getPropertyURI(), dp);
-//            if (validators.length > 0)
-//                validatorMap.put(dp.getPropertyURI(), validators);
-//        }
+        for (ArrayList<Validator> a : _validators)
+        {
+            if (!a.isEmpty())
+                return true;
+        }
+        return false;
     }
 
     /* DataIterator */
@@ -233,7 +234,7 @@ checkRequired:
         boolean validRow = true;
 
         // first the column validators
-        for (int i=1 ; i<=_validators.size() ; i++)
+        for (int i=1 ; i<_validators.size() ; i++)
         {
             List<Validator> l = _validators.get(i);
             if (null == l) continue;

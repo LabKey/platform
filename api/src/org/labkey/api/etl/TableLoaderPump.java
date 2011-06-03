@@ -16,22 +16,27 @@
 
 package org.labkey.api.etl;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.BatchValidationException;
+import sun.java2d.pipe.SpanShapeRenderer;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Map;
 
 /**
-* Created by IntelliJ IDEA.
-* User: matthewb
-* Date: 2011-05-26
-* Time: 4:08 PM
-*/
+ * Created by IntelliJ IDEA.
+ * User: matthewb
+ * Date: 2011-05-26
+ * Time: 4:08 PM
+ *
+ *  Handles MvFieldWrapper
+ */
 public class TableLoaderPump extends ParameterMapPump
 {
     final TableInfo table;
@@ -40,6 +45,16 @@ public class TableLoaderPump extends ParameterMapPump
     {
         super(data, null, errors);
         this.table = table;
+
+        Map<String,Integer> map = DataIteratorUtil.createColumnNameMap(data);
+        for (ColumnInfo col : table.getColumns())
+        {
+            Integer index = map.get(col.getName());
+            String mvColumnName = col.getMvColumnName();
+            if (null == index || null == mvColumnName)
+                continue;
+            data.getColumnInfo(index).setMvColumnName(mvColumnName);
+        }
     }
 
     @Override

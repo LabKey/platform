@@ -27,6 +27,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -142,28 +143,33 @@ public class StandardETL implements DataIteratorBuilder, Runnable
          * notably we need PropertyValidators
          */
         List<ColumnInfo> cols = _target.getColumns();
-        Map<String, Pair<ColumnInfo,DomainProperty>> targetMap = new CaseInsensitiveHashMap<Pair<ColumnInfo,DomainProperty>>(cols.size()*4);
+        Map<FieldKey, Pair<ColumnInfo,DomainProperty>> unusedCols = new HashMap<FieldKey,Pair<ColumnInfo,DomainProperty>>(cols.size() * 2);
+        Map<String, Pair<ColumnInfo,DomainProperty>> targetAliasesMap = new CaseInsensitiveHashMap<Pair<ColumnInfo,DomainProperty>>(cols.size()*4);
         for (ColumnInfo col : cols)
         {
-            if (col.isMvIndicatorColumn() || col.isRawValueColumn()) //TODO col.isNotUpdatableForSomeReasonSoContinue()
+            if (col.isMvIndicatorColumn() || col.isRawValueColumn())
                 continue;
             DomainProperty dp = propertiesMap.get(col.getPropertyURI());
             Pair<ColumnInfo,DomainProperty> p = new Pair<ColumnInfo,DomainProperty>(col,dp);
             String name = col.getName();
-            targetMap.put(name, p);
+            targetAliasesMap.put(name, p);
             String uri = col.getPropertyURI();
-            if (null != uri && !targetMap.containsKey(uri))
-                targetMap.put(uri, p);
+            if (null != uri && !targetAliasesMap.containsKey(uri))
+                targetAliasesMap.put(uri, p);
+            String label = col.getLabel();
+            if (null != label && !targetAliasesMap.containsKey(label))
+                targetAliasesMap.put(label, p);
             for (String alias : col.getImportAliasSet())
-                if (!targetMap.containsKey(alias))
-                    targetMap.put(alias, p);
+                if (!targetAliasesMap.containsKey(alias))
+                    targetAliasesMap.put(alias, p);
+            unusedCols.put(col.getFieldKey(), p);
         }
 
         //
         // match up the columns, validate that there is no more than one source column that matches the target column
         //
         ValidationException setupError = new ValidationException();
-        IdentityHashMap<Pair,Object> used = new IdentityHashMap();
+//        IdentityHashMap<Pair,Object> used = new IdentityHashMap();
 
         ArrayList<Pair<ColumnInfo,DomainProperty>> targetCols = new ArrayList<Pair<ColumnInfo, DomainProperty>>(input.getColumnCount()+1);
         targetCols.add(new Pair(null,null));
@@ -172,15 +178,15 @@ public class StandardETL implements DataIteratorBuilder, Runnable
             ColumnInfo from = input.getColumnInfo(i);
             Pair<ColumnInfo,DomainProperty> to = null;
             if (null == to && null != from.getPropertyURI())
-                to = targetMap.get(from.getPropertyURI());
+                to = targetAliasesMap.get(from.getPropertyURI());
             if (null == to)
-                to = targetMap.get(from.getName());
+                to = targetAliasesMap.get(from.getName());
 
             if (null != to)
             {
-                if (used.containsKey(to))
+                if (!unusedCols.containsKey(to.getKey().getFieldKey()))
                     setupError.addGlobalError("Two columns mapped to target column: " + to.getKey().getName());
-                used.put(to,null);
+                unusedCols.remove(to.getKey().getFieldKey());
                 targetCols.add(to);
             }
             else
@@ -188,7 +194,16 @@ public class StandardETL implements DataIteratorBuilder, Runnable
         }
 
 
-        // TODO : required columns that were not found
+        // check for unbound columns that are required
+        for (Pair<ColumnInfo, DomainProperty> pair : unusedCols.values())
+        {
+            ColumnInfo col = pair.getKey();
+            DomainProperty dp = pair.getValue();
+            if (col.isAutoIncrement())
+                continue;
+            if (!col.isNullable() || (null != dp && dp.isRequired()))
+                setupError.addGlobalError("Data does not contain required field: " + col.getName());
+        }
 
         if (setupError.hasErrors())
             errors.addRowError(setupError);
@@ -229,6 +244,6 @@ public class StandardETL implements DataIteratorBuilder, Runnable
                 validate.addPropertyValidator(i, dp.getPropertyDescriptor());
         }
 
-        return LoggingDataIterator.wrap(validate);
+        return LoggingDataIterator.wrap(validate.hasValidators() ? validate : convert);
     }
 }

@@ -99,4 +99,16 @@ public class LoggingDataIterator extends AbstractDataIterator
     {
         _data.close();
     }
+
+    @Override
+    public boolean isScrollable()
+    {
+        return _data.isScrollable();
+    }
+
+    @Override
+    public void beforeFirst()
+    {
+        _data.beforeFirst();
+    }
 }

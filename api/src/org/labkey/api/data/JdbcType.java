@@ -276,6 +276,11 @@ public enum JdbcType
     {
         return java.util.Date.class.isAssignableFrom(this.cls);
     }
+
+    public Class getJavaClass()
+    {
+        return cls;
+    }
     
     public Object convert(Object o) throws ConversionException
     {

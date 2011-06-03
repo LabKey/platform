@@ -25,6 +25,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.ExcelFactory;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -365,6 +366,9 @@ public enum PropertyType
 
     public static PropertyType getFromClass(Class clazz)
     {
+        if (clazz == BigDecimal.class)
+            clazz = Double.class;
+
         for (PropertyType t : values())
         {
             if (t.javaType == null)
