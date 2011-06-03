@@ -69,7 +69,7 @@
                     <tr style="visibility: <%= first ? "visible" : "collapse" %>;" id="collector-<%= h(collector.getShortName()) %>">
                         <td></td>
                         <td>
-                            <%= collector.getHTML(bean) %>
+                            <% include(collector.getView(bean), out); %>
                         </td>
                     </tr>
                 <%
