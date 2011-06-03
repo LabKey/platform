@@ -112,7 +112,7 @@ public class StudyFolderType extends DefaultFolderType
             buttons.add(new NavTree("Clinical and Assay Data", StudyPagesController.Page.DATA_ANALYSIS.getURL(c)));
             if (c.hasPermission(u, AdminPermission.class))
                 buttons.add(new NavTree("Manage", new ActionURL(StudyController.ManageStudyAction.class, c)));
-            buttons.add(new NavTree("Overview", PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c)));
+            buttons.add(new NavTree("Overview", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c)));
 
             //TODO: Develop some rules (regexp??) for highlighting.
             //AppBar should try based on navTrail if one is provided

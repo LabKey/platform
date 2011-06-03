@@ -29,7 +29,7 @@
 %>
 This webpart displays a single discussion.  It's designed to work in conjunction with custom pages built using the JavaScript API, though it could be placed on a portal page to display a single, specific discussion.<br><br>
 
-<form name="frmCustomize" method="post" action="<%=h(part.getCustomizePostURL(ctx.getContainer()))%>">
+<form name="frmCustomize" method="post" action="<%=h(part.getCustomizePostURL(ctx))%>">
     <table>
         <tr>
             <td>Entity Id:</td>

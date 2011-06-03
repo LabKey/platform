@@ -409,7 +409,8 @@ public class ProjectController extends SpringActionController
             {
                 return new ActionURL(CustomizeWebPartAction.class, getContainer())
                         .addParameter("pageId", form.getPageId())
-                        .addParameter("index", "" + _newPart.getIndex());
+                        .addParameter("index", "" + _newPart.getIndex())
+                        .addReturnURL(form.getReturnActionURL());
             }
             else
                 return form.getReturnURLHelper();
@@ -747,22 +748,23 @@ public class ProjectController extends SpringActionController
         public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
         {
             _webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+            ActionURL returnUrl = null != form.getReturnActionURL() ? form.getReturnActionURL() : beginURL();
             if (null == _webPart)
             {
                 if (errors.hasErrors())
                     return new JspView<Object>("/org/labkey/portal/customizeErrors.jsp", null, errors);
                 else
-                    return HttpView.redirect(beginURL());
+                    return HttpView.redirect(returnUrl);
             }
 
             WebPartFactory desc = Portal.getPortalPart(_webPart.getName());
             assert (null != desc);
             if (null == desc)
-                return HttpView.redirect(beginURL());
+                return HttpView.redirect(returnUrl);
 
             HttpView v = desc.getEditView(_webPart, getViewContext());
             if (null == v)
-                return HttpView.redirect(beginURL());
+                return HttpView.redirect(returnUrl);
 
             return v;
         }
@@ -822,14 +824,7 @@ public class ProjectController extends SpringActionController
         public ActionURL getSuccessURL(CustomizePortletForm customizePortletForm)
         {
             Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), customizePortletForm.getPageId(), customizePortletForm.getIndex());
-            //TODO: This is a hack to get this working, should use returnUrl and pass through in webpart
-            if ("menubar".equals(webPart.getLocation()))
-            {
-                ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer());
-                url.addParameter(TabStripView.TAB_PARAM, "menubar");
-                return url;
-            }
-            return beginURL();
+            return null != customizePortletForm.getReturnActionURL() ? customizePortletForm.getReturnActionURL() : beginURL();
         }
 
         public NavTree appendNavTrail(NavTree root)

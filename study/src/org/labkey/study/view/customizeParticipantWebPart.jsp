@@ -31,7 +31,7 @@
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart bean = me.getModelBean();
     ViewContext ctx = me.getViewContext();
-    ActionURL postUrl = urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
+    ActionURL postUrl = bean.getCustomizePostURL(ctx);
     String participantId = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY);
     String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(ctx.getContainer(), SpecimenService.CompletionType.ParticipantId);
 
@@ -49,8 +49,6 @@
 <table>
     <tr>
         <td>
-            <input type="hidden" name="pageId" value="<%=bean.getPageId()%>">
-            <input type="hidden" name="index" value="<%=bean.getIndex()%>">
             <%= StudyService.get().getSubjectColumnName(getViewContext().getContainer()) %>:
         </td>
         <td>

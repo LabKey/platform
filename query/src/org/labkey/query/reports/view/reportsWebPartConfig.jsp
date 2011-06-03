@@ -51,7 +51,7 @@
     }
 %>
 
-<form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context.getContainer()))%>">
+<form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
     <table>
         <tr>
             <td class="labkey-form-label">Web Part Title:</td>

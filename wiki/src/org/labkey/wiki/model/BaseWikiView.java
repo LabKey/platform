@@ -25,6 +25,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.wiki.BaseWikiPermissions;
@@ -181,9 +182,9 @@ public abstract class BaseWikiView extends JspView<Object>
 
         if (isWebPart() && perms.allowUpdate(wiki))
         {
-            customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c);
-            customizeURL.addParameter("pageId", _pageId);
-            customizeURL.addParameter("index", _index);
+//            customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c);
+//            customizeURL.addParameter("pageId", _pageId);
+//            customizeURL.addParameter("index", _index);
 
             setTitleHref(WikiController.getPageURL(wiki, c));
         }

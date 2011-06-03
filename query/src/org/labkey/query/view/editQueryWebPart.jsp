@@ -142,7 +142,7 @@
 
 </script>
 
-<form name="frmCustomize" method="post" action="<%=h(_part.getCustomizePostURL(getContainer()))%>">
+<form name="frmCustomize" method="post" action="<%=h(_part.getCustomizePostURL(getViewContext()))%>">
     <table>
         <tr>
             <td class="labkey-form-label">Web Part Title:</td>

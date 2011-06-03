@@ -34,7 +34,7 @@
     EditViewBean bean = me.getModelBean();
     Portal.WebPart webPart = bean.webPart;
     ViewContext ctx = me.getViewContext();
-    ActionURL postUrl = urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
+    ActionURL postUrl = webPart.getCustomizePostURL(ctx);
     Integer viewProtocolId = AssayBaseWebPartFactory.getProtocolId(webPart);
 
     // show buttons should be checked by default for a new assay details webpart.  Otherwise, we preserve the persisted setting:
@@ -54,8 +54,6 @@
 <p><%=bean.description%></p>
 
 <form action="<%=postUrl%>" method="post">
-    <input type="hidden" name="pageId" value="<%=webPart.getPageId()%>">
-    <input type="hidden" name="index" value="<%=webPart.getIndex()%>">
     <table>
         <tr>
             <td class="labkey-form-label">Assay</td>

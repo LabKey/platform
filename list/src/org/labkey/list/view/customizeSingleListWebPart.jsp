@@ -41,7 +41,7 @@ This webpart displays data from a single list.<br><br>
 
 If you want to let users change the list that's displayed or customize the view themselves then use the query webpart.<br><br>
 
-<form name="frmCustomize" method="post" action="<%=h(part.getCustomizePostURL(ctx.getContainer()))%>">
+<form name="frmCustomize" method="post" action="<%=h(part.getCustomizePostURL(ctx))%>">
     <table>
         <tr>
             <td>Title:</td>
