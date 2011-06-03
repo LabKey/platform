@@ -182,9 +182,10 @@ public abstract class BaseWikiView extends JspView<Object>
 
         if (isWebPart() && perms.allowUpdate(wiki))
         {
-//            customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c);
-//            customizeURL.addParameter("pageId", _pageId);
-//            customizeURL.addParameter("index", _index);
+            customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c);
+            customizeURL.addParameter("pageId", _pageId);
+            customizeURL.addParameter("index", _index);
+            customizeURL.addReturnURL(getViewContext().getActionURL());
 
             setTitleHref(WikiController.getPageURL(wiki, c));
         }
