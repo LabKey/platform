@@ -37,19 +37,18 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
 
     public static class CustomizeWebPartForm
     {
-        private String pageId;
-        private int index;
         private String fileSet;
         private String path;
         private boolean useFileSet;
         private boolean _folderTreeVisible;
         private String _location;
+        private Portal.WebPart _webPart;
 
         public CustomizeWebPartForm(Portal.WebPart webPart)
         {
-            pageId = webPart.getPageId();
-            index = webPart.getIndex();
+            _webPart = webPart;
             _location = webPart.getLocation();
+
 
             Map<String, String> propertyMap = webPart.getPropertyMap();
 
@@ -58,26 +57,6 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             _folderTreeVisible = BooleanUtils.toBoolean(propertyMap.get("folderTreeVisible"));
 
             useFileSet = fileSet != null;
-        }
-
-        public String getPageId()
-        {
-            return pageId;
-        }
-
-        public void setPageId(String pageId)
-        {
-            this.pageId = pageId;
-        }
-
-        public int getIndex()
-        {
-            return index;
-        }
-
-        public void setIndex(int index)
-        {
-            this.index = index;
         }
 
         public String getFileSet()
@@ -123,6 +102,11 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         public String getLocation()
         {
             return _location;
+        }
+
+        public Portal.WebPart getWebPart()
+        {
+            return _webPart;
         }
     }
 }

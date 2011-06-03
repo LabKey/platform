@@ -30,13 +30,11 @@
     CustomizeFilesWebPartView me = (CustomizeFilesWebPartView) HttpView.currentView();
     CustomizeFilesWebPartView.CustomizeWebPartForm form = me.getModelBean();
     ViewContext ctx = me.getViewContext();
-    ActionURL postUrl = urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
+    ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);
     FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
     AttachmentDirectory [] attDirs = svc.getRegisteredDirectories(ctx.getContainer());
 %>
 <form action="<%=postUrl%>" method="post">
-    <input type="hidden" name="pageId" value="<%=form.getPageId()%>">
-    <input type="hidden" name="index" value="<%=form.getIndex()%>">
     You can configure this web part to show files from the default directory for this folder or
     from a directory configured by a site administrator.<br><br>
 

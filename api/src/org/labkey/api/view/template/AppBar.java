@@ -89,7 +89,7 @@ public class AppBar extends NavTree
     public List<NavTree> fixCrumbTrail(List<NavTree> crumbTrail, ActionURL actionURL)
     {
         NavTree[] buttons = getButtons();
-        boolean hideTitle = crumbTrail.size() <= 1;
+        boolean hideTitle = false;
 
         NavTree selected = getSelected();
         if (null == selected && null != actionURL) //First try to match actionURL
@@ -98,6 +98,7 @@ public class AppBar extends NavTree
                 if (button.getValue().equals(actionURL.toString()))
                 {
                     selected = button;
+                    hideTitle = true;
                     break;
                 }
         }
@@ -111,23 +112,21 @@ public class AppBar extends NavTree
             }
 
         if (null != selected)
-        {
-            if (selected == buttons[buttons.length -1])
-                hideTitle = true;
             selected.setSelected(true);
-        }
-        else
-            buttons[buttons.length -1].setSelected(true);
+//        else
+//            buttons[buttons.length -1].setSelected(true);
 
         if (hideTitle)
         {
             setPageTitle(null);
             return new ArrayList<NavTree>(0);
         }
-        else
+        else if (crumbTrail.size() >= 1)
         {
             setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getKey());
             return crumbTrail.subList(crumbTrail.size() -1, crumbTrail.size());
         }
+        else
+            return crumbTrail;
     }
 }

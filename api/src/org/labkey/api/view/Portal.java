@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -226,17 +227,22 @@ public class Portal
             this.permanent = permanent;
         }
 
-        public ActionURL getCustomizePostURL(Container container)
+        public ActionURL getCustomizePostURL(ViewContext viewContext)
         {
+            ActionURL current = viewContext.getActionURL();
             ActionURL ret = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(container);
             ret.addParameter("pageId", getPageId());
             ret.addParameter("index", Integer.toString(getIndex()));
+            if (null != current.getReturnURL())
+                ret.addReturnURL(current.getReturnURL());
             return ret;
         }
 
-        public String getHiddenFieldsHtml()
+        public String getHiddenFieldsHtml(ViewContext viewContext)
         {
-            return "<input type=\"hidden\" name=\"pageId\" value=\"" + getPageId() + "\">\n<input type=\"hidden\" name=\"index\" value=\"" + getIndex() + "\">";
+            ActionURL current = viewContext.getActionURL();
+            return "<input type=\"hidden\" name=\"pageId\" value=\"" + getPageId() + "\">\n<input type=\"hidden\" name=\"index\" value=\"" + getIndex() + "\">" +
+                    "<input type=\"hidden\" name=\"" + ReturnUrlForm.Params.returnUrl + "\" value=\"" + PageFlowUtil.filter(current.getReturnURL()) + "\">";
         }
 
         public int getRowId()

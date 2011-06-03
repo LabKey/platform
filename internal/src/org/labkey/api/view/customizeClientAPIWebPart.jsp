@@ -28,7 +28,7 @@
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart bean = me.getModelBean();
     ViewContext ctx = me.getViewContext();
-    ActionURL postUrl = urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
+    ActionURL postUrl = bean.getCustomizePostURL(ctx);
 
     String defaultContent = bean.getPropertyMap().get(ClientAPIWebPartFactory.DEFAULT_CONTENT_KEY);
 
@@ -55,8 +55,6 @@
 </script>
 
 <form action="<%=postUrl%>" method="post">
-    <input type="hidden" name="pageId" value="<%=bean.getPageId()%>">
-    <input type="hidden" name="index" value="<%=bean.getIndex()%>">
 <table>
         <tr>
             <td>

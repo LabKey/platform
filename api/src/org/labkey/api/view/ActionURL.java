@@ -368,9 +368,24 @@ public class ActionURL extends URLHelper implements Cloneable
     // Add returnURL as a parameter using standard parameter name
     public ActionURL addReturnURL(URLHelper returnURL)
     {
-        return addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+        return replaceParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
     }
 
+    public URLHelper getReturnURL()
+    {
+        String returnURLStr = getParameter(ReturnUrlForm.Params.returnUrl);
+        if (null == returnURLStr)
+            return null;
+
+        try
+        {
+            return new URLHelper(returnURLStr);
+        }
+        catch (URISyntaxException e)
+        {
+            return null;
+        }
+    }
 
     public ActionURL(HString url)
     {
