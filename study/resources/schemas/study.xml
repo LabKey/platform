@@ -431,12 +431,14 @@
         <ns:description>A string value uniquely identfying the subject/visit combination for each dataset row.</ns:description>
           <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantSequenceKey</ns:propertyURI>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:nullable>false</ns:nullable>
       </ns:column>
       <ns:column columnName="participantid">
         <ns:columnTitle>Participant ID</ns:columnTitle>
         <ns:description>Subject identifier</ns:description>
         <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantId</ns:propertyURI>
         <ns:datatype>Varchar</ns:datatype>
+          <ns:nullable>false</ns:nullable>
       </ns:column>
       <ns:column columnName="datasetid">
         <ns:columnTitle>Dataset ID</ns:columnTitle>
@@ -446,6 +448,7 @@
       <ns:column columnName="lsid">
           <ns:propertyURI>http://cpas.labkey.com/Study#LSID</ns:propertyURI>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:nullable>false</ns:nullable>
       </ns:column>
       <ns:column columnName="sourcelsid">
         <ns:columnTitle>Source Lsid</ns:columnTitle>
