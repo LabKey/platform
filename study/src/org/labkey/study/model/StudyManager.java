@@ -50,6 +50,8 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.BeanDataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
@@ -598,24 +600,14 @@ public class StudyManager
     }
 
 
-    // TODO: Should be able to send List<Bean> to bulk insert method, so we don't have to translate like this
     public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws IOException, ValidationException, SQLException
     {
-        List<Map<String, Object>> maps = new LinkedList<Map<String, Object>>();
-
-        for (VisitAlias alias : aliases)
-        {
-            Map<String, Object> map = new HashMap<String, Object>();
-            map.put("Name", alias.getName());
-            map.put("SequenceNum", alias.getSequenceNum());
-            maps.add(map);
-        }
-
-        importVisitAliases(study, user, new MapLoader(maps));
+        DataIteratorBuilder it = new BeanDataIterator.Builder(VisitAlias.class, aliases);
+        importVisitAliases(study, user, it);
     }
 
 
-    public int importVisitAliases(final Study study, User user, DataLoader loader) throws SQLException, IOException, ValidationException
+    public int importVisitAliases(final Study study, User user, DataIteratorBuilder loader) throws SQLException, IOException, ValidationException
     {
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
         DbScope scope = tinfo.getSchema().getScope();
