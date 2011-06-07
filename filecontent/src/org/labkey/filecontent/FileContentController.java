@@ -1088,7 +1088,7 @@ public class FileContentController extends SpringActionController
         public ApiResponse execute(FilePropsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            TableInfo ti = ExpSchema.TableType.Datas.createTable(new ExpSchema(getUser(), getContainer()));
+            TableInfo ti = ExpSchema.TableType.Datas.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Datas.toString());
             QueryUpdateService qus = ti.getUpdateService();
 
             try {
