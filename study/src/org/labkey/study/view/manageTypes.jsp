@@ -161,6 +161,7 @@
 <table>
     <tr>
         <th align="left">ID</th>
+        <th align="left">Name</th>
         <th align="left">Label</th>
         <th align="left">Category</th>
         <th align="left">Cohort</th>
@@ -173,8 +174,9 @@
     {
     %><tr>
         <td align=right><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%=def.getDataSetId()%></a></td>
-        <td><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%= h(def.getLabel()) %></a></td>
-        <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %></td>
+        <td><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%= h(def.getName()) %></a></td>
+        <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
+        <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %>&nbsp;</td>
         <td><%= def.getCohort() != null ? h(def.getCohort().getLabel()) : "All" %></td>
         <td><%= def.isShowByDefault() %></td>
     </tr><%
