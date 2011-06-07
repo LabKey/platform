@@ -706,6 +706,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         final BatchValidationException _errors;
         DataLoaderIterator _it = null;
         ArrayListMap<String,Object> _row = null;
+        int _rowNumber = 0;
 
         _DataIterator(BatchValidationException errors)
         {
@@ -737,12 +738,15 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         public ColumnInfo getColumnInfo(int i)
         {
             if (i == 0)
-                return new ColumnInfo("_lineNumber", JdbcType.INTEGER);
+                return new ColumnInfo("_rowNumber", JdbcType.INTEGER);
             ColumnDescriptor d = _it._activeColumns[i-1];
             JdbcType type = JdbcType.valueOf(d.clazz);
             if (null == type)
                 type = JdbcType.VARCHAR;
-            return new ColumnInfo(d.name, type);
+            ColumnInfo ret = new ColumnInfo(d.name, type);
+            if (null != d.propertyURI)
+                ret.setPropertyURI(d.propertyURI);
+            return ret;
         }
 
         @Override
@@ -751,7 +755,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             _row = null;
             boolean hasNext = _it.hasNext();
             if (hasNext)
+            {
                 _row = (ArrayListMap)_it.next();
+                _rowNumber++;
+            }
             return hasNext;
         }
 
@@ -759,7 +766,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         public Object get(int i)
         {
             if (i == 0)
-                return _it.lineNum();
+                return _rowNumber;
             return _row.get(i-1);
         }
 

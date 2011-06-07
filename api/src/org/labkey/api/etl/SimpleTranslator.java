@@ -54,11 +54,22 @@ import java.util.concurrent.Callable;
  * Time: 2:03:45 PM
  *
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
+ *
+ * Note that get(n) may be called more than once for any column.  To simplify the implementation to avoid
+ * duplicate errors and make AutoIncrement/Guid easier, we just copy the column data on next().
+ *
+ * NOTE: this also has the effect that it is possible for columns to 'depend' on columns that precede them
+ * in the column list.  This can save some extra nesting of iterators, but it can look confusing so use comments.
+ *
+ *   e.g. Column [2] can use the result calculated by column [1] by calling SimpleTranslator.this.get(1)
+ *
+ * see AliasColumn for an example
  */
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator
 {
-    final DataIterator _data;
+    DataIterator _data;
     protected final ArrayList<Pair<ColumnInfo,Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo,Callable>>();
+    Object[] _row = null;
     boolean _failFast = true;
     Map<String,String> _missingValues = Collections.emptyMap();
     Map<String,Integer> _inputNameMap = null;
@@ -75,6 +86,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     protected DataIterator getInput()
     {
         return _data;
+    }
+
+    public void setInput(DataIterator it)
+    {
+        _data = it;
     }
 
     public void setMvContainer(Container c)
@@ -101,6 +117,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             getRowError().addFieldError(field, msg);
     }
 
+
     protected void addConversionException(String fieldName, Object value, JdbcType target, Exception x)
     {
         String msg;
@@ -113,7 +130,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         addFieldError(fieldName, msg);
     }
 
-    private class PassthroughColumn implements Callable
+
+    protected class PassthroughColumn implements Callable
     {
         final int index;
 
@@ -126,6 +144,23 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public Object call() throws Exception
         {
             return _data.get(index);
+        }
+    }
+
+
+    protected class AliasColumn implements Callable
+    {
+        final int index;
+
+        AliasColumn(int index)
+        {
+            this.index = index;
+        }
+
+        @Override
+        public Object call() throws Exception
+        {
+            return SimpleTranslator.this.get(index);
         }
     }
 
@@ -181,7 +216,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         protected int getFirstValue()
         {
-            return 0;
+            return 1;
         }
 
         @Override
@@ -189,7 +224,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             if (_autoIncrement == -1)
                 _autoIncrement = getFirstValue();
-            return ++_autoIncrement;
+            return _autoIncrement++;
         }
     }
 
@@ -367,6 +402,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return addColumn(col, new MissingValueConvertColumn(col.getName(), fromIndex, col.getJdbcType()));
     }
 
+    public int addAliasColumn(String name, int aliasIndex)
+    {
+        ColumnInfo col = new ColumnInfo(_outputColumns.get(aliasIndex).getKey());
+        col.setName(name);
+        // don't want duplicate property id's usually
+        col.setPropertyURI(null);
+        return addColumn(col, new AliasColumn(aliasIndex));
+    }
+
     public int addConvertColumn(String name, int fromIndex, JdbcType toType, boolean mv)
     {
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
@@ -498,36 +542,45 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     public boolean next() throws BatchValidationException
     {
         _rowError = null;
+
+        boolean hasNext = _data.next();
+        if (!hasNext)
+            return false;
+
+        if (null == _row)
+            _row = new Object[_outputColumns.size()];
+
+        for (int i=0 ; i<_row.length ; ++i)
+        {
+            _row[i] = null;
+            try
+            {
+                _row[i] = _outputColumns.get(i).getValue().call();
+            }
+            catch (ConversionException x)
+            {
+                // preferable to handle in call()
+                addConversionException(_outputColumns.get(i).getKey().getName(), null, null, x);
+            }
+            catch (RuntimeException x)
+            {
+                throw x;
+            }
+            catch (Exception x)
+            {
+                // undone source field name???
+                addFieldError(_outputColumns.get(i).getKey().getName(), x.getMessage());
+            }
+        }
         if (_failFast && _errors.hasErrors())
             return false;
-        return _data.next();
+        return true;
     }
 
     @Override
     public Object get(int i)
     {
-        Callable c = _outputColumns.get(i).getValue();
-
-        try
-        {
-            return c.call();
-        }
-        catch (ConversionException x)
-        {
-            // preferable to handle in call()
-            addConversionException(_outputColumns.get(i).getKey().getName(), null, null, x);
-            return null;
-        }
-        catch (RuntimeException x)
-        {
-            throw x;
-        }
-        catch (Exception x)
-        {
-            // undone source field name???
-            addFieldError(_outputColumns.get(i).getKey().getName(), x.getMessage());
-            return null;
-        }
+        return _row[i];
     }
 
     @Override
@@ -629,9 +682,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 assertEquals(t.getColumnCount(), 1);
                 assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
                 assertEquals(t.getColumnInfo(1).getJdbcType(), JdbcType.INTEGER);
-                assertTrue(t.next());
-                assertEquals(1, t.get(0));
-                assertNull(t.get(1));
                 assertFalse(t.next());
                 assertTrue(errors.hasErrors());
             }

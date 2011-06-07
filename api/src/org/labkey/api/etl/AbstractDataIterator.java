@@ -29,6 +29,7 @@ public abstract class AbstractDataIterator implements DataIterator
 {
     String _debugName = "";
     BatchValidationException _errors;
+    ValidationException _globalError = null;
     ValidationException _rowError = null;
 
     protected AbstractDataIterator(BatchValidationException errors)
@@ -41,6 +42,22 @@ public abstract class AbstractDataIterator implements DataIterator
         _debugName = name;
     }
 
+
+    protected boolean hasErrors()
+    {
+        return _errors.hasErrors();
+    }
+
+    protected ValidationException getGlobalError()
+    {
+        if (null == _globalError)
+        {
+            _globalError = new ValidationException();
+            _globalError.setRowNumber(-1);
+            _errors.addRowError(_globalError);
+        }
+        return _globalError;
+    }
 
     protected ValidationException getRowError()
     {

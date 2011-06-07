@@ -205,9 +205,6 @@ public class StandardETL implements DataIteratorBuilder, Runnable
                 setupError.addGlobalError("Data does not contain required field: " + col.getName());
         }
 
-        if (setupError.hasErrors())
-            errors.addRowError(setupError);
-
         //
         //  CONVERT and VALIDATE iterators
         //
@@ -244,6 +241,7 @@ public class StandardETL implements DataIteratorBuilder, Runnable
                 validate.addPropertyValidator(i, dp.getPropertyDescriptor());
         }
 
-        return LoggingDataIterator.wrap(validate.hasValidators() ? validate : convert);
+        DataIterator last = validate.hasValidators() ? validate : convert;
+        return LoggingDataIterator.wrap(ErrorIterator.wrap(last, errors, false, setupError));
     }
 }

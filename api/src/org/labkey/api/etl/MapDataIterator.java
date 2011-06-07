@@ -103,4 +103,13 @@ public class MapDataIterator extends AbstractDataIterator implements DataIterato
     public void close() throws IOException
     {
     }
+
+
+    public static class Builder extends DataIteratorBuilder.Wrapper
+    {
+        public Builder(Set<String> colNames, List<Map<String,Object>> rows)
+        {
+            super(new MapDataIterator(colNames, rows));
+        }
+    }
 }

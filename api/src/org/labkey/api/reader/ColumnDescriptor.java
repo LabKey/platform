@@ -49,6 +49,7 @@ public class ColumnDescriptor
 
     public Class clazz = String.class;
     public String name = null;
+    public String propertyURI = null;
     public boolean load = true;
     public boolean isProperty = false; //Load as a class property
     public Object missingValues = null;

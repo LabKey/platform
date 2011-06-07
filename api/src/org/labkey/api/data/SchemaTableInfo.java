@@ -638,6 +638,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
                 if (null == colInfo)
                 {
                     colInfo = new ColumnInfo(xmlColumn.getColumnName(), this);
+                    colInfo.setNullable(true); // default is isNullable()==false
                     addColumn(colInfo);
                     colInfo.loadFromXml(xmlColumn, false);
                 }
