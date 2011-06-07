@@ -2546,6 +2546,7 @@ public class AnnouncementsController extends SpringActionController
         public URLHelper currentURL;
         public boolean print = false;
         public boolean includeGroups;
+        public boolean embedded;
     }
 
 
@@ -2599,6 +2600,23 @@ public class AnnouncementsController extends SpringActionController
             bean.printURL = null == currentURL ? null : currentURL.clone().replaceParameter("_print", "1");
             bean.print = print;
             bean.includeGroups = perm.includeGroups();
+            bean.embedded = (ann != null && null != ann.getDiscussionSrcURL() && !getViewContext().getActionURL().getPageFlow().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
+
+            if (!bean.print && !bean.embedded)
+            {
+                NavTree buttons = new NavTree();
+                if (null != bean.listURL)
+                {
+                    buttons.addChild("view list", bean.listURL);
+                }
+                if (!bean.isResponse)
+                {
+                    buttons.addChild("print", bean.printURL);
+                }
+
+                setNavMenu(buttons);
+                setIsWebPart(false);
+            }
 
             setTitle("View " + bean.settings.getConversationName());
         }

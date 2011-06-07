@@ -59,32 +59,14 @@ if (null != bean.message)
 }
 
 // is this an embedded discussion?
-boolean embedded = (null != announcementModel.getDiscussionSrcURL() && !context.getActionURL().getPageFlow().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
 ActionURL discussionSrc = null;
 
-if (!embedded && null != announcementModel.getDiscussionSrcURL())
+if (!bean.embedded && null != announcementModel.getDiscussionSrcURL())
 {
     discussionSrc = DiscussionServiceImpl.fromSaved(announcementModel.getDiscussionSrcURL());
     discussionSrc.replaceParameter("discussion.id", "" + announcementModel.getRowId());
 }
 
-if (!bean.print && !embedded)
-{ %>
-<table width="100%">
-<tr>
-    <td align="left"><%
-    if (null != bean.listURL)
-    {
-        %><%=textLink("view list", bean.listURL)%>&nbsp;<%
-    }
-    if (!bean.isResponse)
-    {
-        %><%=textLink("print", bean.printURL.toString())%>&nbsp;<%
-    }
-    %></td>
-</tr>
-</table><%
-}
 if (!bean.print && null != discussionSrc)
 { %>
     <p></p><img src="<%=contextPath%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page.  <%=textLink("view page", discussionSrc.getLocalURIString())%><%
@@ -269,7 +251,7 @@ if (!bean.isResponse && !bean.print)
     if (bean.perm.allowResponse(announcementModel))
     {
         // There are two cases here.... I'm in the wiki controller or I'm not (e.g. I'm a discussion)
-        if (embedded)
+        if (bean.embedded)
         {
             // UNDONE: respond in place
             URLHelper url = bean.currentURL.clone();
@@ -290,7 +272,7 @@ if (!bean.isResponse && !bean.print)
     {
         ActionURL deleteThread = announcementURL(c, DeleteThreadAction.class, "entityId", announcementModel.getEntityId());
         deleteThread.addParameter("cancelUrl", bean.currentURL.getLocalURIString());
-        if (embedded)
+        if (bean.embedded)
         {
             URLHelper redirect = bean.currentURL.clone().deleteScopeParameters("discussion");
             deleteThread.addReturnURL(redirect);
