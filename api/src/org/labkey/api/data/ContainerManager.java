@@ -110,6 +110,8 @@ public class ContainerManager
 
     private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(Integer.MAX_VALUE, CacheManager.DAY, "containers");
     private static final Object DATABASE_QUERY_LOCK = new Object();
+    public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
+    public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
 
     // enum of properties you can see in property change events
     public enum Property
@@ -172,6 +174,7 @@ public class ContainerManager
         return createContainer(parent, name, null, null, false, null);
     }
 
+    // TODO: Pass in folder type and transact it with container creation
     public static Container createContainer(Container parent, String name, String title, String description, boolean workbook, User user)
     {
         if (CORE.getSchema().getScope().isTransactionActive())
@@ -258,6 +261,51 @@ public class ContainerManager
 
         fireCreateContainer(c, user);
         return c;
+    }
+
+
+    // TODO: Move this property into the Containers table
+    public static void setFolderType(Container c, FolderType folderType) throws SQLException
+    {
+        FolderType oldType = c.getFolderType();
+
+        if (folderType.equals(oldType))
+            return;
+
+        oldType.unconfigureContainer(c);
+        folderType.configureContainer(c);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c.getId(), FOLDER_TYPE_PROPERTY_SET_NAME, true);
+        props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
+        PropertyManager.saveProperties(props);
+
+        _removeFromCache(c);
+    }
+
+
+    // TODO: Move this property into the Containers table
+    public static FolderType getFolderType(Container c)
+    {
+        Map props = PropertyManager.getProperties(0, c.getId(), ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
+        String name = (String) props.get(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
+        FolderType folderType;
+
+        if (null != name)
+        {
+            folderType = ModuleLoader.getInstance().getFolderType(name);
+
+            if (null == folderType)
+            {
+                // If we're upgrading then folder types won't be defined yet... don't warn in that case.
+                if (!ModuleLoader.getInstance().isUpgradeInProgress() && !ModuleLoader.getInstance().isUpgradeRequired())
+                    LOG.warn("No such folder type " + name + " for folder " + c.toString());
+
+                folderType = FolderType.NONE;
+            }
+        }
+        else
+            folderType = FolderType.NONE;
+
+        return folderType;
     }
 
 

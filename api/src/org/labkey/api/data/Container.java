@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,9 +28,17 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -40,12 +47,24 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.WebPartFactory;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -55,8 +74,6 @@ import java.util.*;
  */
 public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext
 {
-    private static final Logger _log = Logger.getLogger(Container.class);
-
     private GUID _id;
     private Path _path;
     private Date _created;
@@ -72,7 +89,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private transient WeakReference<Container> _parent;
 
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
-    private transient FolderType _folderType;
 
     //is this container a workbook?
     private boolean _workbook;
@@ -82,8 +98,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     //optional non-unique title for the container
     private String _title;
-    public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
-    public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
 
     // UNDONE: BeanFactory for Container
 
@@ -629,44 +643,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setFolderType(FolderType folderType) throws SQLException
     {
-        FolderType oldType = getFolderType();
-        if (folderType.equals(oldType))
-            return;
-
-        oldType.unconfigureContainer(this);
-        folderType.configureContainer(this);
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), FOLDER_TYPE_PROPERTY_SET_NAME, true);
-        props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
-        PropertyManager.saveProperties(props);
-
-        _folderType = null;
+        ContainerManager.setFolderType(this, folderType);
     }
 
     public FolderType getFolderType()
     {
-        if (null != _folderType)
-            return _folderType;
-
-        Map props = PropertyManager.getProperties(0, getId(), FOLDER_TYPE_PROPERTY_SET_NAME);
-        String name = (String) props.get(FOLDER_TYPE_PROPERTY_NAME);
-
-        if (null != name)
-        {
-            _folderType = ModuleLoader.getInstance().getFolderType(name);
-
-            if (null == _folderType)
-            {
-                // If we're upgrading then folder types won't be defined yet... don't warn in that case.
-                if (!ModuleLoader.getInstance().isUpgradeInProgress() && !ModuleLoader.getInstance().isUpgradeRequired())
-                    _log.warn("No such folder type " + name + " for folder " + toString());
-
-                _folderType = FolderType.NONE;
-            }
-        }
-        else
-            _folderType = FolderType.NONE;
-
-        return _folderType;
+        return ContainerManager.getFolderType(this);
     }
 
     /**

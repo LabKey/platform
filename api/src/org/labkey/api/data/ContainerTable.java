@@ -84,8 +84,8 @@ public class ContainerTable extends FilteredTable
                 propertySchema.getTableInfoPropertySets() + " ps WHERE ps.ObjectId = " + ExprColumn.STR_TABLE_ALIAS +
                 ".EntityId AND ps.Category = ? AND ps." + getSqlDialect().getColumnSelectName("set") + " = p." +
                 getSqlDialect().getColumnSelectName("set") + " AND p.Name = ?)");
-        folderTypeSQL.add(Container.FOLDER_TYPE_PROPERTY_SET_NAME);
-        folderTypeSQL.add(Container.FOLDER_TYPE_PROPERTY_NAME);
+        folderTypeSQL.add(ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
+        folderTypeSQL.add(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
         ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, JdbcType.VARCHAR);
         addColumn(folderTypeColumn);
 
