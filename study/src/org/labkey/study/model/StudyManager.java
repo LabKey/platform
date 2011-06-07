@@ -3631,6 +3631,7 @@ public class StudyManager
                     rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                     assertTrue(rs.next());
                     assertEquals(1.0, rs.getDouble("SequenceNum"));
+                    rs.close(); rs = null;
 
                     // insert one row w/o visit
                     rows.clear(); errors.clear();
@@ -3646,6 +3647,7 @@ public class StudyManager
 //                    assertTrue(rs.next());
 //                    if ("A2".equals(rs.getString("SubjectId")))
 //                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"));
+                    rs.close(); rs = null;
                 }
                 else
                 {
@@ -3659,6 +3661,7 @@ public class StudyManager
                     rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                     assertTrue(rs.next());
                     assertEquals(Jan2, new java.util.Date(rs.getTimestamp("date").getTime()));
+                    rs.close(); rs = null;
 
                     // insert one row w/o date
                     rows.clear(); errors.clear();
@@ -3674,6 +3677,7 @@ public class StudyManager
                     assertTrue(rs.next());
                     if ("A2".equals(rs.getString("SubjectId")))
                         assertEquals(study.getStartDate(), new java.util.Date(rs.getTimestamp("date").getTime()));
+                    rs.close(); rs = null;
                 }
             }
             finally
