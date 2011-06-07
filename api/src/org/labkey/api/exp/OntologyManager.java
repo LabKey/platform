@@ -1620,10 +1620,11 @@ public class OntologyManager
             else if (null != property.getStringValue())
             {
                 String string = property.getStringValue();
-                /* <UNDONE> handle truncation
+                // UNDONE - handle truncation in some other way?
                 if (string.length() > ObjectProperty.STRING_LENGTH)
-                    ;
-                </UNDONE> */
+                {
+                    throw new SQLException("String value too long in field " + OntologyManager.getPropertyDescriptor(propertyId).getName() + ": " + string);
+                }
                 strings.add(Arrays.asList(objectId, propertyId, string, mvIndicator));
             }
             else if (null != mvIndicator)

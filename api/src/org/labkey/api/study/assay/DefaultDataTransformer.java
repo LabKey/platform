@@ -211,7 +211,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                     }
                     catch (Exception e)
                     {
-                        throw new ValidationException(e.getMessage());
+                        throw new ValidationException(e.getMessage() == null ? e.toString() : e.getMessage());
                     }
                     finally
                     {

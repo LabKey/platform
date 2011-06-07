@@ -176,7 +176,7 @@ public class Table
     }
 
 
-    public static int execute(Connection conn, String sql, Object[] parameters)
+    public static int execute(Connection conn, String sql, Object... parameters)
             throws SQLException
     {
         Statement stmt = null;
@@ -411,7 +411,7 @@ public class Table
     }
 
 
-    public static int execute(DbSchema schema, String sql, Object[] parameters)
+    public static int execute(DbSchema schema, String sql, Object... parameters)
             throws SQLException
     {
         Connection conn = schema.getScope().getConnection();

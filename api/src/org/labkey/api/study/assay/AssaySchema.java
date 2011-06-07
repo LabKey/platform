@@ -79,4 +79,4 @@ public abstract class AssaySchema extends UserSchema
         assert tableName != null;
         return protocol.getName() + " " + tableName;
     }
-        }
+}

@@ -64,7 +64,6 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.ui.PropertiesEditorUtil;
 import org.labkey.api.pipeline.PipelineService;
@@ -620,7 +619,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             try
             {
                 Map<String, File> uploadedData = context.getUploadedData();
-                if (uploadedData != null && uploadedData.size() != 0)
+                if (uploadedData.size() != 0)
                 {
                     file = uploadedData.get(AssayDataCollector.PRIMARY_FILE);
                     if (runName == null)
@@ -1052,7 +1051,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol)
     {
-        final ExpRunTable runTable = (ExpRunTable)ExpSchema.TableType.Runs.createTable(new ExpSchema(schema.getUser(), schema.getContainer()));
+        ExpRunTable runTable = ExperimentService.get().createRunTable(AssaySchema.getRunsTableName(protocol), schema);
+        runTable.populate();
+        
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
         dataLinkColumn.setLabel("Assay Id");
         dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
@@ -1152,7 +1153,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
             public int compare(Pair<Domain, Map<DomainProperty, Object>> dom1, Pair<Domain, Map<DomainProperty, Object>> dom2)
             {
-                return new Integer(dom1.getKey().getTypeId()).compareTo(new Integer(dom2.getKey().getTypeId()));
+                return new Integer(dom1.getKey().getTypeId()).compareTo(dom2.getKey().getTypeId());
             }
         });
     }
