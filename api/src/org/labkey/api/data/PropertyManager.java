@@ -232,7 +232,7 @@ public class PropertyManager
                 " WHERE " + setSelectName +  " IN " +
                 "(SELECT " + setSelectName + " FROM " + prop.getTableInfoPropertySets().getSelectName() + " WHERE ObjectId=?)";
 
-        Table.execute(prop.getSchema(), deleteProps, new Object[] {objectId});
+        Table.execute(prop.getSchema(), deleteProps, objectId);
         Table.delete(prop.getTableInfoPropertySets(), new SimpleFilter("ObjectId", objectId));
     }
 
@@ -269,7 +269,7 @@ public class PropertyManager
         String sql = prop.getSqlDialect().execute(prop.getSchema(), "property_setValue", "?, ?, ?");
         try
         {
-            Table.execute(prop.getSchema(), sql, new Object[]{set, name, value});
+            Table.execute(prop.getSchema(), sql, set, name, value);
         }
         catch (SQLException x)
         {

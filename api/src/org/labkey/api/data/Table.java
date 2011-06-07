@@ -176,14 +176,14 @@ public class Table
     }
 
 
-    public static int execute(Connection conn, String sql, Object... parameters)
+    public static int execute(Connection conn, String sql, @NotNull Object... parameters)
             throws SQLException
     {
         Statement stmt = null;
 
         try
         {
-            if (null == parameters || 0 == parameters.length)
+            if (0 == parameters.length)
             {
                 stmt = conn.createStatement();
                 if (stmt.execute(sql))
@@ -206,8 +206,7 @@ public class Table
             if (null != stmt)
                 stmt.close();
 
-            if (null != parameters)
-                closeParameters(parameters);
+            closeParameters(parameters);
         }
     }
 
@@ -411,7 +410,7 @@ public class Table
     }
 
 
-    public static int execute(DbSchema schema, String sql, Object... parameters)
+    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters)
             throws SQLException
     {
         Connection conn = schema.getScope().getConnection();
@@ -2688,7 +2687,7 @@ public class Table
             load.run();
             assertFalse(errors.hasErrors());
             
-            Table.execute(testTable.getSchema(), "delete from test.testtable where entityid = '" + extract.guid + "'", null);
+            Table.execute(testTable.getSchema(), "delete from test.testtable where entityid = '" + extract.guid + "'");
         }
     }
 }

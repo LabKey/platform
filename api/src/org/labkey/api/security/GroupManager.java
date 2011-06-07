@@ -233,7 +233,7 @@ public class GroupManager
         if (id != null)
             return id.intValue();
 
-        Table.execute(_core.getSchema(), _insertGroupSql, new Object[]{userId, name, type.typeChar});
+        Table.execute(_core.getSchema(), _insertGroupSql, userId, name, type.typeChar);
 
         return userId;
     }

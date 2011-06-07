@@ -132,7 +132,7 @@ public class MvUtil
     {
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
         String sql = "DELETE FROM " + mvTable + " WHERE container = ?";
-        Table.execute(CoreSchema.getInstance().getSchema(), sql, new Object[] {c.getId()});
+        Table.execute(CoreSchema.getInstance().getSchema(), sql, c.getId());
     }
 
     /**

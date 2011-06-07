@@ -159,7 +159,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         addColumnChange.addColumn(objectIdSpec);
         for (String sql : toTable.getSqlDialect().getChangeStatements(addColumnChange))
         {
-            Table.execute(toTable.getSchema(), sql, new Object[0]);
+            Table.execute(toTable.getSchema(), sql);
         }
 
         Container container = protocol.getContainer();
@@ -251,7 +251,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         removeColumnChange.addColumn(objectIdSpec);
         for (String sql : toTable.getSqlDialect().getChangeStatements(removeColumnChange))
         {
-            Table.execute(toTable.getSchema(), sql, new Object[0]);
+            Table.execute(toTable.getSchema(), sql);
         }
 
         // Delete the data from OntologyManager

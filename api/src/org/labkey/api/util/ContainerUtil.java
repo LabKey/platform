@@ -44,7 +44,7 @@ public class ContainerUtil
             key = "Container";
 
         String delete = "DELETE FROM " + tinfo + " WHERE " + key + " NOT IN (SELECT EntityId FROM " + tinfoContainers + ")";
-        return Table.execute(tinfo.getSchema(), delete, null);
+        return Table.execute(tinfo.getSchema(), delete);
     }
 
 
@@ -56,6 +56,6 @@ public class ContainerUtil
             key = "Container";
 
         String delete = "DELETE FROM " + tinfo + " WHERE " + key + " = ?";
-        return Table.execute(tinfo.getSchema(), delete, new Object[]{c.getId()});
+        return Table.execute(tinfo.getSchema(), delete, c.getId());
     }
 }

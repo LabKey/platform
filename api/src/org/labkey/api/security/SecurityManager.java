@@ -265,20 +265,20 @@ public class SecurityManager
 
             // missing container
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
-                    "WHERE Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + ")", null);
+                    "WHERE Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + ")");
 
             // container is not a project (but should be)
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
                     "WHERE Type='g' AND Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + "\n" +
-                    "\tWHERE Parent=? OR Parent IS NULL)", new Object[] {root});
+                    "\tWHERE Parent=? OR Parent IS NULL)", root);
 
             // missing group
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE GroupId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")", null);
+                    "WHERE GroupId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
 
             // missing user
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")", null);
+                    "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
         }
         catch (SQLException x)
         {
@@ -572,7 +572,7 @@ public class SecurityManager
     {
         try
         {
-            int rows = Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoLogins() + " SET Verification=? WHERE email=?", new Object[]{verification, email.getEmailAddress()});
+            int rows = Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoLogins() + " SET Verification=? WHERE email=?", verification, email.getEmailAddress());
             if (1 != rows)
                 throw new UserManagementException(email, "Unexpected number of rows returned when setting verification: " + rows);
         }
@@ -870,7 +870,7 @@ public class SecurityManager
             // Don't need to set LastChanged -- it defaults to current date/time.
             int rowCount = Table.execute(core.getSchema(), "INSERT INTO " + core.getTableInfoLogins() +
                     " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
-                    new Object[]{email.getEmailAddress(), crypt, new Date(), verification, crypt});
+                    email.getEmailAddress(), crypt, new Date(), verification, crypt);
             if (1 != rowCount)
                 throw new UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
 
@@ -898,7 +898,7 @@ public class SecurityManager
                 history.remove(i);
             String cryptHistory = StringUtils.join(history, ",");
 
-            int rows = Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoLogins() + " SET Crypt=?, LastChanged=?, PreviousCrypts=? WHERE Email=?", new Object[]{crypt, new Date(), cryptHistory, email.getEmailAddress()});
+            int rows = Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoLogins() + " SET Crypt=?, LastChanged=?, PreviousCrypts=? WHERE Email=?", crypt, new Date(), cryptHistory, email.getEmailAddress());
             if (1 != rows)
                 throw new UserManagementException(email, "Password update statement affected " + rows + " rows.");
         }
@@ -1109,12 +1109,12 @@ public class SecurityManager
 
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoRoleAssignments() + "\n"+
                     "WHERE UserId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                    "\tWHERE Container=? and Type LIKE ?)", new Object[] {c, type});
+                    "\tWHERE Container=? and Type LIKE ?)", c, type);
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoMembers() + "\n"+
                     "WHERE GroupId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                    "\tWHERE Container=? and Type LIKE ?)", new Object[] {c, type});
+                    "\tWHERE Container=? and Type LIKE ?)", c, type);
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPrincipals() +
-                    "\tWHERE Container=? AND Type LIKE ?", new Object[] {c, type});
+                    "\tWHERE Container=? AND Type LIKE ?", c, type);
         }
         catch (SQLException x)
         {
@@ -1175,7 +1175,7 @@ public class SecurityManager
                     core.getSchema(),
                     "DELETE FROM " + core.getTableInfoMembers() + "\n" +
                             "WHERE GroupId = ? AND UserId = ?",
-                    new Object[]{groupId, principal.getUserId()});
+                    groupId, principal.getUserId());
         }
         catch (SQLException e)
         {
@@ -1212,7 +1212,7 @@ public class SecurityManager
                             "\nWHERE UserId IN (" + addString.toString() + ") AND UserId NOT IN\n" +
                             "  (SELECT _Members.UserId FROM " + core.getTableInfoMembers() + " _Members JOIN " + core.getTableInfoPrincipals() + " _Principals ON _Members.UserId = _Principals.UserId\n" +
                             "   WHERE GroupId = ?)",
-                    new Object[]{groupId, groupId});
+                    groupId, groupId);
 
 
             for (User user : usersToAdd)
@@ -1236,7 +1236,7 @@ public class SecurityManager
             Table.execute(
                     core.getSchema(),
                     "INSERT INTO " + core.getTableInfoMembers() + " (UserId, GroupId) VALUES (?, ?)",
-                    new Object[]{user.getUserId(), group.getUserId()});
+                    user.getUserId(), group.getUserId());
             fireAddPrincipalToGroup(group, user);
         }
         catch (SQLException e)
@@ -2163,11 +2163,11 @@ public class SecurityManager
                 core.getSchema(),
                 "DELETE FROM " + core.getTableInfoRoleAssignments() + " WHERE ResourceId IN(SELECT ResourceId FROM " +
                 core.getTableInfoPolicies() + " WHERE Container=?)",
-                new Object[]{c.getId()});
+                c.getId());
             Table.execute(
                     core.getSchema(),
                     "DELETE FROM " + core.getTableInfoPolicies() + " WHERE Container=?",
-                    new Object[]{c.getId()});
+                    c.getId());
         DbCache.clear(core.getTableInfoRoleAssignments());
         }
         catch (SQLException x)
@@ -2599,9 +2599,9 @@ public class SecurityManager
         }
         Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
             "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container IN (" +
-                sb.toString() + "))", null);
+                sb.toString() + "))");
         Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPolicies() + "\n" +
-            "WHERE Container IN (" + sb.toString() + ")", null);
+            "WHERE Container IN (" + sb.toString() + ")");
         DbCache.clear(core.getTableInfoRoleAssignments());
 
         /* when promoting a folder to a project, create default project groups */

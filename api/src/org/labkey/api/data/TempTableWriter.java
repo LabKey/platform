@@ -121,7 +121,7 @@ public class TempTableWriter
         // Track the table, it will be deleted when tinfoTempTable is GC'd
         //
         tinfoTempTable.track();
-        Table.execute(schema, sql.toString(), null);
+        Table.execute(schema, sql.toString());
 
         //
         // Populate

@@ -520,7 +520,7 @@ public abstract class SqlDialect
 
         try
         {
-            Table.execute(conn, sql, null);
+            Table.execute(conn, sql);
             return false;
         }
         catch (SQLException e)
@@ -632,7 +632,7 @@ public abstract class SqlDialect
         String sql = getAnalyzeCommandForTable(table.getSelectName());
         if (sql != null)
         {
-            Table.execute(table.getSchema(), sql, null);
+            Table.execute(table.getSchema(), sql);
             return true;
         }
         else

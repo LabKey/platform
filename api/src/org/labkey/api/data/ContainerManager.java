@@ -238,7 +238,7 @@ public class ContainerManager
                 StringBuilder sql = new StringBuilder("UPDATE ");
                 sql.append(CORE.getTableInfoContainers());
                 sql.append(" SET Name=? WHERE RowID=?");
-                Table.execute(CORE.getSchema(), sql.toString(), new Object[]{name, c.getRowId()});
+                Table.execute(CORE.getSchema(), sql.toString(), name, c.getRowId());
 
                 _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
                 path = makePath(parent, name);
@@ -380,7 +380,7 @@ public class ContainerManager
             StringBuilder sql = new StringBuilder("UPDATE ");
             sql.append(CORE.getTableInfoContainers());
             sql.append(" SET Description=? WHERE RowID=?");
-            Table.execute(CORE.getSchema(), sql.toString(), new Object[]{description, container.getRowId()});
+            Table.execute(CORE.getSchema(), sql.toString(), description, container.getRowId());
         }
         catch (SQLException x)
         {
@@ -399,7 +399,7 @@ public class ContainerManager
             StringBuilder sql = new StringBuilder("UPDATE ");
             sql.append(CORE.getTableInfoContainers());
             sql.append(" SET Searchable=? WHERE RowID=?");
-            Table.execute(CORE.getSchema(), sql.toString(), new Object[]{searchable, container.getRowId()});
+            Table.execute(CORE.getSchema(), sql.toString(), searchable, container.getRowId());
         }
         catch (SQLException x)
         {
@@ -418,7 +418,7 @@ public class ContainerManager
             StringBuilder sql = new StringBuilder("UPDATE ");
             sql.append(CORE.getTableInfoContainers());
             sql.append(" SET Title=? WHERE RowID=?");
-            Table.execute(CORE.getSchema(), sql.toString(), new Object[]{title, container.getRowId()});
+            Table.execute(CORE.getSchema(), sql.toString(), title, container.getRowId());
         }
         catch (SQLException x)
         {
@@ -1064,7 +1064,7 @@ public class ContainerManager
             CORE.getSchema().getScope().ensureTransaction();
             synchronized (DATABASE_QUERY_LOCK)
             {
-                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET Parent=? WHERE EntityId=?", new Object[]{newParent.getId(), c.getId()});
+                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET Parent=? WHERE EntityId=?", newParent.getId(), c.getId());
 
                 // this could be done in the trigger, but I prefer to put it in the transaction
                 if (changedProjects)
@@ -1109,7 +1109,7 @@ public class ContainerManager
 
             synchronized (DATABASE_QUERY_LOCK)
             {
-                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", new Object[]{name, c.getId()});
+                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", name, c.getId());
                 clearCache();  // Clear the entire cache, since containers cache their full paths
                 //Get new version since name has changed.
                 c = getForId(c.getId());
@@ -1129,7 +1129,7 @@ public class ContainerManager
 
     public static void setPublishBit(Container c, Boolean bit) throws SQLException
     {
-        Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET CaBIGPublished = ? WHERE EntityId = ?", new Object[]{bit, c.getId()});
+        Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET CaBIGPublished = ? WHERE EntityId = ?", bit, c.getId());
     }
 
     public static void setChildOrderToAlphabetical(Container parent)
@@ -1159,7 +1159,7 @@ public class ContainerManager
                 {
                     Container current = siblings.get(index);
                     Table.execute(schema, "UPDATE " + CORE.getTableInfoContainers() + " SET SortOrder = ? WHERE EntityId = ?",
-                            new Object[]{resetToAlphabetical ? 0 : index, current.getId()});
+                            resetToAlphabetical ? 0 : index, current.getId());
                 }
                 schema.getScope().commitTransaction();
                 clearCache();  // Clear the entire cache, since container lists are cached in order
@@ -1215,8 +1215,8 @@ public class ContainerManager
             {
                 try
                 {
-                    Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId=?", new Object[]{c.getId()});
-                    Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainers() + " WHERE EntityId=?", new Object[]{c.getId()});
+                    Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId=?", c.getId());
+                    Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainers() + " WHERE EntityId=?", c.getId());
                     // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
                     SecurityManager.removeAll(c);
                 }

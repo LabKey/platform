@@ -736,13 +736,13 @@ public class OntologyManager
                 sqlDeleteOwnedProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
                 sqlDeleteOwnedProperties.append(in);
                 sqlDeleteOwnedProperties.append("))");
-                Table.execute(getExpSchema(), sqlDeleteOwnedProperties.toString(), null);
+                Table.execute(getExpSchema(), sqlDeleteOwnedProperties.toString());
 
                 StringBuilder sqlDeleteOwnedObjects = new StringBuilder();
                 sqlDeleteOwnedObjects.append("DELETE FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
                 sqlDeleteOwnedObjects.append(in);
                 sqlDeleteOwnedObjects.append(")");
-                Table.execute(getExpSchema(), sqlDeleteOwnedObjects.toString(), null);
+                Table.execute(getExpSchema(), sqlDeleteOwnedObjects.toString());
             }
 
             if (deleteObjects)
@@ -753,7 +753,7 @@ public class OntologyManager
                 sqlDeleteObjects.append("DELETE FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
                 sqlDeleteObjects.append(in);
                 sqlDeleteObjects.append(")");
-                Table.execute(getExpSchema(), sqlDeleteObjects.toString(), null);
+                Table.execute(getExpSchema(), sqlDeleteObjects.toString());
             }
         }
         finally
@@ -842,7 +842,7 @@ public class OntologyManager
                     " WHERE DD.DomainId = " + dd.getDomainId() +
                     " AND PD.Container = DD.Container " +
                     " ) ";
-            Table.execute(getExpSchema(), deleteTypePropsSql, new Object[] {});
+            Table.execute(getExpSchema(), deleteTypePropsSql);
 
             if (objIdsToDelete.length > 0)
             {
@@ -852,7 +852,7 @@ public class OntologyManager
                         " WHERE ObjectId IN ( " + sqlIN.toString() + " ) " +
                         " AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
                         " WHERE  OP.ObjectId = " + getTinfoObject() + ".ObjectId)";
-                Table.execute(getExpSchema(), deleteObjSql, new Object[]{});
+                Table.execute(getExpSchema(), deleteObjSql);
 
                 if (ownerObjIds.length>0)
                 {
@@ -867,7 +867,7 @@ public class OntologyManager
                             " WHERE ObjectId IN ( " + sqlIN.toString() + " ) " +
                             " AND NOT EXISTS (SELECT * FROM " + getTinfoObject() + " SUBO " +
                             " WHERE SUBO.OwnerObjectId = " + getTinfoObject() + ".ObjectId)";
-                    Table.execute(getExpSchema(), deleteOwnerSql , new Object[]{});
+                    Table.execute(getExpSchema(), deleteOwnerSql);
                 }
             }
             // whew!
@@ -914,7 +914,7 @@ public class OntologyManager
                     " WHERE DomainId =  " +
                     " (SELECT DD.DomainId FROM " + getTinfoDomainDescriptor() + " DD "+
                     " WHERE DD.DomainId = ? )";
-            Table.execute(getExpSchema(), deletePDMs, new Object[] {dd.getDomainId()});
+            Table.execute(getExpSchema(), deletePDMs, dd.getDomainId());
 
             if (pdIdsToDelete.length > 0)
             {
@@ -937,7 +937,7 @@ public class OntologyManager
                             "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
                                 "WHERE PDM.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId)";
 
-                Table.execute(getExpSchema(), deletePDs, new Object[]{dd.getContainer().getId()});
+                Table.execute(getExpSchema(), deletePDs, dd.getContainer().getId());
             }
 
             String deleteDD = "DELETE FROM " + getTinfoDomainDescriptor() +
@@ -945,7 +945,7 @@ public class OntologyManager
                         "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
                             "WHERE PDM.DomainId = " + getTinfoDomainDescriptor() + ".DomainId)";
 
-            Table.execute(getExpSchema(), deleteDD, new Object[]{dd.getDomainId()});
+            Table.execute(getExpSchema(), deleteDD, dd.getDomainId());
             clearCaches();
 
             getExpSchema().getScope().commitTransaction();
@@ -978,9 +978,9 @@ public class OntologyManager
 
             // Owned objects should be in same container, so this should work
 			String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-			Table.execute(getExpSchema(), deleteObjPropSql, new Object[]{containerid});
+			Table.execute(getExpSchema(), deleteObjPropSql, containerid);
 			String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
-			Table.execute(getExpSchema(), deleteObjSql, new Object[]{containerid});
+			Table.execute(getExpSchema(), deleteObjSql, containerid);
 
             // delete property validator references on property descriptors
             PropertyService.get().deleteValidatorsAndFormats(c);
@@ -995,14 +995,14 @@ public class OntologyManager
             }
 
             String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";
-            Table.execute(getExpSchema(), deletePropDomSqlPD, new Object[]{containerid});
+            Table.execute(getExpSchema(), deletePropDomSqlPD, containerid);
             String deletePropDomSqlDD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE DomainId IN (SELECT DomainId FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?)";
-            Table.execute(getExpSchema(), deletePropDomSqlDD, new Object[]{containerid});
+            Table.execute(getExpSchema(), deletePropDomSqlDD, containerid);
             String deleteDomSql = "DELETE FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-            Table.execute(getExpSchema(), deleteDomSql, new Object[]{containerid});
+            Table.execute(getExpSchema(), deleteDomSql, containerid);
             // now delete the prop descriptors that are referenced in this container only
             String deletePropSql = "DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?";
-            Table.execute(getExpSchema(), deletePropSql, new Object[]{containerid});
+            Table.execute(getExpSchema(), deletePropSql, containerid);
 
 			clearCaches();
             getExpSchema().getScope().commitTransaction();
@@ -1169,9 +1169,9 @@ public class OntologyManager
 
             // update project of any descriptors in folder just moved
             sql = " UPDATE " + getTinfoPropertyDescriptor() + " SET Project = ? WHERE Container = ? ";
-            Table.execute(getExpSchema(), sql , new Object[]{newProject.getId(), c.getId()});
+            Table.execute(getExpSchema(), sql , newProject.getId(), c.getId());
             sql = " UPDATE " + getTinfoDomainDescriptor() + " SET Project = ? WHERE Container = ? ";
-            Table.execute(getExpSchema(), sql , new Object[]{newProject.getId(), c.getId()});
+            Table.execute(getExpSchema(), sql , newProject.getId(), c.getId());
 
             if (null==oldProject) // if container was a project & demoted I'm done
             {
@@ -1707,7 +1707,7 @@ public class OntologyManager
         sqlDeleteProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(objContainer.getId()).append("' AND ObjectId IN (");
         sqlDeleteProperties.append(in);
         sqlDeleteProperties.append("))");
-        Table.execute(getExpSchema(), sqlDeleteProperties.toString(), null);
+        Table.execute(getExpSchema(), sqlDeleteProperties.toString());
 
         for (String uri : objectURIs)
         {
@@ -1728,9 +1728,9 @@ public class OntologyManager
         {
             getExpSchema().getScope().ensureTransaction();
 
-            Table.execute(getExpSchema(), deleteObjPropSql, new Object[]{propId});
-            Table.execute(getExpSchema(), deletePropDomSql, new Object[]{propId});
-            Table.execute(getExpSchema(), deletePropSql, new Object[]{propId});
+            Table.execute(getExpSchema(), deleteObjPropSql, propId);
+            Table.execute(getExpSchema(), deletePropDomSql, propId);
+            Table.execute(getExpSchema(), deletePropSql, propId);
             propDescCache.remove(key);
             getExpSchema().getScope().commitTransaction();
         }
@@ -3239,7 +3239,7 @@ public class OntologyManager
     {
         String sql =  "UPDATE " + descriptorTable + " SET Project= ? WHERE Project = ? AND Container=? AND " + uriColumn + " NOT IN " +
                 "(SELECT " + uriColumn + " FROM " + descriptorTable + " WHERE Project = ?)" ;
-        Table.execute(getExpSchema(), sql, new Object[]{newProjId, projectId, container.getId(), newProjId});
+        Table.execute(getExpSchema(), sql, newProjId, projectId, container.getId(), newProjId);
 
         // now check to see if there is already an existing descriptor in the target (correct) project.
         // this can happen if a folder containning a descriptor is moved to another project
@@ -3259,9 +3259,9 @@ public class OntologyManager
             {
                 int prevPropId=rs.getInt(1);
                 int curPropId=rs.getInt(2);
-                Table.execute(getExpSchema(), updsql1, new Object[]{curPropId, prevPropId });
-                Table.execute(getExpSchema(), updsql2, new Object[]{curPropId, prevPropId});
-                Table.execute(getExpSchema(), delSql, new Object[]{prevPropId});
+                Table.execute(getExpSchema(), updsql1, curPropId, prevPropId);
+                Table.execute(getExpSchema(), updsql2, curPropId, prevPropId);
+                Table.execute(getExpSchema(), delSql, prevPropId);
             }
         } finally
         {

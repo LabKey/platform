@@ -61,7 +61,7 @@ class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
             if (null != sql)
             {
                 conn = scope.getConnection();
-                Table.execute(conn, sql, null);
+                Table.execute(conn, sql);
             }
         }
         catch(SQLException e)

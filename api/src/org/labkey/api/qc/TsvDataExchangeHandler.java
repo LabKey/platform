@@ -228,7 +228,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         pw.append(transformResult.getUploadedFile().getAbsolutePath());
         pw.append('\n');
 
-        File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
+        AssayFileWriter.ensureUploadDirectory(context.getContainer());
         for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
         {
             ExpData data = entry.getKey();

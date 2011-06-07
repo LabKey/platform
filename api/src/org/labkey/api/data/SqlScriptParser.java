@@ -161,7 +161,7 @@ public class SqlScriptParser
         {
             // Null schema allowed for testing
             if (_sql.length() > 0 && null != _schema)
-                Table.execute(_schema, _sql, new Object[]{});
+                Table.execute(_schema, _sql);
         }
     }
 

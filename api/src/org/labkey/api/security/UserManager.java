@@ -571,7 +571,7 @@ public class UserManager
     {
         try
         {
-            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin=? WHERE UserId=?", new Object[]{new Date(), user.getUserId()});
+            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin=? WHERE UserId=?", new Date(), user.getUserId());
         }
         catch (SQLException e)
         {
@@ -604,10 +604,10 @@ public class UserManager
 
         try
         {
-            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", new Object[]{newEmail.getEmailAddress(), userId});
+            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail.getEmailAddress(), userId);
 
             if (SecurityManager.loginExists(oldEmail))
-                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", new Object[]{newEmail.getEmailAddress(), oldEmail.getEmailAddress()});
+                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail.getEmailAddress(), oldEmail.getEmailAddress());
 
             UserManager.addToUserHistory(UserManager.getUser(userId), currentUser + " changed email from " + oldEmail.getEmailAddress() + " to " + newEmail.getEmailAddress() + ".");
             clearUserList(userId);
@@ -643,15 +643,15 @@ public class UserManager
 
         try
         {
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", new Object[]{userId});
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", new Object[]{userId});
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoUserHistory() + " WHERE UserId=?", new Object[]{userId});
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoUserHistory() + " WHERE UserId=?", userId);
             // TODO: now that user history is managed by the audit service, should we allow audit records to be deleted?
             UserManager.addToUserHistory(user, user.getEmail() + " was deleted from the system");
 
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", new Object[]{userId});
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", new Object[]{user.getEmail()});
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", new Object[]{userId});
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", userId);
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
         }
         catch (SQLException e)
         {

@@ -558,46 +558,46 @@ public class DbSchema
 
             if (testSchema.getSqlDialect().isSqlServer())
             {
-                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop', 'password' ", new Object[]{});
-                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop2', 'password' ", new Object[]{});
-                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop3', 'password' ", new Object[]{});
+                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop', 'password' ");
+                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop2', 'password' ");
+                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop3', 'password' ");
             }
             else if (testSchema.getSqlDialect().isPostgreSQL())
             {
-                Table.execute(testSchema, "create schema testdrop", new Object[]{});
-                Table.execute(testSchema, "create schema testdrop2", new Object[]{});
-                Table.execute(testSchema, "create schema testdrop3", new Object[]{});
+                Table.execute(testSchema, "create schema testdrop");
+                Table.execute(testSchema, "create schema testdrop2");
+                Table.execute(testSchema, "create schema testdrop3");
             }
             else
                 return;
 
-            Table.execute(testSchema, "create table testdrop.T0 (c0 int not null primary key)", new Object[]{});
-            Table.execute(testSchema, "create table testdrop.T (c1 char(1), fk_c0 int REFERENCES testdrop.T0(c0))", new Object[]{});
-            Table.execute(testSchema, "create index T_c1 ON testdrop.T(c1)", new Object[]{});
-            Table.execute(testSchema, "create view testdrop.V AS SELECT c1 FROM testdrop.T", new Object[]{});
+            Table.execute(testSchema, "create table testdrop.T0 (c0 int not null primary key)");
+            Table.execute(testSchema, "create table testdrop.T (c1 char(1), fk_c0 int REFERENCES testdrop.T0(c0))");
+            Table.execute(testSchema, "create index T_c1 ON testdrop.T(c1)");
+            Table.execute(testSchema, "create view testdrop.V AS SELECT c1 FROM testdrop.T");
             String sqlCreateTempTable = "create " + testSchema.getSqlDialect().getTempTableKeyword() + " table "
                                         + tempTableName + "(ctemp int)";
-            Table.execute(testSchema, sqlCreateTempTable, new Object[]{});
+            Table.execute(testSchema, sqlCreateTempTable);
 
-            Table.execute(testSchema, "create table testdrop2.T0 (c0 int primary key)", new Object[]{});
-            Table.execute(testSchema, "create table testdrop2.T (c1 char(10), fk_c0 int REFERENCES testdrop2.T0(c0))", new Object[]{});
-            Table.execute(testSchema, "create table testdrop3.T (c1 char(10), fk_c0 int REFERENCES testdrop2.T0(c0))", new Object[]{});
-            Table.execute(testSchema, "create index T_c1 ON testdrop2.T(c1)", new Object[]{});
+            Table.execute(testSchema, "create table testdrop2.T0 (c0 int primary key)");
+            Table.execute(testSchema, "create table testdrop2.T (c1 char(10), fk_c0 int REFERENCES testdrop2.T0(c0))");
+            Table.execute(testSchema, "create table testdrop3.T (c1 char(10), fk_c0 int REFERENCES testdrop2.T0(c0))");
+            Table.execute(testSchema, "create index T_c1 ON testdrop2.T(c1)");
 
             testSchema = DbSchema.createFromMetaData("testdrop");
 
             //these exist; ensure they are dropped by re-creating them
             testSchema.dropIndexIfExists("T", "T_c1");
-            Table.execute(testSchema, "create index T_c1 ON testdrop.T(c1)", new Object[]{});
+            Table.execute(testSchema, "create index T_c1 ON testdrop.T(c1)");
 
             testSchema.dropTableIfExists("v");
-            Table.execute(testSchema, "create view testdrop.V AS SELECT c0 FROM testdrop.T0", new Object[]{});
+            Table.execute(testSchema, "create view testdrop.V AS SELECT c0 FROM testdrop.T0");
 
             testSchema.dropTableIfExists("T");
-            Table.execute(testSchema, "create table testdrop.T (c1 char(1))", new Object[]{});
+            Table.execute(testSchema, "create table testdrop.T (c1 char(1))");
 
             testSchema.dropTableIfExists(tempTableName);
-            Table.execute(testSchema, sqlCreateTempTable, new Object[]{});
+            Table.execute(testSchema, sqlCreateTempTable);
 
             testSchema.getSqlDialect().dropSchema(testSchema,"testdrop");
 
@@ -720,7 +720,7 @@ public class DbSchema
             }
 
             tTemplate.track();
-            Table.execute(coreSchema, createTempTableSql, new Object[]{});
+            Table.execute(coreSchema, createTempTableSql);
             Table.execute(coreSchema, sbCheck);
 
             if (bfix)
@@ -744,7 +744,7 @@ public class DbSchema
 
                     try
                     {
-                        Table.execute(coreSchema, sql, new Object[]{recovered.getId(), rs1.getString(2)});
+                        Table.execute(coreSchema, sql, recovered.getId(), rs1.getString(2));
                         //remove the ACLs that were there
                         org.labkey.api.security.SecurityManager.removeAll(recovered);
                         sbOut.append("<br> Recovered objects from table ");
