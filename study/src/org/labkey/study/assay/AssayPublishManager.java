@@ -22,6 +22,8 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -294,6 +296,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             QCState defaultQCState = null;
             if (defaultQCStateId != null)
                 defaultQCState = StudyManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
+
             // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
             // IllegalStateException in ContainerManager.ensureContainer.
             List<String> lsids = StudyManager.getInstance().importDatasetData(targetStudy, user, dataset, convertedDataMaps, new Date().getTime(), errors, true, true, defaultQCState, null);

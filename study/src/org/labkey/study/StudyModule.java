@@ -519,7 +519,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         Set<Class> set = new HashSet<Class>();
         set.add(SpecimenImporter.TestCase.class);
-        set.add(StudyManager.StudyTestCase.class);
+        set.add(StudyManager.DatasetImportTestCase.class);
         return set;
     }
 

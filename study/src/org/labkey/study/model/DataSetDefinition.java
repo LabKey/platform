@@ -16,8 +16,8 @@
 
 package org.labkey.study.model;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -27,9 +27,17 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.CachingDataIterator;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorUtil;
+import org.labkey.api.etl.ErrorIterator;
+import org.labkey.api.etl.LoggingDataIterator;
+import org.labkey.api.etl.MapDataIterator;
+import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -43,6 +51,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -67,7 +76,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
@@ -91,6 +100,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -764,6 +774,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 _ptid = wrapped;
             else
                 _ptid = new AliasedColumn(this, subject, wrapped);
+            _ptid.setNullable(false);
             columns.add(_ptid);
             }
 
@@ -1071,7 +1082,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     if (propertyURI == null)
                         continue;
                     String name = col.getName();
-                    PropertyType type = PropertyType.getFromClass(col.getJavaObjectClass());
+                    PropertyType type = PropertyType.getFromClass(col.getJdbcType().getJavaClass());
                     PropertyDescriptor pd = new PropertyDescriptor(
                             propertyURI, type.getTypeUri(), name, ContainerManager.getSharedContainer());
                     standardPropertySet.add(pd);
@@ -1267,11 +1278,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public List<String> importDatasetData(Study study, User user, List<Map<String, Object>> dataMaps, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(Study study, User user, DataIteratorBuilder in, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
             throws SQLException
     {
-        if (dataMaps.size() == 0)
-            return Collections.emptyList();
+//        if (dataMaps.size() == 0)
+//            return Collections.emptyList();
 
         TableInfo tinfo = getTableInfo(user, false);
         Map<String, QCState> qcStateLabels = new CaseInsensitiveHashMap<QCState>();
@@ -1284,110 +1295,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 qcStateLabels.put(state.getLabel(), state);
         }
 
-        //
-        // Try to collect errors early.
-        // Try not to be too repetitive, stop each loop after one error
-        //
-
-        // In certain cases (e.g., QC Columns), we have multiple columns with the same
-        // property URI. We don't want to complain about conversion errors multiple
-        // times, so we keep a set around in case we run into one and only report it once.
-        MultiMap<Integer, String> rowToConversionErrorURIs = new MultiHashMap<Integer, String>();
-
-        int rowNumber = 0;
-        for (Map<String, Object> dataMap : dataMaps)
-        {
-            rowNumber++;
-            if (needToHandleQCState)
-            {
-                String qcStateLabel = (String) dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
-                // We have a non-null QC state column value.  We need to check to see if this is a known state,
-                // and mark it for addition if not.
-                if (qcStateLabel != null && qcStateLabel.length() > 0 && !qcStateLabels.containsKey(qcStateLabel))
-                    qcStateLabels.put(qcStateLabel, null);
-            }
-
-            for (ColumnInfo col : tinfo.getColumns())
-            {
-                // lsid is generated
-                if (col.getName().equalsIgnoreCase("lsid"))
-                    continue;
-
-                Object val = dataMap.get(col.getPropertyURI());
-
-                boolean valueMissing;
-
-                if (val == null)
-                {
-                    valueMissing = true;
-                }
-                else if (val instanceof MvFieldWrapper)
-                {
-                    MvFieldWrapper mvWrapper = (MvFieldWrapper)val;
-
-                    if (mvWrapper.isEmpty())
-                    {
-                        valueMissing = true;
-                    }
-                    else
-                    {
-                        valueMissing = false;
-
-                        if (col.isMvEnabled() && !MvUtil.isValidMvIndicator(mvWrapper.getMvIndicator(), getContainer()))
-                        {
-                            String columnName = col.getName() + MvColumn.MV_INDICATOR_SUFFIX;
-                            errors.add(columnName + " must be a valid MV indicator.");
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    valueMissing = false;
-                }
-
-                if (valueMissing && !col.isNullable() && col.isUserEditable())
-                {
-                    // Demographic data gets special handling for visit or date fields, depending on the type of study,
-                    // since there is usually only one entry for demographic data per dataset
-                    if (isDemographicData())
-                    {
-                        if (study.getTimepointType() != TimepointType.VISIT)
-                        {
-                            if (col.getName().equalsIgnoreCase("Date"))
-                            {
-                                dataMap.put(col.getPropertyURI(), study.getStartDate());
-                                continue;
-                            }
-                        }
-                        else
-                        {
-                            if (col.getName().equalsIgnoreCase("SequenceNum"))
-                            {
-                                dataMap.put(col.getPropertyURI(), 0);
-                                continue;
-                            }
-                        }
-                    }
-
-                    errors.add("Row " + rowNumber + " does not contain required field " + col.getName() + ".");
-                }
-                else if (val == StudyManager.CONVERSION_ERROR)
-                {
-                    if (!rowToConversionErrorURIs.containsValue(rowNumber - 1, col.getPropertyURI()))
-                    {
-                        // Only emit the error once for a given property uri and row
-                        errors.add("Row " + rowNumber + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
-                        rowToConversionErrorURIs.put(rowNumber - 1, col.getPropertyURI());
-                    }
-                }
-            }
-
-            if (errors.size() > 0)
-                return Collections.emptyList();
-        }
-        if (logger != null) logger.debug("checked for missing values");
-
         String keyPropertyURI = null;
         String keyPropertyName = getKeyPropertyName();
 
@@ -1398,35 +1305,31 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 keyPropertyURI = col.getPropertyURI();
         }
 
-        if (checkDuplicates)
-        {
-            checkForDuplicates(study, user, dataMaps, errors, logger, keyPropertyURI, keyPropertyName);
-        }
-        if (errors.size() > 0)
-            return Collections.emptyList();
-
         if (getKeyManagementType() == KeyManagementType.RowId)
         {
             // If additional keys are managed by the server, we need to synchronize around
             // increments, as we're imitating a sequence.
             synchronized (MANAGED_KEY_LOCK)
             {
-                return insertData(study, user, dataMaps, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState, keyPropertyURI);
+                return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState, keyPropertyURI);
             }
         }
         else
         {
-            return insertData(study, user, dataMaps, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState, keyPropertyURI);
+            return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState, keyPropertyURI);
         }
     }
 
-    private void checkForDuplicates(Study study, User user, List<Map<String, Object>> dataMaps, List<String> errors, Logger logger, String keyPropertyURI, String keyPropertyName)
-            throws SQLException
+
+
+    private void checkForDuplicates(DataIterator data,
+            int indexLSID, int indexPTID, int indexVisit, int indexKey, int indexReplace,
+            BatchValidationException errors, Logger logger)
     {
-        String participantIdURI = DataSetDefinition.getParticipantIdURI();
-        String visitSequenceNumURI = DataSetDefinition.getSequenceNumURI();
-        String visitDateURI = DataSetDefinition.getVisitDateURI();
-        HashMap<String, Map> failedReplaceMap = checkAndDeleteDupes(user, study, dataMaps);
+        HashMap<String, Object[]> failedReplaceMap = checkAndDeleteDupes(
+                data,
+                indexLSID, indexPTID, indexVisit, indexKey, indexReplace,
+                errors);
 
         if (null != failedReplaceMap && failedReplaceMap.size() > 0)
         {
@@ -1435,7 +1338,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (!isDemographicData())
             {
-                error.append(study.getTimepointType() != TimepointType.DATE ? "/Date" : "/Visit");
+                error.append(_study.getTimepointType() != TimepointType.DATE ? "/Date" : "/Visit");
 
                 if (getKeyPropertyName() != null)
                     error.append("/").append(getKeyPropertyName()).append(" Triple.  ");
@@ -1448,138 +1351,573 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             error.append("Duplicates were found in the database or imported data.");
-            errors.add(error.toString());
+            errors.addRowError(new ValidationException(error.toString()));
 
-            for (Map.Entry<String, Map> e : failedReplaceMap.entrySet())
+            for (Map.Entry<String, Object[]> e : failedReplaceMap.entrySet())
             {
-                Map m = e.getValue();
-                String err = "Duplicate: " + StudyService.get().getSubjectNounSingular(getContainer()) + " = " + m.get(participantIdURI);
+                Object[] keys = e.getValue();
+                String err = "Duplicate: " + StudyService.get().getSubjectNounSingular(getContainer()) + " = " + keys[0];
                 if (!isDemographicData())
                 {
-                    if (study.getTimepointType() != TimepointType.VISIT)
-                        err = err + "Date = " + m.get(visitDateURI);
+                    if (_study.getTimepointType() != TimepointType.VISIT)
+                        err = err + "Date = " + keys[1];
                     else
-                        err = err + ", VisitSequenceNum = " + m.get(visitSequenceNumURI);
+                        err = err + ", VisitSequenceNum = " + keys[1];
                 }
-                if (keyPropertyURI != null)
-                    err += ", " + keyPropertyName + " = " + m.get(keyPropertyURI);
-                errors.add(err);
+                if (0 < indexKey)
+                    err += ", " + data.getColumnInfo(indexKey).getName() + " = " + keys[2];
+                errors.addRowError(new ValidationException(err));
             }
         }
         if (logger != null) logger.debug("checked for duplicates");
     }
 
-    private List<String> insertData(Study study, User user, List<Map<String, Object>> dataMaps, long lastModified, List<String> errors, boolean ensureObjects, QCState defaultQCState, Logger logger, Map<String, QCState> qcStateLabels, boolean needToHandleQCState, String keyPropertyURI)
+
+
+    private class DatasetDataIteratorBuilder implements DataIteratorBuilder
+    {
+        String keyPropertyURI;
+        boolean needsQC;
+        QCState defaultQC;
+        Map<String, QCState> qcLabels;
+        List<String> lsids = null;
+        boolean checkDuplicates = false;
+        Logger logger = null;
+
+        DataIteratorBuilder builder = null;
+        DataIterator input = null;
+
+        ValidationException setupError = null;
+
+        DatasetDataIteratorBuilder(String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
+        {
+            this.keyPropertyURI = keyPropertyURI;
+            this.needsQC = qc;
+            this.defaultQC = defaultQC;
+            this.qcLabels = qcLabels;
+        }
+
+
+        void setCheckDuplicates(boolean check)
+        {
+            checkDuplicates = check;
+        }
+
+        void setInput(DataIteratorBuilder b)
+        {
+            builder = b;
+        }
+
+        void setInput(DataIterator it)
+        {
+            input = it;
+        }
+
+        void setLogger(Logger logger)
+        {
+            this.logger = logger;
+        }
+
+        void setKeyList(List<String> lsids)
+        {
+            this.lsids = lsids;
+        }
+
+        void setupError(String msg)
+        {
+            if (null == setupError)
+                setupError = new ValidationException();
+            setupError.addGlobalError(msg);
+        }
+
+        @Override
+        public DataIterator getDataIterator(BatchValidationException errors)
+        {
+            TimepointType timetype = getStudy().getTimepointType();
+
+            if (null == input && null != builder)
+                input = builder.getDataIterator(errors);
+
+            _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, errors);
+
+            it.selectAll();
+
+            Map<String,Integer> findMap = DataIteratorUtil.createColumnAndPropertyMap(it);
+
+            // find important columns in the input
+            Integer indexPTID = findMap.get(DataSetDefinition.getParticipantIdURI());
+            Integer indexSequenceNum = findMap.get(DataSetDefinition.getSequenceNumURI());
+            Integer indexKeyProperty = null==keyPropertyURI ? null : findMap.get(keyPropertyURI);
+            Integer indexVisitDate = findMap.get(DataSetDefinition.getVisitDateURI());
+            Integer indexReplace = findMap.get("replace");
+
+            it.setSpecialInputColumns(indexPTID, indexSequenceNum, indexVisitDate, indexKeyProperty);
+            it.setTimepointType(timetype);
+
+
+            /* NOTE: these columns must be added in dependency order
+             *
+             * sequencenum -> date
+             * participantsequence -> ptid, sequencenum
+             * lsid -> ptid, sequencenum, key
+             */
+
+            //
+            // date
+            //
+
+            if (timetype != TimepointType.VISIT && null == indexVisitDate && isDemographicData())
+            {
+                final Date start = _study.getStartDate();
+                indexVisitDate = it.addColumn(new ColumnInfo("Date",JdbcType.TIMESTAMP), new Callable(){
+                    @Override
+                    public Object call() throws Exception
+                    {
+                        return start;
+                    }
+                });
+                it.indexVisitDateOutput = indexVisitDate;
+            }
+
+            //
+            // SequenceNum
+            //
+
+            if (null == indexSequenceNum)
+            {
+                if (isDemographicData())
+                {
+                    indexSequenceNum = it.addColumn(new ColumnInfo("SequenceNum",JdbcType.DOUBLE),
+                            new Callable(){
+                                @Override
+                                public Object call() throws Exception
+                                {
+                                    return VisitImpl.DEMOGRAPHICS_VISIT;
+                                }
+                            });
+                }
+                else if (timetype != TimepointType.VISIT)
+                {
+                    indexSequenceNum = it.addSequenceNumFromDateColumn();
+                }
+                it.indexSequenceNumOutput = indexSequenceNum;
+            }
+
+            //
+            // ROWID
+            //
+
+            if (getKeyManagementType() == KeyManagementType.RowId)
+            {
+                ColumnInfo key = new ColumnInfo(keyPropertyURI, JdbcType.INTEGER);
+                key.setPropertyURI(keyPropertyURI);
+                Callable call = new SimpleTranslator.AutoIncrementColumn()
+                {
+                    @Override
+                    protected int getFirstValue()
+                    {
+                        try
+                        {
+                        return getMaxKeyValue();
+                        }
+                        catch (SQLException x)
+                        {
+                            throw new RuntimeSQLException(x);
+                        }
+                    }
+                };
+                indexKeyProperty = it.addColumn(key, call);
+            }
+
+            //
+            // GUID
+            //
+
+            else if (getKeyManagementType() == KeyManagementType.GUID)
+            {
+                ColumnInfo key = new ColumnInfo(keyPropertyURI, JdbcType.VARCHAR);
+                key.setPropertyURI(keyPropertyURI);
+                indexKeyProperty = it.addColumn(key, new SimpleTranslator.GuidColumn());
+            }
+
+            //
+            // _key
+            //
+
+            if (null != indexKeyProperty)
+            {
+                it.indexKeyPropertyOutput = indexKeyProperty;
+                it.addAliasColumn("_key", indexKeyProperty);
+            }
+
+            //
+            // ParticipantSequenceKey
+            //
+
+            it.addParticipantSequence();
+
+            // QCSTATE
+
+            if (needsQC)
+            {
+                String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
+                Integer indexInputQCState = findMap.get(qcStatePropertyURI);
+                Integer indexInputQCText = findMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
+                if (null == indexInputQCState)
+                {
+                    int indexText = null==indexInputQCText ? -1 : indexInputQCText;
+                    it.addQCStateColumn(indexText, qcStatePropertyURI, defaultQC, qcLabels);
+                }
+            }
+
+
+            //
+            // LSID
+            //
+
+            // NOTE have to add LSID after columns it depends on
+            int indexLSID = it.addLSID();
+
+
+            it.setKeyList(lsids);
+
+            it.setDebugName(getName());
+
+
+            // don't bother going on if we don't have these required columns
+            if (null == indexPTID)
+                setupError("All dataset rows must include a value for " + _study.getSubjectColumnName());
+
+            if (timetype == TimepointType.VISIT && null == indexSequenceNum)
+                setupError("All dataset rows must include a value for SequenceNum");
+
+            if (timetype != TimepointType.VISIT && null == indexVisitDate)
+                setupError("All dataset rows must include a value for Date");
+
+            it.setInput(ErrorIterator.wrap(input, errors, false, setupError));
+            DataIterator ret = LoggingDataIterator.wrap(it);
+
+            if (checkDuplicates && null == setupError)
+            {
+                Integer indexVisit = timetype == TimepointType.VISIT ? indexSequenceNum : indexVisitDate;
+                // no point if required columns are missing
+                if (null != indexPTID && null != indexVisit)
+                {
+                    DataIterator scrollable = CachingDataIterator.wrap(ret);
+                    checkForDuplicates(scrollable, indexLSID,
+                            indexPTID, null==indexVisit?-1:indexVisit, null==indexKeyProperty?-1:indexKeyProperty, null==indexReplace?-1:indexReplace,
+                            errors, logger);
+                    scrollable.beforeFirst();
+                    ret = scrollable;
+                }
+            }
+
+            return ret;
+        }
+    }
+
+
+
+    private class _DatasetColumnsIterator extends SimpleTranslator
+    {
+        DecimalFormat _seqenceFormat = new DecimalFormat("0.0000");
+        Converter convertDate = ConvertUtils.lookup(Date.class);
+        List<String> lsids;
+        User user;
+
+        // these columns are used to compute derived columns, should occur early in the output list
+        Integer indexPTID, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput;
+        // for returning lsid list
+        Integer indexLSIDOutput;
+
+        TimepointType timetype;
+
+        _DatasetColumnsIterator(DataIterator data, BatchValidationException errors) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
+        {
+            super(data, errors);
+        }
+
+        void setSpecialInputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty)
+        {
+            this.indexPTID = indexPTID;
+            this.indexSequenceNumOutput = indexSequenceNum;
+            this.indexVisitDateOutput = indexVisitDate;
+            this.indexKeyPropertyOutput = indexKeyProperty;
+        }
+
+        void setTimepointType(TimepointType timetype)
+        {
+            this.timetype = timetype;
+        }
+
+        void setKeyList(List<String> lsids)
+        {
+            this.lsids = lsids;
+        }
+
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+            if (hasNext)
+            {
+                if (null != lsids && null != indexLSIDOutput)
+                {
+                    try
+                    {
+                        lsids.add((String)get(indexLSIDOutput));
+                    }
+                    catch (RuntimeException x)
+                    {
+                        throw x;
+                    }
+                    catch (Exception x)
+                    {
+                        throw new RuntimeException(x);
+                    }
+                }
+            }
+            return hasNext;
+        }
+
+        Double getOutputDouble(int i)
+        {
+            Object o = get(i);
+            if (null == o)
+                return null;
+            if (o instanceof Number)
+                return ((Number)o).doubleValue();
+            if (o instanceof String)
+            {
+                try
+                {
+                    return Double.parseDouble((String)o);
+                }
+                catch (NumberFormatException x)
+                {
+                    ;
+                }
+            }
+            return null;
+        }
+
+        Date getOutputDate(int i)
+        {
+            Object o = get(i);
+            Date date = (Date)convertDate.convert(Date.class, o);
+            return date;
+        }
+
+        String getString(int i)
+        {
+            Object o = getInput().get(i);
+            return null==o ? "" : o.toString();
+        }
+
+        int addQCStateColumn(int index, String uri, QCState defaultQCState, Map<String,QCState> qcLabels)
+        {
+            ColumnInfo qcCol = new ColumnInfo(uri, JdbcType.INTEGER);
+            qcCol.setPropertyURI(uri);
+            Callable qcCall = new QCStateColumn(index, defaultQCState, qcLabels);
+            return addColumn(qcCol, qcCall);
+        }
+
+        int addSequenceNumFromDateColumn()
+        {
+            return addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
+        }
+
+        int addLSID()
+        {
+            ColumnInfo col = new ColumnInfo("lsid", JdbcType.VARCHAR);
+            indexLSIDOutput = addColumn(col, new LSIDColumn());
+            return indexLSIDOutput;
+        }
+
+        int addParticipantSequence()
+        {
+            ColumnInfo col = new ColumnInfo("participantsequencekey", JdbcType.VARCHAR);
+            return addColumn(col, new ParticipantSequenceColumn());
+        }
+
+        int replaceOrAddColumn(Integer index, ColumnInfo col, Callable call)
+        {
+            if (null == index || index <= 0)
+                return addColumn(col, call);
+            Pair p = new Pair(col,call);
+            _outputColumns.set(index,p);
+            return index;
+        }
+
+        String getFormattedSequenceNum()
+        {
+            assert null != indexSequenceNumOutput || hasErrors();
+            if (null == indexSequenceNumOutput)
+                return null;
+            Double d = getOutputDouble(indexSequenceNumOutput);
+            if (null == d)
+                return null;
+            return _seqenceFormat.format(d);
+        }
+
+        class SequenceNumFromDateColumn implements Callable
+        {
+            @Override
+            public Object call() throws Exception
+            {
+                Date date = getOutputDate(indexVisitDateOutput);
+                if (null != date)
+                    return StudyManager.sequenceNumFromDate(date);
+                else
+                    return VisitImpl.DEMOGRAPHICS_VISIT;
+            }
+        }
+
+        class LSIDColumn implements Callable
+        {
+            @Override
+            public Object call() throws Exception
+            {
+                assert null!=indexPTID || hasErrors();
+                String ptid = null==indexPTID ? "" : getString(indexPTID);
+                String seqnum = getFormattedSequenceNum();
+                Object key = null;
+                if (null != indexKeyPropertyOutput)
+                    key = _DatasetColumnsIterator.this.get(indexKeyPropertyOutput);
+                StringBuilder sb = new StringBuilder();
+                sb.append(ptid).append(".").append(seqnum);
+                if (null != key)
+                    sb.append(".").append(key);
+                return sb.toString();
+            }
+        }
+
+        class ParticipantSequenceColumn implements Callable
+        {
+            @Override
+            public Object call() throws Exception
+            {
+                assert null!=indexPTID || hasErrors();
+                String ptid = null==indexPTID ? "" : getString(indexPTID);
+                String seqnum = getFormattedSequenceNum();
+                return ptid + "|" + seqnum;
+            }
+        }
+
+        class QCStateColumn implements Callable
+        {
+            boolean _autoCreate = true;
+            int _indexInputQCState = -1;
+            QCState _defaultQCState;
+            Map<String, QCState> _qcLabels;
+            Set<String> notFound = new CaseInsensitiveHashSet();
+
+            QCStateColumn(int index, QCState defaultQCState, Map<String,QCState> qcLabels)
+            {
+                _indexInputQCState = index;
+                _defaultQCState = defaultQCState;
+                _qcLabels = qcLabels;
+            }
+
+            @Override
+            public Object call() throws Exception
+            {
+                Object currentStateObj = _indexInputQCState<1 ? null : getInput().get(_indexInputQCState);
+                String currentStateLabel = null==currentStateObj ? null : currentStateObj.toString();
+
+                if (currentStateLabel != null)
+                {
+                    QCState state = _qcLabels.get(currentStateLabel);
+                    if (null == state)
+                    {
+                        if (!_autoCreate)
+                        {
+                            if (notFound.add(currentStateLabel))
+                                getRowError().addFieldError(DataSetTable.QCSTATE_LABEL_COLNAME, "QC State not found: " + currentStateLabel);
+                            return null;
+                        }
+                        else
+                        {
+
+                            QCState newState = new QCState();
+                            // default to public data:
+                            newState.setPublicData(true);
+                            newState.setLabel(currentStateLabel);
+                            newState.setContainer(getContainer());
+                            newState = StudyManager.getInstance().insertQCState(user, newState);
+                            _qcLabels.put(newState.getLabel(), newState);
+                            return newState.getRowId();
+                        }
+                    }
+                    return state.getRowId();
+                }
+                else if (_defaultQCState != null)
+                {
+                    return _defaultQCState.getRowId();
+                }
+                return null;
+            }
+        }
+    }
+
+
+
+    private List<String> insertData(User user, DataIteratorBuilder in,
+            boolean checkDuplicates, long lastModified, List<String> errorStrs, boolean ensureObjects, QCState defaultQCState,
+            Logger logger, Map<String, QCState> qcStateLabels, boolean needToHandleQCState, String keyPropertyURI)
             throws SQLException
     {
+//        if (dataMaps.size() == 0)
+//            return Collections.emptyList();
+
         DbScope scope = ExperimentService.get().getSchema().getScope();
 
         try
         {
             scope.ensureTransaction();
 
-            if (needToHandleQCState)
-            {
-                // We first insert new QC states for any previously unknown QC labels found in the data:
-                Map<String, QCState> iterableStates = new HashMap<String, QCState>(qcStateLabels);
+            DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(
+                    keyPropertyURI,
+                    needToHandleQCState,
+                    defaultQCState,
+                    qcStateLabels);
+            b.setInput(in);
+            b.setCheckDuplicates(checkDuplicates);
 
-                for (Map.Entry<String, QCState> state : iterableStates.entrySet())
-                {
-                    if (state.getValue() == null)
-                    {
-                        QCState newState = new QCState();
-                        // default to public data:
-                        newState.setPublicData(true);
-                        newState.setLabel(state.getKey());
-                        newState.setContainer(study.getContainer());
-                        newState = StudyManager.getInstance().insertQCState(user, newState);
-                        qcStateLabels.put(state.getKey(), newState);
-                    }
-                }
+            ArrayList<String> lsids = new ArrayList<String>();
+            b.setKeyList(lsids);
 
-                // All QC states should now be stored in the database.  Next we iterate the row maps,
-                // swapping in the appropriate row id for each QC label, and applying the default QC state
-                // to null QC rows if appropriate:
-                String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
-
-                for (Map<String, Object> dataMap : dataMaps)
-                {
-                    // only update the QC state ID if it isn't already explicitly specified:
-                    if (dataMap.get(qcStatePropertyURI) == null)
-                    {
-                        Object currentStateObj = dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
-                        String currentStateLabel = currentStateObj != null ? currentStateObj.toString() : null;
-
-                        if (currentStateLabel != null)
-                        {
-                            QCState state = qcStateLabels.get(currentStateLabel);
-                            assert state != null : "QC State " + currentStateLabel + " was expected but not found.";
-                            dataMap.put(qcStatePropertyURI, state.getRowId());
-                        }
-                        else if (defaultQCState != null)
-                            dataMap.put(qcStatePropertyURI, defaultQCState.getRowId());
-                    }
-                }
-                if (logger != null) logger.debug("handled qc state");
-            }
-
-            //
-            // Use OntologyManager for bulk insert
-            //
-            // CONSIDER: it would be nice if we could use the Table/TableInfo methods here
-
-            // Need to generate keys if the server manages them
-            if (getKeyManagementType() == KeyManagementType.RowId)
-            {
-                int currentKey = getMaxKeyValue();
-
-                for (int i = 0; i < dataMaps.size(); i++)
-                {
-                    Map<String, Object> dataMap = dataMaps.get(i);
-                    // Only insert if there isn't already a value
-                    if (dataMap.get(keyPropertyURI) == null)
-                    {
-                        currentKey++;
-                        dataMap.put(keyPropertyURI, currentKey);
-                    }
-                }
-                if (logger != null) logger.debug("generated keys");
-            }
-            else if (getKeyManagementType() == KeyManagementType.GUID)
-            {
-                for (int i = 0; i < dataMaps.size(); i++)
-                {
-                    Map<String, Object> dataMap = dataMaps.get(i);
-                    // Only insert if there isn't already a value
-                    if (dataMap.get(keyPropertyURI) == null)
-                    {
-                        // Create a new map because RowMaps don't work correctly doing put() in all scenarios.
-                        // TODO - once the RowMap implementation is fixed, remove this extra map creation
-                        dataMap = new HashMap<String, Object>(dataMap);
-                        dataMap.put(keyPropertyURI, GUID.makeGUID());
-                        dataMaps.set(i, dataMap);
-                    }
-                }
-                if (logger != null) logger.debug("generated keys");
-            }
-
+            BatchValidationException errors = null;
             long start = System.currentTimeMillis();
-            DatasetImportHelper helper = new DatasetImportHelper(user, this, lastModified);
-            List<String> imported = OntologyManager.insertTabDelimited(getTableInfo(user, false), getContainer(), user,
-                    helper, dataMaps, logger);
+            {
+                TableInfo table = getTableInfo(user, false);
+                StandardETL etl = new StandardETL(table, b, getContainer(), user);
+                etl.run();
+                errors = etl.getErrors();
+            }
             long end = System.currentTimeMillis();
-            _log.info("imported " + getName() + " : " + DateUtil.formatDuration(end-start));
 
-            if (logger != null) logger.debug("starting commit (may effectively no-op if wrapped in larger transaction)...");
+            if (errors.hasErrors())
+                throw errors;
+
+            _log.info("imported " + getName() + " : " + DateUtil.formatDuration(end-start));
             scope.commitTransaction();
             if (logger != null) logger.debug("commit complete");
             StudyManager.fireDataSetChanged(this);
-            return imported;
+
+            return lsids;
         }
-        catch (ValidationException ve)
+        catch (BatchValidationException errors)
         {
-            for (ValidationError error : ve.getErrors())
-                errors.add(error.getMessage());
+            for (ValidationException rowError : errors.getRowErrors())
+            {
+                String rowPrefix = "";
+                if (rowError.getRowNumber() >= 0)
+                    rowPrefix = "Row " + rowError.getRowNumber() + " ";
+                for (ValidationError e : rowError.getErrors())
+                    errorStrs.add(rowPrefix + e.getMessage());
+            }
             return Collections.emptyList();
         }
         finally
@@ -1588,11 +1926,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
+
     /** @return the LSID prefix to be used for this dataset's rows */
     public String getURNPrefix()
     {
         return "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + getContainer().getRowId() + ":" + getDataSetId() + ".";
     }
+
 
      /** @return a SQL expression that generates the LSID for a dataset row */
     public SQLFragment getLSIDSQL()
@@ -1623,220 +1963,99 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return sql;
     }
 
-    /*
-     * Actually persist rows to the database.  These maps are keyed by property URI.
-     *
-     * These maps have QC states and keys generated.  Should behave like OntologyManager.insertTabDelimited()
-     *
-     * TODO: should OntolgoyManager.insertTabDelimited handle this case too (share code with other materialized domains)
-     *
-    private List<String> _insertPropertyMaps(Study study, User user, List<Map<String, Object>> dataMaps, long lastModified, boolean ensureObjects, Logger logger, DbScope scope)
-            throws SQLException, ValidationException
-    {
-        TimepointType timetype = study.getTimepointType();
-        NumberFormat sequenceFormat = new DecimalFormat("0.0000");
-        assert ExperimentService.get().getSchema().getScope().isTransactionActive();
-
-        List<String> imported = new ArrayList<String>(dataMaps.size());
-        DatasetImportHelper helper = null;
-        Connection conn = null;
-        Parameter.ParameterMap parameterMap = null;
-
-        try
-        {
-            conn = scope.getConnection();
-            String typeURI = getTypeURI();
-            Container c = study.getContainer();
-
-            PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
-            helper = new DatasetImportHelper(user, conn, c, this, lastModified);
-
-            ValidatorContext validatorCache = new ValidatorContext(c, user);
-
-            List<ValidationError> errors = new ArrayList<ValidationError>();
-            Map<Integer, IPropertyValidator[]> validatorMap = new HashMap<Integer, IPropertyValidator[]>();
-
-            // cache all the property validators for this upload
-            for (PropertyDescriptor pd : pds)
-            {
-                IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(pd);
-                if (validators.length > 0)
-                    validatorMap.put(pd.getPropertyId(), validators);
-            }
-
-            // UNDONE: custom INSERT VALUES and use with bulk operations
-            // CONSIDER: or use QueryUpdateService for the dataset
-            // This is just a temp fix to get some data in!
-            // NOTE: we are assuming column names and property names match exactly
-
-            Map<String,PropertyDescriptor> propertyNameMap = new CaseInsensitiveHashMap<PropertyDescriptor>(pds.length * 2);
-            for (PropertyDescriptor pd : pds)
-                propertyNameMap.put(pd.getName(), pd);
-            for (PropertyDescriptor pd : pds)
-                propertyNameMap.put(pd.getPropertyURI(), pd);
-            propertyNameMap.put("ptid", propertyNameMap.get("participantid"));
-
-            Map<PropertyDescriptor,PropertyType> propertyTypeMap = new IdentityHashMap<PropertyDescriptor, PropertyType>();
-            for (PropertyDescriptor pd : pds)
-                propertyTypeMap.put(pd, PropertyType.getFromURI(pd.getConceptURI(), pd.getRangeURI()));
-
-            Pair<Object,String> valuePair = new Pair<Object,String>(null,null);
-
-            TableInfo table = getStorageTableInfo();
-            scope = table.getSchema().getScope();
-            parameterMap = QueryService.get().insertStatement(conn, user, table);
-            
-            for (Map row : dataMaps)
-            {
-                if (Thread.currentThread().isInterrupted())
-                    throw new CancellationException();
-
-                parameterMap.clearParameters();
-                
-                for (Map.Entry<String,Object> e : row.entrySet())
-                {
-                    PropertyDescriptor pd = propertyNameMap.get(e.getKey());
-                    if (null == pd) continue;
-                    
-                    PropertyType type = propertyTypeMap.get(pd);
-                    valuePair.first = e.getValue();
-                    valuePair.second = null;
-                    if (null == valuePair.first && pd.isRequired())
-                    {
-                        throw new ValidationException("Missing value for required property " + pd.getName());
-                    }
-                    if (validatorMap.containsKey(pd.getPropertyId()))
-                    {
-                        OntologyManager.validateProperty(validatorMap.get(pd.getPropertyId()), pd, valuePair.first, errors, validatorCache);
-                        if (!errors.isEmpty())
-                            throw new ValidationException(errors);
-                    }
-                    try
-                    {
-                        String name = pd.getName();
-
-                        OntologyManager.convertValuePair(pd, type, valuePair);
-
-                        parameterMap.put(name, valuePair.first);
-                        if (null != valuePair.second)
-                            parameterMap.put(name + "_" + MvColumn.MV_INDICATOR_SUFFIX, valuePair.second);
-                    }
-                    catch (ConversionException x)
-                    {
-                        throw new ValidationException("Could not convert '" + e.getValue() + "' for field " + pd.getName() + ", should be of type " + type.getJavaType().getSimpleName());
-                    }
-                }
-
-                String lsid = helper.getURI(row);
-                String participantId = helper.getParticipantId(row);
-                double sequenceNum = helper.getSequenceNum(row);
-                Object key = helper.getKey(row);
-                String participantSequenceKey = participantId + "|" + sequenceFormat.format(sequenceNum);
-                Date visitDate = helper.getVisitDate(row);
-                Integer qcState = helper.getQCState(row);
-                String sourceLsid = helper.getSourceLsid(row);
-
-                parameterMap.put("participantsequencekey", participantSequenceKey);
-                parameterMap.put("participantid", participantId);
-                parameterMap.put("sequencenum", sequenceNum);
-                parameterMap.put("_key", key==null ? "" : String.valueOf(key));
-                parameterMap.put("lsid", lsid);
-                parameterMap.put("qcstate", qcState);
-                parameterMap.put("sourcelsid", sourceLsid);
-                if (timetype != TimepointType.VISIT)
-                    parameterMap.put("date", visitDate);
-
-                parameterMap.execute();
-
-                imported.add(lsid);
-            }
-        }
-        finally
-        {
-            if (null != helper)
-                helper.done();
-            if (null != parameterMap)
-                parameterMap.close();
-            if (null != conn)
-                scope.releaseConnection(conn);
-        }
-        return imported;
-    }
-     */
-
 
 
     /**
      * If all the dupes can be replaced, delete them. If not return the ones that should NOT be replaced
      * and do not delete anything
      */
-    private HashMap<String, Map> checkAndDeleteDupes(User user, Study study, List<Map<String, Object>> rows) throws SQLException
+    private HashMap<String, Object[]> checkAndDeleteDupes(DataIterator rows,
+            int indexLSID, int indexPTID, int indexDate, int indexKey, int indexReplace,
+            BatchValidationException errors)
     {
-        if (null == rows || rows.size() == 0)
-            return null;
-
-        DatasetImportHelper helper = new DatasetImportHelper(user, this, 0);
-
-        // duplicate keys found that should be deleted
-        Set<String> deleteSet = new HashSet<String>();
-
-        // duplicate keys found in error
-        LinkedHashMap<String,Map> noDeleteMap = new LinkedHashMap<String,Map>();
-
-        StringBuffer sbIn = new StringBuffer();
-        String sep = "";
-        Map<String, Map> uriMap = new HashMap<String, Map>();
-        for (Map m : rows)
+        try
         {
-            String uri = helper.getURI(m);
-            if (null != uriMap.put(uri, m))
-                noDeleteMap.put(uri,m);
-            sbIn.append(sep).append("'").append(uri).append("'");
-            sep = ", ";
-        }
+            // duplicate keys found that should be deleted
+            Set<String> deleteSet = new HashSet<String>();
 
-        TableInfo tinfo = getStorageTableInfo();
-        SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause("LSID IN (" + sbIn + ")", new Object[]{});
+            // duplicate keys found in error
+            LinkedHashMap<String,Object[]> noDeleteMap = new LinkedHashMap<String,Object[]>();
 
-        Map[] results = Table.select(tinfo, Table.ALL_COLUMNS, filter, null, Map.class);
-        for (Map orig : results)
-        {
-            String lsid = (String) orig.get("LSID");
-            Map newMap = uriMap.get(lsid);
-            boolean replace = Boolean.TRUE.equals(newMap.get("replace"));
-            if (replace)
+            StringBuffer sbIn = new StringBuffer();
+            String sep = "";
+            Map<String, Object[]> uriMap = new HashMap<String, Object[]>();
+            int count = 0;
+            while (rows.next())
             {
-                deleteSet.add(lsid);
+                String uri = (String)rows.get(indexLSID);
+                Object[] key = new Object[4];
+                key[0] = rows.get(indexPTID);
+                key[1] = rows.get(indexDate);
+                if (indexKey > 0)
+                    key[2] = rows.get(indexKey);
+                if (indexReplace > 0)
+                    key[3] = rows.get(indexReplace);
+                if (null != uriMap.put(uri, key))
+                    noDeleteMap.put(uri,key);
+                sbIn.append(sep).append("'").append(uri).append("'");
+                sep = ", ";
+                count++;
             }
-            else
+            if (0 == count)
+                return null;
+
+            TableInfo tinfo = getStorageTableInfo();
+            SimpleFilter filter = new SimpleFilter();
+            filter.addWhereClause("LSID IN (" + sbIn + ")", new Object[]{});
+
+            Map[] results = Table.select(tinfo, Table.ALL_COLUMNS, filter, null, Map.class);
+            for (Map orig : results)
             {
-                noDeleteMap.put(lsid, newMap);
+                String lsid = (String) orig.get("LSID");
+                Object[] keys = uriMap.get(lsid);
+                boolean replace = Boolean.TRUE.equals(keys[3]);
+                if (replace)
+                {
+                    deleteSet.add(lsid);
+                }
+                else
+                {
+                    noDeleteMap.put(lsid, keys);
+                }
             }
-        }
 
-        // If we have duplicates, and we don't have an auto-keyed dataset,
-        // then we cannot proceed.
-        if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
-            return noDeleteMap;
+            // If we have duplicates, and we don't have an auto-keyed dataset,
+            // then we cannot proceed.
+            if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
+                return noDeleteMap;
 
-        if (deleteSet.size() == 0)
+            if (deleteSet.size() == 0)
+                return null;
+
+            SimpleFilter deleteFilter = new SimpleFilter();
+            StringBuffer sbDelete = new StringBuffer();
+            sep = "";
+            for (String s : deleteSet)
+            {
+                sbDelete.append(sep).append("'").append(s).append("'");
+                sep = ", ";
+            }
+            deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
+            Table.delete(tinfo, deleteFilter);
+
             return null;
-
-        SimpleFilter deleteFilter = new SimpleFilter();
-        StringBuffer sbDelete = new StringBuffer();
-        sep = "";
-        for (String s : deleteSet)
-        {
-            sbDelete.append(sep).append("'").append(s).append("'");
-            sep = ", ";
         }
-        deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
-        Table.delete(tinfo, deleteFilter);
-//        OntologyManager.deleteOntologyObjects(c, deleteSet.toArray(new String[deleteSet.size()]));
-
-        return null;
+        catch (BatchValidationException vex)
+        {
+            assert vex == errors;
+            return null;
+        }
+        catch (SQLException sqlx)
+        {
+            throw new RuntimeSQLException(sqlx);
+        }
     }
+
 
     /**
      * Gets the current highest key value for a server-managed key field.
@@ -1862,7 +2081,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         DataSetDefinition that = (DataSetDefinition) o;
 
         if (_dataSetId != that._dataSetId) return false;
-        // The _study member variable is populated lazily in the getter,
+        // The _studyDateBased member variable is populated lazily in the getter,
         // so go through the getter instead of relying on the variable to be populated
         if (getStudy() != null ? !getStudy().equals(that.getStudy()) : that.getStudy() != null) return false;
 

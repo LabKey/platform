@@ -51,7 +51,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.BeanDataIterator;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
@@ -2192,11 +2194,11 @@ public class StudyManager
 
     public static final String CONVERSION_ERROR = "Conversion Error";
 
-    private List<Map<String, Object>> parseData(User user,
-                                   DataSetDefinition def,
-                                   DataLoader loader,
-                                   Map<String, String> columnMap,
-                                   List<String> errors)
+    private void parseData(User user,
+               DataSetDefinition def,
+               DataLoader loader,
+               Map<String, String> columnMap,
+               List<String> errors)
             throws ServletException, IOException
     {
         TableInfo tinfo = def.getTableInfo(user, false);
@@ -2256,6 +2258,9 @@ public class StudyManager
                 continue;
             }
 
+            // let ETL do conversions
+            col.clazz = String.class;
+
             if (columnMap.containsKey(name))
                 name = columnMap.get(name);
 
@@ -2274,9 +2279,10 @@ public class StudyManager
                 foundProperties.add(matchedURI);
             }
 
-            col.name = matchedURI;
-            col.clazz = matchedCol.getJavaClass();
-            col.errorValues = CONVERSION_ERROR;
+            col.name = matchedCol.getName();
+            col.propertyURI = matchedURI;
+//            col.clazz = matchedCol.getJavaClass();
+//            col.errorValues = CONVERSION_ERROR;
             if (matchedCol.isMvEnabled())
             {
                 col.setMvEnabled(def.getContainer());
@@ -2296,7 +2302,7 @@ public class StudyManager
             if (matchedCol.getName().equalsIgnoreCase("createdby") || matchedCol.getName().equalsIgnoreCase("modifiedby"))
             {
                 // might be email names instead of userid
-                col.clazz = String.class;
+//                col.clazz = String.class;
             }
         }
 
@@ -2304,24 +2310,34 @@ public class StudyManager
         // during import, and map them to values that will be populated in the QCState Id column.  As a result, we need to
         // ensure QC label is in the loader's column set so it's found at import time, and that the QC ID is in the set so
         // we can assign a value to the property before we insert the data.  brittp, 7.23.2008
-        loader.ensureColumn(new ColumnDescriptor(DataSetTable.QCSTATE_LABEL_COLNAME, String.class));
-        loader.ensureColumn(new ColumnDescriptor(DataSetDefinition.getQCStateURI(), Integer.class));
-
-        return loader.load();
+//        loader.ensureColumn(new ColumnDescriptor(DataSetTable.QCSTATE_LABEL_COLNAME, String.class));
+//        loader.ensureColumn(new ColumnDescriptor(DataSetDefinition.getQCStateURI(), Integer.class));
     }
 
     public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, long lastModified, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
             throws IOException, ServletException, SQLException
     {
-        List<Map<String, Object>> dataMaps = parseData(user, def, loader, columnMap, errors);
-        if (logger != null) logger.debug("parsed " + dataMaps.size() + " rows");
-        return importDatasetData(study, user, def, dataMaps, lastModified, errors, checkDuplicates, ensureObjects, defaultQCState, logger);
+        parseData(user, def, loader, columnMap, errors);
+        return importDatasetData(study, user, def, loader, lastModified, errors, checkDuplicates, ensureObjects, defaultQCState, logger);
     }
 
-    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String, Object>> dataMaps, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
+
+    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
+            throws SQLException
+    {
+        if (data.isEmpty())
+            return Collections.emptyList();
+
+        DataIteratorBuilder it = new MapDataIterator.Builder(data.get(0).keySet(), data);
+
+        return importDatasetData(study, user, def, it, lastModified, errors, checkDuplicates, ensureObjects, defaultQCState, logger);
+    }
+
+
+    private List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataIteratorBuilder data, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
         throws SQLException
     {
-        List<String> result = def.importDatasetData(study, user, dataMaps, lastModified, errors, checkDuplicates, ensureObjects, defaultQCState, logger);
+        List<String> result = def.importDatasetData(study, user, data, lastModified, errors, checkDuplicates, ensureObjects, defaultQCState, logger);
         if (logger != null) logger.debug("imported " + result.size() + " rows");
         return result;
     }
@@ -3132,7 +3148,7 @@ public class StudyManager
 
 
 
-    public static class StudyTestCase extends Assert
+    public static class DatasetImportTestCase extends Assert
     {
         TestContext _context = null;
         StudyManager _manager = StudyManager.getInstance();
@@ -3642,11 +3658,11 @@ public class StudyManager
                     assertEquals(0, errors.size());
                     rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                     assertTrue(rs.next());
-//                    if ("A2".equals(rs.getString("SubjectId")))
-//                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"));
-//                    assertTrue(rs.next());
-//                    if ("A2".equals(rs.getString("SubjectId")))
-//                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"));
+                    if ("A2".equals(rs.getString("SubjectId")))
+                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"));
+                    assertTrue(rs.next());
+                    if ("A2".equals(rs.getString("SubjectId")))
+                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"));
                     rs.close(); rs = null;
                 }
                 else
