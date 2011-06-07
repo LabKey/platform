@@ -34,6 +34,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             for(var i = 0; i < config.origMeasures.length; i++){
                 if(config.origMeasures[i].axis.name == 'y-axis'){
                     config.measures.push({
+                        name: config.origMeasures[i].measure.name,
+                        queryName: config.origMeasures[i].measure.queryName,
+                        label: config.origMeasures[i].measure.label + " from " + config.origMeasures[i].measure.queryName,
                         measure: Ext.apply({}, config.origMeasures[i].measure),
                         dimension: Ext.apply({}, config.origMeasures[i].dimension)
                     });
@@ -58,8 +61,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             multiSelect: false,
             singleSelect: true,
             store: new Ext.data.JsonStore({
+                root: 'measures',
+                idProperty: 'label',
                 fields: [
-                    {name: 'id', type: 'int'},
                     {name: 'label', type: 'string'},
                     {name: 'name', type: 'string'},
                     {name: 'queryName', type: 'string'}
@@ -90,8 +94,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         columnOneItems.push(this.measuresListsView);
 
         // add any original measures (from saved chart) to the measure listview
-        for(var i = 0; i < this.measures.length; i++){
-            this.addMeasureToListView(this.measures[i].measure);
+        if(this.measures.length > 0){
+            this.measuresListsView.getStore().loadData(this);
+            this.measuresListsView.select(this.measuresListsView.getStore().getCount()-1, false, true);
         }
 
         // add a button for the user to add a measure to the chart
@@ -390,13 +395,20 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
     },
 
     addMeasure: function(newMeasure){
-        // add the measure to this and the listview
-        var m = {measure: {}, dimension: {}};
-        Ext.apply(m.measure, newMeasure);
-        this.measures.push(m);
-        this.addMeasureToListView(m.measure);
+        // add the measure to this
+        this.measures.push({
+            name: newMeasure.name,
+            queryName: newMeasure.queryName,
+            label: newMeasure.label + " from " + newMeasure.queryName,
+            measure: Ext.apply({}, newMeasure), 
+            dimension: {}
+        });
 
+        // reload the measure listview store and select the new measure (last index)
         if(this.measures.length > 0){
+            this.measuresListsView.getStore().loadData(this);
+            this.measuresListsView.select(this.measuresListsView.getStore().getCount()-1, false, true);
+
             this.removeMeasureButton.enable();
         }
     },
@@ -410,11 +422,11 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 this.measures[index].dimensionSelectorPanel.destroy();
             }
 
-            // remove the measure from this object
+            // remove the measure from this object and reload the measure listview store
             this.measures.splice(index, 1);
+            this.measuresListsView.getStore().loadData(this);
 
-            // remove the measure from the listView and select the one before it
-            this.measuresListsView.getStore().removeAt(index);
+            // select the previous measure, if there is one
             if(this.measures.length > 0){
                 this.measuresListsView.select(index > 0 ? index-1 : 0);
             }
@@ -618,22 +630,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
     getMeasuresAndDimensions: function(){
         return this.measures;
-    },
-
-    addMeasureToListView: function(measure){
-        // add the measure label to the listview
-        var listStore = this.measuresListsView.getStore();
-        var recIdx = listStore.getCount();
-        var rec = new listStore.recordType({
-            id: recIdx,
-            label: measure.label + " from " + measure.queryName,
-            name: measure.name,
-            queryName: measure.queryName
-        }, recIdx);
-        listStore.insert(recIdx, rec);
-
-        // select the new record from the listview (suppress events)
-        this.measuresListsView.select(rec, false, true);
     },
 
     getSelectedMeasureIndex: function(){
