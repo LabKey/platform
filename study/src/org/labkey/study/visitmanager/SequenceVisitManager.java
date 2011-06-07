@@ -131,8 +131,7 @@ public class SequenceVisitManager extends VisitManager
             // Delete ParticipantVisit where the participant does not exist anymore
             //
             String sqlDeleteParticiapantVisit = "DELETE FROM " + tableParticipantVisit + " WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM " + tableParticipant + " WHERE Container= ?)";
-            Table.execute(schema, sqlDeleteParticiapantVisit,
-                    new Object[] {getStudy().getContainer(), getStudy().getContainer()});
+            Table.execute(schema, sqlDeleteParticiapantVisit, getStudy().getContainer(), getStudy().getContainer());
 
             // after assigning visit dates to all study data-generated visits, we insert any extra ptid/sequencenum/date combinations
             // that are found in the specimen archives.  We simply trust the specimen draw date in this case, rather than relying on the
@@ -221,8 +220,7 @@ public class SequenceVisitManager extends VisitManager
         if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
             sqlUpdateVisitRowId += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
         sqlUpdateVisitRowId += "WHERE Container=?";
-        Table.execute(schema, sqlUpdateVisitRowId,
-                new Object[]{getStudy().getContainer(), getStudy().getContainer()});
+        Table.execute(schema, sqlUpdateVisitRowId, getStudy().getContainer(), getStudy().getContainer());
     }
 
 

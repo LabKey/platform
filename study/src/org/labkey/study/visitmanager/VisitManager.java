@@ -554,7 +554,7 @@ public abstract class VisitManager
                     String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE (" +
                             tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect +
                             ") AND Container = ?";
-                    Table.execute(StudyManager.getSchema(), sql, new Object[] { dataset.getContainer().getId(), dataset.getContainer().getId(), dataset.getContainer().getId() });
+                    Table.execute(StudyManager.getSchema(), sql, dataset.getContainer().getId(), dataset.getContainer().getId(), dataset.getContainer().getId());
                     break;
                 }
             }
@@ -562,7 +562,7 @@ public abstract class VisitManager
         //No demographic data, so just set to study start date.
         String sqlUpdateStartDates = "UPDATE " + tableParticipant + " SET StartDate = ? WHERE Container = ? AND StartDate IS NULL";
         Parameter.TypedValue startDateParam = new Parameter.TypedValue(getStudy().getStartDate(), JdbcType.TIMESTAMP);
-        Table.execute(schema, sqlUpdateStartDates, new Object[] {startDateParam, getStudy().getContainer()});
+        Table.execute(schema, sqlUpdateStartDates, startDateParam, getStudy().getContainer());
     }
 
     StudyImpl getStudy()

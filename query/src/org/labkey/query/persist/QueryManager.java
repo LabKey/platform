@@ -250,7 +250,7 @@ public class QueryManager
         try
         {
             Table.execute(getDbSchema(), "UPDATE " + getTableInfoCustomView() + " SET queryname=? WHERE container=? AND \"schema\"=? AND queryname=?",
-                    new Object[]{newQueryName, c, schema, oldQueryName});
+                    newQueryName, c, schema, oldQueryName);
         }
         catch (SQLException x)
         {

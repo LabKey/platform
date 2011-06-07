@@ -197,15 +197,13 @@ public class CohortManager
     public void clearParticipantCohorts(Study study) throws SQLException
     {
         // null out cohort for all participants in this container:
-        Table.execute(StudySchema.getInstance().getSchema(),
-                "UPDATE " + StudySchema.getInstance().getTableInfoParticipant() +
-                            " SET InitialCohortId = NULL, CurrentCohortId = NULL WHERE Container = ?", new Object[] { study.getContainer().getId() });
+        Table.execute(StudySchema.getInstance().getSchema(), "UPDATE " + StudySchema.getInstance().getTableInfoParticipant() +
+                " SET InitialCohortId = NULL, CurrentCohortId = NULL WHERE Container = ?", study.getContainer().getId());
 
         // null out cohort for all participant/visits in this container (required for advanced cohort support, where participants
         // can change cohorts over time):
-        Table.execute(StudySchema.getInstance().getSchema(),
-                "UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
-                            " SET CohortId = NULL WHERE Container = ?", new Object[] { study.getContainer().getId() });
+        Table.execute(StudySchema.getInstance().getSchema(), "UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
+                " SET CohortId = NULL WHERE Container = ?", study.getContainer().getId());
 
     }
 

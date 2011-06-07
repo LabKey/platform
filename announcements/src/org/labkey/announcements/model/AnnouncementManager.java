@@ -712,8 +712,7 @@ public class AnnouncementManager
         {
         Table.execute(_comm.getSchema(),
                 "UPDATE comm.announcements SET lastIndexed=? WHERE entityId=?",
-                new Object[] {new Timestamp(ms), entityId}
-                );
+                new Timestamp(ms), entityId);
         }
         catch (SQLException sql)
         {
@@ -768,9 +767,9 @@ public class AnnouncementManager
         private void purgeAnnouncements(Container c, boolean verifyEmpty) throws SQLException
         {
             String deleteDocuments = "DELETE FROM " + _core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?)";
-            int docs = Table.execute(_comm.getSchema(), deleteDocuments, new Object[]{c.getId(), c.getId()});
+            int docs = Table.execute(_comm.getSchema(), deleteDocuments, c.getId(), c.getId());
             String deleteAnnouncements = "DELETE FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?";
-            int pages = Table.execute(_comm.getSchema(), deleteAnnouncements, new Object[]{c.getId()});
+            int pages = Table.execute(_comm.getSchema(), deleteAnnouncements, c.getId());
             if (verifyEmpty)
             {
                 assertEquals(0, docs);

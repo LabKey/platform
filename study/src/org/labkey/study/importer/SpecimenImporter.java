@@ -556,13 +556,11 @@ public class SpecimenImporter
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
 
-        Table.execute(tableParticipant.getSchema(),
-                "INSERT INTO " + tableParticipant + " (container, participantid)\n" +
+        Table.execute(tableParticipant.getSchema(), "INSERT INTO " + tableParticipant + " (container, participantid)\n" +
                 "SELECT DISTINCT ?, ptid AS participantid\n" +
-                "FROM " + tableSpecimen + "\n"+
+                "FROM " + tableSpecimen + "\n" +
                 "WHERE container = ? AND ptid IS NOT NULL AND " +
-                "ptid NOT IN (select participantid from " + tableParticipant + " where container = ?)",
-                new Object[] {container, container, container});
+                "ptid NOT IN (select participantid from " + tableParticipant + " where container = ?)", container, container, container);
 
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         info("Updating study-wide subject/visit information...");
@@ -634,7 +632,7 @@ public class SpecimenImporter
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around
             // if an exception is throw during loading, but this is probably okay- the DB will clean it up eventually.
-            Table.execute(schema, "DROP TABLE " + loadInfo.getTempTableName(), null);
+            Table.execute(schema, "DROP TABLE " + loadInfo.getTempTableName());
 
             if (!DEBUG)
                 scope.commitTransaction();
@@ -696,11 +694,9 @@ public class SpecimenImporter
         if (merge)
         {
             // Delete any orphaned specimen rows without vials
-            Table.execute(StudySchema.getInstance().getSchema(),
-                    "DELETE FROM " + StudySchema.getInstance().getTableInfoSpecimen() +
+            Table.execute(StudySchema.getInstance().getSchema(), "DELETE FROM " + StudySchema.getInstance().getTableInfoSpecimen() +
                     " WHERE Container=? " +
-                    " AND RowId NOT IN (SELECT SpecimenId FROM " + StudySchema.getInstance().getTableInfoVial() + ")",
-                    new Object[] { info.getContainer() });
+                    " AND RowId NOT IN (SELECT SpecimenId FROM " + StudySchema.getInstance().getTableInfoVial() + ")", info.getContainer());
         }
     }
 
@@ -1891,7 +1887,7 @@ public class SpecimenImporter
         assert cpuMergeTable.start();
         info(tableName + ": Starting replacement of all data...");
 
-        Table.execute(schema, "DELETE FROM " + tableName + " WHERE Container = ?", new Object[] { container.getId() });
+        Table.execute(schema, "DELETE FROM " + tableName + " WHERE Container = ?", container.getId());
         List<T> availableColumns = new ArrayList<T>();
         StringBuilder insertSql = new StringBuilder();
 
@@ -2317,7 +2313,7 @@ public class SpecimenImporter
             sql.append("\n);");
             if (DEBUG)
                 info(sql.toString());
-            Table.execute(schema, sql.toString(), null);
+            Table.execute(schema, sql.toString());
 
             String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_RowId ON " + tableName + "(RowId)";
             String globalUniqueIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_GlobalUniqueId ON " + tableName + "(GlobalUniqueId)";
@@ -2330,10 +2326,10 @@ public class SpecimenImporter
                 info(lsidIndexSql);
                 info(hashIndexSql);
             }
-            Table.execute(schema, globalUniqueIdIndexSql, null);
-            Table.execute(schema, rowIdIndexSql, null);
-            Table.execute(schema, lsidIndexSql, null);
-            Table.execute(schema, hashIndexSql, null);
+            Table.execute(schema, globalUniqueIdIndexSql);
+            Table.execute(schema, rowIdIndexSql);
+            Table.execute(schema, lsidIndexSql);
+            Table.execute(schema, hashIndexSql);
             info("Created temporary table " + tableName);
 
             return tableName;
@@ -2358,9 +2354,8 @@ public class SpecimenImporter
             _tableName = _schema.getName() + "." + TABLE;
             dropTable();
 
-            Table.execute(_schema,
-                "CREATE TABLE " + _tableName +
-                "(Container VARCHAR(255) NOT NULL, id VARCHAR(10), s VARCHAR(32), i INTEGER)", null);
+            Table.execute(_schema, "CREATE TABLE " + _tableName +
+                    "(Container VARCHAR(255) NOT NULL, id VARCHAR(10), s VARCHAR(32), i INTEGER)");
         }
 
         @After

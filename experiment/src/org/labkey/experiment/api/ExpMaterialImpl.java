@@ -148,7 +148,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
                 {
                     Table.execute(ExperimentService.get().getSchema(),
                             "UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?",
-                            new Object[] { new Timestamp(ms), getRowId() } );
+                            new Timestamp(ms), getRowId());
                 }
                 catch (SQLException e)
                 {

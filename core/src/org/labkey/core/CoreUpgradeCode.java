@@ -121,8 +121,8 @@ public class CoreUpgradeCode implements UpgradeCode
             DbSchema coreSchema = CoreSchema.getInstance().getSchema();
 
             //delete any previously-migrated data in case we failed part way through
-            Table.execute(coreSchema, "delete from core.RoleAssignments", null);
-            Table.execute(coreSchema, "delete from core.Policies", null);
+            Table.execute(coreSchema, "delete from core.RoleAssignments");
+            Table.execute(coreSchema, "delete from core.Policies");
 
             //get all the user ids so that we can verify if a particular group id
             //still exists and ignore if not--returned array is sorted so we can
@@ -145,8 +145,7 @@ public class CoreUpgradeCode implements UpgradeCode
                 boolean empty = true; //will be set to true if ACL contains a valid group id
 
                 //insert into policies
-                Table.execute(coreSchema, insertPolicySql,
-                        new Object[]{objectId, resourceClass, containerId, now});
+                Table.execute(coreSchema, insertPolicySql, objectId, resourceClass, containerId, now);
 
                 ContainerType containerType;
 
@@ -185,8 +184,7 @@ public class CoreUpgradeCode implements UpgradeCode
                             continue;
                         }
 
-                        Table.execute(coreSchema, insertAssignmentSql,
-                                new Object[]{objectId, groups[idx], role.getUniqueName()});
+                        Table.execute(coreSchema, insertAssignmentSql, objectId, groups[idx], role.getUniqueName());
                         empty = false;
                     }
                 }
@@ -198,8 +196,7 @@ public class CoreUpgradeCode implements UpgradeCode
                     //allow admins access to the object. The real equivalent is to assign
                     //the administrators group to the site admin role for this object
                     //and that's all.
-                    Table.execute(CoreSchema.getInstance().getSchema(), insertAssignmentSql,
-                            new Object[]{objectId, Group.groupAdministrators, siteAdminRole.getUniqueName() });
+                    Table.execute(CoreSchema.getInstance().getSchema(), insertAssignmentSql, objectId, Group.groupAdministrators, siteAdminRole.getUniqueName());
                 }
 
                 ++numAcls;

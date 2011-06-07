@@ -238,7 +238,7 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
                         }
                         // remove the old attachments
                         TableInfo tInfo = CoreSchema.getInstance().getTableInfoDocuments();
-                        Table.execute(tInfo.getSchema(), "DELETE FROM " + tInfo + " WHERE Parent = ?", new Object[]{root.getEntityId()});
+                        Table.execute(tInfo.getSchema(), "DELETE FROM " + tInfo + " WHERE Parent = ?", root.getEntityId());
                     }
                 }
             }

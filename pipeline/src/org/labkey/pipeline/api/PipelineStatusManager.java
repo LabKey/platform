@@ -284,8 +284,7 @@ public class PipelineStatusManager
                 .append(" SET JobStore = ?")
                 .append(" WHERE RowId = ?");
 
-        Table.execute(_schema.getSchema(), sql.toString(),
-                new Object[] { xml, sfExist.getRowId() });
+        Table.execute(_schema.getSchema(), sql.toString(), xml, sfExist.getRowId());
     }
 
     public static String retrieveJob(int rowId) throws SQLException
@@ -313,7 +312,7 @@ public class PipelineStatusManager
                 .append(" SET JobStore = NULL")
                 .append(" WHERE RowId = ?");
 
-        Table.execute(_schema.getSchema(), sql.toString(), new Object[] { sfExist.getRowId() });
+        Table.execute(_schema.getSchema(), sql.toString(), sfExist.getRowId());
 
         return sfExist.getJobStore();
     }
@@ -630,7 +629,7 @@ public class PipelineStatusManager
         if (null != jobId)
         {
             String lockCmd = "SELECT Job, JobParent, Container FROM " + _schema.getTableInfoStatusFiles() +  " WITH (TABLOCKX) WHERE Job = ?;";
-            Table.execute(_schema.getSchema(), lockCmd, new Object[]{jobId}) ;
+            Table.execute(_schema.getSchema(), lockCmd, jobId) ;
         }
     }
 

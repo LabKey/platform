@@ -342,6 +342,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         // Clear the last indexed time on all materials
         Table.execute(ExperimentService.get().getSchema(), "UPDATE " + ExperimentService.get().getTinfoMaterial() +
-                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL", new Object[0]);
+                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
     }
 }

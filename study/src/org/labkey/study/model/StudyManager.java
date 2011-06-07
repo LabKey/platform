@@ -823,14 +823,11 @@ public class StudyManager
                     StudyManager.fireDataSetChanged(def);
             }
 
-            Table.execute(schema.getSchema(),
-                    "DELETE FROM " + schema.getTableInfoParticipantVisit() + "\n" +
-                    "WHERE Container = ? and VisitRowId = ?",
-                    new Object[] {study.getContainer().getId(), visit.getRowId()});
+            Table.execute(schema.getSchema(), "DELETE FROM " + schema.getTableInfoParticipantVisit() + "\n" +
+                    "WHERE Container = ? and VisitRowId = ?", study.getContainer().getId(), visit.getRowId());
 
             Table.execute(schema.getSchema(), "DELETE FROM " + schema.getTableInfoVisitMap() + "\n" +
-                    "WHERE Container=? AND VisitRowId=?",
-                    new Object[] {study.getContainer().getId(), visit.getRowId()});
+                    "WHERE Container=? AND VisitRowId=?", study.getContainer().getId(), visit.getRowId());
             // UNDONE broken _visitHelper.delete(visit);
             Table.delete(schema.getTableInfoVisit(), new Object[] {study.getContainer(), visit.getRowId()});
             _visitHelper.clearCache(visit);
@@ -1478,8 +1475,7 @@ public class StudyManager
             if (null != ds && null == ds.getEntityId())
             {
                 ds.setEntityId(GUID.makeGUID());
-                Table.execute(StudySchema.getInstance().getSchema(), "UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL",
-                        new Object[]{ds.getEntityId(), ds.getContainer().getId(), ds.getDataSetId()});
+                Table.execute(StudySchema.getInstance().getSchema(), "UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDataSetId());
                 _dataSetHelper.clearCache(ds);
                 ds = _dataSetHelper.get(s.getContainer(), id, "DataSetId");
                 // calling updateDataSetDefinition() during load (getDatasetDefinition()) may causesrecursion problem
@@ -1848,17 +1844,13 @@ public class StudyManager
         {
             throw new RuntimeException(e);
         }
-        Table.execute(StudySchema.getInstance().getSchema(),
-                "DELETE FROM " + _tableInfoVisitMap + "\n" +
-                "WHERE Container=? AND DatasetId=?",
-                new Object[] {study.getContainer(), ds.getDataSetId()});
+        Table.execute(StudySchema.getInstance().getSchema(), "DELETE FROM " + _tableInfoVisitMap + "\n" +
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
 
         // UNDONE: This is broken
         // this._dataSetHelper.delete(ds);
-        Table.execute(StudySchema.getInstance().getSchema(),
-                "DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
-                "WHERE Container=? AND DatasetId=?",
-                new Object[] {study.getContainer(), ds.getDataSetId()});
+        Table.execute(StudySchema.getInstance().getSchema(), "DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
         _dataSetHelper.clearCache(study.getContainer());
 
         SecurityManager.deletePolicy(ds);

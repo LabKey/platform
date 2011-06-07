@@ -388,9 +388,7 @@ public class WikiManager implements WikiService
             Table.execute(comm.getSchema(), "DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)", params);
 
             //delete stored web part information for this container (e.g., page to display in wiki web part)
-            Table.execute(Portal.getSchema(),
-                    "UPDATE " + Portal.getTableInfoPortalWebParts() + " SET Properties = NULL WHERE (Name LIKE '%Wiki%') AND Properties LIKE '%" + c.getId() + "%'",
-                    null);
+            Table.execute(Portal.getSchema(), "UPDATE " + Portal.getTableInfoPortalWebParts() + " SET Properties = NULL WHERE (Name LIKE '%Wiki%') AND Properties LIKE '%" + c.getId() + "%'");
 
             ContainerUtil.purgeTable(comm.getTableInfoPages(), c, null);
 
@@ -594,8 +592,7 @@ public class WikiManager implements WikiService
         try
         {
             // CONSIDER: Table.touch()?
-            Table.execute(comm.getSchema(), "UPDATE " + comm.getTableInfoPages() + " SET lastIndexed=null, modified=? WHERE container=? AND name=?",
-                    new Object[]{new Date(), wiki.getContainerId(), wiki.getName()});
+            Table.execute(comm.getSchema(), "UPDATE " + comm.getTableInfoPages() + " SET lastIndexed=null, modified=? WHERE container=? AND name=?", new Date(), wiki.getContainerId(), wiki.getName());
         }
         catch (SQLException x)
         {
@@ -608,10 +605,7 @@ public class WikiManager implements WikiService
     {
         try
         {
-            Table.execute(comm.getSchema(),
-                    "UPDATE comm.pages SET lastIndexed=? WHERE container=? AND name=?",
-                    new Object[] {new Timestamp(ms), c, name}
-                    );
+            Table.execute(comm.getSchema(), "UPDATE comm.pages SET lastIndexed=? WHERE container=? AND name=?", new Timestamp(ms), c, name);
         }
         catch (SQLException sql)
         {
@@ -974,16 +968,16 @@ public class WikiManager implements WikiService
         {
             // TODO this belongs in attachment service!
             String deleteDocuments = "DELETE FROM " + _m.core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
-            int docs = Table.execute(_m.comm.getSchema(), deleteDocuments, new Object[]{c.getId(), c.getId()});
+            int docs = Table.execute(_m.comm.getSchema(), deleteDocuments, c.getId(), c.getId());
 
             String updatePages = "UPDATE " + _m.comm.getTableInfoPages() + " SET PageVersionId = null WHERE Container = ?";
-            Table.execute(_m.comm.getSchema(), updatePages, new Object[]{c.getId()});
+            Table.execute(_m.comm.getSchema(), updatePages, c.getId());
 
             String deletePageVersions = "DELETE FROM " + _m.comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
-            int pageVersions = Table.execute(_m.comm.getSchema(), deletePageVersions, new Object[]{c.getId()});
+            int pageVersions = Table.execute(_m.comm.getSchema(), deletePageVersions, c.getId());
 
             String deletePages = "DELETE FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?";
-            int pages = Table.execute(_m.comm.getSchema(), deletePages, new Object[]{c.getId()});
+            int pages = Table.execute(_m.comm.getSchema(), deletePages, c.getId());
 
             if (verifyEmpty)
             {

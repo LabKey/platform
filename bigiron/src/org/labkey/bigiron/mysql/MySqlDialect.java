@@ -55,9 +55,9 @@ public class MySqlDialect extends SimpleSqlDialect
 
         try
         {
-            Table.execute(conn, "SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";", null);
-            Table.execute(conn, "CREATE TEMPORARY TABLE mysql." + tableName + " (" + candidate + " VARCHAR(50));", null);
-            Table.execute(conn, "DROP TEMPORARY TABLE mysql." + tableName + ";", null);
+            Table.execute(conn, "SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";");
+            Table.execute(conn, "CREATE TEMPORARY TABLE mysql." + tableName + " (" + candidate + " VARCHAR(50));");
+            Table.execute(conn, "DROP TEMPORARY TABLE mysql." + tableName + ";");
 
             return false;
         }

@@ -140,18 +140,16 @@ public class RelativeDateVisitManager extends VisitManager
                     "WHERE Container = ?  AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (" +
                     "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +
                     "  WHERE Container = ? AND Specimen.Ptid=PV.ParticipantId AND Specimen.VisitValue=PV.SequenceNum)";
-            Table.execute(schema, sqlInsertParticipantVisit2,
-                    new Object[] {getStudy().getContainer(), getStudy().getContainer()});
+            Table.execute(schema, sqlInsertParticipantVisit2, getStudy().getContainer(), getStudy().getContainer());
             //
             // Delete ParticipantVisit where the participant does not exist anymore
             //
             String sqlDeleteParticiapantVisit = "DELETE FROM " + tableParticipantVisit + " WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM " + tableParticipant + " WHERE Container= ?)";
-            Table.execute(schema, sqlDeleteParticiapantVisit,
-                    new Object[] {getStudy().getContainer(), getStudy().getContainer()});
+            Table.execute(schema, sqlDeleteParticiapantVisit, getStudy().getContainer(), getStudy().getContainer());
 
             String sqlStartDate = "(SELECT StartDate FROM " + tableParticipant + " WHERE " + tableParticipant + ".ParticipantId=" + tableParticipantVisit + ".ParticipantId AND " + tableParticipant + ".Container=" + tableParticipantVisit + ".Container)";
             String sqlUpdateDays = "UPDATE " + tableParticipantVisit + " SET Day = CASE WHEN SequenceNum=? THEN 0 ELSE " + schema.getSqlDialect().getDateDiff(Calendar.DATE, "VisitDate", sqlStartDate) + " END WHERE Container=? AND NOT VisitDate IS NULL";
-            Table.execute(schema, sqlUpdateDays, new Object[] {VisitImpl.DEMOGRAPHICS_VISIT, getStudy().getContainer()});
+            Table.execute(schema, sqlUpdateDays, VisitImpl.DEMOGRAPHICS_VISIT, getStudy().getContainer());
 //            for (DataSetDefinition dataSet : _study.getDataSets())
 //            {
 //                TableInfo tempTableInfo = dataSet.getMaterializedTempTableInfo(user, false);
@@ -168,7 +166,7 @@ public class RelativeDateVisitManager extends VisitManager
 
             String sqlUpdateParticipantSeqKey = "UPDATE " + tableParticipantVisit + " SET ParticipantSequenceKey = " +
                     participantSequenceKey + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";
-            Table.execute(schema, sqlUpdateParticipantSeqKey, new Object[] {getStudy().getContainer()});
+            Table.execute(schema, sqlUpdateParticipantSeqKey, getStudy().getContainer());
 
             _updateVisitRowId();
 
@@ -198,8 +196,7 @@ public class RelativeDateVisitManager extends VisitManager
         if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
             sqlUpdateVisitRowId += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
         sqlUpdateVisitRowId += "WHERE Container=?";
-        Table.execute(schema, sqlUpdateVisitRowId,
-                new Object[]{getStudy().getContainer(), getStudy().getContainer()});
+        Table.execute(schema, sqlUpdateVisitRowId, getStudy().getContainer(), getStudy().getContainer());
     }
 
 
@@ -258,18 +255,14 @@ public class RelativeDateVisitManager extends VisitManager
             TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
 
-            int rowsUpdated = Table.execute(schema,
-                    "UPDATE " + tableParticipant + " SET StartDate=NULL WHERE StartDate= ? AND Container = ?",
-                    new Object[] {oldStartDate, c});
+            int rowsUpdated = Table.execute(schema, "UPDATE " + tableParticipant + " SET StartDate=NULL WHERE StartDate= ? AND Container = ?", oldStartDate, c);
 
             if (rowsUpdated > 0)
             {
                 //Now just start over computing *everything* as if we have brand new data...
-                Table.execute(schema,
-                        "DELETE FROM " + tableParticipantVisit + " WHERE Container=?",
-                        new Object[] {c});
+                Table.execute(schema, "DELETE FROM " + tableParticipantVisit + " WHERE Container=?", c);
 
-                Table.execute(schema, "DELETE FROM " + tableVisit + " WHERE Container=?", new Object[]{c});
+                Table.execute(schema, "DELETE FROM " + tableVisit + " WHERE Container=?", c);
 
                 //Now recompute everything
                 updateParticipantVisits(user, getStudy().getDataSets());

@@ -205,7 +205,7 @@ public class IssueManager
     {
         Table.execute(_issuesSchema.getSchema(),
                 "INSERT INTO " + _issuesSchema.getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
-                new Object[]{c.getId(), type, keyword});
+                c.getId(), type, keyword);
         DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
     }
 
@@ -290,7 +290,7 @@ public class IssueManager
         {
             Table.execute(_issuesSchema.getSchema(),
                     "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=? AND Keyword=?",
-                    new Object[]{Boolean.TRUE, c.getId(), type, keyword});
+                    Boolean.TRUE, c.getId(), type, keyword);
         }
         catch (SQLException x)
         {
@@ -308,7 +308,7 @@ public class IssueManager
         {
             Table.execute(_issuesSchema.getSchema(),
                     "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=?",
-                    new Object[]{Boolean.FALSE, c.getId(), type});
+                    Boolean.FALSE, c.getId(), type);
         }
         catch (SQLException x)
         {
@@ -323,7 +323,7 @@ public class IssueManager
         {
             Table.execute(_issuesSchema.getSchema(),
                     "DELETE FROM " + _issuesSchema.getTableInfoIssueKeywords() + " WHERE Container=? AND Type=? AND Keyword=?",
-                    new Object[]{c.getId(), type, keyword});
+                    c.getId(), type, keyword);
             DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
         }
         catch (SQLException x)
@@ -617,7 +617,7 @@ public class IssueManager
         {
             int ret = Table.execute(_issuesSchema.getSchema(),
                     "UPDATE " + _issuesSchema.getTableInfoEmailPrefs() + " SET EmailOption=? WHERE Container=? AND UserId=?",
-                    new Object[]{emailPrefs, c.getId(), userId});
+                    emailPrefs, c.getId(), userId);
 
 
             if (ret == 0)
@@ -625,7 +625,7 @@ public class IssueManager
                 // record doesn't exist yet...
                 Table.execute(_issuesSchema.getSchema(),
                         "INSERT INTO " + _issuesSchema.getTableInfoEmailPrefs() + " (Container, UserId, EmailOption ) VALUES (?, ?, ?)",
-                        new Object[]{c.getId(), userId, emailPrefs});
+                        c.getId(), userId, emailPrefs);
             }
         }
         catch (SQLException x)
@@ -666,7 +666,7 @@ public class IssueManager
         {
             _issuesSchema.getSchema().getScope().ensureTransaction();
             String deleteComments = "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)";
-            Table.execute(_issuesSchema.getSchema(), deleteComments, new Object[]{c.getId()});
+            Table.execute(_issuesSchema.getSchema(), deleteComments, c.getId());
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
@@ -693,10 +693,10 @@ public class IssueManager
             _issuesSchema.getSchema().getScope().ensureTransaction();
             String deleteComments =
                     "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container NOT IN (SELECT EntityId FROM core.Containers))";
-            int commentsDeleted = Table.execute(_issuesSchema.getSchema(), deleteComments, null);
+            int commentsDeleted = Table.execute(_issuesSchema.getSchema(), deleteComments);
             String deleteOrphanedComments =
                     "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId NOT IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + ")";
-            commentsDeleted += Table.execute(_issuesSchema.getSchema(), deleteOrphanedComments, null);
+            commentsDeleted += Table.execute(_issuesSchema.getSchema(), deleteOrphanedComments);
             int issuesDeleted = ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), null);
             _issuesSchema.getSchema().getScope().commitTransaction();
@@ -736,8 +736,7 @@ public class IssueManager
         {
         Table.execute(_issuesSchema.getSchema(),
                 "UPDATE issues.issues SET lastIndexed=? WHERE container=? AND issueId=?",
-                new Object[] {new Timestamp(ms), containerId, issueId}
-                );
+                new Timestamp(ms), containerId, issueId);
         }
         catch (SQLException sql)
         {
@@ -1170,9 +1169,9 @@ public class IssueManager
             Container c = JunitUtil.getTestContainer();
 
             String deleteComments = "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)";
-            Table.execute(_issuesSchema.getSchema(), deleteComments, new Object[]{c.getId()});
+            Table.execute(_issuesSchema.getSchema(), deleteComments, c.getId());
             String deleteIssues = "DELETE FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?";
-            Table.execute(_issuesSchema.getSchema(), deleteIssues, new Object[]{c.getId()});
+            Table.execute(_issuesSchema.getSchema(), deleteIssues, c.getId());
         }
     }
 }

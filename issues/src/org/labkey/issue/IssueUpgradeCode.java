@@ -72,7 +72,7 @@ public class IssueUpgradeCode implements UpgradeCode
             {
                 _log.info("Invalid issue comment character for issueid=" + row.get("issueid") + ", commentid=" + row.get("commentid"));
                 comment = ViewServlet.replaceInvalid(comment);
-                Table.execute(tinfo.getSchema(), sql, new Object[] { comment, row.get("CommentId"), row.get("IssueId") });
+                Table.execute(tinfo.getSchema(), sql, comment, row.get("CommentId"), row.get("IssueId"));
             }
         }
     }

@@ -161,7 +161,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
             String sql = " INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId )  VALUES ( ? , ? ) ";
             for (Integer runId : newRunIds)
             {
-                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getRowId(), runId});
+                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, getRowId(), runId);
             }
 
             ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
@@ -208,14 +208,14 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                         + " SELECT E.RowId FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
                         + " WHERE E.RowId = " + getRowId()
                         + " AND E.Container = ? ); ";
-                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getContainer().getId()});
+                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, getContainer().getId());
 
                 OntologyManager.deleteOntologyObjects(getContainer(), getLSID());
 
                 sql = "  DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
                         + " WHERE RowId = " + getRowId()
                         + " AND Container = ? ";
-                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getContainer().getId()});
+                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, getContainer().getId());
 
                 ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
             }

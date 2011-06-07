@@ -226,14 +226,14 @@ public class SavePaths implements DavCrawler.SavePaths
                         "UPDATE search.CrawlResources SET LastIndexed=NULL " +
                         "WHERE Parent IN (SELECT id FROM search.CrawlCollections " +
                         "  WHERE Path LIKE ?)",
-                        new Object[]{toPathString(path) + "%"});
+                        toPathString(path) + "%");
             }
             Table.execute(getSearchSchema(),
                     "UPDATE search.CrawlCollections " +
                     "SET LastCrawled=NULL, NextCrawl=? " +
                     "WHERE Path LIKE ?",
                     // UNDONE LIKE ESCAPE
-                    new Object[]{next, toPathString(path) + "%"});
+                    next, toPathString(path) + "%");
         }
         catch (SQLException x)
         {
@@ -249,7 +249,7 @@ public class SavePaths implements DavCrawler.SavePaths
             assert failDate.getTime() < oldDate.getTime();
             Table.execute(getSearchSchema(),
                     "UPDATE search.CrawlResources SET LastIndexed=NULL WHERE LastIndexed<?",
-                    new Object[]{oldDate});
+                    oldDate);
         }
         catch (SQLException x)
         {
@@ -263,8 +263,8 @@ public class SavePaths implements DavCrawler.SavePaths
         try
         {
             // UNDONE LIKE ESCAPE
-            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", new Object[]{toPathString(path) + "%"});
-            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlCollections WHERE Path LIKE ?", new Object[]{toPathString(path) + "%"});
+            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", toPathString(path) + "%");
+            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlCollections WHERE Path LIKE ?", toPathString(path) + "%");
         }
         catch (SQLException x)
         {

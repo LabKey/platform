@@ -757,7 +757,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     // No current value, so need to insert a new row
                     String sql = "INSERT INTO " + getTinfoActiveMaterialSource() + " (Container, MaterialSourceLSID) " +
                         "VALUES (?, ?)";
-                    Table.execute(getExpSchema(), sql, new Object[] { container.getId(), materialSourceLSID });
+                    Table.execute(getExpSchema(), sql, container.getId(), materialSourceLSID);
                 }
             }
             else
@@ -766,13 +766,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     // Current value exists, needs to be deleted
                     String sql = "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE Container = ?";
-                    Table.execute(getExpSchema(), sql, new Object[] { container.getId() });
+                    Table.execute(getExpSchema(), sql, container.getId());
                 }
                 else
                 {
                     // Current value exists, needs to be changed
                     String sql = "UPDATE " + getTinfoActiveMaterialSource() + " SET MaterialSourceLSID = ? WHERE Container = ?";
-                    Table.execute(getExpSchema(), sql, new Object[] { materialSourceLSID, container.getId() });
+                    Table.execute(getExpSchema(), sql, materialSourceLSID, container.getId());
                 }
             }
         }
@@ -991,7 +991,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         String sql = "DELETE FROM exp.RunList WHERE ExperimentRunId = " + runId + ";\n";
         sql += "DELETE FROM exp.ExperimentRun WHERE RowId = " + runId + ";\n";
 
-        Table.execute(getExpSchema(), sql, new Object[]{});
+        Table.execute(getExpSchema(), sql);
 
         auditRunEvent(user, run.getProtocol(), run, "Run deleted");
     }
@@ -1432,7 +1432,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             getExpSchema().getScope().ensureTransaction();
 
-            Table.execute(getExpSchema(), sql, new Object[] {exp.getRowId()} );
+            Table.execute(getExpSchema(), sql, exp.getRowId());
 
             getExpSchema().getScope().commitTransaction();
         }
@@ -1595,14 +1595,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                     String actionIdsJoined = "(" + StringUtils.join(actionIds, ",") + ")";
                     sql = "DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";";
-                    Table.execute(getExpSchema(), sql, new Object[]{});
+                    Table.execute(getExpSchema(), sql);
 
                     sql = "DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined + ";";
-                    Table.execute(getExpSchema(), sql, new Object[]{});
+                    Table.execute(getExpSchema(), sql);
                 }
 
                 sql = "DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ");";
-                Table.execute(getExpSchema(), sql, new Object[]{});
+                Table.execute(getExpSchema(), sql);
 
                 for (Protocol protocol : protocols)
                 {
@@ -1615,7 +1615,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
 
                 sql = "  DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");";
-                Table.execute(getExpSchema(), sql, new Object[]{});
+                Table.execute(getExpSchema(), sql);
 
                 sql = "SELECT RowId FROM exp.Protocol Where RowId NOT IN (SELECT ParentProtocolId from exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?";
                 int[] orphanedProtocolIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
@@ -1689,13 +1689,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
                     OntologyManager.deleteOntologyObjects(container, material.getLSID());
                 }
-                Table.execute(getExpSchema(),
-                        "DELETE FROM exp.MaterialInput WHERE MaterialId IN (" + materialIds + ")",
-                        new Object[0]);
+                Table.execute(getExpSchema(), "DELETE FROM exp.MaterialInput WHERE MaterialId IN (" + materialIds + ")");
 
-                Table.execute(getExpSchema(),
-                        "DELETE FROM exp.Material WHERE RowId IN (" + materialIds + ")",
-                        new Object[]{});
+                Table.execute(getExpSchema(), "DELETE FROM exp.Material WHERE RowId IN (" + materialIds + ")");
 
                 // Remove from search index
                 SearchService ss = ServiceRegistry.get(SearchService.class);
@@ -1750,10 +1746,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     OntologyManager.deleteOntologyObjects(container, data.getLSID());
                 }
                 sql = "DELETE FROM exp.DataInput WHERE DataId IN (" + dataIds + ");";
-                Table.execute(getExpSchema(), sql, new Object[]{});
+                Table.execute(getExpSchema(), sql);
 
                 sql = "DELETE FROM exp.Data WHERE RowId IN (" + dataIds + ");";
-                Table.execute(getExpSchema(), sql, new Object[]{});
+                Table.execute(getExpSchema(), sql);
             }
 
             getExpSchema().getScope().commitTransaction();
@@ -2080,7 +2076,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
             }
 
-            Table.execute(getExpSchema(), "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", new Object[] { source.getLSID() } );
+            Table.execute(getExpSchema(), "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
 
             Table.delete(getTinfoMaterialSource(), rowId);
 
@@ -2516,7 +2512,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             Collection<ProtocolParameter> protocolParams = protocol.retrieveProtocolParameters().values();
             if (!newProtocol)
             {
-                Table.execute(getExpSchema(), "DELETE FROM exp.ProtocolParameter WHERE ProtocolId = ?", new Object[]{protocol.getRowId()});
+                Table.execute(getExpSchema(), "DELETE FROM exp.ProtocolParameter WHERE ProtocolId = ?", protocol.getRowId());
             }
             for (ProtocolParameter param : protocolParams)
             {

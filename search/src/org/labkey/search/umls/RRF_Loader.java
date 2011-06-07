@@ -109,7 +109,7 @@ public class RRF_Loader extends Job
         try
         {
             String exec = _umls.getSqlDialect().execute(_umls, "dropIndexes", "");
-            Table.execute(_umls, exec, null);
+            Table.execute(_umls, exec);
         }
         catch (SQLException x)
         {
@@ -132,7 +132,7 @@ public class RRF_Loader extends Job
             try
             {
                 String exec = _umls.getSqlDialect().execute(_umls, "createIndexes", "");
-                Table.execute(_umls, exec, null);
+                Table.execute(_umls, exec);
             }
             catch (SQLException x)
             {
@@ -151,7 +151,7 @@ public class RRF_Loader extends Job
         Iterator<String[]> it = _reader.iterator(name);
 
         // DELETE
-        Table.execute(_umls, "DELETE FROM " + ti.toString(), null);
+        Table.execute(_umls, "DELETE FROM " + ti.toString());
 
         // POPULATE
         StringBuilder sbInsert = new StringBuilder();
@@ -197,11 +197,11 @@ public class RRF_Loader extends Job
             }
             if (0 == (count % 50000))
             {
-                Table.execute(_umls, _umls.getSqlDialect().getAnalyzeCommandForTable(ti.toString()), null);
+                Table.execute(_umls, _umls.getSqlDialect().getAnalyzeCommandForTable(ti.toString()));
             }
         }
         Table.batchExecute(_umls, sqlInsert, paramList);
-        Table.execute(_umls, _umls.getSqlDialect().getAnalyzeCommandForTable(ti.toString()), null);
+        Table.execute(_umls, _umls.getSqlDialect().getAnalyzeCommandForTable(ti.toString()));
     }
 
 

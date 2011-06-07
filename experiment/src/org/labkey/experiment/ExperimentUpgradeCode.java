@@ -127,7 +127,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     "  ) x\n" +
                     "  WHERE x.ObjectId = exp.objectproperty.ObjectId AND x.PropertyId = exp.objectproperty.PropertyId\n" +
                     ")";
-            Table.execute(exp, deleteName, new Object[] { });
+            Table.execute(exp, deleteName);
 
 
             // For the SampleSets above, remove the idCol1 property from the SampleSet's domain
@@ -145,7 +145,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     "  ) x\n" +
                     "  WHERE x.PropertyId = exp.PropertyDomain.PropertyId and x.DomainId = exp.PropertyDomain.DomainId\n" +
                     ")";
-            Table.execute(exp, deleteIdCol1, new Object[] { });
+            Table.execute(exp, deleteIdCol1);
 
 
             // For the SampleSets above, delete the idCol1 PropertyDescriptor
@@ -157,14 +157,14 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     "  WHERE\n" +
                     "    ms.RowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n" +
                     ")";
-            Table.execute(exp, deleteIdCol1Property, new Object[] { });
+            Table.execute(exp, deleteIdCol1Property);
 
 
             // For the SampleSets above, set the idCol1 property to 'Name'
             String updateIdCol1 =
                     "UPDATE exp.materialsource SET idCol1 = '" + ExpMaterialTableImpl.Column.Name.name() + "'\n" +
                     "WHERE exp.materialsource.rowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n";
-            Table.execute(exp, updateIdCol1, new Object[] { });
+            Table.execute(exp, updateIdCol1);
         }
 
         // Finally, add a 'Property_' prefix to any properties in any SampleSet domain that collide with built-in ExpMaterialTableImpl columns
@@ -185,7 +185,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 "    AND pd.Container=dd.Container\n" +
                 "    AND lower(pd.Name) in (" + StringUtils.join(reservedNames, ", ") + ")\n" +
                 ")";
-        int updatedPropertyCount = Table.execute(exp, updateProperties, new Object[] { });
+        int updatedPropertyCount = Table.execute(exp, updateProperties);
         _log.info("Renamed " + updatedPropertyCount + " SampleSet properties.");
     }
 }

@@ -432,7 +432,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         for (Attachment att : atts)
             ss.deleteResource(makeDocId(parent,att.getName()));
 
-        Table.execute(coreTables().getSchema(), sqlCascadeDelete(), new Object[]{parent.getEntityId()});
+        Table.execute(coreTables().getSchema(), sqlCascadeDelete(), parent.getEntityId());
         if (parent instanceof AttachmentDirectory)
             ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
         AttachmentCache.removeAttachments(parent);
@@ -452,7 +452,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 ss.deleteResource(makeDocId(parent, att.getName()));
             }
 
-            Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
+            Table.execute(coreTables().getSchema(), sqlDelete(), parent.getEntityId(), name);
             if (parent instanceof AttachmentDirectory)
                 ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
 

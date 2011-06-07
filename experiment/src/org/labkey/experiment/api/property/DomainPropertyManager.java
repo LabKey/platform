@@ -214,7 +214,7 @@ public class DomainPropertyManager
                             " WHERE RowId = ?" +
                             " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
                                 " WHERE  VR.ValidatorId = ?)";
-                Table.execute(getExpSchema(), sql, new Object[]{validator.getRowId(), validator.getRowId()});
+                Table.execute(getExpSchema(), sql, validator.getRowId(), validator.getRowId());
                 DbCache.remove(getTinfoValidator(), getCacheKey(property.getPropertyId()));
             }
         }
@@ -236,7 +236,7 @@ public class DomainPropertyManager
                             " WHERE RowId = ?" +
                             " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
                                 " WHERE  VR.ValidatorId = ?)";
-                Table.execute(getExpSchema(), sql, new Object[]{validatorId, validatorId});
+                Table.execute(getExpSchema(), sql, validatorId, validatorId);
                 DbCache.remove(getTinfoValidator(), getCacheKey(propertyId));
             }
         }
@@ -297,7 +297,7 @@ public class DomainPropertyManager
             if (propertyId != 0 && validatorId != 0)
             {
                 String sql = "DELETE FROM " + getTinfoValidatorReference() + " WHERE ValidatorId=? AND PropertyId=?";
-                Table.execute(getExpSchema(), sql, new Object[]{validatorId, propertyId});
+                Table.execute(getExpSchema(), sql, validatorId, propertyId);
             }
             else
                 throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
@@ -320,14 +320,14 @@ public class DomainPropertyManager
     {
         String deletePropValidatorRefSql = "DELETE FROM " + getTinfoValidatorReference() +
                 " WHERE ValidatorId IN (SELECT RowId FROM " + getTinfoValidator() + " WHERE Container = ?)";
-        Table.execute(getExpSchema(), deletePropValidatorRefSql, new Object[]{c.getId()});
+        Table.execute(getExpSchema(), deletePropValidatorRefSql, c.getId());
 
         String deletePropValidatorSql = "DELETE FROM " + getTinfoValidator() + " WHERE Container = ?";
-        Table.execute(getExpSchema(), deletePropValidatorSql, new Object[]{c.getId()});
+        Table.execute(getExpSchema(), deletePropValidatorSql, c.getId());
 
         String deleteConditionalFormatsSql = "DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId IN " +
                 "(SELECT PropertyId FROM " + OntologyManager.getTinfoPropertyDescriptor() + " WHERE Container = ?)";
-        Table.execute(getExpSchema(), deleteConditionalFormatsSql, new Object[]{c.getId()});
+        Table.execute(getExpSchema(), deleteConditionalFormatsSql, c.getId());
 
         DbCache.clear(getTinfoValidator());
         DbCache.clear(getTinfoConditionalFormat());
@@ -338,7 +338,7 @@ public class DomainPropertyManager
         try
         {
             String deleteFormatSql = "DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId = ?";
-            Table.execute(getExpSchema(), deleteFormatSql, new Object[]{propertyId});
+            Table.execute(getExpSchema(), deleteFormatSql, propertyId);
             // Cached both on property and domain level, so blow the whole cache
             DbCache.clear(getTinfoConditionalFormat());
         }
