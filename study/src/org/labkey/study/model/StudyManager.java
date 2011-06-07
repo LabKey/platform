@@ -3156,6 +3156,7 @@ public class StudyManager
                 s.setSubjectNounPlural("Subjects");
                 s.setSubjectNounSingular("Subject");
                 s.setSecurityType(SecurityType.BASIC_WRITE);
+                s.setStartDate(new Date(DateUtil.parseDateTime("1 Jan 2000")));
                 _studyDateBased = StudyManager.getInstance().createStudy(_context.getUser(), s);
 
                 MvUtil.assignMvIndicators(c,
@@ -3183,6 +3184,7 @@ public class StudyManager
 
 
         int counterDatasetId = 100;
+        int counterRow = 0;
 
         DataSet createDataset(Study study, String name, boolean demographic) throws Exception
         {
@@ -3238,7 +3240,7 @@ public class StudyManager
 
             // save
             domain.save(_context.getUser());
-            
+
             return study.getDataSet(id);
         }
 
@@ -3277,7 +3279,6 @@ public class StudyManager
 
         private void _testDatsetUpdateService(Study study) throws Throwable
         {
-            int counter = 0;
             ResultSet rs = null;
 
             try
@@ -3294,7 +3295,7 @@ public class StudyManager
 
                 // insert one row
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++this.counterRow), "Value", 1.0));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
                 rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                 assertTrue(rs.next());
@@ -3313,23 +3314,23 @@ public class StudyManager
 
                 // different participant
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test" + (counter), "Value", 2.0));
+                rows.add(PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 2.0));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
 
                 // different date
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(counter), "Value", "X"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(counterRow), "Value", "X"));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
 
                 // different measure
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "X"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X"));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
 
                 // duplicates in batch
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1.0));
                 try
                 {
                     qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
@@ -3343,7 +3344,7 @@ public class StudyManager
 
                 // missing participantid
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
                 try
                 {
                     qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
@@ -3357,7 +3358,7 @@ public class StudyManager
 
                 // missing date
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counterRow), "Value", 1.0));
                 try
                 {
                     qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
@@ -3402,12 +3403,12 @@ public class StudyManager
 
                 // legal MV indicator
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "X"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X"));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
 
                 // illegal MV indicator
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "N/A"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "N/A"));
                 try
                 {
                     qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
@@ -3421,13 +3422,13 @@ public class StudyManager
 
                 // conversion test
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counter), "Value", "100"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "100"));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
 
-                
+
                 // validation test
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counter), "Value", 1, "Number", 101));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 101));
                 try
                 {
                     qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
@@ -3438,9 +3439,18 @@ public class StudyManager
                     //study:Label: Value '101.0' for field 'Number' is invalid.
                     assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("is invalid"));
                 }
+
                 rows.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter), "Value", 1, "Number", 99));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1, "Number", 99));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+
+                // QCStateLabel
+                rows.clear();
+                rows.add(PageFlowUtil.map("QCStateLabel", "dirty", "SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 5));
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                QCState[] qcstates = StudyManager.getInstance().getQCStates(study.getContainer());
+                assertEquals(1, qcstates.length);
+                assertEquals("dirty" , qcstates[0].getLabel());
             }
             finally
             {
@@ -3448,7 +3458,7 @@ public class StudyManager
             }
         }
 
-        
+
         private void _import(DataSet def, final List rows, List<String> errors) throws Exception
         {
             DataLoader dl = new MapLoader(rows);
@@ -3458,7 +3468,7 @@ public class StudyManager
             {
                 columnMap.put(c.getName(), c.getPropertyURI());
             }
-            
+
             StudyManager.getInstance().importDatasetData(
                     _studyDateBased, _context.getUser(),
                     (DataSetDefinition)def, dl, 0, columnMap,
@@ -3468,7 +3478,6 @@ public class StudyManager
 
         private void _testImportDatasetData(Study study) throws Throwable
         {
-            int counter=0;
             ResultSet rs = null;
 
             try
@@ -3491,7 +3500,7 @@ public class StudyManager
 
                 // insert one row
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
                 _import(def, rows, errors);
                 if (errors.size() != 0)
                     fail(errors.get(0));
@@ -3506,30 +3515,30 @@ public class StudyManager
 
                 // different participant
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counter), "Value", 2.0));
+                rows.add(PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0));
                 _import(def, rows, errors);
 
                 // different date
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(counter), "Value", "X"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(counterRow), "Value", "X"));
                 _import(def, rows, errors);
 
                 // different measure
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "X"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X"));
                 _import(def, rows, errors);
 
                 // duplicates in batch
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1.0));
                 _import(def, rows, errors);
                 //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test3
                 assertTrue(-1 != errors.get(0).indexOf("Duplicates were found in the database or imported data"));
 
                 // missing participantid
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
                 _import(def, rows, errors);
                 //Row 1 does not contain required field SubjectID.
                 assertTrue(errors.size() > 0);
@@ -3538,7 +3547,7 @@ public class StudyManager
 
                 // missing date
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counter), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counterRow), "Value", 1.0));
                 _import(def, rows, errors);
                 //study:Label: Row 1 does not contain required field date.
                 assertTrue(-1 != errors.get(0).indexOf("required"));
@@ -3554,30 +3563,30 @@ public class StudyManager
 
                 // legal MV indicator
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "X"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X"));
                 _import(def, rows, errors);
 
                 // illegal MV indicator
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "N/A"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "N/A"));
                 _import(def, rows, errors);
                 //Row 1 data type error for field Value.
                 assertTrue(-1 != errors.get(0).indexOf("Value"));
 
                 // conversion test
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", "100"));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "100"));
                 _import(def, rows, errors);
 
                 // validation test
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counter), "Value", 1, "Number", 101));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1, "Number", 101));
                 _import(def, rows, errors);
                 //study:Label: Value '101.0' for field 'Number' is invalid.
                 assertTrue(-1 != errors.get(0).indexOf("is invalid"));
 
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counter), "Value", 1, "Number", 99));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1, "Number", 99));
                 _import(def, rows, errors);
             }
             finally
@@ -3589,7 +3598,6 @@ public class StudyManager
 
         private void _testImportDemographicDatasetData(Study study) throws Throwable
         {
-            int counter=0;
             ResultSet rs = null;
 
             try
@@ -3615,7 +3623,7 @@ public class StudyManager
                 {
                     // insert one row w/visit
                     rows.clear(); errors.clear();
-                    rows.add(PageFlowUtil.map("SubjectId", "A1", "SequenceNum", 1.0, "Measure", "Test"+(++counter), "Value", 1.0));
+                    rows.add(PageFlowUtil.map("SubjectId", "A1", "SequenceNum", 1.0, "Measure", "Test"+(++counterRow), "Value", 1.0));
                     _import(def, rows, errors);
                     if (errors.size() != 0)
                         fail(errors.get(0));
@@ -3626,20 +3634,24 @@ public class StudyManager
 
                     // insert one row w/o visit
                     rows.clear(); errors.clear();
-                    rows.add(PageFlowUtil.map("SubjectId", "A2", "Measure", "Test"+(++counter), "Value", 1.0));
+                    rows.add(PageFlowUtil.map("SubjectId", "A2", "Measure", "Test"+(++counterRow), "Value", 1.0));
                     _import(def, rows, errors);
                     if (errors.size() != 0)
                         fail(errors.get(0));
                     assertEquals(0, errors.size());
                     rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                     assertTrue(rs.next());
-                    assertEquals(0.0, rs.getDouble("SequenceNum"));
+//                    if ("A2".equals(rs.getString("SubjectId")))
+//                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"));
+//                    assertTrue(rs.next());
+//                    if ("A2".equals(rs.getString("SubjectId")))
+//                        assertEquals(VisitImpl.DEMOGRAPHICS_VISIT, rs.getDouble("SequenceNum"));
                 }
                 else
                 {
                     // insert one row w/ date
                     rows.clear(); errors.clear();
-                    rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(++counter), "Value", 1.0));
+                    rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(++counterRow), "Value", 1.0));
                     _import(def, rows, errors);
                     if (errors.size() != 0)
                         fail(errors.get(0));
@@ -3650,14 +3662,18 @@ public class StudyManager
 
                     // insert one row w/o date
                     rows.clear(); errors.clear();
-                    rows.add(PageFlowUtil.map("SubjectId", "A2", "Measure", "Test"+(++counter), "Value", 1.0));
+                    rows.add(PageFlowUtil.map("SubjectId", "A2", "Measure", "Test"+(++counterRow), "Value", 1.0));
                     _import(def, rows, errors);
                     if (errors.size() != 0)
                         fail(errors.get(0));
                     assertEquals(0, errors.size());
                     rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                     assertTrue(rs.next());
-                    assertEquals(study.getStartDate(), new java.util.Date(rs.getTimestamp("date").getTime()));
+                    if ("A2".equals(rs.getString("SubjectId")))
+                        assertEquals(study.getStartDate(), new java.util.Date(rs.getTimestamp("date").getTime()));
+                    assertTrue(rs.next());
+                    if ("A2".equals(rs.getString("SubjectId")))
+                        assertEquals(study.getStartDate(), new java.util.Date(rs.getTimestamp("date").getTime()));
                 }
             }
             finally
@@ -3665,7 +3681,7 @@ public class StudyManager
                 ResultSetUtil.close(rs);
             }
         }
-        
+
 
 
 //        @AfterClass
