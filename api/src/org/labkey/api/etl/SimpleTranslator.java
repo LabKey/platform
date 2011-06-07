@@ -68,7 +68,15 @@ import java.util.concurrent.Callable;
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator
 {
     DataIterator _data;
-    protected final ArrayList<Pair<ColumnInfo,Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo,Callable>>();
+    protected final ArrayList<Pair<ColumnInfo,Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo,Callable>>()
+    {
+        @Override
+        public boolean add(Pair<ColumnInfo, Callable> columnInfoCallablePair)
+        {
+            assert null == _row;
+            return super.add(columnInfoCallablePair);
+        }
+    };
     Object[] _row = null;
     boolean _failFast = true;
     Map<String,String> _missingValues = Collections.emptyMap();
@@ -397,9 +405,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     public int addConvertColumn(ColumnInfo col, int fromIndex, boolean mv)
     {
         if (mv)
-            return addColumn(col, new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType()));
-        else
             return addColumn(col, new MissingValueConvertColumn(col.getName(), fromIndex, col.getJdbcType()));
+        else
+            return addColumn(col, new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType()));
     }
 
     public int addAliasColumn(String name, int aliasIndex)
@@ -549,6 +557,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         if (null == _row)
             _row = new Object[_outputColumns.size()];
+        assert _row.length == _outputColumns.size();
 
         for (int i=0 ; i<_row.length ; ++i)
         {
@@ -586,6 +595,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     @Override
     public void beforeFirst()
     {
+        _row = null;
         _data.beforeFirst();
     }
 
