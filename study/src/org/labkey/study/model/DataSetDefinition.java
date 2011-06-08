@@ -1295,28 +1295,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 qcStateLabels.put(state.getLabel(), state);
         }
 
-        String keyPropertyURI = null;
-        String keyPropertyName = getKeyPropertyName();
-
-        if (keyPropertyName != null)
-        {
-            ColumnInfo col = tinfo.getColumn(keyPropertyName);
-            if (null != col)
-                keyPropertyURI = col.getPropertyURI();
-        }
-
         if (getKeyManagementType() == KeyManagementType.RowId)
         {
             // If additional keys are managed by the server, we need to synchronize around
             // increments, as we're imitating a sequence.
             synchronized (MANAGED_KEY_LOCK)
             {
-                return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState, keyPropertyURI);
+                return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState);
             }
         }
         else
         {
-            return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState, keyPropertyURI);
+            return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState);
         }
     }
 
@@ -1376,7 +1366,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private class DatasetDataIteratorBuilder implements DataIteratorBuilder
     {
-        String keyPropertyURI;
+        User user;
         boolean needsQC;
         QCState defaultQC;
         Map<String, QCState> qcLabels;
@@ -1389,9 +1379,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         ValidationException setupError = null;
 
-        DatasetDataIteratorBuilder(String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
+        DatasetDataIteratorBuilder(User user, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
         {
-            this.keyPropertyURI = keyPropertyURI;
+            this.user = user;
             this.needsQC = qc;
             this.defaultQC = defaultQC;
             this.qcLabels = qcLabels;
@@ -1434,6 +1424,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         public DataIterator getDataIterator(BatchValidationException errors)
         {
             TimepointType timetype = getStudy().getTimepointType();
+            TableInfo table = getTableInfo(user, false);
 
             if (null == input && null != builder)
                 input = builder.getDataIterator(errors);
@@ -1444,10 +1435,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             Map<String,Integer> findMap = DataIteratorUtil.createColumnAndPropertyMap(it);
 
+            String keyColumnName = getKeyPropertyName();
+            ColumnInfo keyColumn = null;
+            if (null != keyColumnName)
+                keyColumn = table.getColumn(keyColumnName);
+
             // find important columns in the input
             Integer indexPTID = findMap.get(DataSetDefinition.getParticipantIdURI());
             Integer indexSequenceNum = findMap.get(DataSetDefinition.getSequenceNumURI());
-            Integer indexKeyProperty = null==keyPropertyURI ? null : findMap.get(keyPropertyURI);
+            Integer indexKeyProperty = null==keyColumn ? null : findMap.get(keyColumn.getPropertyURI());
             Integer indexVisitDate = findMap.get(DataSetDefinition.getVisitDateURI());
             Integer indexReplace = findMap.get("replace");
 
@@ -1509,8 +1505,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (getKeyManagementType() == KeyManagementType.RowId)
             {
-                ColumnInfo key = new ColumnInfo(keyPropertyURI, JdbcType.INTEGER);
-                key.setPropertyURI(keyPropertyURI);
+                ColumnInfo key = new ColumnInfo(keyColumn);
                 Callable call = new SimpleTranslator.AutoIncrementColumn()
                 {
                     @Override
@@ -1535,8 +1530,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             else if (getKeyManagementType() == KeyManagementType.GUID)
             {
-                ColumnInfo key = new ColumnInfo(keyPropertyURI, JdbcType.VARCHAR);
-                key.setPropertyURI(keyPropertyURI);
+                ColumnInfo key = new ColumnInfo(keyColumn);
                 indexKeyProperty = it.addColumn(key, new SimpleTranslator.GuidColumn());
             }
 
@@ -1717,7 +1711,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         int addQCStateColumn(int index, String uri, QCState defaultQCState, Map<String,QCState> qcLabels)
         {
-            ColumnInfo qcCol = new ColumnInfo(uri, JdbcType.INTEGER);
+            ColumnInfo qcCol = new ColumnInfo("QCState", JdbcType.INTEGER);
             qcCol.setPropertyURI(uri);
             Callable qcCall = new QCStateColumn(index, defaultQCState, qcLabels);
             return addColumn(qcCol, qcCall);
@@ -1865,7 +1859,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private List<String> insertData(User user, DataIteratorBuilder in,
             boolean checkDuplicates, long lastModified, List<String> errorStrs, boolean ensureObjects, QCState defaultQCState,
-            Logger logger, Map<String, QCState> qcStateLabels, boolean needToHandleQCState, String keyPropertyURI)
+            Logger logger, Map<String, QCState> qcStateLabels, boolean needToHandleQCState)
             throws SQLException
     {
 //        if (dataMaps.size() == 0)
@@ -1878,7 +1872,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             scope.ensureTransaction();
 
             DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(
-                    keyPropertyURI,
+                    user,
                     needToHandleQCState,
                     defaultQCState,
                     qcStateLabels);
