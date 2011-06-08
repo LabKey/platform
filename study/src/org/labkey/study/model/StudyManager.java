@@ -2184,8 +2184,6 @@ public class StudyManager
     }
 
 
-    public static final String CONVERSION_ERROR = "Conversion Error";
-
     private void parseData(User user,
                DataSetDefinition def,
                DataLoader loader,
@@ -2202,41 +2200,31 @@ public class StudyManager
             columnMap = new CaseInsensitiveHashMap<String>(columnMap);
         }
 
-        Map<String,ColumnInfo> propName2Col = new CaseInsensitiveHashMap<ColumnInfo>();
-
-        Domain domain = def.getDomain();
-
-        if (null != domain)
-        {
-            for (Map.Entry<String, DomainProperty> aliasInfo : def.getDomain().createImportMap(true).entrySet())
-            {
-                propName2Col.put(aliasInfo.getKey(), tinfo.getColumn(aliasInfo.getValue().getName()));
-            }
-        }
+        // StandardETL will handle most aliasing, HOWEVER, ...
+        // columnMap may contain propertyURIs (dataset import job) and labels (GWT import file)
+        Map<String,ColumnInfo> nameMap = new CaseInsensitiveHashMap<ColumnInfo>();
 
         for (ColumnInfo col : tinfo.getColumns())
         {
-            propName2Col.put(col.getName(), col);
-            String uri = col.getPropertyURI();
-            if (null != uri)
+            nameMap.put(col.getName(), col);
+            if (!col.isMvIndicatorColumn() && !col.isRawValueColumn())
             {
-                propName2Col.put(uri, col);
-                String propName = uri.substring(uri.lastIndexOf('#')+1);
-                if (!propName2Col.containsKey(propName))
-                    propName2Col.put(propName,col);
+                if (!nameMap.containsKey(col.getLabel()))
+                    nameMap.put(col.getLabel(), col);
+                String uri = col.getPropertyURI();
+                if (null != uri)
+                {
+                    nameMap.put(uri, col);
+                    String propName = uri.substring(uri.lastIndexOf('#')+1);
+                    if (!nameMap.containsKey(propName))
+                        nameMap.put(propName,col);
+                }
             }
-        }
-        for (ColumnInfo col : tinfo.getColumns())
-        {
-            String label = col.getLabel();
-            if (null != label && !propName2Col.containsKey(label))
-                propName2Col.put(label, col);
         }
 
         //
         // create columns to properties map
         //
-        HashSet<String> foundProperties = new HashSet<String>();
         ColumnDescriptor[] cols = loader.getColumns();
         for (ColumnDescriptor col : cols)
         {
@@ -2256,55 +2244,17 @@ public class StudyManager
             if (columnMap.containsKey(name))
                 name = columnMap.get(name);
 
-            ColumnInfo matchedCol = propName2Col.get(name);
-            if (null == matchedCol)
-                continue;
+            col.name = name;
 
-            String matchedURI = matchedCol.getPropertyURI();
-
-            if (!matchedCol.isMvIndicatorColumn())
+            ColumnInfo colinfo = nameMap.get(col.name);
+            if (null != colinfo)
             {
-                if (foundProperties.contains(matchedURI))
-                {
-                    errors.add("Property '" + name + "' included more than once.");
-                }
-                foundProperties.add(matchedURI);
-            }
-
-            col.name = matchedCol.getName();
-            col.propertyURI = matchedURI;
-//            col.clazz = matchedCol.getJavaClass();
-//            col.errorValues = CONVERSION_ERROR;
-            if (matchedCol.isMvEnabled())
-            {
-                col.setMvEnabled(def.getContainer());
-            }
-            else if (matchedCol.isMvIndicatorColumn())
-            {
-                col.setMvIndicator(def.getContainer());
-            }
-            else
-            {
-                // explicitly null the MV enabled property.  This is because the types may have been
-                // inferred as having MV indicators, after which the user may have elected not to use them.  In
-                // this case, it's necessary to explicitly modify 'col' to match 'matchedCol'.
-                col.setMvDisabled();
-            }
-
-            if (matchedCol.getName().equalsIgnoreCase("createdby") || matchedCol.getName().equalsIgnoreCase("modifiedby"))
-            {
-                // might be email names instead of userid
-//                col.clazz = String.class;
+                col.name = colinfo.getName();
+                col.propertyURI = colinfo.getPropertyURI();
             }
         }
-
-        // make sure that our QC state columns are understood by this tab loader; we'll need to find QCStateLabel columns
-        // during import, and map them to values that will be populated in the QCState Id column.  As a result, we need to
-        // ensure QC label is in the loader's column set so it's found at import time, and that the QC ID is in the set so
-        // we can assign a value to the property before we insert the data.  brittp, 7.23.2008
-//        loader.ensureColumn(new ColumnDescriptor(DataSetTable.QCSTATE_LABEL_COLNAME, String.class));
-//        loader.ensureColumn(new ColumnDescriptor(DataSetDefinition.getQCStateURI(), Integer.class));
     }
+
 
     public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, long lastModified, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
             throws IOException, ServletException, SQLException
@@ -3472,10 +3422,10 @@ public class StudyManager
             DataLoader dl = new MapLoader(rows);
             Map<String,String> columnMap = new CaseInsensitiveHashMap<String>();
 
-            for (ColumnInfo c : def.getTableInfo(_context.getUser()).getColumns())
-            {
-                columnMap.put(c.getName(), c.getPropertyURI());
-            }
+//            for (ColumnInfo c : def.getTableInfo(_context.getUser()).getColumns())
+//            {
+//                columnMap.put(c.getName(), c.getPropertyURI());
+//            }
 
             StudyManager.getInstance().importDatasetData(
                     _studyDateBased, _context.getUser(),
@@ -3505,7 +3455,6 @@ public class StudyManager
                     }
                 };
 
-
                 // insert one row
                 rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
@@ -3515,6 +3464,7 @@ public class StudyManager
                 assertEquals(0, errors.size());
                 rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                 assertTrue(rs.next());
+                rs.close(); rs = null;
 
                 // duplicate row
                 _import(def, rows, errors);
@@ -3573,12 +3523,38 @@ public class StudyManager
                 rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X"));
                 _import(def, rows, errors);
+                // count rows with "X"
+                rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
+                int Xcount=0;
+                while (rs.next())
+                {
+                    if ("X".equals(rs.getString("ValueMVIndicator")))
+                        Xcount++;
+                }
+                rs.close(); rs = null;
+
+                // legal MV indicator
+                rows.clear(); errors.clear();
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", null, "ValueMVIndicator", "X"));
+                _import(def, rows, errors);
+
+                // should have two rows with "X"
+                rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
+                int XcountAgain=0;
+                while (rs.next())
+                {
+                    if ("X".equals(rs.getString("ValueMVIndicator")))
+                        XcountAgain++;
+                }
+                assertEquals(Xcount+1, XcountAgain);
+                rs.close(); rs = null;
 
                 // illegal MV indicator
                 rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "N/A"));
                 _import(def, rows, errors);
                 //Row 1 data type error for field Value.
+                assertTrue(errors.size() > 0);
                 assertTrue(-1 != errors.get(0).indexOf("Value"));
 
                 // conversion test
