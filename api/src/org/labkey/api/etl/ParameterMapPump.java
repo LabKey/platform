@@ -98,6 +98,7 @@ class ParameterMapPump implements Runnable
                     {
                         if (null != binding.mv)
                             binding.mv.setValue(((MvFieldWrapper) value).getMvIndicator());
+                        binding.to.setValue(((MvFieldWrapper) value).getValue());
                     }
                     else
                     {

@@ -38,6 +38,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,6 +80,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     };
     Object[] _row = null;
     boolean _failFast = true;
+    Container _mvContainer;
     Map<String,String> _missingValues = Collections.emptyMap();
     Map<String,Integer> _inputNameMap = null;
     boolean _verbose = false;    // allow more than one error per field
@@ -103,9 +105,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public void setMvContainer(Container c)
     {
-        Map<String,String> _missingValues = MvUtil.getIndicatorsAndLabels(c);
+        _mvContainer = c;
+        _missingValues = MvUtil.getIndicatorsAndLabels(c);
     }
 
+    protected boolean validMissingValue(String mv)
+    {
+        return _missingValues.containsKey(mv);
+    }
 
     public void setFailFast(boolean ff)
     {
@@ -239,7 +246,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     private class MissingValueConvertColumn extends SimpleConvertColumn
     {
-        final int indicator;
+        boolean supportsMissingValue = true;
+        int indicator;
 
         MissingValueConvertColumn(String fieldName, int index,JdbcType to)
         {
@@ -253,47 +261,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             indicator = indexIndicator;
         }
 
-        @Override
-        public Object convert(Object v)
-        {
-            Object mv = 0==indicator ? null : _data.get(indicator);
-
-            if (v instanceof String && StringUtils.isEmpty((String)v))
-                v = null;
-            if (null != mv && !(mv instanceof String))
-                mv = String.valueOf(mv);
-            if (null != mv && ((String)mv).length() == 0)
-                mv = null;
-
-            if (null != mv)
-            {
-                if (v != null && !v.equals(mv))
-                    addFieldError(_data.getColumnInfo(index).getName(), "Column has value and missing-value indicator");
-                return new MvFieldWrapper(v, String.valueOf(mv));
-            }
-
-            if (v instanceof String)
-            {
-                if (_missingValues.containsKey(v))
-                    return new MvFieldWrapper(null, (String)v);
-            }
-
-            return type.convert(v);
-        }
-    }
-
-
-    private class PropertyConvertColumn extends SimpleConvertColumn
-    {
-        PropertyDescriptor pd;
-        PropertyType pt;
-
-        PropertyConvertColumn(String fieldName, int fromIndex, PropertyDescriptor pd, PropertyType pt)
-        {
-            super(fieldName, fromIndex, pt.getJdbcType());
-            this.pd = pd;
-            this.pt = pt;
-        }
 
         @Override
         public Object convert(Object value)
@@ -301,15 +268,67 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (value instanceof MvFieldWrapper)
                 return value;
 
-            if (pd.isMvEnabled() && null != value)
+            Object mv = 0==indicator ? null : _data.get(indicator);
+
+            if (value instanceof String && StringUtils.isEmpty((String)value))
+                value = null;
+            if (null != mv && !(mv instanceof String))
+                mv = String.valueOf(mv);
+            if (StringUtils.isEmpty((String)mv))
+                mv = null;
+
+            if (supportsMissingValue && null == mv && null != value)
             {
-                if (MvUtil.isMvIndicator(value.toString(), pd.getContainer()))
-                    return new MvFieldWrapper(null, value.toString());
+                String s = value.toString();
+                if (validMissingValue(s))
+                {
+                    mv = s;
+                    value = null;
+                }
             }
 
-            if (null != value && null != pt)
-                value = pt.convert(value);
+            if (null != value)
+                value = innerConvert(value);
+            
+            if (supportsMissingValue && null != mv)
+            {
+                if (!validMissingValue((String)mv))
+                {
+                    getRowError().addFieldError(_data.getColumnInfo(index).getName(),"Value is not a valid missing value indicator: " + mv.toString());
+                    return null;
+                }
 
+                return new MvFieldWrapper(value, String.valueOf(mv));
+            }
+
+            return value;
+        }
+
+        Object innerConvert(Object value)
+        {
+            return type.convert(value);
+        }
+    }
+
+
+    private class PropertyConvertColumn extends MissingValueConvertColumn
+    {
+        PropertyDescriptor pd;
+        PropertyType pt;
+
+        PropertyConvertColumn(String fieldName, int fromIndex, int mvIndex, PropertyDescriptor pd, PropertyType pt)
+        {
+            super(fieldName, fromIndex, mvIndex, pt.getJdbcType());
+            this.pd = pd;
+            this.pt = pt;
+            this.supportsMissingValue = pd.isMvEnabled();
+        }
+
+        @Override
+        Object innerConvert(Object value)
+        {
+            if (null != pt)
+                value = pt.convert(value);
             return value;
         }
     }
@@ -410,6 +429,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return addColumn(col, new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType()));
     }
 
+    public int addConvertColumn(ColumnInfo col, int fromIndex, int mvIndex, boolean mv)
+    {
+        if (mv)
+            return addColumn(col, new MissingValueConvertColumn(col.getName(), fromIndex, mvIndex, col.getJdbcType()));
+        else
+            return addColumn(col, new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType()));
+    }
+
     public int addAliasColumn(String name, int aliasIndex)
     {
         ColumnInfo col = new ColumnInfo(_outputColumns.get(aliasIndex).getKey());
@@ -427,12 +454,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addConvertColumn(col, fromIndex, mv);
     }
 
+    public int addConvertColumn(String name, int fromIndex, int mvIndex, PropertyDescriptor pd, PropertyType pt)
+    {
+        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        col.setName(name);
+        col.setJdbcType(pt.getJdbcType());
+        return addColumn(col, new PropertyConvertColumn(name, fromIndex, mvIndex, pd, pt));
+    }
+
     public int addConvertColumn(String name, int fromIndex, PropertyDescriptor pd, PropertyType pt)
     {
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         col.setJdbcType(pt.getJdbcType());
-        return addColumn(col, new PropertyConvertColumn(name, fromIndex, pd, pt));
+        return addColumn(col, new PropertyConvertColumn(name, fromIndex, 0, pd, pt));
     }
 
 

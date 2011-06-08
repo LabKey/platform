@@ -24,12 +24,15 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
@@ -106,6 +109,18 @@ public class StandardETL implements DataIteratorBuilder, Runnable
         return _errors;
     }
 
+    private static class TranslateHelper
+    {
+        TranslateHelper(ColumnInfo col, DomainProperty dp)
+        {
+            this.target = col;
+            this.dp = dp;
+        }
+        int indexFrom = 0;
+        int indexMv = 0;
+        ColumnInfo target=null;
+        DomainProperty dp=null;
+    }
 
     @Override
     public DataIterator getDataIterator(BatchValidationException errors)
@@ -136,6 +151,9 @@ public class StandardETL implements DataIteratorBuilder, Runnable
 
         input = SimpleTranslator.wrapBuiltInColumns(input, errors, _c, _user, _target);
 
+        Map<String,Integer> sourceColumnsMap = DataIteratorUtil.createColumnAndPropertyMap(input);
+
+
         /*
          * NOTE: sbouldn't really need DomainProperty here,
          * but not all information is available on the ColumnInfo
@@ -143,14 +161,14 @@ public class StandardETL implements DataIteratorBuilder, Runnable
          * notably we need PropertyValidators
          */
         List<ColumnInfo> cols = _target.getColumns();
-        Map<FieldKey, Pair<ColumnInfo,DomainProperty>> unusedCols = new HashMap<FieldKey,Pair<ColumnInfo,DomainProperty>>(cols.size() * 2);
-        Map<String, Pair<ColumnInfo,DomainProperty>> targetAliasesMap = new CaseInsensitiveHashMap<Pair<ColumnInfo,DomainProperty>>(cols.size()*4);
+        Map<FieldKey, TranslateHelper> unusedCols = new HashMap<FieldKey,TranslateHelper>(cols.size() * 2);
+        Map<String, TranslateHelper> targetAliasesMap = new CaseInsensitiveHashMap<TranslateHelper>(cols.size()*4);
         for (ColumnInfo col : cols)
         {
             if (col.isMvIndicatorColumn() || col.isRawValueColumn())
                 continue;
             DomainProperty dp = propertiesMap.get(col.getPropertyURI());
-            Pair<ColumnInfo,DomainProperty> p = new Pair<ColumnInfo,DomainProperty>(col,dp);
+            TranslateHelper p = new TranslateHelper(col,dp);
             String name = col.getName();
             targetAliasesMap.put(name, p);
             String uri = col.getPropertyURI();
@@ -165,18 +183,21 @@ public class StandardETL implements DataIteratorBuilder, Runnable
             unusedCols.put(col.getFieldKey(), p);
         }
 
+
         //
         // match up the columns, validate that there is no more than one source column that matches the target column
         //
         ValidationException setupError = new ValidationException();
-//        IdentityHashMap<Pair,Object> used = new IdentityHashMap();
 
-        ArrayList<Pair<ColumnInfo,DomainProperty>> targetCols = new ArrayList<Pair<ColumnInfo, DomainProperty>>(input.getColumnCount()+1);
-        targetCols.add(new Pair(null,null));
+        ArrayList<TranslateHelper> targetCols = new ArrayList<TranslateHelper>(input.getColumnCount()+1);
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
             ColumnInfo from = input.getColumnInfo(i);
-            Pair<ColumnInfo,DomainProperty> to = null;
+
+            if (from.getName().toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
+                continue;
+
+            TranslateHelper to = null;
             if (null == to && null != from.getPropertyURI())
                 to = targetAliasesMap.get(from.getPropertyURI());
             if (null == to)
@@ -184,26 +205,27 @@ public class StandardETL implements DataIteratorBuilder, Runnable
 
             if (null != to)
             {
-                if (!unusedCols.containsKey(to.getKey().getFieldKey()))
-                    setupError.addGlobalError("Two columns mapped to target column: " + to.getKey().getName());
-                unusedCols.remove(to.getKey().getFieldKey());
+                if (!unusedCols.containsKey(to.target.getFieldKey()))
+                    setupError.addGlobalError("Two columns mapped to target column: " + to.target.getName());
+                unusedCols.remove(to.target.getFieldKey());
+                to.indexFrom = i;
+                Integer indexMv = null==to.target.getMvColumnName() ? null : sourceColumnsMap.get(to.target.getMvColumnName());
+                to.indexMv = null==indexMv ? 0 : indexMv.intValue();
                 targetCols.add(to);
             }
-            else
-                targetCols.add(new Pair(null,null));
         }
 
-
+        //
         // check for unbound columns that are required
-        for (Pair<ColumnInfo, DomainProperty> pair : unusedCols.values())
+        //
+        for (TranslateHelper pair : unusedCols.values())
         {
-            ColumnInfo col = pair.getKey();
-            DomainProperty dp = pair.getValue();
-            if (col.isAutoIncrement())
+            if (pair.target.isAutoIncrement())
                 continue;
-            if (!col.isNullable() || (null != dp && dp.isRequired()))
-                setupError.addGlobalError("Data does not contain required field: " + col.getName());
+            if (!pair.target.isNullable() || (null != pair.dp && pair.dp.isRequired()))
+                setupError.addGlobalError("Data does not contain required field: " + pair.target.getName());
         }
+
 
         //
         //  CONVERT and VALIDATE iterators
@@ -216,29 +238,23 @@ public class StandardETL implements DataIteratorBuilder, Runnable
         convert.setMvContainer(_c);
         ValidatorIterator validate = new ValidatorIterator(convert, errors, _c, _user);
 
-        for (int i=1 ; i<= input.getColumnCount() ; i++)
+        for (TranslateHelper pair : targetCols)
         {
-            Pair<ColumnInfo, DomainProperty> pair = targetCols.get(i);
-            ColumnInfo col = pair.getKey();
-            DomainProperty dp = pair.getValue();
-            if (null == col)
-            {
-                convert.addColumn(input.getColumnInfo(i).getName(), i);
-                continue;
-            }
-            boolean supportsMV = null != col.getMvColumnName() || (null != dp && dp.isMvEnabled());
-            if (null == dp)
-                convert.addConvertColumn(col, i, supportsMV);
+            boolean supportsMV = null != pair.target.getMvColumnName() || (null != pair.dp && pair.dp.isMvEnabled());
+            int indexConvert;
+
+            if (null == pair.dp)
+                indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv,  supportsMV);
             else
-                convert.addConvertColumn(col.getName(), i, dp.getPropertyDescriptor(), dp.getPropertyDescriptor().getPropertyType());
+                indexConvert = convert.addConvertColumn(pair.target.getName(), pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
 
-            if (!col.isNullable())
-                validate.addRequired(i, false);
-            else if (null != dp && dp.isRequired())
-                validate.addRequired(i, true);
+            if (!pair.target.isNullable())
+                validate.addRequired(indexConvert, false);
+            else if (null != pair.dp && pair.dp.isRequired())
+                validate.addRequired(indexConvert, true);
 
-            if (null != dp)
-                validate.addPropertyValidator(i, dp.getPropertyDescriptor());
+            if (null != pair.dp)
+                validate.addPropertyValidator(indexConvert, pair.dp.getPropertyDescriptor());
         }
 
         DataIterator last = validate.hasValidators() ? validate : convert;
