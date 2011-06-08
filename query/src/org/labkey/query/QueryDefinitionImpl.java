@@ -209,9 +209,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _queryDef.getName();
     }
 
-    public List<QueryException> getParseErrors(QuerySchema schema)
+    public List<QueryParseException> getParseErrors(QuerySchema schema)
     {
-        List<QueryException> ret = new ArrayList<QueryException>(getQuery(schema).getParseErrors());
+        List<QueryParseException> ret = new ArrayList<QueryParseException>();
+
+        for (QueryException e : getQuery(schema).getParseErrors())
+            ret.add(wrapParseException(e));
+
         String metadata = StringUtils.trimToNull(getMetadataXml());
         if (metadata != null)
         {
@@ -225,16 +229,28 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             catch (XmlException xmle)
             {
-                ret.add(new MetadataException("Metadata XML " + XmlBeansUtil.getErrorMessage(xmle)));
+                ret.add(wrapParseException(new MetadataException("Metadata XML " + XmlBeansUtil.getErrorMessage(xmle))));
             }
             for (XmlError xmle : errors)
             {
-                ret.add(new MetadataException("Metadata XML " + XmlBeansUtil.getErrorMessage(xmle)));
+                ret.add(new QueryParseException(xmle.getMessage(), null, xmle.getLine(), xmle.getColumn()));
             }
         }
         return ret;
     }
 
+    static QueryParseException wrapParseException(Throwable e)
+    {
+        if (e instanceof QueryParseException)
+        {
+            return (QueryParseException) e;
+        }
+        if (e instanceof MetadataException)
+        {
+            return new QueryParseException(e.getMessage(), e, 0, 0);
+        }
+        return new QueryParseException("Unexpected exception", e, 0, 0);
+    }
 
     public Query getQuery(QuerySchema schema)
     {

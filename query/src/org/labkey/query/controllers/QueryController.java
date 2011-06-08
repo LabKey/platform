@@ -38,6 +38,7 @@ import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleErrorView;
@@ -631,6 +632,8 @@ public class QueryController extends SpringActionController
     }
 */
 
+    // CONSIDER : deleting this action after the SQL editor UI changes are finalized, keep in mind that built-in views
+    // use this view as welll via the edit metadata page.
     @RequiresPermissionClass(ReadPermission.class)
     public class SourceQueryAction extends FormViewAction<SourceForm>
     {
@@ -745,6 +748,73 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /**
+     * Ajax action to save a query. If the save is successful the request will return successfully. A query
+     * with SQL syntax errors can still be saved successfully.
+     *
+     * If the SQL contains parse errors, a parseErrors object will be returned which contains an array of
+     * JSON serialized error information.
+     */
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SaveSourceQueryAction extends MutatingApiAction<SourceForm>
+    {
+        @Override
+        public ApiResponse execute(SourceForm form, BindException errors) throws Exception
+        {
+            if (form.getQueryDef() == null)
+                throw new IllegalArgumentException("Query definition not found, schemaName and queryName are required.");
+
+            if (!form.canEdit())
+                throw new RuntimeException("Edit permissions are required.");
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            try
+            {
+                QueryDefinition query = form.getQueryDef();
+                query.setSql(form.ff_queryText);
+
+                assert !query.isTableQueryDefinition() : "This action can only be used to save custom queries";
+                if (!query.isTableQueryDefinition())
+                {
+                    query.setMetadataXml(form.ff_metadataText);
+                    /* if query definition has parameters set hidden==true by default */
+                    try
+                    {
+                        ArrayList<QueryException> qerrors = new ArrayList<QueryException>();
+                        TableInfo t = query.getTable(qerrors, false);
+                        if (null != t && qerrors.isEmpty())
+                        {
+                            boolean hasParams = !t.getNamedParameters().isEmpty();
+                            if (hasParams)
+                                query.setIsHidden(true);
+                        }
+                    }
+                    catch (Exception x)
+                    {
+
+                    }
+                    query.save(getUser(), getContainer());
+
+                    // the query was successfully saved, validate the query but return any errors in the success response
+                    List<QueryParseException> parseErrors = query.getParseErrors(form.getSchema());
+                    if (!parseErrors.isEmpty())
+                    {
+                        response.put("parseErrors", QueryParseException.toJSON(form.ff_queryText, parseErrors));
+                    }
+                }
+            }
+            catch (SQLException e)
+            {
+                errors.reject("An exception occurred: " + e);
+                Logger.getLogger(QueryController.class).error("Error", e);
+            }
+
+            //if we got here, the query is OK
+            response.put("success", true);
+            return response;
+        }
+    }
 
     @RequiresPermissionClass(DeletePermission.class)
     public class DeleteQueryAction extends ConfirmAction<QueryForm>
