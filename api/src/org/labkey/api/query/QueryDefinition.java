@@ -72,7 +72,7 @@ public interface QueryDefinition
     void save(User user, Container container) throws SQLException;
     void delete(User user) throws SQLException;
 
-    List<QueryException> getParseErrors(QuerySchema schema);
+    List<QueryParseException> getParseErrors(QuerySchema schema);
 
     ActionURL urlFor(QueryAction action);
     /** Used for URLs that don't require row-level info, like insert or grid URLs */

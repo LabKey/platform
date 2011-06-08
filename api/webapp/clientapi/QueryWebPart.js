@@ -480,7 +480,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 if (targetElem)
                 {
                     this.unmask();
-                    targetElem.update("<div class='labkey-error'>" + Ext.util.Format.htmlEncode(json.exception) + "</div>");
+
+                    if (!this.returnErrors || !this._failure)
+                        targetElem.update("<div class='labkey-error'>" + Ext.util.Format.htmlEncode(json.exception) + "</div>");
+
                     if (this._failure)
                         this._failure.call(this.scope || this, json, response, options);
                 }

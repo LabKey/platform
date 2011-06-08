@@ -16,9 +16,13 @@
 
 package org.labkey.api.query;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
+
+import java.util.List;
 
 public class QueryParseException extends QueryException
 {
@@ -64,5 +68,36 @@ public class QueryParseException extends QueryException
         NullColumnInfo col = new NullColumnInfo(parent, key, "VARCHAR");
         col.setLabel("#ERROR: " + key.getDisplayString() + " " + getMessage());
         return col;
+    }
+
+    /**
+     * Serializes a list of QueryParseExceptions into a JSON object.
+     *
+     * @param sql - the sql that the parse exceptions originated from
+     */
+    public static JSONArray toJSON(String sql, List<QueryParseException> parseErrors)
+    {
+        JSONArray errors = new JSONArray();
+
+        String lines[] = null;
+        if (sql != null)
+            lines = sql.split("\n");
+
+        for (QueryParseException e : parseErrors)
+        {
+            JSONObject error = new JSONObject();
+
+            error.put("msg", e.getMessage());
+            error.put("line", e.getLine());
+            error.put("col", e.getColumn());
+
+            if (lines != null && e.getLine() <= lines.length && e.getLine() >= 1)
+            {
+                String errorStr = lines[e.getLine() - 1];
+                error.put("errorStr", errorStr.substring(e.getColumn()));
+            }
+            errors.put(error);
+        }
+        return errors;
     }
 }

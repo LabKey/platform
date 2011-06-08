@@ -16,13 +16,20 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang.BooleanUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiQueryResponse;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.apache.commons.beanutils.ConvertingWrapDynaBean;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +44,11 @@ public class QueryWebPart extends WebPartView
     private QuerySettings _settings;
     private String _schemaName;
 
+    // if set to true, any parse errors in the query are returned to the client as a JSON object instead of
+    // rendered in the webpart
+    private boolean _returnErrors;
+
+
     public QueryWebPart(ViewContext context, Portal.WebPart part)
     {
         _context = context;
@@ -44,6 +56,7 @@ public class QueryWebPart extends WebPartView
         _properties = part.getPropertyMap();
         _extendedProperties = part.getExtendedProperties();
         String title = _properties.get("title");
+        _returnErrors = BooleanUtils.toBoolean(_properties.get("returnErrors"));
 
         ActionURL url = QueryService.get().urlQueryDesigner(getUser(), getContainer(), null);
         _schemaName = _properties.get(QueryParam.schemaName.toString());
@@ -56,6 +69,20 @@ public class QueryWebPart extends WebPartView
         {
             _settings = _schema.getSettings(part, context);
             String queryName = _settings.getQueryName();
+
+            if (queryName == null)
+            {
+                String sql = _properties.get("sql");
+
+                // execute arbitrary sql
+                if (sql != null)
+                {
+                    QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, sql);
+
+                    _settings.setQueryName(def.getName());
+                    queryName = _settings.getQueryName();
+                }
+            }
 
             TableInfo td = null;
             try {
@@ -110,6 +137,32 @@ public class QueryWebPart extends WebPartView
     public Container getContainer()
     {
         return _context.getContainer();
+    }
+
+    @Override
+    public void render(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        QueryDefinition queryDef = _settings.getQueryDef(_schema);
+
+        // need to return any parse errors before we start sending anything back through the response so
+        // we can return JSON content
+        if (_returnErrors && queryDef != null)
+        {
+            List<QueryParseException> parseErrors = queryDef.getParseErrors(_schema);
+            if (!parseErrors.isEmpty())
+            {
+                ApiSimpleResponse simpleResp = new ApiSimpleResponse();
+                simpleResp.put("parseErrors", QueryParseException.toJSON(queryDef.getSql(), parseErrors));
+                simpleResp.put("success", false);
+
+                response.setStatus(500);
+                ApiJsonWriter jsonOut = new ApiJsonWriter(response);
+
+                jsonOut.write(simpleResp);
+                return;
+            }
+        }
+        super.render(request, response);
     }
 
     @Override
