@@ -16,6 +16,7 @@
 
 package org.labkey.api.etl;
 
+import org.apache.xmlbeans.impl.jam.internal.elements.ParameterImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -213,6 +214,13 @@ public class StandardETL implements DataIteratorBuilder, Runnable
                 to.indexMv = null==indexMv ? 0 : indexMv.intValue();
                 targetCols.add(to);
             }
+            else
+            {
+                // pass through unrecognized columns (may be internal column like "_key")
+                to = new TranslateHelper(null, null);
+                to.indexFrom = i;
+                targetCols.add(to);
+            }
         }
 
         //
@@ -240,15 +248,17 @@ public class StandardETL implements DataIteratorBuilder, Runnable
 
         for (TranslateHelper pair : targetCols)
         {
-            boolean supportsMV = null != pair.target.getMvColumnName() || (null != pair.dp && pair.dp.isMvEnabled());
+            boolean supportsMV = (null != pair.target && null != pair.target.getMvColumnName()) || (null != pair.dp && pair.dp.isMvEnabled());
             int indexConvert;
 
-            if (null == pair.dp)
+            if (null == pair.target)
+                indexConvert = convert.addColumn(input.getColumnInfo(pair.indexFrom).getName(), pair.indexFrom);
+            else if (null == pair.dp)
                 indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv,  supportsMV);
             else
                 indexConvert = convert.addConvertColumn(pair.target.getName(), pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
 
-            if (!pair.target.isNullable())
+            if (null != pair.target && !pair.target.isNullable())
                 validate.addRequired(indexConvert, false);
             else if (null != pair.dp && pair.dp.isRequired())
                 validate.addRequired(indexConvert, true);
