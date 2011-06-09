@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
@@ -44,9 +45,9 @@ public class QueryWebPart extends WebPartView
     private QuerySettings _settings;
     private String _schemaName;
 
-    // if set to true, any parse errors in the query are returned to the client as a JSON object instead of
+    // if set to 'html', any parse errors in the query are returned to the client as a JSON object instead of
     // rendered in the webpart
-    private boolean _returnErrors;
+    private String _returnErrors;
 
 
     public QueryWebPart(ViewContext context, Portal.WebPart part)
@@ -56,7 +57,7 @@ public class QueryWebPart extends WebPartView
         _properties = part.getPropertyMap();
         _extendedProperties = part.getExtendedProperties();
         String title = _properties.get("title");
-        _returnErrors = BooleanUtils.toBoolean(_properties.get("returnErrors"));
+        _returnErrors = StringUtils.defaultString(_properties.get("returnErrors"), "html");
 
         ActionURL url = QueryService.get().urlQueryDesigner(getUser(), getContainer(), null);
         _schemaName = _properties.get(QueryParam.schemaName.toString());
@@ -89,7 +90,23 @@ public class QueryWebPart extends WebPartView
                 ArrayList<QueryException> errors = new ArrayList<QueryException>();
                 QueryDefinition qd = _settings.getQueryDef(_schema);
                 if (null != qd)
+                {
+                    // apply any metadata to the query definition (only xml is supported)
+                    if (_extendedProperties.get("metadata") instanceof JSONObject)
+                    {
+                        JSONObject metadata = (JSONObject)_extendedProperties.get("metadata");
+
+                        if (metadata.has("type") && metadata.has("value"))
+                        {
+                            if ("xml".equalsIgnoreCase((String)metadata.get("type")))
+                            {
+                                String xml = (String)metadata.get("value");
+                                qd.setMetadataXml(xml);                        
+                            }
+                        }
+                    }
                     td = qd.getTable(_schema, errors, false);
+                }
                 if (!errors.isEmpty())
                     td = null;
             }catch(Exception x){}
@@ -146,7 +163,7 @@ public class QueryWebPart extends WebPartView
 
         // need to return any parse errors before we start sending anything back through the response so
         // we can return JSON content
-        if (_returnErrors && queryDef != null)
+        if ("json".equalsIgnoreCase(_returnErrors) && queryDef != null)
         {
             List<QueryParseException> parseErrors = queryDef.getParseErrors(_schema);
             if (!parseErrors.isEmpty())

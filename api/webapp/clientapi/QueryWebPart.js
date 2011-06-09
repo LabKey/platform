@@ -235,11 +235,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         buttonBar: false,
         maxRows: false,
         offset: false,
-        scope: false
+        scope: false,
+        metadata: false
     },
 
     constructor : function(config)
     {
+        this.returnErrors = 'html';
 
         Ext.apply(this, config, {
             dataRegionName: Ext.id(undefined, "aqwp"),
@@ -405,6 +407,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         if (this.aggregates)
             LABKEY.Filter.appendAggregateParams(json.filters, this.aggregates, this.dataRegionName);
 
+        if (this.metadata)
+        {
+            json.metadata = this.metadata;   
+        }
+
         // re-open designer after update
         if (dr)
         {
@@ -481,7 +488,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 {
                     this.unmask();
 
-                    if (!this.returnErrors || !this._failure)
+                    if (this.returnErrors == 'html' || !this._failure)
                         targetElem.update("<div class='labkey-error'>" + Ext.util.Format.htmlEncode(json.exception) + "</div>");
 
                     if (this._failure)
@@ -500,6 +507,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     },
 
     mask : function(message) {
+        if (this.masking === false) return;            
         var el = Ext.get(this.maskEl || this.renderTo);
         if (el)
         {
@@ -510,6 +518,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     },
 
     unmask : function() {
+        if (this.masking === false) return;
         var el = Ext.get(this.maskEl || this.renderTo);
         if (el)
             el.unmask();
