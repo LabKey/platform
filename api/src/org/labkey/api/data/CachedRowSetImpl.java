@@ -1107,6 +1107,12 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
         return "Displaying only the first " + maxRows + " rows.";
     }
 
+//    @Override
+    public boolean supportsGetRowMap()
+    {
+        return true;
+    }
+
     public Map<String, Object> getRowMap() throws SQLException
     {
         if (_row >= _maps.length)
@@ -1214,7 +1220,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
 
     public boolean isClosed() throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return _wasClosed;
     }
 
     public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException
