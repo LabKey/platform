@@ -307,7 +307,9 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 }
                 else
                 {
-                    Logger.getLogger(WebPartView.class).error("renderView() exception in " + getClass().getName() + " while responding to " + getViewContext().getActionURL().getLocalURIString(), exceptionToRender);
+                    Logger log = Logger.getLogger(WebPartView.class);
+                    log.error("renderView() exception in " + getClass().getName() + " while responding to " + getViewContext().getActionURL().getLocalURIString(), exceptionToRender);
+                    log.error("View creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
                 }
             }
         }

@@ -80,7 +80,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     protected Map<String, ModelAndView> _views;
     protected ViewContext _viewContext;
     protected Map _renderMap = null;
-    private final StackTraceElement[] _creationStackTrace;
+    protected final StackTraceElement[] _creationStackTrace;
 
 
 
@@ -135,7 +135,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
                 try {response.getWriter().flush();} catch (Exception x) {/* */}
                 response.flushBuffer();
             }
-            Logger.getLogger(HttpView.class).error("Exception while rendering view; creation stacktrace:\n" + ExceptionUtil.renderStackTrace(_creationStackTrace));
+            Logger.getLogger(HttpView.class).error("Exception while rendering view; creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
             throw e;
         }
         finally
