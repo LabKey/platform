@@ -2015,6 +2015,7 @@ query/src/org/labkey/query/view/EditQueryPage.java -text
 query/src/org/labkey/query/view/EditQueryView.java -text
 query/src/org/labkey/query/view/QueryWebPartFactory.java -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
+query/webapp/query/QueryEditorPanel.js -text
 query/webapp/query/columnPicker.js -text
 query/webapp/query/columnProperties.gif -text
 query/webapp/query/delete.gif -text

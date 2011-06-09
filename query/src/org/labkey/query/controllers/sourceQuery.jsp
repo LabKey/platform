@@ -15,119 +15,174 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.query.QueryAction"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.util.HelpTopic"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.SourceForm" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SourceForm form = (SourceForm)HttpView.currentModel();
     boolean canEdit = form.canEdit();
     boolean editableSQL = canEdit && !form.getQueryDef().isTableQueryDefinition();
-%>
-
-<script type="text/javascript">
-    LABKEY.requiresScript("/editarea/edit_area_full.js");
-</script>
-
-<div class="extContainer">
-<labkey:errors />
-<form method="POST" action="<%=form.urlFor(QueryAction.sourceQuery)%>">
-    <input type="hidden" id="redirect" name="ff_redirect" value="<%=form.ff_redirect%>">
-    <p>SQL:<br>
-    <% if (editableSQL) { %>
-        <textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="queryText" name="ff_queryText"><%=h(form.ff_queryText)%></textarea>
-        <script type="text/javascript">
-            Ext.EventManager.on('queryText', 'keydown', handleTabsInTextArea);
-            editAreaLoader.init({
-                id : "queryText",
-                syntax: "sql",
-                start_highlight: true
-            });
-        </script>
-    <% } else { %>
-        <input type="hidden" name="ff_queryText" value="<%=h(form.ff_queryText)%>" />
-        <pre><%=h(form.ff_queryText)%></pre>
-    <% } %>
-<br/><%
-if (canEdit)
-{
-    %><labkey:button text="Save" onclick="submit_onclick('sourceQuery')" />&nbsp;<%
-}
-if (!form.getQueryDef().isTableQueryDefinition())
-{
-    %><labkey:button text="Design Query" onclick="submit_onclick('designQuery')" />&nbsp;<%
-}%>
-<% if (canEdit && form.getQueryDef().isMetadataEditable()) { %>
-    <labkey:button text="Edit Metadata" onclick="submit_onclick('metadataQuery')" />&nbsp;
-<% }
     String topic = "labkeySql";
 %>
-    <labkey:button text="View Data" onclick="submit_onclick('executeQuery')" />&nbsp;
-    <labkey:button text="SQL Help" href="<%=new HelpTopic(topic)%>" target="_blank" />
-<br/><br/>
-    <p>Metadata XML<%=PageFlowUtil.helpPopup("Metadata XML", "This XML lets you configure how your columns are displayed and other query-level attributes. See the <a target='_blank' href='https://www.labkey.org/download/schema-docs/xml-schemas/schemas/tableInfo_xsd/schema-summary.html'>XSD documentation</a> to learn more.", true)%>:<br><%
-if (canEdit)
-{
-    %><textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="metadataText" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
-    <script type="text/javascript">
-         Ext.EventManager.on('metadataText', 'keydown', handleTabsInTextArea);
-         editAreaLoader.init({
-             id : "metadataText",
-             syntax: "xml",
-             start_highlight: true
-         });
-     </script><%
-}
-else
-{
-    %><input type="hidden" name="ff_metadataText" value="<%=h(form.ff_metadataText)%>" />
-    <pre><%=h(form.ff_metadataText)%></pre><%
-}
-%></p>
-</form>
-</div>
+<style type="text/css">
 
+    /* Back Panel */
+    .x-border-layout-ct {
+        background: none repeat scroll 0 0 transparent;
+    }
+
+    .x-panel-body {
+        background-color: transparent;
+    }
+
+    /* Strip behind Tabs */
+    .x-tab-panel-header, .x-tab-panel-footer {
+        background-color: transparent;
+    }
+
+    ul.x-tab-strip-top {
+        background: transparent;
+    }
+
+    /* Buttons on Panels */
+    .query-button {
+        float: left;
+        padding: 3px 5px;
+    }
+
+    .query-editor-panel {
+        background-color: transparent;
+    }
+
+    /* Allow fullscreen on editor */
+    .x-panel-body {
+        position: static;
+    }
+
+    table.labkey-data-region {
+        width: 100%;
+    }
+
+    .error-container {
+        margin-left: 30px !important;
+        margin-top: 25px !important;
+    }
+
+    .labkey-status-info {
+        height : 12px;
+        font-size: 12px;
+        margin : 0 0 10px 0;
+    }
+
+</style>
 <script type="text/javascript">
-function _id(s) {return document.getElementById(s);}
+    LABKEY.requiresScript("query/QueryEditorPanel.js", true);
+</script>
+<div id="status" class="labkey-status-info" style="visibility: hidden;" width="99%">(status)</div>
+<div id="query-editor-panel" class="extContainer"></div>
+<script type="text/javascript">
 
-var origQueryText = _id("queryText") == null ? null : _id("queryText").value;
-var origMetadataText = _id("metadataText").value;
+    Ext.onReady(function(){
 
-function isDirty()
-{
-    return (origQueryText != null && origQueryText != _id("queryText").value) || origMetadataText != _id("metadataText").value;  
-}
-window.onbeforeunload = LABKEY.beforeunload(isDirty);
+        Ext.QuickTips.init();
 
-function submit_onclick(method)
-{
-    if (document.getElementById("queryText") && document.getElementById("edit_area_toggle_checkbox_queryText") && document.getElementById("edit_area_toggle_checkbox_queryText").checked)
-    {
-        document.getElementById("queryText").value = editAreaLoader.getValue("queryText");
-    }
-    if (document.getElementById("metadataText") && document.getElementById("edit_area_toggle_checkbox_metadataText") && document.getElementById("edit_area_toggle_checkbox_metadataText").checked)
-    {
-        document.getElementById("metadataText").value = editAreaLoader.getValue("metadataText");
-    }
-    _id('redirect').value = method;
-    window.onbeforeunload = null;
-}
+        Ext.Ajax.timeout = 86400000; // 1 day
 
-//Ext.onReady(function(){
-//    var e = Ext.get('queryText');
-//    if (e)
-//    {
-//        Ext.DomHelper.applyStyles(e,{margin:"1px"});
-//        new Ext.Resizable(e, { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{border:"1px solid black"}});
-//    }
-//    e = Ext.get('metadataText');
-//    if (e)
-//    {
-//        Ext.DomHelper.applyStyles(e,{margins:1, padding:2});
-//        new Ext.Resizable(e, { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{padding:2}});
-//    }
-//});
+        // TODO: Replace the following object with an Ajax call
+        var query = {
+            schema    : LABKEY.ActionURL.getParameter('schemaName'),
+            query     : LABKEY.ActionURL.getParameter('query.queryName'),
+            canEdit   : <%= canEdit %>,
+            metadataEdit : <%= form.getQueryDef().isMetadataEditable() && canEdit %>,
+            queryText : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
+            metadataText  : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,
+            help      : <%=PageFlowUtil.jsString(new HelpTopic(topic).toString())%>
+        };
+
+        var queryEditor = new LABKEY.query.QueryEditorPanel({
+            id          : 'qep',
+            border      : false,
+            layout      : 'fit',
+            bodyCssClass: 'query-editor-panel',
+            query       : query
+        });
+
+        var panel = new Ext.Panel({
+            renderTo   : 'query-editor-panel',
+            layout     : 'fit',
+            frame      : false,
+            border     : false,
+            items      : [queryEditor]
+        });
+
+        var _resize = function(w, h) {
+            if (!panel.rendered)
+                return;
+            var padding = [30,40];
+            var xy = panel.el.getXY();
+            var size = {
+                width : Math.max(100,w-xy[0]-padding[0]),
+                height : Math.max(100,h-xy[1]-padding[1])};
+            panel.setSize(size);
+            panel.doLayout();
+        };
+
+        Ext.EventManager.onWindowResize(_resize);
+        Ext.EventManager.fireWindowResize();
+
+        function beforeSave() { setStatus('Saving...'); }
+        function afterSave(saved)  {
+            if (saved) setStatus("Saved", true);
+            else {
+                setError("Failed to Save");
+            }
+        }
+        queryEditor.getSourceEditor().on('beforeSave', beforeSave);
+        queryEditor.getSourceEditor().on('save', afterSave);
+        queryEditor.getMetadataEditor().on('beforeSave', beforeSave);
+        queryEditor.getMetadataEditor().on('save', afterSave);
+
+        function clearStatus() {
+            var elem = Ext.get("status");
+            elem.update("&nbsp;");
+            elem.setVisible(false);
+        }
+
+        function setStatus(msg, autoClear)
+        {
+            var elem = Ext.get("status");
+            elem.update(msg);
+            elem.dom.className = "labkey-status-info";
+            elem.setDisplayed(true);
+            elem.setVisible(true);
+            var clear = clearStatus;
+            if(autoClear) clearStatus.defer(5000);
+        }
+
+        function setError(msg)
+        {
+            var elem = Ext.get("status");
+            elem.update(msg);
+            elem.dom.className = "labkey-status-error";
+            elem.setVisible(true);
+        }
+
+        function onKeyDown(evt) {
+            var handled = false;
+
+            if(evt.ctrlKey && !evt.altKey && 83 == evt.getKey()) {
+                handled = true;
+            }
+
+            if(handled) {
+                evt.preventDefault();
+                evt.stopPropagation();
+            }
+        }
+        
+        Ext.EventManager.addListener(document, "keydown", onKeyDown);
+    });
 </script>
