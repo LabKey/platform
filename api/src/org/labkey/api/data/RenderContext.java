@@ -189,6 +189,8 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
     {
+        Table.checkAllColumns(tinfo, tinfo.getColumns(), "RenderContext.getSelectColumns() tinfo.getColumns()");
+
         Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new LinkedHashSet<ColumnInfo>());
         LinkedHashSet<FieldKey> keys = new LinkedHashSet<FieldKey>();
 
@@ -211,6 +213,8 @@ public class RenderContext extends BoundMap // extends ViewContext
                 dc.addQueryFieldKeys(keys);
         }
 
+        Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret, after adding display columns");
+
         Set<FieldKey> detailsUrlKeys = tinfo.getDetailsURLKeys();
         keys.addAll(detailsUrlKeys);
         Collection<ColumnInfo> infoCollection = QueryService.get().getColumns(tinfo, keys, ret).values();
@@ -232,7 +236,7 @@ public class RenderContext extends BoundMap // extends ViewContext
             ret.add(col);
         }
 
-        Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret");
+        Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret, method end");
 
         return new ArrayList<ColumnInfo>(ret);
     }
