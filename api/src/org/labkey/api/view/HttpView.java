@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Debug;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
@@ -79,6 +80,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     protected Map<String, ModelAndView> _views;
     protected ViewContext _viewContext;
     protected Map _renderMap = null;
+    private final StackTraceElement[] _creationStackTrace;
 
 
 
@@ -115,7 +117,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
     /**
-     * HttpView.render() does not check isVisible() renderInternal() should do that.
+     * HttpView.render() does not check isVisible(); renderInternal() should do that.
      */
     public final void render(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
@@ -133,6 +135,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
                 try {response.getWriter().flush();} catch (Exception x) {/* */}
                 response.flushBuffer();
             }
+            Logger.getLogger(HttpView.class).error("Exception while rendering view; creation stacktrace:\n" + ExceptionUtil.renderStackTrace(_creationStackTrace));
             throw e;
         }
         finally
@@ -231,6 +234,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     {
         _viewContext = context;
         setView(this);
+        _creationStackTrace = Thread.currentThread().getStackTrace();
         assert MemTracker.put(this);
     }
 
