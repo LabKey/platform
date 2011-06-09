@@ -174,7 +174,7 @@ public class ContainerManager
         return createContainer(parent, name, null, null, false, null);
     }
 
-    // TODO: Pass in folder type and transact it with container creation
+    // TODO: Pass in folder type and transact it with container creation?
     public static Container createContainer(Container parent, String name, String title, String description, boolean workbook, User user)
     {
         if (CORE.getSchema().getScope().isTransactionActive())
@@ -264,7 +264,6 @@ public class ContainerManager
     }
 
 
-    // TODO: Move this property into the Containers table
     public static void setFolderType(Container c, FolderType folderType) throws SQLException
     {
         FolderType oldType = c.getFolderType();
@@ -278,11 +277,11 @@ public class ContainerManager
         props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
         PropertyManager.saveProperties(props);
 
+        // TODO: Not needed? I don't think we've changed the container's state.
         _removeFromCache(c);
     }
 
 
-    // TODO: Move this property into the Containers table
     public static FolderType getFolderType(Container c)
     {
         Map props = PropertyManager.getProperties(0, c.getId(), ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);

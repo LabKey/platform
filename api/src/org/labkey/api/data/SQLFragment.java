@@ -18,11 +18,13 @@ package org.labkey.api.data;
 
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.HString;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JdbcUtil;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: Matthew

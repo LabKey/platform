@@ -71,7 +71,7 @@ public class DefaultFolderType implements FolderType
         List<Portal.WebPart> required = getRequiredWebParts();
         List<Portal.WebPart> defaultParts = getPreferredWebParts();
 
-        //Just to be sure, make sure required web  parts are set correctly
+        //Just to be sure, make sure required web parts are set correctly
         if (null != required)
             for (Portal.WebPart part : required)
                 part.setPermanent(true);
