@@ -84,9 +84,10 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
         Set<String> fileInputs = new HashSet<String>();
         fileInputs.add(PRIMARY_FILE);
 
-        // if assay type allows for > 1 file, add thos inputs to the set as well
+        // if assay type allows for > 1 file, add those inputs to the set as well
         int fileInputIndex = 1;
-        while(fileInputIndex < getMaxFileInputs()){
+        while(fileInputIndex < getMaxFileInputs())
+        {
             fileInputs.add(PRIMARY_FILE + fileInputIndex);
             fileInputIndex++;
         }

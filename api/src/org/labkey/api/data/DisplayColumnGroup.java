@@ -58,7 +58,7 @@ public class DisplayColumnGroup
         out.write("<td>");
         if (isCopyable())
         {
-            out.write("<input type=checkbox name='" + ctx.getForm().getFormFieldName(getColumns().get(0).getColumnInfo()) + "CheckBox' id='" + ctx.getForm().getFormFieldName(getColumns().get(0).getColumnInfo()) + "CheckBox' onchange=\"");
+            out.write("<input type=checkbox name='" + getGroupFormFieldName(ctx) + "CheckBox' id='" + getGroupFormFieldName(ctx) + "CheckBox' onchange=\"");
             out.write("b = this.checked;" );
             for (int i = 1; i < getColumns().size(); i++)
             {
@@ -69,9 +69,77 @@ public class DisplayColumnGroup
                     out.write("document.getElementsByName('" + ctx.getForm().getFormFieldName(colInfo) + "')[0].style.display = b ? 'none' : 'block';\n");
                 }
             }
-            out.write(" if (b) { " + ctx.getForm().getFormFieldName(getColumns().get(0).getColumnInfo()) + "Updated(); }\">");
+            out.write(" if (b) { " + getGroupFormFieldName(ctx) + "Updated(); }\">");
         }
         out.write("</td>");
     }
+
+    private String getGroupFormFieldName(RenderContext ctx)
+    {
+        return getColumns().get(0).getFormFieldName(ctx);
+    }
     
+    public void writeCopyableJavaScript(RenderContext ctx, Writer out) throws IOException
+    {
+        if (!isCopyable())
+        {
+            return;
+        }
+        
+        String groupName = getGroupFormFieldName(ctx);
+        out.write("function " + groupName + "Updated() {\n");
+        out.write("  if (document.getElementById('" + groupName + "CheckBox') != null && document.getElementById('" + groupName + "CheckBox').checked) {\n");
+
+        if (getColumns().get(0).getColumnInfo() != null)
+        {
+            String valueProperty = "value";
+            String inputType = getColumns().get(0).getColumnInfo().getInputType();
+            if ("select".equalsIgnoreCase(inputType))
+            {
+                valueProperty = "selectedIndex";
+            }
+            else if ("checkbox".equalsIgnoreCase(inputType))
+            {
+                valueProperty = "checked";
+            }
+            out.write("    var v = document.getElementsByName('" + groupName + "')[0]." + valueProperty + ";\n");
+            for (int i = 1; i < getColumns().size(); i++)
+            {
+                out.write("    document.getElementsByName('" + ctx.getForm().getFormFieldName(getColumns().get(i).getColumnInfo()) + "')[0]." + valueProperty + " = v;\n");
+            }
+        }
+        out.write("  }\n");
+        out.write("}\n");
+        out.write("var e = document.getElementsByName('" + groupName + "')[0];\n");
+        out.write("e.onchange=" + groupName + "Updated;\n");
+        out.write("e.onkeyup=" + groupName + "Updated;\n");
+        out.write("\n");
+    }
+
+    public void writeCopyableOnChangeHandler(RenderContext ctx, Writer out) throws IOException
+    {
+        if (isCopyable())
+        {
+            out.write("document.getElementById('" + getGroupFormFieldName(ctx) + "CheckBox').checked = this.checked; document.getElementById('" + getGroupFormFieldName(ctx) + "CheckBox').onchange();");
+        }
+    }
+
+    public void writeCopyableExtJavaScript(RenderContext ctx, Writer out) throws IOException
+    {
+        if (isCopyable())
+        {
+            String groupFormFieldName = getGroupFormFieldName(ctx);
+            out.write("function " + groupFormFieldName + "Updated()\n{");
+            out.write("if (document.getElementById('" + groupFormFieldName + "CheckBox') != null && document.getElementById('" + groupFormFieldName + "CheckBox').checked) {");
+            out.write("v = document.getElementsByName('" + groupFormFieldName + "')[0].value;");
+            for (int i = 1; i < getColumns().size(); i++)
+            {
+                out.write("document.getElementsByName('" + ctx.getForm().getFormFieldName(getColumns().get(i).getColumnInfo()) + "')[0].value = v;");
+            }
+            out.write("}}\n");
+            out.write("e = document.getElementsByName('" + groupFormFieldName + "')[0];\n");
+            out.write("e.onchange=" + groupFormFieldName + "Updated;");
+            out.write("e.onkeyup=" + groupFormFieldName + "Updated;");
+        }
+    }
 }

@@ -22,18 +22,22 @@ import org.labkey.api.exp.Lsid;
 public class DataType
 {
     protected String _namespacePrefix;
+
     public DataType(String namespacePrefix)
     {
         _namespacePrefix = namespacePrefix;
     }
+
     public String getNamespacePrefix()
     {
         return _namespacePrefix;
     }
+
     public URLHelper getDetailsURL(ExpData dataObject)
     {
         return null;
     }
+
     public String urlFlag(boolean flagged)
     {
         return null;
@@ -42,5 +46,22 @@ public class DataType
     public boolean matches(Lsid lsid)
     {
         return lsid != null && lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().equals(_namespacePrefix);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof DataType)) return false;
+
+        DataType dataType = (DataType) o;
+
+        return !(_namespacePrefix != null ? !_namespacePrefix.equals(dataType._namespacePrefix) : dataType._namespacePrefix != null);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _namespacePrefix != null ? _namespacePrefix.hashCode() : 0;
     }
 }

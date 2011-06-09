@@ -46,7 +46,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -2542,7 +2541,7 @@ public class Table
 
         SQLFragment sqlfDelete = new SQLFragment();
         SQLFragment sqlfDeleteObject = null;
-        SQLFragment sqlfDeleteTable = null;
+        SQLFragment sqlfDeleteTable;
 
         //
         // exp.Objects delete
@@ -2550,7 +2549,6 @@ public class Table
 
         Domain domain = tableDelete.getDomain();
         DomainKind domainKind = tableDelete.getDomainKind();
-        DomainProperty[] properties = null;
         if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
         {
             if (!d.isPostgreSQL() && !d.isSqlServer())

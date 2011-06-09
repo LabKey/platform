@@ -158,7 +158,7 @@ public class AssayFileWriter
     
     public Map<String, File> savePostedFiles(AssayRunUploadContext context, PostedFileSaveFilter filter) throws ExperimentException, IOException
     {
-        Map<String, File> files = new HashMap<String, File>();
+        Map<String, File> files = new TreeMap<String, File>();
         if (context.getRequest() instanceof MultipartHttpServletRequest)
         {
             MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)context.getRequest();

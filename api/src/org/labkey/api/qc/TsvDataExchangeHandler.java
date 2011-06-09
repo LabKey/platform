@@ -164,11 +164,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         dataFiles.addAll(context.getUploadedData().values());
 
-        // currently assume only a single uploaded data file
-        assert(dataFiles.size() <= 1);
-
         ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
         XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);
+
+        Map<DataType, List<Map<String, Object>>> mergedDataMap = new HashMap<DataType, List<Map<String, Object>>>();
+
+        // All of the DataTypes that support
+        Set<DataType> transformDataTypes = new HashSet<DataType>();
 
         for (File data : dataFiles)
         {
@@ -186,33 +188,55 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 _filesToIgnore.add(data);
 
                 Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, LOG, xarContext);
-                File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
 
-                for (Map.Entry<DataType, List<Map<String, Object>>> dataEntry : dataMap.entrySet())
+                // Combine the rows of any of the same DataTypes into a single entry
+                for (Map.Entry<DataType, List<Map<String, Object>>> entry : dataMap.entrySet())
                 {
-                    File runData = new File(scriptDir, Props.runDataFile + ".tsv");
-                    getDataSerializer().exportRunData(context.getProtocol(), dataEntry.getValue(), runData);
-                    _filesToIgnore.add(runData);
-
-                    pw.append(Props.runDataFile.name());
-                    pw.append('\t');
-                    pw.append(runData.getAbsolutePath());
-                    pw.append('\t');
-                    pw.append(dataEntry.getKey().getNamespacePrefix());
+                    if (mergedDataMap.containsKey(entry.getKey()))
+                    {
+                        mergedDataMap.get(entry.getKey()).addAll(entry.getValue());
+                    }
+                    else
+                    {
+                        mergedDataMap.put(entry.getKey(), entry.getValue());
+                    }
 
                     if (handler instanceof TransformDataHandler)
                     {
-                        // if the handler supports data transformation, we will include an additional column for the location of
-                        // a transformed data file that a transform script may create.
-                        File transformedData = AssayFileWriter.createFile(context.getProtocol(), dir, "tsv");
-
-                        pw.append('\t');
-                        pw.append(transformedData.getAbsolutePath());
+                        transformDataTypes.add(entry.getKey());
                     }
-                    pw.append('\n');
                 }
             }
         }
+
+        File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
+
+        assert mergedDataMap.size() <= 1 : "Multiple input files are only supported if they are of the same type";
+
+        for (Map.Entry<DataType, List<Map<String, Object>>> dataEntry : mergedDataMap.entrySet())
+        {
+            File runData = new File(scriptDir, Props.runDataFile + ".tsv");
+            getDataSerializer().exportRunData(context.getProtocol(), dataEntry.getValue(), runData);
+            _filesToIgnore.add(runData);
+
+            pw.append(Props.runDataFile.name());
+            pw.append('\t');
+            pw.append(runData.getAbsolutePath());
+            pw.append('\t');
+            pw.append(dataEntry.getKey().getNamespacePrefix());
+
+            if (transformDataTypes.contains(dataEntry.getKey()))
+            {
+                // if the handler supports data transformation, we will include an additional column for the location of
+                // a transformed data file that a transform script may create.
+                File transformedData = AssayFileWriter.createFile(context.getProtocol(), dir, "tsv");
+
+                pw.append('\t');
+                pw.append(transformedData.getAbsolutePath());
+            }
+            pw.append('\n');
+        }
+
     }
 
     /**
