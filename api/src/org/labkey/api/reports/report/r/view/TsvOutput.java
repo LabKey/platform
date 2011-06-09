@@ -117,7 +117,7 @@ public class TsvOutput extends AbstractParamReplacement
                 }
 
                 int row = 0;
-                out.write("<table class=\"labkey-data-region\">");
+                out.write("<table class=\"labkey-data-region labkey-show-borders\">");
                 renderTitle(model, out);
                 if (isCollapse())
                     out.write("<tr style=\"display:none\"><td><table>");
@@ -127,9 +127,9 @@ public class TsvOutput extends AbstractParamReplacement
                 for (ColumnDescriptor col : display)
                 {
                     if (Number.class.isAssignableFrom(col.getClass()))
-                        out.write("<td class='labkey-header' align='right'>");
+                        out.write("<td class='labkey-column-header' align='right'>");
                     else
-                        out.write("<td class='labkey-header'>");
+                        out.write("<td class='labkey-column-header'>");
                     out.write(PageFlowUtil.filter(col.name, true, true));
                     out.write("</td>");
                     row++;
@@ -139,9 +139,9 @@ public class TsvOutput extends AbstractParamReplacement
                 for (Map m : data)
                 {
                     if (row % 2 == 0)
-                        out.write("<tr class=\"labkey-alternate-row\">");
-                    else
                         out.write("<tr class=\"labkey-row\">");
+                    else
+                        out.write("<tr class=\"labkey-alternate-row\">");
                     for (ColumnDescriptor col : display)
                     {
                         Object colVal = m.get(col.name);
