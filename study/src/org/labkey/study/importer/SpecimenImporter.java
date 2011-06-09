@@ -2110,8 +2110,8 @@ public class SpecimenImporter
 
         SQLFragment existingEvents = new SQLFragment("SELECT Vial.Container, GlobalUniqueId");
         existingEvents.append(hashCols);
-        existingEvents.append("FROM ").append(StudySchema.getInstance().getTableInfoVial()).append(" AS Vial\n");
-        existingEvents.append("JOIN ").append(StudySchema.getInstance().getTableInfoSpecimen()).append(" AS Specimen\n");
+        existingEvents.append("FROM ").append(StudySchema.getInstance().getTableInfoVial(), "Vial").append("\n");
+        existingEvents.append("JOIN ").append(StudySchema.getInstance().getTableInfoSpecimen(), "Specimen").append("\n");
         existingEvents.append("ON Vial.SpecimenId = Specimen.RowId\n");
         existingEvents.append("WHERE Vial.Container=?\n").add(container.getId());
         existingEvents.append("AND Vial.GlobalUniqueId IN (SELECT GlobalUniqueId FROM ").append(tempTable).append(")\n");

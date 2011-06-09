@@ -153,11 +153,11 @@ public class UsersMsgPrefTable extends FilteredTable
 
             SQLFragment joinSql = new SQLFragment();
 
-            joinSql.append(" LEFT JOIN ").append(_emailPrefsTable).append(" AS ").append(tableAlias);
+            joinSql.append(" LEFT JOIN ").append(_emailPrefsTable, tableAlias);
             joinSql.append(" ON ").append(tableAlias).append(".UserId = ").append(parentAlias).append(".UserId");
             joinSql.append(" AND ").append(tableAlias).append(".Container = ").append("'").append(_container.getId()).append("'");
             joinSql.append(" AND ").append(tableAlias).append(".Type = ").append("'").append(_type).append("'");
-            joinSql.append(" LEFT JOIN ").append(_emailOptionsTable).append(" AS ").append(tableOptionsAlias);
+            joinSql.append(" LEFT JOIN ").append(_emailOptionsTable, tableOptionsAlias);
             joinSql.append(" ON ").append(tableAlias).append(".EmailOptionId = ").append(tableOptionsAlias).append(".EmailOptionId");
 
             map.put(tableAlias, joinSql);
