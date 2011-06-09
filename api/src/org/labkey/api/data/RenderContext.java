@@ -206,6 +206,9 @@ public class RenderContext extends BoundMap // extends ViewContext
                 if (null == displayColumn)
                     continue;
                 displayColumn.addQueryColumns(ret);
+
+                // TODO: Remove this check -- it's overkill, but should help narrow down a TeamCity failure
+                Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns(), after adding " + displayColumn.getName());
             }
 
             // add any additional columns specified by FieldKey
