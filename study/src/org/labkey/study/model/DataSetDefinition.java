@@ -1481,7 +1481,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (null == indexSequenceNum)
             {
-                if (isDemographicData())
+                if (timetype != TimepointType.VISIT && null != indexVisitDate)
+                {
+                    indexSequenceNum = it.addSequenceNumFromDateColumn();
+                }
+                else if (isDemographicData())
                 {
                     indexSequenceNum = it.addColumn(new ColumnInfo("SequenceNum",JdbcType.DOUBLE),
                             new Callable(){
@@ -1491,10 +1495,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                                     return VisitImpl.DEMOGRAPHICS_VISIT;
                                 }
                             });
-                }
-                else if (timetype != TimepointType.VISIT)
-                {
-                    indexSequenceNum = it.addSequenceNumFromDateColumn();
                 }
                 it.indexSequenceNumOutput = indexSequenceNum;
             }
@@ -1582,11 +1582,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (null == indexPTID)
                 setupError("All dataset rows must include a value for " + _study.getSubjectColumnName());
 
-            if (timetype == TimepointType.VISIT && null == indexSequenceNum)
-                setupError("All dataset rows must include a value for SequenceNum");
-
             if (timetype != TimepointType.VISIT && null == indexVisitDate)
                 setupError("All dataset rows must include a value for Date");
+
+            if (timetype == TimepointType.VISIT && null == indexSequenceNum)
+                setupError("All dataset rows must include a value for SequenceNum");
 
             it.setInput(ErrorIterator.wrap(input, errors, false, setupError));
             DataIterator ret = LoggingDataIterator.wrap(it);
@@ -1770,6 +1770,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         class LSIDColumn implements Callable
         {
+            String _urnPrefix = getURNPrefix();
+
             @Override
             public Object call() throws Exception
             {
@@ -1779,7 +1781,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 Object key = null;
                 if (null != indexKeyPropertyOutput)
                     key = _DatasetColumnsIterator.this.get(indexKeyPropertyOutput);
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new StringBuilder(_urnPrefix);
                 sb.append(ptid).append(".").append(seqnum);
                 if (null != key)
                     sb.append(".").append(key);

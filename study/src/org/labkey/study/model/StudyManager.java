@@ -3671,6 +3671,22 @@ public class StudyManager
         }
 
 
+        // TODO
+        @Test
+        public void _testAutoIncrement()
+        {
+
+        }
+
+
+        // TODO
+        @Test
+        public void _testGuid()
+        {
+
+        }
+
+
 
 //        @AfterClass
         public void tearDown()
