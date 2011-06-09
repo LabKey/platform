@@ -1808,9 +1808,7 @@ public class AdminController extends SpringActionController
 
         public HttpView getTabView(String tabId) throws Exception
         {
-            ActionsView view = new ActionsView();
-            view.setSummary("summary".equals(tabId));
-            return view;
+            return new ActionsView("summary".equals(tabId));
         }
     }
 

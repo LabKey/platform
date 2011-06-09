@@ -148,11 +148,10 @@ public class FileContentController extends SpringActionController
        IMAGE        // <img>                          (image/*)
    }
 
-   static DefaultActionResolver _actionResolver = new DefaultActionResolver(FileContentController.class);
+   private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(FileContentController.class);
 
    public FileContentController() throws Exception
    {
-       super();
        setActionResolver(_actionResolver);
    }
 

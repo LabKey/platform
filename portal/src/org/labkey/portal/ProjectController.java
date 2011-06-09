@@ -28,11 +28,11 @@ import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.files.FileUrls;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.portal.ProjectUrls;
@@ -56,7 +56,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
-import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -329,7 +328,7 @@ public class ProjectController extends SpringActionController
             else if (path.startsWith(files))
             {
                 path = files.relativize(path);
-                _redirect = new ActionURL("filecontent", "begin", c).addParameter("path", path.encode());
+                _redirect = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("path", path.encode());
             }
             else
             {
@@ -459,6 +458,7 @@ public class ProjectController extends SpringActionController
             return _direction;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setDirection(int direction)
         {
             _direction = direction;
@@ -469,6 +469,7 @@ public class ProjectController extends SpringActionController
             return _webPartId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setWebPartId(int webPartId)
         {
             _webPartId = webPartId;
@@ -1014,7 +1015,7 @@ public class ProjectController extends SpringActionController
     }
 
     /**
-     * Returns all contains visible to the current user
+     * Returns all containers visible to the current user
      */
     @RequiresNoPermission
     public class GetContainersAction extends ApiAction<GetContainersForm>

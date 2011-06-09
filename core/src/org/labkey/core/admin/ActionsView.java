@@ -28,14 +28,9 @@ import java.util.Map;
 
 class ActionsView extends HttpView
 {
-    private boolean _summary = false;
+    private final boolean _summary;
 
-    public boolean isSummary()
-    {
-        return _summary;
-    }
-
-    public void setSummary(boolean summary)
+    ActionsView(boolean summary)
     {
         _summary = summary;
     }
