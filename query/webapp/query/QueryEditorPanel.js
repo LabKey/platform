@@ -158,6 +158,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 title     : '',
                 masking   : false,
                 success   : function(response) {
+                    this.showErrors();
                     this.fireEvent('loaded', true);
                 },
                 failure   : function(response) {
@@ -165,7 +166,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                     if (response && response.parseErrors) {
                         var errors = [];
                         for (var e=0; e < response.parseErrors.length; e++) {
-                            errors.push(response.parseErrors[e].msg);
+                            errors.push(response.parseErrors[e]);
                         }
                         this.showErrors(errors, this.display);
                     }
@@ -235,7 +236,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 var msgs = [];
                 var $ = json.parseErrors;
                 for (var i=0; i<$.length;i++){
-                    msgs.push($[i].msg);
+                    msgs.push($[i]);
                 }
                 this.showErrors(msgs);
             }
@@ -259,20 +260,15 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
     onShow : function() {
 
-        // Doing this due to faulty editor when tabbing back
-        this.eal.init({
-            id     : this.editorId,
-            syntax : 'sql',
-            start_highlight: true
-        });
         LABKEY.query.SourceEditorPanel.superclass.onShow.call(this);
+        
+        this.eal.show(this.editorId);
     },
 
     onHide : function() {
 
-        // Doing this due to faulty editor when tabbing back
-        this.eal.delete_instance(this.editorId);
-
+        this.eal.hide(this.editorId);
+        
         LABKEY.query.SourceEditorPanel.superclass.onHide.call(this);
     },
 
@@ -299,9 +295,10 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             if (queryEl) queryEl.update('');
             return;
         }
+        
         var inner = '<div class="labkey-error error-container"><ul>';
         for (var e = 0; e < errors.length; e++) {
-            inner += '<li>' + errors[e] + '</li>'
+            inner += '<li>' + errors[e].msg + '</li>'
         }
         inner += '</ul></div>';
 
@@ -313,6 +310,22 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         if (queryEl) {
             queryEl.update('');
             queryEl.update(inner);
+            
+            var cmd = this.eal.execCommand;
+            if (cmd) {
+                // First highlight the line
+                this.eal.execCommand(this.editorId, 'resync_highlight', true);
+                if (errors[0] && errors[0].line) cmd(this.editorId, 'go_to_line', errors[0].line.toString());
+
+                // Highlight selected text
+                var val = this.eal.getValue(this.editorId);
+                var _s = val.search(errors[0].errorStr);
+                if (_s >= 0) {
+                    var end = _s + errors[0].errorStr.length;
+                    this.eal.setSelectionRange(this.editorId, _s, end);
+                }
+                this.eal.getSelectedText(this.editorId);
+            }
         }
     }
 });
