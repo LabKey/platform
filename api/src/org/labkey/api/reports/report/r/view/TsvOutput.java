@@ -95,7 +95,7 @@ public class TsvOutput extends AbstractParamReplacement
 
                 for (ColumnDescriptor col : cols)
                 {
-                    if (col.name.endsWith(".href"))
+                    if (col.name.endsWith(".href") || col.name.endsWith("_href"))
                     {
                         String name = col.name.substring(0,col.name.length()-".href".length());
                         if (hrefs.containsKey(name))
@@ -104,7 +104,7 @@ public class TsvOutput extends AbstractParamReplacement
                             continue;
                         }
                     }
-                    if (col.name.endsWith(".style"))
+                    if (col.name.endsWith(".style") || col.name.endsWith("_style"))
                     {
                         String name = col.name.substring(0,col.name.length()-".style".length());
                         if (hrefs.containsKey(name))
