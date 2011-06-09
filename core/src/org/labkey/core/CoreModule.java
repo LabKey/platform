@@ -43,6 +43,7 @@ import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.XMLWriterTest;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.etl.CachingDataIterator;
+import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.module.FirstRequestHandler;
@@ -544,6 +545,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ValidEmail.TestCase.class
             , SimpleTranslator.TranslateTestCase.class
             , CachingDataIterator.ScrollTestCase.class
+            , ResultSetDataIterator.TestCase.class
             //,RateLimiter.TestCase.class
         ));
 
