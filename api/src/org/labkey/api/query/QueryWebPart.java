@@ -16,12 +16,9 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
@@ -47,7 +44,7 @@ public class QueryWebPart extends WebPartView
 
     // if set to 'html', any parse errors in the query are returned to the client as a JSON object instead of
     // rendered in the webpart
-    private String _returnErrors;
+    private String _errorType;
 
 
     public QueryWebPart(ViewContext context, Portal.WebPart part)
@@ -57,7 +54,7 @@ public class QueryWebPart extends WebPartView
         _properties = part.getPropertyMap();
         _extendedProperties = part.getExtendedProperties();
         String title = _properties.get("title");
-        _returnErrors = StringUtils.defaultString(_properties.get("returnErrors"), "html");
+        _errorType = StringUtils.defaultString(_properties.get("errorType"), "html");
 
         ActionURL url = QueryService.get().urlQueryDesigner(getUser(), getContainer(), null);
         _schemaName = _properties.get(QueryParam.schemaName.toString());
@@ -163,7 +160,7 @@ public class QueryWebPart extends WebPartView
 
         // need to return any parse errors before we start sending anything back through the response so
         // we can return JSON content
-        if ("json".equalsIgnoreCase(_returnErrors) && queryDef != null)
+        if ("json".equalsIgnoreCase(_errorType) && queryDef != null)
         {
             List<QueryParseException> parseErrors = queryDef.getParseErrors(_schema);
             if (!parseErrors.isEmpty())

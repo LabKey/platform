@@ -241,7 +241,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
 
     constructor : function(config)
     {
-        this.returnErrors = 'html';
+        this.errorType = 'html';
 
         Ext.apply(this, config, {
             dataRegionName: Ext.id(undefined, "aqwp"),
@@ -488,7 +488,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 {
                     this.unmask();
 
-                    if (this.returnErrors == 'html' || !this._failure)
+                    if (this.errorType == 'html' || !this._failure)
                         targetElem.update("<div class='labkey-error'>" + Ext.util.Format.htmlEncode(json.exception) + "</div>");
 
                     if (this._failure)
