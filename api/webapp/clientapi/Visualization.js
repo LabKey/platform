@@ -154,7 +154,10 @@ LABKEY.Visualization = new function() {
          *              <li><b>schemaName</b>: The name of the schema containing the query that contains this measure.</li>
          *              <li><b>queryName</b>: The name of the query containing this measure.</li>
          *              <li><b>type</b>: The data type of this measure.</li>
-         *              <li><b>values</b>: Optional.  If provided, results will be filtered to .</li>
+         *              <li><b>values</b>: Optional.  If provided, results will be filtered to include only the provided values.</li>
+         *              <li><b>allowNullResults</b>: Optional, defaults to true.  If true, this measure will be joined to other measures via an outer join, which will allow results
+         *                  from other measures at timepoints not present for this measure (possibly resulting in null/blank values for this measure).  If false, other measures will be inner joined
+         *                  to this measure, which will produce a dataset without null values for this measure, but which may not include all data from joined measures.</li>
          *              <li><b>aggregate</b>: See {@link LABKEY.Visualization.Aggregate}.  Required if a 'dimension' property is specified, ignored otherwise.  Indicates
          *                                    what data should be returned if pivoting by dimension results in multiple underlying values
          *                                    per series data point.</li>
