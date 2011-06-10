@@ -318,7 +318,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
         for (Map.Entry<ExpData, String> entry : sampleDerivationInputs.entrySet())
         {
             if (SAMPLE_METADATA_INPUT_ROLE.equals(entry.getValue()))
-                return entry.getKey().getDataFile();
+                return entry.getKey().getFile();
         }
         return null;
     }

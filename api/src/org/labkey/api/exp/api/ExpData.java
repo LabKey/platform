@@ -29,7 +29,6 @@ public interface ExpData extends ExpProtocolOutput
 {
     DataType getDataType();
     URI getDataFileURI();
-    File getDataFile();
 
     void setDataFileURI(URI uri);
 
