@@ -156,7 +156,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public String id(String id)
     {
         ViewContext ctx = getViewContext();
-        return DemoMode.obfuscate(id, ctx.getContainer(), ctx.getUser());
+        return DemoMode.id(id, ctx.getContainer(), ctx.getUser());
     }
 
 

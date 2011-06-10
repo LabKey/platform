@@ -12,6 +12,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.contextPath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath;
     LABKEY.imagePath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath + "/_images";
     LABKEY.devMode = false;
+    LABKEY.demoMode = false;
     LABKEY.extJsRoot = "ext-3.2.2";
     LABKEY.extJsRoot_40 = "ext-4.0.1";
     LABKEY.verbose = false;
@@ -393,4 +394,17 @@ LABKEY.requiresVisualization = function ()
         LABKEY.requiresScript("protovis/protovis-r3.2.js");
 
     LABKEY.requiresScript("vis/ChartComponent.js");
+};
+
+// If we're in demo mode, replace each ID with an equal length string of "*".  This code should match DemoMode.id().
+LABKEY.id = function(id)
+{
+    if (LABKEY.demoMode)
+    {
+        return new Array(id.length + 1 ).join("*");
+    }
+    else
+    {
+        return id;
+    }
 };

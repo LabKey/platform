@@ -33,13 +33,13 @@ public class DemoMode
     private final static Set<Pair<Container, User>> SET = new HashSet<Pair<Container, User>>();
 
     // Return an obfuscated version of the id.  This is the choke point for all obfuscation... currently returns
-    // a string of number signs the same length as the input.  
+    // a string of astericks the same length as the input.
     public static String obfuscate(String id)
     {
         return StringUtils.repeat("*", id.length());
     }
 
-    public static String obfuscate(String id, Container c, User user)
+    public static String id(String id, Container c, User user)
     {
         if (isDemoMode(c, user))
             return obfuscate(id);
