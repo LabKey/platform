@@ -33,6 +33,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
@@ -61,6 +62,18 @@ public abstract class BaseStudyTable extends FilteredTable
         ColumnInfo participantColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn(rootTableColumnName));
         participantColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
         participantColumn.setKeyField(true);
+
+        if (DemoMode.isDemoMode(_schema.getContainer(), _schema.getUser()))
+        {
+            participantColumn.setDisplayColumnFactory(new DisplayColumnFactory() {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo column)
+                {
+                    return new PtidObfuscatingDisplayColumn(column);
+                }
+            });
+        }
+
         return addColumn(participantColumn);
     }
 /*

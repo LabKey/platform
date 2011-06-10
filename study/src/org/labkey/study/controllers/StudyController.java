@@ -1298,7 +1298,7 @@ public class StudyController extends BaseStudyController
     // Obfuscate the passed in test if this user is in "demo" mode in this container
     private static String id(String id, Container c, User user)
     {
-        return DemoMode.obfuscate(id, c, user);
+        return DemoMode.id(id, c, user);
     }
 
 

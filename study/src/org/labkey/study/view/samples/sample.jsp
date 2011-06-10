@@ -42,7 +42,7 @@
     </tr>
     <tr>
         <th align="right"><%= h(StudyService.get().getSubjectNounSingular(sample.getContainer())) %></th>
-        <td><%= h(sample.getPtid()) %></td>
+        <td><%= h(id(sample.getPtid())) %></td>
     </tr>
     <tr>
         <th align="right">Visit</th>

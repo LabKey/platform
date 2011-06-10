@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.study.samples.SampleSearchBean" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.query.PtidObfuscatingDisplayColumn" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SampleSearchBean> me = (JspView<SampleSearchBean>) HttpView.currentView();
@@ -115,17 +116,24 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
     <table id="<%= pass == 0 ? "specialColumnsTable" : "additionalColumnsTable" %>" style="display:<%= (pass == 0 || bean.isAdvancedExpanded()) ? "block" : "none" %>">
     <%
             RenderContext renderContext = new RenderContext(me.getViewContext());
+
             for (DisplayColumn col : bean.getDisplayColumns())
             {
+                // Bit of a hack... should consider changing getPickListValues to return a Map<Key, Value> and/or get the
+                // displaycolumn to filter the values.
+                boolean obfuscate = col instanceof PtidObfuscatingDisplayColumn;
                 boolean display;
+
                 if (pass == 0)
                     display = col.isVisible(renderContext) && bean.isDefaultColumn(col.getColumnInfo());
                 else
                     display = col.isVisible(renderContext) && availableColumns.contains(col.getColumnInfo().getName());
+
                 if (display)
                 {
                     String columnName = bean.getDataRegionName() + "." + (col instanceof DataColumn ?
                             ((DataColumn) col).getDisplayColumn().getName() : col.getColumnInfo().getName());
+
                     if (bean.isPickListColumn(col.getColumnInfo()))
                     {
                         List<String> pickList = bean.getPickListValues(col.getColumnInfo());
@@ -136,14 +144,13 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
                             <input type="hidden" name="searchParams[<%= paramNumber %>].columnName" value="<%= h(columnName) %>">
                             <input type="hidden" name="searchParams[<%= paramNumber %>].compareType" value="<%= CompareType.EQUAL.name() %>">
                             <select name="searchParams[<%= paramNumber %>].value" id="searchParams[<%= paramNumber %>].value">
-                                <option value="">&lt;has any value&gt;</option>
-                                <%
+                                <option value="">&lt;has any value&gt;</option><%
                                     for (Object value : pickList)
                                     {
-                                        String valueString = value != null ? h(value.toString()) : "";
+                                        String keyValue = (value != null ? h(value.toString()) : "");
+                                        String displayValue = obfuscate ? id(keyValue) : keyValue;
                                 %>
-                                <option value="<%= valueString %>"><%= valueString %></option>
-                                <%
+                                <option value="<%= keyValue %>"><%= displayValue %></option><%
                                     }
                                 %>
                             </select>
@@ -161,11 +168,9 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
                                 <select name="searchParams[<%= paramNumber %>].compareType"
                                         id="searchParams[<%= paramNumber %>].compareType"
                                         onChange="updateVisibility('searchParams[<%= paramNumber %>]')">
-                                    <option value="">&lt;has any value&gt;</option>
-                                    <%
+                                    <option value="">&lt;has any value&gt;</option><%
                                         for (CompareType type : CompareType.getValidCompareSet(col.getColumnInfo()))
-                                        {
-                                    %>
+                                        { %>
                                     <option value="<%= h(type.name()) %>"><%= h(type.getDisplayValue()) %></option><%
                                         }
                                     %>

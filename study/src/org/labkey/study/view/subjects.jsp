@@ -1,10 +1,3 @@
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.view.SubjectsWebPart" %>
 <%
 /*
  * Copyright (c) 2010-2011 LabKey Corporation
@@ -22,6 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.view.SubjectsWebPart" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SubjectsWebPart.SubjectsBean> me = (JspView<SubjectsWebPart.SubjectsBean>) HttpView.currentView();
@@ -114,7 +114,7 @@ ul.subjectlist {
                     html += '</ul></td><td  valign="top"><ul class="subjectlist">';
 
                 if (count <= maxCount)
-                    html += '<li><a href="' + _urlTemplate + subjectId + '">' + subjectId + '</a></li>';
+                    html += '<li><a href="' + _urlTemplate + subjectId + '">' + LABKEY.id(subjectId) + '</a></li>';
             }
         }
 
