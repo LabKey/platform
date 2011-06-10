@@ -51,7 +51,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.BeanDataIterator;
-import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.etl.StandardETL;
@@ -472,7 +471,9 @@ public class StudyManager
             Domain domain = dataSetDefinition.getDomain();
 
             // Check if the extra key field has changed
-            if (domain != null && domain.getStorageTableName() != null && !PageFlowUtil.nullSafeEquals(old.getKeyPropertyName(), dataSetDefinition.getKeyPropertyName()))
+            boolean isProvisioned = domain != null && domain.getStorageTableName() != null ;
+            boolean isKeyChanged = old.isDemographicData() != dataSetDefinition.isDemographicData() || !StringUtils.equals(old.getKeyPropertyName(), dataSetDefinition.getKeyPropertyName());
+            if (isProvisioned && isKeyChanged)
             {
                 // If so, we need to update the _key column and the LSID
 
@@ -493,8 +494,10 @@ public class StudyManager
 
                 // Now update the LSID column. Note - this needs to be the same as DatasetImportHelper.getURI()
                 SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
-                updateLSIDSQL.append(dataSetDefinition.getLSIDSQL());
+                updateLSIDSQL.append(dataSetDefinition.generateLSIDSQL());
+                // TODO drop PK
                 Table.execute(getSchema(), updateLSIDSQL);
+                // TODO add PK
             }   
             Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
             _dataSetHelper.update(user, dataSetDefinition, pk);

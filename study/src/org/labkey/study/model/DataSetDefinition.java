@@ -33,7 +33,6 @@ import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.ErrorIterator;
 import org.labkey.api.etl.LoggingDataIterator;
-import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -522,6 +521,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public void setDemographicData(boolean demographicData)
     {
+        verifyMutability();
         _demographicData = demographicData;
     }
 
@@ -658,6 +658,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public void setKeyPropertyName(String keyPropertyName)
     {
+        verifyMutability();
         _keyPropertyName = keyPropertyName;
     }
 
@@ -1331,14 +1332,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 error.append(_study.getTimepointType() != TimepointType.DATE ? "/Date" : "/Visit");
 
                 if (getKeyPropertyName() != null)
-                    error.append("/").append(getKeyPropertyName()).append(" Triple.  ");
+                    error.append("/").append(getKeyPropertyName()).append(" Triple");
                 else
-                    error.append(" Pair.  ");
+                    error.append(" Pair");
             }
             else if (getKeyPropertyName() != null)
             {
-                error.append("/").append(getKeyPropertyName()).append(" Pair.  ");
+                error.append("/").append(getKeyPropertyName()).append(" Pair");
             }
+            error.append(".  ");
 
             error.append("Duplicates were found in the database or imported data.");
             errors.addRowError(new ValidationException(error.toString()));
@@ -1487,8 +1489,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
                 else if (isDemographicData())
                 {
-                    indexSequenceNum = it.addColumn(new ColumnInfo("SequenceNum",JdbcType.DOUBLE),
-                            new Callable(){
+                    indexSequenceNum = it.addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE),
+                            new Callable()
+                            {
                                 @Override
                                 public Object call() throws Exception
                                 {
@@ -1775,16 +1778,24 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             @Override
             public Object call() throws Exception
             {
-                assert null!=indexPTID || hasErrors();
-                String ptid = null==indexPTID ? "" : getString(indexPTID);
-                String seqnum = getFormattedSequenceNum();
-                Object key = null;
-                if (null != indexKeyPropertyOutput)
-                    key = _DatasetColumnsIterator.this.get(indexKeyPropertyOutput);
                 StringBuilder sb = new StringBuilder(_urnPrefix);
-                sb.append(ptid).append(".").append(seqnum);
-                if (null != key)
-                    sb.append(".").append(key);
+                assert null!=indexPTID || hasErrors();
+
+                String ptid = null==indexPTID ? "" : getString(indexPTID);
+                sb.append(ptid);
+
+                if (!isDemographicData())
+                {
+                    String seqnum = getFormattedSequenceNum();
+                    sb.append(".").append(seqnum);
+
+                    if (null != indexKeyPropertyOutput)
+                    {
+                        Object key = _DatasetColumnsIterator.this.get(indexKeyPropertyOutput);
+                        if (null != key)
+                            sb.append(".").append(key);
+                    }
+                }
                 return sb.toString();
             }
         }
@@ -1931,31 +1942,37 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
      /** @return a SQL expression that generates the LSID for a dataset row */
-    public SQLFragment getLSIDSQL()
+    public SQLFragment generateLSIDSQL()
     {
-        SQLFragment visitSQL;
-        if (_study.getTimepointType() != TimepointType.VISIT)
+        if (null == getStorageTableInfo())
+            return new SQLFragment("''");
+
+        ArrayList<SQLFragment> parts = new ArrayList<SQLFragment>();
+        parts.add(new SQLFragment("?", getURNPrefix()));
+        parts.add(new SQLFragment("participantid"));
+
+        if (!isDemographicData())
         {
-            visitSQL = StudyManager.sequenceNumFromDateSQL("date");
+            parts.add(new SQLFragment("'.'"));
+            if (_study.getTimepointType() != TimepointType.VISIT)
+                parts.add(StudyManager.sequenceNumFromDateSQL("date"));
+            else
+                parts.add(new SQLFragment("CAST(CAST(sequencenum AS NUMERIC(15,4)) AS VARCHAR)"));
+
+            if (getKeyPropertyName() != null)
+            {
+                ColumnInfo key = getStorageTableInfo().getColumn(getKeyPropertyName());
+                if (null != key)
+                {
+                    // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
+                    // so use COALESCE to get rid of NULLs
+                    parts.add(new SQLFragment("'.'"));
+                    parts.add(new SQLFragment("COALESCE(CAST(\"" + key.getSelectName() + "\" AS VARCHAR), '')"));
+                }
+            }
         }
-        else
-        {
-            visitSQL = new SQLFragment("CAST (sequencenum AS VARCHAR)");
-        }
-        SQLFragment sql = StudyManager.getSchema().getSqlDialect().concatenate(
-                new SQLFragment("?", getURNPrefix()),
-                visitSQL,
-                new SQLFragment("'.'"),
-                new SQLFragment("participantid"));
-        if (getKeyPropertyName() != null)
-        {
-            // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
-            // so use COALESCE to get rid of NULLs
-            sql = StudyManager.getSchema().getSqlDialect().concatenate(
-                    sql, 
-                    new SQLFragment("'.'"),
-                    new SQLFragment("COALESCE(CAST(\"" + getKeyPropertyName().toLowerCase() + "\" AS VARCHAR), '')"));
-        }
+
+        SQLFragment sql = StudyManager.getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
         return sql;
     }
 
@@ -1969,6 +1986,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             int indexLSID, int indexPTID, int indexDate, int indexKey, int indexReplace,
             BatchValidationException errors)
     {
+        boolean isDemographic = isDemographicData();
+
         try
         {
             // duplicate keys found that should be deleted
@@ -1984,16 +2003,20 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             while (rows.next())
             {
                 String uri = (String)rows.get(indexLSID);
+                String ptid = (String)rows.get(indexPTID);
                 Object[] key = new Object[4];
-                key[0] = rows.get(indexPTID);
+                key[0] = ptid;
                 key[1] = rows.get(indexDate);
                 if (indexKey > 0)
                     key[2] = rows.get(indexKey);
                 if (indexReplace > 0)
                     key[3] = rows.get(indexReplace);
-                if (null != uriMap.put(uri, key))
-                    noDeleteMap.put(uri,key);
-                sbIn.append(sep).append("'").append(uri).append("'");
+
+                String uniq = isDemographic ? ptid : uri;
+                if (null != uriMap.put(uniq, key))
+                    noDeleteMap.put(uniq,key);
+
+                sbIn.append(sep).append("'").append(uniq).append("'");
                 sep = ", ";
                 count++;
             }
@@ -2002,13 +2025,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             TableInfo tinfo = getStorageTableInfo();
             SimpleFilter filter = new SimpleFilter();
-            filter.addWhereClause("LSID IN (" + sbIn + ")", new Object[]{});
+            filter.addWhereClause((isDemographic?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
 
             Map[] results = Table.select(tinfo, Table.ALL_COLUMNS, filter, null, Map.class);
             for (Map orig : results)
             {
                 String lsid = (String) orig.get("LSID");
-                Object[] keys = uriMap.get(lsid);
+                String uniq = isDemographic ? (String)orig.get("ParticipantID"): lsid;
+                Object[] keys = uriMap.get(uniq);
                 boolean replace = Boolean.TRUE.equals(keys[3]);
                 if (replace)
                 {
@@ -2016,7 +2040,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
                 else
                 {
-                    noDeleteMap.put(lsid, keys);
+                    noDeleteMap.put(uniq, keys);
                 }
             }
 
@@ -2067,6 +2091,42 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 );
         return newKey.intValue();
     }
+
+
+/*    public boolean verifyUniqueKeys()
+    {
+        ResultSet rs = null;
+        try
+        {
+            ColumnInfo colKey = getKeyPropertyName()==null ? null : getStorageTableInfo().getColumn(getKeyPropertyName());
+
+            TableInfo tt = getStorageTableInfo();
+            String cols = isDemographicData() ? "participantid" :
+                    null == colKey ? "participantid, sequencenum" :
+                    "participantid, sequencenum, " + colKey.getSelectName();
+
+            rs = Table.executeQuery(DbSchema.get("study"), "SELECT " + cols + " FROM "+ tt.getFromSQL("ds") + " GROUP BY " + cols + " HAVING COUNT(*) > 1", null);
+            if (rs.next())
+                return false;
+            return true;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+
+
+    // WHEN isDemographic() or getKeyPropertyName() changes we need to regenerate the LSIDS for this dataset
+    public void regenerateLSIDS()
+    {
+    }  */
+
+
 
     @Override
     public boolean equals(Object o)
