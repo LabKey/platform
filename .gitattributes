@@ -4224,6 +4224,8 @@ internal/webapp/editarea/plugins/charmap/langs/ru.js -text
 internal/webapp/editarea/plugins/charmap/langs/sk.js -text
 internal/webapp/editarea/plugins/charmap/langs/zh.js -text
 internal/webapp/editarea/plugins/charmap/popup.html -text
+internal/webapp/editarea/plugins/save/langs/en.js -text
+internal/webapp/editarea/plugins/save/save.js -text
 internal/webapp/editarea/plugins/test/css/test.css -text
 internal/webapp/editarea/plugins/test/images/Thumbs.db -text
 internal/webapp/editarea/plugins/test/images/test.gif -text

@@ -1,0 +1,1 @@
+editArea.add_lang("en",{});
