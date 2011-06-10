@@ -1296,7 +1296,7 @@ public class ExperimentController extends SpringActionController
                 if (_data.isInlineImage() && form.getMaxDimension() != null && _data.isFileOnDisk())
                 {
                     ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                    BufferedImage image = ImageIO.read(_data.getDataFile());
+                    BufferedImage image = ImageIO.read(_data.getFile());
                     int imageMax = Math.max(image.getHeight(), image.getWidth());
                     if (imageMax > form.getMaxDimension().intValue())
                     {

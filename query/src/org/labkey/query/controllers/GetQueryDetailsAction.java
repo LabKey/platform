@@ -52,7 +52,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         User user = getViewContext().getUser();
         QuerySchema schema = DefaultSchema.get(user, container).getSchema(form.getSchemaName());
         if (null == schema)
-            throw new IllegalArgumentException("Could not find the schema '" + form.getSchemaName() + "' in the folder '" + container.getPath() + "'!");
+            throw new NotFoundException("Could not find the schema '" + form.getSchemaName() + "' in the folder '" + container.getPath() + "'!");
 
         //a few basic props about the query
         //this needs to be populated before attempting to get the table info
@@ -88,7 +88,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         }
 
         if (null == tinfo)
-            throw new IllegalArgumentException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
+            throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
 
         if (!isUserDefined && tinfo.isMetadataOverrideable())
             resp.put("isMetadataOverrideable", true);

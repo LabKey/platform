@@ -315,7 +315,7 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition getQueryDef(User user, Container container, String schema, String name)
     {
-        Map<String, QueryDefinition> ret = new LinkedHashMap<String, QueryDefinition>();
+        Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<QueryDefinition>();
 
         for (QueryDefinition queryDef : getAllQueryDefs(user, container, schema, true, true, false).values())
             ret.put(queryDef.getName(), queryDef);

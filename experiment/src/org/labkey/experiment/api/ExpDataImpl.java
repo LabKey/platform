@@ -119,11 +119,6 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         }
     }
 
-    public File getDataFile()
-    {
-        return _object.getFile();
-    }
-
     public ExperimentDataHandler findDataHandler()
     {
         return Handler.Priority.findBestHandler(ExperimentServiceImpl.get().getExperimentDataHandlers(), (ExpData)this);

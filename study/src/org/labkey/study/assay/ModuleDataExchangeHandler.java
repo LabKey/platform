@@ -41,7 +41,7 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
             // the original uploaded path
             pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name());
             pw.append('\t');
-            pw.println(expData.getDataFile().getAbsolutePath());
+            pw.println(expData.getFile().getAbsolutePath());
         }
 
         if (form instanceof ModuleRunUploadContext)
