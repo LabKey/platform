@@ -3090,6 +3090,8 @@ visualization/src/org/labkey/visualization/VisualizationController.java -text
 visualization/src/org/labkey/visualization/VisualizationModule.java -text
 visualization/src/org/labkey/visualization/report/TimeChartReportImpl.java -text
 visualization/src/org/labkey/visualization/report/VisualizationUIProvider.java -text
+visualization/src/org/labkey/visualization/sql/IVisualizationSourceQuery.java -text
+visualization/src/org/labkey/visualization/sql/OuterJoinSourceQuery.java -text
 visualization/src/org/labkey/visualization/sql/StudyVisualizationProvider.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationAggregateColumn.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationIntervalColumn.java -text

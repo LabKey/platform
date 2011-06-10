@@ -41,29 +41,33 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceQuery first, VisualizationSourceQuery second)
+    public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, VisualizationSourceQuery second)
     {
         if (!first.getContainer().equals(second.getContainer()))
             throw new IllegalArgumentException("Can't yet join across containers.");
 
+        List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinCols = new ArrayList<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>();
+
         DataSet.KeyType firstType = StudyService.get().getDatasetKeyType(first.getContainer(), first.getQueryName());
         DataSet.KeyType secondType = StudyService.get().getDatasetKeyType(second.getContainer(), second.getQueryName());
-        if (firstType == DataSet.KeyType.SUBJECT || secondType == DataSet.KeyType.SUBJECT)
+        String firstSubjectColumnName = StudyService.get().getSubjectColumnName(first.getContainer());
+        // allow null results for this column so as to follow the lead of the primary measure column for this query:
+        VisualizationSourceColumn firstSubjectCol = factory.create(first.getSchema(), first.getQueryName(), firstSubjectColumnName, true);
+        String secondSubjectColName = StudyService.get().getSubjectColumnName(second.getContainer());
+        // allow null results for this column so as to follow the lead of the primary measure column for this query:
+        VisualizationSourceColumn secondSubjectCol = factory.create(second.getSchema(), second.getQueryName(), secondSubjectColName, true);
+
+        joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSubjectCol, secondSubjectCol));
+        // if either dataset is demographic, it's sufficient to join on subject only:
+        if (firstType != DataSet.KeyType.SUBJECT && secondType != DataSet.KeyType.SUBJECT)
         {
-            // if either dataset is demographic, it's sufficient to join on subject only:
-            String firstSubjectCol = StudyService.get().getSubjectColumnName(first.getContainer());
-            VisualizationSourceColumn firstSourceCol = new VisualizationSourceColumn(first.getSchema(), first.getQueryName(), firstSubjectCol);
-            String secondSubjectCol = StudyService.get().getSubjectColumnName(second.getContainer());
-            VisualizationSourceColumn secondSourceCol = new VisualizationSourceColumn(second.getSchema(), second.getQueryName(), secondSubjectCol);
-            return Collections.singletonList(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSourceCol, secondSourceCol));
+            // for non-demographic datasets, join on subject/visit, allowing null results for this column so as to follow the lead of the primary measure column for this query:
+            VisualizationSourceColumn firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), "ParticipantVisit/VisitDate", true);
+            VisualizationSourceColumn secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), "ParticipantVisit/VisitDate", true);
+            joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSequenceCol, secondSequenceCol));
         }
-        else
-        {
-            // for non-demographic datasets, join on subject/visit:
-            VisualizationSourceColumn firstSourceCol = new VisualizationSourceColumn(first.getSchema(), first.getQueryName(), "ParticipantSequenceKey");
-            VisualizationSourceColumn secondSourceCol = new VisualizationSourceColumn(second.getSchema(), second.getQueryName(), "ParticipantSequenceKey");
-            return Collections.singletonList(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSourceCol, secondSourceCol));
-        }
+
+        return joinCols;
     }
 
     @Override

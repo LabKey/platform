@@ -27,7 +27,7 @@ import java.util.*;
 * User: brittp
 * Date: Jan 27, 2011 11:14:20 AM
 */
-public class VisualizationSourceQuery
+public class VisualizationSourceQuery implements IVisualizationSourceQuery
 {
     private Container _container;
     private UserSchema _schema;
@@ -38,7 +38,7 @@ public class VisualizationSourceQuery
     private Set<VisualizationSourceColumn> _allSelects = null;
     private Set<VisualizationAggregateColumn> _aggregates = new LinkedHashSet<VisualizationAggregateColumn>();
     private Set<VisualizationSourceColumn> _sorts = new LinkedHashSet<VisualizationSourceColumn>();
-    private VisualizationSourceQuery _joinTarget;  // query this query must join to when building SQL
+    private IVisualizationSourceQuery _joinTarget;  // query this query must join to when building SQL
     private List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> _joinConditions;
     private SimpleFilter _filter;
 
@@ -56,7 +56,6 @@ public class VisualizationSourceQuery
             _tinfo = _schema.getTable(_queryName);
         return _tinfo;
     }
-
 
     private void ensureSameQuery(VisualizationSourceColumn measure)
     {
@@ -82,20 +81,36 @@ public class VisualizationSourceQuery
         return _container;
     }
 
+    public boolean requireInnerJoin()
+    {
+        for (VisualizationSourceColumn col : _selects)
+        {
+            if (!col.isAllowNullResults())
+                return true;
+        }
+        for (VisualizationAggregateColumn aggregate : _aggregates)
+        {
+            if (!aggregate.isAllowNullResults())
+                return true;
+        }
+        return false;
+    }
+
     public void addSelect(VisualizationSourceColumn select)
     {
         ensureSameQuery(select);
         _selects.add(select);
     }
 
-    public Set<VisualizationSourceColumn> getSelects(boolean includeRequiredExtraCols)
+    @Override
+    public Set<VisualizationSourceColumn> getSelects(VisualizationSourceColumn.Factory factory, boolean includeRequiredExtraCols)
     {
         if (includeRequiredExtraCols)
         {
             if (_allSelects == null)
             {
                 _allSelects = new LinkedHashSet<VisualizationSourceColumn>(_selects);
-                _allSelects.addAll(getOORColumns());
+                _allSelects.addAll(getOORColumns(factory));
             }
             return _allSelects;
         }
@@ -114,6 +129,70 @@ public class VisualizationSourceQuery
         return _aggregates;
     }
 
+    @Override
+    public boolean contains(VisualizationSourceColumn column)
+    {
+        return column.getSchemaName().equals(this.getSchemaName()) && column.getQueryName().equals(this.getQueryName());
+    }
+
+    @Override
+    public String getSelectListName(Set<String> selectAliases)
+    {
+        // If there is more than one available alias for a given value, just choose the first: 
+        return selectAliases.iterator().next();
+    }
+
+    private static void addToColMap(Map<String, Set<String>> colMap, String name, String alias)
+    {
+        Set<String> aliases = colMap.get(name);
+        if (aliases == null)
+        {
+            aliases = new LinkedHashSet<String>();
+            colMap.put(name, aliases);
+        }
+        aliases.add(alias);
+    }
+
+
+    @Override
+    public Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory)
+    {
+        Map<String, Set<String>> colMap = new LinkedHashMap<String, Set<String>>();
+        Set<VisualizationAggregateColumn> aggregates = getAggregates();
+        if (!aggregates.isEmpty())
+        {
+            for (VisualizationAggregateColumn aggregate : aggregates)
+            {
+                if (getPivot() != null && !getPivot().getValues().isEmpty())
+                {
+                    // Aggregate with pivot:
+                    for (Object pivotValue : getPivot().getValues())
+                    {
+                        addToColMap(colMap, pivotValue.toString(), pivotValue.toString() + "::" + aggregate.getAlias());
+                    }
+                }
+                else
+                {
+                    // Aggregate without pivot (simple grouping)
+                    addToColMap(colMap, aggregate.getOriginalName(), aggregate.getAlias());
+                }
+            }
+        }
+        for (VisualizationSourceColumn select : getSelects(factory, true))
+            addToColMap(colMap, select.getOriginalName(), select.getAlias());
+
+        if (getJoinConditions() != null)
+        {
+            for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : getJoinConditions())
+            {
+                addToColMap(colMap, join.getKey().getOriginalName(), join.getKey().getAlias());
+                addToColMap(colMap, join.getValue().getOriginalName(), join.getValue().getAlias());
+            }
+        }
+        return colMap;
+    }
+
+    @Override
     public VisualizationSourceColumn getPivot()
     {
         return _pivot;
@@ -146,6 +225,7 @@ public class VisualizationSourceQuery
         return getSchemaName() + "." + _queryName;
     }
 
+    @Override
     public String getAlias()
     {
         return ColumnInfo.legalNameFromName(getSchemaName() + "_" + _queryName);
@@ -182,13 +262,13 @@ public class VisualizationSourceQuery
     }
 
 
-    public String getSelectClause()
+    public String getSelectClause(VisualizationSourceColumn.Factory factory)
     {
         StringBuilder selectList = new StringBuilder("SELECT ");
         Set<VisualizationSourceColumn> selects = new LinkedHashSet<VisualizationSourceColumn>();
         if (_pivot != null)
                 selects.add(_pivot);
-        selects.addAll(getSelects(true));
+        selects.addAll(getSelects(factory, true));
         selects.addAll(_sorts);
         selects.addAll(_aggregates);
         appendColumnNames(selectList, selects, true, false, true);
@@ -269,10 +349,10 @@ public class VisualizationSourceQuery
      * @return A set of additional columns that should be selected to ensure that the columns actually requested
      * by the user correctly display their out-of-range indicators.
      */
-    private Set<VisualizationSourceColumn> getOORColumns()
+    private Set<VisualizationSourceColumn> getOORColumns(VisualizationSourceColumn.Factory factory)
     {
         Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
-        for (VisualizationSourceColumn selectCol : this.getSelects(false))
+        for (VisualizationSourceColumn selectCol : this.getSelects(factory, false))
         {
             FieldKey oorSelect = FieldKey.fromString(selectCol.getOriginalName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
             fieldKeys.add(oorSelect);
@@ -280,7 +360,7 @@ public class VisualizationSourceQuery
         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getTableInfo(), fieldKeys);
         Set<VisualizationSourceColumn> oorSelects = new HashSet<VisualizationSourceColumn>();
         for (FieldKey key : cols.keySet())
-            oorSelects.add(new VisualizationSourceColumn(getSchema(), getQueryName(), key.toString()));
+            oorSelects.add(factory.create(getSchema(), getQueryName(), key.toString(), true));
         return oorSelects;
     }
 
@@ -343,7 +423,7 @@ public class VisualizationSourceQuery
         }
         for (VisualizationSourceColumn sort : _sorts)
         {
-            if (sort.getValues() != null && !sort.getValues().isEmpty())
+            if (sort.getValues() != null && !sort.getValues().isEmpty() && !_selects.contains(sort))
             {
                 where.append(sep);
                 appendColumnNames(where, Collections.singleton(sort), false, false, false);
@@ -355,10 +435,11 @@ public class VisualizationSourceQuery
         return where.toString();
     }
 
-    public String getSQL() throws VisualizationSQLGenerator.GenerationException
+    @Override
+    public String getSQL(VisualizationSourceColumn.Factory factory) throws VisualizationSQLGenerator.GenerationException
     {
         StringBuilder sql = new StringBuilder();
-        sql.append(getSelectClause()).append("\n");
+        sql.append(getSelectClause(factory)).append("\n");
         sql.append(getFromClause()).append("\n");
         sql.append(getWhereClause()).append("\n");
         sql.append(getGroupByClause()).append("\n");
@@ -366,9 +447,15 @@ public class VisualizationSourceQuery
         return sql.toString();
     }
 
-    public VisualizationSourceQuery getJoinTarget()
+    @Override
+    public IVisualizationSourceQuery getJoinTarget()
     {
         return _joinTarget;
+    }
+
+    public void setJoinTarget(IVisualizationSourceQuery joinTarget)
+    {
+        _joinTarget = joinTarget;
     }
 
     public String getSchemaName()

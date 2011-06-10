@@ -51,6 +51,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<String, VisualizationSourceQuery>();
     private List<VisualizationIntervalColumn> _intervals = new ArrayList<VisualizationIntervalColumn>();
     private ViewContext _viewContext;
+    private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
 
     @Override
     public void setViewContext(ViewContext context)
@@ -85,12 +86,12 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     col = new VisualizationAggregateColumn(getViewContext(), measureProperties);
                     query = ensureSourceQuery(_viewContext.getContainer(), col, previous);
                     query.addAggregate((VisualizationAggregateColumn) col);
-                    VisualizationSourceColumn pivot = new VisualizationSourceColumn(getViewContext(), dimensionProperties);
+                    VisualizationSourceColumn pivot = _columnFactory.create(getViewContext(), dimensionProperties);
                     query.setPivot(pivot);
                 }
                 else
                 {
-                    col = new VisualizationSourceColumn(getViewContext(), measureProperties);
+                    col = _columnFactory.create(getViewContext(), measureProperties);
                     query = ensureSourceQuery(_viewContext.getContainer(), col, previous);
                     query.addSelect(col);
                 }
@@ -102,7 +103,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
                     if (zeroDateProperties != null)
                     {
-                        VisualizationSourceColumn zeroDateMeasure = new VisualizationSourceColumn(getViewContext(), zeroDateProperties);
+                        VisualizationSourceColumn zeroDateMeasure = _columnFactory.create(getViewContext(), zeroDateProperties);
+                        zeroDateMeasure.setAllowNullResults(false);
                         ensureSourceQuery(_viewContext.getContainer(), zeroDateMeasure, query).addSelect(zeroDateMeasure);
                         String interval = (String) dateOptions.get("interval");
                         if (interval != null)
@@ -118,7 +120,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         {
             for (Map<String, Object> sortInfo : ((JSONArray) sortsProp).toJSONObjectArray())
             {
-                VisualizationSourceColumn sort = new VisualizationSourceColumn(getViewContext(), sortInfo);
+                VisualizationSourceColumn sort = _columnFactory.create(getViewContext(), sortInfo);
                 getSourceQuery(sort, true).addSort(sort);
             }
         }
@@ -143,9 +145,12 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     {
         for (VisualizationSourceQuery query : _sourceQueries.values())
         {
-            VisualizationSourceQuery joinTarget = query.getJoinTarget();
-            if (joinTarget != null)
+            IVisualizationSourceQuery possibleJoinTarget = query.getJoinTarget();
+            if (possibleJoinTarget != null)
             {
+                if (!(possibleJoinTarget instanceof VisualizationSourceQuery))
+                    throw new IllegalStateException("Expected VisualizationSourceQuery instance, found " + possibleJoinTarget.getClass().getName());
+                VisualizationSourceQuery joinTarget = (VisualizationSourceQuery) possibleJoinTarget;
                 if (!joinTarget.getSchemaName().equalsIgnoreCase(query.getSchemaName()))
                 {
                     throw new IllegalArgumentException("Cross-schema joins are not yet supported.  Attempt to join " +
@@ -154,14 +159,20 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 VisualizationProvider provider = VisualizationController.getVisualizationProviders().get(query.getSchemaName());
                 if (provider == null)
                     throw new IllegalArgumentException("No visualization provider registered for schema \"" + query.getSchemaName() + "\".");
-                List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = provider.getJoinColumns(query, joinTarget);
-                query.setJoinConditions(joinConditions);
-                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : joinConditions)
+                List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = new ArrayList<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>();
+                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : provider.getJoinColumns(_columnFactory, query, joinTarget))
                 {
                     // Make sure we're selecting all the columns we need to join on:
-                    getSourceQuery(join.getKey(), true).addSelect(join.getKey());
-                    getSourceQuery(join.getValue(), true).addSelect(join.getValue());
+                    VisualizationSourceColumn left = join.getKey();
+                    getSourceQuery(join.getKey(), true).addSelect(left);
+                    VisualizationSourceColumn right = join.getValue();
+                    getSourceQuery(join.getValue(), true).addSelect(right);
+                    // We need to filter both left and right queries by the same values (for the same columns), since we
+                    // may be doing an outer join.
+                    left.syncValues(right);
+                    joinConditions.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(left, right));
                 }
+                query.setJoinConditions(joinConditions);
             }
         }
     }
@@ -194,64 +205,128 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     public String getSQL() throws VisualizationSQLGenerator.GenerationException
     {
-        // Now that we have the full list of columns we want to select, we can
+        return getSQL(null);
+    }
+
+    public String getSQL(IVisualizationSourceQuery parentQuery) throws VisualizationSQLGenerator.GenerationException
+    {
+        Set<IVisualizationSourceQuery> outerJoinQueries = new LinkedHashSet<IVisualizationSourceQuery>();
+        Set<VisualizationSourceQuery> innerJoinQueries = new LinkedHashSet<VisualizationSourceQuery>();
+        for (VisualizationSourceQuery query : _sourceQueries.values())
+        {
+            if (query.requireInnerJoin())
+                innerJoinQueries.add(query);
+            else
+                outerJoinQueries.add(query);
+        }
+
+        // Create a single, nested outer join query to gather up all the outer-join results
+        List<IVisualizationSourceQuery> queries = new ArrayList<IVisualizationSourceQuery>();
+        IVisualizationSourceQuery nestedOuterJoinQuery = null;
+        if (outerJoinQueries.size() > 1)
+        {
+            nestedOuterJoinQuery = new OuterJoinSourceQuery(outerJoinQueries);
+            queries.add(nestedOuterJoinQuery);
+        }
+        else
+            queries.addAll(outerJoinQueries);
+
+        if (nestedOuterJoinQuery != null)
+        {
+            // Remap any inner join queries to join to the outer-join inner query above:
+            for (VisualizationSourceQuery innerJoinQuery : innerJoinQueries)
+            {
+                IVisualizationSourceQuery joinTarget = innerJoinQuery.getJoinTarget();
+                if (outerJoinQueries.contains(joinTarget))
+                    innerJoinQuery.setJoinTarget(nestedOuterJoinQuery);
+            }
+        }
+        // Add inner joins to the inner-join queries
+        queries.addAll(innerJoinQueries);
+        return getSQL(parentQuery, _columnFactory, queries, _intervals, "INNER JOIN", true);
+    }
+
+    private static IVisualizationSourceQuery findQuery(VisualizationSourceColumn column, Collection<IVisualizationSourceQuery> queries)
+    {
+        for (IVisualizationSourceQuery query : queries)
+        {
+            if (query.contains(column))
+                return query;
+        }
+        return null;
+    }
+
+    public static String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory, Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals, String joinOperator, boolean includeOrderBys) throws VisualizationSQLGenerator.GenerationException
+    {
+        // Now that we have the full list of columns we want to select, we can generate our select list
         StringBuilder masterSelectList = new StringBuilder();
         String sep = "";
-        for (String selectAlias : getColumnMapping().values())
+        for (Set<String> selectAliases : getColumnMapping(factory, queries).values())
         {
-            masterSelectList.append(sep).append("\"").append(selectAlias).append("\"");
+            String selectAlias;
+            if (parentQuery != null)
+                selectAlias = parentQuery.getSelectListName(selectAliases);
+            else
+                selectAlias = "\"" + selectAliases.iterator().next() + "\"";
+            masterSelectList.append(sep).append(selectAlias);
             sep = ",\n\t";
         }
 
-        for (int i = 0, intervalsSize = _intervals.size(); i < intervalsSize; i++)
+        for (int i = 0, intervalsSize = intervals.size(); i < intervalsSize; i++)
         {
-            VisualizationIntervalColumn interval = _intervals.get(i);
+            VisualizationIntervalColumn interval = intervals.get(i);
             String alias = (intervalsSize > 1) ? interval.getFullAlias() : interval.getSimpleAlias();
             masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(alias);
         }
 
-        Map<VisualizationSourceColumn, VisualizationSourceQuery> orderBys = new LinkedHashMap<VisualizationSourceColumn, VisualizationSourceQuery>();
+        Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys = new LinkedHashMap<VisualizationSourceColumn, IVisualizationSourceQuery>();
         StringBuilder sql = new StringBuilder();
-        for (VisualizationSourceQuery query : _sourceQueries.values())
+        for (IVisualizationSourceQuery query : queries)
         {
             for (VisualizationSourceColumn orderBy : query.getSorts())
                 orderBys.put(orderBy, query);
             if (sql.length() == 0)
                 sql.append("SELECT ").append(masterSelectList).append(" FROM\n");
             else
-                sql.append("\nINNER JOIN\n");
-            String querySql = query.getSQL();
+                sql.append("\n").append(joinOperator).append("\n");
+            String querySql = query.getSQL(factory);
             sql.append("(").append(querySql).append(") AS ").append(query.getAlias()).append("\n");
             if (query.getJoinTarget() != null)
             {
                 sql.append("ON ");
+                String andSep = "";
                 for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> condition : query.getJoinConditions())
                 {
                     // either left or right should be our current query
                     VisualizationSourceColumn leftColumn = condition.getKey();
-                    VisualizationSourceQuery leftQuery = getSourceQuery(condition.getKey(), true);
+                    IVisualizationSourceQuery leftQuery = findQuery(condition.getKey(), queries);
                     VisualizationSourceColumn rightColumn = condition.getValue();
-                    VisualizationSourceQuery rightQuery = getSourceQuery(condition.getValue(), true);
+                    IVisualizationSourceQuery rightQuery = findQuery(condition.getValue(), queries);
 
+                    sql.append(andSep);
+                    andSep = " AND ";
                     sql.append(leftQuery.getAlias()).append(".").append(leftColumn.getAlias()).append(" = ");
                     sql.append(rightQuery.getAlias()).append(".").append(rightColumn.getAlias()).append("\n");
                 }
             }
         }
 
-        if (!orderBys.isEmpty())
+        if (includeOrderBys && !orderBys.isEmpty())
         {
             sep = "";
             sql.append("ORDER BY ");
-            for (Map.Entry<VisualizationSourceColumn, VisualizationSourceQuery> orderBy : orderBys.entrySet())
+            UserSchema firstSchema = null;
+            for (Map.Entry<VisualizationSourceColumn, IVisualizationSourceQuery> orderBy : orderBys.entrySet())
             {
+                if (firstSchema == null)
+                    firstSchema = orderBy.getKey().getSchema();
                 sql.append(sep).append(orderBy.getValue().getAlias()).append(".").append(orderBy.getKey().getAlias());
                 sep = ", ";
             }
-            DefaultSchema defSchema = DefaultSchema.get(_viewContext.getUser(), _viewContext.getContainer());
+            assert firstSchema != null : "Should have at least one column with a schema.";
+            DefaultSchema defSchema = DefaultSchema.get(firstSchema.getUser(), firstSchema.getContainer());
             if (defSchema.getDbSchema().getSqlDialect().isSqlServer())
                 sql.append(" LIMIT 1000000");
-
         }
 
         return sql.toString();
@@ -259,57 +334,19 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     public Map<String, String> getColumnMapping()
     {
+        Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<IVisualizationSourceQuery>(_sourceQueries.values());
+        Map<String, Set<String>> allAliases = getColumnMapping(_columnFactory, queries);
         Map<String, String> colMap = new LinkedHashMap<String, String>();
-
-        // Add the sort columns first, since these are generally important to the user and should appear
-        // on the left-hand side of any data grids.  (Subject ID is the most common sort column.)
-        for (VisualizationSourceQuery query : _sourceQueries.values())
-        {
-            for (VisualizationSourceColumn sort : query.getSorts())
-                colMap.put(sort.getOriginalName(), sort.getAlias());
-        }
-
-        for (VisualizationSourceQuery query : _sourceQueries.values())
-        {
-            Set<VisualizationAggregateColumn> aggregates = query.getAggregates();
-            if (!aggregates.isEmpty())
-            {
-                for (VisualizationAggregateColumn aggregate : aggregates)
-                {
-                    if (query.getPivot() != null && !query.getPivot().getValues().isEmpty())
-                    {
-                        // Aggregate with pivot:
-                        for (Object pivotValue : query.getPivot().getValues())
-                        {
-                            colMap.put(pivotValue.toString(), pivotValue.toString() + "::" + aggregate.getAlias());
-                        }
-                    }
-                    else
-                    {
-                        // Aggregate without pivot (simple grouping)
-                        colMap.put(aggregate.getOriginalName(), aggregate.getAlias());
-                    }
-                }
-            }
-            for (VisualizationSourceColumn select : query.getSelects(true))
-                colMap.put(select.getOriginalName(), select.getAlias());
-
-            if (query.getJoinConditions() != null)
-            {
-                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : query.getJoinConditions())
-                {
-                    colMap.put(join.getKey().getOriginalName(), join.getKey().getAlias());
-                    colMap.put(join.getValue().getOriginalName(), join.getValue().getAlias());
-                }
-            }
-        }
+        // The default column mapping references the first available valid alias:
+        for (Map.Entry<String, Set<String>> entry : allAliases.entrySet())
+            colMap.put(entry.getKey(), entry.getValue().iterator().next());
 
         // Now that we have the full set of columns, we can take a pass through to eliminate the columns on the right
         // side of join clauses, since we know the columns contain duplicate data. We leave a key in the column map
         // for the originally requested column name, but replace the value column, so the requestor can use whichever
         // column name they like to find the results.
         Map<String, String> selectAliasRemapping = new HashMap<String, String>();
-        for (VisualizationSourceQuery query : _sourceQueries.values())
+        for (IVisualizationSourceQuery query : queries)
         {
             if (query.getJoinConditions() != null)
             {
@@ -324,6 +361,39 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             String remappedAlias = selectAliasRemapping.get(originalAlias);
             if (remappedAlias != null)
                 mapping.setValue(remappedAlias);
+        }
+
+        return colMap;
+    }
+
+    private static void addToColMap(Map<String, Set<String>> colMap, String name, Set<String> newAliases)
+    {
+        Set<String> aliases = colMap.get(name);
+        if (aliases == null)
+        {
+            aliases = new LinkedHashSet<String>();
+            colMap.put(name, aliases);
+        }
+        aliases.addAll(newAliases);
+    }
+
+    private static Map<String, Set<String>> getColumnMapping(VisualizationSourceColumn.Factory factory, Collection<IVisualizationSourceQuery> queries)
+    {
+        Map<String, Set<String>> colMap = new LinkedHashMap<String, Set<String>>();
+
+        // Add the sort columns first, since these are generally important to the user and should appear
+        // on the left-hand side of any data grids.  (Subject ID is the most common sort column.)
+        for (IVisualizationSourceQuery query : queries)
+        {
+            for (VisualizationSourceColumn sort : query.getSorts())
+                addToColMap(colMap, sort.getOriginalName(), Collections.singleton(sort.getAlias()));
+        }
+
+        for (IVisualizationSourceQuery query : queries)
+        {
+            Map<String, Set<String>> queryColMap = query.getColumnNameToValueAliasMap(factory);
+            for (Map.Entry<String, Set<String>> entry : queryColMap.entrySet())
+                addToColMap(colMap, entry.getKey(), entry.getValue());
         }
         return colMap;
     }

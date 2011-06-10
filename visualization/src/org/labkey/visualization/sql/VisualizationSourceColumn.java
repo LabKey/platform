@@ -11,10 +11,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
 * Copyright (c) 2011 LabKey Corporation
@@ -39,20 +36,57 @@ public class VisualizationSourceColumn
 {
     private String _queryName;
     private UserSchema _schema;
+    private boolean _allowNullResults;
     private String _name;
     private JdbcType _type = null;
     private Set<Object> _values = new LinkedHashSet<Object>();
 
-    public VisualizationSourceColumn(UserSchema schema, String queryName, String name)
+    public static class Factory
+    {
+        private Map<String, VisualizationSourceColumn> _currentCols = new HashMap<String, VisualizationSourceColumn>();
+
+        private VisualizationSourceColumn findOrAdd(VisualizationSourceColumn col)
+        {
+            String key = col.getSchemaName() + "." + col.getQueryName() + "." + col.getOriginalName();
+            VisualizationSourceColumn current = _currentCols.get(key);
+            if (current != null)
+            {
+                // do any necessary merging:
+                if (!col.isAllowNullResults())
+                    current.setAllowNullResults(false);
+                return current;
+            }
+            else
+            {
+                _currentCols.put(key, col);
+                return col;
+            }
+        }
+
+        public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, Boolean allowNullResults)
+        {
+            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, queryName, name, allowNullResults);
+            return findOrAdd(col);
+        }
+
+        public VisualizationSourceColumn create(ViewContext context, Map<String, Object> properties)
+        {
+            VisualizationSourceColumn col = new VisualizationSourceColumn(context, properties);
+            return findOrAdd(col);
+        }
+    }
+
+    protected VisualizationSourceColumn(UserSchema schema, String queryName, String name, Boolean allowNullResults)
     {
         _name = name;
         _queryName = queryName;
         _schema = schema;
+        _allowNullResults = allowNullResults == null || allowNullResults;
     }
 
-    public VisualizationSourceColumn(ViewContext context, Map<String, Object> properties)
+    protected VisualizationSourceColumn(ViewContext context, Map<String, Object> properties)
     {
-        this(getUserSchema(context, (String) properties.get("schemaName")), (String) properties.get("queryName"), (String) properties.get("name"));
+        this(getUserSchema(context, (String) properties.get("schemaName")), (String) properties.get("queryName"), (String) properties.get("name"), (Boolean) properties.get("allowNullResults"));
         JSONArray values = (JSONArray) properties.get("values");
         if (values != null)
         {
@@ -85,6 +119,16 @@ public class VisualizationSourceColumn
     public String getOriginalName()
     {
         return _name;
+    }
+
+    public boolean isAllowNullResults()
+    {
+        return _allowNullResults;
+    }
+
+    public void setAllowNullResults(boolean allowNullResults)
+    {
+        _allowNullResults = allowNullResults;
     }
 
     public String getSelectName()
@@ -143,6 +187,12 @@ public class VisualizationSourceColumn
         return _values;
     }
 
+    public void syncValues(VisualizationSourceColumn other)
+    {
+        _values.addAll(other.getValues());
+        other._values.addAll(getValues());
+    }
+    
     public String getAlias()
     {
         return ColumnInfo.legalNameFromName(getSchemaName() + "_" + _queryName + "_" + _name);

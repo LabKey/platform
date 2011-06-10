@@ -53,8 +53,8 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         for (Map.Entry<String, Object> entry : template.getProperties().entrySet())
             setProperty(entry.getKey(), entry.getValue());
     }
-    
-    public Set<WellGroup> getOverlappingGroups()
+
+    public synchronized Set<WellGroup> getOverlappingGroups()
     {
         if (_overlappingGroups == null)
         {
@@ -83,7 +83,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         return typedGroups;
     }
 
-    public List<WellData> getWellData(boolean combineReplicates)
+    public synchronized List<WellData> getWellData(boolean combineReplicates)
     {
         if (!combineReplicates)
         {
@@ -133,7 +133,6 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
     public double getStdDev()
     {
         computeStats();
-
         return _stdDev;
     }
 
@@ -221,13 +220,13 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         return false;
     }
 
-    private void computeStats()
+    private synchronized void computeStats()
     {
         if (null == _stdDev)
             recomputeStats();
     }
 
-    private void recomputeStats()
+    private synchronized void recomputeStats()
     {
         List<WellData> data = getWellData(true);
         double[] values = new double[data.size()];
@@ -237,7 +236,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         computeStats(values);
     }
 
-    private void computeStats(double[] data)
+    private synchronized void computeStats(double[] data)
     {
         // sd is sqrt of sum of (values-mean) squared divided by n - 1
         // Calculate the mean

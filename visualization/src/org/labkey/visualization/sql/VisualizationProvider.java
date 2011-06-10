@@ -33,7 +33,7 @@ import java.util.*;
 public abstract class VisualizationProvider
 {
     public abstract List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>
-    getJoinColumns(VisualizationSourceQuery first, VisualizationSourceQuery second);
+    getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, VisualizationSourceQuery second);
 
     protected static enum ColumnMatchType
     {
