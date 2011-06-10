@@ -85,6 +85,23 @@
 <div id="query-editor-panel" class="extContainer"></div>
 <script type="text/javascript">
 
+    // CONSIDER : These events are used by both this window and the iFrame of the editAreaLoader.
+    // If you are adding another event please be aware of both instances. 
+    function saveEvent(e) {
+        var cmp = Ext.getCmp('qep');
+        if (cmp) {  cmp.getSourceEditor().save(); }
+    }
+
+    function editEvent(e) {
+        var cmp = Ext.getCmp('qep');
+        if (cmp) {  cmp.openSourceEditor(true); }
+    }
+
+    function executeEvent(e) {
+        var cmp = Ext.getCmp('qep');
+        if (cmp) {  cmp.getSourceEditor().execute(true); }
+    }
+   
     Ext.onReady(function(){
 
         Ext.QuickTips.init();
@@ -115,6 +132,7 @@
             layout     : 'fit',
             frame      : false,
             border     : false,
+            boxMinHeight: 450,
             items      : [queryEditor]
         });
 
@@ -173,8 +191,19 @@
         function onKeyDown(evt) {
             var handled = false;
 
-            if(evt.ctrlKey && !evt.altKey && 83 == evt.getKey()) {
-                handled = true;
+            if(evt.ctrlKey && !evt.altKey && !evt.shiftKey) {
+                if (83 == evt.getKey()) {  // s
+                    saveEvent(evt);
+                    handled = true;
+                }
+                if (69 == evt.getKey()) {  // e
+                    editEvent(evt);
+                    handled = true;
+                }
+                if (13 == evt.getKey()) {  // enter
+                    executeEvent(evt);
+                    handled = true;
+                }
             }
 
             if(handled) {
@@ -182,7 +211,7 @@
                 evt.stopPropagation();
             }
         }
-        
+
         Ext.EventManager.addListener(document, "keydown", onKeyDown);
     });
 </script>

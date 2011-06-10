@@ -104,8 +104,10 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                     this.eal.init({
                         id     : this.editorId,
                         syntax : 'sql',
-                        start_highlight: true
+                        start_highlight: true,
+                        plugins : "save"
                     });
+                    this.doLayout(false, true);
                 },
                 scope : this
             },
@@ -134,6 +136,10 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
     setDisplay : function(id) {
         if (id) this.display = id;           
+    },
+
+    focusEditor : function() {
+        this.eal.execCommand(this.editorId, 'focus');
     },
 
     execute : function(force) {
@@ -204,12 +210,23 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         }
         return _meta;
     },
+
+    save : function(showView) {
+        this.onSave(showView);
+    },
     
     onSave : function(showView) {
 
+        if (!this.query.canEdit) { return; }
+        
         var _sql = this.eal.getValue(this.editorId);
 
         this.fireEvent('beforeSave', this.query.schema, _sql);
+
+        if (!this.isSaveDirty()) {
+            this.fireEvent('save', true);
+            return;
+        }
         
         Ext.Ajax.request({
             url    : LABKEY.ActionURL.buildURL('query', 'saveSourceQuery.api'),
@@ -366,6 +383,8 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         this.editor = new Ext.Panel({
             border: false, frame : false,
             autoScroll : true,
+            layout : 'fit',
+            flex  : 1,
             items : [
                 {
                     xtype : 'box',
@@ -375,7 +394,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                         rows : 17,
                         cols : 80,
                         wrap : 'off',
-                        style: 'width: 100%;',
+                        style: 'width: 100%; height: 100%;',
                         html : this.query.metadataText
                     }
                 }
@@ -500,7 +519,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
         this.sourceEditor.on('loaded', function(loaded){
             this.dataTab.getEl().unmask();
-            if (!loaded) this.tabPanel.setActiveTab(this.sourceEditor);
+            if (!loaded) this.openSourceEditor();
         }, this);
 
         this.metaEditor = new LABKEY.query.MetadataXMLEditorPanel({
@@ -531,6 +550,13 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
     save : function() {
         this.tabPanel.getActiveTab().onSave();
+    },
+
+    openSourceEditor : function(focus) {
+        this.tabPanel.setActiveTab(this.sourceEditor);
+        if (focus) {
+            this.sourceEditor.focusEditor();
+        }
     },
 
     // Allows others to hook events on sourceEditor
