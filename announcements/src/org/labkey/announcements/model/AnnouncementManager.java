@@ -277,7 +277,7 @@ public class AnnouncementManager
     public static AnnouncementModel getAnnouncement(Container c, int rowId, int mask) throws SQLException
     {
         AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS,
-                new SimpleFilter("container", c.getId()).addCondition("rowId", new Integer(rowId)),
+                new SimpleFilter("container", c.getId()).addCondition("rowId", rowId),
                 null, AnnouncementModel.class);
         if (ann.length < 1)
             return null;
@@ -498,17 +498,21 @@ public class AnnouncementManager
 
     public static int getDefaultEmailOption(Container c) throws SQLException
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), "defaultEmailSettings", false);
-        if (props != null && props.size() > 0)
+        Map<String, String> props = PropertyManager.getProperties(c.getId(), "defaultEmailSettings");
+
+        if (props.isEmpty())
+        {
+            return EMAIL_DEFAULT_OPTION;
+        }
+        else
         {
             String option = props.get("defaultEmailOption");
+
             if (option != null)
                 return Integer.parseInt(option);
             else
                 throw new IllegalStateException("Invalid stored property value.");
         }
-        else
-            return EMAIL_DEFAULT_OPTION;
     }
 
     private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
