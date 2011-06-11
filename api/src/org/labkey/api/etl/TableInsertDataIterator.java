@@ -18,33 +18,35 @@ package org.labkey.api.etl;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.BatchValidationException;
-import sun.java2d.pipe.SpanShapeRenderer;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
-/**
- * Created by IntelliJ IDEA.
- * User: matthewb
- * Date: 2011-05-26
- * Time: 4:08 PM
- *
- *  Handles MvFieldWrapper
- */
-public class TableLoaderPump extends ParameterMapPump
+public class TableInsertDataIterator extends StatementDataIterator
 {
-    final TableInfo table;
+    DbScope _scope = null;
+    Connection _conn = null;
+    final TableInfo _table;
 
-    public TableLoaderPump(DataIterator data, TableInfo table, BatchValidationException errors)
+    public static TableInsertDataIterator create(DataIterator data, TableInfo table, BatchValidationException errors)
+    {
+        TableInsertDataIterator it = new TableInsertDataIterator(data, table, errors);
+        it.init();
+        return it;
+    }
+
+    protected TableInsertDataIterator(DataIterator data, TableInfo table, BatchValidationException errors)
     {
         super(data, null, errors);
-        this.table = table;
+        this._table = table;
 
         Map<String,Integer> map = DataIteratorUtil.createColumnNameMap(data);
         for (ColumnInfo col : table.getColumns())
@@ -58,31 +60,25 @@ public class TableLoaderPump extends ParameterMapPump
     }
 
     @Override
-    public void run()
+    void init()
     {
-        DbScope scope = null;
-        Connection conn = null;
-
         try
         {
-            try
-            {
-                scope = ((UpdateableTableInfo)table).getSchemaTableInfo().getSchema().getScope();
-                conn = scope.getConnection();
-                stmt = Table.insertStatement(conn, (TableInfo) table, null, null, false);
-                super.run();
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
+            _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
+            _conn = _scope.getConnection();
+            _stmt = Table.insertStatement(_conn, _table, null, null, true, false);
+            super.init();
         }
-        finally
+        catch (SQLException x)
         {
-            if (null != stmt)
-                try {stmt.close();} catch (SQLException x){}
-            if (null != conn)
-                scope.releaseConnection(conn);
+            throw new RuntimeSQLException(x);
         }
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        super.close();
+        _scope.releaseConnection(_conn);
     }
 }

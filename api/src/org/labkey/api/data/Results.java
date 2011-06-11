@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.query.FieldKey;
 
 import java.io.InputStream;
@@ -105,4 +106,6 @@ public interface Results extends ResultSet, Table.TableResultSet
 
     BigDecimal getBigDecimal(FieldKey f)
             throws SQLException;
+
+    /* DataIterator */
 }

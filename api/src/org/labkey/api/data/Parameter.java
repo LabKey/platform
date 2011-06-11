@@ -26,11 +26,13 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -331,7 +333,11 @@ public class Parameter
 
     public static class ParameterMap
     {
-        PreparedStatement _stmt;                                                                                
+        PreparedStatement _stmt;
+        Integer _selectRowIdIndex = null;
+        Integer _selectObjectIdIndex = null;
+        Integer _rowId;
+        Integer _objectId;
         CaseInsensitiveHashMap<Parameter> _map;
 
         public ParameterMap(PreparedStatement stmt, Collection<Parameter> parameters)
@@ -405,6 +411,16 @@ public class Parameter
         }
 
 
+        public void setRowIdIndex(Integer i)
+        {
+            _selectRowIdIndex = i;
+        }
+
+        public void setObjectIdIndex(Integer i)
+        {
+            _selectObjectIdIndex = i;
+        }
+
         public int size()
         {
             return _map.size();
@@ -425,7 +441,40 @@ public class Parameter
 
         public boolean execute() throws SQLException
         {
-            return _stmt.execute();
+            if (null == _selectObjectIdIndex && null == _selectRowIdIndex)
+                return _stmt.execute();
+
+            ResultSet rs = null;
+            try
+            {
+                rs = _stmt.executeQuery();
+                if (!rs.next())
+                    return false;
+                _rowId = null;
+                if (null != _selectRowIdIndex)
+                {
+                    int id = rs.getInt(_selectRowIdIndex);
+                    _rowId = rs.wasNull() ? null : id;
+                }
+                _objectId = null;
+                if (null != _selectObjectIdIndex)
+                {
+                    int id = rs.getInt(_selectObjectIdIndex);
+                    _objectId = rs.wasNull() ? null : id;
+                }
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+
+            return true;
+        }
+
+
+        public Integer getRowId()
+        {
+            return _rowId;
         }
 
 

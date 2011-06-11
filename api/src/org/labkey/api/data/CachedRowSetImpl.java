@@ -22,6 +22,8 @@ import org.apache.commons.collections15.Predicate;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -29,6 +31,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import static java.lang.Math.max;
@@ -1401,5 +1404,51 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException
     {
         throw new UnsupportedOperationException();
+    }
+
+
+    private class DataIteratorAdapter implements DataIterator
+    {
+        @Override
+        public int getColumnCount()
+        {
+            return getColumnCount();
+        }
+
+        @Override
+        public ColumnInfo getColumnInfo(int i)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            return false;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public Object get(int i)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public boolean isScrollable()
+        {
+            return false;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void beforeFirst()
+        {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
     }
 }

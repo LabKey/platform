@@ -35,8 +35,9 @@ import org.labkey.api.collections.Join;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.AbstractDataIterator;
+import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.SimpleTranslator;
-import org.labkey.api.etl.TableLoaderPump;
+import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -2160,7 +2161,7 @@ public class Table
      * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
      * to provisioned tables for major datatypes.
      */
-    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo tableInsert, Container c, User user, boolean autoFillDefaultColumns) throws SQLException
+    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo tableInsert, Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
         if (!(tableInsert instanceof UpdateableTableInfo))
             throw new IllegalArgumentException();
@@ -2186,7 +2187,7 @@ public class Table
         String comma = "";
         Set<String> done = Sets.newCaseInsensitiveHashSet();
 
-        String objectIdVar = d.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
+        String objectIdVar = null;
         String setKeyword = d.isPostgreSQL() ? "" : "SET ";
 
         //
@@ -2210,6 +2211,8 @@ public class Table
                 if (!d.isPostgreSQL() && !d.isSqlServer())
                     throw new IllegalArgumentException("Domains are only supported for sql server and postgres");
 
+                objectIdVar = d.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
+
                 useVariables = d.isPostgreSQL();
                 sqlfDeclare.append("DECLARE " + objectIdVar + " INT;\n");
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
@@ -2226,7 +2229,7 @@ public class Table
                 appendParameterOrVariable(sqlfObject, d, useVariables, objecturiParameter, parameterToVariable);
                 sqlfObject.append(");\n");
                 sqlfObject.append(setKeyword + objectIdVar + " = (");
-                appendSelectAutoIncrement(d, sqlfObject,DbSchema.get("exp").getTable("object"),"objectid");
+                appendSelectAutoIncrement(d, sqlfObject, DbSchema.get("exp").getTable("object"), "objectid");
                 sqlfObject.append(");\n");
             }
         }
@@ -2303,11 +2306,15 @@ public class Table
         }
 
         String objectIdColumnName = StringUtils.trimToNull(updatable.getObjectIdColumnName());
+        ColumnInfo autoIncrementColumn = null;
 
         for (ColumnInfo column : table.getColumns())
         {
             if (column.isAutoIncrement())
+            {
+                autoIncrementColumn = column;
                 continue;
+            }
             if (column.isVersionColumn())
                 continue;
             if (done.contains(column.getName()))
@@ -2333,6 +2340,30 @@ public class Table
             comma = ", ";
         }
 
+        SQLFragment sqlfSelectIds = null;
+        Integer selectRowIdIndex = null;
+        Integer selectObjectIdIndex = null;
+        int countReturnIds = 0;
+        if (selectIds && (null != autoIncrementColumn || null != objectIdVar))
+        {
+            sqlfSelectIds = new SQLFragment("");
+            String prefix = "SELECT ";
+            int index = 1;
+            if (null != autoIncrementColumn)
+            {
+                appendSelectAutoIncrement(d, sqlfSelectIds, table, autoIncrementColumn.getName());
+                selectRowIdIndex = ++countReturnIds;
+                prefix = ", ";
+            }
+            if (null != objectIdVar)
+            {
+                sqlfSelectIds.append(prefix);
+                sqlfSelectIds.append(objectIdVar);
+                selectObjectIdIndex = ++countReturnIds;
+            }
+            sqlfSelectIds.append(";\n");
+        }
+
         SQLFragment sqlfInsertInto = new SQLFragment();
         sqlfInsertInto.append("INSERT INTO " + table + " (");
         sqlfInsertInto.append(cols).append(")\nVALUES (").append(values).append(");\n");
@@ -2343,6 +2374,10 @@ public class Table
 
         if (null != properties)
         {
+            Set<String> skip = ((UpdateableTableInfo)tableInsert).skipProperties();
+            if (null != skip)
+                done.addAll(skip);
+
             for (DomainProperty dp : domain.getProperties())
             {
                 // ignore property that 'wraps' a hard column
@@ -2392,6 +2427,8 @@ public class Table
             script.append(sqlfObject);
             script.append(sqlfInsertInto);
             script.append(sqlfObjectProperty);
+            if (null != sqlfSelectIds)
+                script.append(sqlfSelectIds);
             ret = new Parameter.ParameterMap(conn, script, updatable.remapSchemaColumns());
         }
         else
@@ -2401,7 +2438,10 @@ public class Table
             String fnName = d.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
             fn.append("CREATE FUNCTION " + fnName + "(");
             // TODO d.execute() doesn't handle temp schema
-            SQLFragment call = new SQLFragment("SELECT " + fnName + "(");
+            SQLFragment call = new SQLFragment("SELECT ");
+            if (countReturnIds > 0)
+                call.append("* FROM ");
+            call.append(fnName + "(");
             final SQLFragment drop = new SQLFragment("DROP FUNCTION " + fnName + "(");
             comma = "";
             for (Map.Entry<Parameter,String> e : parameterToVariable.entrySet())
@@ -2419,14 +2459,32 @@ public class Table
                 call.add(p);
                 comma = ",";
             }
-            fn.append("\n) RETURNS void AS $$\n");
+            fn.append("\n) RETURNS ");
+            if (countReturnIds>0)
+                fn.append("SETOF RECORD");
+            else
+                fn.append("void");
+            fn.append(" AS $$\n");
             drop.append(");");
-            call.append(");");
+            call.append(")");
+            if (countReturnIds > 0)
+            {
+                if (countReturnIds == 1)
+                    call.append(" AS x(A int)");
+                else
+                    call.append(" AS x(A int, B int)");
+            }
+            call.append(";");
             fn.append(sqlfDeclare);
             fn.append("BEGIN\n");
             fn.append(sqlfObject);
             fn.append(sqlfInsertInto);
             fn.append(sqlfObjectProperty);
+            if (null != sqlfSelectIds)
+            {
+                fn.append("\nRETURN QUERY ");
+                fn.append(sqlfSelectIds);
+            }
             fn.append("\nEND;\n$$ LANGUAGE plpgsql;\n");
 
             Table.execute(table.getSchema(), fn);
@@ -2453,6 +2511,9 @@ public class Table
 //                    p.setValue(e.getValue(), true);
 //            }
 //        }
+
+        ret.setRowIdIndex(selectRowIdIndex);
+        ret.setObjectIdIndex(selectObjectIdIndex);
 
         return ret;
     }
@@ -2676,12 +2737,13 @@ public class Table
             translate.selectAll();
             translate.addBuiltInColumns(JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable, false);
 
-            TableLoaderPump load = new TableLoaderPump(
+            TableInsertDataIterator load = TableInsertDataIterator.create(
                     translate,
                     testTable,
                     errors
             );
-            load.run();
+            new Pump(load, errors).run();
+
             assertFalse(errors.hasErrors());
             
             Table.execute(testTable.getSchema(), "delete from test.testtable where entityid = '" + extract.guid + "'");

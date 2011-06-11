@@ -299,7 +299,6 @@ public class OntologyManager
     {
         if (!(tableInsert instanceof UpdateableTableInfo))
             throw new IllegalArgumentException();
-
         DbScope scope = tableInsert.getSchema().getScope();
         
 		assert scope.isTransactionActive();
@@ -1999,8 +1998,18 @@ public class OntologyManager
 		{
             getExpSchema().getScope().ensureTransaction();
 
-			deleteObjectsOfType(domainURI, c);
-            deleteDomain(domainURI, c);
+            try
+
+            {
+                deleteObjectsOfType(domainURI, c);
+                deleteDomain(domainURI, c);
+            }
+            catch (DomainNotFoundException x)
+            {
+                // throw exception but do not kill enclosing transaction
+                getExpSchema().getScope().commitTransaction();
+                throw x;
+            }
 
             getExpSchema().getScope().commitTransaction();
 		}
