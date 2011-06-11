@@ -1025,6 +1025,8 @@ api/src/org/labkey/api/util/StringUtilsLabKey.java -text
 api/src/org/labkey/api/util/SystemMaintenance.java -text
 api/src/org/labkey/api/util/Taintable.java -text
 api/src/org/labkey/api/util/TimeOnlyDate.java -text
+api/src/org/labkey/api/util/Tuple.java -text
+api/src/org/labkey/api/util/Tuple3.java -text
 api/src/org/labkey/api/util/URIUtil.java -text
 api/src/org/labkey/api/util/UnexpectedException.java -text
 api/src/org/labkey/api/util/UniqueID.java -text
