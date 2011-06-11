@@ -379,7 +379,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public String getDefaultHeaderStyle()
     {
-        return (_nowrap ? "white-space:nowrap;" : "") + "text-align:" + (getTextAlign() != null ? getTextAlign() : "left");
+        return "text-align:" + (getTextAlign() != null ? getTextAlign() : "left");
     }
 
     public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException, SQLException

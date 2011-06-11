@@ -405,8 +405,13 @@ public class DataColumn extends DisplayColumn
     @Override @NotNull
     protected String getCssStyle(RenderContext ctx)
     {
+        String result = super.getCssStyle(ctx);
         ConditionalFormat format = findApplicableFormat(ctx);
-        return format == null ? "" : format.getCssStyle();
+        if (format != null)
+        {
+            result = result + ";" + format.getCssStyle();
+        }
+        return result;
     }
 
     public String getFormattedValue(RenderContext ctx)
