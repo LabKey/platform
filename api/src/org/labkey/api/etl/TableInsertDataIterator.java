@@ -66,7 +66,7 @@ public class TableInsertDataIterator extends StatementDataIterator
         {
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
-            _stmt = Table.insertStatement(_conn, _table, null, null, true, false);
+            _stmt = Table.insertStatement(_conn, _table, null, null, false, false);
             super.init();
         }
         catch (SQLException x)
