@@ -43,7 +43,7 @@ public class LabKeyScope extends DbScope
     }
 
     @Override
-    // LabKey data source case.  Load meta data from database and overlay schema.xml.
+    // LabKey data source case.  Load meta data from database, load schema.xml, and stash it for later use.
     protected DbSchema loadSchema(String schemaName) throws Exception
     {
         long startLoad = System.currentTimeMillis();
@@ -85,11 +85,10 @@ public class LabKeyScope extends DbScope
                     LOG.error("LabKeyScope", x);
                 }
             }
-
-            long elapsed = System.currentTimeMillis() - startLoad;
-
-            _schemaLoadTime.addAndGet(elapsed);
         }
+
+        long elapsed = System.currentTimeMillis() - startLoad;
+        _schemaLoadTime.addAndGet(elapsed);
 
         return schema;
     }

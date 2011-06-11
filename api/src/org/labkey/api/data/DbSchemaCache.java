@@ -94,7 +94,7 @@ public class DbSchemaCache
             }
             catch (Exception e)
             {
-                throw new RuntimeException(e);  // Changed from "return null" to "throw runtimeexception" so admin is made aware of the cause of the problem
+                throw new RuntimeException(e);  // Make admin aware of the cause of the problem
             }
         }
     }

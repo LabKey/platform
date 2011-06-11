@@ -794,12 +794,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
             Set<Module> modules = new HashSet<Module>();
             // add all modules found in user preferences:
             if (null != props)
+            {
                 for (String moduleName : props.keySet())
                 {
                     Module module = ModuleLoader.getInstance().getModule(moduleName);
                     if (module != null)
                         modules.add(module);
                 }
+            }
 
            // ensure all modules for folder type are added (may have been added after save
             if (!getFolderType().equals(FolderType.NONE))
@@ -819,6 +821,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 if (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_NEVER)
                     modules.remove(module);
             }
+
             _activeModules = Collections.unmodifiableSet(modules);
         }
 

@@ -16,22 +16,32 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.beanutils.ConvertingWrapDynaBean;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.ButtonBarConfig;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
-import org.apache.commons.beanutils.ConvertingWrapDynaBean;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 public class QueryWebPart extends WebPartView
 {

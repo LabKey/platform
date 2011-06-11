@@ -91,6 +91,8 @@ public class DbSchema
     {
         DbSchema schema = new DbSchema(schemaName, scope);
         schema.loadMetaData();
+        scope.invalidateAllTables(schemaName); // Need to invalidate the table cache
+
         return schema;
     }
 
