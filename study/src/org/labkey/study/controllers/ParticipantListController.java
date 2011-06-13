@@ -39,7 +39,7 @@ public class ParticipantListController extends BaseStudyController
 
             form.setContainer(getContainer().getId());
 
-            ParticipantClassification classification = ParticipantListManager.setParticipantClassification(getUser(), form);
+            ParticipantClassification classification = ParticipantListManager.getInstance().setParticipantClassification(getUser(), form);
 
             resp.put("success", true);
             resp.put("classification", classification.toJSON());
@@ -56,7 +56,7 @@ public class ParticipantListController extends BaseStudyController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ParticipantClassification classification = ParticipantListManager.getParticipantClassification(getContainer(), form.getLabel());
+            ParticipantClassification classification = ParticipantListManager.getInstance().getParticipantClassification(getContainer(), form.getLabel());
 
             resp.put("success", true);
             resp.put("classification", classification.toJSON());
@@ -73,7 +73,7 @@ public class ParticipantListController extends BaseStudyController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ParticipantClassification[] classifications = ParticipantListManager.getParticipantClassifications(getContainer());
+            ParticipantClassification[] classifications = ParticipantListManager.getInstance().getParticipantClassifications(getContainer());
             JSONArray defs = new JSONArray();
 
             for (ParticipantClassification pc : classifications)
@@ -103,11 +103,11 @@ public class ParticipantListController extends BaseStudyController
                 SimpleFilter filter = new SimpleFilter("Container", getContainer());
                 filter.addCondition("Label", form.getLabel());
 
-                ParticipantClassification[] defs = ParticipantListManager.getParticipantClassifications(filter);
+                ParticipantClassification[] defs = ParticipantListManager.getInstance().getParticipantClassifications(filter);
                 if (defs.length == 1)
                     classification = defs[0];
             }
-            ParticipantListManager.deleteParticipantClassification(getUser(), classification);
+            ParticipantListManager.getInstance().deleteParticipantClassification(getUser(), classification);
             resp.put("success", true);
 
             return resp;

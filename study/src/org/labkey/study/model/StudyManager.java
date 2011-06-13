@@ -1965,10 +1965,10 @@ public class StudyManager
             assert deletedTables.add(_studyHelper.getTableInfo());
 
             // participant lists
-            Table.delete(ParticipantListManager.getTableInfoParticipantGroupMap(), containerFilter);
-            assert deletedTables.add(ParticipantListManager.getTableInfoParticipantGroupMap());
-            Table.delete(ParticipantListManager.getTableInfoParticipantGroup(), containerFilter);
-            assert deletedTables.add(ParticipantListManager.getTableInfoParticipantGroup());
+            Table.delete(ParticipantListManager.getInstance().getTableInfoParticipantGroupMap(), containerFilter);
+            assert deletedTables.add(ParticipantListManager.getInstance().getTableInfoParticipantGroupMap());
+            Table.delete(ParticipantListManager.getInstance().getTableInfoParticipantGroup(), containerFilter);
+            assert deletedTables.add(ParticipantListManager.getInstance().getTableInfoParticipantGroup());
             Table.delete(StudySchema.getInstance().getTableInfoParticipantClassification(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantClassification());
 

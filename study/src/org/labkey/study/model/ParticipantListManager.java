@@ -1,5 +1,6 @@
 package org.labkey.study.model;
 
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -24,17 +25,26 @@ import java.util.Map;
  */
 public class ParticipantListManager
 {
-    public static TableInfo getTableInfoParticipantGroup()
+    private static final ParticipantListManager _instance = new ParticipantListManager();
+
+    private void ParticipantListManager(){}
+
+    public static ParticipantListManager getInstance()
+    {
+        return _instance;
+    }
+
+    public TableInfo getTableInfoParticipantGroup()
     {
         return StudySchema.getInstance().getSchema().getTable("ParticipantGroup");
     }
 
-    public static TableInfo getTableInfoParticipantGroupMap()
+    public TableInfo getTableInfoParticipantGroupMap()
     {
         return StudySchema.getInstance().getSchema().getTable("ParticipantGroupMap");
     }
 
-    public static ParticipantClassification getParticipantClassification(Container c, String name)
+    public ParticipantClassification getParticipantClassification(Container c, String name)
     {
         SimpleFilter filter = new SimpleFilter("Container", c);
         filter.addCondition("Label", name);
@@ -52,14 +62,13 @@ public class ParticipantListManager
         return def;
     }
 
-    public static ParticipantClassification[] getParticipantClassifications(SimpleFilter filter)
+    public ParticipantClassification[] getParticipantClassifications(SimpleFilter filter)
     {
         try {
             ParticipantClassification[] lists = Table.select(StudySchema.getInstance().getTableInfoParticipantClassification(), Table.ALL_COLUMNS, filter, null, ParticipantClassification.class);
 
             for (ParticipantClassification pc : lists)
             {
-                //pc.setParticipantIds(getParticipants(pc));
                 pc.setGroups(getParticipantGroups(pc));
             }
             return lists;
@@ -70,12 +79,12 @@ public class ParticipantListManager
         }
     }
 
-    public static ParticipantClassification[] getParticipantClassifications(Container c)
+    public ParticipantClassification[] getParticipantClassifications(Container c)
     {
         return getParticipantClassifications(new SimpleFilter("Container", c));
     }
 
-    public static ParticipantClassification setParticipantClassification(User user, ParticipantClassification def)
+    public ParticipantClassification setParticipantClassification(User user, ParticipantClassification def)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -111,7 +120,7 @@ public class ParticipantListManager
         }
     }
 
-    public static ParticipantGroup setParticipantGroup(User user, ParticipantGroup group)
+    private ParticipantGroup setParticipantGroup(User user, ParticipantGroup group)
     {
         try {
             if (group.isNew())
@@ -125,10 +134,16 @@ public class ParticipantListManager
         }
     }
 
-    public static ParticipantGroup[] getParticipantGroups(ParticipantClassification def) throws SQLException
+    public ParticipantGroup[] getParticipantGroups(ParticipantClassification def) throws SQLException
     {
         if (!def.isNew())
         {
+            String cacheKey = getCacheKey(def);
+            ParticipantGroup[] groups = (ParticipantGroup[]) DbCache.get(StudySchema.getInstance().getTableInfoParticipantClassification(), cacheKey);
+
+            if (groups != null)
+                return groups;
+
             SQLFragment sql = new SQLFragment("SELECT * FROM (");
             sql.append("SELECT pg.label, pg.rowId FROM ").append(StudySchema.getInstance().getTableInfoParticipantClassification(), "pc");
             sql.append(" JOIN ").append(getTableInfoParticipantGroup(), "pg").append(" ON pc.rowId = pg.classificationId WHERE pg.classificationId = ?) jr ");
@@ -151,7 +166,10 @@ public class ParticipantListManager
                 }
                 groupMap.get(pg.getGroupId()).addParticipantId(pg.getParticipantId());
             }
-            return groupMap.values().toArray(new ParticipantGroup[groupMap.size()]);
+            groups = groupMap.values().toArray(new ParticipantGroup[groupMap.size()]);
+
+            DbCache.put(StudySchema.getInstance().getTableInfoParticipantClassification(), cacheKey, groups);
+            return groups;
         }
         return new ParticipantGroup[0];
     }
@@ -182,20 +200,7 @@ public class ParticipantListManager
         }
     }
 
-    public static String[] getParticipants(ParticipantClassification def) throws SQLException
-    {
-        if (!def.isNew())
-        {
-            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM ").append(getTableInfoParticipantGroup(), "");
-
-            sql.append(" WHERE GroupId = ? AND Container = ?;");
-
-            return Table.executeArray(StudySchema.getInstance().getSchema(), sql.getSQL(), new Object[]{def.getRowId(), def.getContainerId()}, String.class);
-        }
-        return new String[0];
-    }
-
-    private static void updateListTypeDef(User user, ParticipantClassification def) throws SQLException
+    private void updateListTypeDef(User user, ParticipantClassification def) throws SQLException
     {
         assert !def.isNew() : "The participant classification has not been created yet";
 
@@ -208,6 +213,7 @@ public class ParticipantListManager
             group.setContainer(def.getContainerId());
 
             group = setParticipantGroup(user, group);
+            def.setGroups(new ParticipantGroup[]{group});
 
             // add the mapping from group to participants
             SQLFragment sql = new SQLFragment("INSERT INTO ").append(getTableInfoParticipantGroupMap(), "");
@@ -218,6 +224,8 @@ public class ParticipantListManager
 
             for (String id : def.getParticipantIds())
             {
+                group.addParticipantId(id);
+
                 params.add(group.getRowId());
                 params.add(id);
                 params.add(group.getContainerId());
@@ -228,10 +236,11 @@ public class ParticipantListManager
             sql.append(";");
 
             Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), params.toArray());
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantClassification(), getCacheKey(def));
         }
     }
 
-    public static void deleteParticipantClassification(User user, ParticipantClassification def)
+    public void deleteParticipantClassification(User user, ParticipantClassification def)
     {
         if (def.isNew())
             throw new IllegalArgumentException("Participant classification has not been saved to the database yet");
@@ -255,6 +264,7 @@ public class ParticipantListManager
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(StudySchema.getInstance().getTableInfoParticipantClassification(), "").append(" WHERE RowId = ?");
             Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), def.getRowId());
 
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantClassification(), getCacheKey(def));
             scope.commitTransaction();
         }
         catch (SQLException x)
@@ -266,4 +276,10 @@ public class ParticipantListManager
             scope.closeConnection();
         }
     }
+
+    private String getCacheKey(ParticipantClassification def)
+    {
+        return "ParticipantClassification" + def.getRowId();
+    }
+
 }
