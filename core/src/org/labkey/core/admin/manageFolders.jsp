@@ -29,14 +29,9 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     HttpView<ManageFoldersForm> me = (HttpView<ManageFoldersForm>) HttpView.currentView();
-    final ViewContext ctx = me.getViewContext();
-    final Container c = ctx.getContainer();
-    final ActionURL currentUrl = ctx.cloneActionURL();
+    ViewContext ctx = me.getViewContext();
+    Container c = ctx.getContainer();
     Container project = c.getProject();
-    final ContainerTreeSelected ct = new ContainerTreeSelected(project.getName(), ctx.getUser(), AdminPermission.class, currentUrl, "managefolders");
-
-    ct.setCurrent(c);
-    ct.setInitialLevel(1);
 %>
 <style type="text/css">
     .x-tree-node-leaf .x-tree-node-icon{
@@ -109,7 +104,7 @@
                 text : 'LabKey Server Projects'
                 <%=project.equals(c) ? ", cls : 'x-tree-node-current'" : ""%>
             },
-            
+
             listeners : {
                 contextmenu    : onRightClick,
                 expandnode     : select_node,
@@ -117,8 +112,8 @@
                 dblclick       : onDblClick,
                 beforenodedrop : onBeforeNodeDrop,
                 nodedragover   : onNodeDragOver,
-                nodedrop       : function() { folderTree.info.update(''); },
-                enddrag        : function() { folderTree.info.update(''); }
+                nodedrop       : function() { folderTree.r(''); },
+                enddrag        : function() { folderTree.r(''); }
             },
 
             contextMenu : new Ext.menu.Menu({
@@ -163,14 +158,17 @@
                 {text: 'Create Subfolder',     ref: '../create',  handler : function(){ action('create'); }},
                 {text: 'Delete',               ref: '../remove',  handler : function(){ action('remove'); }},
                 {text: 'Move',                 ref: '../move',    handler : function(){ action('move'); }},
-                {text: 'Rename',               ref: '../rename',  handler : function(){ action('rename'); }}
+                {text: 'Rename',               ref: '../rename',  handler : function(){ action('rename'); }},
+                {xtype: 'box', ref : '../info', autoEl : { tag : 'div', html : '&nbsp;'}}
             ],
             buttonAlign : 'left',
-            fbar : [{
-                xtype  : 'box',
-                ref    : '../info',
-                autoEl : { tag: 'div', html : '&nbsp;' }
-            }]
+            r : function(msg, error) {
+                var _msg = "<span";
+                if (error) _msg += " style = \"color: red;\"";                
+                _msg += ">" + msg + "</span>";
+                console.info(_msg);
+                folderTree.info.update(_msg);
+            }
         });
         
         /*
@@ -230,6 +228,11 @@
 
         function validateFolder(node, e) {
 
+            var _n = folderTree.getSelectionModel().getSelectedNodes();
+            var tool = folderTree.getTopToolbar();
+            
+            //_n.length > 1 ? tool.disable() : tool.enable();
+            
             r('node ' + node.attributes.containerPath);
             if (e && e.nodeDrop && e.nodeDrop.length){
                 r(e.nodeDrop.length + ' selected.');
@@ -239,6 +242,7 @@
             else
                 console.error("Failed to retrieve the selected folder.");
 
+            folderTree.info.enable();
             folderTree.rename.setDisabled(selectedFolder.attributes.notModifiable);
             folderTree.move.setDisabled(selectedFolder.attributes.notModifiable);
             folderTree.remove.setDisabled(selectedFolder.attributes.notModifiable);
@@ -255,12 +259,12 @@
         function mask(message) {
             if (message) { Ext.get('folderdiv').mask(message); }
             else { Ext.get('folderdiv').mask('Moving Folders. This could take a few minutes...'); }
-            folderTree.info.update('');
+            folderTree.r('');
         }
 
         function unmask() {
             Ext.get('folderdiv').unmask();
-            folderTree.info.update('');
+            folderTree.r('');
         }
 
         function onRightClick(node, e){
@@ -297,7 +301,10 @@
                     r('Working on ' + e.dropNode[f].attributes.containerPath);
                     var s = e.dropNode[f];
 
-                    var target = calculateTarget(e);
+                    var _t = calculateTarget(e.dropNode[f], e.target, e.point);
+                    if (_t.cancel) e.cancel = true;
+                    var target = _t.target;
+                    
                     var d = target.leaf ? target.parentNode : target;
 
                     e.oldParent = s.parentNode;
@@ -404,7 +411,20 @@
                 }
             }
 
-            function failureHandler(){ alert("FAILED!"); }
+            function failureHandler(response, opts){
+                if (response && response.errors) {
+                    var errors = response.errors;
+                    var _msg = "";
+                    for (var i=0; i < errors.length; i++) {
+                        _msg += errors[i].msg + "\n";
+                    }
+                    Ext.Msg.alert('Failed to Move', _msg);
+                }
+                else {
+                    Ext.Msg.alert('Operation Failed', 'Failed to complete move.');
+                }
+                unmask();
+            }
             
             function successHandler(data, response, opts) { executeNext(); }
             
@@ -414,75 +434,80 @@
         // The event is cancelled if the drag is invalid.
         function onNodeDragOver(e) {
 
-            function nodeDragOver(e) {
-                var node = e.dropNode;
+            function nodeDragOver(node, target, point) {
+
                 if (node.attributes.isProject || node.attributes.notModifiable) {
-                    folderTree.info.update('');
-                    e.cancel = true;
+                    folderTree.r('');
+                    return true;
                 }
 
-                target = calculateTarget(e);
-
+                var t = calculateTarget(node, target, point);
+                if (t.cancel) return true;
+                
                 // Check matching name FIX so it works as reorder in same subfolder
-                var children = target.childNodes;
+                var children = t.target.childNodes;
                 var nodeName = node.text.toLowerCase();
                 for (var i = 0; i < children.length; i++) {
                     if (children[i].text.toLowerCase() == nodeName) {
-                        if (target == node.parentNode && !node.attributes.isProject) {
-                            folderTree.info.update('Change display order of /' + nodeName + ' in ' + node.parentNode.attributes.containerPath);
-                            return;
+                        if (t.target == node.parentNode && !node.attributes.isProject) {
+                            folderTree.r('Change display order of /' + nodeName + ' in ' + node.parentNode.attributes.containerPath);
+                            return false;
                         }
-                        folderTree.info.update('/' + nodeName + ' already exists in ' + node.parentNode.attributes.containerPath);
-                        e.cancel = true;
+                        folderTree.r('/' + nodeName + ' already exists in ' + node.parentNode.attributes.containerPath, true);
+                        return true;
                     }
                 }
 
-                if (node.attributes.isProject && target == node.parentNode && (e.point == 'above' || e.point == 'below')) {
-                    folderTree.info.update('Change display order of /' + nodeName + ' in LabKey Server Projects.');
-                    e.cancel = false;
+                if (node.attributes.isProject && t.target == node.parentNode && (e.point == 'above' || e.point == 'below')) {
+                    folderTree.r('Change display order of /' + nodeName + ' in LabKey Server Projects.');
+                    return false;
                 }
+
+                return false;
             }
-            
-            var f;
+
+            // cycle over all selected nodes
+            var path = e.dropNode[0].parentNode.attributes.containerPath;
             for (var n=0; n < e.dropNode.length; n++){
-                f = e;
-                f.dropNode = f.dropNode[n];
-                nodeDragOver(f);
-                e.cancel = f.cancel;
+                if (e.dropNode[n].parentNode.attributes.containerPath != path) {
+                    e.cancel = true;
+                    folderTree.r('You may only multi-select folders at the same level within a single project.', true);
+                    return;
+                }
+                if (nodeDragOver(e.dropNode[n], e.target, e.point)) {
+                    e.cancel = true;
+                    return;
+                }
             }
         }
 
         // Gives the correct target folder based on the drag/drop action. This should be used by all methods
         // that incorporate drag/drop in folder tree.
-        function calculateTarget(e) {
+        // Returns an object containing the target node and whether to cancel the event
+        function calculateTarget(node, target, point) {
 
-            if (!e.target) {
-                console.error('Target not provided by event.');
-                e.cancel = true; // attempt to salvage event
-                return null;
-            }
-
-            var target = e.target;
-            folderTree.info.update('Move to ' + target.attributes.containerPath);
+            if (!target)
+                return {target: undefined, cancel: true};
+            
+            folderTree.r('Move to ' + target.attributes.containerPath);
 
             // Use event.point to determine correct target node
-            var pt = e.point;
-            if (pt) {
-                if (pt == 'above' || pt == 'below'){
+            if (point) {
+                if (point == 'above' || point == 'below'){
                     // check if same parent, check if root node -- cannot elevate to project
                     if (target.parentNode) {
                         target = target.parentNode;
                         r('Target set to ' + target.attributes.containerPath);
                         if (target.attributes.containerPath === undefined) {
-                            folderTree.info.update('');
-                            e.cancel = true;
+                            folderTree.r('');
+                            return {target: target, cancel: true};
                         }
                     }
                     // different parent equates to move (and reorder?)
                 }
             }
 
-            return target;
+            return {target: target, cancel: false};
         }
 
         function reorderFolders(s, order, alpha, alphaNode, successFn) {
