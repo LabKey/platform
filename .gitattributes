@@ -2328,6 +2328,7 @@ study/resources/schemas/dbscripts/postgresql/study-10.39-10.391.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.10-11.101.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.101-11.11.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.11-11.12.sql -text
+study/resources/schemas/dbscripts/postgresql/study-11.12-11.13.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.10-9.20.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.20-9.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.201-9.30.sql -text
@@ -2477,6 +2478,7 @@ study/resources/schemas/dbscripts/sqlserver/study-10.32-10.33.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-10.39-10.391.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.10-11.101.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.101-11.11.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-11.12-11.13.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.10-9.20.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.20-9.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.201-9.30.sql -text
@@ -2534,6 +2536,7 @@ study/src/org/labkey/study/controllers/DatasetController.java -text
 study/src/org/labkey/study/controllers/DatasetImportServiceImpl.java -text
 study/src/org/labkey/study/controllers/DatasetServiceImpl.java -text
 study/src/org/labkey/study/controllers/InsertUpdateAction.java -text
+study/src/org/labkey/study/controllers/ParticipantListController.java -text
 study/src/org/labkey/study/controllers/StudyController.java -text
 study/src/org/labkey/study/controllers/StudyDefinitionController.java -text
 study/src/org/labkey/study/controllers/StudyPagesController.java -text
@@ -2617,8 +2620,11 @@ study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/Participant.java -text
+study/src/org/labkey/study/model/ParticipantClassification.java -text
 study/src/org/labkey/study/model/ParticipantDataMapKey.java -text
 study/src/org/labkey/study/model/ParticipantDataset.java -text
+study/src/org/labkey/study/model/ParticipantGroup.java -text
+study/src/org/labkey/study/model/ParticipantListManager.java -text
 study/src/org/labkey/study/model/ParticipantSequenceKey.java -text
 study/src/org/labkey/study/model/PrimaryType.java -text
 study/src/org/labkey/study/model/QCState.java -text
