@@ -127,6 +127,11 @@
         <td><%= textLink("Manage Cohorts", manageCohortsURL) %></td>
     </tr>
     <tr>
+        <th align="left"><%= h(subjectNounSingle) %> Classifications</th>
+        <td>This study defines TBD <%= h(subjectNounSingle.toLowerCase()) %> classifications</td>
+        <td><%= textLink("Manage " + h(subjectNounSingle) + " Classifications", new ActionURL(StudyController.ManageParticipantClassificationsAction.class, c)) %></td>
+    </tr>
+    <tr>
         <th align="left">Security</th>
         <td>Manage access to Study datasets and samples</td>
         <% ActionURL url = new ActionURL(SecurityController.BeginAction.class, c);%>

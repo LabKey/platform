@@ -2874,6 +2874,7 @@ study/src/org/labkey/study/view/importVisitAliases.jsp -text
 study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
 study/src/org/labkey/study/view/manageComments.jsp -text
+study/src/org/labkey/study/view/manageParticipantClassifications.jsp -text
 study/src/org/labkey/study/view/manageQCStates.jsp -text
 study/src/org/labkey/study/view/manageReload.jsp -text
 study/src/org/labkey/study/view/manageReports.jsp -text

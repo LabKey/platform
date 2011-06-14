@@ -6726,4 +6726,19 @@ public class StudyController extends BaseStudyController
             return new ActionURL(ShowVisitImportMappingAction.class, getContainer());
         }
     }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ManageParticipantClassificationsAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/study/view/manageParticipantClassifications.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage Participant Classifications");
+        }
+    }
 }
