@@ -1888,7 +1888,6 @@ query/src/org/labkey/query/TableQueryDefinition.java -text
 query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/ViewFilterItemImpl.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
-query/src/org/labkey/query/controllers/DesignForm.java -text
 query/src/org/labkey/query/controllers/DesignServiceForm.java -text
 query/src/org/labkey/query/controllers/ExternalSchemaForm.java -text
 query/src/org/labkey/query/controllers/GetQueryDetailsAction.java -text
@@ -1910,7 +1909,6 @@ query/src/org/labkey/query/controllers/apitest.jsp -text
 query/src/org/labkey/query/controllers/browse.jsp -text
 query/src/org/labkey/query/controllers/createSnapshot.jsp -text
 query/src/org/labkey/query/controllers/deleteQuery.jsp -text
-query/src/org/labkey/query/controllers/designQuery.jsp -text
 query/src/org/labkey/query/controllers/editSnapshot.jsp -text
 query/src/org/labkey/query/controllers/externalSchema.jsp -text
 query/src/org/labkey/query/controllers/internalDeleteView.jsp -text

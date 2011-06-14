@@ -295,7 +295,6 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             {
                 if (LABKEY.Security.currentUser.isAdmin)
                 {
-                    container.children.push(this.formatQueryLink("designQuery", params, "edit design"));
                     container.children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
                     container.children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
                     container.children.push(this.formatQueryLink("deleteQuery", params, "delete query"));

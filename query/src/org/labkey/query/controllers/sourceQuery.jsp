@@ -25,6 +25,7 @@
     SourceForm form = (SourceForm)HttpView.currentModel();
     boolean canEdit = form.canEdit();
     boolean editableSQL = canEdit && !form.getQueryDef().isTableQueryDefinition();
+    boolean builtIn = form.getQueryDef().isTableQueryDefinition();
     String topic = "labkeySql";
 %>
 <style type="text/css">
@@ -113,6 +114,7 @@
             schema    : LABKEY.ActionURL.getParameter('schemaName'),
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
             canEdit   : <%= canEdit %>,
+            builtIn   : <%= builtIn %>,
             metadataEdit : <%= form.getQueryDef().isMetadataEditable() && canEdit %>,
             queryText : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
             metadataText  : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,

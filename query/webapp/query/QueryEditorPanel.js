@@ -105,6 +105,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                         id     : this.editorId,
                         syntax : 'sql',
                         start_highlight: true,
+                        is_editable : !this.query.builtIn && this.query.canEdit,
                         plugins : "save"
                     });
                     this.doLayout(false, true);
@@ -225,19 +226,26 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
         if (!this.isSaveDirty()) {
             this.fireEvent('save', true);
-            return;
+            if (showView === true) {
+                window.location = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {
+                    schemaName : this.query.schema,
+                    'query.queryName' : this.query.query
+                });
+            }
         }
-        
+
+        var json = {
+            schemaName   : this.query.schema,
+            queryName    : this.query.query,
+            ff_metadataText : this.getMetadata()
+        };
+        !this.query.builtIn ? json.ff_queryText = _sql : null;
+
         Ext.Ajax.request({
             url    : LABKEY.ActionURL.buildURL('query', 'saveSourceQuery.api'),
             method : 'POST',
             success: onSuccess,
-            jsonData : Ext.encode({
-                schemaName   : this.query.schema,
-                queryName    : this.query.query,
-                ff_queryText : _sql,
-                ff_metadataText  : this.getMetadata()
-            }),
+            jsonData : Ext.encode(json),
             failure: onError,
             headers : {
                 'Content-Type' : 'application/json'
@@ -446,16 +454,17 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
 
         this.fireEvent('beforeSave', this.query.schema, _xml);
 
+        var json = {};
+        json.schemaName = this.query.schema;
+        json.queryName  = this.query.query;
+        !this.query.builtIn ? json.ff_queryText = Ext.get('queryText').getValue() : null;
+        json.ff_metadataText = _xml;
+        
         Ext.Ajax.request({
             url    : LABKEY.ActionURL.buildURL('query', 'saveSourceQuery.api'),
             method : 'POST',
             success: onSuccess,
-            jsonData : Ext.encode({
-                schemaName   : this.query.schema,
-                queryName    : this.query.query,
-                ff_queryText : Ext.get('queryText').getValue(),  // really, really bad
-                ff_metadataText  : _xml
-            }),
+            jsonData : Ext.encode(json),
             failure: onError,
             headers : {
                 'Content-Type' : 'application/json'
@@ -505,7 +514,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
                 scope : this
             }
         });
-        
+
         this.sourceEditor = new LABKEY.query.SourceEditorPanel({
             query : this.query,
             metadata : true

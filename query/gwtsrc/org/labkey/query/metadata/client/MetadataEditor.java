@@ -40,7 +40,6 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     private MetadataServiceAsync _service;
     private static final String SCHEMA_NAME_PROPERTY = "schemaName";
     private static final String QUERY_NAME_PROPERTY = "queryName";
-    public static final String DESIGN_QUERY_URL = "designQueryURL";
     public static final String EDIT_SOURCE_URL = "editSourceURL";
     public static final String VIEW_DATA_URL = "viewDataURL";
     private TablePropertiesEditor _editor;
@@ -101,11 +100,6 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
             }
         });
 
-        String designQueryURL = PropertyUtil.getServerProperty(DESIGN_QUERY_URL);
-        if (designQueryURL != null)
-        {
-            _editor.addButton(createSavePromptingNavigationButton("Design Query", designQueryURL));
-        }
         String editSourceURL = PropertyUtil.getServerProperty(EDIT_SOURCE_URL);
         if (editSourceURL != null)
         {

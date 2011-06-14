@@ -50,7 +50,6 @@
                 <% } %>
             </select>
         </p>
-
-        <labkey:button text="Create and Design Query" onclick="document.getElementById('ff_redirect').value = 'designQuery'"/> <labkey:button text="Create and Edit Source" />
+        <labkey:button text="Create and Edit Source" />
     </form>
 <% } %>

@@ -775,8 +775,15 @@ public class QueryController extends SpringActionController
                 QueryDefinition query = form.getQueryDef();
                 query.setSql(form.ff_queryText);
 
-                assert !query.isTableQueryDefinition() : "This action can only be used to save custom queries";
-                if (!query.isTableQueryDefinition())
+                if (query.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
+                {
+                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName().toString(), form.getQueryName(), false) != null)
+                    {
+                        // delete the query in order to reset the metadata over a built-in query
+                        query.delete(getUser());
+                    }
+                }
+                else
                 {
                     query.setMetadataXml(form.ff_metadataText);
                     /* if query definition has parameters set hidden==true by default */
@@ -1427,10 +1434,6 @@ public class QueryController extends SpringActionController
             Map<String, String> props = new HashMap<String, String>();
             props.put("schemaName", form.getSchemaName().toString());
             props.put("queryName", form.getQueryName());
-            if (!_query.isTableQueryDefinition())
-            {
-                props.put(MetadataEditor.DESIGN_QUERY_URL, _form.getQueryDef().urlFor(QueryAction.designQuery, getContainer()).toString());
-            }
             props.put(MetadataEditor.EDIT_SOURCE_URL, _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString());
             props.put(MetadataEditor.VIEW_DATA_URL, _form.getQueryDef().urlFor(QueryAction.executeQuery, getContainer()).toString());
 
@@ -1454,107 +1457,6 @@ public class QueryController extends SpringActionController
             return root;
         }
     }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class DesignQueryAction extends FormViewAction<DesignForm>
-    {
-        DesignForm _form;
-        QueryDefinitionImpl _queryDef;
-
-        public void validateCommand(DesignForm target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(DesignForm form, boolean reshow, BindException errors) throws Exception
-        {
-            _form = form;
-            _queryDef = (QueryDefinitionImpl) form.getQueryDef();
-            if (null == _queryDef)
-            {
-                throw new NotFoundException();
-            }
-
-            if (form.ff_designXML == null)
-            {
-                Query q = _queryDef.getQuery(form.getSchema());
-                if (q.isAggregate() || q.hasSubSelect())
-                {
-                    errors.reject(ERROR_MSG, "Query is too complicated for design view");
-                    SourceQueryAction a = new SourceQueryAction();
-                    a.setViewContext(getViewContext());
-                    SourceForm srcForm = new SourceForm(getViewContext());
-                    srcForm.bindParameters(getPropertyValues());
-                    return a.getView(srcForm, reshow, errors);
-                }
-                QueryDocument queryDoc = _queryDef.getDesignDocument(form.getSchema());
-                if (queryDoc == null)
-                    return HttpView.redirect(_queryDef.urlFor(QueryAction.sourceQuery));
-                form.ff_designXML = queryDoc.toString();
-            }
-            setHelpTopic(new HelpTopic("customSQL"));
-            return new JspView<DesignForm>(QueryController.class, "designQuery.jsp", form, errors);
-        }
-
-        public boolean handlePost(DesignForm form, BindException errors) throws Exception
-        {
-            _form = form;
-            _queryDef = (QueryDefinitionImpl) form.getQueryDef();
-            if (null == _queryDef)
-            {
-                throw new NotFoundException();
-            }
-
-            if (form.ff_dirty)
-            {
-                List<QueryException> qerrors = new ArrayList<QueryException>();
-                _queryDef.updateDesignDocument(form.getSchema(), QueryDocument.Factory.parse(form.ff_designXML), qerrors);
-                if (qerrors.size() == 0)
-                {
-                    _queryDef.save(getUser(), getContainer());
-                }
-                for (QueryException qerror : qerrors)
-                {
-                    errors.reject(ERROR_MSG, qerror.getMessage());
-                }
-            }
-            return errors.getErrorCount() == 0;
-        }
-
-        public ActionURL getSuccessURL(DesignForm designForm)
-        {
-            return _queryDef.urlFor(_form.ff_redirect);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            (new SchemaAction(_form)).appendNavTrail(root);
-            String name = _queryDef.getName();
-            root.addChild("Design query " + name, getViewContext().getActionURL());
-            return root;
-        }
-    }
-
-
-//    private NavTrailConfig getNavTrailConfig(QueryForm form) throws Exception
-//    {
-//        NavTrailConfig ret = new NavTrailConfig(getViewContext());
-//        if (form.getSchema() == null)
-//        {
-//            return ret;
-//        }
-//        if (form.getQueryDef() != null)
-//        {
-//            ret.setTitle(form.getQueryDef().getName());
-//            ret.setExtraChildren(new NavTree(form.getSchemaName() + " queries", form.getSchema().urlFor(QueryAction.begin)));
-//        }
-//        else if (form.getSchemaName() != null)
-//        {
-//            ret.setTitle(form.getSchemaName());
-//        }
-//        return ret;
-//    }
-
 
     public interface UpdateViewCallback
     {
