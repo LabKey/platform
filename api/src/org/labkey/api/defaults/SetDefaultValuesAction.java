@@ -198,7 +198,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         }
         bbar.add(new ActionButton("Cancel", new ActionURL(domainIdForm.getReturnUrl())));
         rgn.addHiddenFormField("domainId", "" + domainIdForm.getDomainId());
-        rgn.addHiddenFormField("returnUrl", domainIdForm.getReturnUrl());
+        rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnUrl());
         rgn.setButtonBar(bbar);
 
         List<Container> overridees = DefaultValueService.get().getDefaultValueOverridees(domainIdForm.getContainer(), domain);
@@ -218,7 +218,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 domain.getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class))
         {
             ActionURL url = new ActionURL(this.getClass(), domain.getContainer());
-            url.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
+            url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
             url.addParameter("domainId", domain.getTypeId());
             headerHtml.append(PageFlowUtil.textLink("edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()), url));
         }
@@ -260,7 +260,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     {
         ActionURL editURL = new ActionURL(this.getClass(), container);
         editURL.addParameter("domainId", domain.getTypeId());
-        editURL.addParameter("returnUrl", returnUrl);
+        editURL.addParameter(ActionURL.Param.returnUrl, returnUrl);
         builder.append("<a href=\"").append(PageFlowUtil.filter(editURL.getLocalURIString())).append("\">");
         builder.append(PageFlowUtil.filter(container.getPath()));
         builder.append("</a><br>");

@@ -50,7 +50,6 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
     public static class PublishForm extends ProtocolIdForm implements DataRegionSelection.DataSelectionKeyForm
     {
         private String _dataRegionSelectionKey;
-        private ReturnURLString _returnURL;
         private String _containerFilterName;
         private boolean _runIds;
 
@@ -62,16 +61,6 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         public void setDataRegionSelectionKey(String dataRegionSelectionKey)
         {
             _dataRegionSelectionKey = dataRegionSelectionKey;
-        }
-
-        public ReturnURLString getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(ReturnURLString returnURL)
-        {
-            _returnURL = returnURL;
         }
 
         public String getContainerFilterName()
@@ -246,7 +235,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
                     containers,
                     nullsFound,
                     insufficientPermissions,
-                    publishForm.getReturnURL(),
+                    publishForm.getReturnUrl(),
                     publishForm.getContainerFilterName()));
     }
 

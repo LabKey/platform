@@ -17,7 +17,6 @@ package org.labkey.api.view;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -42,6 +41,13 @@ import java.util.Map;
  */
 public class ActionURL extends URLHelper implements Cloneable
 {
+    public static enum Param
+    {
+        returnUrl,
+        redirectUrl,
+        cancelUrl
+    }
+
     private boolean _baseServerPropsInitialized = false;
     
     // ActionURL always uses the AppProps settings for scheme, host, and port.  We defer setting these since we
@@ -368,12 +374,12 @@ public class ActionURL extends URLHelper implements Cloneable
     // Add returnURL as a parameter using standard parameter name
     public ActionURL addReturnURL(URLHelper returnURL)
     {
-        return replaceParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+        return replaceParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
     }
 
     public URLHelper getReturnURL()
     {
-        String returnURLStr = getParameter(ReturnUrlForm.Params.returnUrl);
+        String returnURLStr = getParameter(ActionURL.Param.returnUrl);
         if (null == returnURLStr)
             return null;
 

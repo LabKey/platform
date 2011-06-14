@@ -17,13 +17,14 @@ package org.labkey.api.view;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import javax.servlet.http.HttpServletRequest;
 
 
-public class ViewForm implements HasViewContext
+public class ViewForm extends ReturnUrlForm implements HasViewContext
 {
     protected User _user;
     protected Container _c;

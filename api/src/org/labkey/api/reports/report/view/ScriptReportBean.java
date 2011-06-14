@@ -121,7 +121,7 @@ public class ScriptReportBean extends ReportDesignBean
                 descriptor.setOwner(null);
 
             if (getRedirectUrl() != null)
-                descriptor.setProperty("redirectUrl", getRedirectUrl());
+                descriptor.setProperty(ReportDescriptor.Prop.redirectUrl, getRedirectUrl());
 
             descriptor.setProperty(ScriptReportDescriptor.Prop.runInBackground, _runInBackground);
 

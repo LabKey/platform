@@ -111,7 +111,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                 {
                     NavTree setDefaultsTree = new NavTree("set default values");
                     ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAssayAction.class, getViewContext().getContainer());
-                    baseEditUrl.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
+                    baseEditUrl.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
                     baseEditUrl.addParameter("providerName", _provider.getName());
                     for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
                     {

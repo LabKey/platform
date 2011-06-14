@@ -98,7 +98,7 @@ public class ReportUtil
         if (bean.getFilterParam() != null)
             url.replaceParameter(ReportDescriptor.Prop.filterParam.toString(), bean.getFilterParam());
         if (bean.getRedirectUrl() != null)
-            url.replaceParameter("redirectUrl", bean.getRedirectUrl());
+            url.replaceParameter(ReportDescriptor.Prop.redirectUrl.name(), bean.getRedirectUrl());
         if (bean.getDataRegionName() != null)
             url.replaceParameter(QueryParam.dataRegionName.toString(), bean.getDataRegionName());
         if (bean.getReportId() != null)
@@ -139,16 +139,16 @@ public class ReportUtil
         {
             if (null != report.getDescriptor().getReportId())
                 url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
-            if (context.getActionURL().getParameter("redirectUrl") != null)
-                url.addParameter("redirectUrl", context.getActionURL().getParameter("redirectUrl"));
+            if (context.getActionURL().getParameter(ReportDescriptor.Prop.redirectUrl) != null)
+                url.addParameter(ReportDescriptor.Prop.redirectUrl, context.getActionURL().getParameter(ReportDescriptor.Prop.redirectUrl));
             else
             {
                 // don't want to use the current url if it's an ajax request
                 ActionURL ajaxAction = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViewsSummary(context.getContainer());
                 if (context.getActionURL().getPageFlow().equals(ajaxAction.getPageFlow()))
-                    url.addParameter("redirectUrl", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
+                    url.addParameter(ReportDescriptor.Prop.redirectUrl, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
                 else
-                    url.addParameter("redirectUrl", context.getActionURL().getLocalURIString());
+                    url.addParameter(ReportDescriptor.Prop.redirectUrl, context.getActionURL().getLocalURIString());
             }
         }
         return url;

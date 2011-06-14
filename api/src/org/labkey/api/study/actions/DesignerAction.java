@@ -20,7 +20,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
@@ -57,16 +56,6 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         {
             _copy = copy;
         }
-
-        public String getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(String returnURL)
-        {
-            _returnURL = returnURL;
-        }
     }
 
     private DesignerForm _form;
@@ -84,9 +73,9 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             properties.put("copy", Boolean.toString(form.isCopy()));
         }
         properties.put("providerName", form.getProviderName());
-        if (form.getReturnURL() != null)
+        if (form.getReturnUrl() != null)
         {
-            properties.put("returnURL", form.getReturnURL());
+            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource());
         }
 
         // hack for 4404 : Lookup picker performance is terrible when there are many containers

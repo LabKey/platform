@@ -132,7 +132,7 @@ public abstract class RunReportView extends TabStripView
     protected URLHelper getBaseUrl()
     {
         ActionURL url = getViewContext().getActionURL();
-        String returnURL = url.getParameter("returnURL");
+        String returnURL = url.getParameter(ActionURL.Param.returnUrl);
 
         try
         {

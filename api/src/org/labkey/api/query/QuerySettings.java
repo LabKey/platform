@@ -29,7 +29,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.action.ReturnUrlForm;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -248,7 +247,7 @@ public class QuerySettings
                 setContainerFilterName(containerFilterNameParam);
         }
 
-        String returnURL = _getParameter(ReturnUrlForm.Params.returnUrl.toString());
+        String returnURL = _getParameter(ActionURL.Param.returnUrl.name());
         if (returnURL == null)
             returnURL = _getParameter("returnURL");
         if (returnURL == null)
@@ -257,7 +256,7 @@ public class QuerySettings
         {
             try
             {
-                setReturnURL(new URLHelper(returnURL));
+                setReturnUrl(new URLHelper(returnURL));
             }
             catch (URISyntaxException _) { }
         }
@@ -399,12 +398,12 @@ public class QuerySettings
      * Returns the "returnURL" parameter or null if none.
      * The url may not necessarily be an ActionURL, e.g. if served from a FileContent html page.
      */
-    public URLHelper getReturnURL()
+    public URLHelper getReturnUrl()
     {
         return _returnURL;
     }
 
-    public void setReturnURL(URLHelper returnURL)
+    public void setReturnUrl(URLHelper returnURL)
     {
         _returnURL = returnURL;
     }

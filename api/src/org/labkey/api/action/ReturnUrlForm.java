@@ -33,17 +33,12 @@ import java.net.URISyntaxException;
 */
 public class ReturnUrlForm
 {
-    public enum Params
-    {
-        returnUrl
-    }
-
     private ReturnURLString _returnUrl;
 
     // Generate a hidden form field to post a return URL with the standard name used by this form
     public static String generateHiddenFormField(URLHelper returnUrl)
     {
-        return "<input type=\"hidden\" name=\"" + Params.returnUrl + "\" value=\"" + PageFlowUtil.filter(returnUrl) + "\">";
+        return "<input type=\"hidden\" name=\"" + ActionURL.Param.returnUrl + "\" value=\"" + PageFlowUtil.filter(returnUrl) + "\">";
     }
 
     public ReturnURLString getReturnUrl()
@@ -88,5 +83,18 @@ public class ReturnUrlForm
         {
         }
         return defaultURL;
+    }
+
+    // when we convert code to us ReturnUrlForm we may leave behind bookmarks using "returnURL"
+    @Deprecated
+    public ReturnURLString getReturnURL()
+    {
+        return _returnUrl;
+    }
+
+    @Deprecated
+    public void setReturnURL(ReturnURLString returnUrl)
+    {
+        _returnUrl = returnUrl;
     }
 }

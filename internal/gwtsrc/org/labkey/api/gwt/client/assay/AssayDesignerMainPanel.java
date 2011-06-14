@@ -101,7 +101,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         String protocolIdStr = PropertyUtil.getServerProperty("protocolId");
         _protocolId = protocolIdStr != null ? new Integer(Integer.parseInt(protocolIdStr)) : null;
         _providerName = PropertyUtil.getServerProperty("providerName");
-        _returnURL = PropertyUtil.getServerProperty("returnURL");
+        _returnURL = PropertyUtil.getReturnURL();
         String copyStr = PropertyUtil.getServerProperty("copy");
         _copy = copyStr != null && Boolean.TRUE.toString().equals(copyStr);
 

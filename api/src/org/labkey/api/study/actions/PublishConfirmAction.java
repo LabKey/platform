@@ -63,19 +63,8 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         private boolean _attemptPublish;
         private boolean _validate;
         private String _dataRegionSelectionKey;
-        private ReturnURLString _returnURL;
         private String _containerFilterName;
         private PublishResultsQueryView.DefaultValueSource _defaultValueSource = PublishResultsQueryView.DefaultValueSource.Assay;
-
-        public ReturnURLString getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(ReturnURLString returnURL)
-        {
-            _returnURL = returnURL;
-        }
 
         public String getDataRegionSelectionKey()
         {
@@ -250,14 +239,14 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
 
         List<ActionButton> buttons = new ArrayList<ActionButton>();
-        HString returnURL;
-        if (publishConfirmForm.getReturnURL() != null)
+        ReturnURLString returnURL;
+        if (publishConfirmForm.getReturnUrl() != null)
         {
-            returnURL = publishConfirmForm.getReturnURL();
+            returnURL = publishConfirmForm.getReturnUrl();
         }
         else
         {
-            returnURL = new HString(getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString(), false);
+            returnURL = new ReturnURLString(getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString(), false);
         }
         String script = "window.onbeforeunload = null;"; // Need to prevent a warning if the user clicks on these buttons
 

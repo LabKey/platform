@@ -238,7 +238,7 @@ public class QueryView extends WebPartView<Object>
     /** Returns an ActionURL for the "returnURL" parameter or the current ActionURL if none. */
     public URLHelper getReturnURL()
     {
-        URLHelper url = getSettings().getReturnURL();
+        URLHelper url = getSettings().getReturnUrl();
         return url != null ? url : ViewServlet.getRequestURL();
     }
 
@@ -496,7 +496,7 @@ public class QueryView extends WebPartView<Object>
 
     protected URLHelper urlRefreshQuery()
     {
-        URLHelper ret = getSettings().getReturnURL();
+        URLHelper ret = getSettings().getReturnUrl();
         if (null == ret)
             ret = getSettings().getSortFilterURL();
         ret.deleteParameter(param(QueryParam.queryName));
@@ -526,7 +526,7 @@ public class QueryView extends WebPartView<Object>
 
     protected URLHelper urlChangeView()
     {
-        URLHelper ret = getSettings().getReturnURL();
+        URLHelper ret = getSettings().getReturnUrl();
         if (null == ret)
             ret = getSettings().getSortFilterURL();
         else if (getSettings().getDataRegionName() != null)
@@ -990,7 +990,7 @@ public class QueryView extends WebPartView<Object>
     {
         if (_customView != null && _customView.hasFilterOrSort())
         {
-            URLHelper url = getSettings().getReturnURL();
+            URLHelper url = getSettings().getReturnUrl();
             if (null == url)
                 url = getSettings().getSortFilterURL();
             NavTree item;
@@ -1023,7 +1023,7 @@ public class QueryView extends WebPartView<Object>
 
             for (ContainerFilter.Type filterType : getAllowableContainerFilterTypes())
             {
-                URLHelper url = getSettings().getReturnURL();
+                URLHelper url = getSettings().getReturnUrl();
                 if (null == url)
                     url = getSettings().getSortFilterURL();
                 String propName = getDataRegionName() + ".containerFilterName";

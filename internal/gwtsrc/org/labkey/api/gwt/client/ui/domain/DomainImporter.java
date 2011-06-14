@@ -24,12 +24,8 @@ import com.google.gwt.user.client.ui.FormHandler;
 import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.FormSubmitCompleteEvent;
 import com.google.gwt.user.client.ui.FormSubmitEvent;
-import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
-import com.google.gwt.user.client.ui.InlineHTML;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
@@ -40,7 +36,6 @@ import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.incubator.ProgressBar;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
-import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -176,13 +171,13 @@ public class DomainImporter
 
     protected void onFinish()
     {
-        String successURL = PropertyUtil.getServerProperty("successURL");
+        String successURL = PropertyUtil.getReturnURL();
         navigate(successURL);
     }
 
     protected void onCancel()
     {
-        String cancelURL = PropertyUtil.getServerProperty("cancelURL");
+        String cancelURL = PropertyUtil.getCancelURL();
         if (null == cancelURL || cancelURL.length() == 0)
             back();
         else

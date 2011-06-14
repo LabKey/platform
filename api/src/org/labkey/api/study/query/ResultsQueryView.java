@@ -22,7 +22,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.study.actions.PublishStartAction;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -72,10 +71,10 @@ public class ResultsQueryView extends AssayBaseQueryView
         DataView view = super.createDataView();
         view.getRenderContext().setBaseSort(new Sort(AssayService.get().getProvider(_protocol).getTableMetadata().getResultRowIdFieldKey().toString()));
         view.getDataRegion().addHiddenFormField("rowId", "" + _protocol.getRowId());
-        String returnURL = getViewContext().getRequest().getParameter("returnURL");
+        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
         if (returnURL == null)
             returnURL = getViewContext().getActionURL().toString();
-        view.getDataRegion().addHiddenFormField("returnURL", returnURL);
+        view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl.returnUrl, returnURL);
         if (showControls())
         {
             if (!AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())

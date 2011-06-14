@@ -255,7 +255,7 @@ public class ReportDesignBean extends ReportForm
         if (null != _reportId)
             list.add(new Pair<String, String>(ReportDescriptor.Prop.reportId.toString(), _reportId.toString()));
         if (!StringUtils.isEmpty(_redirectUrl))
-            list.add(new Pair<String, String>("redirectUrl", _redirectUrl));
+            list.add(new Pair<String, String>(ReportDescriptor.Prop.redirectUrl.name(), _redirectUrl));
         if (!StringUtils.isEmpty(_reportDescription))
             list.add(new Pair<String, String>(ReportDescriptor.Prop.reportDescription.toString(), _reportDescription));
         if (_owner != -1)
@@ -283,6 +283,6 @@ public class ReportDesignBean extends ReportForm
 
         setShareReport((descriptor.getOwner() == null));
         setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
-        setRedirectUrl(getViewContext().getActionURL().getParameter("redirectUrl"));
+        setRedirectUrl(getViewContext().getActionURL().getParameter(ReportDescriptor.Prop.redirectUrl.name()));
     }
 }

@@ -48,19 +48,8 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
 {
     public static class ImportForm extends ProtocolIdForm
     {
-        private String _returnURL;
         private String _path;
         private String[] _file;
-
-        public String getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(String returnURL)
-        {
-            _returnURL = returnURL;
-        }
 
         public String getPath()
         {
@@ -103,9 +92,9 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
             throw new NotFoundException("Could not find assay provider " + form.getProviderName());
         }
 
-        if (form.getReturnURL() != null)
+        if (form.getReturnUrl() != null)
         {
-            properties.put("returnURL", form.getReturnURL());
+            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource());
         }
 
         VBox result = new VBox();

@@ -18,7 +18,6 @@ package org.labkey.api.view;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -242,7 +241,7 @@ public class Portal
         {
             ActionURL current = viewContext.getActionURL();
             return "<input type=\"hidden\" name=\"pageId\" value=\"" + getPageId() + "\">\n<input type=\"hidden\" name=\"index\" value=\"" + getIndex() + "\">" +
-                    "<input type=\"hidden\" name=\"" + ReturnUrlForm.Params.returnUrl + "\" value=\"" + PageFlowUtil.filter(current.getReturnURL()) + "\">";
+                    "<input type=\"hidden\" name=\"" + ActionURL.Param.returnUrl + "\" value=\"" + PageFlowUtil.filter(current.getReturnURL()) + "\">";
         }
 
         public int getRowId()

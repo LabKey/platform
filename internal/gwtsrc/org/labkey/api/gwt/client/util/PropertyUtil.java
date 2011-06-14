@@ -64,6 +64,21 @@ public class PropertyUtil
         return getServerProperty("queryString");
     }
 
+    public static String getReturnURL()
+    {
+        return getServerProperty("returnUrl");
+    }
+
+    public static String getRedirectURL()
+    {
+        return getServerProperty("redirectUrl");
+    }
+
+    public static String getCancelURL()
+    {
+        return getServerProperty("cancelUrl");
+    }
+
     public static String getContextPath()
     {
         String ret = getServerProperty("contextPath");
