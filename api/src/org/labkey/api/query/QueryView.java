@@ -301,14 +301,6 @@ public class QueryView extends WebPartView<Object>
 
         if (_queryDef != null && _queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
         {
-            if (_queryDef.isTableQueryDefinition())
-            {
-                button.addMenuItem("Design Query", false, true);
-            }
-            else
-            {
-                button.addMenuItem("Design Query", getSchema().urlFor(QueryAction.designQuery, _queryDef));
-            }
             NavTree editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
             editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
             button.addMenuItem(editQueryItem);
@@ -321,7 +313,6 @@ public class QueryView extends WebPartView<Object>
         }
         else
         {
-            button.addMenuItem("Design Query", false, true);
             button.addMenuItem("Edit Query", false, true);
         }
         button.addSeparator();
@@ -412,7 +403,6 @@ public class QueryView extends WebPartView<Object>
         switch (action)
         {
             case deleteQuery:
-            case designQuery:
             case sourceQuery:
                 break;
             case detailsQueryRow:

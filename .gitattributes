@@ -4153,7 +4153,6 @@ internal/webapp/_images/warning-small.png -text
 internal/webapp/applet.js -text
 internal/webapp/color_functions.js -text
 internal/webapp/completion.js -text
-internal/webapp/designer/designer.js -text
 internal/webapp/designer/designer2.js -text
 internal/webapp/designer/wand.gif -text
 internal/webapp/editarea/autocompletion.js -text

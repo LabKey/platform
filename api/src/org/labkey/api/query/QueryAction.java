@@ -20,7 +20,6 @@ public enum QueryAction
 {
     begin,
     schema,
-    designQuery,
     sourceQuery,
     metadataQuery,
     executeQuery,
