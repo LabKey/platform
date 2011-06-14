@@ -228,7 +228,7 @@ public class ListController extends SpringActionController
             URLHelper returnURL = form.getReturnURLHelper();
 
             props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
-            props.put("returnURL", returnURL.toString());
+            props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
             props.put("allowFileLinkProperties", "0");
             props.put("allowAttachmentProperties", "1");
             props.put("showDefaultValueSettings", "1");
@@ -538,7 +538,7 @@ public class ListController extends SpringActionController
             }
             view.setFocusId("firstInputField");
             getPageConfig().setFocusId(view.getFocusId());
-            view.getDataRegion().setButtonBar(getButtonBar(_list.urlFor(InsertAction.class).addParameter("returnUrl", returnURL.getLocalURIString()), returnURL));
+            view.getDataRegion().setButtonBar(getButtonBar(_list.urlFor(InsertAction.class).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString()), returnURL));
 
             return view;
         }
@@ -882,7 +882,7 @@ public class ListController extends SpringActionController
 
                     if (!StringUtils.isEmpty(oldRecord) || !StringUtils.isEmpty(newRecord))
                     {
-                        return new ItemDetails(event, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter("redirectURL"));
+                        return new ItemDetails(event, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl));
                     }
                     else
                         return new HtmlView("No details available for this event.");

@@ -60,7 +60,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
     {
         _root = StudyApplication.getRootPanel();
 
-        _redirectUrl = PropertyUtil.getServerProperty("redirectUrl");
+        _redirectUrl = PropertyUtil.getRedirectURL();
         _datasetId = PropertyUtil.getServerProperty("datasetId");
         _participantId = PropertyUtil.getServerProperty("participantId");
         String participantChart = PropertyUtil.getServerProperty("isParticipantChart");

@@ -405,7 +405,7 @@ public class AdminController extends SpringActionController
             }
             if (returnURL != null)
             {
-                url.addParameter("returnUrl", returnURL.toString());
+                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
             }
             return url;
         }

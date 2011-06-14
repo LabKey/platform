@@ -58,7 +58,7 @@ public class ChartDesigner extends AbstractChartPanel implements EntryPoint
     {
         _root = RootPanel.get("org.labkey.reports.designer.ChartDesigner-Root");
 
-        _returnURL = PropertyUtil.getServerProperty("returnURL");
+        _returnURL = PropertyUtil.getReturnURL();
         String isAdmin = PropertyUtil.getServerProperty("isAdmin");
         _isAdmin = isAdmin != null ? Boolean.valueOf(isAdmin).booleanValue() : false;
         String isGuest = PropertyUtil.getServerProperty("isGuest");

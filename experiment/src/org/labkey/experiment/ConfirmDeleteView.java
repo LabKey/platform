@@ -90,12 +90,12 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             return _detailAction;
         }
 
-        public void setReturnURL(ReturnURLString url)
+        public void setReturnUrl(ReturnURLString url)
         {
             _returnURL =  url;
         }
 
-        public ReturnURLString getReturnURL()
+        public ReturnURLString getReturnUrl()
         {
             return _returnURL;
         }
@@ -141,7 +141,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         }
 
         ConfirmDeleteBean bean = new ConfirmDeleteBean(runsWithPermission, runsWithoutPermission, getViewContext(), objects, objectType, detailAction, form.getSingleObjectRowId());
-        bean.setReturnURL(form.getReturnURL());
+        bean.setReturnUrl(form.getReturnUrl());
         bean.setDataRegionSelectionKey(form.getDataRegionSelectionKey());
         setModelBean(bean);
     }

@@ -115,7 +115,7 @@ public class PropertyController extends SpringActionController
             Map<String, String> props = new HashMap<String, String>();
             ActionURL returnURL = _domain.getDomainKind().urlShowData(_domain);
             props.put("typeURI", _domain.getTypeURI());
-            props.put("returnURL", returnURL.toString());
+            props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
             props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
             props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
             props.put("showDefaultValueSettings", String.valueOf(form.isShowDefaultValueSettings()));

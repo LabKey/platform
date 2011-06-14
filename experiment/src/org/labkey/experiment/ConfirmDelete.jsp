@@ -37,7 +37,7 @@
 <% if (bean.getObjects().isEmpty())
 {
     %><p>There are no selected objects to delete.</p>
-    <%= bean.getReturnURL() == null || bean.getReturnURL().isEmpty() ? generateButton("OK", "begin.view") : generateButton("OK", bean.getReturnURL())%><%
+    <%= bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty() ? generateButton("OK", "begin.view") : generateButton("OK", bean.getReturnUrl())%><%
 }
 else
 { %>
@@ -106,15 +106,15 @@ else
         if (bean.getDataRegionSelectionKey() != null) { %>
             <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
         <% }
-        if (bean.getReturnURL() != null)
+        if (bean.getReturnUrl() != null)
         { %>
-            <input type="hidden" name="returnURL" value="<%= h(bean.getReturnURL()) %>"/>
+            <input type="hidden" name="returnURL" value="<%= h(bean.getReturnUrl()) %>"/>
         <% } %>
         <input type="hidden" name="forceDelete" value="true"/>
         <% if (bean.getRunsWithoutPermission().isEmpty() )
         { %>
             <%= generateSubmitButton("Confirm Delete") %>
         <% } %>
-        <%= bean.getReturnURL() == null || bean.getReturnURL().isEmpty()? generateButton("Cancel", "begin.view") : generateButton("Cancel", bean.getReturnURL())%>
+        <%= bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty()? generateButton("Cancel", "begin.view") : generateButton("Cancel", bean.getReturnUrl())%>
     </form>
 <% } %>

@@ -175,7 +175,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     protected static String getHistoryLinkBase(ViewContext ctx)
     {
         ActionURL historyLink = new ActionURL(SpecimenController.SampleEventsAction.class, ctx.getContainer());
-        historyLink.addParameter("returnUrl", ctx.getActionURL().getLocalURIString());
+        historyLink.addParameter(ActionURL.Param.returnUrl, ctx.getActionURL().getLocalURIString());
         return historyLink.toString() + "&id=";
     }
 

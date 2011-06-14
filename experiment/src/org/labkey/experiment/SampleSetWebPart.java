@@ -103,7 +103,7 @@ public class SampleSetWebPart extends QueryView
         ActionButton deleteButton = new ActionButton("deleteMaterialSource.view", "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DeletePermission.class);
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, model.getContainer());
-        deleteURL.addParameter("returnURL", model.getActionURL().toString());
+        deleteURL.addParameter(ActionURL.Param.returnUrl, model.getActionURL().toString());
         deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);
         deleteButton.setRequiresSelection(true);

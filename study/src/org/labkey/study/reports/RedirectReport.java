@@ -16,6 +16,7 @@
 package org.labkey.study.reports;
 
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.RedirectException;
@@ -30,7 +31,7 @@ import java.io.PrintWriter;
  */
 public abstract class RedirectReport extends AbstractReport
 {
-    public static final String REDIRECT_URL = "redirectUrl";
+    public static final String REDIRECT_URL = ReportDescriptor.Prop.redirectUrl.name();
 
     public HttpView renderReport(ViewContext viewContext)
     {

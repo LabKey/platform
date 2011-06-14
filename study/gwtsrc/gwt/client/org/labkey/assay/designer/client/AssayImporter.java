@@ -323,7 +323,7 @@ public class AssayImporter implements EntryPoint
 
     protected void onCancel()
     {
-        String cancelURL = PropertyUtil.getServerProperty("cancelURL");
+        String cancelURL = PropertyUtil.getCancelURL();
         if (null == cancelURL || cancelURL.length() == 0)
             back();
         else

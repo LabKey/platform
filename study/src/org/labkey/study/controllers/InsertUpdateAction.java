@@ -156,7 +156,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
         DataRegion dataRegion = view.getDataRegion();
 
-        ReturnURLString referer = form.getReturnURL();
+        ReturnURLString referer = form.getReturnUrl();
         if (referer == null || referer.isEmpty())
             referer =  new ReturnURLString(HttpView.currentRequest().getHeader("Referer"));
 
@@ -170,7 +170,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         else
         {
             cancelURL = new ActionURL(referer);
-            dataRegion.addHiddenFormField("returnURL", referer);
+            dataRegion.addHiddenFormField(ActionURL.Param.returnUrl, referer);
         }
 
         ButtonBar buttonBar = new ButtonBar();
@@ -311,10 +311,11 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
     public ActionURL getSuccessURL(Form form)
     {
-        if (form.getReturnURL() != null)
-            return new ActionURL(form.getReturnURL());
+        ActionURL url = form.getReturnActionURL();
+        if (null != url)
+            return url;
 
-        ActionURL url = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
+        url = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
         url.addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
         if (StudyManager.getInstance().showQCStates(getViewContext().getContainer()))
         {

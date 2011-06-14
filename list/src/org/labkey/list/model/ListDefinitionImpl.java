@@ -617,7 +617,7 @@ public class ListDefinitionImpl implements ListDefinition
             url.addParameter("pk", pk.toString());
 
         if (returnUrl != null)
-            url.addParameter("returnUrl", returnUrl.getLocalURIString());
+            url.addParameter(ActionURL.Param.returnUrl, returnUrl.getLocalURIString());
 
         return url;
     }

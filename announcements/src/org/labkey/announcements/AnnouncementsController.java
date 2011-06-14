@@ -845,7 +845,7 @@ public class AnnouncementsController extends SpringActionController
                 sendNotificationEmails(insert, currentRendererType);
             }
 
-            URLHelper returnURL = form.getReturnUrl();
+            URLHelper returnURL = form.getReturnURLHelper();
 
             // Null in insert/update message case, since we want to redirect to thread view anchoring to new post
             if (null == returnURL)
@@ -924,7 +924,7 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            InsertMessageView insertView = new InsertMessageView(form, "New " + settings.getConversationName(), errors, reshow, form.getReturnUrl(), false, true);
+            InsertMessageView insertView = new InsertMessageView(form, "New " + settings.getConversationName(), errors, reshow, form.getReturnURLHelper(), false, true);
             insertView.setShowTitle(false);
 
             getPageConfig().setFocusId("title");
@@ -973,7 +973,7 @@ public class AnnouncementsController extends SpringActionController
             ThreadView threadView = new ThreadView(c, getActionURL(), parent, perm);
             threadView.setFrame(WebPartView.FrameType.DIV);
 
-            HttpView respondView = new RespondView(c, parent, form, form.getReturnUrl(), errors, reshow, false);
+            HttpView respondView = new RespondView(c, parent, form, form.getReturnURLHelper(), errors, reshow, false);
 
             getPageConfig().setFocusId("body");
             _parent = parent;
@@ -2019,27 +2019,9 @@ public class AnnouncementsController extends SpringActionController
             }
         }
 
-        public URLHelper getReturnUrl()
-        {
-            String urlString = StringUtils.trimToNull((String)get("returnUrl"));
-
-            if (null != urlString)
-            {
-                try
-                {
-                    return new URLHelper(urlString);
-                }
-                catch (URISyntaxException e)
-                {
-                }
-            }
-
-            return null;
-        }
-
         public ActionURL getCancelUrl()
         {
-            String urlString = StringUtils.trimToNull((String)get("cancelUrl"));
+            String urlString = StringUtils.trimToNull((String)get(ActionURL.Param.cancelUrl.name()));
 
             if (null == urlString)
                 return null;
@@ -2284,7 +2266,7 @@ public class AnnouncementsController extends SpringActionController
         {
             // This is set to the outer page URL in the case of rendering a dynamic webpart; use it instead of
             // the getWebPart URL.
-            String returnURL = (String)ctx.get("returnURL");
+            String returnURL = (String)ctx.get(ActionURL.Param.returnUrl.name());
 
             if (null != returnURL)
                 return new ActionURL(returnURL);
@@ -2704,7 +2686,7 @@ public class AnnouncementsController extends SpringActionController
                 addAttachmentURL = attachmentURL.clone().setAction(ShowAddAttachmentAction.class);
                 statusSelect = getStatusSelect(settings, ann.getStatus());
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
-                returnURL = form.getReturnUrl();// getThreadUrl(c, annModel.getEntityId(), annModel.getRowId());  // TODO: Use URL to object instead
+                returnURL = form.getReturnURLHelper();
             }
         }
     }

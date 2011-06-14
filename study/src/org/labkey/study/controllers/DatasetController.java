@@ -16,9 +16,7 @@
 
 package org.labkey.study.controllers;
 
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -497,11 +495,11 @@ public class DatasetController extends BaseStudyController
             // Cancel should delete the dataset
             ActionURL cancelURL = new ActionURL(
                 StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", form.getDatasetId());
-            props.put("cancelURL", cancelURL.getLocalURIString());
+            props.put(ActionURL.Param.cancelUrl.name(), cancelURL.getLocalURIString());
 
             ActionURL successURL = new ActionURL(
                 StudyController.DatasetAction.class, getContainer()).addParameter("datasetId", form.getDatasetId());
-            props.put("successURL", successURL.getLocalURIString());
+            props.put(ActionURL.Param.returnUrl.name(), successURL.getLocalURIString());
 
             // need a comma-separated list of base columns
             Set<String> baseColumnNames = def.getDefaultFieldNames();
@@ -658,7 +656,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    public static class EditDatasetRowForm
+    public static class EditDatasetRowForm extends ReturnUrlForm
     {
         private String lsid;
         private int datasetId;
@@ -668,8 +666,6 @@ public class DatasetController extends BaseStudyController
         public void setLsid(String lsid) {this.lsid = lsid;}
         public int getDatasetId() {return datasetId;}
         public void setDatasetId(int datasetId) {this.datasetId = datasetId;}
-        public ReturnURLString getReturnURL() {return returnURL;}
-        public void setReturnURL(ReturnURLString returnURL) {this.returnURL = returnURL;}
     }
 
     public static class DatasetAuditHistoryForm

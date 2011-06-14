@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.query.AssayBaseQueryView;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 
@@ -49,6 +50,14 @@ public class EditResultsQueryView extends AssayBaseQueryView
         _returnURL = returnURL;
     }
 
+    public EditResultsQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings, int runId, ReturnURLString returnURL)
+    {
+        super(protocol, schema, settings);
+        _runId = runId;
+        _provider = (CBCAssayProvider)AssayService.get().getProvider(_protocol);
+        _returnURL = (null == returnURL || returnURL.isEmpty()) ? null : returnURL.getSource();
+    }
+
     public DataView createDataView()
     {
         DataView view = super.createDataView();
@@ -65,7 +74,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
 
         view.getDataRegion().setShowSelectMessage(false);
         if (_returnURL != null)
-            view.getDataRegion().addHiddenFormField("returnURL", new ActionURL(_returnURL).getLocalURIString());
+            view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, new ActionURL(_returnURL).getLocalURIString());
 
         return view;
     }
@@ -92,7 +101,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
 
         ActionURL url = getViewContext().cloneActionURL();
         url.setAction(CBCAssayController.EditResultsAction.class);
-        url = url.deleteParameter("returnURL"); // use 'returnURL' hidden form field
+        url = url.deleteParameter(ActionURL.Param.returnUrl); // use 'returnURL' hidden form field
         ActionButton doneButton = new ActionButton("Save", url);
         doneButton.setActionName(url.getAction() + ".view?" + url.getQueryString()); // preserve url filters
         doneButton.setActionType(ActionButton.Action.POST);

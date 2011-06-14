@@ -17,9 +17,7 @@
 package org.labkey.cbcassay;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -54,6 +52,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -99,7 +98,7 @@ public class CBCAssayController extends SpringActionController
         int _runId;
         int[] _objectId;
         String[] _sampleId;
-        String _returnURL;
+        ReturnURLString _returnURL;
 
         public int getRunId()
         {
@@ -130,16 +129,6 @@ public class CBCAssayController extends SpringActionController
         {
             _sampleId = sampleId;
         }
-
-        public String getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(String returnURL)
-        {
-            _returnURL = returnURL;
-        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
@@ -166,7 +155,7 @@ public class CBCAssayController extends SpringActionController
             settings.setMaxRows(Table.ALL_ROWS);
             settings.setShowRows(ShowRows.ALL);
 
-            EditResultsQueryView queryView = new EditResultsQueryView(_protocol, schema, settings, runId, form.getReturnURL());
+            EditResultsQueryView queryView = new EditResultsQueryView(_protocol, schema, settings, runId, form.getReturnUrl());
             queryView.setShowDetailsColumn(false);
             queryView.setShowExportButtons(false);
             queryView.setShowPagination(false);
@@ -231,12 +220,9 @@ public class CBCAssayController extends SpringActionController
 
         public ActionURL getSuccessURL(EditResultsForm form)
         {
-            String returnURL = form.getReturnURL();
-            if (returnURL != null)
-            {
-                ActionURL url = new ActionURL(returnURL);
-                return url.deleteParameter("returnURL");
-            }
+            ActionURL returnURL = form.getReturnActionURL();
+            if (null != returnURL)
+                return returnURL.deleteParameter(ActionURL.Param.returnUrl);
             return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getContainer(), form.getProtocol());
         }
 
@@ -263,16 +249,6 @@ public class CBCAssayController extends SpringActionController
         public void setDataRowId(int dataRowId)
         {
             _dataRowId = dataRowId;
-        }
-
-        public String getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(String returnURL)
-        {
-            _returnURL = returnURL;
         }
 
         public void setSrcURL(String srcURL)

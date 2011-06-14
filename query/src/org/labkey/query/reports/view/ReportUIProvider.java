@@ -55,7 +55,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         ChartDesignerBean chartBean = new ChartDesignerBean(settings);
         chartBean.setReportType(ChartQueryReport.TYPE);
 
-        URLHelper returnUrl = settings.getReturnURL();
+        URLHelper returnUrl = settings.getReturnUrl();
         if (returnUrl == null)
             returnUrl = context.getActionURL();
         chartBean.setRedirectUrl(returnUrl.getLocalURIString());

@@ -342,7 +342,7 @@ public class ExperimentController extends SpringActionController
                     super.populateButtonBar(view, bar);
 
                     ActionURL deleteMaterialUrl = new ActionURL(DeleteMaterialByRowIdAction.class, getContainer());
-                    deleteMaterialUrl.addParameter("returnURL", getViewContext().getActionURL().toString());
+                    deleteMaterialUrl.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                     ActionButton deleteMaterial = new ActionButton(deleteMaterialUrl, "Delete");
                     deleteMaterial.setActionType(ActionButton.Action.POST);
                     deleteMaterial.setDisplayPermission(DeletePermission.class);
@@ -387,7 +387,7 @@ public class ExperimentController extends SpringActionController
                 deleteButton.setDisplayPermission(DeletePermission.class);
                 ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
                 deleteURL.addParameter("singleObjectRowId", _source.getRowId());
-                deleteURL.addParameter("returnURL", ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
+                deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
 
                 deleteButton.setURL(deleteURL);
                 deleteButton.setActionType(ActionButton.Action.LINK);
@@ -2003,10 +2003,9 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getSuccessURL(DeleteForm deleteForm)
         {
-            if (deleteForm.getReturnURL() != null)
-            {
-                return new ActionURL(deleteForm.getReturnURL());
-            }
+            ActionURL url = deleteForm.getReturnActionURL();
+            if (null != url)
+                return url;
             return ExperimentUrlsImpl.get().getOverviewURL(getContainer());
         }
 
@@ -2328,7 +2327,6 @@ public class ExperimentController extends SpringActionController
 
     public static class DeleteForm extends ViewForm implements DataRegionSelection.DataSelectionKeyForm
     {
-        private ReturnURLString _returnURL;
         private boolean _forceDelete;
         private String _dataRegionSelectionKey;
         private Integer _singleObjectRowId;
@@ -2350,16 +2348,6 @@ public class ExperimentController extends SpringActionController
         public void setSingleObjectRowId(Integer singleObjectRowId)
         {
             _singleObjectRowId = singleObjectRowId;
-        }
-
-        public ReturnURLString getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(ReturnURLString returnURL)
-        {
-            _returnURL = returnURL;
         }
 
         public boolean isForceDelete()
@@ -3877,19 +3865,8 @@ public class ExperimentController extends SpringActionController
 
     public static class CreateExperimentForm extends ExperimentForm implements DataRegionSelection.DataSelectionKeyForm
     {
-        private String _returnURL;
         private boolean _addSelectedRuns;
         private String _dataRegionSelectionKey;
-
-        public String getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(String returnURL)
-        {
-            _returnURL = returnURL;
-        }
 
         public boolean isAddSelectedRuns()
         {
@@ -3918,7 +3895,6 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(CreateExperimentForm form, BindException errors) throws Exception
         {
             // HACK - convert ExperimentForm to not be a BeanViewForm
-            form.setReturnURL(getViewContext().getRequest().getParameter("returnURL"));
             form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) && !"true".equals(getViewContext().getRequest().getParameter("noPost")))
@@ -3955,9 +3931,9 @@ public class ExperimentController extends SpringActionController
                         addSelectedRunsToExperiment(wrapper);
                     }
 
-                    if (form.getReturnURL() != null)
+                    if (form.getReturnUrl() != null)
                     {
-                        throw new RedirectException(form.getReturnURL());
+                        throw new RedirectException(form.getReturnUrl());
                     }
                     throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
                 }
@@ -3965,7 +3941,7 @@ public class ExperimentController extends SpringActionController
 
             DataRegion drg = new DataRegion();
 
-            drg.addHiddenFormField("returnURL", getViewContext().getRequest().getParameter("returnURL"));
+            drg.addHiddenFormField(ActionURL.Param.returnUrl, getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name()));
             drg.addHiddenFormField("addSelectedRuns", java.lang.Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
             for (String rowId : DataRegionSelection.getSelected(getViewContext(), false))
@@ -4292,7 +4268,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter("returnURL", returnURL.getLocalURIString());
+            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
         }
 
         public ActionURL getAddRunsToExperimentURL(Container c, ExpExperiment exp)
@@ -4340,17 +4316,17 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getDeleteDatasURL(Container c, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedDataAction.class, c).addParameter("returnURL", returnURL.getLocalURIString());
+            return new ActionURL(DeleteSelectedDataAction.class, c).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
         }
 
         public ActionURL getDeleteSelectedExperimentsURL(Container c, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExperimentsAction.class, c).addParameter("returnURL", returnURL.getLocalURIString());
+            return new ActionURL(DeleteSelectedExperimentsAction.class, c).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
         }
 
         public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addParameter("returnURL", returnURL.getLocalURIString());
+            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
         }
 
         public ActionURL getShowUpdateURL(ExpExperiment experiment)
@@ -4360,7 +4336,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment exp)
         {
-            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addParameter("returnURL", returnURL.getLocalURIString()).addParameter("expRowId", exp.getRowId());
+            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString()).addParameter("expRowId", exp.getRowId());
         }
 
         public ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns)
@@ -4368,7 +4344,7 @@ public class ExperimentController extends SpringActionController
             ActionURL result = new ActionURL(CreateRunGroupAction.class, container);
             if (returnURL != null)
             {
-                result.addParameter("returnURL", returnURL.getLocalURIString());
+                result.addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
             }
             if (addSelectedRuns)
             {

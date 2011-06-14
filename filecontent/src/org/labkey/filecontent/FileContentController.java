@@ -20,19 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiResponseWriter;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.CustomApiForm;
-import org.labkey.api.action.ExtFormAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentForm;
@@ -995,26 +983,12 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    public static class DesignerForm
-    {
-        private String _returnURL;
-
-        public String getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(String returnURL)
-        {
-            _returnURL = returnURL;
-        }
-    }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class DesignerAction extends SimpleViewAction<DesignerForm>
+    public class DesignerAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
-        public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             String uri = svc.getDomainURI(getContainer());
@@ -1023,8 +997,8 @@ public class FileContentController extends SpringActionController
 
             properties.put("typeURI", uri);
             properties.put("domainName", FileContentServiceImpl.PROPERTIES_DOMAIN);
-            properties.put("returnURL", form.getReturnURL());
-            properties.put("cancelURL", form.getReturnURL());
+            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl()==null?null:form.getReturnUrl().getSource());
+            properties.put(ActionURL.Param.cancelUrl.name(), form.getReturnUrl()==null?null:form.getReturnUrl().getSource());
 
             return new GWTView("org.labkey.filecontent.designer.FilePropertiesDesigner", properties);
         }

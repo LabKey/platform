@@ -24,7 +24,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.query.ResultsQueryView;
@@ -34,7 +33,6 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.cbcassay.data.CBCDataDisplayColumn;
 import org.labkey.cbcassay.data.CBCDataProperty;
-import org.labkey.api.data.DisplayColumnDecorator;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -69,7 +67,7 @@ public final class CBCResultsQueryView extends ResultsQueryView
         if (canEdit())
         {
             ActionURL url = getViewContext().cloneActionURL();
-            url.addParameter("returnURL", url.getLocalURIString());
+            url.addParameter(ActionURL.Param.returnUrl, url.getLocalURIString());
             url.setAction(CBCAssayController.EditResultsAction.class);
             ActionButton editButton = new ActionButton("Edit", url);
             bar.add(editButton);

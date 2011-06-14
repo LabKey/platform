@@ -239,7 +239,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
                 return null;
 
             ActionURL url = new ActionURL(ListController.ListItemDetailsAction.class, c);
-            url.addParameter("redirectURL", ctx.getViewContext().getActionURL().getLocalURIString());
+            url.addParameter(ActionURL.Param.redirectUrl, ctx.getViewContext().getActionURL().getLocalURIString());
             return new DetailsURL(url, _columns).eval(ctx);
         }
 

@@ -441,7 +441,7 @@ public class StudyController extends BaseStudyController
                     "datasetId", ""+form.getDatasetId(),
                     "typeURI", def.getTypeURI(),
                     "timepointType", ""+study.getTimepointType(),
-                    "returnURL", new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
+                    ActionURL.Param.returnUrl.name(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
             HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
             HttpView view = new StudyGWTView(Designer.class, props);
@@ -1122,7 +1122,7 @@ public class StudyController extends BaseStudyController
                 updateItem.setId("QCState:updateSelected");
 
                 button.addMenuItem("Manage states", new ActionURL(ManageQCStatesAction.class,
-                        getContainer()).addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString()));
+                        getContainer()).addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString()));
             }
             buttonBar.add(button);
         }
@@ -3424,7 +3424,7 @@ public class StudyController extends BaseStudyController
             {
                 ActionURL url = new ActionURL(ManageQCStatesAction.class, getContainer());
                 if (manageQCStatesForm.getReturnUrl() != null)
-                    url.addParameter("returnUrl", manageQCStatesForm.getReturnUrl());
+                    url.addParameter(ActionURL.Param.returnUrl, manageQCStatesForm.getReturnUrl());
                 return url;
             }
             else if (manageQCStatesForm.getReturnUrl() != null)
@@ -3516,7 +3516,7 @@ public class StudyController extends BaseStudyController
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
             if (form.getManageReturnUrl() != null)
-                returnUrl.addParameter("returnUrl", form.getManageReturnUrl());
+                returnUrl.addParameter(ActionURL.Param.returnUrl, form.getManageReturnUrl());
             return returnUrl;
         }
     }
@@ -4919,7 +4919,7 @@ public class StudyController extends BaseStudyController
                 if (form.getParticipantId() != null && form.getParticipantId().length() > 0)
                     reshowURL.addParameter("participantId", form.getParticipantId());
                 if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
-                    reshowURL.addParameter("returnUrl", form.getReturnUrl());
+                    reshowURL.addParameter(ActionURL.Param.returnUrl, form.getReturnUrl());
                 return reshowURL;
             }
             else if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
@@ -5186,8 +5186,8 @@ public class StudyController extends BaseStudyController
                         "datasetId", String.valueOf(dsDef.getDataSetId()),
                         "typeURI", dsDef.getTypeURI(),
                         "timepointType", String.valueOf(study.getTimepointType()),
-                        "returnURL", url.getLocalURIString(),
-                        "cancelURL", url.getLocalURIString(),
+                        ActionURL.Param.returnUrl.name(), url.getLocalURIString(),
+                        ActionURL.Param.cancelUrl.name(), url.getLocalURIString(),
                         "create", "false");
 
                 HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
@@ -5300,7 +5300,7 @@ public class StudyController extends BaseStudyController
                 else if (StudySnapshotForm.CANCEL.equals(form.getAction()))
                 {
                     deletePreviousDatasetDefinition(form);
-                    String redirect = getViewContext().getActionURL().getParameter("redirectURL");
+                    String redirect = getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl);
                     if (redirect != null)
                         _successURL = new ActionURL(PageFlowUtil.decode(redirect));
                 }
@@ -5378,8 +5378,8 @@ public class StudyController extends BaseStudyController
                             "datasetId", String.valueOf(dsDef.getDataSetId()),
                             "typeURI", dsDef.getTypeURI(),
                             "timepointType", String.valueOf(study.getTimepointType()), // XXX: should always be "VISIT" ?
-                            "returnURL", returnURL.toString(),
-                            "cancelURL", returnURL.toString(),
+                            ActionURL.Param.returnUrl.name(), returnURL.toString(),
+                            ActionURL.Param.cancelUrl.name(), returnURL.toString(),
                             "create", "false");
 
                     HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
@@ -5400,7 +5400,7 @@ public class StudyController extends BaseStudyController
         {
             if (StudySnapshotForm.CANCEL.equals(form.getAction()))
             {
-                String redirect = getViewContext().getActionURL().getParameter("redirectURL");
+                String redirect = getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl);
                 if (redirect != null)
                     _successURL = new ActionURL(PageFlowUtil.decode(redirect));
             }
@@ -5985,7 +5985,7 @@ public class StudyController extends BaseStudyController
             if (_showCustomizeLink && c.hasPermission(getViewContext().getUser(), AdminPermission.class))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, c);
-                customizeURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
+                customizeURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
                 customizeURL.addParameter("participantId", _currentParticipantId);
                 customizeURL.addParameter(SharedFormParameters.QCState, _encodedQcState);
                 out.print("</td><td>");
@@ -6443,7 +6443,7 @@ public class StudyController extends BaseStudyController
             String referrer = getViewContext().getRequest().getHeader("Referer");
             if (referrer != null)
             {
-                _url.addParameter(ReturnUrlForm.Params.returnUrl, referrer);
+                _url.addParameter(ActionURL.Param.returnUrl, referrer);
             }
         }
     }

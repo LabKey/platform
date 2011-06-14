@@ -22,7 +22,6 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONWriter;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -815,7 +814,7 @@ public class DavController extends SpringActionController
                 WebdavStatus status = super.doMethod();
 
                 // if _returnUrl then redirect, else respond as if PROPFIND
-                String returnUrl = getRequest().getParameter(ReturnUrlForm.Params.returnUrl.toString());
+                String returnUrl = getRequest().getParameter(ActionURL.Param.returnUrl.name());
                 if (null != StringUtils.trimToNull(returnUrl))
                 {
                     String url = returnUrl + (returnUrl.indexOf('?')==-1 ? '?' : '&') + "status=" + status;

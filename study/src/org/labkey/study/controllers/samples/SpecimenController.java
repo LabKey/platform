@@ -489,7 +489,6 @@ public class SpecimenController extends BaseStudyController
     {
         private boolean _selected;
         private boolean _vialView;
-        private ReturnURLString _returnUrl;
 
         public boolean isSelected()
         {
@@ -510,27 +509,16 @@ public class SpecimenController extends BaseStudyController
         {
             _vialView = vialView;
         }
-
-        public ReturnURLString getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(ReturnURLString returnUrl)
-        {
-            _returnUrl = returnUrl;
-        }
     }
 
-    public static class SpecimenEventBean
+    public static class SpecimenEventBean extends ReturnUrlForm
     {
         private Specimen _specimen;
-        private ReturnURLString _returnUrl;
 
         public SpecimenEventBean(Specimen specimen, ReturnURLString returnUrl)
         {
             _specimen = specimen;
-            _returnUrl = returnUrl;
+            setReturnUrl(returnUrl);
         }
 
         public Specimen getSpecimen()
@@ -541,16 +529,6 @@ public class SpecimenController extends BaseStudyController
         public void setSpecimen(Specimen specimen)
         {
             _specimen = specimen;
-        }
-
-        public ReturnURLString getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(ReturnURLString returnUrl)
-        {
-            _returnUrl = returnUrl;
         }
     }
 
@@ -3431,7 +3409,7 @@ public class SpecimenController extends BaseStudyController
                                 addParameter(ParticipantCommentForm.params.participantId, vial.getPtid()).
                                 addParameter(ParticipantCommentForm.params.visitId, String.valueOf(vial.getVisitValue())).
                                 addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                                addParameter(ParticipantCommentForm.params.returnURL, commentsForm.getReferrer());
+                                addParameter(ParticipantCommentForm.params.returnUrl, commentsForm.getReferrer());
                     }
                 }
                 else
@@ -3439,7 +3417,7 @@ public class SpecimenController extends BaseStudyController
                     _successUrl = new ActionURL(CopyParticipantCommentAction.class, getContainer()).
                             addParameter(ParticipantCommentForm.params.participantId, commentsForm.getCopyParticipantId()).
                             addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                            addParameter(ParticipantCommentForm.params.returnURL, commentsForm.getReferrer());
+                            addParameter(ParticipantCommentForm.params.returnUrl, commentsForm.getReferrer());
                 }
 
                 // delete existing vial comments if move is specified
@@ -4556,7 +4534,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class IdForm
+    public static class IdForm extends ReturnUrlForm
     {
         public enum PARAMS
         {
@@ -4751,7 +4729,7 @@ public class SpecimenController extends BaseStudyController
             vialCommentsToClear,
             lsid,
             datasetId,
-            returnURL,
+            returnUrl,
         }
 
         public String getParticipantId()
@@ -4859,7 +4837,7 @@ public class SpecimenController extends BaseStudyController
 
                 url.addParameter(ParticipantCommentForm.params.datasetId, def.getDataSetId()).
                         addParameter(ParticipantCommentForm.params.comment, form.getComment()).
-                        addParameter(ParticipantCommentForm.params.returnURL, form.getReturnURL()).
+                        addParameter(ParticipantCommentForm.params.returnUrl, form.getReturnUrl()).
                         addParameter(ParticipantCommentForm.params.visitId, form.getVisitId());
 
                 for (int rowId : form.getVialCommentsToClear())

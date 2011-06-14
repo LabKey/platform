@@ -534,7 +534,7 @@ public class SearchController extends SpringActionController
 
             try
             {
-                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+                String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
                 if (null != returnUrl)
                     return new ActionURL(returnUrl);
             }
@@ -565,7 +565,7 @@ public class SearchController extends SpringActionController
 
             try
             {
-                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+                String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
                 if (null != returnUrl)
                     return new ActionURL(returnUrl);
             }
@@ -585,7 +585,7 @@ public class SearchController extends SpringActionController
         {
             // SimpleRedirectAction doesn't take a form
             boolean full = "1".equals(getViewContext().getRequest().getParameter("full"));
-            String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+            String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
             boolean wait = "1".equals(getViewContext().getRequest().getParameter("wait"));
 
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);

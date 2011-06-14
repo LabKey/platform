@@ -297,7 +297,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         // clone the current url to keep objectId parameter if present
         ActionURL url = context.cloneActionURL();
         url.setAction(CBCAssayController.UpdateAction.class);
-        url.addParameter("returnURL", context.getActionURL().toString());
+        url.addParameter(ActionURL.Param.returnUrl, context.getActionURL().toString());
         return url;
     }
 

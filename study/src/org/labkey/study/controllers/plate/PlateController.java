@@ -17,6 +17,7 @@
 package org.labkey.study.controllers.plate;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.action.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
@@ -30,9 +31,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.FormViewAction;
 import org.labkey.study.plate.PlateDataServiceImpl;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.view.StudyGWTView;
@@ -86,20 +84,6 @@ public class PlateController extends SpringActionController
         }
     }
 
-    public static class PlateTemplateListForm
-    {
-        private ReturnURLString _returnURL;
-
-        public ReturnURLString getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(ReturnURLString returnURL)
-        {
-            _returnURL = returnURL;
-        }
-    }
 
     public static class PlateTemplateListBean
     {
@@ -116,9 +100,9 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class PlateTemplateListAction extends SimpleViewAction<PlateTemplateListForm>
+    public class PlateTemplateListAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(PlateTemplateListForm plateTemplateListForm, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors) throws Exception
         {
             PlateTemplate[] plateTemplates = PlateService.get().getPlateTemplates(getContainer());
             return new JspView<PlateTemplateListBean>("/org/labkey/study/plate/view/plateTemplateList.jsp",

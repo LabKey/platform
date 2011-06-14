@@ -92,8 +92,8 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
     {
         _root = RootPanel.get("org.labkey.filecontent.designer.FilePropertiesDesigner-Root");
 
-        _returnURL = PropertyUtil.getServerProperty("returnURL");
-        _cancelURL = PropertyUtil.getServerProperty("cancelURL");
+        _returnURL = PropertyUtil.getReturnURL();
+        _cancelURL = PropertyUtil.getCancelURL();
         _typeURI = PropertyUtil.getServerProperty("typeURI");
         _domainName = PropertyUtil.getServerProperty("domainName");
 

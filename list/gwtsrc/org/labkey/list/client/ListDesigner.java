@@ -157,8 +157,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     public void onModuleLoad()
     {
         _listId = Integer.parseInt(PropertyUtil.getServerProperty("listId"));
-        _returnURL = PropertyUtil.getServerProperty("returnURL");
-        _cancelURL = PropertyUtil.getServerProperty("cancelURL");
+        _returnURL = PropertyUtil.getReturnURL();
+        _cancelURL = PropertyUtil.getCancelURL();
         _hasDesignListPermission = Boolean.valueOf(PropertyUtil.getServerProperty("hasDesignListPermission"));
         _hasInsertPermission = Boolean.valueOf(PropertyUtil.getServerProperty("hasInsertPermission"));
         _hasDeleteListPermission =  Boolean.valueOf(PropertyUtil.getServerProperty("hasDeleteListPermission"));

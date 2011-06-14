@@ -1121,7 +1121,7 @@ public class UserController extends SpringActionController
                 if (null != form.getReturnUrl())
                 {
                     doneButton = new ActionButton("Done", form.getReturnURLHelper());
-                    rgn.addHiddenFormField(ReturnUrlForm.Params.returnUrl, form.getReturnUrl());
+                    rgn.addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnUrl());
                 }
                 else
                 {
@@ -1196,10 +1196,10 @@ public class UserController extends SpringActionController
 
                 rgn.removeColumns("Active");
 
-                String returnUrl = form.getStrings().get(ReturnUrlForm.Params.returnUrl.toString());
+                String returnUrl = form.getStrings().get(ActionURL.Param.returnUrl.name());
 
                 if (null != returnUrl)
-                    rgn.addHiddenFormField(ReturnUrlForm.Params.returnUrl, returnUrl);
+                    rgn.addHiddenFormField(ActionURL.Param.returnUrl, returnUrl);
 
                 view = new UpdateView(rgn, form, errors);
                 view.getViewContext().addContextualRole(ReadPermission.class);
@@ -1229,7 +1229,7 @@ public class UserController extends SpringActionController
         {
             ActionURL returnURL = null;
 
-            String returnURLString = form.getStrings().get(ReturnUrlForm.Params.returnUrl.toString());
+            String returnURLString = form.getStrings().get(ActionURL.Param.returnUrl.name());
             if (null != returnURLString)
                 returnURL = new ActionURL(returnURLString);
 

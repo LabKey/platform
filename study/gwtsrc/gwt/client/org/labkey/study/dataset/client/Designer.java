@@ -122,8 +122,8 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
     {
         int datasetId = Integer.parseInt(PropertyUtil.getServerProperty("datasetId"));
         String typeURI = PropertyUtil.getServerProperty("typeURI");
-        _returnURL = PropertyUtil.getServerProperty("returnURL");
-        _cancelURL = PropertyUtil.getServerProperty("cancelURL");
+        _returnURL = PropertyUtil.getReturnURL();
+        _cancelURL = PropertyUtil.getCancelURL();
         _timepointType = PropertyUtil.getServerProperty("timepointType");
 
         _root = StudyApplication.getRootPanel();

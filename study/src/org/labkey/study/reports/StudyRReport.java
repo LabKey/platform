@@ -124,7 +124,7 @@ public class StudyRReport extends RReport
         {
             return getRunReportURL(context).
                     addParameter(TabStripView.TAB_PARAM, TAB_SOURCE).
-                    addParameter("redirectUrl", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
+                    addParameter(ActionURL.Param.redirectUrl, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
         }
         return null;
     }

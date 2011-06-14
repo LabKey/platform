@@ -136,7 +136,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
                 addParameter(qs.param(QueryParam.viewName), settings.getViewName()).
                 addParameter(DataSetDefinition.DATASETKEY, context.getActionURL().getParameter(DataSetDefinition.DATASETKEY)).
-                addParameter("redirectURL", PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
+                addParameter(ActionURL.Param.redirectUrl, PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
     public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
@@ -376,7 +376,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
                 addParameter("snapshotName", settings.getQueryName()).
                 addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
-                addParameter("redirectURL", PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
+                addParameter(ActionURL.Param.redirectUrl.name(), PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
     private static boolean isContainerValid(Container c)

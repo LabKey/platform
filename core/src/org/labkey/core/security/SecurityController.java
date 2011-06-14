@@ -1241,7 +1241,7 @@ public class SecurityController extends SpringActionController
 
             if (null != form.getReturnUrl())
             {
-                extraParams.add(new Pair<String, String>(ReturnUrlForm.Params.returnUrl.toString(), form.getReturnUrl().getSource()));
+                extraParams.add(new Pair<String, String>(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource()));
                 returnURL = form.getReturnURLHelper();
             }
 

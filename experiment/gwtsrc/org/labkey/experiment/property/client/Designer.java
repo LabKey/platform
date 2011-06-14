@@ -62,7 +62,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
     public void onModuleLoad()
     {
         String typeURI = PropertyUtil.getServerProperty("typeURI");
-        _returnURL = PropertyUtil.getServerProperty("returnURL");
+        _returnURL = PropertyUtil.getReturnURL();
         _allowFileLinkProperties = "true".equals(PropertyUtil.getServerProperty("allowFileLinkProperties"));
         _allowAttachmentProperties = "true".equals(PropertyUtil.getServerProperty("allowAttachmentProperties"));
         _showDefaultValueSettings = "true".equals(PropertyUtil.getServerProperty("showDefaultValueSettings"));

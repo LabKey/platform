@@ -456,16 +456,6 @@ public class AssayController extends SpringActionController
         {
             this.createInProject = createInProject;
         }
-
-        public ReturnURLString getReturnURL()
-        {
-            return returnURL;
-        }
-
-        public void setReturnURL(ReturnURLString returnURL)
-        {
-            this.returnURL = returnURL;
-        }
     }
 
     public static class ChooseAssayBean
@@ -521,17 +511,14 @@ public class AssayController extends SpringActionController
 
         public ActionURL getSuccessURL(CreateAssayForm form)
         {
-            ActionURL returnURL = null;
-            if (form.getReturnURL() != null)
-                returnURL = new ActionURL(form.getReturnURL());
+            ActionURL returnURL = form.getReturnActionURL();
             return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(createIn, form.getProviderName(), returnURL);
         }
 
         public ModelAndView getView(CreateAssayForm form, boolean reshow, BindException errors) throws Exception
         {
             ChooseAssayBean bean = new ChooseAssayBean();
-            if (form.getReturnURL() != null)
-                bean.returnURL = new ActionURL(form.getReturnURL());
+            bean.returnURL = form.getReturnActionURL();
             return new JspView<ChooseAssayBean>("/org/labkey/study/assay/view/chooseAssayType.jsp", bean, errors);
         }
 
@@ -851,7 +838,7 @@ public class AssayController extends SpringActionController
                 url.addParameter("copy", "true");
             url.addParameter("providerName", provider.getName());
             if (null != returnUrl)
-                url.addParameter("returnURL", returnUrl.toString());
+                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
             return url;
         }
 
@@ -866,7 +853,7 @@ public class AssayController extends SpringActionController
             url.addParameter("providerName", provider.getName());
             if (returnURL != null)
             {
-                url.addParameter("returnURL", returnURL.toString());
+                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
             }
             return url;
         }
