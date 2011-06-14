@@ -84,6 +84,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ExceptionUtil;
@@ -2483,6 +2484,18 @@ public class QueryController extends SpringActionController
                         false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", 0, null, metaDataOnly);
         }
     }
+
+
+
+    @RequiresNoPermission
+    public static class ImportAction extends AbstractQueryImportAction
+    {
+        public ImportAction()
+        {
+            super();
+        }
+    }
+
 
     public static class ExportSqlForm
     {
