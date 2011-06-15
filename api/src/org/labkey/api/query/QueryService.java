@@ -72,6 +72,7 @@ abstract public class QueryService
     abstract public boolean isQuerySnapshot(Container container, String schema, String name);
     abstract public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema);
     abstract public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql);
+    abstract public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql, String metadataXml);
     abstract public QueryDefinition getSessionQuery(ViewContext context, Container container, String schema, String queryName);
 
     abstract public ActionURL urlQueryDesigner(User user, Container container, String schema);

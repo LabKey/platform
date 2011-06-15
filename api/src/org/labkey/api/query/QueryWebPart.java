@@ -55,6 +55,7 @@ public class QueryWebPart extends WebPartView
     // if set to 'html', any parse errors in the query are returned to the client as a JSON object instead of
     // rendered in the webpart
     private String _errorType;
+    private String _metadata;
 
 
     public QueryWebPart(ViewContext context, Portal.WebPart part)
@@ -73,6 +74,20 @@ public class QueryWebPart extends WebPartView
             _schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), _schemaName);
         }
 
+        // check for any metadata overrides
+        if (_extendedProperties != null && _extendedProperties.get("metadata") instanceof JSONObject)
+        {
+            JSONObject metadata = (JSONObject)_extendedProperties.get("metadata");
+
+            if (metadata.has("type") && metadata.has("value"))
+            {
+                if ("xml".equalsIgnoreCase((String)metadata.get("type")))
+                {
+                    _metadata = (String)metadata.get("value");
+                }
+            }
+        }
+
         if (_schema != null)
         {
             _settings = _schema.getSettings(part, context);
@@ -85,7 +100,7 @@ public class QueryWebPart extends WebPartView
                 // execute arbitrary sql
                 if (sql != null)
                 {
-                    QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, sql);
+                    QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, sql, _metadata);
 
                     _settings.setQueryName(def.getName());
                     queryName = _settings.getQueryName();
@@ -98,20 +113,6 @@ public class QueryWebPart extends WebPartView
                 QueryDefinition qd = _settings.getQueryDef(_schema);
                 if (null != qd)
                 {
-                    // apply any metadata to the query definition (only xml is supported)
-                    if (_extendedProperties.get("metadata") instanceof JSONObject)
-                    {
-                        JSONObject metadata = (JSONObject)_extendedProperties.get("metadata");
-
-                        if (metadata.has("type") && metadata.has("value"))
-                        {
-                            if ("xml".equalsIgnoreCase((String)metadata.get("type")))
-                            {
-                                String xml = (String)metadata.get("value");
-                                qd.setMetadataXml(xml);                        
-                            }
-                        }
-                    }
                     td = qd.getTable(_schema, errors, false);
                 }
                 if (!errors.isEmpty())
@@ -167,6 +168,9 @@ public class QueryWebPart extends WebPartView
     public void render(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         QueryDefinition queryDef = _settings.getQueryDef(_schema);
+
+        if (_metadata != null)
+            queryDef.setMetadataXml(_metadata);
 
         // need to return any parse errors before we start sending anything back through the response so
         // we can return JSON content
