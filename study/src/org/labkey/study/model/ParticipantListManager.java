@@ -13,6 +13,7 @@ import org.labkey.study.StudySchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +92,7 @@ public class ParticipantListManager
         try {
             scope.ensureTransaction();
             ParticipantClassification ret;
+            boolean isUpdate = !def.isNew();
 
             if (def.isNew())
                 ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantClassification(), def);
@@ -100,7 +102,7 @@ public class ParticipantListManager
             switch (ParticipantClassification.Type.valueOf(ret.getType()))
             {
                 case list:
-                    updateListTypeDef(user, ret);
+                    updateListTypeDef(user, ret, isUpdate);
                     break;
                 case query:
                     throw new UnsupportedOperationException("Participant classification type: query not yet supported");
@@ -122,11 +124,60 @@ public class ParticipantListManager
 
     private ParticipantGroup setParticipantGroup(User user, ParticipantGroup group)
     {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
         try {
+            scope.ensureTransaction();
+
+            ParticipantGroup ret;
             if (group.isNew())
-                return Table.insert(user, getTableInfoParticipantGroup(), group);
+                ret = Table.insert(user, getTableInfoParticipantGroup(), group);
             else
-                return Table.update(user, getTableInfoParticipantGroup(), group, group.getRowId());
+                ret = Table.update(user, getTableInfoParticipantGroup(), group, group.getRowId());
+
+            // add the mapping from group to participants
+            SQLFragment sql = new SQLFragment("INSERT INTO ").append(getTableInfoParticipantGroupMap(), "");
+            sql.append(" (GroupId, ParticipantId, Container) VALUES ");
+
+            String delim = "";
+            List<Object> params = new ArrayList<Object>();
+
+            for (String id : group.getParticipantIds())
+            {
+                params.add(group.getRowId());
+                params.add(id);
+                params.add(group.getContainerId());
+
+                sql.append(delim).append("(?, ?, ?)");
+                delim = ",";
+            }
+            sql.append(";");
+
+            Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), params.toArray());
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantClassification(), getCacheKey(group.getClassificationId()));
+
+            scope.commitTransaction();
+            return ret;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+    }
+
+    private void deleteGroupParticipants(User user, ParticipantGroup group)
+    {
+        try {
+            // remove the mapping from group to participants
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "");
+            sql.append(" WHERE GroupId = ?");
+
+            Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), group.getRowId());
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantClassification(), getCacheKey(group.getClassificationId()));
         }
         catch (SQLException x)
         {
@@ -200,43 +251,48 @@ public class ParticipantListManager
         }
     }
 
-    private void updateListTypeDef(User user, ParticipantClassification def) throws SQLException
+    private void updateListTypeDef(User user, ParticipantClassification def, boolean update) throws SQLException
     {
         assert !def.isNew() : "The participant classification has not been created yet";
 
         if (!def.isNew() && def.getParticipantIds().length != 0)
         {
-            // add a single entry to the participant group table that whose label is the same as the classification
-            ParticipantGroup group = new ParticipantGroup();
-            group.setClassificationId(def.getRowId());
-            group.setLabel(def.getLabel());
-            group.setContainer(def.getContainerId());
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            group = setParticipantGroup(user, group);
-            def.setGroups(new ParticipantGroup[]{group});
+            try {
+                scope.ensureTransaction();
+                ParticipantGroup group;
 
-            // add the mapping from group to participants
-            SQLFragment sql = new SQLFragment("INSERT INTO ").append(getTableInfoParticipantGroupMap(), "");
-            sql.append(" (GroupId, ParticipantId, Container) VALUES ");
+                // updating an existing classification
+                if (update)
+                {
+                    ParticipantGroup[] groups = getParticipantGroups(def);
+                    if (groups.length == 1)
+                    {
+                        group = groups[0];
+                        deleteGroupParticipants(user, group);
+                    }
+                    else
+                        throw new RuntimeException("The existing participant classification had no group associated with it.");
+                }
+                else
+                {
+                    group = new ParticipantGroup();
+                    group.setClassificationId(def.getRowId());
+                    group.setContainer(def.getContainerId());
+                }
+                group.setLabel(def.getLabel());
+                group.setParticipantIds(Arrays.asList(def.getParticipantIds()));
 
-            String delim = "";
-            List<Object> params = new ArrayList<Object>();
+                group = setParticipantGroup(user, group);
+                def.setGroups(new ParticipantGroup[]{group});
 
-            for (String id : def.getParticipantIds())
-            {
-                group.addParticipantId(id);
-
-                params.add(group.getRowId());
-                params.add(id);
-                params.add(group.getContainerId());
-
-                sql.append(delim).append("(?, ?, ?)");
-                delim = ",";
+                scope.commitTransaction();
             }
-            sql.append(";");
-
-            Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), params.toArray());
-            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantClassification(), getCacheKey(def));
+            finally
+            {
+                scope.closeConnection();
+            }
         }
     }
 
@@ -279,7 +335,11 @@ public class ParticipantListManager
 
     private String getCacheKey(ParticipantClassification def)
     {
-        return "ParticipantClassification" + def.getRowId();
+        return "ParticipantClassification-" + def.getRowId();
     }
 
+    private String getCacheKey(int classificationId)
+    {
+        return "ParticipantClassification-" + classificationId;
+    }
 }

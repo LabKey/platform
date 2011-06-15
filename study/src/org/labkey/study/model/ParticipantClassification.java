@@ -182,6 +182,9 @@ public class ParticipantClassification extends Entity
         json.put("label", getLabel());
         json.put("type", getType());
         json.put("autoUpdate", isAutoUpdate());
+        json.put("created", getCreated());
+        json.put("createdBy", getCreatedBy());
+        json.put("container", getContainerId());
 
         if (Type.query.equals(Type.valueOf(getType())))
         {
@@ -208,5 +211,17 @@ public class ParticipantClassification extends Entity
         }
 
         return json;
+    }
+
+    public void copySpecialFields(ParticipantClassification copy)
+    {
+        if (getEntityId() == null)
+            setEntityId(copy.getEntityId());
+        if (getCreatedBy() == 0)
+            setCreatedBy(copy.getCreatedBy());
+        if (getCreated() == null)
+            setCreated(copy.getCreated());
+        if (getContainerId() == null)
+            setContainer(copy.getContainerId());
     }
 }

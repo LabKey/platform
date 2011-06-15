@@ -49,6 +49,36 @@ public class ParticipantListController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    public class UpdateParticipantClassification extends MutatingApiAction<ParticipantClassification>
+    {
+        @Override
+        public ApiResponse execute(ParticipantClassification form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            if (form.isNew())
+            {
+                throw new IllegalArgumentException("The specified classification does not exist, you must pass in the RowId");
+            }
+
+            SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
+            ParticipantClassification[] defs = ParticipantListManager.getInstance().getParticipantClassifications(filter);
+            if (defs.length == 1)
+            {
+                form.copySpecialFields(defs[0]);
+                ParticipantClassification classification = ParticipantListManager.getInstance().setParticipantClassification(getUser(), form);
+
+                resp.put("success", true);
+                resp.put("classification", classification.toJSON());
+
+                return resp;
+            }
+            else
+                throw new RuntimeException("Unable to update the classification with rowId: " + form.getRowId());
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetParticipantClassification extends ApiAction<ParticipantClassification>
     {
         @Override
