@@ -15,17 +15,22 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.json.JSONObject"%>
-<%@ page import="org.labkey.api.query.DefaultSchema"%>
 <%@ page import="static org.labkey.api.query.QueryService.*" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
-<%@ page import="java.util.*" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.TreeMap" %>
+<%@ page import="java.util.TreeSet" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
     Map<String, String> schemaOptions = new TreeMap<String, String>(new Comparator<String>(){
         public int compare(String o1, String o2)
@@ -36,17 +41,20 @@
 
     Map<String, Map<String, List<String>>> schemaTableNames = new CaseInsensitiveHashMap<Map<String, List<String>>>();
     DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
+
     for (String name : defSchema.getUserSchemaNames())
     {
         schemaOptions.put(name, name);
         UserSchema schema = get().getUserSchema(getUser(), getContainer(), name);
         Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<List<String>>();
+
         for (String tableName : new TreeSet<String>(schema.getTableAndQueryNames(true)))
         {
             List<String> viewNames = new ArrayList<String>();
             viewNames.add(""); // default view
 
             QueryDefinition queryDef = schema.getQueryDefForTable(tableName);
+
             if (queryDef != null)
             {
                 for (String viewName : queryDef.getCustomViews(getUser(), getViewContext().getRequest()).keySet())
@@ -55,14 +63,17 @@
                         viewNames.add(viewName);
                 }
             }
+
             Collections.sort(viewNames, new Comparator<String>(){
                 public int compare(String o1, String o2)
                 {
                     return o1.compareToIgnoreCase(o2);
                 }
             });
+
             tableNames.put(tableName, viewNames);
         }
+
         schemaTableNames.put(name, tableNames);
     }
 

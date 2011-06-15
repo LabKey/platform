@@ -1927,7 +1927,7 @@ public class StudyManager
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        HashSet<TableInfo> deletedTables = new HashSet<TableInfo>();
+        Set<TableInfo> deletedTables = new HashSet<TableInfo>();
         SimpleFilter containerFilter = new SimpleFilter("Container", c.getId());
 
         try
@@ -2026,9 +2026,24 @@ public class StudyManager
         }
 
         //
-        // trust and verify
+        // trust and verify... but only when asserts are on
         //
-        Set<String> deletedTableNames = new CaseInsensitiveHashSet();
+
+        assert verifyAllTablesWereDeleted(deletedTables, deleteStudyDesigns);
+    }
+
+    // TODO: Check that datasets are deleted as well?
+    private boolean verifyAllTablesWereDeleted(Set<TableInfo> deletedTables, boolean deleteStudyDesigns)
+    {
+        // Pretend like we deleted from StudyData and StudyDataTemplate tables  TODO: why aren't we deleting from these?
+        Set<String> deletedTableNames = new CaseInsensitiveHashSet("studydata", "studydatatemplate");
+
+        // If we're not supposed to delete study designs, then pretend like we did
+        if (!deleteStudyDesigns)
+        {
+            deletedTableNames.add(StudyDesignManager.get().getStudyDesignTable().getName());
+            deletedTableNames.add(StudyDesignManager.get().getStudyVersionTable().getName());
+        }
 
         for (TableInfo t : deletedTables)
         {
@@ -2039,27 +2054,17 @@ public class StudyManager
 
         for (String tableName : StudySchema.getInstance().getSchema().getTableNames())
         {
-            if (tableName.equalsIgnoreCase("studydata") || tableName.equalsIgnoreCase("studydatatemplate"))
-            {
-                continue; // fixme.
-            }
-
             if (!deletedTableNames.contains(tableName))
             {
-                if (!deleteStudyDesigns && isStudyDesignTable(tableName))
-                    continue;
-
                 missed.append(" ");
                 missed.append(tableName);
             }
         }
 
-        assert missed.length() == 0 : "forgot something? " + missed;
-    }
+        if (missed.length() != 0)
+            throw new IllegalStateException("Expected to delete from these tables:" + missed);
 
-    private boolean isStudyDesignTable(String tableName)
-    {
-        return tableName.equals(StudyDesignManager.get().getStudyDesignTable().getName()) || tableName.equals(StudyDesignManager.get().getStudyVersionTable().getName());
+        return true;
     }
 
     public String getDatasetType(Container c, int datasetId)

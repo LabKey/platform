@@ -88,13 +88,14 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                     String schemaName = schema.getName();
                     Set<String> tableNames = schema.getTableNames();
 
-                    for (String tableName : tableNames)
+                    for (String mdName : tableNames)
                     {
                         TableInfo table;
 
                         try
                         {
-                            table = schema.getTable(tableName);
+                            table = schema.getTable(mdName);
+                            assert mdName.equalsIgnoreCase(table.getName());
                         }
                         catch (UnauthorizedException e)
                         {
@@ -104,13 +105,13 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                         }
                         catch (Exception e)
                         {
-                            // Shouldn't happen, but if it does, continue with the next query
+                            // Shouldn't happen, but if it does, continue with the next table
                             ExceptionUtil.logExceptionToMothership(null, e);
                             continue;
                         }
 
-                        assert tableName.equals(table.getName());
-
+                        // Use the canonical name for search display, etc.
+                        String tableName = table.getName();
                         StringBuilder body = new StringBuilder();
                         Map<String, Object> props = new HashMap<String,Object>();
 
