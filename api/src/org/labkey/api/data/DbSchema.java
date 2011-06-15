@@ -320,22 +320,6 @@ public class DbSchema
     }
 
 
-    // Warning: This can be a VERY expensive method to call (e.g., on external schemas with thousands of tables)!
-    // If possible, use getTableNames() and retrieve TableInfos selectively.
-    @Deprecated  // TODO: Delete?
-    public Collection<SchemaTableInfo> getTables()
-    {
-        Collection<SchemaTableInfo> tables = new LinkedList<SchemaTableInfo>();
-
-        for (String tableName : _metaDataTableNames.keySet())
-        {
-            SchemaTableInfo table = getTable(tableName);
-            tables.add(table);
-        }
-
-        return Collections.unmodifiableCollection(tables);
-    }
-
     public Collection<String> getTableNames()
     {
         return Collections.unmodifiableCollection(new LinkedList<String>(_metaDataTableNames.keySet()));
