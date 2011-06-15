@@ -405,6 +405,7 @@
                 frame: 'none',
                 border: false,
                 showRecordSelectors: true,
+                showUpdateColumn: false,
                 buttonBarPosition: 'top',
                 buttonBar: {
                     includeStandardButtons: false,
