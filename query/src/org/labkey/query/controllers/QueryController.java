@@ -3204,10 +3204,7 @@ public class QueryController extends SpringActionController
 
                 if (null != schema)
                 {
-                    List<String> tableNames = new ArrayList<String>();
-
-                    for (TableInfo table : schema.getTables())
-                        tableNames.add(table.getName());
+                    List<String> tableNames = new ArrayList<String>(schema.getTableNames());
 
                     Collections.sort(tableNames);
 

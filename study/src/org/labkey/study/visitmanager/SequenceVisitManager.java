@@ -202,8 +202,7 @@ public class SequenceVisitManager extends VisitManager
     }
 
 
-    private void _updateVisitRowId()
-            throws SQLException
+    private void _updateVisitRowId() throws SQLException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();

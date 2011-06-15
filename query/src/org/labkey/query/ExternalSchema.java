@@ -16,55 +16,43 @@
 
 package org.labkey.query;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Filter;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.data.ExternalSchemaTable;
 import org.labkey.query.data.SimpleUserSchema;
 import org.labkey.query.persist.ExternalSchemaDef;
 
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class ExternalSchema extends SimpleUserSchema
 {
     private final ExternalSchemaDef _def;
+    private final Map<String, TableType> _metaDataMap;
 
     public ExternalSchema(User user, Container container, ExternalSchemaDef def)
     {
-        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, getDbSchema(def), new ExternalSchemaFilter(def));
+        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.",
+                user, container, getDbSchema(def), getAvailableTables(def), getHiddenTables(def));
+
         _def = def;
-    }
+        _metaDataMap = new CaseInsensitiveHashMap<TableType>();
 
-    private static class ExternalSchemaFilter implements Filter<TableInfo>
-    {
-        private final Set<String> _tableNameSet;
-
-        private ExternalSchemaFilter(ExternalSchemaDef def)
-        {
-            String allowedTables = def.getTables();
-
-            if ("*".equals(allowedTables))
-            {
-                _tableNameSet = null;
-            }
-            else
-            {
-                _tableNameSet = new CaseInsensitiveHashSet(Arrays.asList(StringUtils.split(allowedTables, ",")));
-            }
-        }
-
-        @Override
-        public boolean accept(TableInfo table)
-        {
-            return null == _tableNameSet || _tableNameSet.contains(table.getName());
-        }
+        for (TableType tt : getTableTypes(def))
+            _metaDataMap.put(tt.getTableName(), tt);
     }
 
     public static DbSchema getDbSchema(ExternalSchemaDef def)
@@ -77,6 +65,36 @@ public class ExternalSchema extends SimpleUserSchema
             return null;
     }
 
+    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def)
+    {
+        DbSchema schema = getDbSchema(def);
+
+        if (null == schema)
+            return Collections.emptySet();
+
+        String allowedTables = def.getTables();
+
+        if ("*".equals(allowedTables))
+        {
+            return schema.getTableNames();
+        }
+        else
+        {
+            return new CsvSet(allowedTables);
+        }
+    }
+
+    private static @NotNull Collection<String> getHiddenTables(ExternalSchemaDef def)
+    {
+        Set<String> hidden = new HashSet<String>();
+
+        for (TableType tt : getTableTypes(def))
+            if (tt.getHidden())
+                hidden.add(tt.getTableName());
+
+        return hidden;
+    }
+
     public static void uncache(ExternalSchemaDef def)
     {
         DbScope scope = DbScope.getDbScope(def.getDataSource());
@@ -86,7 +104,7 @@ public class ExternalSchema extends SimpleUserSchema
             String schemaName = def.getDbSchemaName();
 
             // Don't uncache the built-in LabKey schemas, even those pointed at by external schemas.  Reloading
-            // these schemas is unncessary (they don't change) and causes us to leak DbCaches.  See #10508.
+            // these schemas is unnecessary (they don't change) and causes us to leak DbCaches.  See #10508.
             if (scope != DbScope.getLabkeyScope() || !DbSchema.getModuleSchemaNames().contains(schemaName))
                 scope.invalidateSchema(def.getDbSchemaName());
         }
@@ -101,25 +119,27 @@ public class ExternalSchema extends SimpleUserSchema
 
     private TableType getXbTable(String name)
     {
-        if (_def.getMetaData() == null)
-            return null;
+        return _metaDataMap.get(name);
+    }
 
-        try
+    private static @NotNull TableType[] getTableTypes(ExternalSchemaDef def)
+    {
+        if (def.getMetaData() != null)
         {
-            TablesDocument doc = TablesDocument.Factory.parse(_def.getMetaData());
-            if (doc.getTables() == null)
-                return null;
-            for (TableType tt : doc.getTables().getTableArray())
+            try
             {
-                if (name.equalsIgnoreCase(tt.getTableName()))
-                    return tt;
+                TablesDocument doc = TablesDocument.Factory.parse(def.getMetaData());
+
+                if (doc.getTables() != null)
+                    return doc.getTables().getTableArray();
             }
-            return null;
+            catch (XmlException e)
+            {
+                // TODO: Throw or log or display this exception?
+            }
         }
-        catch (XmlException e)
-        {
-            return null;
-        }
+
+        return new TableType[0];
     }
 
     public boolean areTablesEditable()

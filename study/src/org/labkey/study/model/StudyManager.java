@@ -2028,33 +2028,38 @@ public class StudyManager
         //
         // trust and verify
         //
-        Set<String> deletedTableNames = new HashSet<String>();
+        Set<String> deletedTableNames = new CaseInsensitiveHashSet();
+
         for (TableInfo t : deletedTables)
         {
             deletedTableNames.add(t.getName());
         }
+
         StringBuilder missed = new StringBuilder();
-        for (TableInfo t : StudySchema.getInstance().getSchema().getTables())
+
+        for (String tableName : StudySchema.getInstance().getSchema().getTableNames())
         {
-            if (t.getName().equalsIgnoreCase("studydata") || t.getName().equalsIgnoreCase("studydatatemplate"))
+            if (tableName.equalsIgnoreCase("studydata") || tableName.equalsIgnoreCase("studydatatemplate"))
             {
                 continue; // fixme.
             }
-            if (!deletedTableNames.contains(t.getName()))
+
+            if (!deletedTableNames.contains(tableName))
             {
-                if (!deleteStudyDesigns && isStudyDesignTable(t))
+                if (!deleteStudyDesigns && isStudyDesignTable(tableName))
                     continue;
 
                 missed.append(" ");
-                missed.append(t.getName());
+                missed.append(tableName);
             }
         }
+
         assert missed.length() == 0 : "forgot something? " + missed;
     }
 
-    private boolean isStudyDesignTable(TableInfo t)
+    private boolean isStudyDesignTable(String tableName)
     {
-        return t.getName().equals(StudyDesignManager.get().getStudyDesignTable().getName()) || t.getName().equals(StudyDesignManager.get().getStudyVersionTable().getName());
+        return tableName.equals(StudyDesignManager.get().getStudyDesignTable().getName()) || tableName.equals(StudyDesignManager.get().getStudyVersionTable().getName());
     }
 
     public String getDatasetType(Container c, int datasetId)

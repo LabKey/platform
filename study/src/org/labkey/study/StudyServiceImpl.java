@@ -674,17 +674,19 @@ public class StudyServiceImpl implements StudyService.Service
     {
         if (subjectNounSingular == null || subjectNounSingular.length() == 0)
             return false;
+
         String subjectTableName = getSubjectTableName(subjectNounSingular);
         String subjectVisitTableName = getSubjectVisitTableName(subjectNounSingular);
-        for (SchemaTableInfo schemaTable : StudySchema.getInstance().getSchema().getTables())
+
+        for (String tableName : StudySchema.getInstance().getSchema().getTableNames())
         {
-            String tableName = schemaTable.getName();
             if (!tableName.equalsIgnoreCase("Participant") && !tableName.equalsIgnoreCase("ParticipantVisit"))
             {
                 if (subjectTableName.equalsIgnoreCase(tableName) || subjectVisitTableName.equalsIgnoreCase(tableName))
                     return false;
             }
         }
+
         return true;
     }
 

@@ -25,7 +25,8 @@ import java.io.PrintWriter;
 
 public class EditQueryView extends WebPartView
 {
-    Portal.WebPart _part;
+    private final Portal.WebPart _part;
+
     public EditQueryView(Portal.WebPart part)
     {
         _part = part;

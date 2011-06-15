@@ -138,8 +138,7 @@ public class SavePaths implements DavCrawler.SavePaths
         {
             // UNDONE : this has side-effect of setting Modified field (which we're not using anyway)
             map = Table.insert(User.getSearchUser(), getSearchSchema().getTable("CrawlCollections"), map);
-            int id = ((Integer)map.get("id")).intValue();
-            return id;
+            return ((Integer)map.get("id"));
         }
         catch (SQLException x)
         {

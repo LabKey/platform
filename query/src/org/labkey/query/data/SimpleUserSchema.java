@@ -19,24 +19,32 @@ package org.labkey.query.data;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.SimpleModule;
-import org.labkey.api.query.*;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserIdQueryForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.util.Filter;
 import org.labkey.api.view.NotFoundException;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,54 +53,44 @@ import java.util.Set;
  */
 public class SimpleUserSchema extends UserSchema
 {
-    private Map<String, SchemaTableInfo> _tables;
-    private Set<String> _visible;
+    private final Set<String> _available = new CaseInsensitiveHashSet();
+    private final Set<String> _visible = new CaseInsensitiveHashSet();
 
     public SimpleUserSchema(String name, String description, User user, Container container, DbSchema dbschema)
     {
-        this(name, description, user, container, dbschema, null);
+        this(name, description, user, container, dbschema, null == dbschema ? Collections.<String>emptySet() : dbschema.getTableNames(), Collections.<String>emptySet());
     }
 
-    public SimpleUserSchema(String name, String description, User user, Container container, DbSchema dbschema, @Nullable Filter<TableInfo> filter)
+    // Hidden tables are hidden from the UI but will still be addressible by Query (for fk lookups, etc.)
+    public SimpleUserSchema(String name, String description, User user, Container container, DbSchema dbschema, Collection<String> availableTables, Collection<String> hiddenTables)
     {
         super(name, description, user, container, dbschema);
-        _visible = new HashSet<String>();
-        _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
-
-        if (_dbSchema != null)
-        {
-            for (SchemaTableInfo table : _dbSchema.getTables())
-            {
-                // If a filter is present, the admin has chosen to only allow tables that match the filter.
-                // Unmatched tables are excluded.  See 11269.
-                if (null != filter && !filter.accept(table))
-                    continue;
-
-                // Not visible tables are hidden from the UI but will still be addressible by Query (for fk lookups, etc.)
-                if (!table.isHidden())
-                    _visible.add(table.getName());
-                _tables.put(table.getName(), table);
-            }
-        }
+        _available.addAll(availableTables);
+        _visible.addAll(availableTables);
+        _visible.removeAll(hiddenTables);
     }
 
     protected TableInfo createTable(String name)
     {
-        SchemaTableInfo schematable = _tables.get(name);
+        if (!_available.contains(name))
+            return null;
+
+        SchemaTableInfo schematable = _dbSchema.getTable(name);
+
         if (schematable == null)
             return null;
+
         return createTable(name, schematable);
     }
 
     protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)
     {
-        SimpleTable usertable = new SimpleTable(this, schematable);
-        return usertable;
+        return new SimpleTable(this, schematable);
     }
 
     public Set<String> getTableNames()
     {
-        return Collections.unmodifiableSet(_tables.keySet());
+        return Collections.unmodifiableSet(_available);
     }
 
     @Override
@@ -115,7 +113,6 @@ public class SimpleUserSchema extends UserSchema
 
     public static class SimpleTable extends FilteredTable
     {
-
         SimpleUserSchema _userSchema;
         ColumnInfo _objectUriCol;
         Domain _domain;

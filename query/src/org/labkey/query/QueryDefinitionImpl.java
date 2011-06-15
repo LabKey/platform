@@ -64,8 +64,6 @@ import org.labkey.query.sql.QueryTableInfo;
 import org.labkey.query.view.CustomViewSetKey;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.io.FilenameFilter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
