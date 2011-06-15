@@ -617,14 +617,14 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
-    @Override
-    public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql)
+    public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql, String metadataXml)
     {
-        Map<String, String> queries = getSessionQueryMap(context.getRequest(), container, schemaName, true);
+        Map<String, SessionQuery> queries = getSessionQueryMap(context.getRequest(), container, schemaName, true);
         String queryName = null;
-        for (Map.Entry<String, String> query : queries.entrySet())
+        SessionQuery sq = new SessionQuery(sql, metadataXml);
+        for (Map.Entry<String, SessionQuery> query : queries.entrySet())
         {
-            if (query.getValue().equals(sql))
+            if (query.getValue().equals(sq))
             {
                 queryName = query.getKey();
                 break;
@@ -633,28 +633,71 @@ public class QueryServiceImpl extends QueryService
         if (queryName == null)
         {
             queryName = schemaName + "-temp-" + UniqueID.getServerSessionScopedUID();
-            queries.put(queryName, sql);
+            queries.put(queryName, sq);
         }
         return getSessionQuery(context, container, schemaName, queryName);
     }
 
+    @Override
+    public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql)
+    {
+        return saveSessionQuery(context, container, schemaName, sql, null);
+    }
+
     private static final String PERSISTED_TEMP_QUERIES_KEY = "LABKEY.PERSISTED_TEMP_QUERIES";
-    private Map<String, String> getSessionQueryMap(HttpServletRequest request, Container container, String schemaName, boolean create)
+    private static class SessionQuery
+    {
+        String sql;
+        String metadata;
+
+        public SessionQuery(String sql, String metadata)
+        {
+            this.sql = sql;
+            this.metadata = metadata;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = sql.hashCode();
+            if (metadata != null)
+                result = 31 * result + metadata.hashCode();
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (obj instanceof SessionQuery)
+            {
+                SessionQuery sq = (SessionQuery)obj;
+                if (!sql.equals(sq.sql))
+                    return false;
+                if (metadata != null && !metadata.equals(sq.metadata))
+                    return false;
+
+                return true;
+            }
+            return false;
+        }
+    }
+
+    private Map<String, SessionQuery> getSessionQueryMap(HttpServletRequest request, Container container, String schemaName, boolean create)
     {
         HttpSession session = request.getSession(create);
         if (session == null)
             return Collections.emptyMap();
-        Map<ContainerSchemaKey, Map<String, String>> containerQueries = (Map<ContainerSchemaKey, Map<String, String>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
+        Map<ContainerSchemaKey, Map<String, SessionQuery>> containerQueries = (Map<ContainerSchemaKey, Map<String, SessionQuery>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
         if (containerQueries == null)
         {
-            containerQueries = new HashMap<ContainerSchemaKey, Map<String, String>>();
+            containerQueries = new HashMap<ContainerSchemaKey, Map<String, SessionQuery>>();
             session.setAttribute(PERSISTED_TEMP_QUERIES_KEY, containerQueries);
         }
         ContainerSchemaKey key = new ContainerSchemaKey(container, schemaName);
-        Map<String, String> queries = containerQueries.get(key);
+        Map<String, SessionQuery> queries = containerQueries.get(key);
         if (queries == null)
         {
-            queries = new HashMap<String, String>();
+            queries = new HashMap<String, SessionQuery>();
             containerQueries.put(key, queries);
         }
         return queries;
@@ -662,23 +705,25 @@ public class QueryServiceImpl extends QueryService
 
     private List<QueryDefinition> getAllSessionQueries(HttpServletRequest request, User user, Container container, String schemaName)
     {
-        Map<String, String> sessionQueries = getSessionQueryMap(request, container, schemaName, false);
+        Map<String, SessionQuery> sessionQueries = getSessionQueryMap(request, container, schemaName, false);
         List<QueryDefinition> ret = new ArrayList<QueryDefinition>();
-        for (Map.Entry<String, String> entry : sessionQueries.entrySet())
+        for (Map.Entry<String, SessionQuery> entry : sessionQueries.entrySet())
             ret.add(createTempQueryDefinition(user, container, schemaName, entry.getKey(), entry.getValue()));
         return ret;
     }
 
     public QueryDefinition getSessionQuery(ViewContext context, Container container, String schemaName, String queryName)
     {
-        String sql = getSessionQueryMap(context.getRequest(), container, schemaName, false).get(queryName);
-        return createTempQueryDefinition(context.getUser(), container, schemaName, queryName, sql);
+        SessionQuery query = getSessionQueryMap(context.getRequest(), container, schemaName, false).get(queryName);
+        return createTempQueryDefinition(context.getUser(), container, schemaName, queryName, query);
     }
 
-    private QueryDefinition createTempQueryDefinition(User user, Container container, String schemaName, String queryName, String sql)
+    private QueryDefinition createTempQueryDefinition(User user, Container container, String schemaName, String queryName, SessionQuery query)
     {
         QueryDefinition qdef = QueryService.get().createQueryDef(user, container, schemaName, queryName);
-        qdef.setSql(sql);
+        qdef.setSql(query.sql);
+        if (query.metadata != null)
+            qdef.setMetadataXml(query.metadata);
         qdef.setIsTemporary(true);
         qdef.setIsHidden(true);
         return qdef;
