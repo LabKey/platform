@@ -259,7 +259,7 @@ public class StudyDesignManager
         return version;
     }
 
-    public void deleteStudyDesigns(Container c, HashSet<TableInfo> deletedTables) throws SQLException
+    public void deleteStudyDesigns(Container c, Set<TableInfo> deletedTables) throws SQLException
     {
         inactivateStudyDesign(c);
         Filter filter = new SimpleFilter("Container", c.getId());
