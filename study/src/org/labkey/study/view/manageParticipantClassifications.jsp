@@ -332,7 +332,8 @@
                 this.classificationPanel,
                 this.demoCombobox,
                 {
-                    html: "<div id='demoQueryWebPartDiv' width='100%'></div>",
+                    xtype: 'panel',
+                    id: 'demoQueryWebPartPanel',
                     border: false
                 }
             ];
@@ -382,7 +383,6 @@
                     this.fireEvent('closeWindow');
                 },
                 failure: function(response, options){
-                    // todo: need to handle failure for ptid not in study
                     this.getEl().unmask();
                     LABKEY.Utils.displayAjaxErrorResponse(response, options);
                 },
@@ -395,8 +395,10 @@
         getDemoQueryWebPart: function(queryName)
         {
             var ptidClassificationPanel = this;
+
+            ptidClassificationPanel.getEl().mask("Loading data region...", "x-mask-loading")
             var demoQueryWebPart =  new LABKEY.QueryWebPart({
-                renderTo: 'demoQueryWebPartDiv',
+                renderTo: 'demoQueryWebPartPanel',
                 dataRegionName: 'demoDataRegion',
                 schemaName: 'study',
                 queryName: queryName,
@@ -417,16 +419,15 @@
                             ptidClassificationPanel.getSelectedDemoParticipants(queryName, "all");
                         }
                     }]
+                },
+                success: function(){
+                    ptidClassificationPanel.getEl().unmask();
+                },
+                failure: function(response, options){
+                    ptidClassificationPanel.getEl().unmask();
+                    LABKEY.Utils.displayAjaxErrorResponse(response, options);
                 }
             });
-
-//            // on render, clear any cached selections from the dataregion
-//            demoQueryWebPart.on('render', function(){
-//                LABKEY.DataRegion.clearSelected({
-//                    selectionKey: Ext.ComponentMgr.get('demoDataRegion').selectionKey,
-//                    success: function(){}
-//                });
-//            });
         },
 
         getSelectedDemoParticipants: function(queryName, showStr) {

@@ -38,8 +38,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
 
         // hold on to the x and y axis measure index
-        var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
-        var firstYAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
+        var xAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "x-axis");
+        var firstYAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "y-axis");
 
         // add a listener to call measureSelected on render if this is a saved chart
         this.listeners = {
@@ -322,7 +322,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     measureSelected: function(measure, userSelectedMeasure) {
         // add any user selected measures to the measure panel object
         if(userSelectedMeasure){
-            this.editorMeasurePanel.addMeasure(measure);
+            var measureIndex = this.editorMeasurePanel.addMeasure(measure);
+            this.editorMeasurePanel.setDimensionStore(measureIndex);
         }
 
         // these method calls should only be made for chart initialization
@@ -340,8 +341,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             }
         }
 
-        // these method calls should be made for each measure selected for a given chart
-        this.editorMeasurePanel.setDimensionStore(this.editorMeasurePanel.getMeasureIndex(measure));
         this.enableTabPanels();
     },
 
@@ -386,13 +385,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
 
-        var firstYAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
+        var firstYAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "y-axis");
         if(firstYAxisMeasureIndex == -1){
            this.maskChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
            return;
         }
 
-        var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
+        var xAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "x-axis");
         if(xAxisMeasureIndex == -1){
            Ext.Msg.alert("Error", "Could not find x-axis in chart measure information.");
            return;
@@ -478,13 +477,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
 
-        var firstYAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
+        var firstYAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "y-axis");
         if(firstYAxisMeasureIndex == -1){
            this.maskChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
            return;
         }
 
-        var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
+        var xAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "x-axis");
         if(xAxisMeasureIndex == -1){
            Ext.Msg.alert("Error", "Could not find x-axis in chart measure information.");
            return;
@@ -646,8 +645,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     newLineChart: function(size, series, seriesFilter, title)
     {
         // hold on to the x and y axis measure index
-        var xAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "x-axis");
-        var firstYAxisMeasureIndex = this.getMeasureIndex(this.chartInfo.measures, "y-axis");
+        var xAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "x-axis");
+        var firstYAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "y-axis");
 
     	// if seriesFilter is not null, then create a sub-array for that filter
     	var tempSeries = [];
@@ -822,7 +821,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         return config;
     },
 
-    getMeasureIndex: function(measures, axis){
+    getFirstMeasureIndex: function(measures, axis){
         var index = -1;
         for(var i = 0; i < measures.length; i++){
             if(measures[i].axis.name == axis){

@@ -34,6 +34,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             for(var i = 0; i < config.origMeasures.length; i++){
                 if(config.origMeasures[i].axis.name == 'y-axis'){
                     config.measures.push({
+                        id: i,
                         name: config.origMeasures[i].measure.name,
                         queryName: config.origMeasures[i].measure.queryName,
                         label: config.origMeasures[i].measure.label + " from " + config.origMeasures[i].measure.queryName,
@@ -56,14 +57,14 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         this.measuresListsView = new Ext.list.ListView({
             width: 400,
             height: 95,
-            //style: {border: 'solid grey 1px'},
             hideHeaders: true,
             multiSelect: false,
             singleSelect: true,
             store: new Ext.data.JsonStore({
                 root: 'measures',
-                idProperty: 'label',
+                idProperty: 'id',
                 fields: [
+                    {name: 'id', type: 'integer'},
                     {name: 'label', type: 'string'},
                     {name: 'name', type: 'string'},
                     {name: 'queryName', type: 'string'}
@@ -91,7 +92,12 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 }
             }
         });
-        columnOneItems.push(this.measuresListsView);
+        columnOneItems.push({
+            xtype: 'panel',
+            border: true,
+            width: 400,
+            items: [this.measuresListsView]
+        });
 
         // add any original measures (from saved chart) to the measure listview
         if(this.measures.length > 0){
@@ -397,6 +403,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
     addMeasure: function(newMeasure){
         // add the measure to this
         this.measures.push({
+            id: this.getNextMeasureId(),
             name: newMeasure.name,
             queryName: newMeasure.queryName,
             label: newMeasure.label + " from " + newMeasure.queryName,
@@ -411,6 +418,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
             this.removeMeasureButton.enable();
         }
+
+        // return the index of the added measure
+        return this.measures.length -1;
     },
 
     removeSelectedMeasure: function(){
@@ -637,23 +647,11 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         if(this.measuresListsView.getSelectionCount() == 1){
             var rec = this.measuresListsView.getSelectedRecords()[0];
             for(var i = 0; i < this.measures.length; i++){
-                if(this.measures[i].measure.name == rec.get("name") && this.measures[i].measure.queryName == rec.get("queryName")){
+                if (this.measures[i].id == rec.get("id"))
+                {
                     index = i;
                     break;
                 }
-            }
-        }
-        return index; 
-    },
-
-    getMeasureIndex: function(measure){
-        var index = -1;
-        for(var i = 0; i < this.measures.length; i++){
-            if(this.measures[i].measure.name == measure.name &&
-               this.measures[i].measure.queryName == measure.queryName &&
-               this.measures[i].measure.schemaName == measure.schemaName){
-                    index = i;
-                    break;
             }
         }
         return index;
@@ -738,5 +736,14 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
     getNumMeasures: function(){
         return this.measures.length;
+    },
+
+    getNextMeasureId: function(){
+        var id = 0;
+        if (this.measures.length > 0)
+        {
+            id = this.measures[this.measures.length -1].id + 1;
+        }
+        return id;
     }
 });
