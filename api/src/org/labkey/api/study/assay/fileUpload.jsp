@@ -60,11 +60,11 @@
 
         // add a cell with a button for removing the given row
         cell = row.insertCell(1);
-        cell.innerHTML = "<a id='file-upload-remove" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='removeFileUploadInputRow(this, " + _fileUploadIndex + ");'><span>Remove</span></a>";
+        cell.innerHTML = "<a id='file-upload-remove" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='removeFileUploadInputRow(this, " + _fileUploadIndex + ");'><span>&#45;</span></a>";
 
         // add a cell with a button for adding another row
         cell = row.insertCell(2);
-        cell.innerHTML = "<a id='file-upload-add" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='addFileUploadInputRow(this);'><span>Add</span></a>";
+        cell.innerHTML = "<a id='file-upload-add" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='addFileUploadInputRow(this);'><span>&#43;</span></a>";
 
         _fileUploadIndex++;
 
@@ -118,7 +118,7 @@
 
             document.getElementById("<%= AssayDataCollector.PRIMARY_FILE %>" + prevRowNum).name = "<%= AssayDataCollector.PRIMARY_FILE %>" + (i > 0 ? i : "");
             document.getElementById("<%= AssayDataCollector.PRIMARY_FILE %>" + prevRowNum).id = "<%= AssayDataCollector.PRIMARY_FILE %>" + i;
-            row.cells[1].innerHTML = "<a id='file-upload-remove" + i + "' class='labkey-button' onClick='removeFileUploadInputRow(this, " + i + ");'><span>Remove</span></a>";
+            row.cells[1].innerHTML = "<a id='file-upload-remove" + i + "' class='labkey-button' onClick='removeFileUploadInputRow(this, " + i + ");'><span>&#45;</span></a>";
             document.getElementById("file-upload-add" + prevRowNum).id = "file-upload-add" + i;
         }
     }
