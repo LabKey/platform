@@ -48,8 +48,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -662,112 +660,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             _buttonBarConfig = new ButtonBarConfig(xmlTable.getButtonBarOptions());
     }
 
-
-    public void writeCreateTableSql(Writer out) throws IOException
-    {
-        out.write("CREATE TABLE ");
-        out.write(_name);
-        out.write(" (\n");
-        ColumnInfo[] columns = this.columns.toArray(new ColumnInfo[this.columns.size()]);
-        for (int i = 0; i < columns.length; i++)
-        {
-            if (i > 0)
-                out.write(",\n");
-            out.write(columns[i].toString());
-        }
-        if (null != _pkColumnNames)
-        {
-            out.write(",\n PRIMARY KEY (");
-            //BUGBUG: This is untested, but we don't use this functionality anyway
-            out.write(StringUtils.join(_pkColumnNames, ","));
-            out.write(")");
-        }
-        out.write("\n)\nGO\n\n");
-    }
-
-
-    public void writeCreateConstraintsSql(Writer out) throws IOException
-    {
-        ColumnInfo[] columns = this.columns.toArray(new ColumnInfo[this.columns.size()]);
-
-        SqlDialect dialect = getSchema().getSqlDialect();
-        for (ColumnInfo col : columns) {
-            ColumnInfo.SchemaForeignKey fk = (ColumnInfo.SchemaForeignKey) col.getFk();
-            if (fk != null) {
-                out.write("ALTER TABLE ");
-                out.write(_name);
-                out.write(" ADD CONSTRAINT ");
-                out.write("fk_");
-                out.write(_name);
-                out.write("_");
-                out.write(col.getName());
-                out.write(" FOREIGN KEY (");
-                out.write(col.getSelectName());
-                if (fk.isJoinWithContainer())
-                    out.write(", Container");
-                out.write(") REFERENCES ");
-                out.write(dialect.makeLegalIdentifier(fk.getLookupTableName()));
-                out.write("(");
-                out.write(dialect.getColumnSelectName(fk.getLookupColumnName()));
-                if (fk.isJoinWithContainer())
-                    out.write(", Container");
-                out.write(")\nGO\n");
-            }
-        }
-    }
-
-
-    public void writeBean(Writer out) throws IOException
-    {
-        out.write("class ");
-        out.write(getName());
-        out.write("\n\t{\n");
-
-        String[] methNames = new String[columns.size()];
-        String[] typeNames = new String[columns.size()];
-        String[] memberNames = new String[columns.size()];
-        ColumnInfo[] columns = this.columns.toArray(new ColumnInfo[this.columns.size()]);
-        for (int i = 0; i < columns.length; i++)
-        {
-            ColumnInfo col = columns[i];
-            memberNames[i] = "_" + col.getPropertyName();
-            String methName = col.getLegalName();
-            if (!Character.isUnicodeIdentifierPart(methName.charAt(0)))
-                methName = Character.toUpperCase(methName.charAt(0)) + methName.substring(1);
-            methNames[i] = methName;
-            typeNames[i] = ColumnInfo.javaTypeFromSqlType(col.getSqlTypeInt(), col.isNullable());
-        }
-
-        for (int i = 0; i < columns.length; i++)
-        {
-            out.write("\tprivate ");
-            out.write(typeNames[i]);
-            out.write(" " + memberNames[i] + ";\n");
-        }
-        out.write("\n\n");
-        for (int i = 0; i < columns.length; i++)
-        {
-            out.write("\tpublic ");
-            out.write(typeNames[i]);
-
-            out.write(" get");
-            out.write(methNames[i]);
-            out.write("()\n\t\t{\n\t\treturn ");
-            out.write(memberNames[i]);
-            out.write(";\n\t\t}\n\t");
-
-            out.write("public void set");
-            out.write(methNames[i]);
-            out.write("(");
-            out.write(typeNames[i]);
-            out.write(" val)\n\t\t{\n\t\t");
-            out.write(memberNames[i]);
-            out.write(" = val;\n\t\t");
-            out.write("}\n\n");
-
-        }
-        out.write("\t}\n\n");
-    }
 
     public String getSequence()
     {

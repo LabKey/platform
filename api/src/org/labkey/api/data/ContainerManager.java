@@ -1446,8 +1446,8 @@ public class ContainerManager
     {
         //build a multimap of only the container ids
         MultiMap<String, String> mmIds = new MultiHashMap<String, String>();
-
         ResultSet rs = null;
+
         try
         {
             // Get all containers and parents

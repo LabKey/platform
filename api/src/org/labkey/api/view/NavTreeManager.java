@@ -36,9 +36,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class NavTreeManager
 {
+    private static final Logger _log = Logger.getLogger(NavTreeManager.class);
     private static final String EXPAND_CONTAINERS_KEY = NavTreeManager.class.getName() + "/expandedContainers";
     private static final String CACHE_PREFIX = NavTreeManager.class.getName() + "/";
-    private static final Logger _log = Logger.getLogger(NavTreeManager.class);
     private static final String NULL_MARKER = "__null marker representing the root__";   // ConcurrentHashMap does not support null keys
 
     private static final StringKeyCache<Collapsible> NAV_TREE_CACHE = CacheManager.getSharedCache();

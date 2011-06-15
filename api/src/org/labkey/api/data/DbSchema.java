@@ -35,7 +35,6 @@ import org.labkey.data.xml.TablesDocument;
 import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.io.Writer;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -323,6 +322,7 @@ public class DbSchema
 
     // Warning: This can be a VERY expensive method to call (e.g., on external schemas with thousands of tables)!
     // If possible, use getTableNames() and retrieve TableInfos selectively.
+    @Deprecated  // TODO: Delete?
     public Collection<SchemaTableInfo> getTables()
     {
         Collection<SchemaTableInfo> tables = new LinkedList<SchemaTableInfo>();
@@ -345,30 +345,6 @@ public class DbSchema
     {
         // Scope holds cache for all its tables
         return _scope.getTable(this, tableName);
-    }
-
-    public void writeCreateTableSql(Writer out) throws IOException
-    {
-        for (SchemaTableInfo table : getTables())
-        {
-            table.writeCreateTableSql(out);
-        }
-    }
-
-    public void writeCreateConstraintsSql(Writer out) throws IOException
-    {
-        for (SchemaTableInfo table : getTables())
-        {
-            table.writeCreateConstraintsSql(out);
-        }
-    }
-
-    public void writeBeanSource(Writer out) throws IOException
-    {
-        for (SchemaTableInfo table : getTables())
-        {
-            table.writeBean(out);
-        }
     }
 
     public DbScope getScope()
@@ -620,8 +596,10 @@ public class DbSchema
         DbSchema curSchema = DbSchema.get(dbSchemaName);
         SQLFragment sbSql = new SQLFragment();
 
-        for (TableInfo t : curSchema.getTables())
+        for (String tableName : curSchema.getTableNames())
         {
+            TableInfo t = curSchema.getTable(tableName);
+
             if (t.getTableType()!= TableInfo.TABLE_TYPE_TABLE)
                 continue;
 
