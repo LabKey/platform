@@ -357,10 +357,24 @@
                 ids[i] = ids[i].trim();
             }
 
-            // save the participant classifications
+            // setup the data to be stored for the classification
+            var classificationData = {
+                label: label,
+                type: 'list',
+                participantIds: ids
+            };
+            if (this.classificationRowId)
+            {
+                classificationData.rowId = this.classificationRowId;
+            }
+
+            // save the participant classification ("create" if no prior rowId, "update" if rowId exists)
             Ext.Ajax.request(
             {
-                url : LABKEY.ActionURL.buildURL("participant-list", "createParticipantClassification"),
+                url : (this.classificationRowId
+                        ? LABKEY.ActionURL.buildURL("participant-list", "updateParticipantClassification")
+                        : LABKEY.ActionURL.buildURL("participant-list", "createParticipantClassification")
+                      ),
                 method : 'POST',
                 success: function(){
                     getParticipantClassificationsForGrid();
@@ -372,11 +386,7 @@
                     this.getEl().unmask();
                     LABKEY.Utils.displayAjaxErrorResponse(response, options);
                 },
-                jsonData : {
-                    label: label,
-                    type: 'list',
-                    participantIds: ids
-                },
+                jsonData : classificationData,
                 headers : {'Content-Type' : 'application/json'},
                 scope: this
             });
