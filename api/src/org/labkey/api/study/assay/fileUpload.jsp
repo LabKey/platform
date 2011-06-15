@@ -58,17 +58,21 @@
         var name = "<%= AssayDataCollector.PRIMARY_FILE %>" + (_fileUploadIndex > 0 ? _fileUploadIndex : "");
         cell.innerHTML = "<input type='file' size='40' id='" + id + "' name='" + name + "' onChange='toggleAddRemoveButtons();' />";
 
-        // add a cell with a button for removing the given row
-        cell = row.insertCell(1);
-        cell.innerHTML = "<a id='file-upload-remove" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='removeFileUploadInputRow(this, " + _fileUploadIndex + ");'><span>&#45;</span></a>";
+        // if the given assay type allows for multiple file uploads, add the add and remove buttons
+        if (_maxFileInputs > 1)
+        {
+            // add a cell with a button for removing the given row
+            cell = row.insertCell(1);
+            cell.innerHTML = "<a id='file-upload-remove" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='removeFileUploadInputRow(this, " + _fileUploadIndex + ");'><span>&#45;</span></a>";
 
-        // add a cell with a button for adding another row
-        cell = row.insertCell(2);
-        cell.innerHTML = "<a id='file-upload-add" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='addFileUploadInputRow(this);'><span>&#43;</span></a>";
+            // add a cell with a button for adding another row
+            cell = row.insertCell(2);
+            cell.innerHTML = "<a id='file-upload-add" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='addFileUploadInputRow(this);'><span>&#43;</span></a>";
 
-        _fileUploadIndex++;
+            _fileUploadIndex++;
 
-        toggleAddRemoveButtons();
+            toggleAddRemoveButtons();
+        }
     }
 
     /**
