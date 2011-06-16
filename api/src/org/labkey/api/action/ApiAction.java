@@ -150,6 +150,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                     createResponseWriter().write((Errors)errors);
             }
         }
+        catch (BindException e)
+        {
+            createResponseWriter().write((Errors)e);
+        }
         catch (BatchValidationException e)
         {
             createResponseWriter().write(e);

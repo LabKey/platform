@@ -44,6 +44,15 @@ public class ApiJsonWriter extends ApiResponseWriter
     //per http://www.iana.org/assignments/media-types/application/
     public static final String CONTENT_TYPE_JSON = "application/json";
 
+    /*
+     * (MAB) This code defaults to using setting the response to SC_BAD_REQUEST
+     * when any error is encountered.  I think this is wrong.  Expected
+     * errors should be encoded in a normal JSON reponse and SC_OK.
+     *
+     * Allow new code to specify that SC_OK should be used for errors
+     */
+    int errorResponseStatus = HttpServletResponse.SC_BAD_REQUEST;
+
 
     public ApiJsonWriter(Writer out) throws IOException
     {
@@ -62,6 +71,12 @@ public class ApiJsonWriter extends ApiResponseWriter
         super(response);
         response.setContentType(null == contentTypeOverride ? CONTENT_TYPE_JSON : contentTypeOverride);
         response.setCharacterEncoding("utf-8");
+    }
+
+
+    public void setErrorResponseStatus(int status)
+    {
+        errorResponseStatus = status;
     }
 
 
@@ -93,7 +108,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         }
     }
 
-    public void write(Throwable e) throws IOException
+    public void write(Throwable e, int status) throws IOException
     {
         if (null == getResponse())
         {
@@ -103,11 +118,8 @@ public class ApiJsonWriter extends ApiResponseWriter
                 throw (RuntimeException)e;
             throw new RuntimeException(e);
         }
-            
-        if (e instanceof NotFoundException)
-            getResponse().setStatus(404);
-        else
-            getResponse().setStatus(500);
+
+        getResponse().setStatus(status);
 
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
@@ -117,11 +129,24 @@ public class ApiJsonWriter extends ApiResponseWriter
         writeJsonObj(jsonObj);
     }
 
+
+    public void write(Throwable e) throws IOException
+    {
+        int status;
+
+        if (e instanceof NotFoundException)
+            status = HttpServletResponse.SC_NOT_FOUND;
+        else
+            status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+
+        write(e, status);
+    }
+    
+
     public void write(BatchValidationException e) throws IOException
     {
-        //set the status to 400 to indicate that it was a bad request
         if (null != getResponse())
-            getResponse().setStatus(400);
+            getResponse().setStatus(errorResponseStatus);
 
         JSONObject obj = new JSONObject();
         JSONArray arr = new JSONArray();
@@ -133,6 +158,7 @@ public class ApiJsonWriter extends ApiResponseWriter
                 message = child.optString("exception", "(No error message)");
             arr.put(child);
         }
+        obj.put("success", Boolean.FALSE);
         obj.put("errors", arr);
         obj.put("exception", message);
         obj.put("extraContext", e.getExtraContext());
@@ -142,15 +168,16 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     public void write(ValidationException e) throws IOException
     {
-        //set the status to 400 to indicate that it was a bad request
         if (null != getResponse())
-            getResponse().setStatus(400);
+            getResponse().setStatus(errorResponseStatus);
 
         JSONObject obj = toJSON(e);
+        obj.put("success", Boolean.FALSE);
         writeJsonObj(obj);
     }
 
-    public JSONObject toJSON(ValidationException e)
+
+    protected JSONObject toJSON(ValidationException e)
     {
         JSONObject obj = new JSONObject();
         String message = null;
@@ -199,7 +226,7 @@ public class ApiJsonWriter extends ApiResponseWriter
     {
         //set the status to 400 to indicate that it was a bad request
         if (null != getResponse())
-            getResponse().setStatus(400);
+            getResponse().setStatus(errorResponseStatus);
 
         String exception = null;
         JSONArray jsonErrors = new JSONArray();

@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -48,9 +49,9 @@ import java.util.List;
  *
  * This is a bit strange, since you can't provide more than one error
  * for a given field, and there's really no place to put object-level
- * errors.  Labkey.form
+ * errors. We use the virtual field "_form" for global errors.
  *
- * Also, the response code must be 200, even though there are errors.
+ * Also, the response code must be SC_OK(200).
  *
  * See http://extjs.com/deploy/dev/docs/?class=Ext.form.Action.Submit
  *
@@ -60,11 +61,13 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     public ExtFormResponseWriter(HttpServletResponse response) throws IOException
     {
         super(response);
+        setErrorResponseStatus(HttpServletResponse.SC_OK);
     }
 
-    public ExtFormResponseWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
+    public  ExtFormResponseWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
     {
         super(response, contentTypeOverride);
+        setErrorResponseStatus(HttpServletResponse.SC_OK);
     }
 
     public void write(ValidationException e) throws IOException
@@ -125,5 +128,17 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         root.put("success", false); //used by Ext forms
         root.put("errors", jsonErrors);
         writeJsonObj(root);
+    }
+
+    public void write(Throwable e) throws IOException
+    {
+        int status;
+
+        if (e instanceof NotFoundException)
+            status = HttpServletResponse.SC_NOT_FOUND;
+        else
+            status = errorResponseStatus;
+
+        write(e, status);
     }
 }

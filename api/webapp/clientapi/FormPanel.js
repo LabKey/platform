@@ -301,25 +301,28 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     // CONSIDER: find 'unbound' errors and move to form level
     markInvalid : function(errors)
     {
-        var formMessage;
+        var formMessages = [];
+        var i, len;
 
         if (typeof errors == "string")
         {
-            formMessage = errors;
+            formMessages.push(errors);
             errors = null;
         }
-        else if (Ext.isArray(errors))
+        if (typeof errors == "object" && "_form" in errors)
         {
-           for(var i = 0, len = errors.length; i < len; i++)
-           {
-               var fieldError = errors[i];
-               if (!("id" in fieldError) || "_form" == fieldError.id)
-                   formMessage = fieldError.msg;
-           }
+            formMessages.push(errors._form);
+            delete errors._form;
         }
-        else if (typeof errors == "object" && "_form" in errors)
+        if (errors)
         {
-            formMessage = errors._form;
+            errors = this._flattenErrors([], errors);
+            for (i = 0, len = errors.length; i < len; i++)
+            {
+                var fieldError = errors[i];
+                if (!("id" in fieldError) || "_form" == fieldError.id)
+                    formMessages.push(fieldError.msg);
+            }
         }
 
         if (errors)
@@ -327,13 +330,36 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             this.getForm().markInvalid(errors);
         }
 
-        if (formMessage)
+        if (formMessages.length)
         {
             if (this.errorEl)
-                Ext.get(this.errorEl).update(Ext.util.Format.htmlEncode(formMessage));
+            {
+                for (i=0; i<formMessages.length ; i++)
+                    formMessages[i] = Ext.util.Format.htmlEncode(formMessages[i]);
+                Ext.get(this.errorEl).update(formMessages.join("<br>"));
+            }
             else
-               Ext.Msg.alert("Error", formMessage);
+               Ext.Msg.alert("Error", formMessages.join("\n"));
         }
+    },
+
+    // TODO remove this when I figure out why some errors are double nested
+    /* private */ _flattenErrors : function(collection, errors)
+    {
+        if (!errors)
+            return collection;
+        if (Ext.isString(errors))
+            collection.push(errors);
+        else if (Ext.isArray(errors))
+        {
+            for (var i=0 ; i<errors.length ; i++)
+                this._flattenErrors(collection, errors[i]);
+        }
+        else if (errors.errors)
+            this._flattenErrors(collection, errors.errors);
+        else
+            collection.push(errors);
+        return collection;
     },
 
     /**

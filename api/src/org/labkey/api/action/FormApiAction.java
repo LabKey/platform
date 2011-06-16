@@ -36,6 +36,16 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
 {
     protected boolean _print = false;
 
+    protected FormApiAction()
+    {
+
+    }
+
+    protected FormApiAction(Class<? extends FORM> formClass)
+    {
+        super(formClass);
+    }
+
     @Override
     protected ModelAndView handleGet() throws Exception
     {
