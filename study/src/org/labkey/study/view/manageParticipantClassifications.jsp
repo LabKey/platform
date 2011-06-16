@@ -395,8 +395,8 @@
         getDemoQueryWebPart: function(queryName)
         {
             var ptidClassificationPanel = this;
+            var initialLoad = true;
 
-            ptidClassificationPanel.getEl().mask("Loading data region...", "x-mask-loading")
             var demoQueryWebPart =  new LABKEY.QueryWebPart({
                 renderTo: 'demoQueryWebPartPanel',
                 dataRegionName: 'demoDataRegion',
@@ -406,6 +406,7 @@
                 border: false,
                 showRecordSelectors: true,
                 showUpdateColumn: false,
+                maskEl: ptidClassificationPanel.getEl(),
                 buttonBarPosition: 'top',
                 buttonBar: {
                     includeStandardButtons: false,
@@ -422,11 +423,12 @@
                     }]
                 },
                 success: function(){
-                    ptidClassificationPanel.getEl().unmask();
-                },
-                failure: function(response, options){
-                    ptidClassificationPanel.getEl().unmask();
-                    LABKEY.Utils.displayAjaxErrorResponse(response, options);
+                    // clear any chached selections from the last time this dataRegion was used
+                    if (initialLoad)
+                    {
+                        Ext.ComponentMgr.get('demoDataRegion').clearSelected();
+                        initialLoad = false;
+                    }
                 }
             });
         },
