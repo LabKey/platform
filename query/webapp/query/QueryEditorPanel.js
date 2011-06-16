@@ -39,12 +39,14 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             xtype   : 'button',
             text    : 'Save',
             cls     : 'query-button',
+            tooltip : 'Ctrl + s',
             handler : this.onSave,
             disabled: !this.query.canEdit,
             scope   : this
         },{
             xtype   : 'button',
             text    : 'Execute Query',
+            tooltip : 'Ctrl + Enter',
             cls     : 'query-button',
             handler : function(btn) { this.execute(true); },
             scope   : this
@@ -67,16 +69,32 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         }
 
         items.push({
-            xtype   : 'button',
-            text    : 'SQL Help',
-            cls     : 'query-button',
-            style   : 'float: none;',
-            target  : '_blank',
-            href    : this.query.help,
-            handler : function(btn) {
-                window.location = this.query.help;
-            },
-            scope   : this
+            xtype : 'button',
+            text  : 'Help',
+            cls   : 'query-button',
+            style : 'float: none;',
+            menu  : new Ext.menu.Menu({
+                        id : 'keyboard-menu',
+                        cls : 'extContainer',
+                        items : [{
+                            text  : 'Shortcuts',
+                            menu  : {
+                                id   : '',
+                                cls  : 'extContainer',
+                                items: [{
+                                    text : 'Save&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctrl + s'
+                                },{
+                                    text : 'Execute&nbsp;&nbsp;&nbsp;ctrl + enter'
+                                },{
+                                    text : 'Edit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctrl + e'
+                                }]
+                            }
+                        },'-',{
+                            text  : 'SQL Reference',
+                            handler : function() { window.location = this.query.help; },
+                            scope : this
+                        }]
+                    })      
         });
 
         this.editorId = 'queryText';
@@ -101,13 +119,16 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             listeners : {
                 afterrender : function(){
                     this.eal = editAreaLoader;
-                    this.eal.init({
+                    var config = {
                         id     : this.editorId,
                         syntax : 'sql',
                         start_highlight: true,
                         is_editable : !this.query.builtIn && this.query.canEdit,
                         plugins : "save"
-                    });
+                    };
+                    if (Ext.isIE) config.start_highlight = false;                    
+                    this.eal.init(config);
+                    
                     this.doLayout(false, true);
                 },
                 scope : this
@@ -410,11 +431,14 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
             listeners : {
                 afterrender : function(){
                     this.eal = editAreaLoader;
-                    this.eal.init({
+                    var config = {
                         id     : this.editorId,
                         syntax : 'xml',
-                        start_highlight: true                        
-                    });
+                        start_highlight: true,
+                        plugins : "save"
+                    };
+                    if (Ext.isIE) config.start_highlight = false;
+                    this.eal.init(config);
                 },
                 scope : this
             },
@@ -430,20 +454,28 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
 
     onShow : function() {
 
-        // Doing this due to faulty editor when tabbing back
-        this.eal = editAreaLoader;
-        this.eal.init({
-            id     : this.editorId,
-            syntax : 'xml',
-            start_highlight: true
-        });
+        if (Ext.isIE) {
+            // Doing this due to faulty editor when tabbing back
+            this.eal = editAreaLoader;
+            this.eal.init({
+                id     : this.editorId,
+                syntax : 'xml',
+                start_highlight: true
+            });
+        }
 
         LABKEY.query.MetadataXMLEditorPanel.superclass.onShow.call(this);
+
+        if (!Ext.isIE)
+            this.eal.show(this.editorId);
     },
 
     onHide : function() {
 
-        this.eal.delete_instance(this.editorId);
+        if (Ext.isIE)
+            this.eal.delete_instance(this.editorId);
+        else
+            this.eal.hide(this.editorId);
 
         LABKEY.query.MetadataXMLEditorPanel.superclass.onHide.call(this);
     },

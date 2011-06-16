@@ -141,7 +141,7 @@
         var _resize = function(w, h) {
             if (!panel.rendered)
                 return;
-            var padding = [30,40];
+            var padding = [40,50];
             var xy = panel.el.getXY();
             var size = {
                 width : Math.max(100,w-xy[0]-padding[0]),
