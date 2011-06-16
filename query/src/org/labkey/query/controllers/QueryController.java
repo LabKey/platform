@@ -74,6 +74,7 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -117,7 +118,6 @@ import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
-import org.labkey.query.design.QueryDocument;
 import org.labkey.query.metadata.MetadataServiceImpl;
 import org.labkey.query.metadata.client.MetadataEditor;
 import org.labkey.query.persist.CstmView;
@@ -274,12 +274,10 @@ public class QueryController extends SpringActionController
     }
 
     /**
-     * assertQueryExists throws NotFound if the query/table does not exist.
+     * ensureQueryExists throws NotFound if the query/table does not exist.
      * Does not guarantee that the query is syntactically correct, or can execute.
-     *
-     *  TODO rename, this sounds like a debug-only method
      */
-    protected void assertQueryExists(QueryForm form) throws ServletException
+    protected void ensureQueryExists(QueryForm form) throws ServletException
     {
         if (form.getSchema() == null)
         {
@@ -866,7 +864,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            assertQueryExists(form);
+            ensureQueryExists(form);
 
             _form = form;
 
@@ -906,7 +904,7 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            assertQueryExists(form);
+            ensureQueryExists(form);
 
             _form = form;
 
@@ -1116,7 +1114,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            assertQueryExists(form);
+            ensureQueryExists(form);
             _print = true;
             String title = form.getQueryName();
             if (StringUtils.isEmpty(title))
@@ -1131,7 +1129,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            assertQueryExists(form);
+            ensureQueryExists(form);
             QueryView view = QueryView.create(form, errors);
             getPageConfig().setTemplate(PageConfig.Template.None);
             _export(form, view);
@@ -1168,7 +1166,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(ExportScriptForm form, BindException errors) throws Exception
         {
-            assertQueryExists(form);
+            ensureQueryExists(form);
 
             return ExportScriptModel.getExportScriptView(QueryView.create(form, errors), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
@@ -1233,7 +1231,7 @@ public class QueryController extends SpringActionController
             response.setHeader("Pragma", "private");
             response.setHeader("Cache-Control", "private");
 
-            assertQueryExists(form);
+            ensureQueryExists(form);
             QueryView view = QueryView.create(form, errors);
             getPageConfig().setTemplate(PageConfig.Template.None);
             view.exportToExcelWebQuery(getViewContext().getResponse());
@@ -1247,9 +1245,9 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            assertQueryExists(form);
+            ensureQueryExists(form);
             getPageConfig().setTemplate(PageConfig.Template.None);
-            assertQueryExists(form);
+            ensureQueryExists(form);
             String queryViewActionURL = form.getQueryViewActionURL();
             ActionURL url;
             if (queryViewActionURL != null)
@@ -1428,7 +1426,7 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(QueryForm form, boolean reshow, BindException errors) throws Exception
         {
-            assertQueryExists(form);
+            ensureQueryExists(form);
             _form = form;
             _query = _form.getQueryDef();
             Map<String, String> props = new HashMap<String, String>();
@@ -2167,7 +2165,7 @@ public class QueryController extends SpringActionController
             String maxRowsParam = StringUtils.trimToNull(getViewContext().getRequest().getParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.maxRows.name()));
             boolean metaDataOnly = "0".equals(maxRowsParam);
 
-            assertQueryExists(form);
+            ensureQueryExists(form);
 
             //show all rows by default
             if (null == form.getLimit()
@@ -2389,12 +2387,33 @@ public class QueryController extends SpringActionController
 
 
 
-    @RequiresNoPermission
-    public static class ImportAction extends AbstractQueryImportAction
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ImportAction extends AbstractQueryImportAction<QueryForm>
     {
         public ImportAction()
         {
-            super();
+            super(QueryForm.class);
+        }
+
+        @Override
+        protected void initRequest(QueryForm form) throws ServletException
+        {
+            ensureQueryExists(form);
+
+            QueryDefinition query = form.getQueryDef();
+            List<QueryException> qpe = new ArrayList<QueryException>();
+            TableInfo t = query.getTable(form.getSchema(), qpe, true);
+            if (!qpe.isEmpty())
+                throw qpe.get(0);
+            if (null != t)
+                setTarget(t);
+        }
+
+        @Override
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            initRequest(form);
+            return super.getDefaultImportView(form, errors);
         }
     }
 
