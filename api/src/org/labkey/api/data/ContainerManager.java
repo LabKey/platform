@@ -499,63 +499,60 @@ public class ContainerManager
     public static Map<String, Container> getChildrenMap(Container parent)
     {
         String[] childIds = (String[]) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
-        if (null != childIds)
+        if (null == childIds)
         {
-            if (childIds == emptyStringArray)
-                return Collections.emptyMap();
-            // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily
-            // alphabetical
-            Map<String, Container> ret = new LinkedHashMap<String, Container>();
-            for (String id : childIds)
+            try
             {
-                Container c = ContainerManager.getForId(id);
-                if (null != c)
-                    ret.put(c.getName(), c);
-            }
-            assert null != (ret = Collections.unmodifiableMap(ret));
-            return ret;
-        }
+                CORE.getSchema().getScope().ensureTransaction();
 
-        try
-        {
-            CORE.getSchema().getScope().ensureTransaction();
-
-            synchronized (DATABASE_QUERY_LOCK)
-            {
-                Container[] children = Table.executeQuery(CORE.getSchema(),
-                        "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
-                        new Object[]{parent.getId()},
-                        Container.class);
-                if (children.length == 0)
+                synchronized (DATABASE_QUERY_LOCK)
                 {
-                    CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), emptyStringArray);
+                    Container[] children = Table.executeQuery(CORE.getSchema(),
+                            "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
+                            new Object[]{parent.getId()},
+                            Container.class);
+                    if (children.length == 0)
+                    {
+                        CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), emptyStringArray);
+                        // No database changes to commit, but need to decrement the counter
+                        CORE.getSchema().getScope().commitTransaction();
+                        return Collections.emptyMap();
+                    }
+                    childIds = new String[children.length];
+                    for (int i=0 ; i<children.length ; i++)
+                    {
+                        Container c = children[i];
+                        childIds[i] = c.getId();
+                        _addToCache(c);
+                    }
+                    CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), childIds);
                     // No database changes to commit, but need to decrement the counter
                     CORE.getSchema().getScope().commitTransaction();
-                    return Collections.emptyMap();
                 }
-                Map<String, Container> ret = new CaseInsensitiveTreeMap<Container>();
-                childIds = new String[children.length];
-                for (int i=0 ; i<children.length ; i++)
-                {
-                    Container c = children[i];
-                    childIds[i] = c.getId();
-                    _addToCache(c);
-                    ret.put(c.getName(), c);
-                }
-                CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), childIds);
-                // No database changes to commit, but need to decrement the counter
-                CORE.getSchema().getScope().commitTransaction();
-                return ret;
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+            finally
+            {
+                CORE.getSchema().getScope().closeConnection();
             }
         }
-        catch (SQLException e)
+
+        if (childIds == emptyStringArray)
+            return Collections.emptyMap();
+        // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily
+        // alphabetical
+        Map<String, Container> ret = new LinkedHashMap<String, Container>();
+        for (String id : childIds)
         {
-            throw new RuntimeSQLException(e);
+            Container c = ContainerManager.getForId(id);
+            if (null != c)
+                ret.put(c.getName(), c);
         }
-        finally
-        {
-            CORE.getSchema().getScope().closeConnection();
-        }
+        assert null != (ret = Collections.unmodifiableMap(ret));
+        return ret;
     }
 
 

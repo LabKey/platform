@@ -408,7 +408,7 @@ Ext.ux.MultiSelectTreeDragZone = Ext.extend(Ext.tree.TreeDragZone, {
 		if (!selNodes || selNodes.length < 1) return;
 		var dragData = { nodes: selNodes };
 		// create a container for the proxy...
-		var div = document.createElement('ul'); // create the multi element drag "ghost"
+		var div = document.createElement('span'); // create the multi element drag "ghost"
 		// add classes to keep is pretty...
 		div.className = 'x-tree-node-ct x-tree-lines';
 		// add actual dom nodes to div (instead of tree nodes)
@@ -441,6 +441,7 @@ Ext.ux.MultiSelectTreeDragZone = Ext.extend(Ext.tree.TreeDragZone, {
 				}
 			}
 			div.appendChild(clonenode);
+            Ext.fly(clonenode).addClass(['tree-node-ghost']);
 			Ext.fly(clonenode).removeClass(['x-tree-selected','x-tree-node-over']);
 		}
 		dragData.ddel = div;
