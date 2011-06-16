@@ -495,6 +495,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 if (typeof this.actions[cfg.id] == "object")
                 {
                     var action = this.actions[cfg.id];
+                    action.initialConfig.pressed = false;
                     var newAction = this.createToolbarAction(cfg.id, action.initialConfig);
                     this.newActions[cfg.id] = newAction;
                     buttons.push(newAction);
@@ -542,7 +543,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
             if (action && ('object' == typeof action))
             {
-                var config = Ext.applyIf({xtype:'button', disabled:false, actionId:a}, action.initialConfig);
+                var config = Ext.applyIf({xtype:'button', disabled:false, pressed: false, actionId:a}, action.initialConfig);
 
                 config.handler = undefined;
                 config.listeners = undefined;
