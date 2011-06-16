@@ -37,42 +37,25 @@
 
     var $h = Ext.util.Format.htmlEncode;
     var _grid;
-    var _classificationData;
 
-    function getParticipantClassificationsForGrid(){
-        // get the classifications list from the given study container
-        Ext.Ajax.request(
-        {
-            url : LABKEY.ActionURL.buildURL("participant-list", "getParticipantClassifications"),
-            method : 'POST',
-            success: renderParticipantClassificationsGrid,
-            failure: function(){Ext.Msg.alert("Delete Classification", "Deletion Failed");},
-            headers : {'Content-Type' : 'application/json'}
-        });
-    }
-
-    function renderParticipantClassificationsGrid(response)
+    function renderParticipantClassificationsGrid()
     {
-        // decode the JSON responseText
-        _classificationData = Ext.util.JSON.decode(response.responseText);
-
-        // if the grid has already been created, destroy it to create the new one
-        if (_grid)
-        {
-            _grid.destroy();
-        }
-
         var store = new Ext.data.JsonStore({
+            proxy: new Ext.data.HttpProxy({
+                url : LABKEY.ActionURL.buildURL("participant-list", "getParticipantClassifications"),
+                method : 'POST'
+            }),
             root: 'classifications',
             idProperty: 'rowId',
-            data: _classificationData,
             fields: [
                 {name: 'rowId', type: 'integer'},
                 {name: 'label', type: 'string'},
                 {name: 'type', type: 'string'},
                 {name: 'createdBy', type: 'string'},
-                {name: 'shared', type: 'string'}
-            ]
+                {name: 'shared', type: 'string'},
+                {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString()}}
+            ],
+            autoLoad: true
         });
 
         var columnModel = new Ext.grid.ColumnModel({
@@ -81,15 +64,11 @@
                 sortable: false
             },
             columns: [
-                {header:'Label', dataIndex:'label'},
-                {header:'Type', dataIndex:'type'},
+                {header:'Label', dataIndex:'label', sortable: true, width: 300},
+                {header:'Type', dataIndex:'type', width: 100},
                 {header:'Created By', dataIndex:'createdBy'},
                 {header:'Shared', dataIndex:'shared'}
             ]
-        });
-
-        var selectionModel =  new Ext.grid.RowSelectionModel({
-            singleSelect:true
         });
 
         var tbarButtons = [{
@@ -103,7 +82,10 @@
             text: 'Edit Selected',
             disabled: true,
             handler: function(){
-                editParticipantClassifications(_grid);
+                if (_grid.getSelectionModel().hasSelection())
+                {
+                    editParticipantClassifications(_grid.getSelectionModel().getSelected());
+                }
             },
             scope: this
         },{
@@ -111,7 +93,10 @@
             text: 'Delete Selected',
             disabled: true,
             handler: function(){
-                deleteParticipantClassifications(_grid);
+                if (_grid.getSelectionModel().hasSelection())
+                {
+                    deleteParticipantClassifications(_grid.getSelectionModel().getSelected());
+                }
             },
             scope: this
         }];
@@ -122,20 +107,19 @@
             autoScroll:false,
             autoHeight:true,
             width:800,
-            loadMask:{msg:"Loading classifications..."},
+            loadMask:{msg:"Loading, please wait..."},
             store: store,
             colModel: columnModel,
-            selectionModel: selectionModel,            
+            selModel: new Ext.grid.RowSelectionModel({singleSelect:true}),
             viewConfig: {forceFit: true},
             tbar: tbarButtons
         });
 
         // rowclick listener to enable/disable the edit and delete buttons based on selection
         _grid.on('rowclick', function(g, rowIdx, e){
-            var count = g.getSelectionModel().getCount();
             var topTB = g.getTopToolbar();
 
-            if (count == 1)
+            if (g.getSelectionModel().getCount() == 1)
             {
                 topTB.findById('editSelectedButton').enable();
                 topTB.findById('deleteSelectedButton').enable();
@@ -148,15 +132,7 @@
         }, this);
     }
 
-    function editParticipantClassifications(grid){
-        // get the selected row from the gridpanel (in the case of "edit selected")
-        var selectedRowId = null;
-        if (grid)
-        {
-            var selectedRow = grid.getSelectionModel().getSelected();
-            selectedRowId = selectedRow.get("rowId");
-        }
-
+    function editParticipantClassifications(row){
         var win = new Ext.Window({
             cls: 'extContainer',
             title: 'Create <%= subjectNounSingular %> Classification',
@@ -166,7 +142,9 @@
             modal: true,
             closeAction:'close',
             items: new LABKEY.ParticipantClassificationPanel({
-                classificationRowId: selectedRowId,
+                classificationRowId: (row ? row.get("rowId") : null),
+                classificationLabel: (row ? row.get("label") : null),
+                classificationParticipantIds: (row ? row.get("participantIds") : null),
                 listeners: {
                     scope: this,
                     'closeWindow': function(){
@@ -178,55 +156,39 @@
         win.show(this);
     }
 
-    function deleteParticipantClassifications(grid){
-        if (grid)
-        {
-            // todo: do we need to handle deletion of a shared/public classification differently?
+    function deleteParticipantClassifications(row){
+        // todo: do we need to handle deletion of a shared/public classification differently?
 
-            var selectedRow = grid.getSelectionModel().getSelected();
-            Ext.Msg.show({
-                    title : 'Delete Classification',
-                    msg : 'Delete Selected Classification:<br/>' + selectedRow.get("label"),
-                    buttons: Ext.Msg.YESNO,
-                    icon: Ext.Msg.QUESTION,
-                    fn: function(btn, text) {
-                        if (btn == 'yes')
-                        {
-                            Ext.Ajax.request({
-                                url: LABKEY.ActionURL.buildURL("participant-list", "deleteParticipantClassification"),
-                                method: "POST",
-                                success: getParticipantClassificationsForGrid,
-                                failure: function(){Ext.Msg.alert("Delete Classification", "Deletion Failed");},
-                                jsonData: {rowId: selectedRow.get("rowId")},
-                                headers : {'Content-Type' : 'application/json'}
-                            });
-                        }},
-                    id: 'delete_classifications'
-            });
-        }
-    }
-
-    /**
-     * get the index of the given classification from the results of the getParticipantClassifciations call
-     * @param rowId
-     */
-    function getClassficationIndex(rowId)
-    {
-        var index = -1;
-        for (var i = 0; i < _classificationData.classifications.length; i++)
-        {
-            if (_classificationData.classifications[i].rowId == rowId)
-            {
-                index = i;
-                break;
-            }
-        }
-        return index;
+        Ext.Msg.show({
+            title : 'Delete Classification',
+            msg : 'Delete Selected Classification:<br/>' + row.get("label"),
+            buttons: Ext.Msg.YESNO,
+            icon: Ext.Msg.QUESTION,
+            fn: function(btn, text) {
+                if (btn == 'yes')
+                {
+                    Ext.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL("participant-list", "deleteParticipantClassification"),
+                        method: "POST",
+                        success: function(){
+                            _grid.getStore().reload();
+                        },
+                        failure: function(){
+                            Ext.Msg.alert("Delete Classification", "Deletion Failed");
+                        },
+                        jsonData: {rowId: row.get("rowId")},
+                        headers : {'Content-Type' : 'application/json'}
+                    });
+                }},
+            id: 'delete_classifications'
+        });
     }
 
     /**
      * Panel to take user input for the label and list of participant ids for a classfication to be created or edited
-     * @param classificationRowId = the rowId of the classification to be edited (null if create new) 
+     * @param classificationRowId = the rowId of the classification to be edited (null if create new)
+     * @param classificationLabel = the current label of the classification to be edited (null if create new)
+     * @param classificationParticipantIds = the string representation of the ptid ids array of the classification to be edited (null if create new) 
      */
     LABKEY.ParticipantClassificationPanel = Ext.extend(Ext.Panel, {
         constructor : function(config){
@@ -236,14 +198,6 @@
                 border: false,
                 autoScroll: true
             });
-
-            // if this is an "edit selected" action, get the classification label and participant list
-            if (config.classificationRowId && getClassficationIndex(config.classificationRowId) > -1)
-            {
-                var index = getClassficationIndex(config.classificationRowId);
-                config.classificationLabel = _classificationData.classifications[index].label;
-                config.classificationParticipnatIds = _classificationData.classifications[index].participantIds;
-            }
 
             this.addEvents('closeWindow');
 
@@ -267,7 +221,7 @@
                 },{
                     id: 'classificationIdentifiers',
                     xtype: 'textarea',
-                    value: (this.classificationParticipnatIds ? this.classificationParticipnatIds.toString() : null),
+                    value: this.classificationParticipantIds,
                     hideLabel: true,
                     emptyText: 'Enter <%= subjectNounSingular %> Identifiers Separated by Commas',
                     allowBlank: false,
@@ -304,7 +258,8 @@
                             this.demoCombobox.fireEvent('select', this.demoCombobox, records[0], 0);
                         }
                     }
-                }
+                },
+                autoLoad: true
             });
 
             this.demoCombobox = new Ext.form.ComboBox({
@@ -315,18 +270,14 @@
                 displayField: 'Label',
                 fieldLabel: 'Select <%= subjectNounPlural %> from',
                 labelStyle: 'width: 175px;',
-                minListWidth : 300
+                minListWidth : 300,
+                listeners: {
+                    scope: this,
+                    'select': function(cmp, record, index){
+                        this.getDemoQueryWebPart(record.get("Label"));
+                    } 
+                }
             });
-
-            this.demoCombobox.on('render', function(cmp)
-            {
-                cmp.getStore().load();
-            }, this);
-
-            this.demoCombobox.on('select', function(cmp, record, index)
-            {
-                this.getDemoQueryWebPart(record.get("Label"));
-            }, this);
 
             this.items = [
                 this.classificationPanel,
@@ -364,6 +315,7 @@
                 type: 'list',
                 participantIds: ids
             };
+            
             if (this.classificationRowId)
             {
                 classificationData.rowId = this.classificationRowId;
@@ -378,9 +330,9 @@
                       ),
                 method : 'POST',
                 success: function(){
-                    getParticipantClassificationsForGrid();
                     this.getEl().unmask();
                     this.fireEvent('closeWindow');
+                    _grid.getStore().reload();
                 },
                 failure: function(response, options){
                     this.getEl().unmask();
@@ -418,6 +370,7 @@
                     },{
                         text: 'Add All',
                         handler: function(){
+                            // todo: fix this to only add the visible records (i.e. if filter applied to dataregion)
                             ptidClassificationPanel.getSelectedDemoParticipants(queryName, "all");
                         }
                     }]
@@ -477,5 +430,5 @@
         }
     });
 
-    Ext.onReady(getParticipantClassificationsForGrid);
+    Ext.onReady(renderParticipantClassificationsGrid);
 </script>
