@@ -39,6 +39,10 @@
     .x-tree-selected a.x-tree-node-anchor span {
         font-weight: bold;
     }
+
+    li.tree-node-ghost {
+        list-style-type: none;
+    }
 </style>
 <div id="folderdiv" class="extContainer"></div>
 <script type="text/javascript">
@@ -327,7 +331,7 @@ function init() {
                         sep = ";";
                     }
 
-                    reorderFolders(s, order, null, null, successHandler);
+                    reorderFolders(s, order, false, null, successHandler);
                 }
                 else {
 
@@ -545,7 +549,7 @@ function init() {
 
             var params = {};
             if (order) {params.order = order;}
-            if (alpha) {params.resetToAlphabetical = true;}
+            params.resetToAlphabetical = alpha;
 
             mask();
             Ext.Ajax.request({
