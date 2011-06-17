@@ -144,10 +144,26 @@ var f_scope<%=uid%> = new (function() {
             plain: true,
             defaults: {autoScroll: true},
             listeners: {beforetabchange: beforeTabChange},
+            boxMinWidth: 500,
             items: items
         });
 
         tabs.strip.applyStyles({'background':'#ffffff'});
+
+        var _resize = function(w, h) {
+            if (!tabs.rendered)
+                return;
+            var padding = [40,50];
+            var xy = tabs.el.getXY();
+            var size = {
+                width : Math.max(100,w-xy[0]-padding[0]),
+                height : Math.max(100,h-xy[1]-padding[1])};
+            tabs.setSize(size);
+            tabs.doLayout();
+        };
+
+        Ext.EventManager.onWindowResize(_resize);
+        Ext.EventManager.fireWindowResize();
     });
 
     function beforeTabChange()
