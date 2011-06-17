@@ -2,6 +2,7 @@ package org.labkey.study.model;
 
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -9,6 +10,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 
 import java.sql.SQLException;
@@ -137,23 +139,19 @@ public class ParticipantListManager
 
             // add the mapping from group to participants
             SQLFragment sql = new SQLFragment("INSERT INTO ").append(getTableInfoParticipantGroupMap(), "");
-            sql.append(" (GroupId, ParticipantId, Container) VALUES ");
+            sql.append(" (GroupId, ParticipantId, Container) VALUES (?, ?, ?)");
 
-            String delim = "";
-            List<Object> params = new ArrayList<Object>();
-
+            Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(group.getContainerId()));
             for (String id : group.getParticipantIds())
             {
-                params.add(group.getRowId());
-                params.add(id);
-                params.add(group.getContainerId());
+                Participant p = StudyManager.getInstance().getParticipant(study, id);
 
-                sql.append(delim).append("(?, ?, ?)");
-                delim = ",";
+                // don't let the database catch the invalid ptid, so we can show a more reasonable error
+                if (p == null)
+                    throw new IllegalArgumentException(String.format("The %s ID specified : %s does not exist in this study. Please enter a valid identifier.", study.getSubjectNounSingular(), id));
+
+                Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), group.getRowId(), id, group.getContainerId());
             }
-            sql.append(";");
-
-            Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), params.toArray());
             DbCache.remove(StudySchema.getInstance().getTableInfoParticipantClassification(), getCacheKey(group.getClassificationId()));
 
             scope.commitTransaction();
