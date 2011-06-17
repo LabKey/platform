@@ -139,15 +139,15 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     {
         String filename = file.getName().toLowerCase();
 
-        if (filename.endsWith(".xls") || filename.endsWith(".xlsx"))
+        if (filename.endsWith("xls") || filename.endsWith("xlsx"))
         {
             return new ExcelLoader(file, true, mvIndicatorContainer);
         }
-        else if (filename.endsWith(".txt") || filename.endsWith(".tsv"))
+        else if (filename.endsWith("txt") || filename.endsWith("tsv"))
         {
             return new TabLoader(file, true, mvIndicatorContainer);
         }
-        else if (filename.endsWith(".csv"))
+        else if (filename.endsWith("csv"))
         {
             TabLoader loader = new TabLoader(file, true, mvIndicatorContainer);
             loader.parseAsCSV();
