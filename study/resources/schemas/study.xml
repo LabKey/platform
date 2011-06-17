@@ -605,6 +605,9 @@
           <ns:description>The total cell count for each vial.</ns:description>
           <ns:formatString>0.####</ns:formatString>
         </ns:column>
+        <ns:column columnName="TubeType">
+          <ns:description>The type of vial.</ns:description>
+        </ns:column>
       </ns:columns>
     </ns:table>
   <ns:table tableName="Specimen" tableDbType="TABLE">
@@ -860,6 +863,9 @@
       <ns:column columnName="TotalCellCount">
         <ns:description>The total cell count for each vial.</ns:description>
         <ns:formatString>0.####</ns:formatString>
+      </ns:column>
+      <ns:column columnName="TubeType">
+        <ns:description>The type of vial.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -1214,6 +1220,9 @@
       <ns:column columnName="TotalCellCount">
         <ns:description>The total cell count for each vial.</ns:description>
         <ns:formatString>0.####</ns:formatString>
+      </ns:column>
+      <ns:column columnName="TubeType">
+        <ns:description>The type of vial.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
