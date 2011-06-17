@@ -34,13 +34,32 @@ import org.labkey.api.view.ViewServlet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Date;
-import java.util.*;
+import java.sql.NClob;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 
 /**
@@ -118,13 +137,6 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     }
 
 
-    public CachedRowSetImpl(ResultSetMetaData md, Map<String, Object>[] maps, boolean isComplete)
-    {
-        this();
-        init(md, maps, isComplete);
-    }
-
-
     private void init(ResultSetMetaData md, List<Map<String,Object>> maps, boolean isComplete)
     {
         // UNDONE(MAB): consider moving to ArrayList internally to avoid this array nonsense
@@ -140,6 +152,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
         if (_debug)
         {
             _stackTrace = Thread.currentThread().getStackTrace();
+
             if (HttpView.getStackSize() > 0)
             {
                 try
@@ -151,6 +164,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
                     // we might not be in a view thread...
                 }
             }
+
             _threadName = Thread.currentThread().getName();
         }
     }
@@ -178,6 +192,13 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
         {
             throw new RuntimeSQLException(x);
         }
+    }
+
+
+    // Set an alternate stack trace -- good for async queries, to indicate original creation stack trace
+    public void setStackTrace(StackTraceElement[] stackTrace)
+    {
+        _stackTrace = stackTrace;
     }
 
 

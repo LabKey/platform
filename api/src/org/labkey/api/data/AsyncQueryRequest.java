@@ -16,26 +16,28 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.UnexpectedException;
-import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import java.sql.Statement;
-import java.sql.SQLException;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.concurrent.Callable;
 
 public class AsyncQueryRequest<T>
 {
-    static private final Logger _log = Logger.getLogger(AsyncQueryRequest.class);
-    static private class CancelledException extends RuntimeException
+    private static final Logger _log = Logger.getLogger(AsyncQueryRequest.class);
+
+    private static class CancelledException extends RuntimeException
     {
     }
 
-    HttpServletResponse _response;
-    HttpServletResponse _rootResponse;
+    private final StackTraceElement[] _creationStackTrace;
+    private final HttpServletResponse _rootResponse;
+
     boolean _cancelled;
     Statement _statement;
 
@@ -44,12 +46,14 @@ public class AsyncQueryRequest<T>
 
     public AsyncQueryRequest(HttpServletResponse response)
     {
-        _response = response;
-        _rootResponse = response;
-        while (_rootResponse instanceof HttpServletResponseWrapper)
+        _creationStackTrace = Thread.currentThread().getStackTrace();
+
+        while (response instanceof HttpServletResponseWrapper)
         {
-            _rootResponse = (HttpServletResponse) ((HttpServletResponseWrapper) _rootResponse).getResponse();
+            response = (HttpServletResponse) ((HttpServletResponseWrapper) response).getResponse();
         }
+
+        _rootResponse = response;
     }
 
     synchronized public void setStatement(Statement statement)
@@ -168,5 +172,10 @@ public class AsyncQueryRequest<T>
             cancel();
             throw ioe;
         }
+    }
+
+    public StackTraceElement[] getCreationStackTrace()
+    {
+        return _creationStackTrace;
     }
 }

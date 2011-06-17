@@ -48,6 +48,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -124,10 +125,10 @@ public class Table
 
     private static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters) throws SQLException
     {
-        return _executeQuery(conn, sql, parameters, null, false, null);
+        return _executeQuery(conn, sql, parameters, false, null, null);
     }
 
-    private static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, AsyncQueryRequest asyncRequest, boolean scrollable, Integer statementRowCount)
+    private static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount)
             throws SQLException
     {
         ResultSet rs;
@@ -308,7 +309,7 @@ public class Table
         return executeQuery(schema, sql, parameters, rowCount, 0, cache, scrollable, null, null, null);
     }
 
-    private static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, long scrollOffset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log, Integer statementRowCount)
+    private static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, long scrollOffset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log, @Nullable Integer statementRowCount)
             throws SQLException
     {
         if (log == null) log = _log;
@@ -319,13 +320,13 @@ public class Table
         try
         {
             conn = schema.getScope().getConnection(log);
-            rs = _executeQuery(conn, sql, parameters, asyncRequest, scrollable, statementRowCount);
+            rs = _executeQuery(conn, sql, parameters, scrollable, asyncRequest, statementRowCount);
 
             while (scrollOffset > 0 && rs.next())
                 scrollOffset--;
 
             if (cache)
-                return cacheResultSet(rs, rowCount);
+                return cacheResultSet(rs, rowCount, asyncRequest);
             else
                 return new ResultSetImpl(conn, schema, rs, rowCount);
         }
@@ -382,7 +383,7 @@ public class Table
 
             if (clss == java.util.Map.class)
             {
-                CachedRowSetImpl copy = (CachedRowSetImpl)cacheResultSet(rs, 0);
+                CachedRowSetImpl copy = (CachedRowSetImpl)cacheResultSet(rs, 0, null);
                 //noinspection unchecked
                 K[] arrayListMaps = (K[])(copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
                 copy.close();
@@ -1345,7 +1346,7 @@ public class Table
     }
 
     private static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
-            Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, boolean cache, AsyncQueryRequest asyncRequest)
+            Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, boolean cache, @Nullable AsyncQueryRequest asyncRequest)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
@@ -1359,6 +1360,7 @@ public class Table
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT ");
         boolean first = true;
+
         for (Aggregate agg : aggregates)
         {
             if (agg.isCountStar() || columnMap.containsKey(agg.getColumnName()))
@@ -1370,6 +1372,7 @@ public class Table
                 sql.append(agg.getSQL(table.getSqlDialect(), columnMap));
             }
         }
+
         Map<String, Aggregate.Result> results = new HashMap<String, Aggregate.Result>();
 
         // if we didn't find any columns, then skip the SQL call completely
@@ -1416,7 +1419,7 @@ public class Table
     }
 
 
-    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log)
+    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
             throws SQLException
     {
         assert Table.checkAllColumns(table, select, "selectForDisplay() select columns");
@@ -1586,9 +1589,14 @@ public class Table
     }
 
 
-    private static TableResultSet cacheResultSet(ResultSet rs, int rowCount) throws SQLException
+    private static TableResultSet cacheResultSet(ResultSet rs, int rowCount, @Nullable AsyncQueryRequest asyncRequest) throws SQLException
     {
-        return new CachedRowSetImpl(rs, rowCount);
+        CachedRowSetImpl crsi = new CachedRowSetImpl(rs, rowCount);
+
+        if (null != asyncRequest && AppProps.getInstance().isDevMode())
+            crsi.setStackTrace(asyncRequest.getCreationStackTrace());
+
+        return crsi;
     }
 
 
