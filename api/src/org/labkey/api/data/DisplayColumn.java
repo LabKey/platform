@@ -586,6 +586,7 @@ public abstract class DisplayColumn extends RenderColumn
                 navtree.addChild(desc);
 
                 NavTree clearSort = new NavTree("Clear Sort");
+                clearSort.setId(baseId + ":clear");
                 clearSort.setDisabled(null == sortField || !isRemoveableSort);
                 if(null != sortField)
                     clearSort.setScript(getClearSortScript(ctx));
