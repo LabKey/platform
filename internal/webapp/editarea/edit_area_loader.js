@@ -163,7 +163,8 @@ EditAreaLoader.prototype ={
 			o.isChrome = ua.replace(/^.*?Chrome.*?([0-9\.]+).*$/i, "$1");
 			o.isSafari	= false;
 		}
-		
+
+        if(o.isIE && o.isIE >= 9){o.isIE=false;o.isWebKit=true;}
 	},
 	
 	window_loaded : function(){

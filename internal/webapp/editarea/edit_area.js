@@ -18,8 +18,10 @@
 		
 		parent.editAreaLoader.set_browser_infos(t); 	// navigator identification
 		// fix IE8 detection as we run in IE7 emulate mode through X-UA <meta> tag
-		if( t.isIE >= 8 )
+		if( t.isIE == 8 )
 			t.isIE	= 7;
+        if( t.isIE >= 9 )
+            t.isIE = false;
 		
 		t.last_selection={};		
 		t.last_text_to_highlight="";
@@ -227,7 +229,7 @@
 		
 		if( t.isSafari ){
 			t.editor_area.style.position	= "absolute";
-			a.style.marginLeft		="-3px";
+			a.style.marginLeft		="0px";
 			if( t.isSafari < 3.2 ) // Safari 3.0 (3.1?)
 				a.style.marginTop	="1px";
 		}
