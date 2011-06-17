@@ -2,7 +2,13 @@ package org.labkey.study.model;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import java.util.List;
 
@@ -176,6 +182,8 @@ public class ParticipantClassification extends Entity
     public JSONObject toJSON()
     {
         JSONObject json = new JSONObject();
+        ViewContext context = HttpView.currentContext();
+        User currentUser = context != null ? context.getUser() : null;
 
         json.put("rowId", getRowId());
         json.put("shared", isShared());
@@ -183,8 +191,9 @@ public class ParticipantClassification extends Entity
         json.put("type", getType());
         json.put("autoUpdate", isAutoUpdate());
         json.put("created", getCreated());
-        json.put("createdBy", getCreatedBy());
-        json.put("container", getContainerId());
+
+        User user = UserManager.getUser(getCreatedBy());
+        json.put("createdBy", createDisplayValue(getCreatedBy(), user != null ? user.getDisplayName(currentUser) : getCreatedBy()));
 
         if (Type.query.equals(Type.valueOf(getType())))
         {
@@ -209,6 +218,16 @@ public class ParticipantClassification extends Entity
             }
             json.put("participantIds", ptids);
         }
+
+        return json;
+    }
+
+    private JSONObject createDisplayValue(Object value, Object displayValue)
+    {
+        JSONObject json = new JSONObject();
+
+        json.put("value", value);
+        json.put("displayValue", displayValue);
 
         return json;
     }

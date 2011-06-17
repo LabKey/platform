@@ -51,7 +51,7 @@
                 {name: 'rowId', type: 'integer'},
                 {name: 'label', type: 'string'},
                 {name: 'type', type: 'string'},
-                {name: 'createdBy', type: 'string'},
+                {name: 'createdBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
                 {name: 'shared', type: 'string'},
                 {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString()}}
             ],
