@@ -18,6 +18,7 @@ package org.labkey.api.reader;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ArrayListMap;
@@ -35,10 +36,14 @@ import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.api.query.BatchValidationException;
 
+import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -92,24 +97,57 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         _mvIndicatorContainer = mvIndicatorContainer;
     }
 
+
     public static DataLoader getDataLoaderForFile(File file) throws ServletException, IOException
     {
         return getDataLoaderForFile(file, null);
     }
 
+
+    public static DataLoader getDataLoaderForFile(MultipartFile file) throws ServletException, IOException
+    {
+        String origName = StringUtils.trimToEmpty(file.getOriginalFilename());
+        String filename = origName.toLowerCase();
+
+        if (filename.endsWith(".xls") || filename.endsWith("xlsx"))
+        {
+            File f = File.createTempFile("import", origName);
+            f.deleteOnExit();
+            file.transferTo(f);
+            ExcelLoader loader = new ExcelLoader(f, true);
+            loader.setDeleteFileOnClose(true);
+            return loader;
+        }
+        else if (filename.endsWith(".txt") || filename.endsWith(".tsv"))
+        {
+            Reader r = new InputStreamReader(file.getInputStream());
+            return new TabLoader(r, true);
+        }
+        else if (filename.endsWith(".csv"))
+        {
+            Reader r = new InputStreamReader(file.getInputStream());
+            TabLoader loader = new TabLoader(r, true);
+            loader.parseAsCSV();
+            return loader;
+        }
+
+        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv or .csv.");
+    }
+
+
     public static DataLoader getDataLoaderForFile(File file, Container mvIndicatorContainer) throws ServletException, IOException
     {
-        String filename = file.getName();
+        String filename = file.getName().toLowerCase();
 
-        if (filename.endsWith("xls") || filename.endsWith("xlsx"))
+        if (filename.endsWith(".xls") || filename.endsWith(".xlsx"))
         {
             return new ExcelLoader(file, true, mvIndicatorContainer);
         }
-        else if (filename.endsWith("txt") || filename.endsWith("tsv"))
+        else if (filename.endsWith(".txt") || filename.endsWith(".tsv"))
         {
             return new TabLoader(file, true, mvIndicatorContainer);
         }
-        else if (filename.endsWith("csv"))
+        else if (filename.endsWith(".csv"))
         {
             TabLoader loader = new TabLoader(file, true, mvIndicatorContainer);
             loader.parseAsCSV();
@@ -118,6 +156,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
         throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv or .csv.");
     }
+
 
     public boolean isThrowOnErrors()
     {

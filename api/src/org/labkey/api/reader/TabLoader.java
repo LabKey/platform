@@ -112,8 +112,13 @@ public class TabLoader extends DataLoader
 
     public TabLoader(Reader reader, Boolean hasColumnHeaders) throws IOException
     {
+        this(reader, hasColumnHeaders, null);
+    }
+    
+    public TabLoader(Reader reader, Boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    {
         // This constructor doesn't support MV Indicators:
-        super(null);
+        super(mvIndicatorContainer);
         if (reader.markSupported())
             _reader = reader;
         else

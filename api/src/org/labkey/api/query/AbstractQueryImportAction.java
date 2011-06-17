@@ -2,7 +2,9 @@ package org.labkey.api.query;
 
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExtFormResponseWriter;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -19,6 +21,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
@@ -26,6 +30,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -93,11 +98,21 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         DataLoader loader = null;
 
         String text = getViewContext().getRequest().getParameter("text");
-        if (!StringUtils.isEmpty(text))
+        if (null != StringUtils.trimToNull(text))
         {
             hasPostData = true;
             loader = new TabLoader(text, true);
             // di = loader.getDataIterator(ve);
+        }
+        else if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
+        {
+            Map<String, MultipartFile> files = ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
+            MultipartFile file = null==files ? null : files.get("file");
+            if (null != file && file.getSize() > 0)
+            {
+                hasPostData = true;
+                loader = DataLoader.getDataLoaderForFile(file);
+            }
         }
 
         if (!hasPostData)
@@ -119,6 +134,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return new ApiSimpleResponse(response);
     }
 
+    @Override
+    public ApiResponseWriter createResponseWriter() throws IOException
+    {
+        return new ExtFormResponseWriter(getViewContext().getRequest(), getViewContext().getResponse());
+    }
 
     protected void validatePermission(User user, BindException errors)
     {

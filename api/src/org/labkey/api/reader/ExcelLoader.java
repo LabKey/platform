@@ -50,6 +50,8 @@ public class ExcelLoader extends DataLoader
 
     private String sheetName;
 
+    private boolean deleteFileOnClose = false;
+
     public ExcelLoader(File file) throws IOException
     {
         this(file, false);
@@ -76,6 +78,11 @@ public class ExcelLoader extends DataLoader
         }
     }
 
+    public void setDeleteFileOnClose(boolean del)
+    {
+        deleteFileOnClose = del;
+    }
+    
     public List<String> getSheetNames()
     {
         List<String> names = new ArrayList<String>();
@@ -168,8 +175,12 @@ public class ExcelLoader extends DataLoader
 
     public void close()
     {
-//        workbook.close();
+        if (deleteFileOnClose && null != _file)
+        {
+            _file.delete();
+        }
     }
+
 
     private class ExcelIterator extends DataLoaderIterator
     {

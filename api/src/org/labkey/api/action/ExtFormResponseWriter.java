@@ -23,9 +23,12 @@ import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 
 /*
@@ -58,6 +61,9 @@ import java.util.List;
  */
 public class ExtFormResponseWriter extends ApiJsonWriter
 {
+    boolean isMultipartRequest = false;
+    boolean startResponse = true;
+    
     public ExtFormResponseWriter(HttpServletResponse response) throws IOException
     {
         super(response);
@@ -67,6 +73,15 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     public  ExtFormResponseWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
     {
         super(response, contentTypeOverride);
+        setErrorResponseStatus(HttpServletResponse.SC_OK);
+    }
+
+    public ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response) throws IOException
+    {
+        super(response);
+        if (request instanceof MultipartHttpServletRequest)
+            isMultipartRequest = true;
+        response.setContentType(isMultipartRequest ? "text/html" : CONTENT_TYPE_JSON);
         setErrorResponseStatus(HttpServletResponse.SC_OK);
     }
 
@@ -140,5 +155,27 @@ public class ExtFormResponseWriter extends ApiJsonWriter
             status = errorResponseStatus;
 
         write(e, status);
+    }
+
+
+    @Override
+    protected Writer getWriter()
+    {
+        Writer w = super.getWriter();
+        if (null == w)
+            return null;
+        if (isMultipartRequest && startResponse)
+        {
+            startResponse = false;
+            try
+            {
+            w.write("<html><body><textarea>");
+            }
+            catch (IOException x)
+            {
+                
+            }
+        }
+        return w;
     }
 }

@@ -43,6 +43,7 @@
 
         importForm.getForm().submit(
         {
+            clientValidation : false,
             success: function(form, action)
             {
                 Ext.getBody().unmask();
@@ -136,21 +137,29 @@
     function onReady()
     {
         importForm = new LABKEY.ext.FormPanel({
+            fileUpload : true,
             errorEl : 'errorDiv',
             labelWidth: 75, // label settings here cascade unless overridden
             url:endpoint,
             title: 'Import text',
             bodyStyle:'padding:5px 5px 0',
             width: 600,
-            defaults: {width: 500},
             defaultType: 'textfield',
 
-            items: [{
-                id: <%=q(tsvId)%>,
-                xtype: 'textarea',
-                fieldLabel: 'Text',
-                name: 'text',
-                height:500 }
+            items: [
+                {
+                    xtype: 'textfield',
+                    inputType: 'file',
+                    name : 'file'
+                },
+                {
+                    id: <%=q(tsvId)%>,
+                    xtype: 'textarea',
+                    fieldLabel: 'Text',
+                    name: 'text',
+                    width:500,
+                    height:500
+                }
             ],
 
             buttons: [{
