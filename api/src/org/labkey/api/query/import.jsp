@@ -105,6 +105,13 @@
         var errors = _getGlobalErrors([], result);
         for (var i=0 ; i<errors.length ; i++)
             errors[i] = $html(errors[i]);
+        if (errors.length > 20)
+        {
+            var total = errors.length;
+            errors = errors.slice(0,19);
+            errors.push("... total of " + total + " errors");
+        }
+
         var errorHtml = errors.join("<br>");
         return errorHtml;
     }
@@ -112,11 +119,14 @@
 
     function _getGlobalErrors(collection, errors)
     {
-        if (errors["exception"] || errors["msg"] || errors["_form"])
+        var count = collection.length;
+
+        if (errors["msg"] || errors["_form"])
         {
             collection.push(errors["exception"] || errors["msg"] || errors["_form"]);
         }
-        else if (Ext.isArray(errors))
+        
+        if (Ext.isArray(errors))
         {
             for (var i=0 ; i<errors.length ; i++)
                 _getGlobalErrors(collection, errors[i]);
@@ -125,9 +135,18 @@
         {
             _getGlobalErrors(collection, errors.errors);
         }
-        else
+
+        if (collection.length == count)
         {
-            collection.push($json(errors));
+            // don't want to double up messages, so ignore errors.exception unless there are no other messages
+            if (errors["exception"])
+            {
+                collection.push(errors.exception);
+            }
+            else
+            {
+                collection.push($json(errors));
+            }
         }
 
         return collection;
@@ -150,7 +169,8 @@
                 {
                     xtype: 'textfield',
                     inputType: 'file',
-                    name : 'file'
+                    name : 'file',
+                    width:200
                 },
                 {
                     id: <%=q(tsvId)%>,

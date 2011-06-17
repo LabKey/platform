@@ -57,7 +57,11 @@ public class HomeTemplate extends PrintTemplate
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         WebPartView wikiMenu = null;
         if (null != c && null != c.getProject() && ModuleLoader.getInstance().isStartupComplete() && null != wikiService)
+        {
             wikiMenu = wikiService.getView(c.getProject(), "_navTree", false);
+            if (null != wikiMenu)
+                wikiMenu.setFrame(FrameType.NONE); // 12336: Explicitly don't frame the _header override.
+        }
 
         if (null != wikiMenu)
             setView("menu", wikiMenu);

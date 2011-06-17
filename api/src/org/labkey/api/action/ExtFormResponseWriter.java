@@ -158,7 +158,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     }
 
 
-    @Override
+/*    @Override
     protected Writer getWriter()
     {
         Writer w = super.getWriter();
@@ -178,4 +178,5 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         }
         return w;
     }
+*/
 }
