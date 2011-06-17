@@ -78,6 +78,18 @@
         margin : 0 0 10px 0;
     }
 
+    /* Masking style */
+    .ext-el-mask-msg {
+        border: none;
+        background-color: transparent;
+    }
+
+    .indicator-helper {
+        margin: auto !important;
+        margin-left: 3px !important;
+        padding-left: 25px !important;
+    }
+
 </style>
 <script type="text/javascript">
     LABKEY.requiresScript("query/QueryEditorPanel.js", true);

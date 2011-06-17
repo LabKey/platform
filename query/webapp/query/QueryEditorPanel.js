@@ -185,6 +185,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 frame     : 'none',
                 title     : '',
                 masking   : false,
+                timeout   : Ext.Ajax.timeout, // 12451 -- control the timeout
                 success   : function(response) {
                     this.showErrors();
                     this.fireEvent('loaded', true);
@@ -555,7 +556,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         this.sourceEditor.on('beforeExecute', function(schema, sql){
             this.sourceEditor.setDisplay(_dataTabId);
             this.tabPanel.setActiveTab(this.dataTab);
-            this.dataTab.getEl().mask('Loading Custom Query...');
+            this.dataTab.getEl().mask('Loading Query...', 'loading-indicator indicator-helper');
         }, this);
 
         this.sourceEditor.on('loaded', function(loaded){
