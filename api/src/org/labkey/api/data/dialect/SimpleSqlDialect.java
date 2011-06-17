@@ -32,6 +32,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -145,7 +146,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
 
     @NotNull
     @Override
-    protected String getReservedWords()
+    protected Set<String> getReservedWords()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

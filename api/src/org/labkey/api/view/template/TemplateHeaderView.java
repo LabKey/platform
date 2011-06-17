@@ -111,6 +111,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
         }
 */
 
+/*
         //FIX: 8853
         //show admins deprecation warning for sql server 2000
         if (null != user && user.isAdministrator() && "Microsoft SQL Server".equalsIgnoreCase(coreScope.getDatabaseProductName()))
@@ -122,7 +123,6 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             }
         }
 
-/*
         Commented out because server no longer starts with Java 1.5
 
         //FIX: 9666

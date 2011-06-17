@@ -86,13 +86,13 @@ public abstract class SqlDialect
     {
         initializeSqlTypeNameMap();
         initializeSqlTypeIntMap();
-        _reservedWordSet = Sets.newCaseInsensitiveHashSet(new CsvSet(getReservedWords()));
+        _reservedWordSet = getReservedWords();
 
         assert MemTracker.put(this);
     }
 
 
-    protected abstract @NotNull String getReservedWords();
+    protected abstract @NotNull Set<String> getReservedWords();
 
     protected String getOtherDatabaseThreads()
     {
@@ -213,7 +213,7 @@ public abstract class SqlDialect
         Integer i = _sqlTypeNameMap.get(sqlTypeName);
 
         if (null != i)
-            return i.intValue();
+            return i;
         else
         {
             LOG.info("Unknown SQL Type Name \"" + sqlTypeName + "\"; using String instead.");
@@ -511,6 +511,9 @@ public abstract class SqlDialect
         // sets are a perfect match.
         //if (!shouldRemove.isEmpty())
         //    throw new IllegalStateException("Need to remove " + shouldRemove.size() + " keywords from " + getProductName() + " reserved word list: " + shouldRemove);
+
+        if (!shouldRemove.isEmpty())
+            LOG.info("Should remove " + shouldRemove.size() + " keywords from " + getClass().getName() + " reserved word list: " + shouldRemove);
     }
 
 
