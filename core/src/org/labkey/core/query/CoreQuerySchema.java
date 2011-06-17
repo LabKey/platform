@@ -305,10 +305,6 @@ public class CoreQuerySchema extends UserSchema
 
     private void addGroupsColumn(FilteredTable users)
     {
-        // Don't add the column if MVC is not support (e.g., on SQL Server 2000)
-        if (!MultiValuedForeignKey.isSupported(getDbSchema().getSqlDialect()))
-            return;
-
         ColumnInfo groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
         groupsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("User")
         {
