@@ -51,7 +51,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
         if ("net.sourceforge.jtds.jdbc.Driver".equals(driverClassName))
-            return new MicrosoftSqlServer2000Dialect();
+            return new MicrosoftSqlServer2005Dialect();
         else
             return null;
     }
@@ -64,18 +64,16 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
 
         int version = databaseProductVersion.getVersionInt();
 
-        if (version < 90)
-        {
-            if (logWarnings)
-                _log.warn("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");
+        // TODO: Verify this version number
+        if (version >= 105)
+            return new MicrosoftSqlServer2008R2Dialect();
 
-            return new MicrosoftSqlServer2000Dialect();
-        }
+        if (version >= 100)
+            return new MicrosoftSqlServer2008Dialect();
 
         if (version >= 90)
             return new MicrosoftSqlServer2005Dialect();
 
-        // Not possible to reach here at this point
         throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
     }
 
@@ -94,11 +92,17 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
             badProductName("SQL Server", 1.0, 12.0, "");
             badProductName("sqlserver", 1.0, 12.0, "");
 
-            // < 9.0 should result in MicrosoftSqlServer2000Dialect -- no bad versions at the moment
-            good("Microsoft SQL Server", 0.0, 8.9, "", MicrosoftSqlServer2000Dialect.class);
+            // < 9.0 should result in bad version error
+            badVersion("Microsoft SQL Server", 0.0, 8.9, null);
 
-            // >= 9.0 should result in MicrosoftSqlServer2005Dialect
-            good("Microsoft SQL Server", 9.0, 11.0, "", MicrosoftSqlServer2005Dialect.class);
+            // >= 9.0 and < 10.0 should result in MicrosoftSqlServer2005Dialect
+            good("Microsoft SQL Server", 9.0, 9.9, "", MicrosoftSqlServer2005Dialect.class);
+
+            // >= 10.0 and < 10.5 should result in MicrosoftSqlServer2008Dialect
+            good("Microsoft SQL Server", 10.0, 10.4, "", MicrosoftSqlServer2008Dialect.class);
+
+            // >= 10.5 should result in MicrosoftSqlServer2008R2Dialect
+            good("Microsoft SQL Server", 10.5, 12.0, "", MicrosoftSqlServer2008R2Dialect.class);
         }
     }
 
@@ -109,31 +113,31 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
         {
             String goodSql =
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
-                            "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
-                            "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
-                            "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
-                            "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
-                            "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
-                            "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
-                            "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
-                            "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
-                            "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
+                    "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
+                    "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
+                    "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
+                    "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
+                    "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
+                    "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
+                    "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
+                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
+                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
 
             String badSql =
                     "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
-                            "   more comment\n" +
-                            "*/" +
-                            "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
-                            "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
-                            "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
-                            "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
-                            "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
-                            "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
-                            "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
+                    "   more comment\n" +
+                    "*/" +
+                    "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
+                    "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
+                    "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
+                    "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
+                    "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
+                    "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
+                    "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
 
             try
             {
-                SqlDialect dialect = new MicrosoftSqlServer2000Dialect();
+                SqlDialect dialect = new MicrosoftSqlServer2005Dialect();
                 TestUpgradeCode good = new TestUpgradeCode();
                 dialect.runSql(null, goodSql, good, null);
                 assertEquals(10, good.getCounter());
@@ -154,7 +158,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
         @Test
         public void testJdbcHelper()
         {
-            SqlDialect dialect = new MicrosoftSqlServer2000Dialect();
+            SqlDialect dialect = new MicrosoftSqlServer2005Dialect();
             JdbcHelper helper = dialect.getJdbcHelper();
 
             try

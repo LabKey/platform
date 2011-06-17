@@ -33,6 +33,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,10 +45,10 @@ import java.util.Set;
 public abstract class SasDialect extends SimpleSqlDialect
 {
     @Override
-    protected @NotNull String getReservedWords()
+    protected @NotNull Set<String> getReservedWords()
     {
         // SAS doesn't seem to have a way to escape reserved words, so we'll just claim we don't have any.
-        return "";
+        return Collections.emptySet();
     }
 
     protected String getProductName()

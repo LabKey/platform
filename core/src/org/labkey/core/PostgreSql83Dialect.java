@@ -19,6 +19,8 @@ package org.labkey.core;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CsvSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -56,6 +58,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -73,22 +76,23 @@ class PostgreSql83Dialect extends SqlDialect
     private final Map<String, Integer> _userDefinedTypeScales = new ConcurrentHashMap<String, Integer>();
 
     @Override
-    protected @NotNull String getReservedWords()
+    protected @NotNull Set<String> getReservedWords()
     {
-        return  "all, analyse, analyze, and, any, array, as, asc, asymmetric, authorization, binary, both, case, cast, " +
-                "check, collate, column, concurrently, constraint, create, cross, current_catalog, current_date, " +
-                "current_role, current_schema, current_time, current_timestamp, current_user, default, deferrable, desc, " +
-                "distinct, do, else, end, end-exec, except, fetch, for, foreign, freeze, from, full, grant, group, having, " +
-                "ilike, in, initially, inner, intersect, into, is, isnull, join, leading, left, like, limit, localtime, " +
-                "localtimestamp, natural, not, notnull, null, offset, on, only, or, order, outer, over, overlaps, placing, " +
-                "primary, references, returning, right, select, session_user, similar, some, symmetric, table, then, to, " +
-                "trailing, union, unique, user, using, variadic, verbose, when, where, window, with" +
+        return Sets.newCaseInsensitiveHashSet(new CsvSet(
+            "all, analyse, analyze, and, any, array, as, asc, asymmetric, authorization, binary, both, case, cast, " +
+            "check, collate, column, concurrently, constraint, create, cross, current_catalog, current_date, " +
+            "current_role, current_schema, current_time, current_timestamp, current_user, default, deferrable, desc, " +
+            "distinct, do, else, end, end-exec, except, fetch, for, foreign, freeze, from, full, grant, group, having, " +
+            "ilike, in, initially, inner, intersect, into, is, isnull, join, leading, left, like, limit, localtime, " +
+            "localtimestamp, natural, not, notnull, null, offset, on, only, or, order, outer, over, overlaps, placing, " +
+            "primary, references, returning, right, select, session_user, similar, some, symmetric, table, then, to, " +
+            "trailing, union, unique, user, using, variadic, verbose, when, where, window, with" +
 
-                // for <= PostgreSQL 8.4
-                ", between, new, off, old" +
+            // for <= PostgreSQL 8.4
+            ", between, new, off, old" +
 
-                // For = PostgreSQL 8.3
-                ", false, true";
+            // For = PostgreSQL 8.3
+            ", false, true"));
     }
 
     @Override

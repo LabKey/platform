@@ -14,28 +14,13 @@
  * limitations under the License.
  */
 
-package org.labkey.core;
-
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CsvSet;
-
-import java.util.Set;
+package org.labkey.bigiron.mssql;
 
 /*
 * User: adam
-* Date: May 22, 2011
-* Time: 9:28:29 PM
+* Date: Jun 12, 2011
+* Time: 3:17:39 PM
 */
-public class PostgreSql90Dialect extends PostgreSql84Dialect
+public class MicrosoftSqlServer2008R2Dialect extends MicrosoftSqlServer2008Dialect
 {
-    @NotNull
-    @Override
-    protected Set<String> getReservedWords()
-    {
-        Set<String> words = super.getReservedWords();
-
-        words.removeAll(new CsvSet("between, new, off, old"));
-
-        return words;
-    }
 }

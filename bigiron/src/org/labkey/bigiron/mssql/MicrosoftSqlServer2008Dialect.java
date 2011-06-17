@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 LabKey Corporation
+ * Copyright (c) 2008-2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,12 @@
  * limitations under the License.
  */
 
-package org.labkey.core;
+package org.labkey.bigiron.mssql;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CsvSet;
-
-import java.util.Set;
-
-/*
-* User: adam
-* Date: May 22, 2011
-* Time: 9:28:29 PM
-*/
-public class PostgreSql90Dialect extends PostgreSql84Dialect
+/**
+ * User: kevink
+ * Date: Jan 28, 2008 2:56:27 PM
+ */
+public class MicrosoftSqlServer2008Dialect extends MicrosoftSqlServer2005Dialect
 {
-    @NotNull
-    @Override
-    protected Set<String> getReservedWords()
-    {
-        Set<String> words = super.getReservedWords();
-
-        words.removeAll(new CsvSet("between, new, off, old"));
-
-        return words;
-    }
 }
