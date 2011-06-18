@@ -1069,6 +1069,7 @@ public class ContainerManager
                 CORE.getSchema().getScope().commitTransaction();
 
                 clearCache();  // Clear the entire cache, since containers cache their full paths
+                getChildrenMap(newParent); // reload the cache
             }
 
         }
