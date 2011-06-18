@@ -231,18 +231,16 @@ function init() {
         var _n = folderTree.getSelectionModel().getSelectedNodes();
         var tool = folderTree.getTopToolbar();
 
-        if (node)
-            selectedFolder = node;
-        else
-            console.error("Failed to retrieve the selected folder.");
-
         if (_n.length > 1)
             tool.disable();
         else {
             tool.enable();
-            folderTree.rename.setDisabled(selectedFolder.attributes.notModifiable);
-            folderTree.move.setDisabled(selectedFolder.attributes.notModifiable);
-            folderTree.remove.setDisabled(selectedFolder.attributes.notModifiable);
+            if (node) {
+                selectedFolder = node;
+                folderTree.rename.setDisabled(selectedFolder.attributes.notModifiable);
+                folderTree.move.setDisabled(selectedFolder.attributes.notModifiable);
+                folderTree.remove.setDisabled(selectedFolder.attributes.notModifiable);
+            }
         }
 
         folderTree.info.enable();
@@ -264,6 +262,7 @@ function init() {
     function unmask() {
         Ext.get('folderdiv').unmask();
         folderTree.r('');
+        Ext.Msg.hide();
     }
 
     function onRightClick(node, e){
@@ -289,6 +288,8 @@ function init() {
 
         r('Processing ' + e.dropNode.length + ' folders.');
 
+        var progress = e.dropNode.length > 1;
+        var started = 0;
         var c = 0;
         var exeSet = [];
         var isMove = false;
@@ -339,7 +340,6 @@ function init() {
                     function move(){
 
                         // Make move request
-                        mask("Moving Folders. This could take a few minutes...");
                         LABKEY.Security.moveContainer({
                             container : s.attributes.containerPath,
                             parent    : d.attributes.containerPath,
@@ -351,21 +351,48 @@ function init() {
                                     if (f == (e.dropNode.length-1)) {
                                         if (s.parentNode) {
                                             var p = s.parentNode;
-                                            folderTree.getLoader().load(p);
-                                            p.expand();
+                                            var _l = folderTree.getLoader();
+                                            var fg = function() {
+                                                _l.un('load', fg);
+                                                p.expand();
+                                            };
+                                            _l.requestData(p, function() {
+                                                _l.on('load', fg);
+                                                _l.load(p);
+                                            });
                                         }
+
+                                        onSuccess(response);
                                     }
 
-                                    onSuccess(response);
                                     successHandler();
                                 }
-                                else { failureHandler(response); }
+                                else { failureHandler(response, null, s, d); }
                             },
-                            failure   : failureHandler
+                            failure   : function(response, ops) {
+                                failureHandler(response, ops, s, d);
+                            }
                         });
 
                     }
 
+                    function startMove() {
+                        if (progress){
+                            if (!started) {
+                                Ext.Msg.progress('Moving Folders', '', s.attributes.containerPath);
+                                started = 1;
+                                r('started is ' + started);
+                            }
+                            else{
+                               started = started + 1;
+                                r('started is ' + started);
+                               Ext.Msg.updateProgress((started/e.dropNode.length), s.attributes.containerPath);
+                            }
+                        }
+                        else { mask("Moving Folders. This could take a few minutes..."); }
+                        move();
+                    }
+                    
                     s.bubble(function(ps){
                         if (ps.attributes.isProject){
                             d.bubble(function(pd){
@@ -376,7 +403,7 @@ function init() {
                                     m.yes = 'Confirm Move';
                                     m.no  = 'Cancel';
 
-                                    if (confirmation) move();
+                                    if (confirmation) startMove();
                                     else if (ps.attributes.id == pd.attributes.id) {
                                         var _t, _msg;
                                         if (e.dropNode.length > 1) {
@@ -391,13 +418,12 @@ function init() {
                                         Ext.Msg.confirm(_t, _msg,
                                                 function(btn, text){
                                                     confirmation = true;
-                                                    if (btn == 'yes'){ move(); }
+                                                    if (btn == 'yes'){ startMove(); }
                                                     else {
                                                         // Rollback
                                                         confirmation = false;
-                                                        folderTree.getLoader().load(ps);
                                                         folderTree.getLoader().load(pd);
-                                                        ps.expand();
+                                                        pd.expand();
                                                     }
                                                 });
                                     }
@@ -407,7 +433,7 @@ function init() {
                                                 '<br/><b>This action cannot be undone.</b>',
                                                 function(btn, text){
                                                     confirmation = true;
-                                                    if (btn == 'yes'){ move(); }
+                                                    if (btn == 'yes'){ startMove(); }
                                                     else {
                                                         // Rollback
                                                         confirmation = false;
@@ -440,11 +466,12 @@ function init() {
             else {
                 // Done - reset state
                 r('confirmation reset');
+                folderTree.r('');
                 confirmation = false;
             }
         }
 
-        function failureHandler(response, opts){
+        function failureHandler(response, opts, s, d){
             if (response && response.errors) {
                 var errors = response.errors;
                 var _msg = "";
@@ -455,6 +482,10 @@ function init() {
             }
             else {
                 Ext.Msg.alert('Operation Failed', 'Failed to complete move.');
+            }
+            if (s && d && s.parentNode && d.parentNode) {
+                folderTree.getLoader().load(s.parentNode);
+                folderTree.getLoader().load(d.parentNode);
             }
             unmask();
         }
@@ -530,7 +561,7 @@ function init() {
                 // check if same parent, check if root node -- cannot elevate to project
                 if (target.parentNode) {
                     target = target.parentNode;
-                    r('Target set to ' + target.attributes.containerPath);
+                    folderTree.r('Move to ' + target.attributes.containerPath);
                     if (target.attributes.containerPath === undefined) {
                         folderTree.r('');
                         return {target: target, cancel: true};
@@ -559,6 +590,7 @@ function init() {
                 success : function() {
 
                     if (alpha) {
+                        confirmation = false;
                         folderTree.getLoader().load(alphaNode);
                         alphaNode.expand();
                     }
@@ -590,6 +622,7 @@ function init() {
                     confirmation = false; // 12402
                     if (s.parentNode) {
                         var node = s.parentNode;
+                        r('loading ' + node.attributes.containerPath);
                         folderTree.getLoader().load(node);
                         node.expand();
                     }
