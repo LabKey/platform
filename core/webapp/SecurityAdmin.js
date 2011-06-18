@@ -631,10 +631,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
 function _link(text,href)
 {
-    var html = ["[",
-        {tag:'a', href:(href||'#'), children:$h(text)},
-        "]"];
-    return $dom.markup(html);
+    return LABKEY.Utils.textLink({
+        href : href || '#',
+        text : text
+    });
 }
 function $open(href)
 {
@@ -642,10 +642,11 @@ function $open(href)
 }
 function _open(text,href)
 {
-    var html = ["[",
-        {tag:'a', href:'#', onclick:$h("$open('" + href + "')"), children:$h(text)},
-        "]"];
-    return $dom.markup(html);
+    return LABKEY.Utils.textLink({
+        href : '#',
+        onClick : "$open('" + href + "')",
+        text : text
+    });
 }
 
 
@@ -717,7 +718,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                 this.canEdit = false;
             if (this.canEdit)
             {
-                html.push(_link('manage group...', $url('security','group',this.user.Container||'/',{id:this.user.UserId})));
+                html.push(_link('manage group', $url('security','group',this.user.Container||'/',{id:this.user.UserId})));
                 html.push('&nbsp;');
             }
             if (this.user.UserId != SecurityCache.prototype.groupDevelopers)
