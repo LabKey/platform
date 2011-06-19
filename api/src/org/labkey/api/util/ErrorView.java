@@ -94,10 +94,21 @@ class ErrorView extends HttpView
         }
 
         if (null == c)
-            c = ContainerManager.getRoot();
+        {
+            try
+            {
+                c = ContainerManager.getRoot();
+            }
+            catch (Exception e)
+            {
+                // Exception at initial bootstrap (e.g., database not supported) might result in no root
+            }
+        }
+
+        // need the theme to apply style to ext-based body element
+        WebTheme theme = null == c ? WebTheme.DEFAULT : WebThemeManager.getTheme(c);
 
         //NOTE: BaseSeleniumWebTest requires errors to start with error number and include word "Error" in title
-        WebTheme theme = WebThemeManager.getTheme(c); // need the theme to apply style to ext-based body element
         out.println("<title>" + PageFlowUtil.filter(_renderer.getTitle()) + "</title>");
         out.println("</head><body style=\"margin:40px; background-color:#" + theme.getLinkColor() + "\">");
         _renderer.renderStart(out);

@@ -23,6 +23,8 @@ import java.awt.*;
  */
 public class WebTheme
 {
+    public static final WebTheme DEFAULT = new WebTheme("Seattle", "000000", "126495", "E7EFF4", "F8F8F8", "FFFFFF", "676767", "E0E6EA", false);
+
     private final String _friendlyName;
     private final String _stylesheet;
 

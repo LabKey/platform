@@ -16,7 +16,6 @@
 package org.labkey.api.data;
 
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -112,11 +111,5 @@ public class MultiValuedForeignKey implements ForeignKey
     public String getLookupColumnName()
     {
         return _fk.getLookupColumnName();
-    }
-
-    // TODO: Remove once we remove SQL Server 2000 support 
-    public static boolean isSupported(SqlDialect dialect)
-    {
-        return dialect.supportsGroupConcat() || dialect.supportsSelectConcat();
     }
 }

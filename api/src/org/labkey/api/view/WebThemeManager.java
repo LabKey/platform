@@ -39,15 +39,17 @@ public class WebThemeManager
     private static final WebTheme BROWN =   new WebTheme("Brown",   "212121", "682B16", "EBE2DB", "F4F4F4", "FFFFFF", "682B16", "DFDDD9", false);
     private static final WebTheme HARVEST = new WebTheme("Harvest", "212121", "892405", "F5E2BB", "F4F4F4", "FFFFFF", "892405", "DBD8D2", false);
     private static final WebTheme SAGE  =   new WebTheme("Sage",    "212121", "0F4F0B", "D4E4D3", "F4F4F4", "FFFFFF", "386135", "E1E5E1", false);
-    private static final WebTheme SEATTLE = new WebTheme("Seattle", "000000", "126495", "E7EFF4", "F8F8F8", "FFFFFF", "676767", "E0E6EA", false);
     private static final WebTheme MADISON = new WebTheme("Madison", "212121", "990000", "FFECB0", "FFFCF8", "FFFFFF", "CCCCCC", "EEEBE0", false);
-    
+    // NOTE: DEFAULT theme (SEATTLE) is defined in WebTheme, since we need it in cases where we can't initialize this class (e.g., database not supported exception)
+
     // handle Web Theme color management
     private static final String THEME_NAMES_KEY = "themeNames";
     private static final String THEME_COLORS_KEY = "themeColors-";
 
     @ScalabilityProblem   // Should use a proper cache
     private static final Map<String, WebTheme> _webThemeMap = new TreeMap<String, WebTheme>();
+
+    public final static WebTheme DEFAULT_THEME = WebTheme.DEFAULT;
 
     static
     {
@@ -62,7 +64,7 @@ public class WebThemeManager
             addToMap(HARVEST);
             addToMap(SAGE);
             addToMap(MADISON);
-            addToMap(SEATTLE);
+            addToMap(WebTheme.DEFAULT);
 
             if (null != themeNamesArray)
             {
@@ -115,8 +117,6 @@ public class WebThemeManager
         }
     }
 
-    public final static WebTheme DEFAULT_THEME = SEATTLE;
-
     public static WebTheme getTheme(Container c)
     {
         Container settingsContainer = LookAndFeelProperties.getSettingsContainer(c);
@@ -141,7 +141,7 @@ public class WebThemeManager
         if (null == theme)
         {
             if (c.isRoot())
-               theme = DEFAULT_THEME;
+               theme = WebTheme.DEFAULT;
             else
                theme = lookupTheme(c.getParent());   // Recurse up the chain
         }
