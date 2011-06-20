@@ -23,6 +23,10 @@ public enum QueryAction
     sourceQuery,
     metadataQuery,
     executeQuery,
+    importData
+        {
+            public String toString() {return "import";}
+        },
     deleteQuery,
     propertiesQuery,
     exportRowsExcel,
@@ -38,5 +42,5 @@ public enum QueryAction
     tableInfo,
     excelWebQueryDefinition,
     createSnapshot,
-    editSnapshot,
+    editSnapshot
 }

@@ -86,6 +86,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     protected DetailsURL _insertURL;
     protected DetailsURL _updateURL;
     protected DetailsURL _deleteURL;
+    protected DetailsURL _importURL;
     protected ButtonBarConfig _buttonBarConfig;
     private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(1);
 
@@ -430,6 +431,20 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
+    @Override
+    public ActionURL getImportDataURL(Container container)
+    {
+        if (_importURL == LINK_DISABLER)
+        {
+            return LINK_DISABLER_ACTION_URL;
+        }
+        if (_importURL != null)
+        {
+            return _importURL.copy(container).getActionURL();
+        }
+        return null;
+    }
+
     public ActionURL getDeleteURL(Container container)
     {
         if (_deleteURL == LINK_DISABLER)
@@ -508,7 +523,12 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         _insertURL = insertURL;
     }
-    
+
+    public void setImportURL(DetailsURL importURL)
+    {
+        _importURL = importURL;
+    }
+
     public void setDeleteURL(DetailsURL deleteURL)
     {
         _deleteURL = deleteURL;

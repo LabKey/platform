@@ -88,6 +88,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     private DetailsURL _gridURL;
     private DetailsURL _insertURL;
+    private DetailsURL _importURL;
     private DetailsURL _deleteURL;
     private DetailsURL _updateURL;
     private DetailsURL _detailsURL;
@@ -688,6 +689,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         if (_insertURL != null)
             return _insertURL.copy(container).getActionURL();
+        return null;
+    }
+
+    @Override
+    public ActionURL getImportDataURL(Container container)
+    {
+        if (_importURL != null)
+            return _importURL.copy(container).getActionURL();
         return null;
     }
 

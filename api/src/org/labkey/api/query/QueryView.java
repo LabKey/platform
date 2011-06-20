@@ -141,6 +141,7 @@ public class QueryView extends WebPartView<Object>
 
     private boolean _showExportButtons = true;
     private boolean _showInsertNewButton = true;
+    private boolean _showImportDataButton = true;
     private boolean _showDeleteButton = true;
     private boolean _showConfiguredButtons = true;
     private boolean _allowExportExternalQuery = true;
@@ -589,6 +590,16 @@ public class QueryView extends WebPartView<Object>
         _showInsertNewButton = showInsertNewButton;
     }
 
+    public boolean showImportDataButton()
+    {
+        return _showImportDataButton;
+    }
+
+    public void setShowImportDataButton(boolean show)
+    {
+        _showImportDataButton = show;
+    }
+
     public boolean showDeleteButton()
     {
         return _showDeleteButton;
@@ -649,16 +660,18 @@ public class QueryView extends WebPartView<Object>
             bar.add(createViewButton(_itemFilter));
         }
 
-        if (showInsertNewButton())
+        if (showInsertNewButton() && canInsert())
         {
-            if (canInsert())
-            {
-                ActionButton insertButton = createInsertButton();
-                if (insertButton != null)
-                {
-                    bar.add(insertButton);
-                }
-            }
+            ActionButton insertButton = createInsertButton();
+            if (insertButton != null)
+                bar.add(insertButton);
+        }
+
+        if (showImportDataButton() && canInsert())
+        {
+            ActionButton importButton = createImportButton();
+            if (importButton != null)
+                bar.add(importButton);
         }
 
         if (showDeleteButton())
@@ -705,6 +718,18 @@ public class QueryView extends WebPartView<Object>
         if (urlInsert != null)
         {
             ActionButton btnInsert = new ActionButton(urlInsert, "Insert New");
+            btnInsert.setActionType(ActionButton.Action.LINK);
+            return btnInsert;
+        }
+        return null;
+    }
+
+    public ActionButton createImportButton()
+    {
+        ActionURL urlImport = urlFor(QueryAction.importData);
+        if (urlImport != null && urlImport != TableInfo.LINK_DISABLER_ACTION_URL)
+        {
+            ActionButton btnInsert = new ActionButton(urlImport, "Import Data");
             btnInsert.setActionType(ActionButton.Action.LINK);
             return btnInsert;
         }
@@ -1623,6 +1648,11 @@ public class QueryView extends WebPartView<Object>
         if (table != null)
         {
             ExcelWriter ew = templateOnly ? getExcelTemplateWriter() : getExcelWriter();
+            if (templateOnly)
+            {
+//                ew.setCaptionType(ExcelWriter.CaptionType.Name);
+//                ew.setShowInsertableColumnsOnly(true);
+            }
             ew.write(response);
         }
     }

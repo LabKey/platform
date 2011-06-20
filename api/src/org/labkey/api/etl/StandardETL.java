@@ -159,28 +159,21 @@ public class StandardETL implements DataIteratorBuilder, Runnable
          * NOTE: sbouldn't really need DomainProperty here,
          * but not all information is available on the ColumnInfo
          * notably we need PropertyValidators
-         * notably we need PropertyValidators
+         *
+         * Anyway match up the columns and property descriptors and keep them in a set of TranslateHeleprs
          */
         List<ColumnInfo> cols = _target.getColumns();
         Map<FieldKey, TranslateHelper> unusedCols = new HashMap<FieldKey,TranslateHelper>(cols.size() * 2);
-        Map<String, TranslateHelper> targetAliasesMap = new CaseInsensitiveHashMap<TranslateHelper>(cols.size()*4);
+        Map<String, TranslateHelper> translateHeleprMap = new CaseInsensitiveHashMap<TranslateHelper>(cols.size()*4);
         for (ColumnInfo col : cols)
         {
             if (col.isMvIndicatorColumn() || col.isRawValueColumn())
                 continue;
             DomainProperty dp = propertiesMap.get(col.getPropertyURI());
             TranslateHelper p = new TranslateHelper(col,dp);
-            String name = col.getName();
-            targetAliasesMap.put(name, p);
             String uri = col.getPropertyURI();
-            if (null != uri && !targetAliasesMap.containsKey(uri))
-                targetAliasesMap.put(uri, p);
-            String label = col.getLabel();
-            if (null != label && !targetAliasesMap.containsKey(label))
-                targetAliasesMap.put(label, p);
-            for (String alias : col.getImportAliasSet())
-                if (!targetAliasesMap.containsKey(alias))
-                    targetAliasesMap.put(alias, p);
+            if (null != uri)
+                 translateHeleprMap.put(uri, p);
             unusedCols.put(col.getFieldKey(), p);
         }
 
@@ -190,20 +183,14 @@ public class StandardETL implements DataIteratorBuilder, Runnable
         //
         ValidationException setupError = new ValidationException();
 
+        ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input, _target);
         ArrayList<TranslateHelper> targetCols = new ArrayList<TranslateHelper>(input.getColumnCount()+1);
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
-            ColumnInfo from = input.getColumnInfo(i);
-
-            if (from.getName().toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
+            ColumnInfo targetCol = matches.get(i);
+            if (null == targetCol)
                 continue;
-
-            TranslateHelper to = null;
-            if (null == to && null != from.getPropertyURI())
-                to = targetAliasesMap.get(from.getPropertyURI());
-            if (null == to)
-                to = targetAliasesMap.get(from.getName());
-
+            TranslateHelper to =  translateHeleprMap.get(targetCol.getPropertyURI());
             if (null != to)
             {
                 if (!unusedCols.containsKey(to.target.getFieldKey()))

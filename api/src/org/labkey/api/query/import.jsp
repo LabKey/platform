@@ -31,6 +31,7 @@
 <div id="<%=errorDivId%>" class="labkey-error">
 <labkey:errors></labkey:errors>&nbsp;
 </div>
+<%=textLink("Download an Excel template workbook", bean.urlExcelTemplate)%>
 <div id="<%=importDivId%>">
 </div>
 <script> (function(){
@@ -172,7 +173,7 @@
 
     function onReady()
     {
-        importForm = new LABKEY.ext.FormPanel({
+        importForm = new Ext.form.FormPanel({
             fileUpload : true,
             errorEl : 'errorDiv',
             labelWidth: 75, // label settings here cascade unless overridden

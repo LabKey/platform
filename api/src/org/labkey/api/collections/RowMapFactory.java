@@ -67,6 +67,17 @@ public class RowMapFactory<V>
         return new RowMap<V>(_findMap, Arrays.asList(row));      // TODO: Pass through actual array?  Different class?  Static factory?
     }
 
+    /* will ignore values in source map that do not have values in the findmap */
+    public RowMap<V> getRowMap(Map<String,V> source)
+    {
+        RowMap<V> to = new RowMap<V>(_findMap);
+        for (String key : _findMap.keySet())
+        {
+            to.put(key, source.get(key));
+        }
+        return to;
+    }    
+
     protected Map<String, Integer> getFindMap()
     {
         return _findMap;

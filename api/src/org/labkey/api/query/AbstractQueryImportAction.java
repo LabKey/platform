@@ -21,6 +21,7 @@ import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormResponseWriter;
 import org.labkey.api.action.FormApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -32,6 +33,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -61,6 +63,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public String urlCancel = null;
         public String urlReturn = null;
         public String urlEndpoint = null;
+        public String urlExcelTemplate = null;
     }
 
     protected AbstractQueryImportAction(Class<? extends FORM> formClass)
@@ -88,12 +91,23 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         validatePermission(user, errors);
         ImportViewBean bean = new ImportViewBean();
-        if (null != _target && null != _target.getGridURL(c))
-            bean.urlReturn = _target.getGridURL(c).getLocalURIString(false);
-        else
-            bean.urlReturn =  url.clone().setAction("executeQuery").getLocalURIString(false);
-        bean.urlCancel = bean.urlReturn;
+
+        bean.urlReturn = StringUtils.trimToNull(url.getParameter(ActionURL.Param.returnUrl));
+        bean.urlCancel = StringUtils.trimToNull(url.getParameter(ActionURL.Param.cancelUrl));
+
+        if (null == bean.urlReturn)
+        {
+            if (null != _target && null != _target.getGridURL(c))
+                bean.urlReturn = _target.getGridURL(c).getLocalURIString(false);
+            else
+                bean.urlReturn =  url.clone().setAction("executeQuery").getLocalURIString(false);
+        }
+        if (null == bean.urlCancel)
+            bean.urlCancel = bean.urlReturn;
+
         bean.urlEndpoint = url.getLocalURIString();
+        bean.urlExcelTemplate = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(c, _target.getPublicSchemaName(), _target.getName()).getLocalURIString();
+
         return new JspView<ImportViewBean>(AbstractQueryImportAction.class, "import.jsp", bean, errors);
     }
 
