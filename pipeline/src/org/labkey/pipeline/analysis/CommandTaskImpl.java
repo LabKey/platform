@@ -26,7 +26,6 @@ import org.labkey.api.util.NetworkDrive;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.sql.SQLException;
 
 /**
  * <code>CommandTask</code>
@@ -357,7 +356,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 lineInterval = _factory.getPipeOutputLineInterval();
             }
 
-            getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval);
+            getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false);
 
             // Get rid of any copied input files.
             _wd.discardCopiedInputs();

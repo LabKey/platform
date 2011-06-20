@@ -497,6 +497,19 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
         if (!status.isActive())
         {
+            try
+            {
+                // This is a nasty hack. We want to delete the log file. One would think that Globus would be done
+                // writing to the file before it gives us a callback to tell us that the job is complete. However,
+                // in my testing about 50% of the time it's not quite done. We try to delete the file. Globus closes
+                // the file, which ends up recreating it. Worse, it comes back with different file permissions, set
+                // so that we can't read or write to it anymore, meaning that we can't delete it again or copy its
+                // contents to the main job log. So, we wait a bit for it to be flushed and then try deleting it.
+                // We'll have to wait and see if it's reliably done after ten seconds or not.
+                Thread.sleep(10000);
+            }
+            catch (InterruptedException ignored) {}
+
             appendAndDeleteLogFile(job, OutputType.out);
             appendAndDeleteLogFile(job, OutputType.err);
 
@@ -553,19 +566,6 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                     if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
                 }
             }
-
-            try
-            {
-                // This is a nasty hack. We want to delete the log file. One would think that Globus would be done
-                // writing to the file before it gives us a callback to tell us that the job is complete. However,
-                // in my testing about 50% of the time it's not quite done. We try to delete the file. Globus closes
-                // the file, which ends up recreating it. Worse, it comes back with different file permissions, set
-                // so that we can't read or write to it anymore, meaning that we can't delete it again or copy its
-                // contents to the main job log. So, we wait a bit for it to be flushed and then try deleting it.
-                // We'll have to wait and see if it's reliably done after ten seconds or not.
-                Thread.sleep(10000);
-            }
-            catch (InterruptedException e) {}
 
             job.getLogger().info("Deleting log file " + f + ", which is now of size " + f.length());
             f.delete();

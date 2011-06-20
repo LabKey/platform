@@ -16,6 +16,7 @@
 
 package org.labkey.pipeline.status;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
@@ -35,6 +36,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.pipeline.api.PipelineStatusManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -250,6 +252,8 @@ public class StatusController extends SpringActionController
 
     abstract public class DetailsBaseAction<FORM extends RowIdForm> extends FormViewAction<FORM>
     {
+        private PipelineStatusFile _statusFile;
+
         public ActionURL getSuccessURL(FORM form)
         {
             // Just redirect back to this page
@@ -268,12 +272,30 @@ public class StatusController extends SpringActionController
             {
                 detailsView.getRenderContext().setUseContainerFilter(false);
             }
-            return detailsView;
+
+            detailsView.setFrame(WebPartView.FrameType.PORTAL);
+            detailsView.setTitle("Job Status");
+
+            VBox result = new VBox(detailsView);
+
+            _statusFile = getStatusFile(form.getRowId());
+            if (_statusFile != null)
+            {
+                File f = new File(_statusFile.getFilePath());
+                if (NetworkDrive.exists(f))
+                {
+                    String content = FileUtils.readFileToString(f);
+                    HtmlView logFileView = new HtmlView(f.getName(), "<pre>" + PageFlowUtil.filter(content) + "</pre>");
+                    result.addView(logFileView);
+                }
+            }
+
+            return result;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Job Status");
+            return root.addChild(_statusFile == null ? "Job Status" : _statusFile.getDescription());
         }
     }
 

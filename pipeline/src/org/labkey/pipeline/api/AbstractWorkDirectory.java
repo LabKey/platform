@@ -533,7 +533,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
         FileType type = tp.getType();
         if (type != null)
-            return newFile(f, type.getDefaultName(baseName));
+            return newFile(f, type.findInputFile(_support, baseName).getName());
 
         return newFile(f, tp.getName());
     }
