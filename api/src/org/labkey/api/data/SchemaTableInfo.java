@@ -594,6 +594,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         {
             _gridURL = DetailsURL.fromString(xmlTable.getGridUrl());
         }
+        if (xmlTable.getImportUrl() != null)
+        {
+            _importURL = DetailsURL.fromString(xmlTable.getImportUrl());
+        }
         if (xmlTable.getInsertUrl() != null)
         {
             _insertURL = DetailsURL.fromString(xmlTable.getInsertUrl());
