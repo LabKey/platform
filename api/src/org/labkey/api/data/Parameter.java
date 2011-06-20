@@ -293,6 +293,8 @@ public class Parameter
         if (value == null)
             return null;
 
+        if (value instanceof Double)
+            return ResultSetUtil.mapJavaDoubleToDatabaseDouble(((Double)value));
         if (value instanceof Number || value instanceof String)
             return value;
         else if (value instanceof java.util.Date)

@@ -240,8 +240,6 @@ public class Table
                 else if (value instanceof Double)
                 {
                     isInvalid = value.equals(Double.NaN);
-                    if (!isInvalid)
-                        value = ResultSetUtil.mapJavaDoubleToDatabaseDouble(((Double) value));
                 }
 
                 if (isInvalid)

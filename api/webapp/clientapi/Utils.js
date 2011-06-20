@@ -135,10 +135,11 @@ LABKEY.Utils = new function()
         * any error messages from the server.
         * @param {XMLHttpRequest} responseObj The XMLHttpRequest object containing the response data.
         * @param {Error} [exceptionObj] A JavaScript Error object caught by the calling code.
+        * @param {boolean} showExceptionClass Optional flag to display the java class of the exception.
         * The error dialog will display the Error's name and message, if available. Ext.data.DataReader implementations
         * may throw this type of error object.
         */
-        displayAjaxErrorResponse: function(responseObj, exceptionObj)
+        displayAjaxErrorResponse: function(responseObj, exceptionObj, showExceptionClass)
         {
             if (responseObj.status == 0)
             {
@@ -157,7 +158,8 @@ LABKEY.Utils = new function()
                 if (jsonResponse && jsonResponse.exception)
                 {
                     error = "An error occurred trying to load:\n" + jsonResponse.exception;
-                    error += "\n(" + (jsonResponse.exceptionClass ? jsonResponse.exceptionClass : "Exception class unknown") + ")";
+                    if (showExceptionClass)
+                        error += "\n(" + (jsonResponse.exceptionClass ? jsonResponse.exceptionClass : "Exception class unknown") + ")";
                 }
             }
             if (!error)
