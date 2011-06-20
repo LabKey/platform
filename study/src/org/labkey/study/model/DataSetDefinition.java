@@ -1286,15 +1286,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 //            return Collections.emptyList();
 
         TableInfo tinfo = getTableInfo(user, false);
-        Map<String, QCState> qcStateLabels = new CaseInsensitiveHashMap<QCState>();
 
         boolean needToHandleQCState = tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null;
-
-        if (needToHandleQCState)
-        {
-            for (QCState state : StudyManager.getInstance().getQCStates(study.getContainer()))
-                qcStateLabels.put(state.getLabel(), state);
-        }
 
         if (getKeyManagementType() == KeyManagementType.RowId)
         {
@@ -1302,12 +1295,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // increments, as we're imitating a sequence.
             synchronized (MANAGED_KEY_LOCK)
             {
-                return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState);
+                return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, needToHandleQCState);
             }
         }
         else
         {
-            return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState);
+            return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, needToHandleQCState);
         }
     }
 
@@ -1371,7 +1364,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         User user;
         boolean needsQC;
         QCState defaultQC;
-        Map<String, QCState> qcLabels;
         List<String> lsids = null;
         boolean checkDuplicates = false;
         Logger logger = null;
@@ -1381,12 +1373,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         ValidationException setupError = null;
 
-        DatasetDataIteratorBuilder(User user, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
+        DatasetDataIteratorBuilder(User user, boolean qc, QCState defaultQC)
         {
             this.user = user;
             this.needsQC = qc;
             this.defaultQC = defaultQC;
-            this.qcLabels = qcLabels;
         }
 
 
@@ -1435,19 +1426,35 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             it.selectAll();
 
-            Map<String,Integer> findMap = DataIteratorUtil.createColumnAndPropertyMap(it);
+            Map<String,Integer> fromMap = new CaseInsensitiveHashMap<Integer>(input.getColumnCount()*2);
+            ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input,table);
+            for (int i=1 ; i<matches.size() ; i++)
+            {
+                ColumnInfo from=input.getColumnInfo(i);
+                ColumnInfo match=matches.get(i);
+                if (null != match)
+                {
+                    fromMap.put(match.getPropertyURI(), i);
+                    fromMap.put(match.getColumnName(), i);
+                }
+                else if (!from.getName().toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
+                {
+                    // we want some non-matched columns in here too, like "replace" and "QCStateLabel"
+                    fromMap.put(from.getName(), i);
+                }
+            }
 
             String keyColumnName = getKeyPropertyName();
             ColumnInfo keyColumn = null;
             if (null != keyColumnName)
                 keyColumn = table.getColumn(keyColumnName);
 
-            // find important columns in the input
-            Integer indexPTID = findMap.get(DataSetDefinition.getParticipantIdURI());
-            Integer indexSequenceNum = findMap.get(DataSetDefinition.getSequenceNumURI());
-            Integer indexKeyProperty = null==keyColumn ? null : findMap.get(keyColumn.getPropertyURI());
-            Integer indexVisitDate = findMap.get(DataSetDefinition.getVisitDateURI());
-            Integer indexReplace = findMap.get("replace");
+            // find important columns in the input (CONSIDER: use standard etl alt
+            Integer indexPTID = fromMap.get(DataSetDefinition.getParticipantIdURI());
+            Integer indexSequenceNum = fromMap.get(DataSetDefinition.getSequenceNumURI());
+            Integer indexKeyProperty = null==keyColumn ? null : fromMap.get(keyColumn.getPropertyURI());
+            Integer indexVisitDate = fromMap.get(DataSetDefinition.getVisitDateURI());
+            Integer indexReplace = fromMap.get("replace");
 
             it.setSpecialInputColumns(indexPTID, indexSequenceNum, indexVisitDate, indexKeyProperty);
             it.setTimepointType(timetype);
@@ -1558,12 +1565,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (needsQC)
             {
                 String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
-                Integer indexInputQCState = findMap.get(qcStatePropertyURI);
-                Integer indexInputQCText = findMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
+                Integer indexInputQCState = fromMap.get(qcStatePropertyURI);
+                Integer indexInputQCText = fromMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
                 if (null == indexInputQCState)
                 {
                     int indexText = null==indexInputQCText ? -1 : indexInputQCText;
-                    it.addQCStateColumn(indexText, qcStatePropertyURI, defaultQC, qcLabels);
+                    it.addQCStateColumn(indexText, qcStatePropertyURI, defaultQC);
                 }
             }
 
@@ -1712,11 +1719,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return null==o ? "" : o.toString();
         }
 
-        int addQCStateColumn(int index, String uri, QCState defaultQCState, Map<String,QCState> qcLabels)
+        int addQCStateColumn(int index, String uri, QCState defaultQCState)
         {
             ColumnInfo qcCol = new ColumnInfo("QCState", JdbcType.INTEGER);
             qcCol.setPropertyURI(uri);
-            Callable qcCall = new QCStateColumn(index, defaultQCState, qcLabels);
+            Callable qcCall = new QCStateColumn(index, defaultQCState);
             return addColumn(qcCol, qcCall);
         }
 
@@ -1820,11 +1827,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             Map<String, QCState> _qcLabels;
             Set<String> notFound = new CaseInsensitiveHashSet();
 
-            QCStateColumn(int index, QCState defaultQCState, Map<String,QCState> qcLabels)
+            QCStateColumn(int index, QCState defaultQCState)
             {
                 _indexInputQCState = index;
                 _defaultQCState = defaultQCState;
-                _qcLabels = qcLabels;
+
+                _qcLabels = new CaseInsensitiveHashMap<QCState>();
+                for (QCState state : StudyManager.getInstance().getQCStates(getContainer()))
+                    _qcLabels.put(state.getLabel(), state);
             }
 
             @Override
@@ -1872,7 +1882,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private List<String> insertData(User user, DataIteratorBuilder in,
             boolean checkDuplicates, long lastModified, List<String> errorStrs, boolean ensureObjects, QCState defaultQCState,
-            Logger logger, Map<String, QCState> qcStateLabels, boolean needToHandleQCState)
+            Logger logger, boolean needToHandleQCState)
             throws SQLException
     {
 //        if (dataMaps.size() == 0)
@@ -1887,8 +1897,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(
                     user,
                     needToHandleQCState,
-                    defaultQCState,
-                    qcStateLabels);
+                    defaultQCState);
             b.setInput(in);
             b.setCheckDuplicates(checkDuplicates);
 

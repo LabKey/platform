@@ -2387,6 +2387,8 @@ public class QueryController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ImportAction extends AbstractQueryImportAction<QueryForm>
     {
+        QueryForm _form;
+        
         public ImportAction()
         {
             super(QueryForm.class);
@@ -2395,6 +2397,7 @@ public class QueryController extends SpringActionController
         @Override
         protected void initRequest(QueryForm form) throws ServletException
         {
+            _form = form;
             ensureQueryExists(form);
 
             QueryDefinition query = form.getQueryDef();
@@ -2411,6 +2414,15 @@ public class QueryController extends SpringActionController
         {
             initRequest(form);
             return super.getDefaultImportView(form, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new SchemaAction(_form)).appendNavTrail(root);
+            root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
+            root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.importData));
+            return root;
         }
     }
 

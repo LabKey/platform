@@ -22,11 +22,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.SecurableResource;
@@ -134,7 +134,8 @@ public class StudyServiceImpl implements StudyService.Service
 
             def.deleteRows(u, Collections.singletonList(lsid));
 
-            List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, newData, def);
+            List<Map<String,Object>> dataMap = new ArrayList<Map<String, Object>>();
+            dataMap.add(newData);
 
             List<String> result = StudyManager.getInstance().importDatasetData(
                 study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null);
@@ -208,38 +209,48 @@ public class StudyServiceImpl implements StudyService.Service
         // and one to get the data.  We should eventually be able to convert to using Query completely.
         StudyQuerySchema querySchema = new StudyQuerySchema(study, u, true);
         TableInfo queryTableInfo = querySchema.getDataSetTable(def);
+
+        TableInfo tInfo = def.getTableInfo(u, true);
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause("lsid", lsids);
 
-        TableInfo tInfo = def.getTableInfo(u, true);
-        Map<String,Object>[] datas = Table.select(tInfo, Table.ALL_COLUMNS, filter, null, Map.class);
-
-        if (datas.length == 0)
-            return null;
-
-        Map<String,Object>[] canonicalDatas = new Map[datas.length];
+        Set<String> selectColumns = new TreeSet<String>();
         List<ColumnInfo> columns = tInfo.getColumns();
         ColumnInfo colLSID = tInfo.getColumn("lsid");
         ColumnInfo colSourceLSID = tInfo.getColumn("sourcelsid");
         ColumnInfo colQCState = tInfo.getColumn("QCState");
+        for (ColumnInfo col : columns)
+        {
+            // special handling for lsids and keys -- they're not user-editable,
+            // but we want to display them
+            if (!col.isUserEditable())
+            {
+                if (!(col == colLSID || col == colSourceLSID || col == colQCState ||
+                        col.isKeyField() ||
+                        col.getName().equalsIgnoreCase(def.getKeyPropertyName())))
+                {
+                    continue;
+                }
+            }
+            selectColumns.add(col.getName());
+        }
+
+        Map<String,Object>[] datas = Table.select(tInfo, selectColumns, filter, null, Map.class);
+
+        if (datas.length == 0)
+            return null;
+
+        if (datas[0] instanceof ArrayListMap)
+        {
+            ((ArrayListMap)datas[0]).getFindMap().remove("_key");
+        }
+
+        Map<String,Object>[] canonicalDatas = new Map[datas.length];
         for (int i = 0; i < datas.length; i++)
         {
             Map<String, Object> data = datas[i];
             // Need to remove extraneous columns
             data.remove("_row");
-            for (ColumnInfo col : columns)
-            {
-                // special handling for lsids and keys -- they're not user-editable,
-                // but we want to display them
-                if (col == colLSID || col == colSourceLSID || col == colQCState ||
-                        col.isKeyField() ||
-                        col.getName().equalsIgnoreCase(def.getKeyPropertyName()))
-                {
-                    continue;
-                }
-                if (!col.isUserEditable())
-                    data.remove(col.getName());
-            }
             canonicalDatas[i] = canonicalizeDatasetRow(data, queryTableInfo.getColumns());
         }
         return canonicalDatas;
@@ -256,7 +267,8 @@ public class StudyServiceImpl implements StudyService.Service
         {
             ensureTransaction();
 
-            List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, data, def);
+            List<Map<String,Object>> dataMap = new ArrayList<Map<String, Object>>();//convertMapToPropertyMapArray(u, data, def);
+            dataMap.add(data);
 
             List<String> result = StudyManager.getInstance().importDatasetData(study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null);
 
@@ -311,7 +323,6 @@ public class StudyServiceImpl implements StudyService.Service
     /**
      * Requests arrive as maps of name->value. The StudyManager expects arrays of maps
      * of property URI -> value. This is a convenience method to do that conversion.
-     */
     private List<Map<String,Object>> convertMapToPropertyMapArray(User user, Map<String,Object> origData, DataSetDefinition def)
         throws SQLException
     {
@@ -354,6 +365,7 @@ public class StudyServiceImpl implements StudyService.Service
         result.add(map);
         return result;
     }
+*/
 
     /**
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,

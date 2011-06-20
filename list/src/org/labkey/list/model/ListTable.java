@@ -43,6 +43,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.list.view.AttachmentDisplayColumn;
 import org.labkey.list.view.ListController;
 
@@ -164,7 +165,17 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 
         DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null), Collections.singletonMap("pk", _list.getKeyName()));
         setDetailsURL(detailsURL);
+
+        // TODO: I don't see the point in using DetailsURL for constant URLs (insert, import, grid)
+        if (!listDef.getAllowUpload())
+            setImportURL(LINK_DISABLER);
+        else
+        {
+            ActionURL importURL = listDef.urlFor(ListController.UploadListItemsAction.class);
+            setImportURL(new DetailsURL(importURL, Collections.singletonMap("pk", _list.getKeyName())));
+        }
     }
+    
 
     @Override
     public Domain getDomain()

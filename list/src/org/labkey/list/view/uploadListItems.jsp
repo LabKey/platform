@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.list.view.ListController" %>
 <%@ page import="org.labkey.list.view.UploadListItemsForm" %>
-<%@ page import="org.labkey.api.query.QueryAction" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>

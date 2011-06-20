@@ -52,6 +52,7 @@ import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.BeanDataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -2223,25 +2224,7 @@ public class StudyManager
 
         // StandardETL will handle most aliasing, HOWEVER, ...
         // columnMap may contain propertyURIs (dataset import job) and labels (GWT import file)
-        Map<String,ColumnInfo> nameMap = new CaseInsensitiveHashMap<ColumnInfo>();
-
-        for (ColumnInfo col : tinfo.getColumns())
-        {
-            nameMap.put(col.getName(), col);
-            if (!col.isMvIndicatorColumn() && !col.isRawValueColumn())
-            {
-                if (!nameMap.containsKey(col.getLabel()))
-                    nameMap.put(col.getLabel(), col);
-                String uri = col.getPropertyURI();
-                if (null != uri)
-                {
-                    nameMap.put(uri, col);
-                    String propName = uri.substring(uri.lastIndexOf('#')+1);
-                    if (!nameMap.containsKey(propName))
-                        nameMap.put(propName,col);
-                }
-            }
-        }
+        Map<String,ColumnInfo> nameMap = DataIteratorUtil.createAllAliasesMap(tinfo); 
 
         //
         // create columns to properties map
@@ -3360,7 +3343,7 @@ public class StudyManager
                 catch (BatchValidationException x)
                 {
                     //study:Label: Row 1 does not contain required field Measure.
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("does not contain required field"));
+                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("required"));
                     assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("Measure"));
                 }
 
@@ -3426,8 +3409,10 @@ public class StudyManager
                 // QCStateLabel
                 rows.clear();
                 rows.add(PageFlowUtil.map("QCStateLabel", "dirty", "SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 5));
-                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
                 QCState[] qcstates = StudyManager.getInstance().getQCStates(study.getContainer());
+                assertEquals(0, qcstates.length);
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                qcstates = StudyManager.getInstance().getQCStates(study.getContainer());
                 assertEquals(1, qcstates.length);
                 assertEquals("dirty" , qcstates[0].getLabel());
             }

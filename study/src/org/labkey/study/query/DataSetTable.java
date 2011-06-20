@@ -79,6 +79,14 @@ public class DataSetTable extends FilteredTable
         insertURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
         setInsertURL(new DetailsURL(insertURL));
 
+        ActionURL gridURL = new ActionURL(StudyController.DatasetAction.class, dsd.getContainer());
+        gridURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
+        setGridURL(new DetailsURL(gridURL));
+
+        ActionURL importURL = new ActionURL(StudyController.ShowImportDatasetAction.class, dsd.getContainer());
+        importURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
+        setImportURL(new DetailsURL(importURL));
+
         String subjectColName = StudyService.get().getSubjectColumnName(dsd.getContainer());
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {

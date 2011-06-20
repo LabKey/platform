@@ -73,6 +73,9 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                 case executeQuery:
                     url = table.getGridURL(container);
                     break;
+                case importData:
+                    url = table.getImportDataURL(container);
+                    break;
             }
         }
 
