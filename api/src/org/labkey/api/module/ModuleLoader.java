@@ -46,6 +46,8 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -222,7 +224,7 @@ public class ModuleLoader implements Filter
 
     public static ServletContext getServletContext()
     {
-        return getInstance()._servletContext;
+        return getInstance() == null ? null : getInstance()._servletContext;
     }
 
     private void doInit(ServletContext servletCtx) throws Exception
@@ -379,7 +381,7 @@ public class ModuleLoader implements Filter
     public static List<Module> loadModules(List<File> explodedModuleDirs)
     {
         ApplicationContext parentContext = ServiceRegistry.get().getApplicationContext();
-        
+
         Map<String,File> moduleNameToFile = new CaseInsensitiveHashMap<File>();
         List<Module> modules = new ArrayList<Module>();
         for(File moduleDir : explodedModuleDirs)
@@ -390,15 +392,28 @@ public class ModuleLoader implements Filter
             {
                 if (moduleXml.exists())
                 {
-                    XmlWebApplicationContext beanFactory = new XmlWebApplicationContext();
-                    beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
-                    beanFactory.setParent(parentContext);
-                    beanFactory.setServletContext(new SpringModule.ModuleServletContextWrapper(ModuleLoader.getServletContext()));
-                    beanFactory.refresh();
+                    ApplicationContext applicationContext = null;
+                    if (null != ModuleLoader.getInstance() && null != ModuleLoader.getServletContext())
+                    {
+                        XmlWebApplicationContext beanFactory = new XmlWebApplicationContext();
+                        beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
+                        beanFactory.setParent(parentContext);
+                        beanFactory.setServletContext(new SpringModule.ModuleServletContextWrapper(ModuleLoader.getServletContext()));
+                        beanFactory.refresh();
+                        applicationContext = beanFactory;
+                    }
+                    else
+                    {
+                        FileSystemXmlApplicationContext beanFactory = new FileSystemXmlApplicationContext();
+                        beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
+                        beanFactory.setParent(parentContext);
+                        beanFactory.refresh();
+                        applicationContext = beanFactory;
+                    }
 
                     try
                     {
-                        module = (Module)beanFactory.getBean("moduleBean", Module.class);
+                        module = (Module)applicationContext.getBean("moduleBean", Module.class);
                     }
                     catch (NoSuchBeanDefinitionException x)
                     {
@@ -439,6 +454,8 @@ public class ModuleLoader implements Filter
                     SimpleModule simpleModule = new SimpleModule(moduleName);
                     simpleModule.setSourcePath(moduleDir.getAbsolutePath());
                     BeanUtils.populate(simpleModule, props);
+                    if (simpleModule instanceof ApplicationContextAware)
+                        simpleModule.setApplicationContext(parentContext);
 
                     module = simpleModule;
                 }
@@ -470,6 +487,7 @@ public class ModuleLoader implements Filter
         }
         return modules;
     }
+
 
     public File getWebappDir()
     {

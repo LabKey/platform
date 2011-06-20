@@ -928,14 +928,14 @@ abstract public class PipelineJob extends Job implements Serializable
     
     public void runSubProcess(ProcessBuilder pb, File dirWork) throws PipelineJobException
     {
-        runSubProcess(pb, dirWork, null, 0);
+        runSubProcess(pb, dirWork, null, 0, false);
     }
 
     /**
      * If logLineInterval is greater than 1, the first logLineInterval lines of output will be written to the
      * job's main log file.
      */
-    public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile, int logLineInterval)
+    public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile, int logLineInterval, boolean append)
             throws PipelineJobException
     {
         Process proc;
@@ -952,7 +952,7 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 if(outputFile != null)
                 {
-                    fileWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));
+                    fileWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile, append)));
                 }
             }
             catch(IOException e)

@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 
 import java.io.File;
 import java.io.Serializable;
@@ -32,6 +33,22 @@ import java.util.Vector;
  */
 public class FileType implements Serializable
 {
+    public File findInputFile(FileAnalysisJobSupport support, String baseName)
+    {
+        if (_suffixes.size() > 1)
+        {
+            for (String suffix : _suffixes)
+            {
+                File f = support.findInputFile(baseName + suffix);
+                if (f != null && NetworkDrive.exists(f))
+                {
+                    return f;
+                }
+            }
+        }
+        return support.findInputFile(getDefaultName(baseName));
+    }
+
     /** handle TPP's native use of .xml.gz **/
     public static enum gzSupportLevel
     {

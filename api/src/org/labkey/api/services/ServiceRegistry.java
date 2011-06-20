@@ -22,7 +22,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.AbstractRefreshableApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.AbstractRefreshableWebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -71,9 +70,9 @@ public class ServiceRegistry
     
     private static final ServiceRegistry _instance = new ServiceRegistry();
     private ConcurrentMap<Class, _ServiceDef> _servicesByClass = new ConcurrentHashMap<Class, _ServiceDef>();
-    
+
     static {ServiceRegistry._instance.registerService(ServiceRegistry.class, _instance);}
-    
+
     /**
      * Returns the single instance of the ServiceRegistry
      * @return The single instance of the ServiceRegistry
@@ -107,7 +106,7 @@ public class ServiceRegistry
     {
         return get().getService(type);
     }
-    
+
 
     /**
      * Registers a service implementation. Modules that expose services should call this method
@@ -122,8 +121,8 @@ public class ServiceRegistry
 
         _ServiceDef s = new _ServiceDef(type, instance);
         _servicesByClass.put(s.cls, s);
-        ((ConfigurableListableBeanFactory)applicationContext.getAutowireCapableBeanFactory()).registerSingleton(s.longName, s.instance);
-        ((ConfigurableListableBeanFactory)applicationContext.getAutowireCapableBeanFactory()).registerSingleton(s.shortName, s.instance);
+        ((ConfigurableListableBeanFactory)getApplicationContext().getAutowireCapableBeanFactory()).registerSingleton(s.longName, s.instance);
+        ((ConfigurableListableBeanFactory)getApplicationContext().getAutowireCapableBeanFactory()).registerSingleton(s.shortName, s.instance);
     }
 
 
@@ -148,28 +147,39 @@ public class ServiceRegistry
     }
 
 
-    WebApplicationContext applicationContext = createWebApplicationContext();
+    ApplicationContext applicationContext = createWebApplicationContext();
 
 
-    WebApplicationContext createWebApplicationContext()
+    ApplicationContext createWebApplicationContext()
     {
-        WebApplicationContext wac = WebApplicationContextUtils.getWebApplicationContext(ModuleLoader.getServletContext());
-        // use global if we can, but there's no guarantee that it uses a ConfigurableListableBeanFactory
-        if (wac.getAutowireCapableBeanFactory() instanceof ConfigurableListableBeanFactory)
-            return wac;
+        WebApplicationContext wac = null;
 
-        wac = new AbstractRefreshableWebApplicationContext()
+        if (null != ModuleLoader.getInstance() && null != ModuleLoader.getServletContext())
+        {
+            wac = WebApplicationContextUtils.getWebApplicationContext(ModuleLoader.getServletContext());
+
+            // use global if we can, but there's no guarantee that it uses a ConfigurableListableBeanFactory
+            if (wac.getAutowireCapableBeanFactory() instanceof ConfigurableListableBeanFactory)
+            {
+                return wac;
+            }
+        }
+
+        AbstractRefreshableWebApplicationContext ac = new AbstractRefreshableWebApplicationContext()
         {
             @Override
-            protected void loadBeanDefinitions(DefaultListableBeanFactory defaultListableBeanFactory) throws IOException, BeansException
+            protected void loadBeanDefinitions(DefaultListableBeanFactory config) throws IOException, BeansException
             {
                 for (_ServiceDef sd : _servicesByClass.values())
                 {
-                    defaultListableBeanFactory.registerSingleton(sd.shortName, sd.instance);
-                    defaultListableBeanFactory.registerSingleton(sd.longName, sd.instance);
+                    config.registerSingleton(sd.shortName, sd.instance);
+                    config.registerSingleton(sd.longName, sd.instance);
                 }
             }
         };
-        return wac;
+        if (null != wac)
+            ac.setParent(wac);
+        ac.refresh();
+        return ac;
     }
 }
