@@ -1216,14 +1216,14 @@ public class QueryController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ExportExcelTemplateAction extends _ExportQuery<TemplateForm>
     {
-        protected TemplateForm getCommand(HttpServletRequest request) throws Exception
+        public ExportExcelTemplateAction()
         {
-            return new TemplateForm();
+            setCommandClass(TemplateForm.class);
         }
 
         void _export(TemplateForm form, QueryView view) throws Exception
         {
-            view.exportToExcelTemplate(getViewContext().getResponse(), ExcelWriter.CaptionType.Label, true);
+            view.exportToExcelTemplate(getViewContext().getResponse(), form.captionType, form.insertColumnsOnly);
         }
     }
 
@@ -2441,8 +2441,6 @@ public class QueryController extends SpringActionController
                 throw qpe.get(0);
             if (null != t)
                 setTarget(t);
-            if (null == _updateService && getUser().isGuest())
-                throw new UnauthorizedException();
         }
 
         @Override
