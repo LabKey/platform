@@ -60,6 +60,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -1125,9 +1126,9 @@ public class QueryController extends SpringActionController
     }
 
 
-    abstract class _ExportQuery extends SimpleViewAction<QueryForm>
+    abstract class _ExportQuery<K extends QueryForm> extends SimpleViewAction<K>
     {
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(K form, BindException errors) throws Exception
         {
             ensureQueryExists(form);
             QueryView view = QueryView.create(form, errors);
@@ -1136,7 +1137,7 @@ public class QueryController extends SpringActionController
             return null;
         }
 
-        abstract void _export(QueryForm form, QueryView view) throws Exception;
+        abstract void _export(K form, QueryView view) throws Exception;
 
         public NavTree appendNavTrail(NavTree root)
         {
@@ -1188,12 +1189,41 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ExportExcelTemplateAction extends _ExportQuery
+    public static class TemplateForm extends QueryForm
     {
-        void _export(QueryForm form, QueryView view) throws Exception
+        ExcelWriter.CaptionType captionType = ExcelWriter.CaptionType.Label;
+        boolean insertColumnsOnly = true;
+
+        public void setCaptionType(String s)
         {
-            view.exportToExcelTemplate(getViewContext().getResponse());
+            try
+            {
+                captionType = ExcelWriter.CaptionType.valueOf(s);
+            }
+            catch (Exception x)
+            {
+
+            }
+        }
+
+        public String getCaptionType()
+        {
+            return captionType.name();
+        }
+    }
+
+    
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ExportExcelTemplateAction extends _ExportQuery<TemplateForm>
+    {
+        protected TemplateForm getCommand(HttpServletRequest request) throws Exception
+        {
+            return new TemplateForm();
+        }
+
+        void _export(TemplateForm form, QueryView view) throws Exception
+        {
+            view.exportToExcelTemplate(getViewContext().getResponse(), ExcelWriter.CaptionType.Label, true);
         }
     }
 
@@ -1206,6 +1236,7 @@ public class QueryController extends SpringActionController
             view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage());
         }
     }
+
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
