@@ -36,14 +36,15 @@ import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.api.query.BatchValidationException;
 
+import org.labkey.api.webdav.WebdavResource;
 import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -127,6 +128,41 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             Reader r = new InputStreamReader(file.getInputStream());
             TabLoader loader = new TabLoader(r, true);
+            loader.parseAsCSV();
+            return loader;
+        }
+
+        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv or .csv.");
+    }
+
+
+    public static DataLoader getDataLoaderForFile(WebdavResource r) throws ServletException, IOException
+    {
+        File fOnDisk = r.getFile();
+        if (null != fOnDisk)
+            return getDataLoaderForFile(fOnDisk);
+
+        String origName = StringUtils.trimToEmpty(r.getName());
+        String filename = origName.toLowerCase();
+
+        if (filename.endsWith(".xls") || filename.endsWith("xlsx"))
+        {
+            File f = File.createTempFile("import", origName);
+            f.deleteOnExit();
+            IOUtils.copy(r.getInputStream(),new FileOutputStream(f));
+            ExcelLoader loader = new ExcelLoader(f, true);
+            loader.setDeleteFileOnClose(true);
+            return loader;
+        }
+        else if (filename.endsWith(".txt") || filename.endsWith(".tsv"))
+        {
+            Reader reader = new InputStreamReader(r.getInputStream());
+            return new TabLoader(reader, true);
+        }
+        else if (filename.endsWith(".csv"))
+        {
+            Reader reader = new InputStreamReader(r.getInputStream());
+            TabLoader loader = new TabLoader(reader, true);
             loader.parseAsCSV();
             return loader;
         }

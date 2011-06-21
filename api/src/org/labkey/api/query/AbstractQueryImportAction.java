@@ -34,9 +34,12 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -131,11 +134,24 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         DataLoader loader = null;
 
         String text = getViewContext().getRequest().getParameter("text");
+        String path = getViewContext().getRequest().getParameter("path");
+
         if (null != StringUtils.trimToNull(text))
         {
             hasPostData = true;
             loader = new TabLoader(text, true);
             // di = loader.getDataIterator(ve);
+        }
+        else if (null != StringUtils.trimToNull(path))
+        {
+            WebdavResource resource = WebdavService.get().getResolver().lookup(Path.parse(path));
+            if (null == resource || !resource.isFile())
+                errors.reject(SpringActionController.ERROR_MSG, "File not found: " + path);
+            else
+            {
+                hasPostData = true;
+                loader = DataLoader.getDataLoaderForFile(resource);
+            }
         }
         else if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
         {
