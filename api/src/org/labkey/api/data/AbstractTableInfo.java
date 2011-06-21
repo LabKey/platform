@@ -640,6 +640,17 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         if (xmlTable.getGridUrl() != null)
             _gridURL = parseDetailsURL(schema.getContainer(), xmlTable.getGridUrl(), errors);
 
+        if (xmlTable.isSetImportUrl())
+        {
+            if (StringUtils.isBlank(xmlTable.getImportUrl()))
+            {
+                _insertURL = LINK_DISABLER;
+            }
+            else
+            {
+                _insertURL = parseDetailsURL(schema.getContainer(), xmlTable.getImportUrl(), errors);
+            }
+        }
         if (xmlTable.isSetInsertUrl())
         {
             if (StringUtils.isBlank(xmlTable.getInsertUrl()))
@@ -836,6 +847,13 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
 
     ScriptReference tableScript;
+
+
+    public boolean hasTableScript(Container c) throws ScriptException
+    {
+        return null != getTableScript(c);
+    }
+
 
     protected ScriptReference getTableScript(Container c) throws ScriptException
     {

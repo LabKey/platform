@@ -67,7 +67,7 @@ public class StandardETL implements DataIteratorBuilder, Runnable
 
     ValidatorIterator _it;
 
-    public StandardETL(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user)
+    public StandardETL(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
     {
         if (!(target instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Must implement UpdateableTableInfo");
@@ -75,10 +75,11 @@ public class StandardETL implements DataIteratorBuilder, Runnable
         _target = target;
         _c = c;
         _user = user;
+        _errors = errors;
     }
 
 
-    public StandardETL(TableInfo target, @NotNull DataIterator it, @Nullable Container c, @NotNull User user)
+    public StandardETL(TableInfo target, @NotNull DataIterator it, @Nullable Container c, @NotNull User user,  BatchValidationException errors)
     {
         if (!(target instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Must implement UpdateableTableInfo");
@@ -86,6 +87,7 @@ public class StandardETL implements DataIteratorBuilder, Runnable
         _target = target;
         _c = c;
         _user = user;
+        _errors = errors;
     }
 
 
@@ -188,9 +190,10 @@ public class StandardETL implements DataIteratorBuilder, Runnable
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
             ColumnInfo targetCol = matches.get(i);
-            if (null == targetCol)
-                continue;
-            TranslateHelper to =  translateHeleprMap.get(targetCol.getPropertyURI());
+            TranslateHelper to = null;
+            if (null != targetCol)
+                to = translateHeleprMap.get(targetCol.getPropertyURI());
+
             if (null != to)
             {
                 if (!unusedCols.containsKey(to.target.getFieldKey()))

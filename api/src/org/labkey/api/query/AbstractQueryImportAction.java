@@ -72,8 +72,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     }
 
 
-    TableInfo _target;
-    QueryUpdateService _updateService;
+    protected TableInfo _target;
+    protected QueryUpdateService _updateService;
 
 
     protected void setTarget(TableInfo t)

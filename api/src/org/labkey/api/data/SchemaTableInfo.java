@@ -594,9 +594,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         {
             _gridURL = DetailsURL.fromString(xmlTable.getGridUrl());
         }
-        if (xmlTable.getImportUrl() != null)
+        if (xmlTable.isSetImportUrl())
         {
-            _importURL = DetailsURL.fromString(xmlTable.getImportUrl());
+            if (StringUtils.isBlank(xmlTable.getImportUrl()))
+                _importURL = LINK_DISABLER;
+            else
+                _importURL = DetailsURL.fromString(xmlTable.getImportUrl());
         }
         if (xmlTable.getInsertUrl() != null)
         {
@@ -699,9 +702,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     @Override
     public ActionURL getImportDataURL(Container container)
     {
-        if (_importURL != null)
-            return _importURL.copy(container).getActionURL();
-        return null;
+        if (null == _importURL)
+            return null;
+        if (LINK_DISABLER == _importURL)
+            return LINK_DISABLER_ACTION_URL;
+        return _importURL.copy(container).getActionURL();
     }
 
     public ActionURL getDeleteURL(Container container)
