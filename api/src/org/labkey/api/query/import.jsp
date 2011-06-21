@@ -19,11 +19,14 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.query.AbstractQueryImportAction" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     ViewContext context = HttpView.currentContext();
     AbstractQueryImportAction.ImportViewBean bean = (AbstractQueryImportAction.ImportViewBean)HttpView.currentModel();
-    String importDivId = "importDiv" + getRequestScopedUID();
+    final String copyPasteDivId = "copypasteDiv" + getRequestScopedUID();
+    final String uploadFileDivId = "uploadFileDiv" + getRequestScopedUID();
     String tsvId = "tsv" + getRequestScopedUID();
     String errorDivId = "errorDiv" + getRequestScopedUID();
 %>
@@ -31,20 +34,63 @@
 <div id="<%=errorDivId%>" class="labkey-error">
 <labkey:errors></labkey:errors>&nbsp;
 </div>
-<%=textLink("Download an Excel template workbook", bean.urlExcelTemplate)%>
-<div id="<%=importDivId%>">
-</div>
+<% if (!StringUtils.isBlank(bean.urlExcelTemplate)) {
+    %><%=generateButton("Download Template", bean.urlExcelTemplate)%><br>&nbsp;<br><%
+}%>
+<table class="labkey-wp" style="background-color:#ffffff;">
+<tr class="labkey-wp-header" style="min-width:600px;">
+    <th class="labkey-wp-title-left\" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Copy/paste text (tab delimited)</span></th>
+    <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButton("-","#",null,"id='"+copyPasteDivId+"Expando'")%></th>
+</tr>
+<tr><td colspan=2 style="display:inline;"><div id="<%=copyPasteDivId%>"></div></td></tr>
+</table>
+<br>
+<table class="labkey-bordered labkey-wp" style="background-color:#ffffff;">
+<tr class="labkey-wp-header" style="min-width:600px;">
+    <th class="labkey-wp-title-left\" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Upload file (.xls, .csv, .txt)</span></th>
+    <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButton("+","#",null,"id='"+uploadFileDivId+"Expando'")%></tr>
+<tr><td colspan=2 style="display:none;"><div id="<%=uploadFileDivId%>"></div></td></tr>
+</table>
 <script> (function(){
     var $json = Ext.util.JSON.encode;
     var $html = Ext.util.Format.htmlEncode;
 
-    var importDiv = Ext.get(<%=q(importDivId)%>);
+    var importTsvDiv = Ext.get(<%=q(copyPasteDivId)%>);
+    var uploadFileDiv = Ext.get(<%=q(uploadFileDivId)%>);
     var errorDiv = Ext.get(<%=q(errorDivId)%>);
     var tsvTextarea ;
     var endpoint = <%=q(bean.urlEndpoint)%>;
     var cancelUrl = <%=q(bean.urlCancel)%>;
     var returnUrl = <%=q(bean.urlReturn)%>;
-    var importForm;
+    var importTsvForm;
+    var uploadFileForm;
+
+    // attach listeners to the buttons
+    var importTsvExpando = Ext.get(<%=q(copyPasteDivId+"Expando")%>);
+    var uploadTsvExpando = Ext.get(<%=q(uploadFileDivId+"Expando")%>);
+
+    importTsvExpando.parent('tr').on('click',function(){toggleExpanded(importTsvExpando,importTsvDiv,uploadTsvExpando,uploadFileDiv);});
+    uploadTsvExpando.parent('tr').on('click',function(){toggleExpanded(uploadTsvExpando,uploadFileDiv,importTsvExpando,importTsvDiv);});
+
+    function toggleExpanded(toggleButton, toggleDiv, collapseButton, collapseDiv)
+    {
+        var collapsed = toggleButton.dom.innerText == "+";
+        toggleButton.dom.innerText = collapsed ? "-" : "+";
+        toggleDiv.parent().setStyle("display",collapsed?"inline":"none");
+
+        collapseButton.dom.innerText = "+";
+        collapseDiv.parent().setStyle("display","none");
+    }
+
+
+    function expandFileUpload()
+    {
+        var td = importTsvDiv.getParent();
+        td.setStyle("display","none");
+        td = uploadFileDiv.getParent();
+        td.setStyle("display","inline");
+    }
+
 
     function cancelForm()
     {
@@ -53,13 +99,23 @@
 
     function submitFormTsv()
     {
-        if (!importForm)
+        submitForm(importTsvForm);
+    }
+
+    function submitFormUpload()
+    {
+        submitForm(uploadFileForm);
+    }
+    
+    function submitForm(form)
+    {
+        if (!form)
             return;
 
         Ext.getBody().mask();
         errorDiv.update("&nbsp;");
 
-        importForm.getForm().submit(
+        form.getForm().submit(
         {
             clientValidation : false,
             success: function(form, action)
@@ -88,12 +144,12 @@
                         break;
                     case Ext.form.Action.CONNECT_FAILURE:
                         if (action.result && (action.result.errors || action.result.exception))
-                            serverInvalidTsv(action.result);
+                            serverInvalid(action.result);
                         else
                             Ext.Msg.alert('Failure', 'Ajax communication failed');
                         break;
                     case Ext.form.Action.SERVER_INVALID:
-                        serverInvalidTsv(action.result);
+                        serverInvalid(action.result);
                         break;
                     break;
                 }
@@ -103,7 +159,7 @@
 
 
     // extra processing for server errors
-    function serverInvalidTsv(result)
+    function serverInvalid(result)
     {
         if (result.exception)
             console.log(result.exception);
@@ -173,13 +229,45 @@
 
     function onReady()
     {
-        importForm = new Ext.form.FormPanel({
-            fileUpload : true,
-            errorEl : 'errorDiv',
+        importTsvForm = new Ext.form.FormPanel({
+            fileUpload : false,
             labelWidth: 75, // label settings here cascade unless overridden
             url:endpoint,
-            title: 'Import text',
-            bodyStyle:'padding:5px 5px 0',
+            title: false, // 'Import text',
+            border: false,
+            bodyStyle:'padding:5px',
+            width: 600,
+            defaultType: 'textfield',
+
+            items: [
+                {
+                    id: <%=q(tsvId)%>,
+                    xtype: 'textarea',
+                    hideLabel: true, //fieldLabel: 'Text',
+                    name: 'text',
+                    width:580,
+                    height:500
+                }
+            ],
+            buttons: [{
+                text: 'Submit', handler:submitFormTsv
+            },{
+                text: 'Cancel', handler:cancelForm
+            }]
+        });
+        importTsvForm.render(importTsvDiv);
+        tsvTextarea = Ext.get(<%=q(tsvId)%>);
+        Ext.EventManager.on(tsvTextarea, 'keydown', handleTabsInTextArea);
+
+
+
+        uploadFileForm = new Ext.form.FormPanel({
+            fileUpload : true,
+            labelWidth: 75, // label settings here cascade unless overridden
+            url:endpoint,
+            title: false, // 'Import text',
+            border: false,
+            bodyStyle:'padding:5px',
             width: 600,
             defaultType: 'textfield',
 
@@ -189,26 +277,16 @@
                     inputType: 'file',
                     name : 'file',
                     width:200
-                },
-                {
-                    id: <%=q(tsvId)%>,
-                    xtype: 'textarea',
-                    fieldLabel: 'Text',
-                    name: 'text',
-                    width:500,
-                    height:500
                 }
             ],
 
             buttons: [{
-                text: 'Submit', handler:submitFormTsv
+                text: 'Submit', handler:submitFormUpload
             },{
                 text: 'Cancel', handler:cancelForm
             }]
         });
-        importForm.render(importDiv);
-        tsvTextarea = Ext.get(<%=q(tsvId)%>);
-        Ext.EventManager.on(tsvTextarea, 'keydown', handleTabsInTextArea);
+        uploadFileForm.render(uploadFileDiv);
     }
 
     Ext.onReady(onReady);
