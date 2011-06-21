@@ -1279,12 +1279,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public List<String> importDatasetData(Study study, User user, DataIteratorBuilder in, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(Study study, User user, DataIteratorBuilder in, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
             throws SQLException
     {
-//        if (dataMaps.size() == 0)
-//            return Collections.emptyList();
-
         TableInfo tinfo = getTableInfo(user, false);
 
         boolean needToHandleQCState = tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null;
@@ -1295,12 +1292,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // increments, as we're imitating a sequence.
             synchronized (MANAGED_KEY_LOCK)
             {
-                return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, needToHandleQCState);
+                return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, needToHandleQCState);
             }
         }
         else
         {
-            return insertData(user, in, checkDuplicates, lastModified, errors, ensureObjects, defaultQCState, logger, needToHandleQCState);
+            return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, needToHandleQCState);
         }
     }
 
@@ -1881,7 +1878,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
     private List<String> insertData(User user, DataIteratorBuilder in,
-            boolean checkDuplicates, long lastModified, List<String> errorStrs, boolean ensureObjects, QCState defaultQCState,
+            boolean checkDuplicates, BatchValidationException errors, QCState defaultQCState,
             Logger logger, boolean needToHandleQCState)
             throws SQLException
     {
@@ -1904,13 +1901,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             ArrayList<String> lsids = new ArrayList<String>();
             b.setKeyList(lsids);
 
-            BatchValidationException errors = null;
             long start = System.currentTimeMillis();
             {
                 TableInfo table = getTableInfo(user, false);
-                StandardETL etl = new StandardETL(table, b, getContainer(), user);
+                StandardETL etl = new StandardETL(table, b, getContainer(), user, errors);
                 etl.run();
-                errors = etl.getErrors();
             }
             long end = System.currentTimeMillis();
 
@@ -1924,16 +1919,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             return lsids;
         }
-        catch (BatchValidationException errors)
+        catch (BatchValidationException x)
         {
-            for (ValidationException rowError : errors.getRowErrors())
-            {
-                String rowPrefix = "";
-                if (rowError.getRowNumber() >= 0)
-                    rowPrefix = "Row " + rowError.getRowNumber() + " ";
-                for (ValidationError e : rowError.getErrors())
-                    errorStrs.add(rowPrefix + e.getMessage());
-            }
+            assert x == errors;
             return Collections.emptyList();
         }
         finally

@@ -77,6 +77,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -625,7 +626,7 @@ public class StudyManager
 
             clearVisitAliases(study);
 
-            StandardETL etl = new StandardETL(tinfo, loader, study.getContainer(), user);
+            StandardETL etl = new StandardETL(tinfo, loader, study.getContainer(), user, null);
             etl.run();
 
             if (etl.getErrors().hasErrors())
@@ -2209,8 +2210,7 @@ public class StudyManager
     private void parseData(User user,
                DataSetDefinition def,
                DataLoader loader,
-               Map<String, String> columnMap,
-               List<String> errors)
+               Map<String, String> columnMap)
             throws ServletException, IOException
     {
         TableInfo tinfo = def.getTableInfo(user, false);
@@ -2260,14 +2260,42 @@ public class StudyManager
     }
 
 
+    private void batchValidateExceptionToList(BatchValidationException errors, List<String> errorStrs)
+    {
+        for (ValidationException rowError : errors.getRowErrors())
+        {
+            String rowPrefix = "";
+            if (rowError.getRowNumber() >= 0)
+                rowPrefix = "Row " + rowError.getRowNumber() + " ";
+            for (ValidationError e : rowError.getErrors())
+                errorStrs.add(rowPrefix + e.getMessage());
+        }
+    }
+
+    
+    /** @Deprecated pass in a BatchValidationException, not List<String>  */
+    @Deprecated
     public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, long lastModified, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
             throws IOException, ServletException, SQLException
     {
-        parseData(user, def, loader, columnMap, errors);
-        return importDatasetData(study, user, def, loader, lastModified, errors, checkDuplicates, ensureObjects, defaultQCState, logger);
+        parseData(user, def, loader, columnMap);
+        BatchValidationException ve = new BatchValidationException();
+        List<String> lsids = def.importDatasetData(study, user, loader, ve, checkDuplicates, defaultQCState, logger);
+        batchValidateExceptionToList(ve,errors);
+        return lsids;
     }
 
+    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
+            throws IOException, ServletException, SQLException
+    {
+        parseData(user, def, loader, columnMap);
+        List<String> lsids = def.importDatasetData(study, user, loader, errors, checkDuplicates, defaultQCState, logger);
+        return lsids;
+    }
+    
 
+    /** @Deprecated pass in a BatchValidationException, not List<String>  */
+    @Deprecated
     public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
             throws SQLException
     {
@@ -2275,18 +2303,24 @@ public class StudyManager
             return Collections.emptyList();
 
         DataIteratorBuilder it = new MapDataIterator.Builder(data.get(0).keySet(), data);
-
-        return importDatasetData(study, user, def, it, lastModified, errors, checkDuplicates, ensureObjects, defaultQCState, logger);
+        BatchValidationException ve = new BatchValidationException();
+        List<String> lsids = def.importDatasetData(study, user, it, ve, checkDuplicates, defaultQCState, logger);
+        batchValidateExceptionToList(ve,errors);
+        return lsids;
     }
 
 
-    private List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataIteratorBuilder data, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
-        throws SQLException
+    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
+            throws SQLException
     {
-        List<String> result = def.importDatasetData(study, user, data, lastModified, errors, checkDuplicates, ensureObjects, defaultQCState, logger);
-        if (logger != null) logger.debug("imported " + result.size() + " rows");
-        return result;
+        if (data.isEmpty())
+            return Collections.emptyList();
+
+        DataIteratorBuilder it = new MapDataIterator.Builder(data.get(0).keySet(), data);
+
+        return def.importDatasetData(study, user, it, errors, checkDuplicates, defaultQCState, logger);
     }
+
 
     public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors) throws IOException, SQLException
     {
@@ -3315,7 +3349,9 @@ public class StudyManager
                 catch (BatchValidationException x)
                 {
                     //study:Label: All dataset rows must include a value for SubjectID
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("value for SubjectID"));
+                    String msg = x.getRowErrors().get(0).getMessage();
+                    assertTrue(-1 != msg.indexOf("required") || -1 != msg.indexOf("must include"));
+                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("SubjectID"));
                 }
 
                 // missing date
@@ -3427,11 +3463,6 @@ public class StudyManager
         {
             DataLoader dl = new MapLoader(rows);
             Map<String,String> columnMap = new CaseInsensitiveHashMap<String>();
-
-//            for (ColumnInfo c : def.getTableInfo(_context.getUser()).getColumns())
-//            {
-//                columnMap.put(c.getName(), c.getPropertyURI());
-//            }
 
             StudyManager.getInstance().importDatasetData(
                     _studyDateBased, _context.getUser(),

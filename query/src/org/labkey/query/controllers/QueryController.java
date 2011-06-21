@@ -2441,6 +2441,8 @@ public class QueryController extends SpringActionController
                 throw qpe.get(0);
             if (null != t)
                 setTarget(t);
+            if (null == _updateService && getUser().isGuest())
+                throw new UnauthorizedException();
         }
 
         @Override
