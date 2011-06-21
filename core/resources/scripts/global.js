@@ -102,6 +102,7 @@ window.document = document = {
     body: undefined,
     compatMode: "CSS1Compat",
     documentElement: undefined,
+    documentMode : 8,
 
     getElementById: function () { return undefined; },
     getElementByClassName: function () { return undefined; },
