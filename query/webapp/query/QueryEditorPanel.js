@@ -248,11 +248,8 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
         if (!this.isSaveDirty()) {
             this.fireEvent('save', true);
-            if (showView === true) {
-                window.location = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {
-                    schemaName : this.query.schema,
-                    'query.queryName' : this.query.query
-                });
+            if (showView === true && this.query.executeUrl) {
+                window.location = this.query.executeUrl;
             }
         }
 
@@ -289,11 +286,9 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             }
             else {
                 this.showErrors();
-                if (showView === true) {
-                    window.location = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {
-                        schemaName : this.query.schema,
-                        'query.queryName' : this.query.query
-                    });
+                if (showView === true && this.query.executeUrl) {
+                    this.fireEvent('save', true);
+                    window.location = this.query.executeUrl;
                 }
             }
 

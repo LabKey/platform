@@ -15,8 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.query.QueryAction"%>
 <%@ page import="org.labkey.api.util.HelpTopic"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.SourceForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -24,9 +26,9 @@
 <%
     SourceForm form = (SourceForm)HttpView.currentModel();
     boolean canEdit = form.canEdit();
-    boolean editableSQL = canEdit && !form.getQueryDef().isTableQueryDefinition();
     boolean builtIn = form.getQueryDef().isTableQueryDefinition();
     String topic = "labkeySql";
+    ActionURL exeUrl = form.getQueryDef().urlFor(QueryAction.executeQuery, getViewContext().getContainer());
 %>
 <style type="text/css">
 
@@ -125,12 +127,13 @@
         var query = {
             schema    : LABKEY.ActionURL.getParameter('schemaName'),
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
+            executeUrl: <%= PageFlowUtil.jsString(exeUrl.toString()) %>,
             canEdit   : <%= canEdit %>,
             builtIn   : <%= builtIn %>,
             metadataEdit : <%= form.getQueryDef().isMetadataEditable() && canEdit %>,
-            queryText : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
-            metadataText  : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,
-            help      : <%=PageFlowUtil.jsString(new HelpTopic(topic).toString())%>
+            queryText    : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
+            metadataText : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,
+            help         : <%=PageFlowUtil.jsString(new HelpTopic(topic).toString())%>
         };
 
         var queryEditor = new LABKEY.query.QueryEditorPanel({
