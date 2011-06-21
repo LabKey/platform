@@ -1754,7 +1754,7 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-    static final String extJsRoot = "ext-3.2.2";
+    static final String extJsRoot = "ext-3.4.0";
     static final String extDebug = extJsRoot + "/ext-all-debug.js";
     static final String extMin = extJsRoot + "/ext-all.js";
     static final String extBaseDebug = extJsRoot + "/adapter/ext/ext-base-debug.js";

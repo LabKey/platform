@@ -13,7 +13,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.imagePath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath + "/_images";
     LABKEY.devMode = false;
     LABKEY.demoMode = false;
-    LABKEY.extJsRoot = "ext-3.2.2";
+    LABKEY.extJsRoot = "ext-3.4.0";
     LABKEY.extJsRoot_40 = "ext-4.0.1";
     LABKEY.verbose = false;
     LABKEY.widget = {};
