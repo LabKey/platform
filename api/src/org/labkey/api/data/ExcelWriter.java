@@ -44,6 +44,24 @@ import java.util.regex.Pattern;
 
 public class ExcelWriter
 {
+    public enum CaptionType
+    {
+        Name {
+            @Override
+            public String getText(ExcelColumn c)
+            {
+                return c.getName();
+            }},
+        Label {
+            @Override
+            public String getText(ExcelColumn c)
+            {
+                return c.getCaption();
+            }};
+
+        public abstract String getText(ExcelColumn c);
+    }
+
     public static final int MAX_ROWS = 65535;
 
     protected Results _rs;
@@ -55,6 +73,8 @@ public class ExcelWriter
     private String _footer;
     private String _filenamePrefix;
     private List<String> _headers;
+    private CaptionType _captionType = CaptionType.Label;
+    private boolean _insertableColumnsOnly = false;
     private ArrayList<ExcelColumn> _columns = new ArrayList<ExcelColumn>(10);
     private boolean _captionRowFrozen = true;
     private boolean _captionRowVisible = true;
@@ -104,6 +124,18 @@ public class ExcelWriter
         ResultSet rs = Table.executeQuery(schema, new SQLFragment(query), MAX_ROWS);
         setResultSet(rs);
         createColumns(rs.getMetaData());
+    }
+
+
+    public void setCaptionType(CaptionType type)
+    {
+        this._captionType = type;
+    }
+
+
+    public void setShowInsertableColumnsOnly(boolean b)
+    {
+        this._insertableColumnsOnly = b;
     }
 
 
@@ -262,14 +294,22 @@ public class ExcelWriter
     private void addDisplayColumns(List<DisplayColumn> columns)
     {
         for (DisplayColumn column : columns)
+        {
+            if (_insertableColumnsOnly && (null == column.getColumnInfo() || !column.getColumnInfo().shownInInsertView))
+                continue;
             addColumn(column);
+        }
     }
 
 
     private void addColumns(List<ColumnInfo> cols)
     {
         for (ColumnInfo col : cols)
+        {
+            if (_insertableColumnsOnly && !col.shownInInsertView)
+                continue;
             addColumn(new DataColumn(col));
+        }
     }
 
 
@@ -680,7 +720,7 @@ public class ExcelWriter
             return;
 
         for (int column = 0; column < visibleColumns.size(); column++)
-            visibleColumns.get(column).renderCaption(sheet, getCurrentRow(), column, getBoldFormat());
+            visibleColumns.get(column).renderCaption(sheet, getCurrentRow(), column, getBoldFormat(), _captionType);
 
         incrementRow();
 

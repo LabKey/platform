@@ -355,16 +355,10 @@ public class ExcelColumn extends RenderColumn
         return bestMatch;
     }
 
-    protected void renderCaption(WritableSheet sheet, int row, int column, WritableCellFormat cellFormat) throws WriteException
+    protected void renderCaption(WritableSheet sheet, int row, int column, WritableCellFormat cellFormat, ExcelWriter.CaptionType captionType) throws WriteException
     {
-        sheet.addCell(new Label(column, row, getCaption(), cellFormat));
+        sheet.addCell(new Label(column, row, captionType.getText(this), cellFormat));
     }
-
-//    protected void renderCaption(WritableSheet sheet, int row, int column, WritableCellFormat cellFormat, ExcelWriter.CaptionType captionType) throws WriteException
-//    {
-//        sheet.addCell(new Label(column, row, captionType.getText(this), cellFormat));
-//    }
-
 
     // Note: width of the column will be adjusted once per call to ExcelWriter.render(), which potentially means
     // multiple times per sheet.  This shouldn't be a problem, though.

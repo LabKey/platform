@@ -90,7 +90,7 @@ public class QueryView extends WebPartView<Object>
 
     private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<String, ExportScriptFactory>();
     private String _linkTarget;
-    
+
     // Overrides for any URLs that might already be set on the TableInfo
     private String _updateURL;
     private String _detailsURL;
@@ -820,7 +820,7 @@ public class QueryView extends WebPartView<Object>
             public void render(RenderContext ctx, Writer out) throws IOException
             {
                 addSeparator();
-                
+
                 // We don't know if record selectors are showing until render time so we
                 // need to add in the Show Selected/Unselected menu items at this time.
                 DataRegion rgn = ctx.getCurrentRegion();
@@ -1141,7 +1141,7 @@ public class QueryView extends WebPartView<Object>
             }
             if (view.isShared())
                 description.append("Shared ");
-            
+
             if (view.getContainer() != null && !view.getContainer().equals(getContainer()))
                 description.append("Inherited from '").append(PageFlowUtil.filter(view.getContainer().getPath())).append("'");
 
@@ -1614,7 +1614,7 @@ public class QueryView extends WebPartView<Object>
         }
         // Force the view to use our special list
         getSettings().setFieldKeys(fieldKeys);
-        
+
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
@@ -1632,27 +1632,24 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToExcel(HttpServletResponse response) throws Exception
     {
-        exportToExcel(response, false);
+        exportToExcel(response, false, ExcelWriter.CaptionType.Label, false);
     }
 
     // Export with no data rows -- just captions
-    public void exportToExcelTemplate(HttpServletResponse response) throws Exception
+    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly) throws Exception
     {
-        exportToExcel(response, true);
+        exportToExcel(response, true, captionType, insertColumnsOnly);
     }
 
-    private void exportToExcel(HttpServletResponse response, boolean templateOnly) throws Exception
+    private void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
         {
             ExcelWriter ew = templateOnly ? getExcelTemplateWriter() : getExcelWriter();
-            if (templateOnly)
-            {
-//                ew.setCaptionType(ExcelWriter.CaptionType.Name);
-//                ew.setShowInsertableColumnsOnly(true);
-            }
+            ew.setCaptionType(captionType);
+            ew.setShowInsertableColumnsOnly(insertColumnsOnly);
             ew.write(response);
         }
     }

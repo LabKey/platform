@@ -21,10 +21,10 @@ import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormResponseWriter;
 import org.labkey.api.action.FormApiAction;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
@@ -106,8 +106,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             bean.urlCancel = bean.urlReturn;
 
         bean.urlEndpoint = url.getLocalURIString();
-        bean.urlExcelTemplate = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(c, _target.getPublicSchemaName(), _target.getName()).getLocalURIString();
-
+        ActionURL xl = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(c, _target.getPublicSchemaName(), _target.getName());
+        if (null != xl)
+        {
+            xl.addParameter("captionType", ExcelWriter.CaptionType.Name.name());
+            bean.urlExcelTemplate = xl.getLocalURIString();
+        }
         return new JspView<ImportViewBean>(AbstractQueryImportAction.class, "import.jsp", bean, errors);
     }
 
