@@ -28,6 +28,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.AttachmentParentEntity;
@@ -554,9 +555,9 @@ public class IssuesController extends SpringActionController
 
             final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), user);
             if (assignedTo != null)
-                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened and assigned to " + assignedTo, form.getAction());
+                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened and assigned to " + assignedTo, getAttachmentFileList(), form.getAction());
             else
-                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened", form.getAction());
+                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened", getAttachmentFileList(), form.getAction());
 
             return true;
         }
@@ -708,7 +709,7 @@ public class IssuesController extends SpringActionController
             {
                 change += " as " + issue.getResolution();
             }
-            sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, form.getAction());
+            sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction());
             return true;
         }
 
@@ -1144,7 +1145,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, Class<? extends Controller> action) throws ServletException
+    private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action) throws ServletException
     {
         final Set<String> allAddresses = getEmailAddresses(issue, prevIssue, action);
 
@@ -1160,7 +1161,7 @@ public class IssuesController extends SpringActionController
                 if (addresses != null && addresses.length > 0)
                 {
                     IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, getContainer());
-                    template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses);
+                    template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments);
 
                     m.setSubject(template.renderSubject(getContainer()));
                     m.setHeader("References", references);

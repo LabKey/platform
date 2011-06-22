@@ -15,6 +15,8 @@
  */
 package org.labkey.issue;
 
+import org.apache.commons.lang.ObjectUtils;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -41,7 +43,8 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
             "You can review this ^itemNameLowerCase^ here: ^detailsURL^\n" +
             "Modified by: ^user^\n" +
             "^modifiedFields^\n" +
-            "^comment^";
+            "^comment^\n" +
+            "^attachments^";
     private List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
     private Issue _newIssue;
     private ActionURL _detailsURL;
@@ -49,6 +52,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
     private String _comment;
     private String _fieldChanges;
     private String _recipients;
+    private String _attachments;
 
     public IssueUpdateEmailTemplate()
     {
@@ -99,6 +103,14 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
             public String getValue(Container c)
             {
                 return _comment;
+            }
+        });
+        _replacements.add(new ReplacementParam("attachments", "A List of attachments, if applicable")
+        {
+            public String getValue(Container c)
+            {
+
+                return (((_attachments == null) || (_attachments.length() == 0)) ? null : "\nAttachments: " + _attachments);
             }
         });
         _replacements.add(new ReplacementParam("recipients", "All of the recipients of the email notification")
@@ -320,7 +332,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         protected abstract Integer getUserId(Container c);
     }
 
-    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<String> recipients)
+    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<String> recipients,  List<AttachmentFile> attachments)
     {
         _newIssue = newIssue;
         _detailsURL = detailsURL;
@@ -337,6 +349,17 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
             sb.append(address);
         }
         _recipients = sb.toString();
+
+        sb = new StringBuilder();
+        separator = "";
+        for (AttachmentFile attachment : attachments)
+        {
+            sb.append(separator);
+            separator = ", ";
+            sb.append(attachment.getFilename());
+        }
+        _attachments = sb.toString();
+
     }
 
     public List<ReplacementParam> getValidReplacements(){return _replacements;}
