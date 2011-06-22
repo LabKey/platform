@@ -30,13 +30,12 @@
     String tsvId = "tsv" + getRequestScopedUID();
     String errorDivId = "errorDiv" + getRequestScopedUID();
 %>
-
-<div id="<%=errorDivId%>" class="labkey-error">
-<labkey:errors></labkey:errors>&nbsp;
-</div>
 <% if (!StringUtils.isBlank(bean.urlExcelTemplate)) {
     %><%=generateButton("Download Template", bean.urlExcelTemplate)%><br>&nbsp;<br><%
 }%>
+<div id="<%=errorDivId%>" class="labkey-error">
+<labkey:errors></labkey:errors>&nbsp;
+</div>
 <table class="labkey-wp" style="background-color:#ffffff;">
 <tr class="labkey-wp-header" style="min-width:600px;">
     <th class="labkey-wp-title-left\" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Copy/paste text (tab delimited)</span></th>

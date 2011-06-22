@@ -165,7 +165,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
 
         if (!hasPostData)
-            errors.reject(SpringActionController.ERROR_MSG, "No data provided");
+            errors.reject(SpringActionController.ERROR_MSG, "Form contains no data");
         if (errors.hasErrors())
             throw errors;
 
