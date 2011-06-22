@@ -16,17 +16,28 @@
  */
 %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 <%
     User user = getViewContext().getUser();
 %>
 
-<%=announcementModel.getCreatedByName(includeGroups, user) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) %> at <%=formatDateTime(announcementModel.getCreated())%><%
+<%=announcementModel.getCreatedByName(includeGroups, user) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) %> at <%=formatDateTime(announcementModel.getCreated())%>.<%
+
+    StringBuilder sb = new StringBuilder();
+    String separator = "";
+    for (Attachment attachment : announcementModel.getAttachments())
+    {
+       sb.append(separator);
+       separator = ", ";
+       sb.append(attachment.getName());
+    }
+    String attachmentString = sb.toString();
 
     int attachmentCount = announcementModel.getAttachments().size();
 
     if (attachmentCount > 0)
-        out.println(" and attached " + attachmentCount + " document" + (attachmentCount > 1 ? "s" : ""));
+        out.println("\n\nAttachments: " + attachmentString + ".");
     else
         out.println();
 

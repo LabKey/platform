@@ -17,11 +17,27 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 <%
     Container c = getViewContext().getContainer();
     User user = getViewContext().getUser();
+
+    StringBuilder sb = new StringBuilder();
+    String separator = "";
+
+    if(!announcementModel.getAttachments().isEmpty())
+    {
+        sb.append("Attachments: ");
+        for (Attachment attachment : announcementModel.getAttachments())
+        {
+           sb.append(separator);
+           separator = ", ";
+           sb.append(attachment.getName());
+        }
+    }
+
 %>
 <html>
 <head>
@@ -32,10 +48,7 @@
 <body>
 <table width=100%>
     <tr class="labkey-alternate-row"><td colspan="2" class="labkey-bordered" style="border-right: 0 none">
-    <%
-        int attachmentCount = announcementModel.getAttachments().size();
-    %>
-    <%=announcementModel.getCreatedByName(includeGroups, user) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) + (attachmentCount > 0 ? " and attached " + attachmentCount + " document" + (attachmentCount > 1 ? "s" : "") : "")%></td>
+    <td><%=announcementModel.getCreatedByName(includeGroups, user) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) + "."%></td>
     <td align="right" class="labkey-bordered" style="border-left: 0 none"><%=formatDateTime(announcementModel.getCreated())%></td></tr><%
 
     if (null != body)
@@ -46,6 +59,8 @@
     %>
     <tr><td colspan="3">&nbsp;</td></tr>
     <tr><td colspan="3"><a href="<%=threadURL%>">View this <%=settings.getConversationName().toLowerCase()%></a></td></tr>
+    <tr><td colspan="3">&nbsp;</td></tr>
+    <tr><td colspan="3"><%= sb.toString() %></td></tr>
 </table>
 
 <br>

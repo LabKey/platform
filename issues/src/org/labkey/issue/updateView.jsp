@@ -90,10 +90,6 @@
         out.print("<tr><td>Fields marked with an asterisk <span class=\"labkey-error\">*</span> are required.</td></tr>");
     %>
     </table>
-    <table><tr>
-        <td><%=PageFlowUtil.generateSubmitButton("Submit", null, "name=\"" + bean.getAction() + "\"", true, true)%></td>
-        <td><%= generateButton("Return to Grid", IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
-    </tr></table>
 
     <table>
         <tr>
@@ -212,10 +208,12 @@
 %>
     <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="0"></textarea>
 <% } %>
-    </td></tr></table>
-    <table>
-        <tr><td><table id="filePickerTable"></table></td></tr>
-        <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=context.getRequest().getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
+    </td></tr>
+        <tr>
+            <td align="left" valign="top"><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=context.getRequest().getContextPath()%>/_images/paperclip.gif">Attach a file</a></td>
+            <td align="left" colspan="2"><table id="filePickerTable"></table></td>
+            <td align="right" valign="top"><%= generateButton("Return to Grid", IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%><%=PageFlowUtil.generateSubmitButton("Submit", null, "name=\"" + bean.getAction() + "\"", true, true)%></td>
+        </tr>
     </table>
 <%
     if (bean.getCallbackURL() != null)
