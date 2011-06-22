@@ -98,19 +98,21 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         });
 
         this.editorId = 'queryText';
-
+        this.editorBoxId = Ext.id();
+        
         this.editor = new Ext.Panel({
             border: false, frame : false,
-            autoHeight : true,          
+            autoHeight : true,
             items : [
                 {
+                    id    : this.editorBoxId,
                     xtype : 'box',
                     autoEl: {
                         tag  : 'textarea',
                         id   : this.editorId,
                         rows : 17,
                         cols : 80,
-                        style: 'width: 100%;',
+                        style: 'width: 100%; height: 100%;',
                         wrap : 'off',
                         html : this.query.queryText
                     }
@@ -130,6 +132,21 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                     this.eal.init(config);
                     
                     this.doLayout(false, true);
+                },
+                resize : function(x) {
+                    if (!x) {
+                        var h = this.getHeight() - 160;
+                        this.editor.setHeight(h);
+                        var box = Ext.getCmp(this.editorBoxId);
+                        if (box) {
+                            box.setHeight(h);
+                            var _f = Ext.get('frame_' + this.editorId);
+                            if (_f) {
+                                _f.setHeight(h, false);
+                            }
+                        }
+                        this.doLayout(false, true);
+                    }
                 },
                 scope : this
             },
@@ -154,6 +171,10 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         this.items = items;
 
         LABKEY.query.SourceEditorPanel.superclass.initComponent.apply(this, arguments);
+
+        this.on('resize', function(){
+            this.editor.fireEvent('resize');
+        });
     },
 
     setDisplay : function(id) {
@@ -204,13 +225,13 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             };
 
             // Choose queryName or SQL as source
-            if (!this.isSaveDirty()) {
+            if ((!this.isSaveDirty() && !force) || this.query.builtIn) {
                 config.queryName = this.query.query;
             }
             else { config.sql = sql; }
 
             // Apply Metadata Override
-            if (this.metadata) {
+            if (this.metadata || force) {
                 var _meta = this.getMetadata();
                 if (_meta && _meta.length > 0) {
                     config.metadata = {
@@ -287,7 +308,11 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             else {
                 this.showErrors();
                 if (showView === true && this.query.executeUrl) {
+
+                    this.query.queryText = this.eal.getValue(this.editorId);
+                    
                     this.fireEvent('save', true);
+                    
                     window.location = this.query.executeUrl;
                 }
             }
@@ -314,11 +339,17 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         LABKEY.query.SourceEditorPanel.superclass.onHide.call(this);
     },
 
+    /**
+     * Returns whether the query has changed from its last saved state.
+     */
     isSaveDirty : function() {
         
         return this.eal.getValue(this.editorId).toLowerCase() != this.query.queryText.toLowerCase();
     },
 
+    /**
+     * Returns false if the query has been executed in it's current state. Otherwise, true.
+     */
     isQueryDirty : function() {
         if (!this.cachedSql) {
             return true;
@@ -376,7 +407,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
 
     constructor : function(config){
         Ext.applyIf(config, {
-            title: 'XML',
+            title: 'XML Metadata',
             bodyStyle: 'padding:5px',
             autoScroll: true,
             monitorValid: true,
@@ -405,13 +436,15 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
             scope   : this
         });
 
+
+        this.editorBoxId = Ext.id();
+        
         this.editor = new Ext.Panel({
             border: false, frame : false,
-            autoScroll : true,
-            layout : 'fit',
-            flex  : 1,
+            autoHeight: true,
             items : [
                 {
+                    id : this.editorBoxId,
                     xtype : 'box',
                     autoEl: {
                         tag  : 'textarea',
@@ -436,6 +469,21 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                     if (Ext.isIE) config.start_highlight = false;
                     this.eal.init(config);
                 },
+                resize : function(x) {
+                    if (!x) {
+                        var h = this.getHeight() - 160;
+                        this.editor.setHeight(h);
+                        var box = Ext.getCmp(this.editorBoxId);
+                        if (box) {
+                            box.setHeight(h);
+                            var _f = Ext.get('frame_' + this.editorId);
+                            if (_f) {
+                                _f.setHeight(h, false);
+                            }
+                        }
+                        this.doLayout(false, true);
+                    }
+                },
                 scope : this
             },
             scope : this
@@ -446,6 +494,10 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         this.items = items;
         
         LABKEY.query.MetadataXMLEditorPanel.superclass.initComponent.apply(this, arguments);
+
+        this.on('resize', function(){
+            this.editor.fireEvent('resize');
+        });
     },
 
     onShow : function() {
@@ -476,11 +528,36 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         LABKEY.query.MetadataXMLEditorPanel.superclass.onHide.call(this);
     },
 
+    isSaveDirty : function() {
+        if (this.eal === undefined) return false;
+        return this.eal.getValue(this.editorId).toLowerCase() !=  this.query.metadataText.toLowerCase();
+    },
+
+    isQueryDirty : function(update) {
+        if (!this.cachedMeta) {
+            if (update && this.eal) {
+                this.cachedMeta = this.eal.getValue(this.editorId);
+            }
+            return true;
+        }
+
+        var res = (this.cachedMeta != this.eal.getValue(this.editorId));
+        if (update && this.eal) {
+            this.cachedMeta = this.eal.getValue(this.editorId);
+        }
+        return res;
+    },
+
     onSave : function() {
 
         var _xml = this.eal.getValue(this.editorId);
 
         this.fireEvent('beforeSave', this.query.schema, _xml);
+
+        if (!this.isSaveDirty()) {
+            this.fireEvent('save', true);
+            return;
+        }
 
         var json = {};
         json.schemaName = this.query.schema;
@@ -501,12 +578,11 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         });
 
         function onSuccess(response, opts) {
-            
+            this.query.metadataText = this.eal.getValue(this.editorId);            
             this.fireEvent('save', true);
         }
 
         function onError(x,y,z) {
-
             this.fireEvent('save', false);
         }
     }    
@@ -537,7 +613,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             listeners : {
                 activate : function(p) {
                     this.sourceEditor.setDisplay(_dataTabId);
-                    this.sourceEditor.execute();
+                    this.sourceEditor.execute(this.metaEditor.isQueryDirty(true));
                 },
                 scope : this
             }
@@ -574,6 +650,16 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         this.items = items;
 
         LABKEY.query.QueryEditorPanel.superclass.initComponent.apply(this, arguments);
+    },
+
+    onRender : function() {
+        LABKEY.query.QueryEditorPanel.superclass.onRender.apply(this, arguments);
+        
+        window.onbeforeunload = LABKEY.beforeunload(this.isDirty, this);
+    },
+
+    isDirty : function() {
+        return this.sourceEditor.isSaveDirty() || this.metaEditor.isSaveDirty();
     },
 
     addTab : function(config, makeActive) {
