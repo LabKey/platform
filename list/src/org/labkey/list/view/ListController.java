@@ -52,6 +52,7 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -59,9 +60,11 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -103,9 +106,11 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -747,46 +752,53 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class UploadListItemsAction extends FormViewAction<UploadListItemsForm>
+    public class UploadListItemsAction extends AbstractQueryImportAction<ListDefinitionForm>
     {
         private ListDefinition _list;
 
-        public void validateCommand(UploadListItemsForm target, Errors errors)
+        public UploadListItemsAction()
         {
+            super(ListDefinitionForm.class);
         }
-
-        public ModelAndView getView(UploadListItemsForm form, boolean reshow, BindException errors) throws Exception
+        
+        @Override
+        protected void initRequest(ListDefinitionForm form) throws ServletException
         {
             _list = form.getList();
-            return FormPage.getView(ListController.class, form, errors, "uploadListItems.jsp");
+            setTarget(_list.getTable(getUser()));
         }
 
-        public boolean handlePost(UploadListItemsForm form, BindException errors) throws Exception
+        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
-            if (form.ff_data == null)
-            {
-                errors.reject(ERROR_MSG, "Form contains no data");
-                return false;
-            }
-
-            TabLoader tl = new TabLoader(form.ff_data, true);
-            _list = form.getList();
-
-            List<String> errorList = _list.insertListItems(getUser(), tl, null, null);
-
-            if (errorList.isEmpty())
-                return true;
-
-            for (String error : errorList)
-            {
-                errors.reject(ERROR_MSG, error);
-            }
-            return false;
+            initRequest(form);
+            return getDefaultImportView(form, errors);
         }
 
-        public ActionURL getSuccessURL(UploadListItemsForm form)
+        @Override
+        protected int importData(DataLoader dl, BatchValidationException errors) throws IOException
         {
-            return _list.urlShowData();
+            final int[] totalRows = new int[1];
+            ListImportProgress p = new ListImportProgress()
+            {
+                @Override
+                public void setTotalRows(int rows)
+                {
+                    totalRows[0] = rows;
+                }
+
+                @Override
+                public void setCurrentRow(int currentRow)
+                {
+                }
+            };
+            
+            List<String> errorList = _list.insertListItems(getUser(), dl, null, p);
+            if (null != errorList && !errorList.isEmpty())
+            {
+                for (String error : errorList)
+                    errors.addRowError(new ValidationException(error));
+            }
+            return totalRows[0];
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -795,6 +807,7 @@ public class ListController extends SpringActionController
         }
     }
 
+    
     @RequiresPermissionClass(ReadPermission.class)
     public class HistoryAction extends SimpleViewAction<ListQueryForm>
     {

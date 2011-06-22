@@ -172,7 +172,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         else
         {
             ActionURL importURL = listDef.urlFor(ListController.UploadListItemsAction.class);
-            setImportURL(new DetailsURL(importURL, Collections.singletonMap("pk", _list.getKeyName())));
+            setImportURL(new DetailsURL(importURL));
         }
     }
     
