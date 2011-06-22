@@ -96,6 +96,7 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.ViewMessage;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -1318,6 +1319,11 @@ public class AnnouncementsController extends SpringActionController
         {
             AnnouncementModel ann = form.selectAnnouncement();
 
+            if (null == ann)
+            {
+                throw new NotFoundException("Announcement");
+            }
+
             if (!getPermissions().allowUpdate(ann))
             {
                 throw new UnauthorizedException();
@@ -1336,7 +1342,11 @@ public class AnnouncementsController extends SpringActionController
 
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()
-            throw new RedirectException(form.getReturnUrl());
+            ReturnURLString url = form.getReturnUrl();
+            if (null != url)
+                throw new RedirectException(form.getReturnUrl());
+            else
+                throw new RedirectException(new ActionURL(ThreadAction.class, getContainer()).addParameter("rowId",ann.getRowId()));
         }
 
         public void validateCommand(AnnouncementForm form, Errors errors)
