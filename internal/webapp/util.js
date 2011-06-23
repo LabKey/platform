@@ -346,7 +346,7 @@ function showPathname(filechooser, id)
          filename = pathname.substring(pathname.lastIndexOf('/')+1,pathname.length);
     else
          filename = pathname.substring(pathname.lastIndexOf('\\')+1,pathname.length);
-    document.getElementById(id).innerHTML = filename;
+    document.getElementById(id).innerHTML = " <img src=\"" + LABKEY.Utils.getFileIconUrl(filename) + "\"/> " + filename;
     return(true);
 }
 

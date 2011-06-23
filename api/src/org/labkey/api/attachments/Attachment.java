@@ -215,7 +215,7 @@ public class Attachment implements Serializable
 
     public void setLastIndexed(Date lastIndexed)
     {
-        lastIndexed = lastIndexed;
+        this.lastIndexed = lastIndexed;
     }
 
 
