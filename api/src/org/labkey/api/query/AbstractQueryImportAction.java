@@ -103,7 +103,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         if (null == bean.urlReturn)
         {
-            if (null != _target && null != _target.getGridURL(c))
+            ActionURL success = getSuccessURL(form);
+            if (null != success)
+                bean.urlReturn = success.getLocalURIString(false);
+            else if (null != _target && null != _target.getGridURL(c))
                 bean.urlReturn = _target.getGridURL(c).getLocalURIString(false);
             else
                 bean.urlReturn =  url.clone().setAction("executeQuery").getLocalURIString(false);
@@ -224,6 +227,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected DataIterator wrap(DataIterator di, BatchValidationException errors)
     {
         return di;
+    }
+
+    protected ActionURL getSuccessURL(FORM form)
+    {
+        return null;
     }
 
 

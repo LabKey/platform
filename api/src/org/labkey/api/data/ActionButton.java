@@ -154,6 +154,13 @@ public class ActionButton extends DisplayElement implements Cloneable
         setDisplayModes(displayModes);
     }
 
+    public ActionButton(ActionURL url, String caption, int displayModes, Action actionType)
+    {
+        this(url, caption);
+        setDisplayModes(displayModes);
+        setActionType(actionType);
+    }
+
     public ActionButton(Class<? extends Controller> action, String caption, int displayModes, Action actionType)
     {
         this(SpringActionController.getActionName(action) + ".view", caption, displayModes, actionType);

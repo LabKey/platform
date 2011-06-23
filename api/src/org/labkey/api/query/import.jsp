@@ -288,6 +288,7 @@
         uploadFileForm.render(uploadFileDiv);
     }
 
+    Ext.Ajax.timeout = 5*60*1000;
     Ext.onReady(onReady);
 
 })(); </script>
