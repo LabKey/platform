@@ -673,6 +673,8 @@ public class QueryServiceImpl extends QueryService
                 SessionQuery sq = (SessionQuery)obj;
                 if (!sql.equals(sq.sql))
                     return false;
+                if (metadata == null && sq.metadata != null)
+                    return false;
                 if (metadata != null && !metadata.equals(sq.metadata))
                     return false;
 
