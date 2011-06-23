@@ -65,7 +65,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -73,6 +72,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.InvalidFileException;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -775,7 +775,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, BatchValidationException errors) throws IOException
         {
             final int[] totalRows = new int[1];
             ListImportProgress p = new ListImportProgress()

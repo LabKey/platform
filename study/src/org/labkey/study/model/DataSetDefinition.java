@@ -1658,6 +1658,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
         @Override
+        public void beforeFirst()
+        {
+            super.beforeFirst();
+            lsids.clear();
+        }
+
+
+        @Override
         public boolean next() throws BatchValidationException
         {
             boolean hasNext = super.next();

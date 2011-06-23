@@ -71,6 +71,8 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.AbstractQueryImportAction;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -84,6 +86,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -2228,6 +2231,134 @@ public class StudyController extends BaseStudyController
             return root.addChild("Import Dataset");
         }
     }
+
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class ImportAction extends AbstractQueryImportAction<ImportDataSetForm>
+    {
+        ImportDataSetForm _form = null;
+        Study _study = null;
+        DataSetDefinition _def = null;
+
+        public ImportAction()
+        {
+            super(ImportDataSetForm.class);
+        }
+
+        @Override
+        protected void initRequest(ImportDataSetForm form) throws ServletException
+        {
+            _form = form;
+            _study = getStudy();
+            if (null == _study)
+                throw new NotFoundException("Container does not contain a study.");
+
+            _def = StudyManager.getInstance().getDataSetDefinition(_study, form.getDatasetId());
+            if (null == _def)
+               throw new NotFoundException("Dataset not found");
+            if (null == _def.getTypeURI())
+                return;
+
+            User user = getViewContext().getUser();
+            TableInfo t = new StudyQuerySchema((StudyImpl)_study, user, true).getDataSetTable(_def);
+            setTarget(t);
+
+            if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
+                throw new UnauthorizedException();
+        }        
+
+
+        @SuppressWarnings("deprecation")
+        public ModelAndView getView(ImportDataSetForm form, BindException errors) throws Exception
+        {
+            initRequest(form);
+            
+            if (_def.getTypeURI() == null)
+                return new HtmlView("Error", "Dataset is not yet defined. <a href=\"datasetDetails.view?id=%d\">Show Dataset Details</a>", form.getDatasetId());
+
+            if (null == PipelineService.get().findPipelineRoot(getContainer()))
+                return new RequirePipelineView((StudyImpl)_study, true, errors);
+
+            return getDefaultImportView(form, errors);
+        }
+
+
+        @Override
+        protected int importData(DataLoader dl, FileStream file, BatchValidationException errors) throws IOException
+        {
+            if (null == PipelineService.get().findPipelineRoot(getContainer()))
+            {
+                errors.addRowError(new ValidationException("Pipeline file system is not setup."));
+                return -1;
+            }
+
+            Map<String,String> columnMap = new CaseInsensitiveHashMap<String>();
+            // 2379
+            // see DatasetBatch.prepareImport()
+            columnMap.put("visit", DataSetDefinition.getSequenceNumURI());
+
+            if (_study.getTimepointType() != TimepointType.VISIT)
+                columnMap.put("date", DataSetDefinition.getVisitDateURI());
+            columnMap.put("ptid", DataSetDefinition.getParticipantIdURI());
+            columnMap.put("qcstate", DataSetDefinition.getQCStateURI());
+            columnMap.put("dfcreate", DataSetDefinition.getCreatedURI());     // datafax field name
+            columnMap.put("dfmodify", DataSetDefinition.getModifiedURI());    // datafax field name
+            List<String> errorList = new LinkedList<String>();
+
+
+            Pair<List<String>, UploadLog> result;
+            try
+            {
+                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), (StudyImpl)_study, _def, dl, file, columnMap, errorList);
+            }
+            catch (ServletException x)
+            {
+                errors.addRowError(new ValidationException(x.getMessage()));
+                return -1;
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+
+            if (!result.getKey().isEmpty())
+            {
+                // Log the import
+                String comment = "Dataset data imported. " + result.getKey().size() + " rows imported";
+                StudyServiceImpl.addDatasetAuditEvent(
+                        getUser(), getContainer(), _def, comment, result.getValue());
+            }
+
+            for (String error : errorList)
+            {
+                errors.addRowError(new ValidationException(error));
+            }
+
+            return result.getKey().size();
+        }
+
+        public ActionURL getSuccessURL(ImportDataSetForm form)
+        {
+            ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
+                    addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
+            if (StudyManager.getInstance().showQCStates(getContainer()))
+                url.addParameter(SharedFormParameters.QCState, QCStateSet.getAllStates(getContainer()).getFormValue());
+            return url;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
+            ActionURL overviewURL = getStudyOverviewURL();
+            root.addChild("Study Overview", overviewURL);
+            ActionURL datasetURL = new ActionURL(DatasetAction.class, getContainer()).
+                    addParameter(DataSetDefinition.DATASETKEY, _form.getDatasetId());
+            root.addChild(_def.getName(), datasetURL);
+            root.addChild("Import Data");
+            return root;
+        }
+    }
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class BulkImportDataTypesAction extends FormViewAction<BulkImportTypesForm>
