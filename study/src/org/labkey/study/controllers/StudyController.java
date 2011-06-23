@@ -87,6 +87,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -123,6 +124,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -2190,7 +2192,9 @@ public class StudyController extends BaseStudyController
                 List<String> errorList = new LinkedList<String>();
 
                 DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
-                Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, tsvData, columnMap, errorList);
+                DataLoader dl = new TabLoader(tsvData, true);
+                FileStream f = new FileStream.StringFileStream(tsvData);
+                Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, dl, f, columnMap, errorList);
 
                 if (!result.getKey().isEmpty())
                 {

@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay;
 
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
@@ -34,6 +35,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -58,6 +60,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -622,7 +625,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     static final String DIR_NAME = "assaydata";
-    public UploadLog saveUploadData(User user, DataSet dsd, String tsv) throws IOException
+    public UploadLog saveUploadData(User user, DataSet dsd, FileStream tsv) throws IOException
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dsd.getContainer());
         if (null == pipelineRoot || !pipelineRoot.isValid())
@@ -649,18 +652,17 @@ public class AssayPublishManager implements AssayPublishService.Service
             file = new File(dir, fileName);
         }
         while (file.exists());
-        FileWriter writer = null;
+        FileOutputStream out = null;
         try
         {
-            writer = new FileWriter(file);
-            writer.append(tsv);
-            writer.close();
-            writer = null;
+            out = new FileOutputStream(file);
+            IOUtils.copy(tsv.openInputStream(),out);
+            tsv.closeInputStream();
         }
         finally
         {
-            if (null != writer)
-                try { writer.close(); } catch (Exception x) {}
+            if (null != out)
+                try { out.close(); } catch (Exception x) {}
         }
 
         UploadLog ul = new UploadLog();
@@ -693,18 +695,19 @@ public class AssayPublishManager implements AssayPublishService.Service
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, String tsv, Map<String, String> columnMap, List<String> errors) throws SQLException, ServletException
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, FileStream in, Map<String, String> columnMap, List<String> errors) throws SQLException, ServletException
     {
         UploadLog ul = null;
         List<String> lsids = Collections.emptyList();
         try
         {
-            ul = saveUploadData(user, dsd, tsv);
+            if (null != in)
+                ul = saveUploadData(user, dsd, in);
             Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
             QCState defaultQCState = null;
             if (defaultQCStateId != null)
                 defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, new TabLoader(tsv, true), ul.getCreated().getTime(), columnMap, errors, true, true, defaultQCState, null);
+            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, ul.getCreated().getTime(), columnMap, errors, true, true, defaultQCState, null);
             if (errors.size() == 0)
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singleton(dsd));
         }
