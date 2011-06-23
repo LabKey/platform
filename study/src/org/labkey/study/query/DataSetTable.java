@@ -83,7 +83,8 @@ public class DataSetTable extends FilteredTable
         gridURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
         setGridURL(new DetailsURL(gridURL));
 
-        ActionURL importURL = new ActionURL(StudyController.ShowImportDatasetAction.class, dsd.getContainer());
+//        ActionURL importURL = new ActionURL(StudyController.ShowImportDatasetAction.class, dsd.getContainer());
+        ActionURL importURL = new ActionURL(StudyController.ImportAction.class, dsd.getContainer());
         importURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
         setImportURL(new DetailsURL(importURL));
 

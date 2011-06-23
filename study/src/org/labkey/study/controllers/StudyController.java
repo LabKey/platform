@@ -766,6 +766,14 @@ public class StudyController extends BaseStudyController
     }
 
 
+    // TODO I don't think this is quite correct, however this is the the check currently used by import and delete
+    // moved here to call it out instead of embedding it
+    private static boolean canWrite(DataSetDefinition def, User user)
+    {
+        return def.canWrite(user) && def.getContainer().getPolicy().hasPermission(user, UpdatePermission.class);
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
@@ -990,7 +998,7 @@ public class StudyController extends BaseStudyController
             buttonBar.add(queryView.createPageSizeMenuButton());
 
             User user = getUser();
-            boolean canWrite = def.canWrite(user) && def.getContainer().getPolicy().hasPermission(user, UpdatePermission.class);
+            boolean canWrite = canWrite(def, user);
             boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel());
             boolean isAssayDataset = def.isAssayData();
             ExpProtocol protocol = null;
@@ -1025,7 +1033,9 @@ public class StudyController extends BaseStudyController
                         buttonBar.add(manageButton);
 
                         // bulk import
-                        ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + getDataSetDefinition().getDataSetId(), "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                        ActionURL importURL = new ActionURL(StudyController.ImportAction.class, def.getContainer());
+                        importURL.addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+                        ActionButton uploadButton = new ActionButton(importURL, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                         uploadButton.setDisplayPermission(InsertPermission.class);
                         buttonBar.add(uploadButton);
                     }
@@ -2265,10 +2275,16 @@ public class StudyController extends BaseStudyController
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
                 throw new UnauthorizedException();
-        }        
+        }
 
+        @Override
+        protected void validatePermission(User user, BindException errors)
+        {
+            if (user.isAdministrator() || canWrite(_def, user))
+                return;
+            throw new UnauthorizedException("Can't update dataset: " + _def.getName());
+        }
 
-        @SuppressWarnings("deprecation")
         public ModelAndView getView(ImportDataSetForm form, BindException errors) throws Exception
         {
             initRequest(form);
@@ -2337,6 +2353,7 @@ public class StudyController extends BaseStudyController
             return result.getKey().size();
         }
 
+        @Override
         public ActionURL getSuccessURL(ImportDataSetForm form)
         {
             ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
@@ -2346,6 +2363,7 @@ public class StudyController extends BaseStudyController
             return url;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
