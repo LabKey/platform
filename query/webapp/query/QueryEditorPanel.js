@@ -39,7 +39,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             xtype   : 'button',
             text    : 'Save',
             cls     : 'query-button',
-            tooltip : 'Ctrl + s',
+            tooltip : 'Ctrl + S',
             handler : this.onSave,
             disabled: !this.query.canEdit,
             scope   : this
@@ -82,11 +82,11 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                                 id   : '',
                                 cls  : 'extContainer',
                                 items: [{
-                                    text : 'Save&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctrl + s'
+                                    text : 'Save&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctrl + S'
                                 },{
-                                    text : 'Execute&nbsp;&nbsp;&nbsp;ctrl + enter'
+                                    text : 'Execute&nbsp;&nbsp;&nbsp;ctrl + Enter'
                                 },{
-                                    text : 'Edit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctrl + e'
+                                    text : 'Edit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctrl + E'
                                 }]
                             }
                         },'-',{
@@ -514,43 +514,61 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
 
         LABKEY.query.MetadataXMLEditorPanel.superclass.onShow.call(this);
 
-        if (!Ext.isIE)
+        if (!Ext.isIE && this.eal)
             this.eal.show(this.editorId);
     },
 
     onHide : function() {
 
-        if (Ext.isIE)
-            this.eal.delete_instance(this.editorId);
-        else
-            this.eal.hide(this.editorId);
+        if (this.eal) {
+            if (Ext.isIE)
+                this.eal.delete_instance(this.editorId);
+            else
+                this.eal.hide(this.editorId);
+        }
 
         LABKEY.query.MetadataXMLEditorPanel.superclass.onHide.call(this);
     },
 
+    saved : function() {
+        this.query.metadataText = this.getValue();
+    },
+
     isSaveDirty : function() {
-        if (this.eal === undefined) return false;
-        return this.eal.getValue(this.editorId).toLowerCase() !=  this.query.metadataText.toLowerCase();
+        return this.getValue().toLowerCase() !=  this.query.metadataText.toLowerCase();
+    },
+
+    getValue : function() {
+        if (this.eal) {
+            return this.eal.getValue(this.editorId);
+        }
+        else {
+            var el = Ext.get('metadataText');
+            if (el) {
+                return el.getValue();
+            }
+        }
+        return this.query.metadataText;
     },
 
     isQueryDirty : function(update) {
         if (!this.cachedMeta) {
-            if (update && this.eal) {
-                this.cachedMeta = this.eal.getValue(this.editorId);
+            if (update) {
+                this.cachedMeta = this.getValue();
             }
             return true;
         }
 
-        var res = (this.cachedMeta != this.eal.getValue(this.editorId));
-        if (update && this.eal) {
-            this.cachedMeta = this.eal.getValue(this.editorId);
+        var res = (this.cachedMeta != this.getValue());
+        if (update) {
+            this.cachedMeta = this.getValue();
         }
         return res;
     },
 
     onSave : function() {
 
-        var _xml = this.eal.getValue(this.editorId);
+        var _xml = this.getValue();
 
         this.fireEvent('beforeSave', this.query.schema, _xml);
 
@@ -578,7 +596,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         });
 
         function onSuccess(response, opts) {
-            this.query.metadataText = this.eal.getValue(this.editorId);            
+            this.saved();            
             this.fireEvent('save', true);
         }
 
@@ -633,6 +651,10 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         this.sourceEditor.on('loaded', function(loaded){
             this.dataTab.getEl().unmask();
             if (!loaded) this.openSourceEditor();
+        }, this);
+
+        this.sourceEditor.on('save', function(success){
+            if (success) { this.metaEditor.saved(); }
         }, this);
 
         this.metaEditor = new LABKEY.query.MetadataXMLEditorPanel({
