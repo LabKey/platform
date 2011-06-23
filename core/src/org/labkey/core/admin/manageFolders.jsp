@@ -147,6 +147,7 @@ function init() {
             }
         }),
 
+        cls : 'folder-management-tree', // used by selenium helper
         rootVisible: true,
         enableDD: true,
         containerScroll : true,
