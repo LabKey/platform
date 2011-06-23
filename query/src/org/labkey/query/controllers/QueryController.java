@@ -703,20 +703,13 @@ public class QueryController extends SpringActionController
                 {
                     query.setMetadataXml(form.ff_metadataText);
                     /* if query definition has parameters set hidden==true by default */
-                    try
+                    ArrayList<QueryException> qerrors = new ArrayList<QueryException>();
+                    TableInfo t = query.getTable(qerrors, false);
+                    if (null != t && qerrors.isEmpty())
                     {
-                        ArrayList<QueryException> qerrors = new ArrayList<QueryException>();
-                        TableInfo t = query.getTable(qerrors, false);
-                        if (null != t && qerrors.isEmpty())
-                        {
-                            boolean hasParams = !t.getNamedParameters().isEmpty();
-                            if (hasParams)
-                                query.setIsHidden(true);
-                        }
-                    }
-                    catch (Exception x)
-                    {
-
+                        boolean hasParams = !t.getNamedParameters().isEmpty();
+                        if (hasParams)
+                            query.setIsHidden(true);
                     }
                     query.save(getUser(), getContainer());
                 }
@@ -783,20 +776,13 @@ public class QueryController extends SpringActionController
                 {
                     query.setMetadataXml(form.ff_metadataText);
                     /* if query definition has parameters set hidden==true by default */
-                    try
+                    ArrayList<QueryException> qerrors = new ArrayList<QueryException>();
+                    TableInfo t = query.getTable(qerrors, false);
+                    if (null != t && qerrors.isEmpty())
                     {
-                        ArrayList<QueryException> qerrors = new ArrayList<QueryException>();
-                        TableInfo t = query.getTable(qerrors, false);
-                        if (null != t && qerrors.isEmpty())
-                        {
-                            boolean hasParams = !t.getNamedParameters().isEmpty();
-                            if (hasParams)
-                                query.setIsHidden(true);
-                        }
-                    }
-                    catch (Exception x)
-                    {
-
+                        boolean hasParams = !t.getNamedParameters().isEmpty();
+                        if (hasParams)
+                            query.setIsHidden(true);
                     }
                     query.save(getUser(), getContainer());
 
