@@ -1,0 +1,38 @@
+.labkey-file-add-icon
+{
+    background: url("_images/plus_minus.png") no-repeat;
+    display: block;
+    width: 20px;
+    height: 21px;
+}
+.labkey-file-add-icon-disabled
+{
+    background-position: -32px -59px;
+}
+.labkey-file-add-icon-enabled
+{
+    background-position: -32px -32px;
+}
+.labkey-file-add-icon-enabled:hover
+{
+    background-position: -32px -5px;
+}
+.labkey-file-remove-icon
+{
+    background: url("_images/plus_minus.png") no-repeat;
+    display: block;
+    width: 20px;
+    height: 21px;
+}
+.labkey-file-remove-icon-disabled
+{
+    background-position: -5px -59px;
+}
+.labkey-file-remove-icon-enabled
+{
+    background-position: -5px -32px;
+}
+.labkey-file-remove-icon-enabled:hover
+{
+    background-position: -5px -5px;
+}
