@@ -53,6 +53,8 @@ public class PipelinePathForm extends ViewForm
 
     public void setFile(String[] file)
     {
+        if (null == file)
+            return;
         for (String s : file)
         {
             if (s != null)

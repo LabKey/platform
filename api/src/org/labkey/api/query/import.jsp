@@ -39,7 +39,7 @@
 <table class="labkey-wp" style="background-color:#ffffff;">
 <tr class="labkey-wp-header" style="min-width:600px;">
     <th class="labkey-wp-title-left\" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Copy/paste text (tab delimited)</span></th>
-    <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButton("-","#",null,"id='"+copyPasteDivId+"Expando'")%></th>
+    <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButtonHtml("&ndash;","#",null,"id='"+copyPasteDivId+"Expando'")%></th>
 </tr>
 <tr><td colspan=2 style="display:inline;"><div id="<%=copyPasteDivId%>"></div></td></tr>
 </table>
@@ -74,7 +74,7 @@
     function toggleExpanded(toggleButton, toggleDiv, collapseButton, collapseDiv)
     {
         var collapsed = toggleButton.dom.innerText == "+";
-        toggleButton.dom.innerText = collapsed ? "-" : "+";
+        toggleButton.dom.innerHTML = collapsed ? "&ndash;" : "+";
         toggleDiv.parent().setStyle("display",collapsed?"inline":"none");
 
         collapseButton.dom.innerText = "+";

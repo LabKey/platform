@@ -22,6 +22,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormResponseWriter;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
@@ -33,11 +34,13 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
@@ -131,6 +134,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             throw errors;
 
         boolean hasPostData = false;
+        FileStream file = null;
         DataLoader loader = null;
 
         String text = getViewContext().getRequest().getParameter("text");
@@ -140,6 +144,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         {
             hasPostData = true;
             loader = new TabLoader(text, true);
+            file = new FileStream.ByteArrayFileStream(text.getBytes("UTF-8"));
             // di = loader.getDataIterator(ve);
         }
         else if (null != StringUtils.trimToNull(path))
@@ -151,16 +156,18 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             {
                 hasPostData = true;
                 loader = DataLoader.getDataLoaderForFile(resource);
+                file = resource.getFileStream(user);
             }
         }
         else if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
         {
             Map<String, MultipartFile> files = ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
-            MultipartFile file = null==files ? null : files.get("file");
-            if (null != file && file.getSize() > 0)
+            MultipartFile multipartfile = null==files ? null : files.get("file");
+            if (null != file && multipartfile.getSize() > 0)
             {
                 hasPostData = true;
-                loader = DataLoader.getDataLoaderForFile(file);
+                loader = DataLoader.getDataLoaderForFile(multipartfile);
+                file = new SpringAttachmentFile(multipartfile);
             }
         }
 
@@ -172,7 +179,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         BatchValidationException ve = new BatchValidationException();
         //di = wrap(di, ve);
         //importData(di, ve);
-        int rowCount = importData(loader, ve);
+        int rowCount = importData(loader, file, ve);
 
         if (ve.hasErrors())
             throw ve;
@@ -195,13 +202,15 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         {
             errors.reject(SpringActionController.ERROR_MSG, "Table not specified");
         }
+        else if (!_target.hasPermission(user, InsertPermission.class))
+        {
+            if (user.isGuest())
+                throw new UnauthorizedException();
+            errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
+        }
         else if (null == _updateService)
         {
             errors.reject(SpringActionController.ERROR_MSG, "Table does not support update service: " + _target.getName());
-        }
-        else if (!_target.hasPermission(user, InsertPermission.class))
-        {
-            errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
         }
     }
 
@@ -219,7 +228,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
 
     /* TODO change prototype if/when QueryUpdateServie supports DataIterator */
-    protected int importData(DataLoader dl, BatchValidationException errors) throws IOException
+    protected int importData(DataLoader dl, FileStream file, BatchValidationException errors) throws IOException
     {
         DbScope scope = _target.getSchema().getScope();
         try

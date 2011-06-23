@@ -1103,6 +1103,11 @@ public class PageFlowUtil
 
     public static String generateButton(String text, String href, String onClick, String attributes)
     {
+        return generateButtonHtml(filter(text), href, onClick, attributes);
+    }
+    
+    public static String generateButtonHtml(String html, String href, String onClick, String attributes)
+    {
         char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
 
         String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
@@ -1111,7 +1116,7 @@ public class PageFlowUtil
         return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" +
                 " onClick=" + script  +
                 (attributes != null ? " " + attributes : "") +
-                "><span>" + filter(text) + "</span></a>";
+                "><span>" + html + "</span></a>";
     }
 
     public static String generateButton(String text, URLHelper href)
