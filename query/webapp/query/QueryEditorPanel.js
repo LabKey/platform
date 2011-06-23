@@ -247,12 +247,11 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
     },
 
     getMetadata : function() {
-        var el = Ext.get('metadataText'); // really  bad
-        var _meta = this.query.metadataText;
-        if (el) {
-            _meta = el.getValue();
+        var cmp = Ext.getCmp(this.metaId);
+        if (cmp) {
+            return cmp.getValue();
         }
-        return _meta;
+        console.error('Failed to retrieve metadata.');
     },
 
     save : function(showView) {
@@ -266,13 +265,6 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         var _sql = this.eal.getValue(this.editorId);
 
         this.fireEvent('beforeSave', this.query.schema, _sql);
-
-        if (!this.isSaveDirty()) {
-            this.fireEvent('save', true);
-            if (showView === true && this.query.executeUrl) {
-                window.location = this.query.executeUrl;
-            }
-        }
 
         var json = {
             schemaName   : this.query.schema,
@@ -343,7 +335,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
      * Returns whether the query has changed from its last saved state.
      */
     isSaveDirty : function() {
-        
+        console.info('source: ' + (this.eal.getValue(this.editorId).toLowerCase() != this.query.queryText.toLowerCase()));
         return this.eal.getValue(this.editorId).toLowerCase() != this.query.queryText.toLowerCase();
     },
 
@@ -535,7 +527,9 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
     },
 
     isSaveDirty : function() {
-        return this.getValue().toLowerCase() !=  this.query.metadataText.toLowerCase();
+        var _val = this.getValue().toLowerCase().replace(/(\s)/g, '');
+        var _meta = this.query.metadataText.toLowerCase().replace(/(\s)/g, '');
+        return _val != _meta;
     },
 
     getValue : function() {
@@ -571,11 +565,6 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         var _xml = this.getValue();
 
         this.fireEvent('beforeSave', this.query.schema, _xml);
-
-        if (!this.isSaveDirty()) {
-            this.fireEvent('save', true);
-            return;
-        }
 
         var json = {};
         json.schemaName = this.query.schema;
@@ -637,9 +626,11 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             }
         });
 
+        var _metaId = Ext.id();
         this.sourceEditor = new LABKEY.query.SourceEditorPanel({
             query : this.query,
-            metadata : true
+            metadata : true,
+            metaId : _metaId
         });
 
         this.sourceEditor.on('beforeExecute', function(schema, sql){
@@ -658,6 +649,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         }, this);
 
         this.metaEditor = new LABKEY.query.MetadataXMLEditorPanel({
+            id    : _metaId,
             query : this.query
         });
 
