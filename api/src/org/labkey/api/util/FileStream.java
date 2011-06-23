@@ -99,6 +99,27 @@ public interface FileStream
     }
 
 
+    public static class StringFileStream extends ByteArrayFileStream
+    {
+        public StringFileStream(String s) throws UnsupportedEncodingException
+        {
+            super(toBytes(s));
+        }
+
+        static byte[] toBytes(String s)
+        {
+            try
+            {
+                return s.getBytes("UTF-8");
+            }
+            catch (UnsupportedEncodingException  x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
+    }
+
+
     public static class FileFileStream implements FileStream
     {
         FileInputStream in;
