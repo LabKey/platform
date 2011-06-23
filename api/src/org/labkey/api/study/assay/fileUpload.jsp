@@ -28,6 +28,10 @@
 <table id="file-upload-tbl"></table>
 
 <script type="text/javascript">
+    LABKEY.requiresCss("fileAddRemoveIcon.css");
+</script>
+
+<script type="text/javascript">
     var _fileUploadIndex = 0;
     var _maxFileInputs = <%= bean.getMaxFileInputs() %>;
 
@@ -37,7 +41,7 @@
     function addFileUploadInputRow(btn)
     {
         // if the add button was clicked and it was disabled, do nothing
-        if (btn && btn.className.indexOf("labkey-disabled-button") != -1)
+        if (btn && btn.className.indexOf("labkey-file-add-icon-disabled") != -1)
         {
             return;
         }
@@ -63,11 +67,11 @@
         {
             // add a cell with a button for removing the given row
             cell = row.insertCell(1);
-            cell.innerHTML = "<a id='file-upload-remove" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='removeFileUploadInputRow(this, " + _fileUploadIndex + ");'><span>&#45;</span></a>";
+            cell.innerHTML = "<a id='file-upload-remove" + _fileUploadIndex + "' class='labkey-file-remove-icon labkey-file-remove-icon-disabled' onClick='removeFileUploadInputRow(this, " + _fileUploadIndex + ");'><span>&nbsp;</span></a>";
 
             // add a cell with a button for adding another row
             cell = row.insertCell(2);
-            cell.innerHTML = "<a id='file-upload-add" + _fileUploadIndex + "' class='labkey-disabled-button' onClick='addFileUploadInputRow(this);'><span>&#43;</span></a>";
+            cell.innerHTML = "<a id='file-upload-add" + _fileUploadIndex + "' class='labkey-file-add-icon labkey-file-add-icon-disabled' onClick='addFileUploadInputRow(this);'><span>&nbsp;</span></a>";
 
             _fileUploadIndex++;
 
@@ -82,7 +86,7 @@
     function removeFileUploadInputRow(btn, index)
     {
         // if the remove button was clicked and it was disabled, do nothing
-        if (btn && btn.className.indexOf("labkey-disabled-button") != -1)
+        if (btn && btn.className.indexOf("labkey-file-remove-icon-disabled") != -1)
         {
             return;
         }
@@ -102,7 +106,6 @@
             _fileUploadIndex--;
 
             reindexFileUploadInputRows();
-            toggleAddRemoveButtons();
         }
     }
 
@@ -122,9 +125,11 @@
 
             document.getElementById("<%= AssayDataCollector.PRIMARY_FILE %>" + prevRowNum).name = "<%= AssayDataCollector.PRIMARY_FILE %>" + (i > 0 ? i : "");
             document.getElementById("<%= AssayDataCollector.PRIMARY_FILE %>" + prevRowNum).id = "<%= AssayDataCollector.PRIMARY_FILE %>" + i;
-            row.cells[1].innerHTML = "<a id='file-upload-remove" + i + "' class='labkey-button' onClick='removeFileUploadInputRow(this, " + i + ");'><span>&#45;</span></a>";
+            row.cells[1].innerHTML = "<a id='file-upload-remove" + i + "' class='labkey-file-remove-icon labkey-file-remove-icon-disabled' onClick='removeFileUploadInputRow(this, " + i + ");'><span>&nbsp;</span></a>";
             document.getElementById("file-upload-add" + prevRowNum).id = "file-upload-add" + i;
         }
+
+        toggleAddRemoveButtons();
     }
 
     /**
@@ -165,11 +170,13 @@
         {
             if (enable)
             {
-                el.replaceClass("labkey-disabled-button", "labkey-button");
+                el.removeClass("labkey-file-" + type + "-icon-disabled");
+                el.addClass("labkey-file-" + type + "-icon-enabled");
             }
             else
             {
-                el.replaceClass("labkey-button", "labkey-disabled-button");
+                el.removeClass("labkey-file-" + type + "-icon-enabled");
+                el.addClass("labkey-file-" + type + "-icon-disabled");
             }
         }
     }    
