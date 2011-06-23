@@ -718,7 +718,7 @@ public class QueryController extends SpringActionController
             catch (SQLException e)
             {
                 errors.reject("An exception occurred: " + e);
-                Logger.getLogger(QueryController.class).error("Error", e);
+                LOG.error("Error", e);
                 return false;
             }
         }

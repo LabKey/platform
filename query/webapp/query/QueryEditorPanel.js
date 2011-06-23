@@ -276,18 +276,17 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         Ext.Ajax.request({
             url    : LABKEY.ActionURL.buildURL('query', 'saveSourceQuery.api'),
             method : 'POST',
-            success: onSuccess,
+            success: LABKEY.Utils.getCallbackWrapper(onSuccess, this),
             jsonData : Ext.encode(json),
-            failure: onError,
+            failure: LABKEY.Utils.getCallbackWrapper(onError, this, true),
             headers : {
                 'Content-Type' : 'application/json'
             },
             scope : this
         });
 
-        function onSuccess(response, opts) {
+        function onSuccess(json, response, opts) {
 
-            var json = Ext.decode(response.responseText);
             if (json.parseErrors) {
                 // There are errors
                 var msgs = [];
@@ -303,7 +302,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
                     this.query.queryText = this.eal.getValue(this.editorId);
                     
-                    this.fireEvent('save', true);
+                    this.fireEvent('save', true, json);
                     
                     window.location = this.query.executeUrl;
                 }
@@ -311,10 +310,10 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
             this.query.queryText = this.eal.getValue(this.editorId);
             
-            this.fireEvent('save', true);
+            this.fireEvent('save', true, json);
         }
 
-        function onError() { this.fireEvent('save', false); }
+        function onError(json, response, opts) { this.fireEvent('save', false, json); }
     },
 
     onShow : function() {

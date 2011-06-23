@@ -116,7 +116,7 @@
         var cmp = Ext.getCmp('qep');
         if (cmp) {  cmp.getSourceEditor().execute(true); }
     }
-   
+
     Ext.onReady(function(){
 
         Ext.QuickTips.init();
@@ -168,11 +168,18 @@
         Ext.EventManager.onWindowResize(_resize);
         Ext.EventManager.fireWindowResize();
 
-        function beforeSave() { setStatus('Saving...'); }
-        function afterSave(saved)  {
-            if (saved) setStatus("Saved", true);
+        function beforeSave() {
+            setStatus('Saving...');
+        }
+        function afterSave(saved, json)  {
+            if (saved) {
+                setStatus("Saved", true);
+            }
             else {
-                setError("Failed to Save");
+                var msg = "Failed to Save";
+                if (json && json.exception)
+                    msg += ": " + json.exception;
+                setError(msg);
             }
         }
         queryEditor.getSourceEditor().on('beforeSave', beforeSave);
