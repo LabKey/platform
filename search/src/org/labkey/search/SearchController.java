@@ -56,6 +56,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
@@ -334,6 +335,26 @@ public class SearchController extends SpringActionController
             setHelpTopic(new HelpTopic("searchAdmin"));
             PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Full-Text Search Configuration", null);
             return root;
+        }
+    }
+
+
+    /** for selenium testing */
+    @RequiresSiteAdmin
+    public class WaitForIdleAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            ss.waitForIdle();
+            throw new RedirectException(new ActionURL(AdminAction.class, getContainer()));
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
