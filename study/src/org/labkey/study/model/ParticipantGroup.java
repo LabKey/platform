@@ -15,7 +15,12 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Entity;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +36,7 @@ public class ParticipantGroup extends Entity
     private int _rowId;
     private String _label;
     private int _classificationId;  // fk to participant classification
+    private String _classificationLabel;
 
     private List<String> _participantIds = new ArrayList<String>();
 
@@ -82,5 +88,23 @@ public class ParticipantGroup extends Entity
     public void addParticipantId(String participantId)
     {
         _participantIds.add(participantId);
+    }
+
+    public String getClassificationLabel()
+    {
+        return _classificationLabel;
+    }
+
+    public void setClassificationLabel(String classificationLabel)
+    {
+        _classificationLabel = classificationLabel;
+    }
+
+    public ActionURL addFilter(ViewContext context, String dataRegionName)
+    {
+        ActionURL url = context.cloneActionURL();
+
+        url.addFilter(dataRegionName, FieldKey.fromParts(StudyService.get().getSubjectNounSingular(context.getContainer()) + "Id", getClassificationLabel()), CompareType.EQUAL, getLabel());
+        return url;
     }
 }

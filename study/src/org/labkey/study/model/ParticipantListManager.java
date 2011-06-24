@@ -16,9 +16,11 @@
 package org.labkey.study.model;
 
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -26,13 +28,15 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.StudyController;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -97,6 +101,37 @@ public class ParticipantListManager
         }
     }
 
+    public ActionButton createParticipantListButton(ViewContext context, Container container, String dataRegionName)
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Lists");
+
+        ParticipantClassification[] classes = getParticipantClassifications(container);
+        for (ParticipantClassification cls : classes)
+        {
+            ParticipantGroup[] groups = cls.getGroups();            
+            if (null != groups && groups.length > 1)
+            {
+                NavTree item = new NavTree(cls.getLabel());
+                for (ParticipantGroup grp : groups)
+                {
+                    item.addChild(grp.getLabel(), grp.addFilter(context, dataRegionName));
+                }
+                button.addMenuItem(item);
+            }
+            else if (null != groups && groups.length == 1)
+            {
+                ActionURL filter = groups[0].addFilter(context, dataRegionName);          
+                button.addMenuItem(groups[0].getLabel(), filter.toString(), null, false);
+            }
+        }
+
+        button.addSeparator();
+        button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Lists", new ActionURL(StudyController.ManageParticipantClassificationsAction.class, container));
+
+        return button;
+    }
+    
     public ParticipantClassification[] getParticipantClassifications(Container c)
     {
         return getParticipantClassifications(new SimpleFilter("Container", c));
@@ -222,6 +257,7 @@ public class ParticipantListManager
                 {
                     ParticipantGroup group = new ParticipantGroup();
                     group.setClassificationId(def.getRowId());
+                    group.setClassificationLabel(def.getLabel());
                     group.setLabel(pg.getLabel());
                     group.setContainer(pg.getContainerId());
                     group.setRowId(pg.getRowId());

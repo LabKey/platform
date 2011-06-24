@@ -181,6 +181,7 @@ import org.labkey.study.model.CustomParticipantView;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantListManager;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
@@ -990,6 +991,7 @@ public class StudyController extends BaseStudyController
         {
             createViewButton(buttonBar, queryView);
             createCohortButton(buttonBar, cohortFilter);
+            createParticipantListButton(buttonBar, queryView.getDataRegionName());
             if (StudyManager.getInstance().showQCStates(queryView.getContainer()))
                 createQCStateButton(queryView, buttonBar, currentStates);
 
@@ -1112,6 +1114,13 @@ public class StudyController extends BaseStudyController
             ActionButton cohortButton = CohortManager.getInstance().createCohortButton(getViewContext(), currentCohortFilter);
             if (cohortButton != null)
                 buttonBar.add(cohortButton);
+        }
+
+        private void createParticipantListButton(List<ActionButton> buttonBar, String dataRegionName)
+        {
+            ActionButton listButton = ParticipantListManager.getInstance().createParticipantListButton(getViewContext(), getContainer(), dataRegionName);
+            if (null != listButton)
+                buttonBar.add(listButton);
         }
 
         private void createQCStateButton(DataSetQueryView view, List<ActionButton> buttonBar, QCStateSet currentSet)
