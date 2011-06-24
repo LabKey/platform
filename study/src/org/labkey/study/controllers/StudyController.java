@@ -6890,8 +6890,15 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            return root.addChild("Manage Participant Classifications");
+            try
+            {
+                _appendManageStudy(root);
+                root.addChild("Manage " + getStudy().getSubjectNounSingular() + " Classifications");
+            }
+            catch (ServletException e)
+            {
+            }
+            return root;
         }
     }
 }

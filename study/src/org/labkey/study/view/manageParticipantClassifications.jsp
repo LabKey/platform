@@ -57,6 +57,7 @@
             ],
             autoLoad: true
         });
+        store.on('load', toggleEditDeleteButtons);
 
         var columnModel = new Ext.grid.ColumnModel({
             defaults: {
@@ -114,22 +115,23 @@
             viewConfig: {forceFit: true},
             tbar: tbarButtons
         });
+        _grid.on('rowclick', toggleEditDeleteButtons);
+    }
 
-        // rowclick listener to enable/disable the edit and delete buttons based on selection
-        _grid.on('rowclick', function(g, rowIdx, e){
-            var topTB = g.getTopToolbar();
+    // enable/disable the edit and delete buttons based on selection
+    function toggleEditDeleteButtons(){
+        var topTB = _grid.getTopToolbar();
 
-            if (g.getSelectionModel().getCount() == 1)
-            {
-                topTB.findById('editSelectedButton').enable();
-                topTB.findById('deleteSelectedButton').enable();
-            }
-            else
-            {
-                topTB.findById('editSelectedButton').disable();
-                topTB.findById('deleteSelectedButton').disable();
-            }
-        }, this);
+        if (_grid.getSelectionModel().getCount() == 1)
+        {
+            topTB.findById('editSelectedButton').enable();
+            topTB.findById('deleteSelectedButton').enable();
+        }
+        else
+        {
+            topTB.findById('editSelectedButton').disable();
+            topTB.findById('deleteSelectedButton').disable();
+        }
     }
 
     function editParticipantClassifications(row){
@@ -389,12 +391,20 @@
         getSelectedDemoParticipants: function(queryName, showStr) {
             var ptidClassfiicationPanel = this;
 
+            // convert user filters from data region to expected filterArray
+            var filters = [];
+            Ext.each(Ext.ComponentMgr.get('demoDataRegion').getUserFilter(), function(usrFilter){
+                var filterType = this.getFilterTypeByURLSuffix(usrFilter.op);
+                filters.push(LABKEY.Filter.create(usrFilter.fieldKey,  usrFilter.value, filterType));
+            }, this);
+
             // get the selected rows from the QWP data region
             LABKEY.Query.selectRows({
                 schemaName: 'study',
                 queryName: queryName,
                 selectionKey: Ext.ComponentMgr.get('demoDataRegion').selectionKey,
                 showRows: showStr,
+                filterArray: filters,
                 columns: '<%= subjectNounColName %>',
                 success: function(data){
                     // get the current list of participant ids from the form
@@ -427,6 +437,19 @@
                     });
                 }
             });
+        },
+
+        getFilterTypeByURLSuffix: function(op)
+        {
+            // loop through the labkey filter types to match the URL suffix
+            for (var type in LABKEY.Filter.Types)
+            {
+                if (LABKEY.Filter.Types[type].getURLSuffix() == op)
+                {
+                    return LABKEY.Filter.Types[type];
+                }
+            }
+            return null;
         }
     });
 
