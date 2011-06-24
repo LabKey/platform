@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Entity;
 import org.labkey.api.query.FieldKey;
@@ -100,11 +101,21 @@ public class ParticipantGroup extends Entity
         _classificationLabel = classificationLabel;
     }
 
-    public ActionURL addFilter(ViewContext context, String dataRegionName)
+    public ActionURL getFilter(ViewContext context, String dataRegionName)
     {
         ActionURL url = context.cloneActionURL();
+        FieldKey key = FieldKey.fromParts(StudyService.get().getSubjectColumnName(context.getContainer()), getClassificationLabel());
 
-        url.addFilter(dataRegionName, FieldKey.fromParts(StudyService.get().getSubjectNounSingular(context.getContainer()) + "Id", getClassificationLabel()), CompareType.EQUAL, getLabel());
+        StringBuilder filterKey = new StringBuilder();
+        if (!StringUtils.isEmpty(dataRegionName))
+        {
+            filterKey.append(dataRegionName);
+            filterKey.append(".");
+        }
+        filterKey.append(key);
+
+        url.deleteFilterParameters(filterKey.toString());
+        url.addFilter(dataRegionName, key, CompareType.EQUAL, getLabel());
         return url;
     }
 }

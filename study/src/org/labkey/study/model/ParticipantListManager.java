@@ -115,13 +115,13 @@ public class ParticipantListManager
                 NavTree item = new NavTree(cls.getLabel());
                 for (ParticipantGroup grp : groups)
                 {
-                    item.addChild(grp.getLabel(), grp.addFilter(context, dataRegionName));
+                    item.addChild(grp.getLabel(), grp.getFilter(context, dataRegionName));
                 }
                 button.addMenuItem(item);
             }
             else if (null != groups && groups.length == 1)
             {
-                ActionURL filter = groups[0].addFilter(context, dataRegionName);          
+                ActionURL filter = groups[0].getFilter(context, dataRegionName);
                 button.addMenuItem(groups[0].getLabel(), filter.toString(), null, false);
             }
         }
