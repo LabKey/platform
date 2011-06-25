@@ -914,25 +914,26 @@ public class QueryController extends SpringActionController
             HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url);
 
             Connection con = scope.getConnection();
+            SqlDialect dialect = scope.getSqlDialect();
             DatabaseMetaData dbmd = con.getMetaData();
 
             ResultSet columnsRs;
 
-            if (scope.getSqlDialect().treatCatalogsAsSchemas())
+            if (dialect.treatCatalogsAsSchemas())
                 columnsRs = dbmd.getColumns(_schemaName, null, _tableName, null);
             else
                 columnsRs = dbmd.getColumns(null, _schemaName, _tableName, null);
 
-            ModelAndView metaDataView = new ResultSetView(new CachedRowSetImpl(columnsRs, 0), "Table Meta Data");
+            ModelAndView metaDataView = new ResultSetView(new CachedRowSetImpl(columnsRs, dialect.shouldCacheMetaData(), 0), "Table Meta Data");
 
             ResultSet pksRs;
 
-            if (scope.getSqlDialect().treatCatalogsAsSchemas())
+            if (dialect.treatCatalogsAsSchemas())
                 pksRs = dbmd.getPrimaryKeys(_schemaName, null, _tableName);
             else
                 pksRs = dbmd.getPrimaryKeys(null, _schemaName, _tableName);
 
-            ModelAndView pkView = new ResultSetView(new CachedRowSetImpl(pksRs, 0), "Primary Key Meta Data");
+            ModelAndView pkView = new ResultSetView(new CachedRowSetImpl(pksRs, dialect.shouldCacheMetaData(), 0), "Primary Key Meta Data");
             scope.releaseConnection(con);
 
             return new VBox(scopeInfo, metaDataView, pkView);
@@ -957,6 +958,7 @@ public class QueryController extends SpringActionController
             _schemaName = getViewContext().getActionURL().getParameter("schemaName");
             DbSchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(_schemaName).getDbSchema();
             DbScope scope = schema.getScope();
+            SqlDialect dialect = scope.getSqlDialect();
 
             HttpView scopeInfo = new ScopeView("Scope Information", scope);
 
@@ -964,7 +966,7 @@ public class QueryController extends SpringActionController
             DatabaseMetaData dma = con.getMetaData();
             ResultSet rs;
 
-            if (scope.getSqlDialect().treatCatalogsAsSchemas())
+            if (dialect.treatCatalogsAsSchemas())
                 rs = dma.getTables(_schemaName, null, null, null);
             else
                 rs = dma.getTables(null, _schemaName, null, null);
@@ -972,7 +974,7 @@ public class QueryController extends SpringActionController
             ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
             url.addParameter("schemaName", _schemaName);
             String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
-            ModelAndView tableInfo = new ResultSetView(new CachedRowSetImpl(rs, 0), "Tables", 3, tableLink);
+            ModelAndView tableInfo = new ResultSetView(new CachedRowSetImpl(rs, dialect.shouldCacheMetaData(), 0), "Tables", 3, tableLink);
             scope.releaseConnection(con);
 
             return new VBox(scopeInfo, tableInfo);
@@ -1055,7 +1057,7 @@ public class QueryController extends SpringActionController
             for (int i = 1; i <= columnCount; i++)
             {
                 out.print("<th>");
-                out.print(md.getColumnName(i));
+                out.print(PageFlowUtil.filter(md.getColumnName(i)));
                 out.print("</th>");
             }
 
@@ -1074,12 +1076,11 @@ public class QueryController extends SpringActionController
                     if (null != _link && _linkColumn == i)
                     {
                         out.print("<a href=\"");
-                        out.print(_link);
-                        out.print(val.toString());
+                        out.print(PageFlowUtil.filter(_link + val.toString()));
                         out.print("\">");
                     }
 
-                    out.print(null == val ? "&nbsp;" : val.toString());
+                    out.print(null == val ? "&nbsp;" : PageFlowUtil.filter(val));
 
                     if (null != _link && _linkColumn == i)
                         out.print("</a>");

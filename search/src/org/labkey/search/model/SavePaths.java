@@ -370,6 +370,7 @@ public class SavePaths implements DavCrawler.SavePaths
         try
         {
             rs = (CachedRowSetImpl)Table.executeQuery(getSearchSchema(), s);
+
             while (rs.next())
             {
                 String name = rs.getString("Name");
@@ -379,6 +380,7 @@ public class SavePaths implements DavCrawler.SavePaths
                 Date lastIndex = rs.getTimestamp("LastIndexed");
                 map.put(name, new DavCrawler.ResourceInfo(lastIndex, modified));
             }
+
             rs.close();
             rs = null;
             return map;

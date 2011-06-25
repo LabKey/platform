@@ -189,7 +189,7 @@ public abstract class SasDialect extends SimpleSqlDialect
         // Don't test keywords on SAS
     }
 
-// SAS driver doesn't support setting java.sql.Timestamp parameters, so convert to java.sql.Date
+    // SAS driver doesn't support setting java.sql.Timestamp parameters, so convert to java.sql.Date
     private static class SasStatementWrapper extends StatementWrapper
     {
         protected SasStatementWrapper(ConnectionWrapper conn, Statement stmt)
