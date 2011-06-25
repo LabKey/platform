@@ -54,7 +54,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 
 import javax.servlet.http.HttpServletResponse;
@@ -324,7 +323,7 @@ public class Table
                 scrollOffset--;
 
             if (cache)
-                return cacheResultSet(rs, rowCount, asyncRequest);
+                return cacheResultSet(schema.getSqlDialect(), rs, rowCount, asyncRequest);
             else
                 return new ResultSetImpl(conn, schema, rs, rowCount);
         }
@@ -381,7 +380,7 @@ public class Table
 
             if (clss == java.util.Map.class)
             {
-                CachedRowSetImpl copy = (CachedRowSetImpl)cacheResultSet(rs, 0, null);
+                CachedRowSetImpl copy = (CachedRowSetImpl)cacheResultSet(schema.getSqlDialect(), rs, 0, null);
                 //noinspection unchecked
                 K[] arrayListMaps = (K[])(copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
                 copy.close();
@@ -1587,9 +1586,9 @@ public class Table
     }
 
 
-    private static TableResultSet cacheResultSet(ResultSet rs, int rowCount, @Nullable AsyncQueryRequest asyncRequest) throws SQLException
+    private static TableResultSet cacheResultSet(SqlDialect dialect, ResultSet rs, int rowCount, @Nullable AsyncQueryRequest asyncRequest) throws SQLException
     {
-        CachedRowSetImpl crsi = new CachedRowSetImpl(rs, rowCount);
+        CachedRowSetImpl crsi = new CachedRowSetImpl(rs, dialect.shouldCacheMetaData(), rowCount);
 
         if (null != asyncRequest && AppProps.getInstance().isDevMode())
             crsi.setStackTrace(asyncRequest.getCreationStackTrace());

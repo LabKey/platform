@@ -26,152 +26,139 @@ import java.util.ArrayList;
  * Time: 1:25:29 PM
  */
 
-// Not currently used.  Could be if we ever need to construct a ResultSet from scratch... as opposed to stealing
-// the meta data from a real ResultSet.
+// Used for testing and for databases that require meta data caching.
 public class ResultSetMetaDataImpl implements ResultSetMetaData
 {
-    public class ColumnMetaData
+    private final ArrayList<ColumnMetaData> _list;
+
+    protected ResultSetMetaDataImpl(int size)
     {
-        public boolean isAutoIncrement = false;
-        public boolean isCaseSensitive = false;
-        public boolean isSearchable = true;
-        public boolean isCurrency = false;
-        public int isNullable = columnNullable;
-        public boolean isSigned = true;
-        public int columnDisplaySize = 10;
-        public String columnLabel = null;
-        public String columnName = null;
-        public String schemaName = null;
-        public int precision = 0;
-        public int scale = 0;
-        public String tableName = null;
-        public String catalogName = null;
-        public int columnType=0;
-        public String columnTypeName="";
-        public boolean isReadOnly = false;
-        public boolean isWritable = true;
-        public boolean isDefinitelyWritable = true;
-        public String columnClassName = "";
+        _list = new ArrayList<ColumnMetaData>(size);
+        _list.add(null);
     }
 
-    ArrayList<ColumnMetaData> list;
-
+    // Default to 10 elements if not specified
     protected ResultSetMetaDataImpl()
     {
-        list = new ArrayList<ColumnMetaData>(10);
-        list.add(null);
+        this(10);
     }
 
     protected void addColumn(ColumnMetaData col)
     {
-        list.add(col);
+        _list.add(col);
+    }
+
+    protected void addAllColumns(ResultSetMetaData md) throws SQLException
+    {
+        for (int i = 1; i <= md.getColumnCount(); i++)
+            addColumn(new ColumnMetaData(md, i));
     }
 
     public int getColumnCount() throws SQLException
     {
-        return list.size()-1;
+        return _list.size() - 1;
     }
 
     public boolean isAutoIncrement(int column) throws SQLException
     {
-        return list.get(column).isAutoIncrement;
+        return _list.get(column).isAutoIncrement;
     }
 
     public boolean isCaseSensitive(int column) throws SQLException
     {
-        return list.get(column).isCaseSensitive;
+        return _list.get(column).isCaseSensitive;
     }
 
     public boolean isSearchable(int column) throws SQLException
     {
-        return list.get(column).isSearchable;
+        return _list.get(column).isSearchable;
     }
 
     public boolean isCurrency(int column) throws SQLException
     {
-        return list.get(column).isCurrency;
+        return _list.get(column).isCurrency;
     }
 
     public int isNullable(int column) throws SQLException
     {
-        return list.get(column).isNullable;
+        return _list.get(column).isNullable;
     }
 
     public boolean isSigned(int column) throws SQLException
     {
-        return list.get(column).isSigned;
+        return _list.get(column).isSigned;
     }
 
     public int getColumnDisplaySize(int column) throws SQLException
     {
-        return list.get(column).columnDisplaySize;
+        return _list.get(column).columnDisplaySize;
     }
 
     public String getColumnLabel(int column) throws SQLException
     {
-        return list.get(column).columnLabel;
+        return _list.get(column).columnLabel;
     }
 
     public String getColumnName(int column) throws SQLException
     {
-        return list.get(column).columnName;
+        return _list.get(column).columnName;
     }
 
     public String getSchemaName(int column) throws SQLException
     {
-        return list.get(column).schemaName;
+        return _list.get(column).schemaName;
     }
 
     public int getPrecision(int column) throws SQLException
     {
-        return list.get(column).precision;
+        return _list.get(column).precision;
     }
 
     public int getScale(int column) throws SQLException
     {
-        return list.get(column).scale;
+        return _list.get(column).scale;
     }
 
     public String getTableName(int column) throws SQLException
     {
-        return list.get(column).tableName;
+        return _list.get(column).tableName;
     }
 
     public String getCatalogName(int column) throws SQLException
     {
-        return list.get(column).catalogName;
+        return _list.get(column).catalogName;
     }
 
     public int getColumnType(int column) throws SQLException
     {
-        return list.get(column).columnType;
+        return _list.get(column).columnType;
     }
 
     public String getColumnTypeName(int column) throws SQLException
     {
 //        if (null == list.get(column).columnTypeName)
 //            list.get(column).columnTypeName = ColumnInfo.sqlTypeNameFromSqlType(list.get(column).columnType, SqlDialectMicrosoftSQLServer.getInstance());
-        return list.get(column).columnTypeName;
+        return _list.get(column).columnTypeName;
     }
 
     public boolean isReadOnly(int column) throws SQLException
     {
-        return list.get(column).isReadOnly;
+        return _list.get(column).isReadOnly;
     }
 
     public boolean isWritable(int column) throws SQLException
     {
-        return list.get(column).isWritable;
+        return _list.get(column).isWritable;
     }
 
     public boolean isDefinitelyWritable(int column) throws SQLException
     {
-        return list.get(column).isDefinitelyWritable;
+        return _list.get(column).isDefinitelyWritable;
     }
 
     public String getColumnClassName(int column) throws SQLException
     {
-        return list.get(column).columnClassName;
+        return _list.get(column).columnClassName;
     }
 
     public <T> T unwrap(Class<T> iface) throws SQLException
@@ -182,5 +169,80 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
     public boolean isWrapperFor(Class<?> iface) throws SQLException
     {
         return false;
+    }
+
+
+    public static class ColumnMetaData
+    {
+        public boolean isAutoIncrement;
+        public boolean isCaseSensitive;
+        public boolean isSearchable;
+        public boolean isCurrency;
+        public int isNullable;
+        public boolean isSigned;
+        public int columnDisplaySize;
+        public String columnLabel;
+        public String columnName;
+        public String schemaName;
+        public int precision;
+        public int scale;
+        public String tableName;
+        public String catalogName;
+        public int columnType;
+        public String columnTypeName;
+        public boolean isReadOnly;
+        public boolean isWritable;
+        public boolean isDefinitelyWritable;
+        public String columnClassName;
+
+        // Set all default values
+        public ColumnMetaData()
+        {
+            isAutoIncrement = false;
+            isCaseSensitive = false;
+            isSearchable = true;
+            isCurrency = false;
+            isNullable = columnNullable;
+            isSigned = true;
+            columnDisplaySize = 10;
+            columnLabel = null;
+            columnName = null;
+            schemaName = null;
+            precision = 0;
+            scale = 0;
+            tableName = null;
+            catalogName = null;
+            columnType = 0;
+            columnTypeName = "";
+            isReadOnly = false;
+            isWritable = true;
+            isDefinitelyWritable = true;
+            columnClassName = "";
+        }
+
+        // Set values based on the specified ResultSetMetaData column
+        private ColumnMetaData(ResultSetMetaData md, int i) throws SQLException
+        {
+            catalogName = md.getCatalogName(i);
+            isAutoIncrement = md.isAutoIncrement(i);
+            isCaseSensitive = md.isCaseSensitive(i);
+            isSearchable = md.isSearchable(i);
+            isCurrency = md.isCurrency(i);
+            isNullable = md.isNullable(i);
+            isSigned = md.isSigned(i);
+            columnDisplaySize = md.getColumnDisplaySize(i);
+            columnLabel = md.getColumnLabel(i);
+            columnName = md.getColumnName(i);
+            schemaName = md.getSchemaName(i);
+            precision = md.getPrecision(i);
+            scale = md.getScale(i);
+            tableName = md.getTableName(i);
+            columnType = md.getColumnType(i);
+            columnTypeName = md.getColumnTypeName(i);
+            isReadOnly = md.isReadOnly(i);
+            isWritable = md.isWritable(i);
+            isDefinitelyWritable = md.isDefinitelyWritable(i);
+            columnClassName = md.getColumnClassName(i);
+        }
     }
 }

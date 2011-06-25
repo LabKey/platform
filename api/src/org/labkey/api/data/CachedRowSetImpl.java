@@ -72,14 +72,13 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     private static final Logger _log = Logger.getLogger(CachedRowSetImpl.class);
 
     // metadata
-    ResultSetMetaData _md;
-    HashMap<String, Integer> _columns;
+    private ResultSetMetaData _md;
+    private HashMap<String, Integer> _columns;
 
     // data
-    Map<String, Object>[] _maps;
     ArrayListMap<String, Object>[] _arrayListMaps;
+    private Map<String, Object>[] _maps;
     private boolean _isComplete = true;
-    private boolean _debug = AppProps.getInstance().isDevMode();
     private boolean _wasClosed = false;
 
     private StackTraceElement[] _stackTrace = null;
@@ -87,10 +86,10 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     private String _threadName = null;
 
     // state
-    int _row = -1;
-    int _direction = 1;
-    int _fetchSize = 1;
-    Object _lastObject = null;
+    private int _row = -1;
+    private int _direction = 1;
+    private int _fetchSize = 1;
+    private Object _lastObject = null;
 
 
     private CachedRowSetImpl()
@@ -99,16 +98,17 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     }
 
 
-    public CachedRowSetImpl(ResultSet rs, int maxRows) throws SQLException
+    public CachedRowSetImpl(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
     {
-        this(rs, maxRows, null);
+        this(rs, cacheMetaData, maxRows, null);
     }
 
 
-    public CachedRowSetImpl(ResultSet rs, int maxRows, Predicate<Map<String, Object>> pred) throws SQLException
+    // TODO: pred is not used... combine with above?
+    public CachedRowSetImpl(ResultSet rs, boolean cacheMetaData, int maxRows, Predicate<Map<String, Object>> pred) throws SQLException
     {
         this();
-        List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
+        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 
         if (maxRows == 0)
             maxRows = Integer.MAX_VALUE;
@@ -126,30 +126,30 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
         // If we have another row, then we're not complete
         boolean isComplete = !rs.next();
 
-        init(rs.getMetaData(), list, isComplete);
+        init(rs.getMetaData(), cacheMetaData, list, isComplete);
     }
 
 
-    public CachedRowSetImpl(ResultSetMetaData md, List<Map<String, Object>> maps, boolean isComplete)
+    public CachedRowSetImpl(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
     {
         this();
-        init(md, maps, isComplete);
+        init(md, cacheMetaData, maps, isComplete);
     }
 
 
-    private void init(ResultSetMetaData md, List<Map<String,Object>> maps, boolean isComplete)
+    private void init(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
     {
         // UNDONE(MAB): consider moving to ArrayList internally to avoid this array nonsense
         // HACK
         if (maps.size() > 0 && maps.get(0) instanceof ArrayListMap)
             //noinspection unchecked
-            init(md, maps.toArray((Map<String,Object>[])new ArrayListMap[maps.size()]), isComplete);
+            init(md, cacheMetaData, maps.toArray((Map<String, Object>[])new ArrayListMap[maps.size()]), isComplete);
         else
             //noinspection unchecked
-            init(md, maps.toArray((Map<String,Object>[])new Map[maps.size()]), isComplete);
+            init(md, cacheMetaData, maps.toArray((Map<String, Object>[])new Map[maps.size()]), isComplete);
 
         // Stash stack trace that created this CachedRowSetImpl
-        if (_debug)
+        if (AppProps.getInstance().isDevMode())
         {
             _stackTrace = Thread.currentThread().getStackTrace();
 
@@ -170,17 +170,20 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     }
 
 
-    private void init(ResultSetMetaData md, Map<String, Object>[] maps, boolean isComplete)
+    private void init(ResultSetMetaData md, boolean cacheMetaData, Map<String, Object>[] maps, boolean isComplete)
     {
         try
         {
-            _md = md;
+            _md = cacheMetaData ? new CachedResultSetMetaData(md) : md;
             _maps = maps;
+
             if (maps.length > 0 && maps[0] instanceof ArrayListMap)
                 _arrayListMaps = (ArrayListMap<String, Object>[]) _maps;
+
             _isComplete = isComplete;
 
             _columns = new HashMap<String, Integer>(_md.getColumnCount() * 2);
+
             for (int col = _md.getColumnCount(); col >= 1; col--)
             {
                 String colName = md.getColumnName(col).toLowerCase();
@@ -690,7 +693,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
         {
             close();
 
-            if (_debug)
+            if (AppProps.getInstance().isDevMode())
             {
                 StringBuilder error = new StringBuilder("CachedResultSetImpl was not closed.");
                 if (null != _url)
@@ -1185,7 +1188,6 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     {
         throw new UnsupportedOperationException();
     }
-
 
     public int getHoldability() throws SQLException
     {

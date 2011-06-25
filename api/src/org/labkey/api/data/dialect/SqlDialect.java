@@ -231,6 +231,14 @@ public abstract class SqlDialect
 
     protected abstract String sqlTypeNameFromSqlType(PropertyStorageSpec prop);
 
+    // Should we cache ResultSetMetaData for this dialect's ResultSets?  In other words, does the database server
+    // prevent access to ResultSetMetaData after the underlying ResultSet has been closed?
+    public boolean shouldCacheMetaData()
+    {
+        // Most database servers allow access to result set meta data
+        return false;
+    }
+
     protected String getDatabaseMaintenanceSql()
     {
         return null;

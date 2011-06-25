@@ -16,7 +16,6 @@
 package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections15.Predicate;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -24,10 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.CachedRowSetImpl;
-import org.labkey.api.data.ResultSetIterator;
 import org.labkey.api.data.ResultSetMetaDataImpl;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Table;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -40,12 +36,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-
-import static org.apache.commons.collections15.IteratorUtils.filteredIterator;
-import static org.apache.commons.collections15.IteratorUtils.toList;
 
 
 public class ResultSetUtil
@@ -89,6 +80,7 @@ public class ResultSetUtil
     }
     
 
+/*  Not used... TODO: delete
     public static ResultSet filter(ResultSet in, Predicate<Map<String, Object>> pred)
     {
         Iterator<Map<String, Object>> it;
@@ -115,7 +107,7 @@ public class ResultSetUtil
             throw new RuntimeSQLException(x);
         }
     }
-
+*/
     // Convenience method to convert the current row in a ResultSet to a map.  Do not call this in a loop -- new up a ResultSetRowMap instead
     public static Map<String, Object> mapRow(ResultSet rs) throws SQLException
     {
@@ -460,7 +452,7 @@ public class ResultSetUtil
         @Test
         public void testExport() throws IOException, SQLException
         {
-            ArrayList<Map<String,Object>> maps = new ArrayList<Map<String,Object>>();
+            ArrayList<Map<String, Object>> maps = new ArrayList<Map<String, Object>>();
             Map<String,Object> m;
 
             m = new HashMap<String,Object>();
@@ -476,7 +468,7 @@ public class ResultSetUtil
             m.put("s", null);
             maps.add(m);
 
-            ResultSet rs = new CachedRowSetImpl(new TestMetaData(), maps, true);
+            ResultSet rs = new CachedRowSetImpl(new TestMetaData(), false, maps, true);
 
             StringWriter swXML = new StringWriter(1000);
             rs.beforeFirst();

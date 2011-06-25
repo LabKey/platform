@@ -57,13 +57,15 @@ public class ResultsImpl implements Results
     public ResultsImpl(ResultSet rs)
     {
         _rs = rs;
+
         try
         {
             ResultSetMetaData rsmd = rs.getMetaData();
             int count = rsmd.getColumnCount();
-            _fieldMap = new HashMap<FieldKey,ColumnInfo>(count*2);
-            _fieldIndexMap = new HashMap<FieldKey, Integer>(count*2);
-            for (int i=1 ; i<=count ; i++)
+            _fieldMap = new HashMap<FieldKey,ColumnInfo>(count * 2);
+            _fieldIndexMap = new HashMap<FieldKey, Integer>(count * 2);
+
+            for (int i = 1; i <= count; i++)
             {
                 String name = rsmd.getColumnName(i);
                 ColumnInfo col = new ColumnInfo(rsmd,i);
@@ -82,8 +84,8 @@ public class ResultsImpl implements Results
     public ResultsImpl(ResultSet rs, @NotNull Collection<ColumnInfo> cols)
     {
         _rs = rs;
-        _fieldMap = new HashMap<FieldKey, ColumnInfo>(cols.size()*2);
-        _fieldIndexMap = new HashMap<FieldKey, Integer>(cols.size()*2);
+        _fieldMap = new HashMap<FieldKey, ColumnInfo>(cols.size() * 2);
+        _fieldIndexMap = new HashMap<FieldKey, Integer>(cols.size() * 2);
 
         for (ColumnInfo col : cols)
         {

@@ -18,12 +18,10 @@ package org.labkey.api.etl;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.ValidationException;
 
 import java.io.Closeable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 16, 2011
  * Time: 1:51:48 PM

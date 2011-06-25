@@ -26,7 +26,7 @@ import java.io.IOException;
 */
 public class CloseableFilteredIterator<T> extends FilteredIterator<T> implements CloseableIterator<T>
 {
-    protected CloseableIterator<T> _iter;
+    private final CloseableIterator<T> _iter;
 
     public CloseableFilteredIterator(CloseableIterator<T> iter, Filter<T> filter)
     {

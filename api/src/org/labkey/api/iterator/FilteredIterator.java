@@ -27,8 +27,8 @@ import java.util.Iterator;
  */
 public class FilteredIterator<T> implements Iterator<T>
 {
-    private Iterator<T> _iterator;
-    private Filter<T> _filter;
+    private final Iterator<T> _iterator;
+    private final Filter<T> _filter;
     private T _next;
 
     public FilteredIterator(Iterator<T> iterator, Filter<T> filter)
