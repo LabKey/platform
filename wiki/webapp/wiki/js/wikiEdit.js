@@ -298,12 +298,15 @@ function onChangeName()
 
 function onChangeNameConfirmed(buttonId)
 {
-    if(buttonId == "no")
-        updateControl("name", _wikiProps.name);
+    if(buttonId == "yes")
+    {
+       setWikiDirty();
+       _redirUrl = "";    //clear the redir URL since it will be referring to the old name
+       onSave();
+    }
     else
     {
-        setWikiDirty();
-        _redirUrl = ""; //clear the redir URL since it will be referring to the old name
+        updateControl("name", _wikiProps.name);
     }
 }
 

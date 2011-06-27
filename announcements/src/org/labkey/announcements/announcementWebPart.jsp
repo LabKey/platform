@@ -51,12 +51,15 @@
     for (AnnouncementModel a : bean.announcementModels)
     { %>
     <tr>
-        <td class="labkey-announcement-title labkey-force-word-break" width="40%" align="left"><span><a href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span><%
+        <td class="labkey-announcement-title labkey-force-word-break" colspan=3 align="left"><span><a href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span></td>
+    </tr>
+    <tr>
+        <td width="40%" align="left"><%
         if (a.getResponseCount() > 0)
             out.print(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)"));
         %></td>
-        <td class="labkey-announcement-title" width="20%" align="center"><%=h(a.getCreatedByName(bean.includeGroups, user))%></td>
-        <td class="labkey-announcement-title" width="40%" align="right" nowrap><%=DateUtil.formatDateTime(a.getCreated())%></td>
+        <td width="20%" align="center"><%=h(a.getCreatedByName(bean.includeGroups, user))%></td>
+        <td width="40%" align="right" nowrap><%=DateUtil.formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
     <tr><td colspan=3 class="labkey-force-word-break"><%=a.translateBody(c)%></td></tr>

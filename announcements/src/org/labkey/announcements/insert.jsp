@@ -36,19 +36,8 @@
     String insertUrl = AnnouncementsController.getInsertURL(c).getEncodedLocalURIString();
 %>
 <%=formatMissedErrors("form")%>
-<script type="text/javascript">
-function validateForm(form)
-{
-    var trimmedTitle = form.title.value.trim();
 
-    if (trimmedTitle.length > 0)
-        return true;
-
-    alert("Title must not be blank");
-    return false;
-}
-</script>
-<form method=post enctype="multipart/form-data" action="<%=insertUrl%>" onSubmit="return validateForm(this)">
+<form method=post enctype="multipart/form-data" action="<%=insertUrl%>">
 <input type=hidden name=cancelUrl value="<%=h(null != cancelURL ? cancelURL.getLocalURIString() : null)%>">
 <%=generateReturnUrlFormField(cancelURL)%>
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
