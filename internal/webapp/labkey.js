@@ -14,7 +14,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.devMode = false;
     LABKEY.demoMode = false;
     LABKEY.extJsRoot = "ext-3.4.0";
-    LABKEY.extJsRoot_40 = "ext-4.0.1";
+    LABKEY.extJsRoot_40 = "ext-4.0.2a";
     LABKEY.verbose = false;
     LABKEY.widget = {};
     LABKEY.hash = 0;
@@ -241,7 +241,7 @@ LABKEY.requiresExt4Sandbox = function(immediate)
     if (arguments.length < 1) immediate = true;
 
     LABKEY.requiresCss(LABKEY.extJsRoot_40 + '/resources/css/ext-sandbox.css', true);
-    LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-all-dev.js", immediate);
 };
 
 // adds the compatibility layer to be used on the Ext4 sandbox components
