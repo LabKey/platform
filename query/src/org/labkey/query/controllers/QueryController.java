@@ -757,6 +757,11 @@ public class QueryController extends SpringActionController
             if (!form.canEdit())
                 throw new RuntimeException("Edit permissions are required.");
 
+            if ("flow".equals(form.getSchemaName().getSource()) && "DRTQuery1".equals(form.getQueryName()))
+            {
+                LOG.info("** Saving flow.DRTQuery1:\n" + form.ff_queryText);
+            }
+
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             try
