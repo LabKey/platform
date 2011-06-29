@@ -846,6 +846,7 @@ api/src/org/labkey/api/study/SamplesUrls.java -text
 api/src/org/labkey/api/study/Site.java -text
 api/src/org/labkey/api/study/SpecimenService.java -text
 api/src/org/labkey/api/study/Study.java -text
+api/src/org/labkey/api/study/StudyCachable.java -text
 api/src/org/labkey/api/study/StudyContext.java -text
 api/src/org/labkey/api/study/StudyEntity.java -text
 api/src/org/labkey/api/study/StudyImportException.java -text

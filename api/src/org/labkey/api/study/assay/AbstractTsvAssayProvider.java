@@ -122,7 +122,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     {
         List<DataSet> dataSets = StudyService.get().getDatasetsForAssayProtocol(protocol.getRowId());
         // Iterate through all of the studies that contain a dataset created by copying from this assay
-        for (DataSet dataSet : dataSets)
+        for (DataSet<DataSet> dataSet : dataSets)
         {
             Domain domain = dataSet.getDomain();
             DomainProperty property = domain.getPropertyByName("ObjectId");
@@ -136,6 +136,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                     property.setLabel("RowId");
                     domain.save(user);
                     // Update the key property name too
+                    dataSet = dataSet.createMutable();
                     dataSet.setKeyPropertyName("RowId");
                     dataSet.save(user);
                 }

@@ -78,7 +78,6 @@ public class DataRegion extends DisplayElement
     private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
     private long _offset = 0;
     private List<Pair<String, Object>> _hiddenFormFields = new ArrayList<Pair<String, Object>>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
-    private int _defaultMode = MODE_GRID;
     private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.TOP;
     private boolean allowAsync = false;
     private ActionURL _formActionUrl = null;
@@ -456,7 +455,7 @@ public class DataRegion extends DisplayElement
 
     public Map<String,Object> getQueryParameters()
     {
-        return null==_settings ? Collections.EMPTY_MAP : _settings.getQueryParameters();
+        return null==_settings ? Collections.<String, Object>emptyMap() : _settings.getQueryParameters();
     }
 
     /** Use {@link QuerySettings#setMaxRows(int)}. */
@@ -584,16 +583,6 @@ public class DataRegion extends DisplayElement
     public void setTable(TableInfo table)
     {
         _table = table;
-    }
-
-    public int getDefaultMode()
-    {
-        return _defaultMode;
-    }
-
-    public void setDefaultMode(int defaultMode)
-    {
-        _defaultMode = defaultMode;
     }
 
     /**
@@ -2374,7 +2363,7 @@ public class DataRegion extends DisplayElement
      */
     public void render(RenderContext ctx, Writer out) throws IOException
     {
-        int mode = _defaultMode;
+        int mode = MODE_GRID;
         if (ctx.getMode() != MODE_NONE)
             mode = ctx.getMode();
         else

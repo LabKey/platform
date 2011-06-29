@@ -644,11 +644,11 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         {
             if (StringUtils.isBlank(xmlTable.getImportUrl()))
             {
-                _insertURL = LINK_DISABLER;
+                _importURL = LINK_DISABLER;
             }
             else
             {
-                _insertURL = parseDetailsURL(schema.getContainer(), xmlTable.getImportUrl(), errors);
+                _importURL = parseDetailsURL(schema.getContainer(), xmlTable.getImportUrl(), errors);
             }
         }
         if (xmlTable.isSetInsertUrl())

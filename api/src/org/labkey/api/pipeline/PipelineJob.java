@@ -676,7 +676,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 }
                 catch (Exception e)
                 {
-                    warn("Failed to ensure error status on task error.");
+                    warn("Failed to ensure error status on task error.", e);
                 }
 
                 // Run auto-retry, and retry if appropriate.

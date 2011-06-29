@@ -31,7 +31,7 @@ import java.util.Set;
  * User: kevink
  * Date: May 27, 2009
  */
-public interface DataSet extends StudyEntity
+public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T>
 {
     Set<String> getDefaultFieldNames();
 

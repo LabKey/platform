@@ -53,7 +53,7 @@ public class ResultsQueryView extends AssayBaseQueryView
     @Override
     protected DataRegion createDataRegion()
     {
-        ResultsDataRegion rgn = new ResultsDataRegion();
+        ResultsDataRegion rgn = new ResultsDataRegion(_provider);
         initializeDataRegion(rgn);
         return rgn;
     }
@@ -117,9 +117,15 @@ public class ResultsQueryView extends AssayBaseQueryView
         return TSVGridWriter.ColumnHeaderType.caption;
     }
 
-    private class ResultsDataRegion extends DataRegion
+    public static class ResultsDataRegion extends DataRegion
     {
         private ColumnInfo _matchColumn;
+        private final AssayProvider _provider;
+
+        public ResultsDataRegion(AssayProvider provider)
+        {
+            _provider = provider;
+        }
 
         @Override
         protected boolean isErrorRow(RenderContext ctx, int rowIndex)
