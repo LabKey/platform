@@ -771,6 +771,8 @@ LABKEY.Query = new function()
          * </ul>
          * @param {Boolean} [config.includeUserQueries] If set to false, user-defined queries will not be included in
          * the results. Default is true.
+         * @param {Boolean} [config.includeSystemQueries] If set to false, system-defined queries will not be included in
+         * the results. Default is true.
          * @param {Boolean} [config.includeColumns] If set to false, information about the available columns in this
          * query will not be included in the results. Default is true.
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
@@ -789,7 +791,8 @@ LABKEY.Query = new function()
             {
                 schemaName: 'schemaName',
                 includeColumns: 'includeColumns',
-                includeUserQueries: 'includeUserQueries'
+                includeUserQueries: 'includeUserQueries',
+                includeSystemQueries: 'includeSystemQueries'
             }, false, false);
 
             return LABKEY.Ajax.request({

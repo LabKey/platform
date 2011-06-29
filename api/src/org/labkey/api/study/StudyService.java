@@ -166,6 +166,12 @@ public class StudyService
 
         String getSubjectVisitColumnName(Container container);
 
+        String getSubjectClassificationTableName(Container container);
+
+        String getSubjectGroupTableName(Container container);
+
+        String getSubjectGroupMapTableName(Container container);
+
         boolean isValidSubjectColumnName(Container container, String subjectColumnName);
 
         boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
