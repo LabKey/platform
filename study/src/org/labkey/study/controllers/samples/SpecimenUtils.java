@@ -62,6 +62,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.ParticipantDataset;
+import org.labkey.study.model.ParticipantListManager;
 import org.labkey.study.model.SampleRequest;
 import org.labkey.study.model.SampleRequestActor;
 import org.labkey.study.model.SampleRequestEvent;
@@ -194,6 +195,10 @@ public class SpecimenUtils
             return gridView;
 
         List<DisplayElement> buttons = new ArrayList<DisplayElement>();
+
+        ActionButton ptidListButton = ParticipantListManager.getInstance().createParticipantListButton(getViewContext(), gridView.getSettings().getDataRegionName());
+        if (ptidListButton != null)
+            buttons.add(ptidListButton);
 
         ActionButton cohortButton = CohortManager.getInstance().createCohortButton(getViewContext(), cohortFilter);
         if (cohortButton != null)

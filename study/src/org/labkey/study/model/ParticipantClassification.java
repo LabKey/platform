@@ -258,4 +258,23 @@ public class ParticipantClassification extends Entity
         if (getContainerId() == null)
             setContainer(copy.getContainerId());
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ParticipantClassification that = (ParticipantClassification) o;
+
+        if (_rowId != that._rowId) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _rowId;
+    }
 }

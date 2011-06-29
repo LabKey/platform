@@ -17,9 +17,11 @@ package org.labkey.study.model;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -101,21 +103,55 @@ public class ParticipantGroup extends Entity
         _classificationLabel = classificationLabel;
     }
 
-    public ActionURL getFilter(ViewContext context, String dataRegionName)
+    public Pair<FieldKey, String> getFilterColAndValue(Container container)
     {
-        ActionURL url = context.cloneActionURL();
-        FieldKey key = FieldKey.fromParts(StudyService.get().getSubjectColumnName(context.getContainer()), getClassificationLabel());
+        FieldKey key = FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), getClassificationLabel());
+        return new Pair<FieldKey, String>(key, getLabel());
+    }
 
+    public String getURLFilterParameterName(FieldKey filterColumn, String dataRegionName)
+    {
         StringBuilder filterKey = new StringBuilder();
         if (!StringUtils.isEmpty(dataRegionName))
         {
             filterKey.append(dataRegionName);
             filterKey.append(".");
         }
-        filterKey.append(key);
+        filterKey.append(filterColumn);
+        return filterKey.toString();
+    }
 
-        url.deleteFilterParameters(filterKey.toString());
-        url.addFilter(dataRegionName, key, CompareType.EQUAL, getLabel());
+    public ActionURL addURLFilter(ActionURL url, Container container, String dataRegionName)
+    {
+        Pair<FieldKey, String> filterColAndValue = getFilterColAndValue(container);
+        url.deleteFilterParameters(getURLFilterParameterName(filterColAndValue.getKey(), dataRegionName));
+        url.addFilter(dataRegionName, filterColAndValue.getKey(), CompareType.EQUAL, filterColAndValue.getValue());
         return url;
+    }
+
+    public ActionURL removeURLFilter(ActionURL url, Container container, String dataRegionName)
+    {
+        Pair<FieldKey, String> filterColAndValue = getFilterColAndValue(container);
+        url.deleteFilterParameters(getURLFilterParameterName(filterColAndValue.getKey(), dataRegionName));
+        return url;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ParticipantGroup that = (ParticipantGroup) o;
+
+        if (_rowId != that._rowId) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _rowId;
     }
 }

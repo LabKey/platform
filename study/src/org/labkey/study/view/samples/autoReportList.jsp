@@ -45,6 +45,9 @@
         cohorts = StudyManager.getInstance().getCohorts(container, user);
     String optionLabelStyle = "text-align:right";
     Map<String, CustomView> views = bean.getCustomViews(getViewContext());
+
+    ParticipantClassification[] classes = ParticipantListManager.getInstance().getParticipantClassifications(container);
+    boolean showParticipantLists = classes != null && classes.length > 0;
 %>
 <script type="text/javascript">
     function showOrHide(suffix)
@@ -160,6 +163,50 @@
                         <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType %>" value="<%= CohortFilter.Type.PTID_CURRENT %>">
                 <%
                         }
+                    }
+
+                    if (showParticipantLists && factory.allowsParticipantListFilter())
+                    {
+                %>
+                        <tr>
+                            <td style="<%= optionLabelStyle %>"><%= study.getSubjectNounSingular() %> List</td>
+                            <td>
+                                <select name="participantListFilter">
+                                    <option value="">All Lists</option>
+                                    <%
+                                        for (ParticipantClassification cls : classes)
+                                        {
+                                            ParticipantGroup[] groups = cls.getGroups();
+                                            if (null != groups)
+                                            {
+                                                for (ParticipantGroup grp : groups)
+                                                {
+                                                    %>
+                                                    <option value="<%= grp.getRowId() %>" <%= grp.getRowId() == factory.getParticipantListFilter() ? "SELECTED" : "" %>>
+                                                        <%
+                                                            if (!grp.getLabel().equals(cls.getLabel()))
+                                                            {
+                                                        %>
+                                                        <%= cls.getLabel() + " : " + grp.getLabel() %>
+                                                        <%
+                                                        }
+                                                            else
+                                                        {
+                                                        %>
+                                                            <%= cls.getLabel() %>
+                                                        <%
+                                                        }
+                                                        %>
+                                                    </option>
+                                                    <%
+                                                }
+                                            }
+                                        }
+                                    %>
+                                </select>
+                            </td>
+                        </tr>
+                <%
                     }
                     if (factory.allowsAvailabilityFilter())
                     {

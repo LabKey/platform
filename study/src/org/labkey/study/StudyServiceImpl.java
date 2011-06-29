@@ -669,6 +669,21 @@ public class StudyServiceImpl implements StudyService.Service
         return getSubjectTableName(subjectNounSingular) + "Visit";
     }
 
+    public String getSubjectClassificationTableName(Container container)
+    {
+        return getSubjectTableName(container) + "Classification";
+    }
+
+    public String getSubjectGroupTableName(Container container)
+    {
+        return getSubjectTableName(container) + "Group";
+    }
+
+    public String getSubjectGroupMapTableName(Container container)
+    {
+        return getSubjectTableName(container) + "GroupMap";
+    }
+
     public boolean isValidSubjectColumnName(Container container, String subjectColumnName)
     {
         if (subjectColumnName == null || subjectColumnName.length() == 0)

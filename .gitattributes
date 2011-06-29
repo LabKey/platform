@@ -2709,7 +2709,10 @@ study/src/org/labkey/study/query/DataSetsTable.java -text
 study/src/org/labkey/study/query/DatasetUpdateService.java -text
 study/src/org/labkey/study/query/DerivativeTypeTable.java -text
 study/src/org/labkey/study/query/ExtensibleObjectQueryView.java -text
+study/src/org/labkey/study/query/ParticipantClassificationTable.java -text
 study/src/org/labkey/study/query/ParticipantDataSetTable.java -text
+study/src/org/labkey/study/query/ParticipantGroupMapTable.java -text
+study/src/org/labkey/study/query/ParticipantGroupTable.java -text
 study/src/org/labkey/study/query/ParticipantTable.java -text
 study/src/org/labkey/study/query/ParticipantVisitColumn.java -text
 study/src/org/labkey/study/query/ParticipantVisitDataSetTable.java -text

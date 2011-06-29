@@ -251,4 +251,14 @@ public class StudySchema
     {
         return getSchema().getTable("ParticipantClassifications");
     }
+
+    public TableInfo getTableInfoParticipantGroup()
+    {
+        return getSchema().getTable("ParticipantGroup");
+    }
+
+    public TableInfo getTableInfoParticipantGroupMap()
+    {
+        return getSchema().getTable("ParticipantGroupMap");
+    }
 }

@@ -2,6 +2,8 @@ package org.labkey.study.samples.report;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.study.model.ParticipantGroup;
+import org.labkey.study.model.ParticipantListManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
@@ -186,6 +188,13 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             url.addParameter("SpecimenDetail.ignoreFilter", "1");
 
         addCohortURLFilter(url);
+
+        if (_parameters.getParticipantListFilter() >= 0)
+        {
+            ParticipantGroup filterGroup = ParticipantListManager.getInstance().getParticipantGroup(getContainer(), _parameters.getParticipantListFilter());
+            if (filterGroup != null)
+                filterGroup.addURLFilter(url, getContainer(), "SpecimenDetail");
+        }
 
         switch (_parameters.getStatusFilter())
         {

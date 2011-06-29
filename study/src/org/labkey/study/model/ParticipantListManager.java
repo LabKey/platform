@@ -26,18 +26,24 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -49,7 +55,7 @@ public class ParticipantListManager
 {
     private static final ParticipantListManager _instance = new ParticipantListManager();
 
-    private void ParticipantListManager(){}
+    private ParticipantListManager(){}
 
     public static ParticipantListManager getInstance()
     {
@@ -66,10 +72,10 @@ public class ParticipantListManager
         return StudySchema.getInstance().getSchema().getTable("ParticipantGroupMap");
     }
 
-    public ParticipantClassification getParticipantClassification(Container c, String name)
+    public ParticipantClassification getParticipantClassification(Container c, String label)
     {
         SimpleFilter filter = new SimpleFilter("Container", c);
-        filter.addCondition("Label", name);
+        filter.addCondition("Label", label);
 
         ParticipantClassification[] lists = getParticipantClassifications(filter);
 
@@ -79,7 +85,7 @@ public class ParticipantListManager
         }
         ParticipantClassification def = new ParticipantClassification();
         def.setContainer(c.getId());
-        def.setLabel(name);
+        def.setLabel(label);
 
         return def;
     }
@@ -101,28 +107,81 @@ public class ParticipantListManager
         }
     }
 
-    public ActionButton createParticipantListButton(ViewContext context, Container container, String dataRegionName)
+    public ActionButton createParticipantListButton(ViewContext context, String dataRegionName)
     {
+        Container container = context.getContainer();
+        String[] colFilterParamNames = context.getActionURL().getKeysByPrefix(dataRegionName + ".");
+        Map<String, String> colFilters = new HashMap<String, String>();
+        Set<ParticipantGroup> selected = new HashSet<ParticipantGroup>();
+        // Build up a case-insensititive set of all columns that are being filtered.
+        // We'll use this to identify any existing participant list filters.
+        for (String colFilterParamName : colFilterParamNames)
+        {
+            String colName = colFilterParamName.toLowerCase();
+            int tildaIdx = colName.indexOf('~');
+            if (tildaIdx > 0)
+                colName = colName.substring(0, tildaIdx);
+            colFilters.put(colName, context.getActionURL().getParameter(colFilterParamName));
+        }
+
+        ParticipantClassification[] allClassifications = getParticipantClassifications(container);
+        for (ParticipantClassification classification : allClassifications)
+        {
+            ParticipantGroup[] allGroups = getParticipantGroups(classification);
+            for (ParticipantGroup group : allGroups)
+            {
+                Pair<FieldKey, String> colAndValue = group.getFilterColAndValue(container);
+                String parameterName = group.getURLFilterParameterName(colAndValue.getKey(), dataRegionName);
+                String filteredValue = colFilters.get(parameterName.toLowerCase());
+                if (filteredValue != null && filteredValue.equals(colAndValue.getValue()))
+                    selected.add(group);
+            }
+        }
+        return createParticipantListButton(context, dataRegionName, selected);
+    }
+
+    private ActionButton createParticipantListButton(ViewContext context, String dataRegionName, Set<ParticipantGroup> selected)
+    {
+        Container container = context.getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Lists");
 
         ParticipantClassification[] classes = getParticipantClassifications(container);
+
+        // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
+        ActionURL baseURL = context.getActionURL().clone();
         for (ParticipantClassification cls : classes)
         {
-            ParticipantGroup[] groups = cls.getGroups();            
+            ParticipantGroup[] groups = cls.getGroups();
+            if (groups != null)
+            {
+                for (ParticipantGroup group : groups)
+                    group.removeURLFilter(baseURL, container, dataRegionName);
+            }
+        }
+
+        button.addMenuItem("All", baseURL.toString(), null, selected.isEmpty());
+
+        for (ParticipantClassification cls : classes)
+        {
+            ParticipantGroup[] groups = cls.getGroups();
             if (null != groups && groups.length > 1)
             {
                 NavTree item = new NavTree(cls.getLabel());
                 for (ParticipantGroup grp : groups)
                 {
-                    item.addChild(grp.getLabel(), grp.getFilter(context, dataRegionName));
+                    ActionURL url = baseURL.clone();
+                    url = grp.addURLFilter(url, container, dataRegionName);
+                    NavTree child = item.addChild(grp.getLabel(), url);
+                    child.setSelected(selected.contains(grp));
                 }
                 button.addMenuItem(item);
             }
             else if (null != groups && groups.length == 1)
             {
-                ActionURL filter = groups[0].getFilter(context, dataRegionName);
-                button.addMenuItem(groups[0].getLabel(), filter.toString(), null, false);
+                ActionURL url = baseURL.clone();
+                url = groups[0].addURLFilter(url, container, dataRegionName);
+                button.addMenuItem(groups[0].getLabel(), url.toString(), null, selected.contains(groups[0]));
             }
         }
 
@@ -233,7 +292,49 @@ public class ParticipantListManager
         }
     }
 
-    public ParticipantGroup[] getParticipantGroups(ParticipantClassification def) throws SQLException
+    public ParticipantClassification getParticipantClassification(Container c, int rowId)
+    {
+        SimpleFilter filter = new SimpleFilter("Container", c);
+        filter.addCondition("RowId", rowId);
+
+        ParticipantClassification[] lists = getParticipantClassifications(filter);
+
+        if (lists.length > 0)
+            return lists[0];
+        return null;
+    }
+
+    public ParticipantGroup getParticipantGroup(Container container, int rowId)
+    {
+        SimpleFilter filter = new SimpleFilter("RowId", rowId);
+        filter.addCondition("Container", container);
+        try
+        {
+            ResultSet rs = Table.select(getTableInfoParticipantGroup(), Collections.singleton("ClassificationId"), filter, null);
+            if (rs.next())
+            {
+                ParticipantClassification classification = getParticipantClassification(container, rs.getInt("ClassificationId"));
+                if (classification != null)
+                {
+                    // Use getParticipantGroups here to pull the entire classification into the cache- this is more expensive up-front,
+                    // but will save us time later.
+                    ParticipantGroup[] groups = getParticipantGroups(classification);
+                    for (ParticipantGroup group : groups)
+                    {
+                        if (group.getRowId() == rowId)
+                            return group;
+                    }
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        return null;
+    }
+
+    public ParticipantGroup[] getParticipantGroups(ParticipantClassification def)
     {
         if (!def.isNew())
         {
@@ -248,7 +349,15 @@ public class ParticipantListManager
             sql.append(" JOIN ").append(getTableInfoParticipantGroup(), "pg").append(" ON pc.rowId = pg.classificationId WHERE pg.classificationId = ?) jr ");
             sql.append(" JOIN ").append(getTableInfoParticipantGroupMap(), "gm").append(" ON jr.rowId = gm.groupId;");
 
-            ParticipantGroupMap[] maps = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), new Object[]{def.getRowId()}, ParticipantGroupMap.class);
+            ParticipantGroupMap[] maps = new ParticipantGroupMap[0];
+            try
+            {
+                maps = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), new Object[]{def.getRowId()}, ParticipantGroupMap.class);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
             Map<Integer, ParticipantGroup> groupMap = new HashMap<Integer, ParticipantGroup>();
 
             for (ParticipantGroupMap pg : maps)

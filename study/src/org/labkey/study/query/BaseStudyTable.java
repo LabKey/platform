@@ -76,7 +76,7 @@ public abstract class BaseStudyTable extends FilteredTable
 
         return addColumn(participantColumn);
     }
-/*
+
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
@@ -88,7 +88,7 @@ public abstract class BaseStudyTable extends FilteredTable
             return getColumn(StudyService.get().getSubjectColumnName(getContainer()));
         return null;
     }
-*/
+
     protected ColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
     {
         ColumnInfo locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));

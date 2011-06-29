@@ -10,8 +10,12 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantClassification;
+import org.labkey.study.model.ParticipantGroup;
+import org.labkey.study.model.ParticipantListManager;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.CohortImpl;
@@ -86,6 +90,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     private boolean _viewPtidList = false;
     private boolean _hideEmptyColumns;
     private boolean _excelExport;
+    private int _participantListFilter = -1;
     private List<? extends SpecimenVisitReport> _reports;
     private SampleManager.SpecimenTypeLevel _typeLevel = SampleManager.SpecimenTypeLevel.Derivative;
 
@@ -222,6 +227,9 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
         if (allowsCohortFilter() && getCohortFilter() != null)
             addCohortFilter(filter, getCohortFilter());
+
+        if (allowsParticipantListFilter() && getParticipantListFilter() >= 0)
+            addParticipantListFilter(filter, getParticipantListFilter());
     }
 
     public static final String COMPLETED_REQUESTS_FILTER_SQL =
@@ -257,6 +265,18 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                 filter.addWhereClause("GlobalUniqueId NOT IN (\n" + COMPLETED_REQUESTS_FILTER_SQL + ")",
                         new Object[] { Boolean.TRUE, Boolean.TRUE, getContainer().getId()});
                 break;
+        }
+    }
+
+    protected void addParticipantListFilter(SimpleFilter filter, int ptidListId)
+    {
+        ParticipantGroup group = ParticipantListManager.getInstance().getParticipantGroup(getContainer(), ptidListId);
+        if (group != null)
+        {
+            StringBuilder sql = new StringBuilder();
+            sql.append("(").append(StudyService.get().getSubjectColumnName(getContainer())).append(" IN (SELECT ");
+            sql.append("ParticipantId FROM ").append(StudySchema.getInstance().getTableInfoParticipantGroupMap()).append(" WHERE GroupId = ?))");
+            filter.addWhereClause(sql.toString(), new Object[] { ptidListId });
         }
     }
 
@@ -404,6 +424,21 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     public boolean allowsCustomViewFilter()
     {
         return true;
+    }
+
+    public boolean allowsParticipantListFilter()
+    {
+        return true;
+    }
+
+    public int getParticipantListFilter()
+    {
+        return _participantListFilter;
+    }
+
+    public void setParticipantListFilter(int participantListFilter)
+    {
+        _participantListFilter = participantListFilter;
     }
 
     public abstract Class<? extends SpecimenController.SpecimenVisitReportAction> getAction();

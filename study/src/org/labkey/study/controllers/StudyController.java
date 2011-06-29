@@ -1118,7 +1118,7 @@ public class StudyController extends BaseStudyController
 
         private void createParticipantListButton(List<ActionButton> buttonBar, String dataRegionName)
         {
-            ActionButton listButton = ParticipantListManager.getInstance().createParticipantListButton(getViewContext(), getContainer(), dataRegionName);
+            ActionButton listButton = ParticipantListManager.getInstance().createParticipantListButton(getViewContext(), dataRegionName);
             if (null != listButton)
                 buttonBar.add(listButton);
         }

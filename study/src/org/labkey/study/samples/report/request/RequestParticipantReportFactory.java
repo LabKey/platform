@@ -63,6 +63,12 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         return false;
     }
 
+    @Override
+    public boolean allowsParticipantListFilter()
+    {
+        return false;
+    }
+
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>();

@@ -750,8 +750,67 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
             ]
         });
 
-        Ext.get("lk-vq-start").on("click", this.startValidation, this);
+        this.body.createChild({
+            tag: 'div',
+            cls: 'lk-sb-instructions',
+            children: [
+                {
+                    tag: 'span',
+                    html: '&nbsp;',
+                    cls: 'lk-sb-instructions'
+                },
+                {
+                    id: 'lk-vq-subfolders',
+                    tag: 'input',
+                    type: 'checkbox'
+                },
+                {
+                    tag: 'span',
+                    html: ' Validate subfolders',
+                    cls: 'lk-sb-instructions'
+                },
+                {
+                    tag: 'span',
+                    html: '&nbsp;',
+                    cls: 'lk-sb-instructions'
+                },
+                {
+                    id: 'lk-vq-systemqueries',
+                    tag: 'input',
+                    type: 'checkbox'
+                },
+                {
+                    tag: 'span',
+                    html: ' Include system queries',
+                    cls: 'lk-sb-instructions'
+                }
+            ]
+        });
+
+        Ext.get("lk-vq-start").on("click", this.initContainerList, this);
         Ext.get("lk-vq-stop").on("click", this.stopValidation, this);
+    },
+
+    initContainerList: function()
+    {
+        var scope = this;
+        var containerList = new Array();
+        if (Ext.get("lk-vq-subfolders").dom.checked)
+        {
+            LABKEY.Security.getContainers({
+                includeSubfolders: true,
+                success: function(containersInfo)
+                {
+                    scope.recurseContainers(containersInfo, containerList);
+                    scope.startValidation(containerList);
+                }
+            });
+        }
+        else
+        {
+            containerList[0] = LABKEY.ActionURL.getContainer();
+            this.startValidation(containerList);
+        }
     },
 
     setStatus : function(msg, cls, resetCls) {
@@ -798,20 +857,36 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         this.curIconClass = iconCls;
     },
 
-    startValidation : function() {
-        this.numErrors = 0;
-        this.numValid = 0;
-        this.stop = false;
-        this.clearValidationErrors();
-        
+    recurseContainers : function(containersInfo, containerArray) {
+        containerArray[containerArray.length] = containersInfo.path;
+        for (var child = 0; child < containersInfo.children.length; child++)
+            this.recurseContainers(containersInfo.children[child], containerArray);
+    },
+
+    startValidation : function(containerList) {
+        // Set things up the first time through:
+        if (!this.currentContainer)
+        {
+            this.clearValidationErrors();
+            Ext.get("lk-vq-start").dom.disabled = true;
+            Ext.get("lk-vq-stop").dom.disabled = false;
+            Ext.get("lk-vq-subfolders").dom.disabled = true;
+            Ext.get("lk-vq-systemqueries").dom.disabled = true;
+            Ext.get("lk-vq-stop").focus();
+            this.numErrors = 0;
+            this.numValid = 0;
+            this.stop = false;
+        }
+
+        this.currentContainer = containerList[0];
+        containerList.splice(0,1);
+        this.remainingContainers = containerList;
         LABKEY.Query.getSchemas({
             successCallback: this.onSchemas,
-            scope: this
+            scope: this,
+            containerPath: this.currentContainer
         });
-        Ext.get("lk-vq-start").dom.disabled = true;
-        Ext.get("lk-vq-stop").dom.disabled = false;
-        Ext.get("lk-vq-stop").focus();
-        this.setStatus("Starting validation...", null, true);
+        this.setStatus("Validating queries in " + Ext.util.Format.htmlEncode(this.currentContainer) + "...", null, true);
         this.setStatusIcon("iconAjaxLoadingGreen");
         this.validating = true;
     },
@@ -822,6 +897,9 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
             disabled: true
         });
         Ext.get("lk-vq-stop").dom.disabled = true;
+        Ext.get("lk-vq-subfolders").dom.disabled = false;
+        Ext.get("lk-vq-systemqueries").dom.disabled = false;
+        this.currentContainer = undefined;
     },
 
     onSchemas : function(schemasInfo) {
@@ -832,13 +910,15 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
 
     validateSchema : function() {
         var schemaName = this.schemaNames[this.curSchemaIdx];
-        this.setStatus("Validating queries in schema '" + Ext.util.Format.htmlEncode(schemaName) + "'...");
+        this.setStatus(Ext.util.Format.htmlEncode(this.currentContainer) + ": Validating queries in schema '" + Ext.util.Format.htmlEncode(schemaName) + "'...");
         LABKEY.Query.getQueries({
             schemaName: schemaName,
             successCallback: this.onQueries,
             scope: this,
             includeColumns: false,
-            includeUserQueries: true
+            includeUserQueries: true,
+            includeSystemQueries: Ext.get("lk-vq-systemqueries").dom.checked,
+            containerPath: this.currentContainer
         });
     },
 
@@ -852,20 +932,21 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
     },
 
     validateQuery : function() {
-        this.setStatus("Validating '" + this.getCurrentQueryLabel() + "'...");
+        this.setStatus(Ext.util.Format.htmlEncode(this.currentContainer) + ": Validating '" + this.getCurrentQueryLabel() + "'...");
         LABKEY.Query.validateQuery({
             schemaName: this.schemaNames[this.curSchemaIdx],
             queryName: this.queries[this.curQueryIdx].name,
             successCallback: this.onValidQuery,
             errorCallback: this.onValidationFailure,
             scope: this,
-            includeAllColumns: true
+            includeAllColumns: true,
+            containerPath: this.currentContainer
         });
     },
 
     onValidQuery : function() {
         ++this.numValid;
-        this.setStatus("Validating '" + this.getCurrentQueryLabel() + "'...OK");
+        this.setStatus(Ext.util.Format.htmlEncode(this.currentContainer)  + ": Validating '" + this.getCurrentQueryLabel() + "'...OK");
         this.advance();
     },
 
@@ -873,7 +954,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         ++this.numErrors;
         //add to errors list
         var queryLabel = this.getCurrentQueryLabel();
-        this.setStatus("Validating '" + queryLabel + "'...FAILED: " + errorInfo.exception);
+        this.setStatus(Ext.util.Format.htmlEncode(this.currentContainer) + ": Validating '" + queryLabel + "'...FAILED: " + errorInfo.exception);
         this.setStatusIcon("iconAjaxLoadingRed");
         this.addValidationError(this.schemaNames[this.curSchemaIdx], this.queries[this.curQueryIdx].name, errorInfo);
         this.advance();
@@ -902,15 +983,24 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
     },
 
     onFinish : function() {
-        Ext.get("lk-vq-start").dom.disabled = false;
-        Ext.get("lk-vq-stop").dom.disabled = true;
-        Ext.get("lk-vq-start").focus();
         var msg = (this.stop ? "Validation stopped by user." : "Finished Validation.");
         msg += " " + this.numValid + (1 == this.numValid ? " query was valid." : " queries were valid.");
         msg += " " + this.numErrors + (1 == this.numErrors ? " query" : " queries") + " failed validation.";
         this.setStatus(msg, (this.numErrors > 0 ? "lk-vq-status-error" : "lk-vq-status-all-ok"));
         this.setStatusIcon(this.numErrors > 0 ? "iconWarning" : "iconCheck");
-        this.validating = false;
+
+        if (!this.stop && this.remainingContainers && this.remainingContainers.length > 0)
+            this.startValidation(this.remainingContainers);
+        else
+        {
+            Ext.get("lk-vq-start").dom.disabled = false;
+            Ext.get("lk-vq-stop").dom.disabled = true;
+            Ext.get("lk-vq-subfolders").dom.disabled = false;
+            Ext.get("lk-vq-systemqueries").dom.disabled = false;
+            Ext.get("lk-vq-start").focus();
+            this.validating = false;
+            this.currentContainer = undefined;
+        }
     },
 
     getCurrentQueryLabel : function() {
@@ -945,7 +1035,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
                         {
                             tag: 'span',
                             cls: 'labkey-link lk-vq-error-name',
-                            html: Ext.util.Format.htmlEncode(schemaName) + "." + Ext.util.Format.htmlEncode(queryName)
+                            html: Ext.util.Format.htmlEncode(this.currentContainer) + ": " + Ext.util.Format.htmlEncode(schemaName) + "." + Ext.util.Format.htmlEncode(queryName)
                         }
                     ]
                 },
@@ -956,9 +1046,9 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
                 }
             ]
         });
-
+        var errorContainer = this.currentContainer;
         error.down("div span.labkey-link").on("click", function(){
-            this.fireEvent("queryclick", schemaName, queryName);
+            this.fireEvent("queryclick", schemaName, queryName, errorContainer);
         }, this);
     }
 });
@@ -1334,8 +1424,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     title: "Validate Queries",
                     listeners: {
                         queryclick: {
-                            fn: function(schemaName, queryName){
-                                this.selectQuery(schemaName, queryName); this.showQueryDetails(schemaName, queryName);
+                            fn: function(schemaName, queryName, containerPath){
+                                this.onLookupClick(schemaName, queryName, containerPath);
                             },
                             scope: this
                         }

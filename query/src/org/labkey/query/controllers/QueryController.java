@@ -3961,6 +3961,7 @@ public class QueryController extends SpringActionController
     {
         private String _schemaName;
         private boolean _includeUserQueries = true;
+        private boolean _includeSystemQueries = true;
         private boolean _includeColumns = true;
 
         public String getSchemaName()
@@ -3981,6 +3982,16 @@ public class QueryController extends SpringActionController
         public void setIncludeUserQueries(boolean includeUserQueries)
         {
             _includeUserQueries = includeUserQueries;
+        }
+
+        public boolean isIncludeSystemQueries()
+        {
+            return _includeSystemQueries;
+        }
+
+        public void setIncludeSystemQueries(boolean includeSystemQueries)
+        {
+            _includeSystemQueries = includeSystemQueries;
         }
 
         public boolean isIncludeColumns()
@@ -4032,13 +4043,15 @@ public class QueryController extends SpringActionController
             }
 
             //built-in tables
-            for(String qname : uschema.getVisibleTableNames())
+            if (form.isIncludeSystemQueries())
             {
-                ActionURL viewDataUrl = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, uschema.getSchemaName(), qname);
-                TableInfo tinfo = uschema.getTable(qname);
-                qinfos.add(getQueryProps(qname, tinfo.getDescription(), viewDataUrl, false, uschema, form.isIncludeColumns()));
+                for(String qname : uschema.getVisibleTableNames())
+                {
+                    ActionURL viewDataUrl = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, uschema.getSchemaName(), qname);
+                    TableInfo tinfo = uschema.getTable(qname);
+                    qinfos.add(getQueryProps(qname, tinfo.getDescription(), viewDataUrl, false, uschema, form.isIncludeColumns()));
+                }
             }
-
             response.put("queries", qinfos);
 
             return response;
