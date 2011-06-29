@@ -308,9 +308,10 @@ public class ParticipantListManager
     {
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
         filter.addCondition("Container", container);
+        ResultSet rs = null;
         try
         {
-            ResultSet rs = Table.select(getTableInfoParticipantGroup(), Collections.singleton("ClassificationId"), filter, null);
+            rs = Table.select(getTableInfoParticipantGroup(), Collections.singleton("ClassificationId"), filter, null);
             if (rs.next())
             {
                 ParticipantClassification classification = getParticipantClassification(container, rs.getInt("ClassificationId"));
@@ -330,6 +331,11 @@ public class ParticipantListManager
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException e) { /* fall through */ }
         }
         return null;
     }
