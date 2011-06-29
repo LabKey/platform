@@ -1,2 +1,0 @@
-Main-Class: org.radeox.example.InteractiveExample
-Class-Path: jakarta-oro.jar commons-logging.jar picocontainer.jar

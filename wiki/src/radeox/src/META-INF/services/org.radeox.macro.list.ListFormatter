@@ -1,4 +1,0 @@
-# default list formatter
-org.radeox.macro.list.SimpleList
-org.radeox.macro.list.AtoZListFormatter
-org.radeox.macro.list.ExampleListFormatter
