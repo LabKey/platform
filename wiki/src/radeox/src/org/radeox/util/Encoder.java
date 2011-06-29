@@ -4,9 +4,6 @@
  * Copyright (c) 2002 Stephan J. Schmidt, Matthias L. Jugel
  * All Rights Reserved.
  *
- *  Modified 6/29/2011 by Isaac Hodes
- * (commented out the encoding of & in URLs (broke some links))
- *
  * Please visit http://radeox.org/ for updates and contact.
  *
  * --LICENSE NOTICE--
@@ -50,7 +47,7 @@ public class Encoder {
   // private final static Pattern entityPattern = Pattern.compile("&(#?[0-9a-fA-F]+);");
 
   static {
-    //ESCAPED_CHARS.put("&", toEntity('&'));
+    ESCAPED_CHARS.put("&", toEntity('&'));
     ESCAPED_CHARS.put("\"", toEntity('"'));
     ESCAPED_CHARS.put("'", toEntity('\''));
     ESCAPED_CHARS.put(">", toEntity('>'));

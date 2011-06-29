@@ -3162,10 +3162,6 @@ wiki/src/org/labkey/wiki/view/wikiRadeoxHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiSearch.jsp -text
 wiki/src/org/labkey/wiki/view/wikiVersion.jsp -text
 wiki/src/org/labkey/wiki/welcomeWiki.txt -text
-wiki/src/radeox/Changes.txt -text
-wiki/src/radeox/README -text
-wiki/src/radeox/Radeox.version -text
-wiki/src/radeox/build.xml -text
 wiki/src/radeox/conf/apidocs.txt -text
 wiki/src/radeox/conf/asinservices.txt -text
 wiki/src/radeox/conf/bookservices.txt -text
@@ -3224,7 +3220,6 @@ wiki/src/radeox/lib/junitperf.jar -text
 wiki/src/radeox/lib/picocontainer.jar -text
 wiki/src/radeox/lib/radeox-api.jar -text
 wiki/src/radeox/lib/radeox.jar -text
-wiki/src/radeox/license.txt -text
 wiki/src/radeox/src/META-INF/manifest.radeox -text
 wiki/src/radeox/src/META-INF/manifest.radeox-api -text
 wiki/src/radeox/src/META-INF/services/org.radeox.filter.Filter -text
