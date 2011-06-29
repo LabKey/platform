@@ -109,7 +109,7 @@ import java.util.regex.Pattern;
  * Date: Jan 6, 2006
  * Time: 10:29:31 AM
  */
-public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> implements Cloneable, DataSet
+public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> implements Cloneable, DataSet<DataSetDefinition>
 {
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";

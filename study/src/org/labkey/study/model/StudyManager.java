@@ -99,6 +99,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -2404,6 +2405,7 @@ public class StudyManager
                         def.setShowByDefault(!info.isHidden);
                         def.setKeyPropertyName(info.keyPropertyName);
                         def.setCategory(info.category);
+                        def.setEntityId(GUID.makeGUID());
                         def.setKeyManagementType(info.keyManagementType);
                         def.setDemographicData(info.demographicData);
                         manager.createDataSetDefinition(user, def);

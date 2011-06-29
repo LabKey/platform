@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import org.labkey.api.study.StudyCachable;
 import org.labkey.api.util.MemTracker;
 
 /**

@@ -2646,7 +2646,6 @@ study/src/org/labkey/study/model/SpecimenComment.java -text
 study/src/org/labkey/study/model/SpecimenEvent.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummary.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummaryRow.java -text
-study/src/org/labkey/study/model/StudyCachable.java -text
 study/src/org/labkey/study/model/StudyDomainKind.java -text
 study/src/org/labkey/study/model/StudyImpl.java -text
 study/src/org/labkey/study/model/StudyManager.java -text

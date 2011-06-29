@@ -626,6 +626,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             for (ExpExperiment experiment : getExperiments())
             {
                 ColumnInfo column = new ColumnInfo(experiment.getName());
+                column.setParentTable(result);
                 column.setSqlTypeName(JdbcType.BOOLEAN.toString());
                 result.safeAddColumn(column);
             }

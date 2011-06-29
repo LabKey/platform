@@ -21,7 +21,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.TableInfo;
-import org.labkey.study.model.StudyCachable;
+import org.labkey.api.study.StudyCachable;
 
 /**
  * User: brittp

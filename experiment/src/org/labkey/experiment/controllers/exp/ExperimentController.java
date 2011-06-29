@@ -1417,6 +1417,7 @@ public class ExperimentController extends SpringActionController
                     else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".txt") || lowerCaseFileName.endsWith(".csv"))
                     {
                         TabLoader tabLoader = new TabLoader(realContent);
+                        tabLoader.setScanAheadLineCount(5000);
                         if (lowerCaseFileName.endsWith(".csv"))
                         {
                             tabLoader.parseAsCSV();

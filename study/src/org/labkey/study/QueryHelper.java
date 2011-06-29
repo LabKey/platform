@@ -26,7 +26,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.security.User;
-import org.labkey.study.model.StudyCachable;
+import org.labkey.api.study.StudyCachable;
 
 import java.sql.SQLException;
 import java.util.HashSet;
