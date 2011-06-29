@@ -6,6 +6,11 @@
  *
  * Please visit http://radeox.org/ for updates and contact.
  *
+ * Modified 6/29/2011 by Isaac Hodes
+ * (the macro now re[laces \n with <br> to prevent the ParagraphFilter
+ * from formatting code blocks )
+ *
+ *
  * --LICENSE NOTICE--
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -109,6 +114,7 @@ public class CodeMacro extends LocalePreserved {
       addSpecial('*');
       addSpecial('-');
       addSpecial('\\');
+      addSpecial("\n", "<br />");
   }
 
   public void execute(Writer writer, MacroParameter params)
