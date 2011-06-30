@@ -166,7 +166,7 @@ public class StudyService
 
         String getSubjectVisitColumnName(Container container);
 
-        String getSubjectClassificationTableName(Container container);
+        String getSubjectCategoryTableName(Container container);
 
         String getSubjectGroupTableName(Container container);
 
