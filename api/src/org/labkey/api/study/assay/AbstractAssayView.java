@@ -37,7 +37,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public class AbstractAssayView extends VBox
 {
-    protected void setupViews(QueryView queryView, boolean minimizeLinks, AssayProvider provider, ExpProtocol protocol)
+    public void setupViews(QueryView queryView, boolean minimizeLinks, AssayProvider provider, ExpProtocol protocol)
     {
         if (minimizeLinks)
         {

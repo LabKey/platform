@@ -130,7 +130,6 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         AssayUrls urls = PageFlowUtil.urlProvider(AssayUrls.class);
         if (null != protocol)
         {
-            AssayService.Interface svc = AssayService.get();
             return new AppBar("Assay: " + protocol.getName(),
                     new NavTree("Add Runs", "#"),
                     new NavTree("View Runs", urls.getAssayRunsURL(getContainer(), protocol)),

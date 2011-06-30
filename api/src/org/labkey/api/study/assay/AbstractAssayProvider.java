@@ -104,6 +104,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.ModelAndView;
@@ -1693,4 +1694,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     public void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException {}
+
+    @Override
+    public List<NavTree> getHeaderLinks(ViewContext viewContext, ExpProtocol protocol, ContainerFilter containerFilter)
+    {
+        List<NavTree> result = new ArrayList<NavTree>();
+        result.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(viewContext.getContainer(), protocol, containerFilter))));
+        return result;
+    }
 }

@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -36,6 +37,7 @@ import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -44,6 +46,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -166,6 +169,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /** Upgrade from property store to hard table */
     void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException;
+
+    List<NavTree> getHeaderLinks(ViewContext viewContext, ExpProtocol protocol, ContainerFilter containerFilter);
 
     public enum Scope {
         ALL,
