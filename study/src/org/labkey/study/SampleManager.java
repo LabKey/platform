@@ -1908,9 +1908,9 @@ public class SampleManager
         }
     }
 
-    public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, boolean includeParticipantLists, SpecimenTypeLevel level) throws SQLException
+    public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, boolean includeParticipantGroups, SpecimenTypeLevel level) throws SQLException
     {
-        return getSpecimenSummaryByVisitType(container, user, null, includeParticipantLists, level);
+        return getSpecimenSummaryByVisitType(container, user, null, includeParticipantGroups, level);
     }
 
     public static class SpecimenTypeBeanProperty
@@ -2096,13 +2096,13 @@ public class SampleManager
     }
 
     public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, SimpleFilter specimenDetailFilter,
-                                                              boolean includeParticipantLists, SpecimenTypeLevel level) throws SQLException
+                                                              boolean includeParticipantGroups, SpecimenTypeLevel level) throws SQLException
     {
-        return getSpecimenSummaryByVisitType(container, user, specimenDetailFilter, includeParticipantLists, level, null);
+        return getSpecimenSummaryByVisitType(container, user, specimenDetailFilter, includeParticipantGroups, level, null);
     }
 
     public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, SimpleFilter specimenDetailFilter,
-                                                              boolean includeParticipantLists, SpecimenTypeLevel level,
+                                                              boolean includeParticipantGroups, SpecimenTypeLevel level,
                                                               CustomView baseView) throws SQLException
     {
         if (specimenDetailFilter == null)
@@ -2172,8 +2172,8 @@ public class SampleManager
         }
         SummaryByVisitType[] summaries = ret.toArray(new SummaryByVisitType[ret.size()]);
 
-        if (includeParticipantLists)
-            setSummaryParticipantLists(perPtidSpecimenSQL, viewSqlHelper.getViewSql().getParamsArray(),
+        if (includeParticipantGroups)
+            setSummaryParticipantGroups(perPtidSpecimenSQL, viewSqlHelper.getViewSql().getParamsArray(),
                     viewSqlHelper.getAliasToTypePropertyMap(), summaries, StudyService.get().getSubjectColumnName(container), "Visit");
         return summaries;
     }
@@ -2345,7 +2345,7 @@ public class SampleManager
                 ptidSpecimenSQL, sqlHelper.getViewSql().getParamsArray(), SummaryByVisitParticipant.class);
     }
 
-    public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, User user, SimpleFilter specimenDetailFilter, boolean includeParticipantLists, SpecimenTypeLevel level, CustomView baseView, boolean completeRequestsOnly) throws SQLException
+    public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, User user, SimpleFilter specimenDetailFilter, boolean includeParticipantGroups, SpecimenTypeLevel level, CustomView baseView, boolean completeRequestsOnly) throws SQLException
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -2428,8 +2428,8 @@ public class SampleManager
         }
         RequestSummaryByVisitType[] summaries = ret.toArray(new RequestSummaryByVisitType[ret.size()]);
 
-        if (includeParticipantLists)
-            setSummaryParticipantLists(sql, params, null, summaries, subjectCol, "SequenceNum");
+        if (includeParticipantGroups)
+            setSummaryParticipantGroups(sql, params, null, summaries, subjectCol, "SequenceNum");
         return summaries;
     }
 
@@ -2587,7 +2587,7 @@ public class SampleManager
         }
     }
 
-    private void setSummaryParticipantLists(String sql, Object[] paramArray, Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty,
+    private void setSummaryParticipantGroups(String sql, Object[] paramArray, Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty,
                                            SummaryByVisitType[] summaries, String ptidColumnName, String visitValueColumnName) throws SQLException
     {
         Table.TableResultSet rs = null;

@@ -115,8 +115,8 @@ public class StudyQuerySchema extends UserSchema
             ret.add("SpecimenPrimaryType");
             ret.add("SpecimenComment");
 
-            // Subject classification/group tables:
-            ret.add(StudyService.get().getSubjectClassificationTableName(getContainer()));
+            // Subject category/group tables:
+            ret.add(StudyService.get().getSubjectCategoryTableName(getContainer()));
             ret.add(StudyService.get().getSubjectGroupTableName(getContainer()));
             ret.add(StudyService.get().getSubjectGroupMapTableName(getContainer()));
 
@@ -219,9 +219,9 @@ public class StudyQuerySchema extends UserSchema
             ParticipantTable ret = new ParticipantTable(this);
             return ret;
         }
-        if (StudyService.get().getSubjectClassificationTableName(getContainer()).equalsIgnoreCase(name))
+        if (StudyService.get().getSubjectCategoryTableName(getContainer()).equalsIgnoreCase(name))
         {
-            ParticipantClassificationTable ret = new ParticipantClassificationTable(this);
+            ParticipantCategoryTable ret = new ParticipantCategoryTable(this);
             return ret;
         }
         if (StudyService.get().getSubjectGroupTableName(getContainer()).equalsIgnoreCase(name))

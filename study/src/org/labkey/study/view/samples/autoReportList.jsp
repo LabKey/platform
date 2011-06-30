@@ -46,8 +46,8 @@
     String optionLabelStyle = "text-align:right";
     Map<String, CustomView> views = bean.getCustomViews(getViewContext());
 
-    ParticipantClassification[] classes = ParticipantListManager.getInstance().getParticipantClassifications(container);
-    boolean showParticipantLists = classes != null && classes.length > 0;
+    ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container);
+    boolean showParticipantGroups = categories != null && categories.length > 0;
 %>
 <script type="text/javascript">
     function showOrHide(suffix)
@@ -165,35 +165,35 @@
                         }
                     }
 
-                    if (showParticipantLists && factory.allowsParticipantListFilter())
+                    if (showParticipantGroups && factory.allowsParticipantGroupFilter())
                     {
                 %>
                         <tr>
                             <td style="<%= optionLabelStyle %>"><%= study.getSubjectNounSingular() %> List</td>
                             <td>
-                                <select name="participantListFilter">
-                                    <option value="">All Lists</option>
+                                <select name="participantGroupFilter">
+                                    <option value="">All Groups</option>
                                     <%
-                                        for (ParticipantClassification cls : classes)
+                                        for (ParticipantCategory cat : categories)
                                         {
-                                            ParticipantGroup[] groups = cls.getGroups();
+                                            ParticipantGroup[] groups = cat.getGroups();
                                             if (null != groups)
                                             {
                                                 for (ParticipantGroup grp : groups)
                                                 {
                                                     %>
-                                                    <option value="<%= grp.getRowId() %>" <%= grp.getRowId() == factory.getParticipantListFilter() ? "SELECTED" : "" %>>
+                                                    <option value="<%= grp.getRowId() %>" <%= grp.getRowId() == factory.getParticipantGroupFilter() ? "SELECTED" : "" %>>
                                                         <%
-                                                            if (!grp.getLabel().equals(cls.getLabel()))
+                                                            if (!grp.getLabel().equals(cat.getLabel()))
                                                             {
                                                         %>
-                                                        <%= cls.getLabel() + " : " + grp.getLabel() %>
+                                                        <%= cat.getLabel() + " : " + grp.getLabel() %>
                                                         <%
                                                         }
                                                             else
                                                         {
                                                         %>
-                                                            <%= cls.getLabel() %>
+                                                            <%= cat.getLabel() %>
                                                         <%
                                                         }
                                                         %>

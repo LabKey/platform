@@ -17,15 +17,11 @@ package org.labkey.study.model;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,9 +31,9 @@ import java.util.List;
  */
 
 /**
- * Represents a classification of participants into related groups.
+ * Represents a category of participants in related groups.
  */
-public class ParticipantClassification extends Entity
+public class ParticipantCategory extends Entity
 {
     private int _rowId;
     private boolean _shared;
@@ -86,7 +82,7 @@ public class ParticipantClassification extends Entity
     public void setType(String type)
     {
         if (Type.valueOf(type) == null)
-            throw new IllegalArgumentException("Invalid ParticipantClassification type");
+            throw new IllegalArgumentException("Invalid ParticipantCategory type");
         
         _type = type;
     }
@@ -247,7 +243,7 @@ public class ParticipantClassification extends Entity
         return json;
     }
 
-    public void copySpecialFields(ParticipantClassification copy)
+    public void copySpecialFields(ParticipantCategory copy)
     {
         if (getEntityId() == null)
             setEntityId(copy.getEntityId());
@@ -265,7 +261,7 @@ public class ParticipantClassification extends Entity
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ParticipantClassification that = (ParticipantClassification) o;
+        ParticipantCategory that = (ParticipantCategory) o;
 
         if (_rowId != that._rowId) return false;
 

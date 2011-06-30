@@ -1901,7 +1901,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static HttpView getParticipantNavTrail(ViewContext context, List<String> participantList)
+    public static HttpView getParticipantNavTrail(ViewContext context, List<String> participantGroup)
     {
         String participantId = context.getActionURL().getParameter("participantId");
         String qcState = context.getActionURL().getParameter(SharedFormParameters.QCState);
@@ -1910,28 +1910,28 @@ public class ReportsController extends BaseStudyController
         ActionURL nextParticipantURL = null;
         String title = null;
 
-        if (!participantList.isEmpty())
+        if (!participantGroup.isEmpty())
         {
-            if (participantId == null || !participantList.contains(participantId))
+            if (participantId == null || !participantGroup.contains(participantId))
             {
-                participantId = participantList.get(0);
+                participantId = participantGroup.get(0);
                 context.put("participantId", participantId);
             }
-            int idx = participantList.indexOf(participantId);
+            int idx = participantGroup.indexOf(participantId);
             if (idx != -1)
             {
                 title = StudyService.get().getSubjectNounSingular(context.getContainer()) + " : " + participantId;
 
                 if (idx > 0)
                 {
-                    final String ptid = participantList.get(idx-1);
+                    final String ptid = participantGroup.get(idx-1);
                     nextParticipantURL = context.cloneActionURL();
                     nextParticipantURL.replaceParameter("participantId", ptid);
                 }
 
-                if (idx < participantList.size()-1)
+                if (idx < participantGroup.size()-1)
                 {
-                    final String ptid = participantList.get(idx+1);
+                    final String ptid = participantGroup.get(idx+1);
                     nextParticipantURL = context.cloneActionURL();
                     nextParticipantURL.replaceParameter("participantId", ptid);
                 }

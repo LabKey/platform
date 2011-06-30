@@ -669,9 +669,9 @@ public class StudyServiceImpl implements StudyService.Service
         return getSubjectTableName(subjectNounSingular) + "Visit";
     }
 
-    public String getSubjectClassificationTableName(Container container)
+    public String getSubjectCategoryTableName(Container container)
     {
-        return getSubjectTableName(container) + "Classification";
+        return getSubjectTableName(container) + "Category";
     }
 
     public String getSubjectGroupTableName(Container container)

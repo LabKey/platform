@@ -1968,12 +1968,12 @@ public class StudyManager
             assert deletedTables.add(_studyHelper.getTableInfo());
 
             // participant lists
-            Table.delete(ParticipantListManager.getInstance().getTableInfoParticipantGroupMap(), containerFilter);
-            assert deletedTables.add(ParticipantListManager.getInstance().getTableInfoParticipantGroupMap());
-            Table.delete(ParticipantListManager.getInstance().getTableInfoParticipantGroup(), containerFilter);
-            assert deletedTables.add(ParticipantListManager.getInstance().getTableInfoParticipantGroup());
-            Table.delete(StudySchema.getInstance().getTableInfoParticipantClassification(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantClassification());
+            Table.delete(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), containerFilter);
+            assert deletedTables.add(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap());
+            Table.delete(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), containerFilter);
+            assert deletedTables.add(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup());
+            Table.delete(StudySchema.getInstance().getTableInfoParticipantCategory(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantCategory());
 
             //
             // participant and assay data (OntologyManager will take care of properties)

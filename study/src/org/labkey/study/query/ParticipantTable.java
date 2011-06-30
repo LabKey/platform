@@ -35,8 +35,8 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.ParticipantClassification;
-import org.labkey.study.model.ParticipantListManager;
+import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Map;
@@ -119,11 +119,11 @@ public class ParticipantTable extends FilteredTable
 
         setDefaultVisibleColumns(getDefaultVisibleColumns());
 
-        // join in participant classifications
-        for (ParticipantClassification classification : ParticipantListManager.getInstance().getParticipantClassifications(getContainer()))
+        // join in participant categories
+        for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer()))
         {
-            ColumnInfo classificationColumn = new ParticipantClassificationColumn(classification, this);
-            addColumn(classificationColumn);
+            ColumnInfo categoryColumn = new ParticipantCategoryColumn(category, this);
+            addColumn(categoryColumn);
         }
     }
 
@@ -132,14 +132,14 @@ public class ParticipantTable extends FilteredTable
         return new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
     }
 
-    public static class ParticipantClassificationColumn extends ExprColumn
+    public static class ParticipantCategoryColumn extends ExprColumn
     {
-        private ParticipantClassification _def;
+        private ParticipantCategory _def;
         private String PARTICIPANT_GROUP_ALIAS;
-        private String PARTICIPANT_LIST_JOIN;
-        private String PARTICIPANT_GROUP_JOIN;
+        private String PARTICIPANT_GROUP_GROUPMAP_JOIN;
+        private String PARTICIPANT_GROUPMAP_JOIN_ALIAS;
 
-        public ParticipantClassificationColumn(ParticipantClassification def, FilteredTable parent)
+        public ParticipantCategoryColumn(ParticipantCategory def, FilteredTable parent)
         {
             super(parent, def.getLabel(), new SQLFragment(), JdbcType.VARCHAR);
 
@@ -147,11 +147,11 @@ public class ParticipantTable extends FilteredTable
 
             // set up the join aliases
             PARTICIPANT_GROUP_ALIAS = ColumnInfo.legalNameFromName(_def.getLabel()) + "$" + "ParticipantGroup$";
-            PARTICIPANT_LIST_JOIN = ColumnInfo.legalNameFromName(_def.getLabel()) + "$" + "ParticipantListJoin$";
-            PARTICIPANT_GROUP_JOIN = ColumnInfo.legalNameFromName(_def.getLabel()) + "$" + "ParticipantGroupJoin$";
+            PARTICIPANT_GROUP_GROUPMAP_JOIN = ColumnInfo.legalNameFromName(_def.getLabel()) + "$" + "ParticipantListJoin$";
+            PARTICIPANT_GROUPMAP_JOIN_ALIAS = ColumnInfo.legalNameFromName(_def.getLabel()) + "$" + "ParticipantGroupJoin$";
 
             SQLFragment sql = new SQLFragment();
-            sql.append(ExprColumn.STR_TABLE_ALIAS).append("$").append(PARTICIPANT_GROUP_JOIN).append(".label\n");
+            sql.append(ExprColumn.STR_TABLE_ALIAS).append("$").append(PARTICIPANT_GROUPMAP_JOIN_ALIAS).append(".label\n");
             setValueSQL(sql);
         }
 
@@ -160,17 +160,17 @@ public class ParticipantTable extends FilteredTable
         {
             super.declareJoins(parentAlias, map);
 
-            String tableAlias = parentAlias + "$" + PARTICIPANT_LIST_JOIN;
+            String tableAlias = parentAlias + "$" + PARTICIPANT_GROUP_GROUPMAP_JOIN;
             String groupAlias = parentAlias + "$" + PARTICIPANT_GROUP_ALIAS;
-            String groupJoinAlias = parentAlias + "$" + PARTICIPANT_GROUP_JOIN;
+            String groupJoinAlias = parentAlias + "$" + PARTICIPANT_GROUPMAP_JOIN_ALIAS;
             if (map.containsKey(tableAlias))
                 return;
 
             SQLFragment sql = new SQLFragment();
 
             sql.append(" LEFT OUTER JOIN (SELECT * FROM ");
-            sql.append(" (SELECT * FROM ").append(ParticipantListManager.getInstance().getTableInfoParticipantGroup(), "");
-            sql.append(" WHERE ClassificationId = ? ) ").append(groupAlias).append(" JOIN ").append(ParticipantListManager.getInstance().getTableInfoParticipantGroupMap(), "");
+            sql.append(" (SELECT * FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "");
+            sql.append(" WHERE CategoryId = ? ) ").append(groupAlias).append(" JOIN ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
             sql.append(" ON GroupId = ").append(groupAlias).append(".RowId )").append(groupJoinAlias);
             sql.append(" ON ").append(groupJoinAlias).append(".ParticipantId = ").append(parentAlias).append(".ParticipantId");
 

@@ -3,7 +3,7 @@ package org.labkey.study.samples.report;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.model.ParticipantGroup;
-import org.labkey.study.model.ParticipantListManager;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
@@ -16,7 +16,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;
 
@@ -150,7 +149,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         if (isViewPtidList())
         {
             suffixBuilder.append(suffixBuilder.length() > 0 ? ", " : " (");
-            suffixBuilder.append(PageFlowUtil.filter(StudyService.get().getSubjectColumnName(getContainer()))).append(" List");
+            suffixBuilder.append(PageFlowUtil.filter(StudyService.get().getSubjectColumnName(getContainer()))).append(" Group");
         }
         suffixBuilder.append(")");
         return suffixBuilder.toString();
@@ -189,9 +188,9 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 
         addCohortURLFilter(url);
 
-        if (_parameters.getParticipantListFilter() >= 0)
+        if (_parameters.getParticipantGroupFilter() >= 0)
         {
-            ParticipantGroup filterGroup = ParticipantListManager.getInstance().getParticipantGroup(getContainer(), _parameters.getParticipantListFilter());
+            ParticipantGroup filterGroup = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), _parameters.getParticipantGroupFilter());
             if (filterGroup != null)
                 filterGroup.addURLFilter(url, getContainer(), "SpecimenDetail");
         }

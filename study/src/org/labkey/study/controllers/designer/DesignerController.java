@@ -267,7 +267,7 @@ public class DesignerController extends SpringActionController
     {
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            List<Map<String,Object>> participantList = new ArrayList<Map<String,Object>>();
+            List<Map<String,Object>> participantGroup = new ArrayList<Map<String,Object>>();
             int participantNum = 1;
             for (GWTCohort cohort : getStudyDefinition(form).getGroups())
             {
@@ -277,7 +277,7 @@ public class DesignerController extends SpringActionController
                     hm.put("SubjectId", participantNum++);
                     hm.put("Cohort", cohort.getName());
                     hm.put("StartDate", form.getBeginDate());
-                    participantList.add(hm);
+                    participantGroup.add(hm);
                 }
             }
 
@@ -285,7 +285,7 @@ public class DesignerController extends SpringActionController
             xlCols[0] = new ColumnDescriptor("SubjectId", Integer.class);
             xlCols[1] = new ColumnDescriptor("Cohort", String.class);
             xlCols[2] = new ColumnDescriptor("StartDate", Date.class);
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantList, xlCols);
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols);
             xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
             xlWriter.write(response);
         }

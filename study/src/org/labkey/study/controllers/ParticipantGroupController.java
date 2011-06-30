@@ -24,8 +24,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.study.model.ParticipantClassification;
-import org.labkey.study.model.ParticipantListManager;
+import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.springframework.validation.BindException;
 
 /**
@@ -34,125 +34,125 @@ import org.springframework.validation.BindException;
  * Date: May 30, 2011
  * Time: 2:58:38 PM
  */
-public class ParticipantListController extends BaseStudyController
+public class ParticipantGroupController extends BaseStudyController
 {
-    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(ParticipantListController.class);
+    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(ParticipantGroupController.class);
 
-    public ParticipantListController()
+    public ParticipantGroupController()
     {
         super();
         setActionResolver(ACTION_RESOLVER);
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class CreateParticipantClassification extends MutatingApiAction<ParticipantClassification>
+    public class CreateParticipantCategory extends MutatingApiAction<ParticipantCategory>
     {
         @Override
-        public ApiResponse execute(ParticipantClassification form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantCategory form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
             form.setContainer(getContainer().getId());
 
-            ParticipantClassification classification = ParticipantListManager.getInstance().setParticipantClassification(getUser(), form);
+            ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getUser(), form);
 
             resp.put("success", true);
-            resp.put("classification", classification.toJSON());
+            resp.put("category", category.toJSON());
 
             return resp;
         }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class UpdateParticipantClassification extends MutatingApiAction<ParticipantClassification>
+    public class UpdateParticipantCategory extends MutatingApiAction<ParticipantCategory>
     {
         @Override
-        public ApiResponse execute(ParticipantClassification form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantCategory form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
             if (form.isNew())
             {
-                throw new IllegalArgumentException("The specified classification does not exist, you must pass in the RowId");
+                throw new IllegalArgumentException("The specified category does not exist, you must pass in the RowId");
             }
 
             SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
-            ParticipantClassification[] defs = ParticipantListManager.getInstance().getParticipantClassifications(filter);
+            ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(filter);
             if (defs.length == 1)
             {
                 form.copySpecialFields(defs[0]);
-                ParticipantClassification classification = ParticipantListManager.getInstance().setParticipantClassification(getUser(), form);
+                ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getUser(), form);
 
                 resp.put("success", true);
-                resp.put("classification", classification.toJSON());
+                resp.put("category", category.toJSON());
 
                 return resp;
             }
             else
-                throw new RuntimeException("Unable to update the classification with rowId: " + form.getRowId());
+                throw new RuntimeException("Unable to update the category with rowId: " + form.getRowId());
         }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetParticipantClassification extends ApiAction<ParticipantClassification>
+    public class GetParticipantCategory extends ApiAction<ParticipantCategory>
     {
         @Override
-        public ApiResponse execute(ParticipantClassification form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantCategory form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ParticipantClassification classification = ParticipantListManager.getInstance().getParticipantClassification(getContainer(), form.getLabel());
+            ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), form.getLabel());
 
             resp.put("success", true);
-            resp.put("classification", classification.toJSON());
+            resp.put("category", category.toJSON());
 
             return resp;
         }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetParticipantClassifications extends ApiAction<Object>
+    public class GetParticipantCategories extends ApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ParticipantClassification[] classifications = ParticipantListManager.getInstance().getParticipantClassifications(getContainer());
+            ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer());
             JSONArray defs = new JSONArray();
 
-            for (ParticipantClassification pc : classifications)
+            for (ParticipantCategory pc : categories)
             {
                 defs.put(pc.toJSON());
             }
             resp.put("success", true);
-            resp.put("classifications", defs);
+            resp.put("categories", defs);
 
             return resp;
         }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class DeleteParticipantClassification extends MutatingApiAction<ParticipantClassification>
+    public class DeleteParticipantCategory extends MutatingApiAction<ParticipantCategory>
     {
         @Override
-        public ApiResponse execute(ParticipantClassification form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantCategory form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ParticipantClassification classification = form;
+            ParticipantCategory category = form;
 
             if (form.isNew())
             {
-                // try to match a single classification by label/container
+                // try to match a single category by label/container
                 SimpleFilter filter = new SimpleFilter("Container", getContainer());
                 filter.addCondition("Label", form.getLabel());
 
-                ParticipantClassification[] defs = ParticipantListManager.getInstance().getParticipantClassifications(filter);
+                ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(filter);
                 if (defs.length == 1)
-                    classification = defs[0];
+                    category = defs[0];
             }
-            ParticipantListManager.getInstance().deleteParticipantClassification(getUser(), classification);
+            ParticipantGroupManager.getInstance().deleteParticipantCategory(getUser(), category);
             resp.put("success", true);
 
             return resp;

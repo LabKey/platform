@@ -23,7 +23,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +37,8 @@ public class ParticipantGroup extends Entity
 {
     private int _rowId;
     private String _label;
-    private int _classificationId;  // fk to participant classification
-    private String _classificationLabel;
+    private int _categoryId;  // fk to participant category
+    private String _categoryLabel;
 
     private List<String> _participantIds = new ArrayList<String>();
 
@@ -68,14 +67,14 @@ public class ParticipantGroup extends Entity
         _label = label;
     }
 
-    public int getClassificationId()
+    public int getCategoryId()
     {
-        return _classificationId;
+        return _categoryId;
     }
 
-    public void setClassificationId(int classificationId)
+    public void setCategoryId(int categoryId)
     {
-        _classificationId = classificationId;
+        _categoryId = categoryId;
     }
 
     public List<String> getParticipantIds()
@@ -93,19 +92,19 @@ public class ParticipantGroup extends Entity
         _participantIds.add(participantId);
     }
 
-    public String getClassificationLabel()
+    public String getCategoryLabel()
     {
-        return _classificationLabel;
+        return _categoryLabel;
     }
 
-    public void setClassificationLabel(String classificationLabel)
+    public void setCategoryLabel(String categoryLabel)
     {
-        _classificationLabel = classificationLabel;
+        _categoryLabel = categoryLabel;
     }
 
     public Pair<FieldKey, String> getFilterColAndValue(Container container)
     {
-        FieldKey key = FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), getClassificationLabel());
+        FieldKey key = FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), getCategoryLabel());
         return new Pair<FieldKey, String>(key, getLabel());
     }
 

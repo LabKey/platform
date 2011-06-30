@@ -51,13 +51,13 @@ import java.util.Set;
  * Date: Jun 1, 2011
  * Time: 2:26:02 PM
  */
-public class ParticipantListManager
+public class ParticipantGroupManager
 {
-    private static final ParticipantListManager _instance = new ParticipantListManager();
+    private static final ParticipantGroupManager _instance = new ParticipantGroupManager();
 
-    private ParticipantListManager(){}
+    private ParticipantGroupManager(){}
 
-    public static ParticipantListManager getInstance()
+    public static ParticipantGroupManager getInstance()
     {
         return _instance;
     }
@@ -72,34 +72,34 @@ public class ParticipantListManager
         return StudySchema.getInstance().getSchema().getTable("ParticipantGroupMap");
     }
 
-    public ParticipantClassification getParticipantClassification(Container c, String label)
+    public ParticipantCategory getParticipantCategory(Container c, String label)
     {
         SimpleFilter filter = new SimpleFilter("Container", c);
         filter.addCondition("Label", label);
 
-        ParticipantClassification[] lists = getParticipantClassifications(filter);
+        ParticipantCategory[] lists = getParticipantCategories(filter);
 
         if (lists.length > 0)
         {
             return lists[0];
         }
-        ParticipantClassification def = new ParticipantClassification();
+        ParticipantCategory def = new ParticipantCategory();
         def.setContainer(c.getId());
         def.setLabel(label);
 
         return def;
     }
 
-    public ParticipantClassification[] getParticipantClassifications(SimpleFilter filter)
+    public ParticipantCategory[] getParticipantCategories(SimpleFilter filter)
     {
         try {
-            ParticipantClassification[] lists = Table.select(StudySchema.getInstance().getTableInfoParticipantClassification(), Table.ALL_COLUMNS, filter, null, ParticipantClassification.class);
+            ParticipantCategory[] categories = Table.select(StudySchema.getInstance().getTableInfoParticipantCategory(), Table.ALL_COLUMNS, filter, null, ParticipantCategory.class);
 
-            for (ParticipantClassification pc : lists)
+            for (ParticipantCategory pc : categories)
             {
                 pc.setGroups(getParticipantGroups(pc));
             }
-            return lists;
+            return categories;
         }
         catch (SQLException x)
         {
@@ -107,7 +107,7 @@ public class ParticipantListManager
         }
     }
 
-    public ActionButton createParticipantListButton(ViewContext context, String dataRegionName)
+    public ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName)
     {
         Container container = context.getContainer();
         String[] colFilterParamNames = context.getActionURL().getKeysByPrefix(dataRegionName + ".");
@@ -124,10 +124,10 @@ public class ParticipantListManager
             colFilters.put(colName, context.getActionURL().getParameter(colFilterParamName));
         }
 
-        ParticipantClassification[] allClassifications = getParticipantClassifications(container);
-        for (ParticipantClassification classification : allClassifications)
+        ParticipantCategory[] allCategories = getParticipantCategories(container);
+        for (ParticipantCategory category : allCategories)
         {
-            ParticipantGroup[] allGroups = getParticipantGroups(classification);
+            ParticipantGroup[] allGroups = getParticipantGroups(category);
             for (ParticipantGroup group : allGroups)
             {
                 Pair<FieldKey, String> colAndValue = group.getFilterColAndValue(container);
@@ -137,20 +137,20 @@ public class ParticipantListManager
                     selected.add(group);
             }
         }
-        return createParticipantListButton(context, dataRegionName, selected);
+        return createParticipantGroupButton(context, dataRegionName, selected);
     }
 
-    private ActionButton createParticipantListButton(ViewContext context, String dataRegionName, Set<ParticipantGroup> selected)
+    private ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, Set<ParticipantGroup> selected)
     {
         Container container = context.getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Lists");
+        MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Groups");
 
-        ParticipantClassification[] classes = getParticipantClassifications(container);
+        ParticipantCategory[] classes = getParticipantCategories(container);
 
         // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
         ActionURL baseURL = context.getActionURL().clone();
-        for (ParticipantClassification cls : classes)
+        for (ParticipantCategory cls : classes)
         {
             ParticipantGroup[] groups = cls.getGroups();
             if (groups != null)
@@ -162,7 +162,7 @@ public class ParticipantListManager
 
         button.addMenuItem("All", baseURL.toString(), null, selected.isEmpty());
 
-        for (ParticipantClassification cls : classes)
+        for (ParticipantCategory cls : classes)
         {
             ParticipantGroup[] groups = cls.getGroups();
             if (null != groups && groups.length > 1)
@@ -186,39 +186,39 @@ public class ParticipantListManager
         }
 
         button.addSeparator();
-        button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Lists", new ActionURL(StudyController.ManageParticipantClassificationsAction.class, container));
+        button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, container));
 
         return button;
     }
     
-    public ParticipantClassification[] getParticipantClassifications(Container c)
+    public ParticipantCategory[] getParticipantCategories(Container c)
     {
-        return getParticipantClassifications(new SimpleFilter("Container", c));
+        return getParticipantCategories(new SimpleFilter("Container", c));
     }
 
-    public ParticipantClassification setParticipantClassification(User user, ParticipantClassification def)
+    public ParticipantCategory setParticipantCategory(User user, ParticipantCategory def)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
         try {
             scope.ensureTransaction();
-            ParticipantClassification ret;
+            ParticipantCategory ret;
             boolean isUpdate = !def.isNew();
 
             if (def.isNew())
-                ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantClassification(), def);
+                ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
             else
-                ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantClassification(), def, def.getRowId());
+                ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def, def.getRowId());
 
-            switch (ParticipantClassification.Type.valueOf(ret.getType()))
+            switch (ParticipantCategory.Type.valueOf(ret.getType()))
             {
                 case list:
                     updateListTypeDef(user, ret, isUpdate);
                     break;
                 case query:
-                    throw new UnsupportedOperationException("Participant classification type: query not yet supported");
+                    throw new UnsupportedOperationException("Participant category type: query not yet supported");
                 case cohort:
-                    throw new UnsupportedOperationException("Participant classification type: cohort not yet supported");
+                    throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
             }
             scope.commitTransaction();
             return ret;
@@ -261,7 +261,7 @@ public class ParticipantListManager
 
                 Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), group.getRowId(), id, group.getContainerId());
             }
-            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantClassification(), getCacheKey(group.getClassificationId()));
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(group.getCategoryId()));
 
             scope.commitTransaction();
             return ret;
@@ -284,7 +284,7 @@ public class ParticipantListManager
             sql.append(" WHERE GroupId = ?");
 
             Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), group.getRowId());
-            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantClassification(), getCacheKey(group.getClassificationId()));
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(group.getCategoryId()));
         }
         catch (SQLException x)
         {
@@ -292,15 +292,15 @@ public class ParticipantListManager
         }
     }
 
-    public ParticipantClassification getParticipantClassification(Container c, int rowId)
+    public ParticipantCategory getParticipantCategory(Container c, int rowId)
     {
         SimpleFilter filter = new SimpleFilter("Container", c);
         filter.addCondition("RowId", rowId);
 
-        ParticipantClassification[] lists = getParticipantClassifications(filter);
+        ParticipantCategory[] categories = getParticipantCategories(filter);
 
-        if (lists.length > 0)
-            return lists[0];
+        if (categories.length > 0)
+            return categories[0];
         return null;
     }
 
@@ -311,15 +311,15 @@ public class ParticipantListManager
         ResultSet rs = null;
         try
         {
-            rs = Table.select(getTableInfoParticipantGroup(), Collections.singleton("ClassificationId"), filter, null);
+            rs = Table.select(getTableInfoParticipantGroup(), Collections.singleton("CategoryId"), filter, null);
             if (rs.next())
             {
-                ParticipantClassification classification = getParticipantClassification(container, rs.getInt("ClassificationId"));
-                if (classification != null)
+                ParticipantCategory category = getParticipantCategory(container, rs.getInt("CategoryId"));
+                if (category != null)
                 {
-                    // Use getParticipantGroups here to pull the entire classification into the cache- this is more expensive up-front,
+                    // Use getParticipantGroups here to pull the entire category into the cache- this is more expensive up-front,
                     // but will save us time later.
-                    ParticipantGroup[] groups = getParticipantGroups(classification);
+                    ParticipantGroup[] groups = getParticipantGroups(category);
                     for (ParticipantGroup group : groups)
                     {
                         if (group.getRowId() == rowId)
@@ -340,19 +340,19 @@ public class ParticipantListManager
         return null;
     }
 
-    public ParticipantGroup[] getParticipantGroups(ParticipantClassification def)
+    public ParticipantGroup[] getParticipantGroups(ParticipantCategory def)
     {
         if (!def.isNew())
         {
             String cacheKey = getCacheKey(def);
-            ParticipantGroup[] groups = (ParticipantGroup[]) DbCache.get(StudySchema.getInstance().getTableInfoParticipantClassification(), cacheKey);
+            ParticipantGroup[] groups = (ParticipantGroup[]) DbCache.get(StudySchema.getInstance().getTableInfoParticipantCategory(), cacheKey);
 
             if (groups != null)
                 return groups;
 
             SQLFragment sql = new SQLFragment("SELECT * FROM (");
-            sql.append("SELECT pg.label, pg.rowId FROM ").append(StudySchema.getInstance().getTableInfoParticipantClassification(), "pc");
-            sql.append(" JOIN ").append(getTableInfoParticipantGroup(), "pg").append(" ON pc.rowId = pg.classificationId WHERE pg.classificationId = ?) jr ");
+            sql.append("SELECT pg.label, pg.rowId FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "pc");
+            sql.append(" JOIN ").append(getTableInfoParticipantGroup(), "pg").append(" ON pc.rowId = pg.categoryId WHERE pg.categoryId = ?) jr ");
             sql.append(" JOIN ").append(getTableInfoParticipantGroupMap(), "gm").append(" ON jr.rowId = gm.groupId;");
 
             ParticipantGroupMap[] maps = new ParticipantGroupMap[0];
@@ -371,8 +371,8 @@ public class ParticipantListManager
                 if (!groupMap.containsKey(pg.getGroupId()))
                 {
                     ParticipantGroup group = new ParticipantGroup();
-                    group.setClassificationId(def.getRowId());
-                    group.setClassificationLabel(def.getLabel());
+                    group.setCategoryId(def.getRowId());
+                    group.setCategoryLabel(def.getLabel());
                     group.setLabel(pg.getLabel());
                     group.setContainer(pg.getContainerId());
                     group.setRowId(pg.getRowId());
@@ -383,7 +383,7 @@ public class ParticipantListManager
             }
             groups = groupMap.values().toArray(new ParticipantGroup[groupMap.size()]);
 
-            DbCache.put(StudySchema.getInstance().getTableInfoParticipantClassification(), cacheKey, groups);
+            DbCache.put(StudySchema.getInstance().getTableInfoParticipantCategory(), cacheKey, groups);
             return groups;
         }
         return new ParticipantGroup[0];
@@ -415,9 +415,9 @@ public class ParticipantListManager
         }
     }
 
-    private void updateListTypeDef(User user, ParticipantClassification def, boolean update) throws SQLException
+    private void updateListTypeDef(User user, ParticipantCategory def, boolean update) throws SQLException
     {
-        assert !def.isNew() : "The participant classification has not been created yet";
+        assert !def.isNew() : "The participant category has not been created yet";
 
         if (!def.isNew() && def.getParticipantIds().length != 0)
         {
@@ -427,7 +427,7 @@ public class ParticipantListManager
                 scope.ensureTransaction();
                 ParticipantGroup group;
 
-                // updating an existing classification
+                // updating an existing category
                 if (update)
                 {
                     ParticipantGroup[] groups = getParticipantGroups(def);
@@ -437,12 +437,12 @@ public class ParticipantListManager
                         deleteGroupParticipants(user, group);
                     }
                     else
-                        throw new RuntimeException("The existing participant classification had no group associated with it.");
+                        throw new RuntimeException("The existing participant category had no group associated with it.");
                 }
                 else
                 {
                     group = new ParticipantGroup();
-                    group.setClassificationId(def.getRowId());
+                    group.setCategoryId(def.getRowId());
                     group.setContainer(def.getContainerId());
                 }
                 group.setLabel(def.getLabel());
@@ -460,10 +460,10 @@ public class ParticipantListManager
         }
     }
 
-    public void deleteParticipantClassification(User user, ParticipantClassification def)
+    public void deleteParticipantCategory(User user, ParticipantCategory def)
     {
         if (def.isNew())
-            throw new IllegalArgumentException("Participant classification has not been saved to the database yet");
+            throw new IllegalArgumentException("Participant category has not been saved to the database yet");
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -472,19 +472,19 @@ public class ParticipantListManager
 
             // remove any participant group mappings from the junction table
             SQLFragment sqlMapping = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "").append(" WHERE GroupId IN ");
-            sqlMapping.append("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").append(" WHERE ClassificationId = ?)");
+            sqlMapping.append("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").append(" WHERE CategoryId = ?)");
             Table.execute(StudySchema.getInstance().getSchema(), sqlMapping.getSQL(), def.getRowId());
 
             // delete the participant groups
             SQLFragment sqlGroup = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroup(), "").append(" WHERE RowId IN ");
-            sqlGroup.append("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").append(" WHERE ClassificationId = ?)");
+            sqlGroup.append("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").append(" WHERE CategoryId = ?)");
             Table.execute(StudySchema.getInstance().getSchema(), sqlGroup.getSQL(), def.getRowId());
 
             // delete the participant list definition
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(StudySchema.getInstance().getTableInfoParticipantClassification(), "").append(" WHERE RowId = ?");
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "").append(" WHERE RowId = ?");
             Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), def.getRowId());
 
-            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantClassification(), getCacheKey(def));
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(def));
             scope.commitTransaction();
         }
         catch (SQLException x)
@@ -497,13 +497,13 @@ public class ParticipantListManager
         }
     }
 
-    private String getCacheKey(ParticipantClassification def)
+    private String getCacheKey(ParticipantCategory def)
     {
-        return "ParticipantClassification-" + def.getRowId();
+        return "ParticipantCategory-" + def.getRowId();
     }
 
-    private String getCacheKey(int classificationId)
+    private String getCacheKey(int categoryId)
     {
-        return "ParticipantClassification-" + classificationId;
+        return "ParticipantCategory-" + categoryId;
     }
 }

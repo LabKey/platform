@@ -64,7 +64,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
     }
 
     @Override
-    public boolean allowsParticipantListFilter()
+    public boolean allowsParticipantGroupFilter()
     {
         return false;
     }

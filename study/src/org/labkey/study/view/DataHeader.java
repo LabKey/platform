@@ -168,14 +168,6 @@ public class DataHeader extends HttpView
             params.put(QueryParam.queryName.toString(), _datasetDef.getLabel());
             if (!StringUtils.isEmpty(viewName))
                 params.put(QueryParam.viewName.toString(), viewName);
-/*
-            if (participantId == null)
-            {
-                List<String> cachedList = StudyController.getParticipantListFromCache(getViewContext(), _datasetDef.getDataSetId(), viewName, _selectedCohort);
-                if (cachedList.size() > 0)
-                    params.put("participantId", cachedList.get(0));
-            }
-*/
         }
         else
         {

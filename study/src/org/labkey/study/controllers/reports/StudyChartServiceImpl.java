@@ -282,7 +282,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
             // the chart preview will look more representative.
             int datasetId = NumberUtils.toInt((String)chart.getProperties().get(DataSetDefinition.DATASETKEY));
             String qcState = getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
-            List<String> participants = StudyController.getParticipantListFromCache(_context, datasetId, bean.getViewName(), null, qcState);
+            List<String> participants = StudyController.getParticipantGroupFromCache(_context, datasetId, bean.getViewName(), null, qcState);
             if (!participants.isEmpty())
                 url.addParameter("participantId", participants.get(0));
         }

@@ -247,9 +247,9 @@ public class StudySchema
         return getSchema().getTable("SampleAvailabilityRule");
     }
 
-    public TableInfo getTableInfoParticipantClassification()
+    public TableInfo getTableInfoParticipantCategory()
     {
-        return getSchema().getTable("ParticipantClassifications");
+        return getSchema().getTable("ParticipantCategory");
     }
 
     public TableInfo getTableInfoParticipantGroup()

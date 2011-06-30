@@ -27,12 +27,12 @@ import org.labkey.study.StudySchema;
  * User: brittp
  * Date: Jun 28, 2011 12:50:30 PM
  */
-public class ParticipantClassificationTable extends BaseStudyTable
+public class ParticipantCategoryTable extends BaseStudyTable
 {
-    public ParticipantClassificationTable(StudyQuerySchema schema)
+    public ParticipantCategoryTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoParticipantClassification());
-        setName(StudyService.get().getSubjectClassificationTableName(schema.getContainer()));
+        super(schema, StudySchema.getInstance().getTableInfoParticipantCategory());
+        setName(StudyService.get().getSubjectCategoryTableName(schema.getContainer()));
 
         ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);

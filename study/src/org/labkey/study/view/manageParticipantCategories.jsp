@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Object> me = (JspView<Object>) HttpView.currentView();
@@ -30,7 +29,7 @@
     String subjectNounColName = s.getSubjectColumnName();
 %>
 
-<div id="participantClassificationsGrid" class="extContainer"></div>
+<div id="participantCategoriesGrid" class="extContainer"></div>
 
 <script type="text/javascript">
     Ext.QuickTips.init();
@@ -38,14 +37,14 @@
     var $h = Ext.util.Format.htmlEncode;
     var _grid;
 
-    function renderParticipantClassificationsGrid()
+    function renderParticipantCategoriesGrid()
     {
         var store = new Ext.data.JsonStore({
             proxy: new Ext.data.HttpProxy({
-                url : LABKEY.ActionURL.buildURL("participant-list", "getParticipantClassifications"),
+                url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
                 method : 'POST'
             }),
-            root: 'classifications',
+            root: 'categories',
             idProperty: 'rowId',
             fields: [
                 {name: 'rowId', type: 'integer'},
@@ -75,7 +74,7 @@
         var tbarButtons = [{
             text: 'Create',
             handler: function(){
-                editParticipantClassifications(null);
+                editParticipantCategories(null);
             },
             scope: this
         },{
@@ -85,7 +84,7 @@
             handler: function(){
                 if (_grid.getSelectionModel().hasSelection())
                 {
-                    editParticipantClassifications(_grid.getSelectionModel().getSelected());
+                    editParticipantCategories(_grid.getSelectionModel().getSelected());
                 }
             },
             scope: this
@@ -96,15 +95,15 @@
             handler: function(){
                 if (_grid.getSelectionModel().hasSelection())
                 {
-                    deleteParticipantClassifications(_grid.getSelectionModel().getSelected());
+                    deleteParticipantCategories(_grid.getSelectionModel().getSelected());
                 }
             },
             scope: this
         }];
 
-        // create a gridpanel with the list of classifications (one per row)
+        // create a gridpanel with the list of categories (one per row)
         _grid = new Ext.grid.GridPanel({
-            renderTo: 'participantClassificationsGrid',
+            renderTo: 'participantCategoriesGrid',
             autoScroll:false,
             autoHeight:true,
             width:800,
@@ -134,19 +133,19 @@
         }
     }
 
-    function editParticipantClassifications(row){
+    function editParticipantCategories(row){
         var win = new Ext.Window({
             cls: 'extContainer',
-            title: 'Create <%= subjectNounSingular %> Classification',
+            title: 'Create <%= subjectNounSingular %> Category',
             layout:'fit',
             width:800,
             height:550,
             modal: true,
             closeAction:'close',
-            items: new LABKEY.ParticipantClassificationPanel({
-                classificationRowId: (row ? row.get("rowId") : null),
-                classificationLabel: (row ? row.get("label") : null),
-                classificationParticipantIds: (row ? row.get("participantIds") : null),
+            items: new LABKEY.ParticipantCategoryPanel({
+                categoryRowId: (row ? row.get("rowId") : null),
+                categoryLabel: (row ? row.get("label") : null),
+                categoryParticipantIds: (row ? row.get("participantIds") : null),
                 listeners: {
                     scope: this,
                     'closeWindow': function(){
@@ -158,41 +157,41 @@
         win.show(this);
     }
 
-    function deleteParticipantClassifications(row){
-        // todo: do we need to handle deletion of a shared/public classification differently?
+    function deleteParticipantCategories(row){
+        // todo: do we need to handle deletion of a shared/public category differently?
 
         Ext.Msg.show({
-            title : 'Delete Classification',
-            msg : 'Delete Selected Classification:<br/>' + row.get("label"),
+            title : 'Delete Category',
+            msg : 'Delete Selected Category:<br/>' + row.get("label"),
             buttons: Ext.Msg.YESNO,
             icon: Ext.Msg.QUESTION,
             fn: function(btn, text) {
                 if (btn == 'yes')
                 {
                     Ext.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL("participant-list", "deleteParticipantClassification"),
+                        url: LABKEY.ActionURL.buildURL("participant-group", "deleteParticipantCategory"),
                         method: "POST",
                         success: function(){
                             _grid.getStore().reload();
                         },
                         failure: function(){
-                            Ext.Msg.alert("Delete Classification", "Deletion Failed");
+                            Ext.Msg.alert("Delete Category", "Deletion Failed");
                         },
                         jsonData: {rowId: row.get("rowId")},
                         headers : {'Content-Type' : 'application/json'}
                     });
                 }},
-            id: 'delete_classifications'
+            id: 'delete_categories'
         });
     }
 
     /**
      * Panel to take user input for the label and list of participant ids for a classfication to be created or edited
-     * @param classificationRowId = the rowId of the classification to be edited (null if create new)
-     * @param classificationLabel = the current label of the classification to be edited (null if create new)
-     * @param classificationParticipantIds = the string representation of the ptid ids array of the classification to be edited (null if create new) 
+     * @param categoryRowId = the rowId of the category to be edited (null if create new)
+     * @param categoryLabel = the current label of the category to be edited (null if create new)
+     * @param categoryParticipantIds = the string representation of the ptid ids array of the category to be edited (null if create new)
      */
-    LABKEY.ParticipantClassificationPanel = Ext.extend(Ext.Panel, {
+    LABKEY.ParticipantCategoryPanel = Ext.extend(Ext.Panel, {
         constructor : function(config){
             Ext.apply(config, {
                 layout: 'form',
@@ -203,17 +202,17 @@
 
             this.addEvents('closeWindow');
 
-            LABKEY.ParticipantClassificationPanel.superclass.constructor.call(this, config);
+            LABKEY.ParticipantCategoryPanel.superclass.constructor.call(this, config);
         },
 
         initComponent : function() {
-            this.classificationPanel = new Ext.form.FormPanel({
+            this.categoryPanel = new Ext.form.FormPanel({
                 monitorValid: true,
                 border: false,
                 items: [{
-                    id: 'classificationLabel',
+                    id: 'categoryLabel',
                     xtype: 'textfield',
-                    value: this.classificationLabel,
+                    value: this.categoryLabel,
                     hideLabel: true,
                     emptyText: '<%= subjectNounSingular %> Set Label',
                     allowBlank: false,
@@ -221,9 +220,9 @@
                     preventMark: true,
                     anchor: '100%'
                 },{
-                    id: 'classificationIdentifiers',
+                    id: 'categoryIdentifiers',
                     xtype: 'textarea',
-                    value: this.classificationParticipantIds,
+                    value: this.categoryParticipantIds,
                     hideLabel: true,
                     emptyText: 'Enter <%= subjectNounSingular %> Identifiers Separated by Commas',
                     allowBlank: false,
@@ -234,7 +233,7 @@
                 buttons: [{
                     text:'Save',
                     formBind: true,
-                    handler: this.saveClassification,
+                    handler: this.saveCategory,
                     scope: this
                 },{
                     text:'Cancel',
@@ -282,7 +281,7 @@
             });
 
             this.items = [
-                this.classificationPanel,
+                this.categoryPanel,
                 this.demoCombobox,
                 {
                     xtype: 'panel',
@@ -291,18 +290,18 @@
                 }
             ];
 
-            LABKEY.ParticipantClassificationPanel.superclass.initComponent.call(this);
+            LABKEY.ParticipantCategoryPanel.superclass.initComponent.call(this);
         },
 
-        saveClassification: function()
+        saveCategory: function()
         {
             // mask the panel
-            this.getEl().mask("Saving classification...", "x-mask-loading");
+            this.getEl().mask("Saving category...", "x-mask-loading");
 
             // get the label and ids from the form
-            var fieldValues = this.classificationPanel.getForm().getFieldValues();
-            var label = $h(fieldValues["classificationLabel"]);
-            var idStr = $h(fieldValues["classificationIdentifiers"]);
+            var fieldValues = this.categoryPanel.getForm().getFieldValues();
+            var label = $h(fieldValues["categoryLabel"]);
+            var idStr = $h(fieldValues["categoryIdentifiers"]);
 
             // split the ptid list into an array of strings
             var ids = idStr.split(",");
@@ -311,24 +310,24 @@
                 ids[i] = ids[i].trim();
             }
 
-            // setup the data to be stored for the classification
-            var classificationData = {
+            // setup the data to be stored for the category
+            var categoryData = {
                 label: label,
                 type: 'list',
                 participantIds: ids
             };
             
-            if (this.classificationRowId)
+            if (this.categoryRowId)
             {
-                classificationData.rowId = this.classificationRowId;
+                categoryData.rowId = this.categoryRowId;
             }
 
-            // save the participant classification ("create" if no prior rowId, "update" if rowId exists)
+            // save the participant category ("create" if no prior rowId, "update" if rowId exists)
             Ext.Ajax.request(
             {
-                url : (this.classificationRowId
-                        ? LABKEY.ActionURL.buildURL("participant-list", "updateParticipantClassification")
-                        : LABKEY.ActionURL.buildURL("participant-list", "createParticipantClassification")
+                url : (this.categoryRowId
+                        ? LABKEY.ActionURL.buildURL("participant-group", "updateParticipantCategory")
+                        : LABKEY.ActionURL.buildURL("participant-group", "createParticipantCategory")
                       ),
                 method : 'POST',
                 success: function(){
@@ -340,7 +339,7 @@
                     this.getEl().unmask();
                     LABKEY.Utils.displayAjaxErrorResponse(response, options);
                 },
-                jsonData : classificationData,
+                jsonData : categoryData,
                 headers : {'Content-Type' : 'application/json'},
                 scope: this
             });
@@ -348,7 +347,7 @@
 
         getDemoQueryWebPart: function(queryName)
         {
-            var ptidClassificationPanel = this;
+            var ptidCategoryPanel = this;
             var initialLoad = true;
 
             var demoQueryWebPart =  new LABKEY.QueryWebPart({
@@ -360,20 +359,20 @@
                 border: false,
                 showRecordSelectors: true,
                 showUpdateColumn: false,
-                maskEl: ptidClassificationPanel.getEl(),
+                maskEl: ptidCategoryPanel.getEl(),
                 buttonBarPosition: 'top',
                 buttonBar: {
                     includeStandardButtons: false,
                     items:[{
                         text: 'Add Selected',
                         handler: function(){
-                            ptidClassificationPanel.getSelectedDemoParticipants(queryName, "selected");
+                            ptidCategoryPanel.getSelectedDemoParticipants(queryName, "selected");
                         }
                     },{
                         text: 'Add All',
                         handler: function(){
                             // todo: fix this to only add the visible records (i.e. if filter applied to dataregion)
-                            ptidClassificationPanel.getSelectedDemoParticipants(queryName, "all");
+                            ptidCategoryPanel.getSelectedDemoParticipants(queryName, "all");
                         }
                     }]
                 },
@@ -389,7 +388,7 @@
         },
 
         getSelectedDemoParticipants: function(queryName, showStr) {
-            var ptidClassfiicationPanel = this;
+            var ptidCategoryPanel = this;
 
             // convert user filters from data region to expected filterArray
             var filters = [];
@@ -408,8 +407,8 @@
                 columns: '<%= subjectNounColName %>',
                 success: function(data){
                     // get the current list of participant ids from the form
-                    var classPanelValues = ptidClassfiicationPanel.classificationPanel.getForm().getFieldValues();
-                    var tempIds = classPanelValues["classificationIdentifiers"];
+                    var classPanelValues = ptidCategoryPanel.categoryPanel.getForm().getFieldValues();
+                    var tempIds = classPanelValues["categoryIdentifiers"];
 
                     // also store the ids as an array to check if the ids to add already exist 
                     var tempIdsArray = tempIds.split(",");
@@ -432,8 +431,8 @@
                     }
 
                     // put the new list of ids into the form
-                    ptidClassfiicationPanel.classificationPanel.getForm().setValues({
-                       classificationIdentifiers: tempIds
+                    ptidCategoryPanel.categoryPanel.getForm().setValues({
+                       categoryIdentifiers: tempIds
                     });
                 }
             });
@@ -453,5 +452,5 @@
         }
     });
 
-    Ext.onReady(renderParticipantClassificationsGrid);
+    Ext.onReady(renderParticipantCategoriesGrid);
 </script>

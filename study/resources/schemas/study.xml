@@ -1546,7 +1546,7 @@
       </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="ParticipantClassifications" tableDbType="TABLE">
+  <ns:table tableName="ParticipantCategory" tableDbType="TABLE">
     <ns:columns>
         <ns:column columnName="RowId"/>
         <ns:column columnName="EntityId"/>
@@ -1569,7 +1569,7 @@
         <ns:column columnName="RowId"/>
         <ns:column columnName="Container"/>
         <ns:column columnName="Label"/>
-        <ns:column columnName="ClassificationId"/>
+        <ns:column columnName="CategoryId"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="ParticipantGroupMap" tableDbType="TABLE">

@@ -77,7 +77,7 @@ import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.DatasetController;
-import org.labkey.study.controllers.ParticipantListController;
+import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.StudyPagesController;
@@ -169,7 +169,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 11.15;
+        return 11.16;
     }
 
     protected void init()
@@ -187,7 +187,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("cohort", CohortController.class);
         addController("study-properties", StudyPropertiesController.class);
         addController("study-pages", StudyPagesController.class);
-        addController("participant-list", ParticipantListController.class);
+        addController("participant-group", ParticipantGroupController.class);
 
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());

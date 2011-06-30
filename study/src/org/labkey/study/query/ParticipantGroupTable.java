@@ -37,9 +37,9 @@ public class ParticipantGroupTable extends BaseStudyTable
         rowIdColumn.setUserEditable(false);
         rowIdColumn.setKeyField(true);
 
-        ColumnInfo classificationIdColumn = new AliasedColumn(this, "ClassificationId", _rootTable.getColumn("ClassificationId"));
-        classificationIdColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectClassificationTableName(getContainer()), "RowId", "Label"));
-        addColumn(classificationIdColumn);
+        ColumnInfo categoryIdColumn = new AliasedColumn(this, "CategoryId", _rootTable.getColumn("CategoryId"));
+        categoryIdColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectCategoryTableName(getContainer()), "RowId", "Label"));
+        addColumn(categoryIdColumn);
 
         addWrapColumn(_rootTable.getColumn("Label"));
     }

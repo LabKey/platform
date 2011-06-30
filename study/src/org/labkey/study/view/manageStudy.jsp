@@ -40,8 +40,8 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.StudyPropertiesQueryView" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
-<%@ page import="org.labkey.study.model.ParticipantListManager" %>
-<%@ page import="org.labkey.study.model.ParticipantClassification" %>
+<%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
+<%@ page import="org.labkey.study.model.ParticipantCategory" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
@@ -58,7 +58,7 @@
     String intervalLabel;
 
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
-    org.labkey.study.model.ParticipantClassification[] classifications = ParticipantListManager.getInstance().getParticipantClassifications(c);
+    ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(c);
 
     if (!study.isAllowReload())
         intervalLabel = "This study is set to not reload";
@@ -130,9 +130,9 @@
         <td><%= textLink("Manage Cohorts", manageCohortsURL) %></td>
     </tr>
     <tr>
-        <th align="left"><%= h(subjectNounSingle) %> Classifications</th>
-        <td>This study defines <%=classifications.length%> <%= h(subjectNounSingle.toLowerCase()) %> classifications</td>
-        <td><%= textLink("Manage " + h(subjectNounSingle) + " Classifications", new ActionURL(StudyController.ManageParticipantClassificationsAction.class, c)) %></td>
+        <th align="left"><%= h(subjectNounSingle) %> Categories</th>
+        <td>This study defines <%=categories.length%> <%= h(subjectNounSingle.toLowerCase()) %> categories</td>
+        <td><%= textLink("Manage " + h(subjectNounSingle) + " Categories", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Security</th>

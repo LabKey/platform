@@ -62,7 +62,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.ParticipantDataset;
-import org.labkey.study.model.ParticipantListManager;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SampleRequest;
 import org.labkey.study.model.SampleRequestActor;
 import org.labkey.study.model.SampleRequestEvent;
@@ -83,7 +83,6 @@ import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
@@ -196,7 +195,7 @@ public class SpecimenUtils
 
         List<DisplayElement> buttons = new ArrayList<DisplayElement>();
 
-        ActionButton ptidListButton = ParticipantListManager.getInstance().createParticipantListButton(getViewContext(), gridView.getSettings().getDataRegionName());
+        ActionButton ptidListButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), gridView.getSettings().getDataRegionName());
         if (ptidListButton != null)
             buttons.add(ptidListButton);
 

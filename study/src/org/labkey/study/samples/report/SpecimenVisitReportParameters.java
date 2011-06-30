@@ -13,9 +13,8 @@ import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.Participant;
-import org.labkey.study.model.ParticipantClassification;
 import org.labkey.study.model.ParticipantGroup;
-import org.labkey.study.model.ParticipantListManager;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.CohortImpl;
@@ -90,7 +89,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     private boolean _viewPtidList = false;
     private boolean _hideEmptyColumns;
     private boolean _excelExport;
-    private int _participantListFilter = -1;
+    private int _participantGroupFilter = -1;
     private List<? extends SpecimenVisitReport> _reports;
     private SampleManager.SpecimenTypeLevel _typeLevel = SampleManager.SpecimenTypeLevel.Derivative;
 
@@ -228,8 +227,8 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         if (allowsCohortFilter() && getCohortFilter() != null)
             addCohortFilter(filter, getCohortFilter());
 
-        if (allowsParticipantListFilter() && getParticipantListFilter() >= 0)
-            addParticipantListFilter(filter, getParticipantListFilter());
+        if (allowsParticipantGroupFilter() && getParticipantGroupFilter() >= 0)
+            addParticipantGroupFilter(filter, getParticipantGroupFilter());
     }
 
     public static final String COMPLETED_REQUESTS_FILTER_SQL =
@@ -268,9 +267,9 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         }
     }
 
-    protected void addParticipantListFilter(SimpleFilter filter, int ptidListId)
+    protected void addParticipantGroupFilter(SimpleFilter filter, int ptidListId)
     {
-        ParticipantGroup group = ParticipantListManager.getInstance().getParticipantGroup(getContainer(), ptidListId);
+        ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), ptidListId);
         if (group != null)
         {
             StringBuilder sql = new StringBuilder();
@@ -426,19 +425,19 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return true;
     }
 
-    public boolean allowsParticipantListFilter()
+    public boolean allowsParticipantGroupFilter()
     {
         return true;
     }
 
-    public int getParticipantListFilter()
+    public int getParticipantGroupFilter()
     {
-        return _participantListFilter;
+        return _participantGroupFilter;
     }
 
-    public void setParticipantListFilter(int participantListFilter)
+    public void setParticipantGroupFilter(int participantGroupFilter)
     {
-        _participantListFilter = participantListFilter;
+        _participantGroupFilter = participantGroupFilter;
     }
 
     public abstract Class<? extends SpecimenController.SpecimenVisitReportAction> getAction();
