@@ -34,8 +34,6 @@ log4j-1.2.16.jar|Log4j|1.2.16|{link:Apache|http://logging.apache.org/log4j/docs/
 poi-3.7.jar|POI|3.7|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
 poi-ooxml-3.7.jar|POI|3.7|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
 poi-ooxml-schemas-3.7.jar|POI|3.7|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
-radeox-api.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
-radeox.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 spring-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-mock.jar dependency
 spring-mock-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
 spring-webmvc-2.5.5.jar|Spring Web MVC Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
