@@ -156,7 +156,7 @@
             %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height=22 width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
         }
         %>
-    </table
+    </table>
     <%=generateSubmitButton("Save")%>
     <span id="selectionButtons">
         <%=PageFlowUtil.generateButton("Select All", "#", "setSelection(true); return false;")%>
