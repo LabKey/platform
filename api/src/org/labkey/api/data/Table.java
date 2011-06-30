@@ -897,7 +897,7 @@ public class Table
 
 
     // Returns a new Map<String, Object> if fieldsIn is a Map, otherwise returns modified version of fieldsIn.
-    public static <K> K insert(User user, TableInfo table, K fieldsIn) throws SQLException
+    public static <K> K insert(@Nullable User user, TableInfo table, K fieldsIn) throws SQLException
     {
         assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
 

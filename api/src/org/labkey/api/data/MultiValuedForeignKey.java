@@ -29,6 +29,11 @@ public class MultiValuedForeignKey implements ForeignKey
     private final ForeignKey _fk;
     private final String _junctionLookup;
 
+    /**
+     * @param fk the foreign key from the current column to its target in the junction table
+     * @param junctionLookup the name of the column in the junction table that points to the table that has multiple
+     * matches to this table 
+     */
     public MultiValuedForeignKey(ForeignKey fk, String junctionLookup)
     {
         _fk = fk;
