@@ -274,12 +274,6 @@ table.labkey-data-region
     background-color: #<%= second %>;
 }
 
-/* Used for the normal rows in data regions, sometimes these rows are not given a class */
-.labkey-row td, .labkey-row th, tr.labkey-row
-{
-    background: #<%= second %>;
-}
-
 /* This is used for the headers on data regions that highlight on mouseover and give a drop down
 of filter options when clicked */
 th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th
