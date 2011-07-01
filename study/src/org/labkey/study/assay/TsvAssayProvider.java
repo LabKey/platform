@@ -168,4 +168,10 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     {
         return TsvImportAction.class;
     }
+
+    @Override
+    public boolean supportsEditableResults()
+    {
+        return true;
+    }
 }

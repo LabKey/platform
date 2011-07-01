@@ -211,7 +211,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
             result.setValidationScripts(scriptNames);
         }
-        result.setSaveScriptFiles(provider.getSaveScriptFiles(protocol));
+        result.setSaveScriptFiles(provider.isSaveScriptFiles(protocol));
+        result.setEditableResults(provider.isEditableResults(protocol));
+        result.setEditableRuns(provider.isEditableRuns(protocol));
 
         // data transform scripts
         List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF, AssayProvider.ScriptType.TRANSFORM);
@@ -393,6 +395,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
                 provider.setValidationAndAnalysisScripts(protocol, transformScripts, AssayProvider.ScriptType.TRANSFORM);
                 provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
+                provider.setEditableResults(protocol, assay.isEditableResults());
+                provider.setEditableRuns(protocol, assay.isEditableRuns());
 
                 Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
                 String autoCopyTargetContainerId = null;

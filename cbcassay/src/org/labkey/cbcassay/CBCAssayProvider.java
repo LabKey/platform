@@ -27,9 +27,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.AssayResultDetailsAction;
 import org.labkey.api.study.assay.*;
@@ -159,21 +156,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
     public FilteredTable createDataTable(final AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns)
     {
-        AssayResultTable table = new AssayResultTable(schema, protocol, this, includeCopiedToStudyColumns) {
-            @Override
-            public boolean hasPermission(User user, Class<? extends Permission> perm)
-            {
-                if (getUpdateService() != null)
-                    return (UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm)) && _schema.getContainer().hasPermission(user, perm);
-                return false;
-            }
-
-            @Override
-            public QueryUpdateService getUpdateService()
-            {
-                return new DefaultQueryUpdateService(this, getRealTable());
-            }
-        };
+        AssayResultTable table = new AssayResultTable(schema, protocol, this, includeCopiedToStudyColumns);
 
         ActionURL showDetailsUrl = new ActionURL(AssayResultDetailsAction.class, schema.getContainer());
         showDetailsUrl.addParameter("rowId", protocol.getRowId());
@@ -246,6 +229,14 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         return protocol;
     }
 
+    @Override
+    public boolean isEditableResults(ExpProtocol protocol)
+    {
+        // Override to make default value true
+        Boolean b = getBooleanProperty(protocol, EDITABLE_RESULTS_PROPERTY_SUFFIX);
+        return b == null || b.booleanValue();
+    }
+
     private void setMinMaxUnits(Container c, User user, String domainUri, String name, Double min, Double max, String units) throws SQLException
     {
         if (min == null && max == null && units == null)
@@ -264,8 +255,6 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         if (units != null)
             row.put(CBCDataProperty.Units.getPropertyDescriptor().getPropertyURI(), units);
 
-        Map<String, Object>[] rows = new Map[] { row };
-
         try
         {
             OntologyManager.ImportHelper helper = new OntologyManager.ImportHelper() {
@@ -279,7 +268,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
                 public void updateStatistics(int currentRow) throws SQLException {
                 }
             };
-            OntologyManager.insertTabDelimited(c, user, null, helper, props, Arrays.asList(rows), false);
+            OntologyManager.insertTabDelimited(c, user, null, helper, props, Collections.singletonList(row), false);
         }
         catch (ValidationException e)
         {
@@ -361,5 +350,11 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     {
         return new AssayPipelineProvider(CBCAssayModule.class,
                 new PipelineProvider.FileTypesEntryFilter(getDataType().getFileType()), this, "Import CBC");
+    }
+
+    @Override
+    public boolean supportsEditableResults()
+    {
+        return true;
     }
 }

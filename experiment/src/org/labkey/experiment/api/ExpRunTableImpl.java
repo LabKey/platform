@@ -59,10 +59,12 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 
@@ -684,6 +686,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             ExpRunImpl run = getRun(oldRow);
             if (run != null)
             {
+                // Don't trust that they're trying to edit a run from the current container
+                if (!run.getContainer().hasPermission(user, UpdatePermission.class))
+                {
+                    throw new UnauthorizedException("You do not have permission to edit a run in " + run.getContainer());
+                }
                 StringBuilder sb = new StringBuilder("Run edited.");
                 for (Map.Entry<String, Object> entry : row.entrySet())
                 {

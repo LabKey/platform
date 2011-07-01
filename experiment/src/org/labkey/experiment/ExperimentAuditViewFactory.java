@@ -119,11 +119,11 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
         return protocol.getName() + KEY_SEPARATOR + (run != null ? run.getName() : "");
     }
 
-    protected static Pair<String, String> splitKey3(String value)
+    protected static Pair<String, String> splitKey3(Object value)
     {
         if (value == null)
             return null;
-        String[] parts = value.split(KEY_SEPARATOR);
+        String[] parts = value.toString().split(KEY_SEPARATOR);
         if (parts == null || parts.length != 2)
             return null;
         return new Pair<String, String>(parts[0], parts[1].length() > 0 ? parts[1] : null);
@@ -225,7 +225,7 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
 
             if (_defaultName != null)
             {
-                Pair<String, String> key3 = splitKey3(_defaultName.getValue(ctx).toString());
+                Pair<String, String> key3 = splitKey3(_defaultName.getValue(ctx));
                 out.write(key3 != null ? PageFlowUtil.filter(key3.getKey()) : "&nbsp;");
             }
             else
@@ -271,7 +271,7 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
                     }
                 }
             }
-            Pair<String, String> key3 = splitKey3(_defaultName.getValue(ctx).toString());
+            Pair<String, String> key3 = splitKey3(_defaultName.getValue(ctx));
             out.write(key3 != null && key3.getValue() != null ? PageFlowUtil.filter(key3.getValue()) : "&nbsp;");
         }
     }
