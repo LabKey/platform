@@ -77,7 +77,7 @@ LABKEY.DataRegion = function (config)
          * @name selectchange
          * @event
          * @description Fires when the selection has changed.
-         * @param {LABKEY.DataRegion} this DataRegion object.
+         * @param {LABKEY.DataRegion} dataRegion this DataRegion object.
          * @param {Boolean} hasSelection true if the DataRegion has at least one selected item.
          * @example Here's an example of subscribing to the DataRegion 'selectchange' event:
          * Ext.ComponentMgr.onAvailable("dataRegionName", function (dataregion) {
@@ -101,7 +101,16 @@ LABKEY.DataRegion = function (config)
          "beforeclearallfilters",
          "beforechangeview",
          "beforeshowrowschange",
-         "buttonclick"
+         "buttonclick",
+            /**
+             * @memberOf LABKEY.DataRegion#
+             * @name beforerefresh
+             * @event
+             * @description Fires when a refresh of the DataRegion has been requested. If no handler consumes the event,
+             * the whole page will be reloaded.
+             * @param {LABKEY.DataRegion} dataRegion this DataRegion object.
+             */
+         "beforerefresh"
     );
 
     this.rendered = true; // prevent Ext.Component.render() from doing anything
@@ -129,6 +138,17 @@ LABKEY.DataRegion = function (config)
             return;
 
         this._setParam(".maxRows", newmax, [".offset", ".maxRows", ".showRows"]);
+    };
+
+    /**
+     * Refreshes the grid, via AJAX if loaded through a QueryWebPart, and via a page reload otherwise.
+     */
+    this.refresh = function ()
+    {
+        if (false === this.fireEvent("beforerefresh", this))
+            return;
+
+        window.location.reload(false);
     };
 
     /**

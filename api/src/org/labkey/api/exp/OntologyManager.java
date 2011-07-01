@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -133,12 +134,12 @@ public class OntologyManager
     public static final int MAX_PROPS_IN_BATCH = 1000;  // Keep this reasonably small so progress indicator is updated regularly
     public static final int UPDATE_STATS_BATCH_COUNT = 1000;
 
-    public static List<String> insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
+    public static List<String> insertTabDelimited(Container c, User user, @Nullable Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {
         return insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rows, ensureObjects, null);
     }
 
-    private static List<String> insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects, Logger logger) throws SQLException, ValidationException
+    private static List<String> insertTabDelimited(Container c, User user, @Nullable Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects, Logger logger) throws SQLException, ValidationException
     {
 		CPUTimer total  = new CPUTimer("insertTabDelimited");
 		CPUTimer before = new CPUTimer("beforeImport");

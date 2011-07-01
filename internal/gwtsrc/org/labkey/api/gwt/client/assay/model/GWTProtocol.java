@@ -52,6 +52,8 @@ public class GWTProtocol implements IsSerializable
     private boolean _allowTransformationScript;
     private GWTContainer _autoCopyTargetContainer;
     private boolean _saveScriptFiles;
+    private boolean _editableRuns;
+    private boolean _editableResults;
 
     public GWTProtocol()
     {
@@ -206,5 +208,25 @@ public class GWTProtocol implements IsSerializable
     public void setSaveScriptFiles(boolean saveScriptFiles)
     {
         _saveScriptFiles = saveScriptFiles;
+    }
+
+    public boolean isEditableRuns()
+    {
+        return _editableRuns;
+    }
+
+    public void setEditableRuns(boolean editableRuns)
+    {
+        _editableRuns = editableRuns;
+    }
+
+    public boolean isEditableResults()
+    {
+        return _editableResults;
+    }
+
+    public void setEditableResults(boolean editableResults)
+    {
+        _editableResults = editableResults;
     }
 }

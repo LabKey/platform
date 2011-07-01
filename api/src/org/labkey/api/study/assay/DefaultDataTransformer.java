@@ -268,7 +268,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider != null)
-            return provider.getSaveScriptFiles(protocol);
+            return provider.isSaveScriptFiles(protocol);
         return false;
     }
 }

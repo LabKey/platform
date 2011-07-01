@@ -93,6 +93,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private List<GWTContainer> _autoCopyTargets;
     private boolean _isPlateBased;
     private BooleanProperty _debugScriptFiles = new BooleanProperty(false);
+    private BooleanProperty _editableRuns = new BooleanProperty(false);
+    private BooleanProperty _editableResults = new BooleanProperty(false);
 
     public AssayDesignerMainPanel(RootPanel rootPanel)
     {
@@ -521,7 +523,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
             // add a checkbox to enter debug mode
             _debugScriptFiles.setBool(assay.isSaveScriptFiles());
-            BoundCheckBox debugScriptFiles = new BoundCheckBox("id_debug_script", _debugScriptFiles, this);
+            BoundCheckBox debugScriptFilesCheckBox = new BoundCheckBox("id_debug_script", _debugScriptFiles, this);
             scriptFile.getBox().setVisibleLength(79);
             FlowPanel debugPanel = new FlowPanel();
             debugPanel.add(new InlineHTML("Save Script Data"));
@@ -530,8 +532,30 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     "If this checkbox is checked, files will be saved to a subfolder named: \"TransformAndValidationFiles\", located in the same folder " +
                     "that the original script is located."));
             table.setWidget(row, 0, debugPanel);
-            table.setWidget(row++, 1, debugScriptFiles);
+            table.setWidget(row++, 1, debugScriptFilesCheckBox);
         }
+
+        _editableRuns.setBool(assay.isEditableRuns());
+        FlowPanel editableRunPanel = new FlowPanel();
+        editableRunPanel.add(new InlineHTML("Editable Runs"));
+        editableRunPanel.add(new HelpPopup("Editable Runs", "If enabled, users with sufficient permissions can " +
+                "edit values at the run level after the initial import is complete. " +
+                "These changes will be audited."));
+        table.setWidget(row, 0, editableRunPanel);
+        table.setWidget(row++, 1, new BoundCheckBox("id_editable_run_properties", _editableRuns, this));
+
+        _editableResults.setBool(assay.isEditableRuns());
+        if ("true".equals(PropertyUtil.getServerProperty("supportsEditableResults")))
+        {
+            FlowPanel editableResultsPanel = new FlowPanel();
+            editableResultsPanel.add(new InlineHTML("Editable Results"));
+            editableResultsPanel.add(new HelpPopup("Editable Runs", "If enabled, users with sufficient permissions can " +
+                    "edit and delete at the individual results row level after the initial import is complete. " +
+                    "These changes will be audited. New result rows cannot be added to existing runs."));
+            table.setWidget(row, 0, editableResultsPanel);
+            table.setWidget(row++, 1, new BoundCheckBox("id_editable_results_properties", _editableResults, this));
+        }
+
         return table;
     }
 
@@ -662,6 +686,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
             _assay.setProviderName(_providerName);
             _assay.setSaveScriptFiles(_debugScriptFiles.booleanValue());
+            _assay.setEditableRuns(_editableRuns.booleanValue());
+            _assay.setEditableResults(_editableResults.booleanValue());
             getService().saveChanges(_assay, true, callback);
         }
     }

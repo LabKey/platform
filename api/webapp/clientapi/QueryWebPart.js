@@ -457,6 +457,9 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                             dr.on("beforechangeview", this.beforeChangeView, this);
                             dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
                             dr.on("buttonclick", this.onButtonClick, this);
+                            dr.on("beforerefresh", this.beforeRefresh, this);
+
+
 
                             if (customizeViewVisible)
                                 dr.showCustomizeView(null, false, false);
@@ -469,6 +472,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                             // We've failed to get the data region (could be bad query params) and have probably displayed
                             // error message.  Should failure be called?  Or should we add a new failure/success callback pair
                             // for the webpart itself (as opposed to the webpart's contents)?
+
+                            this.dataRegion = null;
                         }
 
                         this.fireEvent("render");
@@ -652,6 +657,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         return false;
     },
 
+    beforeRefresh : function(dataRegion) {
+        this.render();
+        return false;
+    },
+
     getQualifiedParamName : function(paramName) {
         return this.dataRegionName + "." + paramName;
     },
@@ -662,6 +672,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         delete this.maxRows;
         this.render();
         return false;
+    },
+
+    getDataRegion : function(){
+        return this.dataRegionName ? LABKEY.DataRegions[this.dataRegionName] : null;
     }
 });
 

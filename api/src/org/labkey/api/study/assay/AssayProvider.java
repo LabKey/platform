@@ -205,7 +205,13 @@ public interface AssayProvider extends Handler<ExpProtocol>
     List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope, ScriptType type);
 
     void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
-    boolean getSaveScriptFiles(ExpProtocol protocol);
+    boolean isSaveScriptFiles(ExpProtocol protocol);
+
+    boolean supportsEditableResults();
+    void setEditableResults(ExpProtocol protocol, boolean editable) throws ExperimentException;
+    boolean isEditableResults(ExpProtocol protocol);
+    void setEditableRuns(ExpProtocol protocol, boolean editable) throws ExperimentException;
+    boolean isEditableRuns(ExpProtocol protocol);
 
     /**
      * @return the data type that this run creates for its analyzed results

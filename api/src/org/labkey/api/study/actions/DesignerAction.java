@@ -20,12 +20,14 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
@@ -72,7 +74,17 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             properties.put("protocolId", "" + rowId);
             properties.put("copy", Boolean.toString(form.isCopy()));
         }
-        properties.put("providerName", form.getProviderName());
+        AssayProvider provider = AssayService.get().getProvider(form.getProviderName());
+        if (provider == null)
+        {
+            provider = getProvider(form);
+        }
+        if (provider == null)
+        {
+            throw new NotFoundException("No such assay provider: " + form.getProviderName());
+        }
+        properties.put("providerName", provider.getName());
+        properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
         if (form.getReturnUrl() != null)
         {
             properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource());

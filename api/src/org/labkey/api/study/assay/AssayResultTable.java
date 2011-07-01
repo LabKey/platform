@@ -20,6 +20,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
@@ -36,6 +39,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
@@ -43,7 +47,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -73,6 +81,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         _resultsDomain = _provider.getResultsDomain(protocol);
 
         setDescription("Contains all of the results (and may contain raw data as well) for the " + protocol.getName() + " assay definition");
+        setName(AssayService.get().getResultsTableName(protocol));
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 
@@ -165,9 +174,27 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 }
             }
 
+            specimenIdCol.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    DataColumn result = new DataColumn(colInfo);
+                    result.setInputType("text");
+                    return result;
+                }
+            });
+
             if (foundTargetStudyCol)
                 specimenIdCol.setFk(new SpecimenForeignKey(_schema, _provider, _protocol));
         }
+
+        ColumnInfo dataColumn = getColumn("DataId");
+        dataColumn.setLabel("Data");
+        dataColumn.setFk(new ExpSchema(_schema.getUser(), _schema.getContainer()).getDataIdForeignKey());
+        dataColumn.setUserEditable(false);
+
+        getColumn("RowId").setShownInUpdateView(false);
 
         ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment("(SELECT RunId FROM exp.Data WHERE RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)"), JdbcType.INTEGER);
         runColumn.setFk(new LookupForeignKey("RowID")
@@ -334,6 +361,20 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     public CaseInsensitiveHashSet skipProperties()
     {
         return null;
+    }
+
+    @Override
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    {
+        return (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm)) &&
+                _provider.isEditableResults(_protocol) &&
+                _schema.getContainer().hasPermission(user, perm);
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return new AssayResultUpdateService(_schema, this);
     }
 
     @Override

@@ -85,6 +85,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
@@ -150,6 +151,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final FieldKey BATCH_ROWID_FROM_RUN = FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, "RowId");
 
     public static final DataType RELATED_FILE_DATA_TYPE = new DataType("RelatedFile");
+    public static final String SAVE_SCRIPT_FILES_PROPERTY_SUFFIX = "SaveScriptFiles";
+    public static final String EDITABLE_RUNS_PROPERTY_SUFFIX = "EditableRuns";
+    public static final String EDITABLE_RESULTS_PROPERTY_SUFFIX = "EditableResults";
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
@@ -1053,6 +1057,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol)
     {
         ExpRunTable runTable = ExperimentService.get().createRunTable(AssaySchema.getRunsTableName(protocol), schema);
+        if (isEditableRuns(protocol))
+        {
+            runTable.addAllowablePermission(UpdatePermission.class);
+        }
         runTable.populate();
         
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
@@ -1619,21 +1627,59 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException
     {
-        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
-        String propertyURI = protocol.getLSID() + "#SaveScriptFiles";
+        setBooleanProperty(protocol, SAVE_SCRIPT_FILES_PROPERTY_SUFFIX, save);
+    }
 
-        ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
-                propertyURI, save);
+    private void setBooleanProperty(ExpProtocol protocol, String propertySuffix, boolean value)
+    {
+        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+
+        String propertyURI = createPropertyURI(protocol, propertySuffix);
+        ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(), propertyURI, value);
         props.put(propertyURI, prop);
 
         protocol.setObjectProperties(props);
     }
 
     @Override
-    public boolean getSaveScriptFiles(ExpProtocol protocol)
+    public void setEditableResults(ExpProtocol protocol, boolean editable) throws ExperimentException
     {
-        String propertyURI = protocol.getLSID() + "#SaveScriptFiles";
-        ObjectProperty prop = protocol.getObjectProperties().get(propertyURI);
+        setBooleanProperty(protocol, EDITABLE_RESULTS_PROPERTY_SUFFIX, editable);
+    }
+
+    @Override
+    public boolean supportsEditableResults()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isEditableResults(ExpProtocol protocol)
+    {
+        return supportsEditableResults() && Boolean.TRUE.equals(getBooleanProperty(protocol, EDITABLE_RESULTS_PROPERTY_SUFFIX));
+    }
+
+    @Override
+    public void setEditableRuns(ExpProtocol protocol, boolean editable) throws ExperimentException
+    {
+        setBooleanProperty(protocol, EDITABLE_RUNS_PROPERTY_SUFFIX, editable);
+    }
+
+    @Override
+    public boolean isEditableRuns(ExpProtocol protocol)
+    {
+        return Boolean.TRUE.equals(getBooleanProperty(protocol, EDITABLE_RUNS_PROPERTY_SUFFIX));
+    }
+
+    @Override
+    public boolean isSaveScriptFiles(ExpProtocol protocol)
+    {
+        return Boolean.TRUE.equals(getBooleanProperty(protocol, SAVE_SCRIPT_FILES_PROPERTY_SUFFIX));
+    }
+
+    protected Boolean getBooleanProperty(ExpProtocol protocol, String propertySuffix)
+    {
+        ObjectProperty prop = protocol.getObjectProperties().get(createPropertyURI(protocol, propertySuffix));
 
         if (prop != null)
         {
@@ -1641,7 +1687,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (o instanceof Boolean)
                 return (Boolean)o;
         }
-        return false;  
+        return null;
+    }
+
+    private static String createPropertyURI(ExpProtocol protocol, String propertySuffix)
+    {
+        return protocol.getLSID() + "#" + propertySuffix;
     }
 
     public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
