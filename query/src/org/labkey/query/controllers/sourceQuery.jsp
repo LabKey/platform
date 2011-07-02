@@ -27,7 +27,8 @@
     SourceForm form = (SourceForm)HttpView.currentModel();
     boolean canEdit = form.canEdit();
     boolean builtIn = form.getQueryDef().isTableQueryDefinition();
-    String topic = "labkeySql";
+    String sqlHelpTopic = "labkeySql";
+    String metadataHelpTopic = "metadataSql";
     ActionURL exeUrl = form.getQueryDef().urlFor(QueryAction.executeQuery, getViewContext().getContainer());
 %>
 <style type="text/css">
@@ -133,7 +134,8 @@
             metadataEdit : <%= form.getQueryDef().isMetadataEditable() && canEdit %>,
             queryText    : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
             metadataText : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,
-            help         : <%=PageFlowUtil.jsString(new HelpTopic(topic).toString())%>
+            help         : <%=PageFlowUtil.jsString(new HelpTopic(sqlHelpTopic).toString())%>,
+            metadataHelp : <%=PageFlowUtil.jsString(new HelpTopic(metadataHelpTopic).toString())%>
         };
 
         var queryEditor = new LABKEY.query.QueryEditorPanel({

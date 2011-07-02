@@ -91,7 +91,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                             }
                         },'-',{
                             text  : 'SQL Reference',
-                            handler : function() { window.location = this.query.help; },
+                            handler : function() { window.open(this.query.help, '_blank'); },
                             scope : this
                         }]
                     })      
@@ -421,9 +421,17 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
             xtype   : 'button',
             text    : 'Save',
             cls     : 'query-button',
-            style   : 'float: none;',
             disabled: !this.query.canEdit,
             handler : this.onSave,
+            scope   : this
+        },
+
+        {
+            xtype   : 'button',
+            text    : 'Help',
+            cls     : 'query-button',
+            style   : 'float: none;',
+            handler : function() { window.open(this.query.metadataHelp, '_blank'); },
             scope   : this
         });
 

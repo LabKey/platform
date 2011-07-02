@@ -645,7 +645,7 @@ public class QueryServiceImpl extends QueryService
     }
 
     private static final String PERSISTED_TEMP_QUERIES_KEY = "LABKEY.PERSISTED_TEMP_QUERIES";
-    private static class SessionQuery
+    private static class SessionQuery implements Serializable
     {
         String sql;
         String metadata;
