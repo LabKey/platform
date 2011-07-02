@@ -366,10 +366,10 @@ public class SavePaths implements DavCrawler.SavePaths
         s.add(toPathString(path));
 
         Map<String,DavCrawler.ResourceInfo> map = new HashMap<String, DavCrawler.ResourceInfo>();
-        CachedRowSetImpl rs = null;
+        CachedResultSet rs = null;
         try
         {
-            rs = (CachedRowSetImpl)Table.executeQuery(getSearchSchema(), s);
+            rs = (CachedResultSet)Table.executeQuery(getSearchSchema(), s);
 
             while (rs.next())
             {

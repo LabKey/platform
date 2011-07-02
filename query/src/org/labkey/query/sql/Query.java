@@ -24,7 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.CachedRowSetImpl;
+import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
@@ -741,7 +741,7 @@ public class Query
 
         void validate(QueryTestCase test)
         {
-            CachedRowSetImpl rs = null;
+            CachedResultSet rs = null;
 
             try
             {
@@ -787,11 +787,11 @@ public class Query
         @Override
         void validate(QueryTestCase test)
         {
-            CachedRowSetImpl rs = null;
+            CachedResultSet rs = null;
 
             try
             {
-                rs = (CachedRowSetImpl)QueryService.get().select(test.lists, sql);
+                rs = (CachedResultSet)QueryService.get().select(test.lists, sql);
                 QueryTestCase.fail("should fail: " + sql);
             }
             catch (SQLException x)
@@ -1096,11 +1096,11 @@ public class Query
 
 
         @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-        CachedRowSetImpl resultset(String sql) throws Exception
+        CachedResultSet resultset(String sql) throws Exception
         {
 			try
 			{
-				CachedRowSetImpl rs = (CachedRowSetImpl)QueryService.get().select(lists, sql);
+				CachedResultSet rs = (CachedResultSet)QueryService.get().select(lists, sql);
 				assertNotNull(sql, rs);
 				return rs;
 			}
@@ -1142,7 +1142,7 @@ public class Query
             // custom tests
             SqlDialect dialect = lists.getDbSchema().getSqlDialect();
             String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
-            CachedRowSetImpl rs = null;
+            CachedResultSet rs = null;
 
 
             try

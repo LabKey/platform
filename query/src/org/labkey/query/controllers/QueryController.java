@@ -50,7 +50,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.CachedRowSetImpl;
+import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -929,7 +929,7 @@ public class QueryController extends SpringActionController
             else
                 columnsRs = dbmd.getColumns(null, _schemaName, _tableName, null);
 
-            ModelAndView metaDataView = new ResultSetView(new CachedRowSetImpl(columnsRs, dialect.shouldCacheMetaData(), 0), "Table Meta Data");
+            ModelAndView metaDataView = new ResultSetView(new CachedResultSet(columnsRs, dialect.shouldCacheMetaData(), 0), "Table Meta Data");
 
             ResultSet pksRs;
 
@@ -938,7 +938,7 @@ public class QueryController extends SpringActionController
             else
                 pksRs = dbmd.getPrimaryKeys(null, _schemaName, _tableName);
 
-            ModelAndView pkView = new ResultSetView(new CachedRowSetImpl(pksRs, dialect.shouldCacheMetaData(), 0), "Primary Key Meta Data");
+            ModelAndView pkView = new ResultSetView(new CachedResultSet(pksRs, dialect.shouldCacheMetaData(), 0), "Primary Key Meta Data");
             scope.releaseConnection(con);
 
             return new VBox(scopeInfo, metaDataView, pkView);
@@ -979,7 +979,7 @@ public class QueryController extends SpringActionController
             ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
             url.addParameter("schemaName", _schemaName);
             String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
-            ModelAndView tableInfo = new ResultSetView(new CachedRowSetImpl(rs, dialect.shouldCacheMetaData(), 0), "Tables", 3, tableLink);
+            ModelAndView tableInfo = new ResultSetView(new CachedResultSet(rs, dialect.shouldCacheMetaData(), 0), "Tables", 3, tableLink);
             scope.releaseConnection(con);
 
             return new VBox(scopeInfo, tableInfo);

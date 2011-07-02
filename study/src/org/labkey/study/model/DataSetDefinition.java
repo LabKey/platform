@@ -54,7 +54,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
-import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -763,20 +762,20 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // PartipantId
 
             {
-            // StudyData columns
-            // NOTE (MAB): I think it was probably wrong to alias participantid to subjectname here
-            // That probably should have been done only in the StudyQuerySchema
-            // CONSIDER: remove this aliased column
-            ColumnInfo ptidCol = getStorageColumn("ParticipantId");
-            ColumnInfo wrapped = newDatasetColumnInfo(this, ptidCol, getParticipantIdURI());
-            wrapped.setName("ParticipantId");
-            String subject = StudyService.get().getSubjectColumnName(_container);
-            if ("ParticipantId".equalsIgnoreCase(subject))
-                _ptid = wrapped;
-            else
-                _ptid = new AliasedColumn(this, subject, wrapped);
-            _ptid.setNullable(false);
-            columns.add(_ptid);
+                // StudyData columns
+                // NOTE (MAB): I think it was probably wrong to alias participantid to subjectname here
+                // That probably should have been done only in the StudyQuerySchema
+                // CONSIDER: remove this aliased column
+                ColumnInfo ptidCol = getStorageColumn("ParticipantId");
+                ColumnInfo wrapped = newDatasetColumnInfo(this, ptidCol, getParticipantIdURI());
+                wrapped.setName("ParticipantId");
+                String subject = StudyService.get().getSubjectColumnName(_container);
+                if ("ParticipantId".equalsIgnoreCase(subject))
+                    _ptid = wrapped;
+                else
+                    _ptid = new AliasedColumn(this, subject, wrapped);
+                _ptid.setNullable(false);
+                _columns.add(_ptid);
             }
 
             // base columns
@@ -788,7 +787,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 ColumnInfo wrapped = newDatasetColumnInfo(this, col, uriForName(col.getName()));
                 wrapped.setName(name);
                 wrapped.setUserEditable(false);
-                columns.add(wrapped);
+                _columns.add(wrapped);
             }
 
             // SequenceNum
@@ -797,18 +796,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             sequenceNumCol.setName("SequenceNum");
             sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.VisitId));
             sequenceNumCol.setMeasure(false);
+
             if (def.isDemographicData())
             {
                 sequenceNumCol.setHidden(true);
                 sequenceNumCol.setUserEditable(false);
             }
+
             if (study.getTimepointType() != TimepointType.VISIT)
             {
                 sequenceNumCol.setNullable(true);
                 sequenceNumCol.setHidden(true);
                 sequenceNumCol.setUserEditable(false);
             }
-            columns.add(sequenceNumCol);
+
+            _columns.add(sequenceNumCol);
 
             // Date
 
@@ -816,7 +818,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 ColumnInfo visitDateCol = newDatasetColumnInfo(this, getStorageColumn("Date"), getVisitDateURI());
                 visitDateCol.setNullable(false);
-                columns.add(visitDateCol);
+                _columns.add(visitDateCol);
             }
 
             // QCState
@@ -826,22 +828,25 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // a FilteredTable, so it doesn't know how to restrict QC options to those in the current container.
             // Note that QC state can still be modified via the standard update UI.
             qcStateCol.setUserEditable(false);
-            columns.add(qcStateCol);
+            _columns.add(qcStateCol);
 
             // Property columns (see OntologyManager.getColumnsForType())
 
             Domain d = def.getDomain();
             DomainProperty[] properties = null==d ? new DomainProperty[0] : d.getProperties();
+
             for (DomainProperty p : properties)
             {
                 ColumnInfo col = getStorageColumn(d, p);
+
                 if (col == null)
                 {
                     _log.error("didn't find column for property: " + p.getPropertyURI());
                     continue;
                 }
+
                 ColumnInfo wrapped = newDatasetColumnInfo(user, this, col, p.getPropertyDescriptor());
-                columns.add(wrapped);
+                _columns.add(wrapped);
 
                 // Set the FK if the property descriptor is configured as a lookup. DatasetSchemaTableInfos aren't
                 // cached, so it's safe to include the current user 
@@ -870,8 +875,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
                     rawValueCol.setRawValueColumn(true);
 
-                    columns.add(mvColumn);
-                    columns.add(rawValueCol);
+                    _columns.add(mvColumn);
+                    _columns.add(rawValueCol);
 
                     wrapped.setMvColumnName(mvColumn.getName());
                 }
@@ -880,7 +885,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // If we have an extra key, and it's server-managed, make it non-editable
             if (def.getKeyManagementType() != KeyManagementType.None)
             {
-                for (ColumnInfo col : columns)
+                for (ColumnInfo col : _columns)
                 {
                     if (col.getName().equals(def.getKeyPropertyName()))
                     {
@@ -904,10 +909,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             datasetColumn.setUserEditable(false);
             datasetColumn.setHidden(true);
             datasetColumn.setDimension(false);
-            columns.add(datasetColumn);
+            _columns.add(datasetColumn);
 
             // reset colMap
-            colMap = null;
+            _colMap = null;
             setPkColumnNames(Arrays.asList("LSID"));
         }
 
@@ -2418,19 +2423,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             for (ColumnInfo col : columnsBase)
             {
                 ColumnInfo wrapped = new ColumnInfo(col, this);
-                columns.add(wrapped);
+                _columns.add(wrapped);
             }
             if (def.getStudy().getTimepointType() != TimepointType.VISIT)
             {
                 ColumnInfo wrapped = new AliasedColumn(this, "Date", studyData.getColumn("_VisitDate"));
-                columns.add(wrapped);
+                _columns.add(wrapped);
             }
 
             // Property columns
-            columns.addAll(def.getDomain().getColumns(this, getColumn("LSID"), null));
+            _columns.addAll(def.getDomain().getColumns(this, getColumn("LSID"), null));
 
             // HACK reset colMap
-            colMap = null;
+            _colMap = null;
 
             _fromSql = new SQLFragment(
                     "SELECT *\n" +

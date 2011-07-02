@@ -158,7 +158,7 @@
     </tr>
     <tr>
         <th align="left">Demo Mode</th>
-        <td>Demo mode obscures participant IDs on many pages</td>
+        <td>Demo mode obscures <%=h(subjectNounSingle.toLowerCase())%> IDs on many pages</td>
         <td><%=textLink("Demo Mode",
                 new ActionURL(StudyController.DemoModeAction.class, c)) %></td>
     </tr>
