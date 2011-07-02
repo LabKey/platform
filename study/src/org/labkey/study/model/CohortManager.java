@@ -147,41 +147,8 @@ public class CohortManager
                     item.setSelected(true);
                 button.addMenuItem(item);
 
-                Study study = StudyManager.getInstance().getStudy(container);
-
-                if (study.isAdvancedCohorts())
-                {
-                    for (CohortFilter.Type type : CohortFilter.Type.values())
-                    {
-                        NavTree typeItem = new NavTree(type.getTitle());
-                        typeItem.setId(button.getCaption() + ":" + typeItem.getKey());
-
-                        for (CohortImpl cohort : cohorts)
-                        {
-                            CohortFilter filter = new CohortFilter(type, cohort.getRowId());
-                            ActionURL url = filter.addURLParameters(context.cloneActionURL());
-                            item = new NavTree(cohort.getLabel(),url.toString());
-                            item.setId(typeItem.getId() + ":" + cohort.getLabel());
-                            if (filter.equals(currentCohortFilter))
-                                item.setSelected(true);
-                            typeItem.addChild(item);
-                        }
-                        button.addMenuItem(typeItem);
-                    }
-                }
-                else
-                {
-                    for (CohortImpl cohort : cohorts)
-                    {
-                        CohortFilter filter = new CohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
-                        ActionURL url = filter.addURLParameters(context.cloneActionURL());
-                        item = new NavTree(cohort.getLabel(), url.toString());
-                        item.setId(button.getCaption() + ":" + item.getKey());
-                        if (filter.equals(currentCohortFilter))
-                            item.setSelected(true);
-                        button.addMenuItem(item);
-                    }
-                }
+                NavTree btnNavTree = button.getPopupMenu().getNavTree();
+                addCohortNavTree(container, user, context.getActionURL(), currentCohortFilter, btnNavTree);
 
                 if (container.hasPermission(user, AdminPermission.class))
                 {
@@ -192,6 +159,62 @@ public class CohortManager
             }
         }
         return null;
+    }
+
+    public boolean hasCohortMenu(Container container, User user)
+    {
+        if (StudyManager.getInstance().showCohorts(container, user))
+        {
+            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, user);
+            return cohorts.length > 0;
+        }
+        return false;
+    }
+
+    public void addCohortNavTree(Container container, User user, ActionURL baseURL, CohortFilter currentCohortFilter, NavTree tree)
+    {
+        CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, user);
+        if (cohorts.length > 0)
+        {
+            String caption = "Cohorts";
+            Study study = StudyManager.getInstance().getStudy(container);
+
+            if (study.isAdvancedCohorts())
+            {
+                for (CohortImpl cohort : cohorts)
+                {
+                    NavTree item = new NavTree(cohort.getLabel());
+                    item.setId(caption + ":" + cohort.getLabel());
+
+                    for (CohortFilter.Type type : CohortFilter.Type.values())
+                    {
+                        CohortFilter filter = new CohortFilter(type, cohort.getRowId());
+                        ActionURL url = filter.addURLParameters(baseURL.clone());
+
+                        NavTree typeItem = new NavTree(type.getTitle(), url.toString());
+                        typeItem.setId(cohort.getLabel() + ":" + typeItem.getKey());
+                        if (filter.equals(currentCohortFilter))
+                            typeItem.setSelected(true);
+
+                        item.addChild(typeItem);
+                    }
+                    tree.addChild(item);
+                }
+            }
+            else
+            {
+                for (CohortImpl cohort : cohorts)
+                {
+                    CohortFilter filter = new CohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
+                    ActionURL url = filter.addURLParameters(baseURL.clone());
+                    NavTree item = new NavTree(cohort.getLabel(), url.toString());
+                    item.setId(caption + ":" + item.getKey());
+                    if (filter.equals(currentCohortFilter))
+                        item.setSelected(true);
+                    tree.addChild(item);
+                }
+            }
+        }
     }
 
     public void clearParticipantCohorts(Study study) throws SQLException

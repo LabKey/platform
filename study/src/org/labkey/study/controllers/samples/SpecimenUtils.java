@@ -195,13 +195,15 @@ public class SpecimenUtils
 
         List<DisplayElement> buttons = new ArrayList<DisplayElement>();
 
-        ActionButton ptidListButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), gridView.getSettings().getDataRegionName());
+        ActionButton ptidListButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), gridView.getSettings().getDataRegionName(), cohortFilter);
         if (ptidListButton != null)
             buttons.add(ptidListButton);
 
+/*
         ActionButton cohortButton = CohortManager.getInstance().createCohortButton(getViewContext(), cohortFilter);
         if (cohortButton != null)
             buttons.add(cohortButton);
+*/
 
         if (settings.isEnableRequests())
         {

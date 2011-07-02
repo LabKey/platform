@@ -46,7 +46,7 @@
     String optionLabelStyle = "text-align:right";
     Map<String, CustomView> views = bean.getCustomViews(getViewContext());
 
-    ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container);
+    ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
     boolean showParticipantGroups = categories != null && categories.length > 0;
 %>
 <script type="text/javascript">

@@ -190,7 +190,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 
         if (_parameters.getParticipantGroupFilter() >= 0)
         {
-            ParticipantGroup filterGroup = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), _parameters.getParticipantGroupFilter());
+            ParticipantGroup filterGroup = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), _parameters.getParticipantGroupFilter());
             if (filterGroup != null)
                 filterGroup.addURLFilter(url, getContainer(), "SpecimenDetail");
         }

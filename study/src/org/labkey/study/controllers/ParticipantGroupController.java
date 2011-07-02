@@ -54,7 +54,7 @@ public class ParticipantGroupController extends BaseStudyController
 
             form.setContainer(getContainer().getId());
 
-            ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getUser(), form);
+            ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form);
 
             resp.put("success", true);
             resp.put("category", category.toJSON());
@@ -77,11 +77,11 @@ public class ParticipantGroupController extends BaseStudyController
             }
 
             SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
-            ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(filter);
+            ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
             if (defs.length == 1)
             {
                 form.copySpecialFields(defs[0]);
-                ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getUser(), form);
+                ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form);
 
                 resp.put("success", true);
                 resp.put("category", category.toJSON());
@@ -101,7 +101,7 @@ public class ParticipantGroupController extends BaseStudyController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), form.getLabel());
+            ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getLabel());
 
             resp.put("success", true);
             resp.put("category", category.toJSON());
@@ -118,7 +118,7 @@ public class ParticipantGroupController extends BaseStudyController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer());
+            ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser());
             JSONArray defs = new JSONArray();
 
             for (ParticipantCategory pc : categories)
@@ -148,11 +148,11 @@ public class ParticipantGroupController extends BaseStudyController
                 SimpleFilter filter = new SimpleFilter("Container", getContainer());
                 filter.addCondition("Label", form.getLabel());
 
-                ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(filter);
+                ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
                 if (defs.length == 1)
                     category = defs[0];
             }
-            ParticipantGroupManager.getInstance().deleteParticipantCategory(getUser(), category);
+            ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), category);
             resp.put("success", true);
 
             return resp;

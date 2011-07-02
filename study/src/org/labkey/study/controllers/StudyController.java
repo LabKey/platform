@@ -990,8 +990,8 @@ public class StudyController extends BaseStudyController
                                        CohortFilter cohortFilter, QCStateSet currentStates) throws ServletException
         {
             createViewButton(buttonBar, queryView);
-            createCohortButton(buttonBar, cohortFilter);
-            createParticipantGroupButton(buttonBar, queryView.getDataRegionName());
+            //createCohortButton(buttonBar, cohortFilter);
+            createParticipantGroupButton(buttonBar, queryView.getDataRegionName(), cohortFilter);
             if (StudyManager.getInstance().showQCStates(queryView.getContainer()))
                 createQCStateButton(queryView, buttonBar, currentStates);
 
@@ -1116,9 +1116,9 @@ public class StudyController extends BaseStudyController
                 buttonBar.add(cohortButton);
         }
 
-        private void createParticipantGroupButton(List<ActionButton> buttonBar, String dataRegionName)
+        private void createParticipantGroupButton(List<ActionButton> buttonBar, String dataRegionName, CohortFilter cohortFilter)
         {
-            ActionButton listButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), dataRegionName);
+            ActionButton listButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), dataRegionName, cohortFilter);
             if (null != listButton)
                 buttonBar.add(listButton);
         }

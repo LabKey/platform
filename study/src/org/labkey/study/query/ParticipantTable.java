@@ -120,7 +120,7 @@ public class ParticipantTable extends FilteredTable
         setDefaultVisibleColumns(getDefaultVisibleColumns());
 
         // join in participant categories
-        for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer()))
+        for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), _schema.getUser()))
         {
             ColumnInfo categoryColumn = new ParticipantCategoryColumn(category, this);
             addColumn(categoryColumn);

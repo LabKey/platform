@@ -29,6 +29,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 
 /**
@@ -132,13 +134,14 @@ public class SampleSetWebPart extends QueryView
 
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
+        PrintWriter out = response.getWriter();
         if (_sampleSetError != null)
         {
             out.write("<font class=\"labkey-error\">" + PageFlowUtil.filter(_sampleSetError) + "</font><br>");
         }
-        super.renderView(model, out);
+        super.renderView(model, request, response);
     }
 
     public void setSampleSetError(String sampleSetError)

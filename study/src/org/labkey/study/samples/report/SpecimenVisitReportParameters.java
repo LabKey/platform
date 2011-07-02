@@ -269,7 +269,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     protected void addParticipantGroupFilter(SimpleFilter filter, int ptidListId)
     {
-        ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), ptidListId);
+        ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), ptidListId);
         if (group != null)
         {
             StringBuilder sql = new StringBuilder();

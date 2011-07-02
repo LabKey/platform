@@ -58,7 +58,7 @@
     String intervalLabel;
 
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
-    ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(c);
+    ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(c, user);
 
     if (!study.isAllowReload())
         intervalLabel = "This study is set to not reload";

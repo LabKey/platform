@@ -28,14 +28,18 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
 
+import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -72,12 +76,11 @@ public class ParticipantGroupManager
         return StudySchema.getInstance().getSchema().getTable("ParticipantGroupMap");
     }
 
-    public ParticipantCategory getParticipantCategory(Container c, String label)
+    public ParticipantCategory getParticipantCategory(Container c, User user, String label)
     {
-        SimpleFilter filter = new SimpleFilter("Container", c);
-        filter.addCondition("Label", label);
+        SimpleFilter filter = new SimpleFilter("Label", label);
 
-        ParticipantCategory[] lists = getParticipantCategories(filter);
+        ParticipantCategory[] lists = getParticipantCategories(c, user, filter);
 
         if (lists.length > 0)
         {
@@ -90,14 +93,15 @@ public class ParticipantGroupManager
         return def;
     }
 
-    public ParticipantCategory[] getParticipantCategories(SimpleFilter filter)
+    public ParticipantCategory[] getParticipantCategories(Container c, User user, SimpleFilter filter)
     {
         try {
+            filter.addCondition("Container", c);
             ParticipantCategory[] categories = Table.select(StudySchema.getInstance().getTableInfoParticipantCategory(), Table.ALL_COLUMNS, filter, null, ParticipantCategory.class);
 
             for (ParticipantCategory pc : categories)
             {
-                pc.setGroups(getParticipantGroups(pc));
+                pc.setGroups(getParticipantGroups(c, user, pc));
             }
             return categories;
         }
@@ -107,7 +111,7 @@ public class ParticipantGroupManager
         }
     }
 
-    public ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName)
+    public ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter)
     {
         Container container = context.getContainer();
         String[] colFilterParamNames = context.getActionURL().getKeysByPrefix(dataRegionName + ".");
@@ -124,10 +128,10 @@ public class ParticipantGroupManager
             colFilters.put(colName, context.getActionURL().getParameter(colFilterParamName));
         }
 
-        ParticipantCategory[] allCategories = getParticipantCategories(container);
+        ParticipantCategory[] allCategories = getParticipantCategories(container, context.getUser());
         for (ParticipantCategory category : allCategories)
         {
-            ParticipantGroup[] allGroups = getParticipantGroups(category);
+            ParticipantGroup[] allGroups = getParticipantGroups(container, context.getUser(), category);
             for (ParticipantGroup group : allGroups)
             {
                 Pair<FieldKey, String> colAndValue = group.getFilterColAndValue(container);
@@ -137,66 +141,87 @@ public class ParticipantGroupManager
                     selected.add(group);
             }
         }
-        return createParticipantGroupButton(context, dataRegionName, selected);
+        return createParticipantGroupButton(context, dataRegionName, selected, cohortFilter);
     }
 
-    private ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, Set<ParticipantGroup> selected)
+    private ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, Set<ParticipantGroup> selected, CohortFilter cohortFilter)
     {
-        Container container = context.getContainer();
-        StudyImpl study = StudyManager.getInstance().getStudy(container);
-        MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Groups");
+        try {
+            Container container = context.getContainer();
+            StudyImpl study = StudyManager.getInstance().getStudy(container);
+            MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Groups");
 
-        ParticipantCategory[] classes = getParticipantCategories(container);
+            ParticipantCategory[] classes = getParticipantCategories(container, context.getUser());
 
-        // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
-        ActionURL baseURL = context.getActionURL().clone();
-        for (ParticipantCategory cls : classes)
-        {
-            ParticipantGroup[] groups = cls.getGroups();
-            if (groups != null)
+            // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
+            ActionURL baseURL = CohortFilter.clearURLParameters(context.cloneActionURL());
+
+            for (ParticipantCategory cls : classes)
             {
-                for (ParticipantGroup group : groups)
-                    group.removeURLFilter(baseURL, container, dataRegionName);
+                ParticipantGroup[] groups = cls.getGroups();
+                if (groups != null)
+                {
+                    for (ParticipantGroup group : groups)
+                        group.removeURLFilter(baseURL, container, dataRegionName);
+                }
             }
-        }
 
-        button.addMenuItem("All", baseURL.toString(), null, selected.isEmpty());
+            button.addMenuItem("All", baseURL.toString(), null, (selected.isEmpty() && cohortFilter == null));
 
-        for (ParticipantCategory cls : classes)
-        {
-            ParticipantGroup[] groups = cls.getGroups();
-            if (null != groups && groups.length > 1)
+            // merge in cohorts
+            if (CohortManager.getInstance().hasCohortMenu(context.getContainer(), context.getUser()))
             {
-                NavTree item = new NavTree(cls.getLabel());
-                for (ParticipantGroup grp : groups)
+                //button.addMenuItem(((MenuButton)cohortButton).getPopupMenu().getNavTree());
+                NavTree cohort = new NavTree("Cohorts");
+                CohortManager.getInstance().addCohortNavTree(context.getContainer(), context.getUser(), baseURL, cohortFilter, cohort);
+                button.addMenuItem(cohort);
+            }
+
+            for (ParticipantCategory cls : classes)
+            {
+                ParticipantGroup[] groups = cls.getGroups();
+                if (null != groups && groups.length > 1)
+                {
+                    NavTree item = new NavTree(cls.getLabel());
+                    for (ParticipantGroup grp : groups)
+                    {
+                        ActionURL url = baseURL.clone();
+                        url = grp.addURLFilter(url, container, dataRegionName);
+                        NavTree child = item.addChild(grp.getLabel(), url);
+                        child.setSelected(selected.contains(grp));
+                    }
+                    button.addMenuItem(item);
+                }
+                else if (null != groups && groups.length == 1)
                 {
                     ActionURL url = baseURL.clone();
-                    url = grp.addURLFilter(url, container, dataRegionName);
-                    NavTree child = item.addChild(grp.getLabel(), url);
-                    child.setSelected(selected.contains(grp));
+                    url = groups[0].addURLFilter(url, container, dataRegionName);
+                    button.addMenuItem(groups[0].getLabel(), url.toString(), null, selected.contains(groups[0]));
                 }
-                button.addMenuItem(item);
             }
-            else if (null != groups && groups.length == 1)
+
+            button.addSeparator();
+            if (CohortManager.getInstance().hasCohortMenu(context.getContainer(), context.getUser()) &&
+                    container.hasPermission(context.getUser(), AdminPermission.class))
             {
-                ActionURL url = baseURL.clone();
-                url = groups[0].addURLFilter(url, container, dataRegionName);
-                button.addMenuItem(groups[0].getLabel(), url.toString(), null, selected.contains(groups[0]));
+                button.addMenuItem("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, container));
             }
+            button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, container));
+
+            return button;
         }
-
-        button.addSeparator();
-        button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, container));
-
-        return button;
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
     
-    public ParticipantCategory[] getParticipantCategories(Container c)
+    public ParticipantCategory[] getParticipantCategories(Container c, User user)
     {
-        return getParticipantCategories(new SimpleFilter("Container", c));
+        return getParticipantCategories(c, user, new SimpleFilter());
     }
 
-    public ParticipantCategory setParticipantCategory(User user, ParticipantCategory def)
+    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -213,7 +238,7 @@ public class ParticipantGroupManager
             switch (ParticipantCategory.Type.valueOf(ret.getType()))
             {
                 case list:
-                    updateListTypeDef(user, ret, isUpdate);
+                    updateListTypeDef(c, user, ret, isUpdate);
                     break;
                 case query:
                     throw new UnsupportedOperationException("Participant category type: query not yet supported");
@@ -276,7 +301,7 @@ public class ParticipantGroupManager
         }
     }
 
-    private void deleteGroupParticipants(User user, ParticipantGroup group)
+    private void deleteGroupParticipants(Container c, User user, ParticipantGroup group)
     {
         try {
             // remove the mapping from group to participants
@@ -292,19 +317,18 @@ public class ParticipantGroupManager
         }
     }
 
-    public ParticipantCategory getParticipantCategory(Container c, int rowId)
+    public ParticipantCategory getParticipantCategory(Container c, User user, int rowId)
     {
-        SimpleFilter filter = new SimpleFilter("Container", c);
-        filter.addCondition("RowId", rowId);
+        SimpleFilter filter = new SimpleFilter("RowId", rowId);
 
-        ParticipantCategory[] categories = getParticipantCategories(filter);
+        ParticipantCategory[] categories = getParticipantCategories(c, user, filter);
 
         if (categories.length > 0)
             return categories[0];
         return null;
     }
 
-    public ParticipantGroup getParticipantGroup(Container container, int rowId)
+    public ParticipantGroup getParticipantGroup(Container container, User user, int rowId)
     {
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
         filter.addCondition("Container", container);
@@ -314,12 +338,12 @@ public class ParticipantGroupManager
             rs = Table.select(getTableInfoParticipantGroup(), Collections.singleton("CategoryId"), filter, null);
             if (rs.next())
             {
-                ParticipantCategory category = getParticipantCategory(container, rs.getInt("CategoryId"));
+                ParticipantCategory category = getParticipantCategory(container, user, rs.getInt("CategoryId"));
                 if (category != null)
                 {
                     // Use getParticipantGroups here to pull the entire category into the cache- this is more expensive up-front,
                     // but will save us time later.
-                    ParticipantGroup[] groups = getParticipantGroups(category);
+                    ParticipantGroup[] groups = getParticipantGroups(container, user, category);
                     for (ParticipantGroup group : groups)
                     {
                         if (group.getRowId() == rowId)
@@ -340,7 +364,7 @@ public class ParticipantGroupManager
         return null;
     }
 
-    public ParticipantGroup[] getParticipantGroups(ParticipantCategory def)
+    public ParticipantGroup[] getParticipantGroups(Container c, User user, ParticipantCategory def)
     {
         if (!def.isNew())
         {
@@ -415,7 +439,7 @@ public class ParticipantGroupManager
         }
     }
 
-    private void updateListTypeDef(User user, ParticipantCategory def, boolean update) throws SQLException
+    private void updateListTypeDef(Container c, User user, ParticipantCategory def, boolean update) throws SQLException
     {
         assert !def.isNew() : "The participant category has not been created yet";
 
@@ -430,11 +454,11 @@ public class ParticipantGroupManager
                 // updating an existing category
                 if (update)
                 {
-                    ParticipantGroup[] groups = getParticipantGroups(def);
+                    ParticipantGroup[] groups = getParticipantGroups(c, user, def);
                     if (groups.length == 1)
                     {
                         group = groups[0];
-                        deleteGroupParticipants(user, group);
+                        deleteGroupParticipants(c, user, group);
                     }
                     else
                         throw new RuntimeException("The existing participant category had no group associated with it.");
@@ -460,7 +484,7 @@ public class ParticipantGroupManager
         }
     }
 
-    public void deleteParticipantCategory(User user, ParticipantCategory def)
+    public void deleteParticipantCategory(Container c, User user, ParticipantCategory def)
     {
         if (def.isNew())
             throw new IllegalArgumentException("Participant category has not been saved to the database yet");
