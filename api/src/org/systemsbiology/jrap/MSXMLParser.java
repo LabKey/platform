@@ -120,7 +120,7 @@ public final class MSXMLParser
     protected XMLReader parser = null;
 
     /** The file we are in charge of reading */
-    protected String fileName = null;
+    protected File file = null;
 
     /** The MD5 signature found the last time we read the index */
     protected String fileMD5 = null;
@@ -131,8 +131,8 @@ public final class MSXMLParser
     /** The information contained in the header of the mzXML file. */
     protected MZXMLFileInfo info;
 
-    public MSXMLParser(String fileName) {
-        this.fileName = fileName;
+    public MSXMLParser(File file) {
+        this.file = file;
 
         // The defaults for the parser
         boolean namespaces = DEFAULT_NAMESPACES;
@@ -239,8 +239,8 @@ public final class MSXMLParser
         long indexPosition = -1;
         try
         {
-            fileIN = new FileInputStream(fileName);
-            long fileLength = new File(fileName).length();
+            fileIN = new FileInputStream(this.file);
+            long fileLength = this.file.length();
             fileIN.skip(fileLength - 500);
             byte[] bytes = new byte[500];
             int bytesRead = fileIN.read(bytes);
@@ -273,7 +273,7 @@ public final class MSXMLParser
         try
         {
             fileIN.close();
-            fileIN = new FileInputStream(fileName);
+            fileIN = new FileInputStream(this.file);
             fileIN.skip(indexPosition);
         } catch (Exception e)
         {
@@ -303,7 +303,7 @@ public final class MSXMLParser
         {
             if (null != fileIN)
                 fileIN.close();
-            fileIN = new FileInputStream(fileName);
+            fileIN = new FileInputStream(this.file);
         } catch (Exception e)
         {
             System.out.println("File exception:" + e);
@@ -356,7 +356,7 @@ public final class MSXMLParser
         long scanOffset = -1;
         try
         {
-            fileIN = new FileInputStream(fileName);
+            fileIN = new FileInputStream(file);
             scanOffset = indexHandler.getScanOffset(scanNumber);
             if (scanOffset == -1)
             {
@@ -414,7 +414,7 @@ public final class MSXMLParser
 
         try
         {
-            fileIN = new FileInputStream(fileName);
+            fileIN = new FileInputStream(file);
             scanOffset = indexHandler.getScanOffset(scanNumber);
             if (scanOffset == -1)
             {
