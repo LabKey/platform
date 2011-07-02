@@ -139,6 +139,7 @@ api/src/org/labkey/api/collections/RowMap.java -text
 api/src/org/labkey/api/collections/RowMapFactory.java -text
 api/src/org/labkey/api/collections/SetFromMap.java -text
 api/src/org/labkey/api/collections/Sets.java -text
+api/src/org/labkey/api/data/AbstractDataRegion.java -text
 api/src/org/labkey/api/data/AbstractForeignKey.java -text
 api/src/org/labkey/api/data/AbstractTableInfo.java -text
 api/src/org/labkey/api/data/Aggregate.java -text
@@ -625,6 +626,7 @@ api/src/org/labkey/api/query/QueryWebPart.java -text
 api/src/org/labkey/api/query/QueryWrapperDynaClass.java -text
 api/src/org/labkey/api/query/RExportScriptFactory.java -text
 api/src/org/labkey/api/query/RExportScriptModel.java -text
+api/src/org/labkey/api/query/ReportDataRegion.java -text
 api/src/org/labkey/api/query/RowIdForeignKey.java -text
 api/src/org/labkey/api/query/RowIdQueryUpdateService.java -text
 api/src/org/labkey/api/query/SimpleValidationError.java -text

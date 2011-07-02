@@ -641,12 +641,30 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         return false;
     },
 
-    beforeChangeView : function(dataRegion, viewName) {
+    /**
+     * Listener for view change events.
+     * @param {Object} view An object which contains the following properties.
+     * @param {String} [view.type] the type of view, either a 'view' or a 'report'.
+     * @param {String} [view.viewName] If the type is 'view', then the name of the view.
+     * @param {String} [view.reportId] If the type is 'report', then the report id.
+     */
+    beforeChangeView : function(dataRegion, view) {
         delete this.offset;
-        delete this.userFilters;
-        delete this.userSort;
-        if (viewName)
-            this.viewName = viewName;
+
+        // this makes interactive filters 'sticky' between view and report changes.
+        //delete this.userFilters;
+        //delete this.userSort;
+
+        delete this.viewName;
+        delete this.reportId;
+
+        if (view)
+        {
+            if (view.type == 'report')
+                this.reportId = view.reportId;
+            else
+                this.viewName = view.viewName;
+        }
         else
         {
             // delete the viewName so it isn't POSTed as empty string

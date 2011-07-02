@@ -697,18 +697,27 @@ LABKEY.DataRegion = function (config)
 
     /**
      * Change the currently selected view to the named view
-     * @param viewName the name of the saved view to display
+     * @param {Object} view An object which contains the following properties.
+     * @param {String} [view.type] the type of view, either a 'view' or a 'report'.
+     * @param {String} [view.viewName] If the type is 'view', then the name of the view.
+     * @param {String} [view.reportId] If the type is 'report', then the report id.
      * @param urlParameters <b>NOTE: Experimental parameter; may change without warning.</b> A set of filter and sorts to apply as URL parameters when changing the view.
      */
-    this.changeView = function(viewName, urlParameters)
+    this.changeView = function(view, urlParameters)
     {
-        if (false === this.fireEvent("beforechangeview", this, viewName, urlParameters))
+        if (false === this.fireEvent("beforechangeview", this, view, urlParameters))
             return;
 
         var skipPrefixes = [".offset", ".showRows", ".viewName", ".reportId"];
-        var newParamValPairs = [];
-        if (viewName)
-            newParamValPairs.push([".viewName", viewName]);
+        var newParamValPairs = [];        
+        if (view)
+        {
+            if (view.type == 'report')
+                newParamValPairs.push([".reportId", view.reportId]);
+            else
+                newParamValPairs.push([".viewName", view.viewName]);
+        }
+
         if (urlParameters)
         {
             if (urlParameters.filter && urlParameters.filter.length > 0)
@@ -810,7 +819,8 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this.form = document.forms[this.name];
         this.table = Ext.get("dataregion_" + this.name);
         this.msgbox = Ext.get("dataregion_msgbox_" + this.name);
-        this.msgbox.enableDisplayMode();
+        if (this.msgbox)
+            this.msgbox.enableDisplayMode();
         this.header = Ext.get("dataregion_header_" + this.name);
         this.footer = Ext.get("dataregion_footer_" + this.name);
 

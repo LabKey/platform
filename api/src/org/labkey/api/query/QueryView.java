@@ -1068,23 +1068,24 @@ public class QueryView extends WebPartView<Object>
 
     protected String getChangeViewScript(String viewName)
     {
-        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].changeView(" + PageFlowUtil.jsString(viewName) + ");";
+        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].changeView({type:'view', viewName:" + PageFlowUtil.jsString(viewName) + "});";
+    }
+
+    protected String getChangeReportScript(String reportId)
+    {
+        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].changeView({type:'report', reportId:" + PageFlowUtil.jsString(reportId) + "});";
     }
 
     protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
-        boolean isReport = getSettings().getReportId() != null;
-
         // default grid view stays at the top level
-        //reports don't render a DataRegion JavaScript object, so we need to use an explicit href when this is a report
-        NavTree item = new NavTree("default", (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), "").getLocalURIString() : null));
-        if (!isReport)
-            item.setScript(getChangeViewScript(""));
+        NavTree item = new NavTree("default", (String)null);
+        item.setScript(getChangeViewScript(""));
 
         item.setId(getDataRegionName() + ":Views:default");
         if ("".equals(currentView))
             item.setStrong(true);
-        if (!isReport && _customView != null)
+        if ( _customView != null)
         {
             StringBuilder description = new StringBuilder();
             if (_customView.isSession())
@@ -1126,9 +1127,8 @@ public class QueryView extends WebPartView<Object>
             if (label == null)
                 continue;
 
-            item = new NavTree(label, (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString(): null));
-            if (!isReport)
-                item.setScript(getChangeViewScript(label));
+            item = new NavTree(label, (String)null);
+            item.setScript(getChangeViewScript(label));
             item.setId(getDataRegionName() + ":Views:" + label);
             if (label.equals(currentView))
                 item.setStrong(true);
@@ -1189,11 +1189,12 @@ public class QueryView extends WebPartView<Object>
             for (Report report : entry.getValue())
             {
                 String reportId = report.getDescriptor().getReportId().toString();
-                NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.reportId), reportId).getLocalURIString());
+                NavTree item = new NavTree(report.getDescriptor().getReportName(), (String) null);
                 item.setId(getDataRegionName() + ":Views:" + report.getDescriptor().getReportName());
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setStrong(true);
                 item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
+                item.setScript(getChangeReportScript(reportId));
                 menu.addMenuItem(item);
             }
         }
@@ -1261,12 +1262,6 @@ public class QueryView extends WebPartView<Object>
         return PageFlowUtil.filter(o);
     }
 
-    @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
-    {
-        renderDataRegion(out);
-    }
-
     protected void renderTitle(PrintWriter out)
     {
         if (getSettings().getAllowChooseView() && _buttonBarPosition != DataRegion.ButtonBarPosition.NONE)
@@ -1286,10 +1281,37 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+    /**
+     * this is the choke point for rendering reports and views, if this method is overriden you need to call
+     * super in order to have report/view rendering to work properly.
+     */
     @Override
-    final protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        super.renderView(model, request, response);
+        if (isReportView())
+            renderReportView(model, request, response);
+        else
+            renderDataRegion(response.getWriter());
+    }
+
+    protected void renderReportView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        if (_report != null)
+        {
+            ReportDataRegion dr = new ReportDataRegion(getSettings(), getViewContext(), _report);
+            RenderContext ctx = new RenderContext(getViewContext());
+
+            if (!isPrintView())
+            {
+                // not sure why this is necessary (adding the reportId to the context)
+                ctx.put("reportId", _report.getDescriptor().getReportId());
+                ButtonBar bar = new ButtonBar();
+                populateReportButtonBar(bar);
+
+                dr.setButtonBar(bar);
+            }
+            dr.render(ctx, request, response);
+        }
     }
 
     protected SqlDialect getSqlDialect()
@@ -1344,6 +1366,13 @@ public class QueryView extends WebPartView<Object>
     public ButtonBarConfig getButtonBarConfig()
     {
         return _buttonBarConfig;
+    }
+
+    private boolean isReportView()
+    {
+        _report = getSettings().getReportView();
+
+        return _report != null && getSettings().getViewName() == null;
     }
 
     public DataView createDataView()
@@ -1475,32 +1504,15 @@ public class QueryView extends WebPartView<Object>
 
     protected void renderDataRegion(PrintWriter out) throws Exception
     {
-        _report = getSettings().getReportView();
-        String viewName = getSettings().getViewName();
-        if (_report != null && viewName == null)
+        // make sure table has been instantiated
+        getTable();
+        List<QueryException> errors = getParseErrors();
+        if (errors.size() != 0)
         {
-            if (!isPrintView())
-            {
-                RenderContext ctx = new RenderContext(getViewContext());
-                ctx.put("reportId", _report.getDescriptor().getReportId());
-                ButtonBar bar = new ButtonBar();
-                populateReportButtonBar(bar);
-                bar.render(ctx, out);
-            }
-            include(_report.getRunReportView(getViewContext()));
+            renderErrors(out, "Query '" + getQueryDef().getName() + "' has errors", errors);
+            return;
         }
-        else
-        {
-            // make sure table has been instantiated
-            getTable();
-            List<QueryException> errors = getParseErrors();
-            if (errors.size() != 0)
-            {
-                renderErrors(out, "Query '" + getQueryDef().getName() + "' has errors", errors);
-                return;
-            }
-            include(createDataView(), out);
-        }
+        include(createDataView(), out);
     }
 
     protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()

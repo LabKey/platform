@@ -200,7 +200,7 @@ public class ButtonBar extends DisplayElement
 
     public DataRegion.ButtonBarPosition getConfiguredPosition()
     {
-        if (_configs.size() > 0)
+        if (_configs != null && _configs.size() > 0)
             return _configs.get(_configs.size() - 1).getPosition();
         return null;
     }

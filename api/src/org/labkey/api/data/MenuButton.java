@@ -113,4 +113,9 @@ public class MenuButton extends ActionButton
         super.setCaption(caption);
         popupMenu.getNavTree().setKey(caption);
     }
+
+    public PopupMenu getPopupMenu()
+    {
+        return popupMenu;
+    }
 }
