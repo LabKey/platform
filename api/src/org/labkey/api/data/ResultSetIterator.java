@@ -37,7 +37,7 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
     {
         _rs = rs;
 
-        if (!(_rs instanceof CachedRowSetImpl))
+        if (!(_rs instanceof CachedResultSet))
         {
             try
             {
@@ -68,8 +68,8 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
         {
             _rs.next();
 
-            if (_rs instanceof CachedRowSetImpl)
-                return ((CachedRowSetImpl)_rs).getRowMap();
+            if (_rs instanceof CachedResultSet)
+                return ((CachedResultSet)_rs).getRowMap();
             else
                 return _factory.getRowMap(_rs);
         }

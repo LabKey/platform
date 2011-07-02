@@ -1132,7 +1132,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             throws SQLException
     {
          //Use linked hash map to preserve ordering...
-        LinkedHashMap<String, ColumnInfo> colList = new LinkedHashMap<String, ColumnInfo>();
+        LinkedHashMap<String, ColumnInfo> colMap = new LinkedHashMap<String, ColumnInfo>();
         ResultSet rsCols;
 
         if (parentTable.getSqlDialect().treatCatalogsAsSchemas())
@@ -1188,7 +1188,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             if (col.isAutoIncrement())
                 parentTable.setSequence(reader.getSequence());
 
-            colList.put(col.getName(), col);
+            colMap.put(col.getName(), col);
         }
 
         rsCols.close();
@@ -1212,6 +1212,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         int iFkName = findColumn(rsKeys, "FK_NAME");
         
         List<ImportedKey> importedKeys = new ArrayList<ImportedKey>();
+
         while (rsKeys.next())
         {
             String pkOwnerName = rsKeys.getString(iPkTableSchema);
@@ -1240,11 +1241,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 key.fkColumnNames.add(colName);
             }
         }
+
         rsKeys.close();
 
         for (ImportedKey key : importedKeys)
         {
-            int i=-1;
+            int i = -1;
             boolean joinWithContainer = false;
 
             if (key.pkColumnNames.size() == 1)
@@ -1266,7 +1268,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             if (i > -1)
             {
                 String colName = key.fkColumnNames.get(i);
-                ColumnInfo col = colList.get(colName);
+                ColumnInfo col = colMap.get(colName);
+
                 if (col.fk != null)
                 {
                     _log.warn("More than one FK defined for column " + parentTable.getName() + col.getName() + ". Skipping constraint " + key.fkName);
@@ -1281,7 +1284,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             }
         }
 
-        return colList.values();
+        return colMap.values();
     }
 
 

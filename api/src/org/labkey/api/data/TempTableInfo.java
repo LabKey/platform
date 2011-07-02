@@ -27,38 +27,40 @@ import java.util.List;
 */
 public class TempTableInfo extends SchemaTableInfo
 {
-    TempTableTracker _ttt;
-    String _tempTableName;
-    String _unique;
+    private final String _tempTableName;
+
+    private TempTableTracker _ttt;
 
     static private String shortGuid()
     {
         String guid = GUID.makeGUID();
         StringBuilder sb = new StringBuilder(guid.length());
-        for (int i=0 ; i<guid.length() ; i++)
+
+        for (int i = 0; i < guid.length(); i++)
         {
             char ch = guid.charAt(i);
             if (ch != '-')
                 sb.append(ch);
         }
+
         return sb.toString();
     }
 
     public TempTableInfo(DbSchema parentSchema, String name, List<ColumnInfo> cols, List<String> pk)
     {
-        super(parentSchema);
+        super(name, parentSchema.getSqlDialect().getGlobalTempTablePrefix() + name + "$" + shortGuid(), parentSchema);
 
-        _unique = shortGuid();
-        _tempTableName = parentSchema.getSqlDialect().getGlobalTempTablePrefix() + name + "$" + _unique;
+        // TODO: Do away with _tempTableName?  getSelectName() is synonymous.
+        _tempTableName = getSelectName();
 
-        // overwrite selectName to not use schema/owner name
-        _name = name;
-        selectName = new SQLFragment(_tempTableName);
         for (ColumnInfo col : cols)
             col.setParentTable(this);
-        columns.addAll(cols);
+
+        _columns.addAll(cols);
+
         if (pk != null)
             setPkColumnNames(pk);
+
         setTableType(TABLE_TYPE_TABLE);
     }
 
@@ -66,12 +68,6 @@ public class TempTableInfo extends SchemaTableInfo
     {
         _buttonBarConfig = bbarConfig;
     }
-
-    public String getSelectName()
-    {
-        return _tempTableName;
-    }
-
 
     public String getTempTableName()
     {

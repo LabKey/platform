@@ -57,7 +57,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.rowset.CachedRowSet;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.sql.BatchUpdateException;
@@ -380,7 +379,7 @@ public class Table
 
             if (clss == java.util.Map.class)
             {
-                CachedRowSetImpl copy = (CachedRowSetImpl)cacheResultSet(schema.getSqlDialect(), rs, 0, null);
+                CachedResultSet copy = (CachedResultSet)cacheResultSet(schema.getSqlDialect(), rs, 0, null);
                 //noinspection unchecked
                 K[] arrayListMaps = (K[])(copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
                 copy.close();
@@ -1588,7 +1587,7 @@ public class Table
 
     private static TableResultSet cacheResultSet(SqlDialect dialect, ResultSet rs, int rowCount, @Nullable AsyncQueryRequest asyncRequest) throws SQLException
     {
-        CachedRowSetImpl crsi = new CachedRowSetImpl(rs, dialect.shouldCacheMetaData(), rowCount);
+        CachedResultSet crsi = new CachedResultSet(rs, dialect.shouldCacheMetaData(), rowCount);
 
         if (null != asyncRequest && AppProps.getInstance().isDevMode())
             crsi.setStackTrace(asyncRequest.getCreationStackTrace());
@@ -1704,8 +1703,8 @@ public class Table
 
         public int size() throws SQLException
         {
-            if (resultset instanceof CachedRowSet)
-                return ((CachedRowSet) resultset).size();
+            if (resultset instanceof javax.sql.rowset.CachedRowSet)
+                return ((javax.sql.rowset.CachedRowSet) resultset).size();
             return -1;
         }
 

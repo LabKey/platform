@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.data.CachedRowSetImpl;
+import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ResultSetMetaDataImpl;
 
 import java.io.IOException;
@@ -52,6 +52,7 @@ public class ResultSetUtil
     {
         if (null == rs)
             return null;
+
         try
         {
             rs.close();
@@ -69,6 +70,7 @@ public class ResultSetUtil
     {
         if (null == stmt)
             return;
+
         try
         {
             stmt.close();
@@ -80,40 +82,14 @@ public class ResultSetUtil
     }
     
 
-/*  Not used... TODO: delete
-    public static ResultSet filter(ResultSet in, Predicate<Map<String, Object>> pred)
-    {
-        Iterator<Map<String, Object>> it;
-        boolean isComplete = true;
-
-        if (in instanceof Table.TableResultSet)
-        {
-            it = ((Table.TableResultSet)in).iterator();
-            isComplete = ((Table.TableResultSet)in).isComplete();
-        }
-        else
-        {
-            it = new ResultSetIterator(in);
-        }
-
-        List<Map<String, Object>> accepted = toList(filteredIterator(it, pred));
-
-        try
-        {
-            return new CachedRowSetImpl(in.getMetaData(), accepted, isComplete);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-*/
     // Convenience method to convert the current row in a ResultSet to a map.  Do not call this in a loop -- new up a ResultSetRowMap instead
     public static Map<String, Object> mapRow(ResultSet rs) throws SQLException
     {
-        if (rs instanceof CachedRowSetImpl)
-            return ((CachedRowSetImpl)rs).getRowMap();
+        if (rs instanceof CachedResultSet)
+            return ((CachedResultSet)rs).getRowMap();
+
         ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+
         return factory.getRowMap(rs);
     }
 
@@ -178,7 +154,6 @@ public class ResultSetUtil
                     for (int i = 1; i <= columnCount; i++)
                     {
                         Object value = rs.getObject(i);
-
                         sb.append(null == value ? "-" : value.toString()).append(" ");
                     }
 
@@ -215,7 +190,8 @@ public class ResultSetUtil
     public static String legalNameFromName(String str)
     {
         StringBuilder buf = null;
-        for (int i = 0; i < str.length(); i ++)
+
+        for (int i = 0; i < str.length(); i++)
         {
             if (isLegalNameChar(str.charAt(i), i == 0))
                 continue;
@@ -226,8 +202,10 @@ public class ResultSetUtil
             buf.append(str.substring(buf.length(), i));
             buf.append("_");
         }
+
         if (buf == null)
             return str;
+
         buf.append(str.substring(buf.length(), str.length()));
         return buf.toString();
     }
@@ -252,7 +230,8 @@ public class ResultSetUtil
         ResultSetMetaData md = rs.getMetaData();
         ExportCol[] cols = new ExportCol[md.getColumnCount()+1];
         int columnCount = md.getColumnCount();
-        for (int i=1 ; i<= columnCount; i++)
+
+        for (int i = 1; i <= columnCount; i++)
         {
             String name = md.getColumnName(i);
             String legalName = legalJsName(name);
@@ -301,6 +280,7 @@ public class ResultSetUtil
                 _out.write(ConvertUtils.convert(o));
             }
         };
+
         out.write("[");
         export.write(out, rs, "{", "}", ",", cols);
         out.write("]");
@@ -316,7 +296,8 @@ public class ResultSetUtil
         ResultSetMetaData md = rs.getMetaData();
         int columnCount = md.getColumnCount();
         ExportCol[] cols = new ExportCol[columnCount+1];
-        for (int i=1 ; i<= columnCount; i++)
+
+        for (int i = 1; i <= columnCount; i++)
         {
             String name = md.getColumnName(i);
             String legalName = legalXMLName(name);
@@ -327,6 +308,7 @@ public class ResultSetUtil
         String endRow = "</" + typeName + ">";
 
         out.write("<" + collectionName + ">\n");
+
         ExportResultSet export = new ExportResultSet()
         {
             void writeString(String s) throws IOException
@@ -339,6 +321,7 @@ public class ResultSetUtil
                 _out.write(ConvertUtils.convert(o));
             }
         };
+
         export.write(out, rs, startRow, endRow, "\n", cols);
         out.write("</" + collectionName + ">\n");
     }
@@ -351,6 +334,7 @@ public class ResultSetUtil
             prefix = pre;
             postfix = post;
         }
+
         String prefix;
         String postfix;
     }
@@ -397,19 +381,21 @@ public class ResultSetUtil
         {
             _out = out;
             int columnCount = rs.getMetaData().getColumnCount();
-
             String and = "";
+
             while (rs.next())
             {
                 _out.write(and);
                 _out.write(startRow);
-                for (int i=1 ; i<=columnCount ; i++)
+
+                for (int i = 1; i <= columnCount; i++)
                 {
                     _out.write(cols[i].prefix);
                     Object o = rs.getObject(i);
                     write(o);
                     _out.write(cols[i].postfix);
                 }
+
                 _out.write(endRow);
                 and = connector;
             }
@@ -468,7 +454,7 @@ public class ResultSetUtil
             m.put("s", null);
             maps.add(m);
 
-            ResultSet rs = new CachedRowSetImpl(new TestMetaData(), false, maps, true);
+            ResultSet rs = new CachedResultSet(new TestMetaData(), false, maps, true);
 
             StringWriter swXML = new StringWriter(1000);
             rs.beforeFirst();
@@ -483,7 +469,6 @@ public class ResultSetUtil
             rs.close();
         }
         
-
         private class TestMetaData extends ResultSetMetaDataImpl
         {
             TestMetaData()

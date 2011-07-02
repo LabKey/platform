@@ -16,7 +16,7 @@
 package org.labkey.api.collections;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.CachedRowSetImpl;
+import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.beans.Introspector;
@@ -41,14 +41,14 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
 
     public static ResultSetRowMapFactory create(ResultSet rs) throws SQLException
     {
-        if (rs instanceof CachedRowSetImpl)
+        if (rs instanceof CachedResultSet)
         {
             return new ResultSetRowMapFactory(rs)
             {
                 @Override
                 public RowMap<Object> getRowMap(ResultSet rs) throws SQLException
                 {
-                    return (RowMap<Object>)((CachedRowSetImpl)rs).getRowMap();
+                    return (RowMap<Object>)((CachedResultSet)rs).getRowMap();
                 }
             };
         }

@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.IteratorUtils;
-import org.apache.commons.collections15.Predicate;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -67,9 +66,9 @@ import static java.lang.Math.min;
  * Date: Nov 29, 2005
  * Time: 12:52:06 PM
  */
-public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
+public class CachedResultSet implements ResultSet, Table.TableResultSet
 {
-    private static final Logger _log = Logger.getLogger(CachedRowSetImpl.class);
+    private static final Logger _log = Logger.getLogger(CachedResultSet.class);
 
     // metadata
     private ResultSetMetaData _md;
@@ -92,22 +91,14 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     private Object _lastObject = null;
 
 
-    private CachedRowSetImpl()
+    private CachedResultSet()
     {
         assert MemTracker.put(this);
     }
 
 
-    public CachedRowSetImpl(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
+    public CachedResultSet(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
     {
-        this(rs, cacheMetaData, maxRows, null);
-    }
-
-
-    // TODO: pred is not used... combine with above?
-    public CachedRowSetImpl(ResultSet rs, boolean cacheMetaData, int maxRows, Predicate<Map<String, Object>> pred) throws SQLException
-    {
-        this();
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 
         if (maxRows == 0)
@@ -117,11 +108,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
 
         // Note: we check in this order to avoid consuming the "extra" row used to detect complete vs. not
         while (list.size() < maxRows && rs.next())
-        {
-            Map<String, Object> m = factory.getRowMap(rs);
-            if (null == pred || pred.evaluate(m))
-                list.add(m);
-        }
+            list.add(factory.getRowMap(rs));
 
         // If we have another row, then we're not complete
         boolean isComplete = !rs.next();
@@ -130,7 +117,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     }
 
 
-    public CachedRowSetImpl(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
+    public CachedResultSet(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
     {
         this();
         init(md, cacheMetaData, maps, isComplete);
@@ -139,7 +126,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
 
     private void init(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
     {
-        // UNDONE(MAB): consider moving to ArrayList internally to avoid this array nonsense
+        // TODO: consider moving to ArrayList internally to avoid this array nonsense
         // HACK
         if (maps.size() > 0 && maps.get(0) instanceof ArrayListMap)
             //noinspection unchecked
@@ -148,7 +135,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
             //noinspection unchecked
             init(md, cacheMetaData, maps.toArray((Map<String, Object>[])new Map[maps.size()]), isComplete);
 
-        // Stash stack trace that created this CachedRowSetImpl
+        // Stash stack trace that created this CachedRowSet
         if (AppProps.getInstance().isDevMode())
         {
             _stackTrace = Thread.currentThread().getStackTrace();
@@ -174,19 +161,17 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     {
         try
         {
+            if (maps.length > 0 && maps[0] instanceof ArrayListMap)
+                _arrayListMaps = (ArrayListMap<String, Object>[]) maps;
+
             _md = cacheMetaData ? new CachedResultSetMetaData(md) : md;
             _maps = maps;
-
-            if (maps.length > 0 && maps[0] instanceof ArrayListMap)
-                _arrayListMaps = (ArrayListMap<String, Object>[]) _maps;
-
             _isComplete = isComplete;
-
             _columns = new HashMap<String, Integer>(_md.getColumnCount() * 2);
 
             for (int col = _md.getColumnCount(); col >= 1; col--)
             {
-                String colName = md.getColumnName(col).toLowerCase();
+                String colName = _md.getColumnName(col).toLowerCase();
                 assert !_columns.containsKey(colName) : "Duplicate column name: " + colName;
                 _columns.put(colName, col);
             }
@@ -1150,8 +1135,8 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
 
     public Iterator<Map<String, Object>> iterator()
     {
-        Iterator it = IteratorUtils.arrayIterator(_maps);
-        return (Iterator<Map<String, Object>>)IteratorUtils.unmodifiableIterator(it);
+        Iterator<Map<String, Object>> it = IteratorUtils.arrayIterator(_maps);
+        return IteratorUtils.unmodifiableIterator(it);
     }
 
     public int getSize()
