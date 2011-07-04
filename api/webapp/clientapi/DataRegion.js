@@ -714,8 +714,10 @@ LABKEY.DataRegion = function (config)
         {
             if (view.type == 'report')
                 newParamValPairs.push([".reportId", view.reportId]);
-            else
+            else if (view.type == 'view')
                 newParamValPairs.push([".viewName", view.viewName]);
+            else
+                newParamValPairs.push([".viewName", view]);
         }
 
         if (urlParameters)
@@ -1273,7 +1275,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 this.showSuccessMessage();
                 // change view to either a shadowed view or the default view
                 var viewName = json.viewName;
-                this.changeView(viewName);
+                this.changeView({type:'view', viewName: viewName});
             }, this),
             failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
                 if (timerId > 0)
@@ -1340,7 +1342,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                             if (timerId > 0)
                                 clearTimeout(timerId);
                             self.showSuccessMessage();
-                            self.changeView(o.name);
+                            self.changeView({type:'view', viewName:o.name});
                         }, self),
                         failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
                             if (timerId > 0)
@@ -1382,7 +1384,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         if (savedViewsInfo && savedViewsInfo.views.length > 0)
         {
             this.hideCustomizeView();
-            this.changeView(savedViewsInfo.views[0].name, urlParameters);
+            this.changeView({
+                type: 'view',
+                viewName:savedViewsInfo.views[0].name}, urlParameters);
         }
     }
 
