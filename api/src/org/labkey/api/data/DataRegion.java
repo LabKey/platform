@@ -1028,60 +1028,58 @@ public class DataRegion extends AbstractDataRegion
     {
         if (_showPagination)
         {
-            if (_buttonBarPosition.atTop() && location != PaginationLocation.TOP)
-                return;
-
-            if (_buttonBarPosition._atBottom && location != PaginationLocation.BOTTOM)
-                return;
-
-            if (isSmallResultSet())
-                return;
-
-            NumberFormat fmt = NumberFormat.getInstance();
-
-            out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
-
-            if (getMaxRows() > 0 && getOffset() >= 2*getMaxRows())
-                paginateLink(out, "First Page", "<b>&laquo;</b> First", 0);
-
-            if (getMaxRows() > 0 && getOffset() >= getMaxRows())
-                paginateLink(out, "Previous Page", "<b>&lsaquo;</b> Prev", getOffset() - getMaxRows());
-
-            if (_rowCount != null)
-                out.write("<em>" + fmt.format(getOffset() + 1) + "</em> - <em>" + fmt.format(getOffset() + _rowCount.intValue()) + "</em> ");
-
-            if (_totalRows != null)
+            if ((_buttonBarPosition.atTop() && location == PaginationLocation.TOP) ||
+                (_buttonBarPosition._atBottom && location == PaginationLocation.BOTTOM))
             {
+                if (isSmallResultSet())
+                    return;
+
+                NumberFormat fmt = NumberFormat.getInstance();
+
+                out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
+
+                if (getMaxRows() > 0 && getOffset() >= 2*getMaxRows())
+                    paginateLink(out, "First Page", "<b>&laquo;</b> First", 0);
+
+                if (getMaxRows() > 0 && getOffset() >= getMaxRows())
+                    paginateLink(out, "Previous Page", "<b>&lsaquo;</b> Prev", getOffset() - getMaxRows());
+
                 if (_rowCount != null)
-                    out.write("of <em>" + fmt.format( _totalRows) + "</em> ");
+                    out.write("<em>" + fmt.format(getOffset() + 1) + "</em> - <em>" + fmt.format(getOffset() + _rowCount.intValue()) + "</em> ");
 
-                if (getMaxRows() > 0)
+                if (_totalRows != null)
                 {
-                    long remaining = _totalRows.longValue() - getOffset();
-                    long lastPageSize = _totalRows.longValue() % getMaxRows();
-                    if (lastPageSize == 0)
-                        lastPageSize = getMaxRows();
-                    long lastPageOffset = _totalRows.longValue() - lastPageSize;
+                    if (_rowCount != null)
+                        out.write("of <em>" + fmt.format( _totalRows) + "</em> ");
 
-                    if (remaining > getMaxRows())
+                    if (getMaxRows() > 0)
                     {
-                        long nextOffset = getOffset() + getMaxRows();
-                        if (nextOffset > _totalRows.longValue())
-                            nextOffset = lastPageOffset;
-                        paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", nextOffset);
+                        long remaining = _totalRows.longValue() - getOffset();
+                        long lastPageSize = _totalRows.longValue() % getMaxRows();
+                        if (lastPageSize == 0)
+                            lastPageSize = getMaxRows();
+                        long lastPageOffset = _totalRows.longValue() - lastPageSize;
+
+                        if (remaining > getMaxRows())
+                        {
+                            long nextOffset = getOffset() + getMaxRows();
+                            if (nextOffset > _totalRows.longValue())
+                                nextOffset = lastPageOffset;
+                            paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", nextOffset);
+                        }
+
+                        if (remaining > 2*getMaxRows())
+                            paginateLink(out, "Last Page", "Last <b>&raquo;</b>", lastPageOffset);
                     }
-
-                    if (remaining > 2*getMaxRows())
-                        paginateLink(out, "Last Page", "Last <b>&raquo;</b>", lastPageOffset);
                 }
-            }
-            else
-            {
-                if (!_complete)
-                    paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", getOffset() + getMaxRows());
-            }
+                else
+                {
+                    if (!_complete)
+                        paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", getOffset() + getMaxRows());
+                }
 
-            out.write("</div>");
+                out.write("</div>");
+            }
         }
     }
 
