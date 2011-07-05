@@ -169,7 +169,7 @@
                     {
                 %>
                         <tr>
-                            <td style="<%= optionLabelStyle %>"><%= study.getSubjectNounSingular() %> List</td>
+                            <td style="<%= optionLabelStyle %>"><%= study.getSubjectNounSingular() %> Group</td>
                             <td>
                                 <select name="participantGroupFilter">
                                     <option value="">All Groups</option>

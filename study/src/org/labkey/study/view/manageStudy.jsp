@@ -130,9 +130,9 @@
         <td><%= textLink("Manage Cohorts", manageCohortsURL) %></td>
     </tr>
     <tr>
-        <th align="left"><%= h(subjectNounSingle) %> Categories</th>
-        <td>This study defines <%=categories.length%> <%= h(subjectNounSingle.toLowerCase()) %> categories</td>
-        <td><%= textLink("Manage " + h(subjectNounSingle) + " Categories", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, c)) %></td>
+        <th align="left"><%= h(subjectNounSingle) %> Groups</th>
+        <td>This study defines <%=categories.length%> <%= h(subjectNounSingle.toLowerCase()) %> groups</td>
+        <td><%= textLink("Manage " + h(subjectNounSingle) + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Security</th>

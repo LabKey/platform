@@ -6902,7 +6902,7 @@ public class StudyController extends BaseStudyController
             try
             {
                 _appendManageStudy(root);
-                root.addChild("Manage " + getStudy().getSubjectNounSingular() + " Categories");
+                root.addChild("Manage " + getStudy().getSubjectNounSingular() + " Groups");
             }
             catch (ServletException e)
             {

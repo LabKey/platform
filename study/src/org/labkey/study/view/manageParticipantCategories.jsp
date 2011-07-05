@@ -138,7 +138,7 @@
     function editParticipantCategories(row){
         var win = new Ext.Window({
             cls: 'extContainer',
-            title: 'Create <%= subjectNounSingular %> Category',
+            title: 'Create <%= subjectNounSingular %> Group',
             layout:'fit',
             width:800,
             height:550,
@@ -215,7 +215,7 @@
                     xtype: 'textfield',
                     value: this.categoryLabel,
                     hideLabel: true,
-                    emptyText: '<%= subjectNounSingular %> Category Label',
+                    emptyText: '<%= subjectNounSingular %> Group Label',
                     allowBlank: false,
                     selectOnFocus: true,
                     preventMark: true,
