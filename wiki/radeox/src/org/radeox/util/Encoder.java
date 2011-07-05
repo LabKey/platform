@@ -6,6 +6,9 @@
  *
  * Please visit http://radeox.org/ for updates and contact.
  *
+ * Modified 6/30/2011 by Isaac Hodes
+ * commented out encoding of & in order to correctly display URLs
+ *
  * --LICENSE NOTICE--
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,7 +50,7 @@ public class Encoder {
   // private final static Pattern entityPattern = Pattern.compile("&(#?[0-9a-fA-F]+);");
 
   static {
-    ESCAPED_CHARS.put("&", toEntity('&'));
+    //ESCAPED_CHARS.put("&", toEntity('&'));
     ESCAPED_CHARS.put("\"", toEntity('"'));
     ESCAPED_CHARS.put("'", toEntity('\''));
     ESCAPED_CHARS.put(">", toEntity('>'));

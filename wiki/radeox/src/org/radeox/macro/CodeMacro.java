@@ -6,6 +6,10 @@
  *
  * Please visit http://radeox.org/ for updates and contact.
  *
+ * Modified 6/30/2011 by Isaac Hodes
+ * replacing newlines with <br /> in order to prevent the paragraph
+ * filter from destroying the layout of a code block
+ *
  * --LICENSE NOTICE--
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -109,6 +113,7 @@ public class CodeMacro extends LocalePreserved {
       addSpecial('*');
       addSpecial('-');
       addSpecial('\\');
+      addSpecial("\n", "<br />");
   }
 
   public void execute(Writer writer, MacroParameter params)

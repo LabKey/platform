@@ -15,8 +15,12 @@
  */
 package org.labkey.wiki.renderer;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.HString;
@@ -702,6 +706,34 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         protected String getWikiView(String name)
         {
             return name;
+        }
+    }
+
+    public static class RadeoxRenderTest extends Assert
+    {
+        RadeoxRenderer _r;
+
+        @Before
+        public void setup()
+        {
+           _r = new RadeoxRenderer();
+        }
+
+        @Test
+        public void testRendering()
+        {
+            String underline = "<div class=\"labkey-wiki\"><u class=\"underline\">something</u></div>";
+            String italics = "<div class=\"labkey-wiki\"><i class=\"italic\">something</i></div>";
+            String bold = "<div class=\"labkey-wiki\"><b class=\"bold\">something</b></div>";
+            String url = "<div class=\"labkey-wiki\"><span class=\"nobr\"><a href=\"https://www.d.com/?l=q&#38;r=e\">&#104;ttps://www.d.com/?l=q&#38;r=e</a></span></div>";
+            String code = "<div class=\"labkey-wiki\"><div class=\"code\"><pre>def fn:<br />something here<br />something here<br /><br />something <span class=\"java&#45;keyword\">else</span></pre></div></div>";
+
+            assertEquals(underline, _r.format("__something__").getHtml());
+            assertEquals(italics,  _r.format("~~something~~").getHtml());
+            assertEquals(bold,  _r.format("**something**").getHtml());
+            assertEquals(url,  _r.format("https://www.d.com/?l=q&r=e").getHtml());
+            assertEquals(code,  _r.format("{code}def fn:\nsomething here\nsomething here\n\nsomething else{code}").getHtml());
+
         }
     }
 }

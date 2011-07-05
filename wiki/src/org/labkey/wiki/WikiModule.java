@@ -42,6 +42,7 @@ import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.permissions.IncludeScriptPermission;
+import org.labkey.wiki.renderer.RadeoxRenderer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -211,7 +212,8 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     public Set<Class> getJUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(
-            WikiManager.TestCase.class));
+                WikiManager.TestCase.class,
+                RadeoxRenderer.RadeoxRenderTest.class));
     }
 
 

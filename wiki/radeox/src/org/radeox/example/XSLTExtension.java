@@ -34,11 +34,11 @@ import org.radeox.EngineManager;
  * Example usage:
  * <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
  * xmlns:radeox="http://snipsnap.org/org.radeox.example.XSLTExtension">
- * É
+ *
  * <xsl:template match="content">
  *   <content><xsl:value-of select="radeox:render(.)" disable-output-escaping="yes"/></content>
  * </xsl:template>
- * É
+ *
  * </xsl:stylesheet>
  * @author Micah Dubinko
  * @version $Id: XSLTExtension.java,v 1.2 2003/10/07 08:20:24 stephan Exp $
