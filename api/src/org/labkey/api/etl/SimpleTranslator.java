@@ -394,10 +394,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     public void selectAll()
     {
         for (int i=1 ; i<=_data.getColumnCount() ; i++)
-        {
-            ColumnInfo ci = _data.getColumnInfo(i);
-            _outputColumns.add(new Pair<ColumnInfo, Callable>(new ColumnInfo(ci), new PassthroughColumn(i)));
-        }
+            addColumn(i);
     }
 
 
@@ -413,6 +410,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return _outputColumns.size()-1;
     }
 
+    public int addColumn(int fromIndex)
+    {
+        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        return addColumn(col, new PassthroughColumn(fromIndex));
+    }
 
     public int addColumn(String name, int fromIndex)
     {
