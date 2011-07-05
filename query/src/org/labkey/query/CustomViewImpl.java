@@ -71,7 +71,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 
     public void setContainer(Container container)
     {
-        _cstmView.setContainer(container.getId());
+        edit().setContainer(container.getId());
     }
 
     public QueryDefinition getQueryDefinition()
