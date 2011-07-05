@@ -588,6 +588,8 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     onSaveClick : function (btn, e) {
         var config = Ext.applyIf({
             canEditSharedViews: this.query.canEditSharedViews,
+            allowableContainerFilters: this.allowableContainerFilters,
+            targetContainers: this.query.targetContainers,
             canEdit: this.getEditableErrors().length == 0,
             success: function (win, o) {
                 this.save(o, function () {

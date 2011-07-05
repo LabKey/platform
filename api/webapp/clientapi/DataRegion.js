@@ -1242,7 +1242,12 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             msg += " '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'";
         else
             msg += "default";
-        msg += " saved view?";
+        msg += " saved view";
+        if (this.view && this.view.containerPath && this.containerPath != LABKEY.ActionURL.getContainer())
+        {
+            msg += " from '" + this.view.containerPath + "'";
+        }
+        msg += "?";
         Ext.Msg.confirm(title, msg, function (btnId) {
             if (btnId == "yes")
             {
@@ -1290,12 +1295,6 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         var errors = [];
         if (view)
         {
-            if (view.inherit)
-            {
-                if (view.containerPath && view.containerPath != LABKEY.ActionURL.getContainer())
-                    errors.push("Inherited views can only be edited from the defining folder.");
-            }
-
             if (!view.editable)
                 errors.push("The view is read-only and cannot be edited.");
         }
@@ -1514,19 +1513,35 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
         var containerPath = config.containerPath;
         var canEdit = config.canEdit;
         var canEditSharedViews = config.canEditSharedViews;
+        var targetContainers = config.targetContainers;
+        var allowableContainerFilters = config.allowableContainerFilters;
+
+        var containerData = new Array();
+        for (var i = 0; i < targetContainers.length; i++)
+        {
+            var targetContainer = targetContainers[i];
+            containerData[i] = [targetContainers[i].path];
+        }
+
+        var containerStore = new Ext.data.ArrayStore({
+            fields: [ 'path' ],
+            data: containerData
+        });
 
         var disableSharedAndInherit = LABKEY.user.isGuest || hidden /*|| session*/ || (containerPath && containerPath != LABKEY.ActionURL.getContainer());
         var newViewName = viewName || "New View";
         if (!canEdit && viewName)
             newViewName = viewName + " Copy";
 
+        var warnedAboutMoving = false;
+
         var win = new Ext.Window({
             title: "Save Custom View" + (viewName ? ": " + Ext.util.Format.htmlEncode(viewName) : ""),
             cls: "extContainer",
             bodyStyle: "padding: 6px",
             modal: true,
-            width: 460,
-            height: 220,
+            width: 480,
+            height: 260,
             layout: "form",
             defaults: {
                 tooltipType: "title"
@@ -1579,7 +1594,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
             },{
                 xtype: "box",
                 style: "padding-left: 122px; padding-bottom: 8px",
-                html: "<em>The current view can't be saved over.<br>Please enter an alternate view name.</em>",
+                html: "<em>The current view is not editable.<br>Please enter an alternate view name.</em>",
                 hidden: canEdit
             },{
                 xtype: "spacer",
@@ -1599,7 +1614,38 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                 fieldLabel: "Inherit",
                 boxLabel: "Make this grid view available in child folders",
                 checked: inherit,
-                disabled: disableSharedAndInherit
+                disabled: disableSharedAndInherit,
+                hidden: !allowableContainerFilters || allowableContainerFilters.length <= 1,
+                listeners: {
+                    check: function(checkbox, checked) {
+                        Ext.ComponentMgr.get("saveCustomView_targetContainer").setDisabled(!checked);
+                    }
+                }
+            },{
+                ref: "targetContainer",
+                xtype: "combo",
+                name: "saveCustomView_targetContainer",
+                id: "saveCustomView_targetContainer",
+                fieldLabel: "Save in Folder",
+                store: containerStore,
+                value: config.containerPath,
+                displayField: 'path',
+                valueField: 'path',
+                width: 300,
+                triggerAction: 'all',
+                mode: 'local',
+                editable: false,
+                hidden: !allowableContainerFilters || allowableContainerFilters.length <= 1,
+                disabled: !inherit,
+                listeners: {
+                    select: function(combobox) {
+                        if (!warnedAboutMoving && combobox.getValue() != config.containerPath)
+                        {
+                            warnedAboutMoving = true;
+                            Ext.Msg.alert("Moving a Saved View", "If you save, this view will be moved from '" + config.containerPath + "' to " + combobox.getValue());
+                        }
+                    }
+                }
             }],
             buttons: [{
                 text: "Save",
@@ -1632,6 +1678,11 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                             o.shared = win.sharedField.getValue();
                             o.inherit = win.inheritField.getValue();
                         }
+                    }
+
+                    if (o.inherit)
+                    {
+                        o.containerPath = win.targetContainer.getValue();
                     }
 
                     success.call(scope, win, o);
