@@ -116,7 +116,14 @@
             viewConfig: {forceFit: true},
             tbar: tbarButtons
         });
+        
         _grid.on('rowclick', toggleEditDeleteButtons);
+        _grid.on('rowdblclick', function(g, idx, e){
+            if (_grid.getSelectionModel().hasSelection())
+            {
+                editParticipantCategories(_grid.getSelectionModel().getSelected());
+            }
+        });
     }
 
     // enable/disable the edit and delete buttons based on selection
@@ -138,7 +145,7 @@
     function editParticipantCategories(row){
         var win = new Ext.Window({
             cls: 'extContainer',
-            title: 'Create <%= subjectNounSingular %> Group',
+            title: 'Define <%= subjectNounSingular %> Group',
             layout:'fit',
             width:800,
             height:550,
@@ -148,6 +155,8 @@
                 categoryRowId: (row ? row.get("rowId") : null),
                 categoryLabel: (row ? row.get("label") : null),
                 categoryParticipantIds: (row ? row.get("participantIds") : null),
+                categoryShared : (row ? row.get("shared") : false),
+                canEdit : true, // TODO: Modify this to adhere to API to check (participant) group permission
                 listeners: {
                     scope: this,
                     'closeWindow': function(){
@@ -210,6 +219,7 @@
         initComponent : function() {
             this.categoryPanel = new Ext.form.FormPanel({
                 border: false,
+                defaults : {disabled : !this.canEdit},
                 items: [{
                     id: 'categoryLabel',
                     xtype: 'textfield',
@@ -234,6 +244,7 @@
                 buttons: [{
                     text:'Save',
                     handler: this.saveCategory,
+                    disabled : !this.canEdit,
                     scope: this
                 },{
                     text:'Cancel',
@@ -270,8 +281,10 @@
                 valueField: 'Label',
                 displayField: 'Label',
                 fieldLabel: 'Select <%= subjectNounPlural %> from',
-                labelStyle: 'width: 175px;',
+                labelStyle: 'width: 150px;',
+                labelSeparator : '',
                 minListWidth : 300,
+                disabled : !this.canEdit,
                 listeners: {
                     scope: this,
                     'select': function(cmp, record, index){
@@ -280,10 +293,40 @@
                 }
             });
 
+            console.info('category shared : ' + this.categoryShared);
+            this.sharedfield = new Ext.form.Checkbox({
+                fieldLabel     : 'Shared',
+                labelSeparator : '',
+                disabled       : !this.canEdit,
+                hidden         : !this.canEdit
+            });
+
+            if (!this.categoryShared || this.categoryShared == "false")
+                this.sharedfield.setValue(false);
+            else
+                this.sharedfield.setValue(true);
+
             this.items = [
                 this.categoryPanel,
-                this.demoCombobox,
                 {
+                    border : false, frame: false,
+                    items  : [{
+                        layout : 'column',
+                        border : false, frame : false,
+                        defeaults : { border: false, frame: false },
+                        items  : [{
+                            layout      : 'form',
+                            columnWidth : .5,
+                            border : false, frame : false,
+                            items       : [this.demoCombobox]
+                        },{
+                            layout      : 'form',                            
+                            columnWidth : .2,
+                            border : false, frame : false,
+                            items       : [this.sharedfield]
+                        }]
+                    }]
+                },{
                     xtype: 'panel',
                     id: 'demoQueryWebPartPanel',
                     border: false
@@ -326,7 +369,8 @@
             var categoryData = {
                 label: label,
                 type: 'list',
-                participantIds: ids
+                participantIds: ids,
+                shared : this.sharedfield.getValue()
             };
             
             if (this.categoryRowId)
