@@ -1426,7 +1426,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, errors);
 
-            it.selectAll();
+            //it.selectAll();
+            for (int i=1 ; i<=input.getColumnCount() ; i++)
+            {
+                ColumnInfo ci = input.getColumnInfo(i);
+                if (ci.getName().equalsIgnoreCase("lsid"))
+                    continue;
+                it.addColumn(i);
+            }
+
 
             Map<String,Integer> fromMap = new CaseInsensitiveHashMap<Integer>(input.getColumnCount()*2);
             ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input,table);

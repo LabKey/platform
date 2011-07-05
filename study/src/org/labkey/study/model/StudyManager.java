@@ -3294,9 +3294,17 @@ public class StudyManager
                 // insert one row
                 rows.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++this.counterRow), "Value", 1.0));
-                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                Map<String,Object> firstRowMap = ret.get(0);
+                String lsidRet = (String)firstRowMap.get("lsid");
+                assertNotNull(lsidRet);
+                assertTrue("lsid should end with "+":101.A1.20110101.0000.Test11", lsidRet.endsWith(":101.A1.20110101.0000.Test11"));
                 rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                 assertTrue(rs.next());
+                String lsidFirstRow = rs.getString("lsid");
+                assertEquals(lsidFirstRow, lsidRet);
+                ResultSetUtil.close(rs);
+                rs = null;
 
                 // duplicate row
                 try
@@ -3453,6 +3461,18 @@ public class StudyManager
                 qcstates = StudyManager.getInstance().getQCStates(study.getContainer());
                 assertEquals(1, qcstates.length);
                 assertEquals("dirty" , qcstates[0].getLabel());
+
+                // let's try to update a row
+                rows.clear();
+                assertTrue(firstRowMap.containsKey("Value"));
+                firstRowMap.put("Value", 3.14159);
+                // TODO why is Number==null OK on insert() but not update()?
+                firstRowMap.put("Number", 1.0);
+                rows.add(firstRowMap);
+                List keys = new ArrayList();
+                keys.add(PageFlowUtil.map("lsid", lsidFirstRow));
+                ret = qus.updateRows(_context.getUser(), study.getContainer(), rows, keys, null);
+                assert(ret.size() == 1);
             }
             finally
             {
