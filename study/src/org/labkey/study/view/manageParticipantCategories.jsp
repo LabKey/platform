@@ -29,6 +29,8 @@
     String subjectNounColName = s.getSubjectColumnName();
 %>
 
+<p><%= subjectNounSingular %> groups allow you to quickly filter data in a study to groups of <%= subjectNounPlural.toLowerCase() %> you define.
+    Use this page to define a group and add <%= subjectNounPlural.toLowerCase() %> to it.</p>
 <div id="participantCategoriesGrid" class="extContainer"></div>
 
 <script type="text/javascript">
@@ -52,7 +54,7 @@
                 {name: 'type', type: 'string'},
                 {name: 'createdBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
                 {name: 'shared', type: 'string'},
-                {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString()}}
+                {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString().replace(/,/g,", ");}}
             ],
             autoLoad: true
         });
@@ -64,7 +66,7 @@
                 sortable: false
             },
             columns: [
-                {header:'Label', dataIndex:'label', sortable: true, width: 300},
+                {header:'Label', dataIndex:'label', sortable: true, width: 300, renderer: $h},
                 {header:'Type', dataIndex:'type', width: 100},
                 {header:'Created By', dataIndex:'createdBy'},
                 {header:'Shared', dataIndex:'shared'}
@@ -162,7 +164,7 @@
 
         Ext.Msg.show({
             title : 'Delete Category',
-            msg : 'Delete Selected Category:<br/>' + row.get("label"),
+            msg : 'Delete Selected Category:<br/>' + $h(row.get("label")),
             buttons: Ext.Msg.YESNO,
             icon: Ext.Msg.QUESTION,
             fn: function(btn, text) {
@@ -207,14 +209,13 @@
 
         initComponent : function() {
             this.categoryPanel = new Ext.form.FormPanel({
-                monitorValid: true,
                 border: false,
                 items: [{
                     id: 'categoryLabel',
                     xtype: 'textfield',
                     value: this.categoryLabel,
                     hideLabel: true,
-                    emptyText: '<%= subjectNounSingular %> Set Label',
+                    emptyText: '<%= subjectNounSingular %> Category Label',
                     allowBlank: false,
                     selectOnFocus: true,
                     preventMark: true,
@@ -232,7 +233,6 @@
                 }],
                 buttons: [{
                     text:'Save',
-                    formBind: true,
                     handler: this.saveCategory,
                     scope: this
                 },{
@@ -295,13 +295,25 @@
 
         saveCategory: function()
         {
-            // mask the panel
-            this.getEl().mask("Saving category...", "x-mask-loading");
-
             // get the label and ids from the form
             var fieldValues = this.categoryPanel.getForm().getFieldValues();
-            var label = $h(fieldValues["categoryLabel"]);
-            var idStr = $h(fieldValues["categoryIdentifiers"]);
+            var label = fieldValues["categoryLabel"];
+            var idStr = fieldValues["categoryIdentifiers"];
+
+            // make sure the label and idStr are not null
+            if (!label)
+            {
+                Ext.Msg.alert("ERROR", "<%= subjectNounSingular %> Category Label required.");
+                return;
+            }
+            if (!idStr)
+            {
+                Ext.Msg.alert("ERROR", "One or more <%= subjectNounSingular %> Identifiers required.");
+                return;
+            }            
+
+            // mask the panel
+            this.getEl().mask("Saving category...", "x-mask-loading");
 
             // split the ptid list into an array of strings
             var ids = idStr.split(",");
@@ -424,7 +436,7 @@
                        {
                            if (tempIdsArray.indexOf(data.rows[i]["<%= subjectNounColName %>"]) == -1)
                            {
-                               tempIds += (tempIds.length > 0 ? "," : "") + data.rows[i]["<%= subjectNounColName %>"];
+                               tempIds += (tempIds.length > 0 ? ", " : "") + data.rows[i]["<%= subjectNounColName %>"];
                                tempIdsArray.push(data.rows[i]["<%= subjectNounColName %>"]);
                            }
                        }
