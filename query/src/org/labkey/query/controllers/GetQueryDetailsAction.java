@@ -16,6 +16,8 @@
 package org.labkey.query.controllers;
 
 import org.apache.commons.lang.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -150,6 +152,32 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
                 viewName = StringUtils.trimToNull(viewName);
                 viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), viewName, true));
             }
+
+            // Include information about where these views might be saved and if the user has permission
+            // to share views in that container
+            JSONArray targetContainers = new JSONArray();
+            JSONObject targetContainer = new JSONObject(container.toJSON(getViewContext().getUser()));
+            targetContainer.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
+            targetContainers.put(targetContainer);
+
+            if (tinfo instanceof ContainerFilterable)
+            {
+                Container c = container.getParent();
+                while (!c.equals(ContainerManager.getRoot()))
+                {
+                    targetContainer = new JSONObject(c.toJSON(getViewContext().getUser()));
+                    targetContainer.put("canEditSharedViews", c.hasPermission(user, EditSharedViewPermission.class));
+                    targetContainers.put(targetContainer);
+                    c = c.getParent();
+                }
+
+                c = ContainerManager.getSharedContainer();
+                targetContainer = new JSONObject(c.toJSON(getViewContext().getUser()));
+                targetContainer.put("canEditSharedViews", c.hasPermission(user, EditSharedViewPermission.class));
+                targetContainers.put(targetContainer);
+            }
+
+            resp.put("targetContainers", targetContainers);
 
             resp.put("views", viewInfos);
 

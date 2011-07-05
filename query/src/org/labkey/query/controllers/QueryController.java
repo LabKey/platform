@@ -1485,7 +1485,7 @@ public class QueryController extends SpringActionController
     }
 
     // Uck. Supports the old and new view designer.
-    protected Map<String, Object> saveCustomView(UserSchema schema, QueryDefinition queryDef,
+    protected Map<String, Object> saveCustomView(Container container, QueryDefinition queryDef,
                                                  String regionName, String viewName,
                                                  boolean share, boolean inherit,
                                                  boolean session, boolean saveFilter,
@@ -1494,7 +1494,7 @@ public class QueryController extends SpringActionController
                                                  Errors errors)
     {
         User owner = getUser();
-        boolean canSaveForAllUsers = getContainer().hasPermission(getUser(), EditSharedViewPermission.class);
+        boolean canSaveForAllUsers = container.hasPermission(getUser(), EditSharedViewPermission.class);
         if (share && canSaveForAllUsers && !session)
         {
             owner = null;
@@ -1506,7 +1506,7 @@ public class QueryController extends SpringActionController
 
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
-        boolean canEdit = view == null || session || view.canEdit(getContainer(), errors);
+        boolean canEdit = view == null || session || view.canEdit(container, errors);
         if (canEdit)
         {
             // Create a new view if none exists or the current view is a shared view
@@ -1546,6 +1546,7 @@ public class QueryController extends SpringActionController
                 view.setCanInherit(inherit);
             }
             isHidden = view.isHidden();
+            ((CustomViewImpl) view).setContainer(container);
             view.save(getUser(), getViewContext().getRequest());
             if (owner == null)
             {
@@ -1642,9 +1643,27 @@ public class QueryController extends SpringActionController
                 boolean shared = jsonView.optBoolean("shared", false);
                 boolean inherit = jsonView.optBoolean("inherit", false);
                 boolean session = jsonView.optBoolean("session", false);
+                // Users may save views to a location other than the current container
+                String containerPath = jsonView.optString("containerPath", getContainer().getPath());
+                Container container;
+                if (inherit)
+                {
+                    // Only respect this request if it's a view that is inheritable in subfolders
+                    container = ContainerManager.getForPath(containerPath);
+                }
+                else
+                {
+                    // Otherwise, save it in the current container
+                    container = getViewContext().getContainer();
+                }
+
+                if (container == null)
+                {
+                    throw new NotFoundException("No such container: " + containerPath);
+                }
 
                 Map<String, Object> savedView = saveCustomView(
-                        schema, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName,
+                        container, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName,
                         shared, inherit, session, true, new UpdateViewCallback() {
                             public void update(CustomView view, boolean saveFilter)
                             {
