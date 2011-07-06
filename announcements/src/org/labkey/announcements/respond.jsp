@@ -140,7 +140,17 @@ if (settings.hasFormatPicker())
       </table>
     </td></tr>
 </table>
-<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, false)%>&nbsp;<%=generateButton("Cancel", bean.cancelURL) %>
+<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, false)%>&nbsp;<%
+if (null != bean.cancelURL)
+{
+    %><%=generateButton("Cancel", bean.cancelURL)%><%
+}
+else
+{
+    %><%=PageFlowUtil.generateSubmitButton("Cancel", "javascript:window.history.back(); return false;")%>
+    <%
+}
+%>
 </form>
 <br>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>

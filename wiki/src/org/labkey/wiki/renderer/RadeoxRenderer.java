@@ -727,13 +727,14 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             String bold = "<div class=\"labkey-wiki\"><b class=\"bold\">something</b></div>";
             String url = "<div class=\"labkey-wiki\"><span class=\"nobr\"><a href=\"https://www.d.com/?l=q&#38;r=e\">&#104;ttps://www.d.com/?l=q&#38;r=e</a></span></div>";
             String code = "<div class=\"labkey-wiki\"><div class=\"code\"><pre>def fn:<br />something here<br />something here<br /><br />something <span class=\"java&#45;keyword\">else</span></pre></div></div>";
+            String link = "<div class=\"labkey-wiki\"><span class=\"nobr\" style=\"border:4px dotted red;\"><a href=\"https://www.labkey.org/\">To Labkey</a></span></div>";
 
             assertEquals(underline, _r.format("__something__").getHtml());
             assertEquals(italics,  _r.format("~~something~~").getHtml());
             assertEquals(bold,  _r.format("**something**").getHtml());
             assertEquals(url,  _r.format("https://www.d.com/?l=q&r=e").getHtml());
             assertEquals(code,  _r.format("{code}def fn:\nsomething here\nsomething here\n\nsomething else{code}").getHtml());
-
+            assertEquals(link,  _r.format("{link:style=border:4px dotted red;|url=https://www.labkey.org/|text=To Labkey}").getHtml());
         }
     }
 }

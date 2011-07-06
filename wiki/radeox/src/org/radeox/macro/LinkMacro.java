@@ -6,6 +6,9 @@
  *
  * Please visit http://radeox.org/ for updates and contact.
  *
+ * Modifed by Isaac Hodes on 7/5/2011
+ * added the style attr
+ *
  * --LICENSE NOTICE--
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,39 +47,44 @@ import java.io.Writer;
  */
 
 public class LinkMacro extends BaseLocaleMacro {
-  public String getLocaleKey() {
-    return "macro.link";
-  }
-
-  public void execute(Writer writer, MacroParameter params)
-      throws IllegalArgumentException, IOException {
-
-    RenderContext context = params.getContext();
-    RenderEngine engine = context.getRenderEngine();
-
-    String text = params.get("text", 0);
-    String url = params.get("url", 1);
-    String img = params.get("img", 2);
-
-    // check for single url argument (text == url)
-    if(params.getLength() == 1) {
-      url = text;
-      text = Encoder.toEntity(text.charAt(0)) + Encoder.escape(text.substring(1));
+    public String getLocaleKey() {
+        return "macro.link";
     }
 
-    if (url != null && text != null) {
-      writer.write("<span class=\"nobr\">");
-      if (!"none".equals(img) && engine instanceof ImageRenderEngine) {
-        writer.write(((ImageRenderEngine) engine).getExternalImageLink());
-      }
-      writer.write("<a href=\"");
-      writer.write(url);
-      writer.write("\">");
-      writer.write(text);
-      writer.write("</a></span>");
-    } else {
-      throw new IllegalArgumentException("link needs a name and a url as argument");
+    public void execute(Writer writer, MacroParameter params)
+            throws IllegalArgumentException, IOException {
+
+        RenderContext context = params.getContext();
+        RenderEngine engine = context.getRenderEngine();
+
+        String text = params.get("text", 0);
+        String url = params.get("url", 1);
+        String img = params.get("img", 2);
+        String style = params.get("style", 3);
+
+
+        // check for single url argument (text == url)
+        if(params.getLength() == 1) {
+            url = text;
+            text = Encoder.toEntity(text.charAt(0)) + Encoder.escape(text.substring(1));
+        }
+
+        if (url != null && text != null) {
+            writer.write("<span class=\"nobr\"");
+            if(style != null)
+                writer.write(" style=\"" + style + "\"");
+            writer.write(">");
+            if (!"none".equals(img) && engine instanceof ImageRenderEngine) {
+                writer.write(((ImageRenderEngine) engine).getExternalImageLink());
+            }
+            writer.write("<a href=\"");
+            writer.write(url);
+            writer.write("\">");
+            writer.write(text);
+            writer.write("</a></span>");
+        } else {
+            throw new IllegalArgumentException("link needs a name and a url as argument");
+        }
+        return;
     }
-    return;
-  }
 }
