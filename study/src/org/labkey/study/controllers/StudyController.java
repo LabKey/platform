@@ -940,7 +940,6 @@ public class StudyController extends BaseStudyController
             StringBuffer sb = new StringBuffer();
             if (def.getDescription() != null && def.getDescription().length() > 0)
                 sb.append(PageFlowUtil.filter(def.getDescription(), true, true)).append("<br/>");
-            sb.append("<br/><span><b>View :</b> ").append(filter(getViewName())).append("</span>");
             if (_cohortFilter != null)
                 sb.append("<br/><span><b>Cohort :</b> ").append(filter(_cohortFilter.getDescription(getContainer(), getUser()))).append("</span>");
             if (qcStateSet != null)
