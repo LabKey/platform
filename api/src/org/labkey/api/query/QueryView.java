@@ -1372,7 +1372,7 @@ public class QueryView extends WebPartView<Object>
     {
         _report = getSettings().getReportView();
 
-        return _report != null && getSettings().getViewName() == null;
+        return _report != null && StringUtils.trimToNull(getSettings().getViewName()) == null;
     }
 
     public DataView createDataView()

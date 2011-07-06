@@ -1,6 +1,7 @@
 package org.labkey.api.query;
 
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.AbstractDataRegion;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.RenderContext;
@@ -24,6 +25,7 @@ import java.io.Writer;
 public class ReportDataRegion extends AbstractDataRegion
 {
     private HttpView _reportView;
+    private Report _report;
     private ButtonBar _buttonBar;
 
     public ReportDataRegion(QuerySettings settings, ViewContext context, Report report)
@@ -32,6 +34,7 @@ public class ReportDataRegion extends AbstractDataRegion
 
         try {
             report.getDescriptor().setProperty(ReportDescriptor.Prop.dataRegionName, settings.getDataRegionName());
+            _report = report;
             _reportView = report.getRunReportView(context);
         }
         catch (Exception e)
@@ -47,6 +50,7 @@ public class ReportDataRegion extends AbstractDataRegion
             StringBuilder sb = new StringBuilder();
             Writer out = response.getWriter();
 
+            addViewMessage(sb, ctx);
             addFilterMessage(sb, ctx, true);
             renderHeaderScript(ctx, out, sb.toString());
 
@@ -116,5 +120,13 @@ public class ReportDataRegion extends AbstractDataRegion
     public void setButtonBar(ButtonBar buttonBar)
     {
         _buttonBar = buttonBar;
+    }
+
+    protected void addViewMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+    {
+        headerMessage.append("<span class='labkey-strong'>View:</span>&nbsp;");
+        headerMessage.append("<span style='padding:5px 45px 5px 0;'>");
+        headerMessage.append(_report.getDescriptor().getReportName());
+        headerMessage.append("</span>&nbsp;");
     }
 }

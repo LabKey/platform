@@ -55,10 +55,6 @@
     String scriptId = "script" + uid;
     String viewDivId = "viewDiv" + uid;
 
-    // We might be rendering within a data region or on a page with multiple reports... so we need a different
-    // data region name for the data tab.
-    String dataTabRegionName = "reportRegion" + uid;
-
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
@@ -106,6 +102,12 @@ var f_scope<%=uid%> = new (function() {
     var dataFirstLoad = true;
     var dataRegion = null;
     var readOnly = <%=readOnly%>;
+
+    // We might be rendering within a data region or on a page with multiple reports... so we need a different
+    // data region name for the data tab.
+
+    var dataRegionName = <%=q(report.getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName))%>;
+    var dataTabRegionName = <%=q(report.getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName) + "_report")%>;
 
     Ext.onReady(function(){
         scriptText = document.getElementById("<%=scriptId%>");
@@ -206,7 +208,10 @@ var f_scope<%=uid%> = new (function() {
             previousViewURL = currentViewURL;
 
             var config = {
-                parameters: {script: currentScript}
+                parameters: {
+                    script: currentScript,
+                    dataRegionName: dataRegionName
+                }
             };
 
             Ext.Ajax.request({
@@ -312,7 +317,7 @@ var f_scope<%=uid%> = new (function() {
                 viewName: <%=q(bean.getViewName())%>,<%
                 }
                 %>
-                dataRegionName: <%=q(dataTabRegionName)%>,
+                dataRegionName: dataTabRegionName,
                 removeableFilters: removeableFilters,
                 removeableSort: sort,
                 buttonBarPosition: 'none',
@@ -381,6 +386,25 @@ var f_scope<%=uid%> = new (function() {
             {
                 dataFirstLoad = false;
                 previousViewURL = getViewURL();
+            }
+
+            // show any filter messages on the enclosing dataregion's msg area
+            var outerRegion = LABKEY.DataRegions[dataRegionName];
+            if (outerRegion && dr.getMessage())
+            {
+                var html = dr.getMessage();
+                var oldScript = 'LABKEY.DataRegions[\'' + dataTabRegionName + '\'].clearAllFilters();'
+                var newScript = 'LABKEY.DataRegions[\'' + dataRegionName + '\'].clearAllFilters();';
+
+                var idx = html.indexOf(oldScript)
+
+                if (idx != -1)
+                {
+                    html = html.substring(0, idx) + newScript + html.substring(idx + oldScript.length);
+                    outerRegion.clearMessage();
+                    outerRegion.showMessage(html);
+                }
+                dr.clearMessage();
             }
         }
     }

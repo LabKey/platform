@@ -123,11 +123,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         if (urlFilter != null && !urlFilter.getWhereParamNames().isEmpty())
         {
             StringBuilder filterDesc = new StringBuilder();
-            if (ctx.getView() != null && StringUtils.isNotEmpty(ctx.getView().getName()))
-                filterDesc.append("View \"").append(ctx.getView().getName()).append("\"");
-            else
-                filterDesc.append("This view");
-            filterDesc.append(" is filtered: ").append(urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
+            filterDesc.append(urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
             {
                 @Override
                 public String format(String columnName)
@@ -186,6 +182,18 @@ public abstract class AbstractDataRegion extends DisplayElement
         return buf.toString();
     }
 
+    protected void addViewMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+    {
+        headerMessage.append("<span class='labkey-strong'>View:</span>&nbsp;");
+        headerMessage.append("<span style='padding:5px 45px 5px 0;'>");
+        if (ctx.getView() != null && StringUtils.isNotEmpty(ctx.getView().getName()))
+            headerMessage.append(ctx.getView().getName());
+        else
+            headerMessage.append("default");
+
+        headerMessage.append("</span>&nbsp;");
+    }
+
     /**
      * Adds any filter error messages and optionally the filter description that is applied to the current context.
      * @param headerMessage The StringBuilder to append messages to
@@ -200,12 +208,9 @@ public abstract class AbstractDataRegion extends DisplayElement
 
         if (filterDescription != null)
         {
-            if (headerMessage.length() > 0)
-                headerMessage.append("<br>");
-            headerMessage.append(PageFlowUtil.filter(filterDescription));
-            headerMessage.append(" <a href=\"#\" onClick=\"javascript:LABKEY.DataRegions['");
-            headerMessage.append(PageFlowUtil.filter(getName()));
-            headerMessage.append("'].clearAllFilters(); return false;\">Clear all filters</a>");
+            headerMessage.append("<span class='labkey-strong'>Filter:</span>&nbsp;");
+            headerMessage.append(PageFlowUtil.filter(filterDescription)).append("&nbsp;&nbsp;");
+            headerMessage.append(PageFlowUtil.generateButton("Clear", "#", "LABKEY.DataRegions['" + PageFlowUtil.filter(getName()) + "'].clearAllFilters(); return false;"));
         }
     }
 

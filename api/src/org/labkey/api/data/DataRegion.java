@@ -776,6 +776,7 @@ public class DataRegion extends AbstractDataRegion
                     _totalRows = getOffset() + _rowCount.intValue();
             }
 
+            addViewMessage(headerMessage, ctx);
             addFilterMessage(headerMessage, ctx, isShowFilterDescription());
             renderHeaderScript(ctx, out, headerMessage.toString(), showRecordSelectors);
 

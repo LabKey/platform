@@ -608,6 +608,7 @@ LABKEY.DataRegion = function (config)
      */
     this.showMessage = function (html)
     {
+        this.message = html;
         var div = this.msgbox.child("div");
         if (div.first())
             div.createChild({tag: 'hr'});
@@ -668,9 +669,15 @@ LABKEY.DataRegion = function (config)
     /** Clear the message box contents. */
     this.clearMessage = function ()
     {
+        this.message = undefined;
         var div = this.msgbox.child("div");
         div.dom.innerHTML = "";
     };
+
+    this.getMessage = function ()
+    {
+        return this.message;
+    }
 
     this.alterSortString = function(currentSortString, columnName, direction)
     {
