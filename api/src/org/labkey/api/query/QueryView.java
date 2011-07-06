@@ -259,7 +259,9 @@ public class QueryView extends WebPartView<Object>
     {
         out.print("<p class=\"labkey-error\">");
         out.print(PageFlowUtil.filter(message));
-        out.print("</p>");
+        if (_queryDef != null && _queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
+            out.print("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, _queryDef) + "\">Edit Query</a>");
+        out.print("</p>");                
 
         Set<String> seen = new HashSet<String>();
 

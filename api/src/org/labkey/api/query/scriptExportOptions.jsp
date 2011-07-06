@@ -43,7 +43,7 @@
             </table>
         </td>
         <td class="labkey-export-tab-buttons">
-            <%=generateButton("Create Script", "", "window.location = getRadioButtonValue(document.getElementById(\"" + guid + "\")); return false;") %>
+            <%=generateButton("Create Script", "", "var _scriptUrl = getRadioButtonValue(document.getElementById(\"" + guid + "\")); window.open(_scriptUrl, \"_newtab\"); return false;") %>
         </td>
     </tr>
 </table>
