@@ -132,6 +132,7 @@
             canEdit   : <%= canEdit %>,
             builtIn   : <%= builtIn %>,
             metadataEdit : <%= form.getQueryDef().isMetadataEditable() && canEdit %>,
+            propEdit     : <%= canEdit && !builtIn %>,
             queryText    : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
             metadataText : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,
             help         : <%=PageFlowUtil.jsString(new HelpTopic(sqlHelpTopic).toString())%>,

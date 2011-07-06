@@ -32,6 +32,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             xtype   : 'button',
             text    : 'Save & Finish',
             cls     : 'query-button',
+            tooltip : 'Save & View Results',
             handler : function() { this.onSave(true); },
             disabled: !this.query.canEdit,
             scope   : this
@@ -39,18 +40,35 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             xtype   : 'button',
             text    : 'Save',
             cls     : 'query-button',
-            tooltip : 'Ctrl + S',
+            tooltip : 'Ctrl+S',
             handler : this.onSave,
             disabled: !this.query.canEdit,
             scope   : this
         },{
             xtype   : 'button',
             text    : 'Execute Query',
-            tooltip : 'Ctrl + Enter',
+            tooltip : 'Ctrl+Enter',
             cls     : 'query-button',
             handler : function(btn) { this.execute(true); },
             scope   : this
         });
+
+        if (this.query.propEdit) {
+            items.push({
+                xtype  : 'button',
+                text   : 'Edit Properties',
+                tooltip: 'Name, Description, Sharing',
+                cls    : 'query-button',
+                handler: function(btn) {
+                    var url = LABKEY.ActionURL.buildURL('query', 'propertiesQuery', null, {
+                        schemaName : this.query.schema,
+                        'query.queryName' : this.query.query
+                    });
+                    window.location = url;
+                },
+                scope : this
+            });
+        }
         
         if (this.query.metadataEdit) {
             items.push({
@@ -82,11 +100,17 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                                 id   : '',
                                 cls  : 'extContainer',
                                 items: [{
-                                    text : 'Save&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctrl + S'
+                                    text : 'Save&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+S',
+                                    handler : this.onSave,
+                                    scope : this
                                 },{
-                                    text : 'Execute&nbsp;&nbsp;&nbsp;ctrl + Enter'
+                                    text : 'Execute&nbsp;&nbsp;&nbsp;Ctrl+Enter',
+                                    handler : function() { this.execute(true); },
+                                    scope   : this
                                 },{
-                                    text : 'Edit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctrl + E'
+                                    text : 'Edit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+E',
+                                    handler : function() { this.focusEditor(); },
+                                    scope : this
                                 }]
                             }
                         },'-',{
@@ -208,10 +232,12 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 masking   : false,
                 timeout   : Ext.Ajax.timeout, // 12451 -- control the timeout
                 success   : function(response) {
+                    console.info('have success');
                     this.showErrors();
                     this.fireEvent('loaded', true);
                 },
                 failure   : function(response) {
+                    console.info('have failure');
                     this.fireEvent('loaded', false);
                     if (response && response.parseErrors) {
                         var errors = [];
@@ -241,6 +267,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 }
             }
 
+            console.info(config);
             var qwp = new LABKEY.QueryWebPart(config);
         }
         else { this.fireEvent('loaded', true); }
@@ -334,7 +361,6 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
      * Returns whether the query has changed from its last saved state.
      */
     isSaveDirty : function() {
-        console.info('source: ' + (this.eal.getValue(this.editorId).toLowerCase() != this.query.queryText.toLowerCase()));
         return this.eal.getValue(this.editorId).toLowerCase() != this.query.queryText.toLowerCase();
     },
 
