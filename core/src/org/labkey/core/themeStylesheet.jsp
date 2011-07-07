@@ -34,7 +34,6 @@
 
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-    String navBarWidth = laf.getNavigationBarWidth();
 
     String link        = theme.getLinkColor();
     String text        = theme.getTextColor();
