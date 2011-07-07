@@ -160,21 +160,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         {
             if (initialized.get())
                 return;
-            
-            HashSet<String> seen = new HashSet<String>();
+
             ArrayList<File> roots = new ArrayList<File>();
-            
-            for (Module m : ModuleLoader.getInstance().getModules())
-            {
-                for (File d :  m.getStaticFileDirectories())
-                {
-                    if (!d.isDirectory())
-                        continue;
-                    d = FileUtil.canonicalFile(d);
-                    if (seen.add(d.getPath()))
-                        roots.add(d);
-                }
-            }
+
             // Support an additional extraWebapp directory with site-specific content. This lets users drop
             // in things like robots.txt without them being deleted at upgrade or when the server restarts.
             // Defaults to extraWebapp as a peer to the labkeyWebapp directory, but can be configured with the
@@ -191,6 +179,21 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             }
             roots.add(extraWebappDir);
 
+            // modules
+            HashSet<String> seen = new HashSet<String>();
+            for (Module m : ModuleLoader.getInstance().getModules())
+            {
+                for (File d :  m.getStaticFileDirectories())
+                {
+                    if (!d.isDirectory())
+                        continue;
+                    d = FileUtil.canonicalFile(d);
+                    if (seen.add(d.getPath()))
+                        roots.add(d);
+                }
+            }
+
+            // webapp
             roots.add(ModuleLoader.getInstance().getWebappDir());
 
             // This is so '_webdav' shows up as a child when someone does a propfind on '/'
