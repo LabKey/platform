@@ -177,7 +177,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             {
                 extraWebappDir = new File(extraWebappPath);
             }
-            roots.add(extraWebappDir);
+            if (extraWebappDir.isDirectory())
+                roots.add(extraWebappDir);
 
             // modules
             HashSet<String> seen = new HashSet<String>();
@@ -622,6 +623,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             assertTrue(rIcon.isFile());
             
             WebdavResource rI = s.lookup(new Path("I"));
+            if (null != rI && rI.exists())
+                s.removeLink(new Path("I"));
+            rI = s.lookup(new Path("I"));
             assertTrue(rI == null || !rI.exists());
             
             // This test depends on knowing some existing webapp directories
