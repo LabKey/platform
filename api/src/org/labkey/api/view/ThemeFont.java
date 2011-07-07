@@ -24,10 +24,10 @@ import java.util.*;
 
 public class ThemeFont
 {
-    protected final static ThemeFont XSMALL   = new ThemeFont("Smallest",  "11px", "13px", "18px", "18px", "25px", "13px", "13px", "11", "12");
-    protected final static ThemeFont SMALL   = new ThemeFont("Small",      "12px", "13px", "18px", "22px", "25px", "13px", "13px", "12", "13");
-    protected final static ThemeFont MEDIUM  = new ThemeFont("Medium",     "13px", "13px", "20px", "24px", "27px", "15px", "15px", "13", "14");
-    protected final static ThemeFont LARGE   = new ThemeFont("Large",      "14px", "14px", "22px", "30px", "28px", "18px", "18px", "14", "15");
+    protected final static ThemeFont XSMALL  = new ThemeFont("Smallest", "11px", "13px", "18px", "18px", "25px", "13px", "11", "12");
+    protected final static ThemeFont SMALL   = new ThemeFont("Small",    "12px", "13px", "18px", "22px", "25px", "13px", "12", "13");
+    protected final static ThemeFont MEDIUM  = new ThemeFont("Medium",   "13px", "13px", "20px", "24px", "27px", "15px", "13", "14");
+    protected final static ThemeFont LARGE   = new ThemeFont("Large",    "14px", "14px", "22px", "30px", "28px", "18px", "14", "15");
 
     public final static ThemeFont DEFAULT_THEME_FONT = MEDIUM;
 
@@ -38,12 +38,11 @@ public class ThemeFont
     private final String _sizePageHeader;
     private final String _sizeButtonHeight;
     private final String _sizeHeading_1;
-    private final String _sizeHeading_1_1;
     private final String _sizeGraphicButtonTextHeight;
     private final String _sizeGraphicTabTextHeight;
 
     private ThemeFont(String friendlyName, String sizeNormal, String sizeTextInput, String sizePageTitle, String sizePageHeader, String sizeButtonHeight,
-        String sizeHeading_1, String sizeHeading_1_1, String sizeGraphicButtonTextHeight, String sizeGraphicTabTextHeight)
+        String sizeHeading_1, String sizeGraphicButtonTextHeight, String sizeGraphicTabTextHeight)
     {
         _friendlyName = friendlyName;
         _sizeNormal = sizeNormal;
@@ -52,7 +51,6 @@ public class ThemeFont
         _sizePageHeader = sizePageHeader;
         _sizeButtonHeight = sizeButtonHeight;
         _sizeHeading_1 = sizeHeading_1;
-        _sizeHeading_1_1 = sizeHeading_1_1;
         _sizeGraphicButtonTextHeight = sizeGraphicButtonTextHeight;
         _sizeGraphicTabTextHeight = sizeGraphicTabTextHeight;
     }
@@ -85,11 +83,6 @@ public class ThemeFont
     public String getHeader_1Size()
     {
         return _sizeHeading_1;
-    }
-
-    public String getHeader_1_1Size()
-    {
-        return _sizeHeading_1_1;
     }
 
     public String getGraphicButtonTextHeight()
