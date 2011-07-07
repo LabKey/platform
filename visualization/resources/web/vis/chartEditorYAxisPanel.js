@@ -58,12 +58,12 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         });
         columnOneItems.push(this.scaleCombo);
 
-        columnOneItems.push({
+        this.labelTextField = new Ext.form.TextField({
             id: 'y-axis-label-textfield',
-            xtype: 'textfield',
             fieldLabel: 'Axis label',
             value: this.axis.label,
             width: 300,
+            enableKeyEvents: true,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
@@ -72,6 +72,11 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
                 }
             }
         });
+        this.labelTextField.addListener('keyUp', function(){
+                this.axis.label = this.labelTextField.getValue();
+                this.fireEvent('chartDefinitionChanged', false);
+            }, this, {buffer: 500});
+        columnOneItems.push(this.labelTextField);
 
         this.rangeAutomaticRadio = new Ext.form.Radio({
             name: 'yaxis_range',
@@ -202,7 +207,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
 
     setLabel: function(newLabel){
         this.axis.label = newLabel;
-        Ext.getCmp('y-axis-label-textfield').setValue(this.axis.label);
+        this.labelTextField.setValue(this.axis.label);
     },
 
     setScale: function(newScale){

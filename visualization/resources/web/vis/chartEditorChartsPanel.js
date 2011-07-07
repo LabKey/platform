@@ -90,12 +90,12 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         });
         columnOneItems.push(this.chartLayoutRadioGroup);
 
-        columnTwoItems.push({
-            xtype: 'textfield',
-            id: 'chart-title-textfield',
+        this.chartTitleTextField = new Ext.form.TextField({
+            id: 'chart-title-textfield',            
             fieldLabel: 'Chart Title',
             value: this.mainTitle,
             width: 300,
+            enableKeyEvents: true,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
@@ -104,6 +104,11 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                 }
             }
         });
+        this.chartTitleTextField.addListener('keyUp', function(){
+                this.mainTitle = this.chartTitleTextField.getValue();
+                this.fireEvent('chartDefinitionChanged', false);
+            }, this, {buffer: 500});
+        columnTwoItems.push(this.chartTitleTextField);
 
         // slider field to set the line width for the chart(s)
         this.lineWidthSliderField = new Ext.form.SliderField({
@@ -179,7 +184,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
 
     setMainTitle: function(newMainTitle){
         this.mainTitle = newMainTitle;
-        Ext.getCmp('chart-title-textfield').setValue(newMainTitle);
+        this.chartTitleTextField.setValue(newMainTitle);
     },
 
     setChartLayout: function(newChartLayout){

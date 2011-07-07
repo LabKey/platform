@@ -61,7 +61,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         if(!this.axis.label && this.zeroDateCombo && this.zeroDateCombo.getValue()) {
                             var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
                             var newLabel = "Days Since " + zeroDateLabel;
-                            Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
+                            this.labelTextField.setValue(newLabel);
 
                             this.axis.label = newLabel;
                         }
@@ -80,9 +80,9 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
                     var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
                     var ending = " Since " + zeroDateLabel;
-                    if(Ext.getCmp('x-axis-label-textfield').getValue().indexOf(ending) > -1) {
+                    if(this.labelTextField.getValue().indexOf(ending) > -1) {
                         var newLabel = record.data.value + " Since " + zeroDateLabel;
-                        Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
+                        this.labelTextField.setValue(newLabel);
 
                         this.axis.label = newLabel;
                     }
@@ -130,9 +130,9 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     // change the axis label if it has not been customized by the user
                     // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
                     var beginning = this.intervalCombo.getValue() + " Since ";
-                    if(Ext.getCmp('x-axis-label-textfield').getValue().indexOf(beginning) == 0) {
+                    if(this.labelTextField.getValue().indexOf(beginning) == 0) {
                        var newLabel = this.intervalCombo.getValue() + " Since " + record.data.label;
-                        Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
+                        this.labelTextField.setValue(newLabel);
 
                         this.axis.label = newLabel;
                     }
@@ -159,12 +159,12 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             ]
         });
 
-        columnTwoItems.push({
-            xtype: 'textfield',
-            id: 'x-axis-label-textfield',
+        this.labelTextField = new Ext.form.TextField({
+            id: 'x-axis-label-textfield',            
             fieldLabel: 'Axis label',
             value: this.axis.label,
             width: 300,
+            enableKeyEvents: true,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
@@ -173,6 +173,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 }
             }
         });
+        this.labelTextField.addListener('keyUp', function(){
+                this.axis.label = this.labelTextField.getValue();
+                this.fireEvent('chartDefinitionChanged', false);
+            }, this, {buffer: 500});
+        columnTwoItems.push(this.labelTextField);
 
         this.rangeAutomaticRadio = new Ext.form.Radio({
             name: 'xaxis_range',
@@ -349,7 +354,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     if(!this.axis.label && this.intervalCombo && this.intervalCombo.getValue() && store.find('longlabel', this.zeroDateCombo.getValue()) > -1) {
                         var zeroDateLabel = store.getAt(store.find('longlabel', this.zeroDateCombo.getValue())).data.label;
                         var newLabel = this.intervalCombo.getValue() + " Since " + zeroDateLabel;
-                        Ext.getCmp('x-axis-label-textfield').setValue(newLabel);
+                        this.labelTextField.setValue(newLabel);
 
                         this.axis.label = newLabel;
                     }
