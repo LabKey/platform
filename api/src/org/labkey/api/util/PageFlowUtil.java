@@ -1815,9 +1815,6 @@ public class PageFlowUtil
         boolean explodedExt = AppProps.getInstance().isDevMode() && false;
         boolean explodedClient = AppProps.getInstance().isDevMode();
 
-        // LABKEY
-        scripts.add("util.js");
-
         // EXT
         scripts.add(AppProps.getInstance().isDevMode() ? extBaseDebug : extBase);
         if (explodedExt)
@@ -1845,6 +1842,9 @@ public class PageFlowUtil
         scripts.add(extJsRoot + "/ext-patches.js");
         included.add(extDebug);
         included.add(extMin);
+
+        // LABKEY
+        scripts.add("util.js");
 
         // CLIENT
         for (String e : clientExploded)
