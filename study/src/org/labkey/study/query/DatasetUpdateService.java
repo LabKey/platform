@@ -75,7 +75,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         List<String> errors = new ArrayList<String>();
         String newLsid = StudyService.get().insertDatasetRow(user, container, _dataset.getDataSetId(), row, errors);
-        _potentiallyNewParticipants.add(getParticipant(row));
+
         if(errors.size() > 0)
         {
             ValidationException e = new ValidationException();
@@ -84,18 +84,38 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throw e;
         }
 
-        //update the lsid and return
+        //update the lsid
         row.put("lsid", newLsid);
+        _potentiallyNewParticipants.add(getParticipant(row, user, container));
+
         return row;
     }
 
-    private @NotNull String getParticipant(Map<String, Object> row) throws ValidationException
+    private @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException, SQLException
     {
         String columnName = _dataset.getStudy().getSubjectColumnName();
         Object participant = row.get(columnName);
         if (participant == null)
         {
             participant = row.get("ParticipantId");
+        }
+        if (participant == null)
+        {
+            try
+            {
+                // This may be an update or delete where the user specified the LSID as the key, but didn't bother
+                // sending the participant, so look it up
+                Map<String, Object> originalRow = getRow(user, container, row);
+                participant = originalRow == null ? null : originalRow.get(columnName);
+                if (participant == null)
+                {
+                    participant = originalRow.get("ParticipantId");
+                }
+            }
+            catch (InvalidKeyException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
         }
         if (participant == null)
         {
@@ -128,7 +148,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         List<String> errors = new ArrayList<String>();
         String lsid = keyFromMap(oldRow);
+        // Make sure we've found the original participant before doing the update
+        String oldParticipant = getParticipant(oldRow, user, container);
         String newLsid = StudyService.get().updateDatasetRow(user, container, _dataset.getDataSetId(), lsid, row, errors);
+        //update the lsid and return
+        row.put("lsid", newLsid);
         if(errors.size() > 0)
         {
             ValidationException e = new ValidationException();
@@ -137,8 +161,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throw e;
         }
 
-        String oldParticipant = getParticipant(oldRow);
-        String newParticipant = getParticipant(row);
+        String newParticipant = getParticipant(row, user, container);
         if (!oldParticipant.equals(newParticipant))
         {
             // Participant has changed - might be a reference to a new participant, or removal of the last reference to
@@ -147,8 +170,6 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             _potentiallyDeletedParticipants.add(oldParticipant);
         }
 
-        //update the lsid and return
-        row.put("lsid", newLsid);
         return row;
     }
 
@@ -165,8 +186,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException
     {
+        // Make sure we've found the original participant before doing the delete
+        String participant = getParticipant(oldRow, user, container);
         StudyService.get().deleteDatasetRow(user, container, _dataset.getDataSetId(), keyFromMap(oldRow));
-        _potentiallyDeletedParticipants.add(getParticipant(oldRow));
+        _potentiallyDeletedParticipants.add(participant);
         return oldRow;
     }
 
