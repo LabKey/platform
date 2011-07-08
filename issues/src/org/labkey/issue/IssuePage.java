@@ -40,8 +40,10 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -462,9 +464,19 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderAttachments(ViewContext context, AttachmentParent parent)
     {
-        Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
+        List<Attachment> attachments = new ArrayList(AttachmentService.get().getAttachments(parent));
+
         StringBuilder sb = new StringBuilder();
         boolean canEdit = isEditable("attachments");
+
+        Collections.sort(attachments, new Comparator<Attachment>()
+        {
+            @Override
+            public int compare(Attachment o1, Attachment o2)
+            {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
 
         if (attachments.size() > 0)
         {
