@@ -105,7 +105,7 @@ public class Issue extends Entity implements Serializable, Cloneable
         resolved = null;
         duplicate = null;
 
-        if (resolvedBy != null)
+        if (assignedTo == null && resolvedBy != null)
             assignedTo = resolvedBy;
 
         resolvedBy = null;
