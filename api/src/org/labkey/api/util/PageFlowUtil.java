@@ -102,7 +102,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -137,33 +136,12 @@ public class PageFlowUtil
     private static Logger _log = Logger.getLogger(PageFlowUtil.class);
     private static final String _newline = System.getProperty("line.separator");
 
-    private static final Pattern urlPattern = Pattern.compile(".*((http|https|ftp|mailto)://\\S+).*");
     private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+).*");
 
     /**
      * Default parser class.
      */
     protected static final String DEFAULT_PARSER_NAME = "org.apache.xerces.parsers.SAXParser";
-
-    String encodeURLs(String input)
-    {
-        Matcher m = urlPattern.matcher(input);
-        StringBuffer sb = new StringBuffer();
-        int start;
-        int end = 0;
-        while (m.find())
-        {
-            start = m.start();
-            String href = m.group(1);
-            if (href.endsWith(".")) href = href.substring(0, href.length() - 1);
-            sb.append(input.substring(end, start));
-            sb.append("<a href=\"").append(href).append("\">").append(href).append("</a>");
-            end = m.end();
-        }
-        sb.append(input.substring(end));
-        return sb.toString();
-    }
-
 
     static public final String NONPRINTING_ALTCHAR = "~";
 
@@ -481,7 +459,7 @@ public class PageFlowUtil
         if (null == c || c.isEmpty())
             return null;
         String strAnd = "";
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (Map.Entry<?,?> entry : c)
         {
             sb.append(strAnd);
@@ -507,7 +485,7 @@ public class PageFlowUtil
         if (null == pvs || pvs.isEmpty())
             return null;
         String strAnd = "";
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (PropertyValue entry : pvs.getPropertyValues())
         {
             Object key = entry.getName();
@@ -621,31 +599,6 @@ public class PageFlowUtil
         return ret;
     }
 
-    public static URI redirectToURI(HttpServletRequest request, String uri)
-    {
-        if (null == uri)
-            uri = request.getContextPath() + "/";
-
-        // Try redirecting to the URI stashed in the session
-        try
-        {
-            return new URI(uri);
-        }
-        catch (Exception x)
-        {
-            // That didn't work, just redirect home
-            try
-            {
-                return new URI(request.getContextPath());
-            }
-            catch (Exception y)
-            {
-                return null;
-            }
-        }
-    }
-
-
     // Cookie helper function -- loops through Cookie array and returns matching value (or defaultValue if not found)
     public static String getCookieValue(Cookie[] cookies, String cookieName, String defaultValue)
     {
@@ -705,8 +658,7 @@ public class PageFlowUtil
                 isCompressed = byteArrayInputStream;
             }
             ObjectInputStream ois = new ObjectInputStream(isCompressed);
-            Object obj = ois.readObject();
-            return obj;
+            return ois.readObject();
         }
         catch (ClassNotFoundException x)
         {
@@ -951,8 +903,7 @@ public class PageFlowUtil
             };
         mv.getView().render(mv.getModel(), request, sresponse);
         String sheet = writer.toString();
-        Content c = new Content(sheet);
-        return c;
+        return new Content(sheet);
     }
 
 
@@ -1015,14 +966,6 @@ public class PageFlowUtil
 
         return contents;
     }
-
-
-    // Fetch the contents of a file, and return it in a list.
-    public static List<String> getFileContentsAsList(File file) throws IOException
-    {
-        return getStreamContentsAsList(new FileInputStream(file));
-    }
-
 
     public static boolean empty(String str)
     {
@@ -1096,7 +1039,7 @@ public class PageFlowUtil
         return generateButton(text, href, null);
     }
 
-    public static String generateButton(String text, String href, String onClick)
+    public static String generateButton(String text, String href, @Nullable String onClick)
     {
         return generateButton(text, href, onClick, "");
     }
@@ -1108,13 +1051,8 @@ public class PageFlowUtil
     
     public static String generateButtonHtml(String html, String href, String onClick, String attributes)
     {
-        char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
-
-        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
-        String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
-
         return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" +
-                " onClick=" + script  +
+                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
                 (attributes != null ? " " + attributes : "") +
                 "><span>" + html + "</span></a>";
     }
@@ -1124,7 +1062,7 @@ public class PageFlowUtil
         return generateButton(text, href, null);
     }
 
-    public static String generateButton(String text, URLHelper href, String onClick)
+    public static String generateButton(String text, URLHelper href, @Nullable String onClick)
     {
         // 11525 : NPE caused by generateButton.
         if (href == null)
@@ -1138,22 +1076,22 @@ public class PageFlowUtil
         return generateSubmitButton(text, null);
     }
 
-    public static String generateSubmitButton(String text, String onClickScript)
+    public static String generateSubmitButton(String text, @Nullable String onClickScript)
     {
         return generateSubmitButton(text, onClickScript, null);
     }
 
-    public static String generateSubmitButton(String text, String onClick, String attributes)
+    public static String generateSubmitButton(String text, String onClick, @Nullable String attributes)
     {
         return generateSubmitButton(text, onClick, attributes, true);
     }
 
-    public static String generateSubmitButton(String text, String onClick, String attributes, boolean enabled)
+    public static String generateSubmitButton(String text, @Nullable String onClick, @Nullable String attributes, boolean enabled)
     {
         return generateSubmitButton(text, onClick, attributes, enabled, false);
     }
 
-    public static String generateSubmitButton(String text, String onClick, String attributes, boolean enabled, boolean disableOnClick)
+    public static String generateSubmitButton(String text, @Nullable String onClick, @Nullable String attributes, boolean enabled, boolean disableOnClick)
     {
         String id = GUID.makeGUID();
         char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
@@ -1187,7 +1125,7 @@ public class PageFlowUtil
 
         sb.append(" href=\"#\"");
 
-        sb.append(" onclick=").append(wrapOnClick(onClickMethod));
+        sb.append(" onclick=\"").append(filter(onClickMethod)).append("\"");
 
         if (attributes != null)
             sb.append(" ").append(" ").append(attributes);
@@ -1198,18 +1136,12 @@ public class PageFlowUtil
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
-    public static String generateDropDownButton(String text, String href, String onClick, String attributes)
+    public static String generateDropDownButton(String text, String href, String onClick, @Nullable String attributes)
     {
-        char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
-
-        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
-        String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
-
-        String myReturn = "<a class=\"labkey-menu-button\" href=\"" + filter(href) + "\"" +
-                " onClick=" + script +
+        return "<a class=\"labkey-menu-button\" href=\"" + filter(href) + "\"" +
+                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
                 (attributes != null ? " " + attributes : "") +
                 "><span>" + filter(text) + "</span>&nbsp;<span class=\"css-arrow-down\"></span></a>";
-        return myReturn;
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
@@ -1221,13 +1153,8 @@ public class PageFlowUtil
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
     public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset)
     {
-        char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
-
-        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
-        String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
-
         return "<a  style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
-                " onClick=" + script +
+                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
                 "><span>" + text + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
                 "/_images/text_link_arrow.gif\" style=\"position:relative; background-color:transparent; width:10px; height:auto; top:" + offset +"px; right:0;\"></a>";
     }
@@ -1235,12 +1162,9 @@ public class PageFlowUtil
     /* Renders image and a drop down wrapped in an unstyled link */
     public static String generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId)
     {
-        char quote = getUsedQuoteSymbol(onClick);
-
-        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
-        String script = wrapOnClick(onClick != null ? checkDisabled + onClick : checkDisabled);
-
-        return "<a href=\"" + filter(href) +"\" onClick=" + script +"><img id=\"" + imageId + "\" title=\"" + text + "\"src=\"" + imageSrc + "\"/></a>";
+        return "<a href=\"" + filter(href) +"\"" +
+            " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
+            "><img id=\"" + imageId + "\" title=\"" + text + "\"src=\"" + imageSrc + "\"/></a>";
     }
 
     /* Renders a lightly colored inactive button, or in other words, a disabled span wrapped in a link of type labkey-disabled-button */
@@ -1253,14 +1177,6 @@ public class PageFlowUtil
     public static String generateDisabledSubmitButton(String text, String onClick, String attributes)
     {
         return generateSubmitButton(text, onClick, attributes, false);
-    }
-
-    /* This function is used so that the onClick script can use either " or ' quote scheme inside of itself */
-    public static String wrapOnClick(String onClick)
-    {
-        char quote = getUnusedQuoteSymbol(onClick);
-
-        return quote + onClick + quote;
     }
 
     /**
@@ -1306,7 +1222,7 @@ public class PageFlowUtil
     }
 
     @Deprecated
-    public static String textLink(String text, String href, String onClickScript, String id)
+    public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id)
     {
         return textLink(text, href, onClickScript, id, Collections.<String, String>emptyMap());
     }
@@ -1648,7 +1564,7 @@ public class PageFlowUtil
     {
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS());
-        sb.append(getStylesheetIncludes(c, userAgent, false));
+        sb.append(getStylesheetIncludes(c, userAgent));
         sb.append(getJavaScriptIncludes());
         return sb.toString();
     }
@@ -1674,12 +1590,12 @@ public class PageFlowUtil
 
     public static String getStylesheetIncludes(Container c)
     {
-        return getStylesheetIncludes(c, null, true);
+        return getStylesheetIncludes(c, null);
     }
 
 
-    /** @param forEmail whether this is intended for emailing, in which case we shouldn't include any JavaScript at all */
-    public static String getStylesheetIncludes(Container c, @Nullable String userAgent, boolean forEmail)
+    /** */
+    public static String getStylesheetIncludes(Container c, @Nullable String userAgent)
     {
         boolean oldIE = null != userAgent && (-1 != userAgent.indexOf("MSIE 6") || -1 != userAgent.indexOf("MSIE 7"));
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
@@ -1745,16 +1661,6 @@ public class PageFlowUtil
         sb.append("<link href=\"");
         sb.append(filter(printStyleURL));
         sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\" >\n");
-
-//        if (forEmail)
-//        {
-//            // mark these stylesheets as included (in case someone else tries)
-//            sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
-//            sb.append("LABKEY.loadedScripts('" + extJsRoot + "/resources/css/ext-all.css','" + theme.getStyleSheet() + "','printStyle.css');\n");
-//            if (useLESS)
-//                sb.append("LABKEY.requiresScript('less-1.0.35.js',true);\n");
-//            sb.append("</script>\n");
-//        }
 
         return sb.toString();
     }
@@ -2092,8 +1998,6 @@ public class PageFlowUtil
             _illegalElements.add("plaintext");
         }
 
-        static HashSet<String> _illegalAttributes = new HashSet<String>();
-
         Collection<String> _errors;
         HashSet<String> _reported = new HashSet<String>();
 
@@ -2300,27 +2204,6 @@ public class PageFlowUtil
         }
     }
 
-    static public String getResourceAsString(Class clazz, String resource)
-    {
-        InputStream is = null;
-        try
-        {
-            is = clazz.getResourceAsStream(resource);
-            if (is == null)
-                return null;
-            return PageFlowUtil.getStreamContentsAsString(is);
-        }
-        finally
-        {
-            close(is);
-        }
-    }
-
-    static public String _gif()
-    {
-        return _gif(1, 1);
-    }
-
     static public String _gif(int height, int width)
     {
         StringBuilder ret = new StringBuilder();
@@ -2334,48 +2217,10 @@ public class PageFlowUtil
         return ret.toString();
     }
 
-    static public String strCheckbox(String name, boolean checked)
-    {
-        return strCheckbox(name, null, checked);
-    }
-
-    static public String strCheckbox(String name, String value, boolean checked)
-    {
-        StringBuilder out = new StringBuilder();
-        String htmlName = h(name);
-
-        out.append("<input type=\"checkbox\" name=\"");
-        out.append(htmlName);
-        out.append("\"");
-        if (null != value)
-        {
-            out.append(" value=\"");
-            out.append(h(value));
-            out.append("\"");
-        }
-        if (checked)
-        {
-            out.append(" checked");
-        }
-        out.append(">");
-        out.append("<input type=\"hidden\" name=\"");
-        out.append(SpringActionController.FIELD_MARKER);
-        out.append(htmlName);
-        out.append("\">");
-        return out.toString();
-    }
-
-
-    /** CONSOLIDATE ALL .lastFilter handling **/
-
-    public static void saveLastFilter()
-    {
-        ViewContext context = HttpView.getRootContext();
-        saveLastFilter(context, context.getActionURL(), "");
-    }
-
-
-    // scope is not fully supported
+    /**
+     * CONSOLIDATE ALL .lastFilter handling
+     * scope is not fully supported
+     */
     public static void saveLastFilter(ViewContext context, ActionURL url, String scope)
     {
         boolean lastFilter = ColumnInfo.booleanFromString(url.getParameter(scope + DataRegion.LAST_FILTER_PARAM));

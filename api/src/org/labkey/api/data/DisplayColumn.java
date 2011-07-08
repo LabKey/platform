@@ -469,7 +469,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (navtree != null)
         {
             out.write(" onclick=\"showMenu(this, ");
-            out.write(PageFlowUtil.jsString(navtree.getId()));
+            out.write(PageFlowUtil.filter(PageFlowUtil.jsString(navtree.getId())));
             out.write(", null);\"");
         }
         out.write(">\n");

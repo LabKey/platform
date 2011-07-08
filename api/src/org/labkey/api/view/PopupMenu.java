@@ -169,7 +169,7 @@ public class PopupMenu extends DisplayElement
         StringBuilder sb = new StringBuilder();
 
         sb.append("{cls:'extContainer',");
-        sb.append("id:").append(PageFlowUtil.qh(id)).append(",\n");
+        sb.append("id:").append(PageFlowUtil.jsString(id)).append(",\n");
         sb.append("items:[");
         for (NavTree tree : trees)
         {

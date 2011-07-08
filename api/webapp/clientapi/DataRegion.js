@@ -1524,10 +1524,18 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
         var allowableContainerFilters = config.allowableContainerFilters;
 
         var containerData = new Array();
-        for (var i = 0; i < targetContainers.length; i++)
+        if (targetContainers)
         {
-            var targetContainer = targetContainers[i];
-            containerData[i] = [targetContainers[i].path];
+            for (var i = 0; i < targetContainers.length; i++)
+            {
+                var targetContainer = targetContainers[i];
+                containerData[i] = [targetContainers[i].path];
+            }
+        }
+        else
+        {
+            // Assume view should be saved to current container
+            containerData[0] = LABKEY.ActionURL.getContainer();
         }
 
         var containerStore = new Ext.data.ArrayStore({

@@ -98,7 +98,7 @@ public class PanelButton extends ActionButton
                 "LABKEY.requiresScript(\"groupTabPanel/GroupTab.js\", true);\n" +
                 "});</script>");
         out.append(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
-                "LABKEY.DataRegions[" + PageFlowUtil.filterQuote(_dataRegionName) + "].showButtonPanel(this, " + config + ");", attributes));
+                "LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(this, " + config + ");", attributes));
     }
 
     public void addSubPanel(String caption, HttpView view)

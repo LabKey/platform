@@ -166,7 +166,7 @@ public class StandardETL implements DataIteratorBuilder, Runnable
          */
         List<ColumnInfo> cols = _target.getColumns();
         Map<FieldKey, TranslateHelper> unusedCols = new HashMap<FieldKey,TranslateHelper>(cols.size() * 2);
-        Map<String, TranslateHelper> translateHeleprMap = new CaseInsensitiveHashMap<TranslateHelper>(cols.size()*4);
+        Map<String, TranslateHelper> translateHelperMap = new CaseInsensitiveHashMap<TranslateHelper>(cols.size()*4);
         for (ColumnInfo col : cols)
         {
             if (col.isMvIndicatorColumn() || col.isRawValueColumn())
@@ -175,7 +175,7 @@ public class StandardETL implements DataIteratorBuilder, Runnable
             TranslateHelper p = new TranslateHelper(col,dp);
             String uri = col.getPropertyURI();
             if (null != uri)
-                 translateHeleprMap.put(uri, p);
+                 translateHelperMap.put(uri, p);
             unusedCols.put(col.getFieldKey(), p);
         }
 
@@ -192,7 +192,7 @@ public class StandardETL implements DataIteratorBuilder, Runnable
             ColumnInfo targetCol = matches.get(i);
             TranslateHelper to = null;
             if (null != targetCol)
-                to = translateHeleprMap.get(targetCol.getPropertyURI());
+                to = translateHelperMap.get(targetCol.getPropertyURI());
 
             if (null != to)
             {
