@@ -46,6 +46,8 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     {
         super(rootPanel, parent, service, new GWTColumnInfo());
         _contentPanel.insert(_otherContainerMessage, 0);
+        // Since removing a field won't delete any real data, don't bother lecturing the user on the danger
+        _warnAboutDelete = false;
     }
 
     private ImageButton getWrapFieldButton()
