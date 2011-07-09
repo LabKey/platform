@@ -21,6 +21,7 @@ import org.apache.poi.ss.format.CellFormat;
 import org.apache.poi.ss.format.CellFormatter;
 import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -82,12 +83,28 @@ public class ExcelFactory
                         return formatter.format(cell.getBooleanCellValue());
                     case Cell.CELL_TYPE_NUMERIC:
                         return formatter.format(cell.getNumericCellValue());
+                    case Cell.CELL_TYPE_FORMULA:
+                    {
+                        Workbook wb = cell.getSheet().getWorkbook();
+                        FormulaEvaluator evaluator = createFormulaEvaluator(wb);
+                        if (evaluator != null)
+                        {
+                            String val = evaluator.evaluate(cell).formatAsString();
+                            return val;
+                        }
+                        return "";
+                    }
                 }
                 return cell.getStringCellValue();
             }
             return CellFormat.getInstance(cell.getCellStyle().getDataFormatString()).apply(cell).text;
         }
         return "";
+    }
+
+    public static FormulaEvaluator createFormulaEvaluator(Workbook workbook)
+    {
+        return workbook != null ? workbook.getCreationHelper().createFormulaEvaluator() : null;
     }
 
     /**

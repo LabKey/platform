@@ -431,7 +431,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         Ext.Ajax.request({
             timeout: (this.timeout == undefined) ? 30000 : this.timeout,
             url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
-            success: function(response) {
+            success: function(response, options) {
                 if (timerId > 0)
                     clearTimeout(timerId);
 
@@ -474,6 +474,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                             // for the webpart itself (as opposed to the webpart's contents)?
 
                             this.dataRegion = null;
+                            if (this._failure)
+                            {
+                                response.statusText = 'The dataregion failed to be rendered to the page.';
+                                this._failure.call(this.scope || this, response, options);
+                            }
                         }
 
                         this.fireEvent("render");
