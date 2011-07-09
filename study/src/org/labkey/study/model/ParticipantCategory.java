@@ -17,9 +17,11 @@ package org.labkey.study.model;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -203,6 +205,11 @@ public class ParticipantCategory extends Entity
         json.put("autoUpdate", isAutoUpdate());
         json.put("created", getCreated());
 
+        if (context != null)
+        {
+            json.put("canEdit", canEdit(context.getContainer(), currentUser));
+            json.put("canDelete", canDelete(context.getContainer(), currentUser));
+        }
         User user = UserManager.getUser(getCreatedBy());
         json.put("createdBy", createDisplayValue(getCreatedBy(), user != null ? user.getDisplayName(currentUser) : getCreatedBy()));
 
@@ -272,5 +279,31 @@ public class ParticipantCategory extends Entity
     public int hashCode()
     {
         return _rowId;
+    }
+
+    public boolean canEdit(Container container, User user)
+    {
+        if (isShared())
+            return container.hasPermission(user, AdminPermission.class);
+        else
+        {
+            User owner = UserManager.getUser(getCreatedBy());
+            return (owner != null && !owner.isGuest()) ? owner.equals(user) : true;
+        }
+    }
+
+    public boolean canDelete(Container container, User user)
+    {
+        return canEdit(container, user);
+    }
+    
+    public boolean canRead(Container container, User user)
+    {
+        if (!isShared())
+        {
+            User owner = UserManager.getUser(getCreatedBy());
+            return (owner != null && !owner.isGuest()) ? owner.equals(user) : true;
+        }
+        return true;
     }
 }

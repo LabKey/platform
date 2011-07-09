@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Object> me = (JspView<Object>) HttpView.currentView();
@@ -27,6 +28,7 @@
     String subjectNounSingular = s.getSubjectNounSingular();
     String subjectNounPlural = s.getSubjectNounPlural();
     String subjectNounColName = s.getSubjectColumnName();
+    boolean isAdmin = c.hasPermission(getViewContext().getUser(), org.labkey.api.security.permissions.AdminPermission.class);
 %>
 
 <p><%= subjectNounSingular %> groups allow you to quickly filter data in a study to groups of <%= subjectNounPlural.toLowerCase() %> you define.
@@ -54,7 +56,9 @@
                 {name: 'type', type: 'string'},
                 {name: 'createdBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
                 {name: 'shared', type: 'string'},
-                {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString().replace(/,/g,", ");}}
+                {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString().replace(/,/g,", ");}},
+                {name: 'canEdit', type: 'boolean'},
+                {name: 'canDelete', type: 'boolean'}
             ],
             autoLoad: true
         });
@@ -156,7 +160,7 @@
                 categoryLabel: (row ? row.get("label") : null),
                 categoryParticipantIds: (row ? row.get("participantIds") : null),
                 categoryShared : (row ? row.get("shared") : false),
-                canEdit : true, // TODO: Modify this to adhere to API to check (participant) group permission
+                canEdit : (row ? row.get("canEdit") :  true), // TODO: Modify this to adhere to API to check (participant) group permission
                 listeners: {
                     scope: this,
                     'closeWindow': function(){
@@ -185,8 +189,8 @@
                         success: function(){
                             _grid.getStore().reload();
                         },
-                        failure: function(){
-                            Ext.Msg.alert("Delete Category", "Deletion Failed");
+                        failure: function(response, options){
+                            LABKEY.Utils.displayAjaxErrorResponse(response, options);
                         },
                         jsonData: {rowId: row.get("rowId")},
                         headers : {'Content-Type' : 'application/json'}
@@ -217,6 +221,7 @@
         },
 
         initComponent : function() {
+            this.isAdmin = <%=isAdmin%>;
             this.categoryPanel = new Ext.form.FormPanel({
                 border: false,
                 defaults : {disabled : !this.canEdit},
@@ -297,7 +302,7 @@
             this.sharedfield = new Ext.form.Checkbox({
                 fieldLabel     : 'Shared',
                 labelSeparator : '',
-                disabled       : !this.canEdit,
+                disabled       : !this.isAdmin || !this.canEdit,
                 hidden         : !this.canEdit
             });
 

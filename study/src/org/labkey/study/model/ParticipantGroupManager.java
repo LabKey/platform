@@ -42,10 +42,12 @@ import org.labkey.study.controllers.StudyController;
 import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -98,12 +100,17 @@ public class ParticipantGroupManager
         try {
             filter.addCondition("Container", c);
             ParticipantCategory[] categories = Table.select(StudySchema.getInstance().getTableInfoParticipantCategory(), Table.ALL_COLUMNS, filter, null, ParticipantCategory.class);
+            List<ParticipantCategory> filtered = new ArrayList<ParticipantCategory>();
 
             for (ParticipantCategory pc : categories)
             {
-                pc.setGroups(getParticipantGroups(c, user, pc));
+                if (pc.canRead(c, user))
+                {
+                    pc.setGroups(getParticipantGroups(c, user, pc));
+                    filtered.add(pc);
+                }
             }
-            return categories;
+            return filtered.toArray(new ParticipantCategory[filtered.size()]);
         }
         catch (SQLException x)
         {
@@ -191,12 +198,16 @@ public class ParticipantGroupManager
                         child.setSelected(selected.contains(grp));
                     }
                     button.addMenuItem(item);
+                    if (cls.isShared())
+                        item.setImageSrc(context.getContextPath() + "/reports/grid_shared.gif");
                 }
                 else if (null != groups && groups.length == 1)
                 {
                     ActionURL url = baseURL.clone();
                     url = groups[0].addURLFilter(url, container, dataRegionName);
-                    button.addMenuItem(groups[0].getLabel(), url.toString(), null, selected.contains(groups[0]));
+                    NavTree item = button.addMenuItem(groups[0].getLabel(), url.toString(), null, selected.contains(groups[0]));
+                    if (cls.isShared())
+                        item.setImageSrc(context.getContextPath() + "/reports/grid_shared.gif");
                 }
             }
 
@@ -230,10 +241,17 @@ public class ParticipantGroupManager
             ParticipantCategory ret;
             boolean isUpdate = !def.isNew();
 
+            if (!def.canEdit(c, user))
+                throw new RuntimeException("You don't have permission to create or edit this participant category");
+            
             if (def.isNew())
+            {
                 ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
+            }
             else
+            {
                 ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def, def.getRowId());
+            }
 
             switch (ParticipantCategory.Type.valueOf(ret.getType()))
             {
@@ -488,6 +506,9 @@ public class ParticipantGroupManager
     {
         if (def.isNew())
             throw new IllegalArgumentException("Participant category has not been saved to the database yet");
+
+        if (!def.canDelete(c, user))
+            throw new RuntimeException("You must either be an administrator or the owner to delete a participant group");
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
