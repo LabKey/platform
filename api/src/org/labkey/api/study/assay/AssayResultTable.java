@@ -248,7 +248,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 sql.append(StringUtils.repeat("?", ", ", ids.size()));
                 sql.append(")");
                 sql.addAll(ids);
-                addCondition(sql, "Run/Folder");
+                addCondition(sql, containerColumn);
             }
         }
     }

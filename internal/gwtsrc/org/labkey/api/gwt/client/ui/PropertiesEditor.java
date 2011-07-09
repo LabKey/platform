@@ -65,7 +65,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     protected VerticalPanel _contentPanel;
     private com.extjs.gxt.ui.client.widget.TabPanel _extraPropertiesTabPanel = new com.extjs.gxt.ui.client.widget.TabPanel();
     private Image _spacerImage;
-    private boolean _warnedAboutDelete = false;
+    protected boolean _warnAboutDelete = true;
     private static final String BAD_NAME_ERROR_MESSAGE = "Name may only contain letters, numbers, spaces, and underscores (_), and must start with a letter or underscore.";
 
     public enum FieldStatus
@@ -755,7 +755,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                         }
                         else
                         {
-                            if (!_warnedAboutDelete)
+                            if (_warnAboutDelete)
                             {
                                 // If we haven't already warned about the dangers of delete, do so now
                                 ImageButton okButton = new ImageButton("OK", new ClickHandler()
@@ -763,7 +763,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                                     public void onClick(ClickEvent e)
                                     {
                                         // Once they say yes, don't bother them again
-                                        _warnedAboutDelete = true;
+                                        _warnAboutDelete = false;
                                         markDeleted(index);
                                     }
                                 });
@@ -1219,7 +1219,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         for (int i=0 ; i<_rows.size() ; i++)
         {
-            if (!getRow(i).edit.equals(getRow(i).orig))
+            if (!getRow(i).edit.equals(getRow(i).orig) || getRow(i).deleted)
                 return true;
         }
         return false;
