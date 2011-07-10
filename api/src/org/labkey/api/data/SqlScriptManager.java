@@ -44,7 +44,7 @@ public class SqlScriptManager
     public static Set<SqlScript> getRunScripts(SqlScriptProvider provider) throws SQLException
     {
         // Skip if the table hasn't been created yet (bootstrap case)
-        if (_core.getTableInfoSqlScripts().getTableType() != TableInfo.TABLE_TYPE_TABLE)
+        if (_core.getTableInfoSqlScripts().getTableType() != DatabaseTableType.TABLE)
             return Collections.emptySet();
 
         String[] runFilenames = Table.executeArray(_core.getSchema(), "SELECT FileName FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ?", new Object[]{provider.getProviderName()}, String.class);
@@ -67,7 +67,7 @@ public class SqlScriptManager
     {
         // Make sure DbSchema thinks SqlScript table is in the database.  If not, we're bootstrapping and it's either just before or just after the first
         // script is run.  In either case, invalidate to force reloading schema from database meta data.
-        if (_core.getTableInfoSqlScripts().getTableType() == TableInfo.TABLE_TYPE_NOT_IN_DB)
+        if (_core.getTableInfoSqlScripts().getTableType() == DatabaseTableType.NOT_IN_DB)
         {
             DbScope.invalidateAllIncompleteSchemas();
             return null;

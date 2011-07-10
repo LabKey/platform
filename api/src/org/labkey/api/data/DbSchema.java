@@ -110,10 +110,10 @@ public class DbSchema
     }
 
 
-    // Base class that pulls table meta data from the database, based on a supplied table pattern.  This allows us to
-    // share code between schema load (when we capture just the table names for all tables) and table load (when we
-    // capture all properties of just a single table).  We want consistent transaction, exception, and filtering
-    // behavior in both cases.
+    // Base class that pulls table meta data from the database, based on a supplied table pattern.  This lets us share
+    // code between schema load (when we capture just the table names for all tables) and table load (when we capture
+    // all properties of just a single table).  We want consistent transaction, exception, and filtering behavior in
+    // both cases.
     private abstract class TableMetaDataLoader
     {
         private final String _tableNamePattern;
@@ -125,7 +125,7 @@ public class DbSchema
 
         protected abstract void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException;
 
-        private void load() throws SQLException
+        void load() throws SQLException
         {
             DbScope scope = getScope();
             String dbName = scope.getDatabaseName();
@@ -206,11 +206,10 @@ public class DbSchema
         {
             if (null == ti)
             {
-                ti = new SchemaTableInfo(xmlTable.getTableName(), this);
-                ti.setTableType(TableInfo.TABLE_TYPE_NOT_IN_DB);
+                ti = new SchemaTableInfo(this, DatabaseTableType.NOT_IN_DB, xmlTable.getTableName());
             }
 
-            ti.loadFromXml(xmlTable, true);
+            ti.loadTablePropertiesFromXml(xmlTable);
         }
 
         return ti;
@@ -219,26 +218,40 @@ public class DbSchema
 
     SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
     {
-        final SchemaTableInfo ti = new SchemaTableInfo(tableName, DbSchema.this);
-
-        TableMetaDataLoader loader = new TableMetaDataLoader(tableName) {
-            @Override
-            protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
-            {
-                assert tableName.equalsIgnoreCase(name);
-                ti.setMetaDataName(tableName);
-                ti.setTableType(rs.getString("TABLE_TYPE"));
-                String description = rs.getString("REMARKS");
-                if (null != description && !"No comments".equals(description))  // Consider: Move "No comments" exclusion to SAS dialect?
-                    ti.setDescription(description);
-
-                ti.loadFromMetaData(dbmd, getScope().getDatabaseName(), getName());
-            }
-        };
+        SingleTableMetaDataLoader loader = new SingleTableMetaDataLoader(tableName);
 
         loader.load();
 
-        return ti;
+        return loader.getTableInfo();
+    }
+
+
+    private class SingleTableMetaDataLoader extends TableMetaDataLoader
+    {
+        private final String _tableName;
+        private SchemaTableInfo _ti = null;
+
+        private SingleTableMetaDataLoader(String tableName)
+        {
+            super(tableName);
+            _tableName = tableName;
+        }
+
+        @Override
+        protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
+        {
+            assert _tableName.equalsIgnoreCase(name);
+            DatabaseTableType tableType = DatabaseTableType.valueOf(DatabaseTableType.class, rs.getString("TABLE_TYPE"));
+            _ti = new SchemaTableInfo(DbSchema.this, tableType, _tableName);
+            String description = rs.getString("REMARKS");
+            if (null != description && !"No comments".equals(description))  // Consider: Move "No comments" exclusion to SAS dialect?
+                _ti.setDescription(description);
+        }
+
+        private SchemaTableInfo getTableInfo()
+        {
+            return _ti;
+        }
     }
 
 
@@ -584,7 +597,7 @@ public class DbSchema
         {
             TableInfo t = curSchema.getTable(tableName);
 
-            if (t.getTableType()!= TableInfo.TABLE_TYPE_TABLE)
+            if (t.getTableType()!= DatabaseTableType.TABLE)
                 continue;
 
             for (ColumnInfo col : t.getColumns())

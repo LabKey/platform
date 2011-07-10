@@ -236,7 +236,7 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
         {
             SimpleFilter filter = new SimpleFilter("Container", c);
             TableInfo realTable = ((FilteredTable)table).getRealTable();
-            if (realTable.getTableType() == TableInfo.TABLE_TYPE_TABLE)
+            if (realTable.getTableType() == DatabaseTableType.TABLE)
             {
                 Table.delete(realTable, filter);
             }

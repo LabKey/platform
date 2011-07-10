@@ -45,7 +45,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
-import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
 import java.sql.Connection;
@@ -53,7 +52,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -67,52 +65,57 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 {
     private static final Logger _log = Logger.getLogger(SchemaTableInfo.class);
 
-    private String _name;
+    // Table properties
     private final DbSchema _parentSchema;
     private final SQLFragment _selectName;
+    private final String _metaDataName;
+    private final DatabaseTableType _tableType;
 
-    private String _title = null;
-    private String _titleColumn = null;
+    // TODO: Remove -- temp hack for datasets, that set "study" as schema but saves tables to "studydatasets" schema
+    private String _metaDataSchemaName;
 
-    private boolean _hasDefaultTitleColumn = true;
-
-    protected List<ColumnInfo> _columns = new ArrayList<ColumnInfo>();
-    protected Map<String, ColumnInfo> _colMap = null;
-    protected List<String> _pkColumnNames = new ArrayList<String>();
-    private List<ColumnInfo> _pkColumns;
-    private String _versionColumnName = null;
-    private List<FieldKey> _defaultVisibleColumns = null;
-
-    private int _tableType = TABLE_TYPE_NOT_IN_DB;
-    private String _metaDataName = null;
+    private String _name;
     private String _description;
-
+    private String _title = null;
     private String _sequence = null;
     private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
-
     private DetailsURL _gridURL;
     private DetailsURL _insertURL;
     private DetailsURL _importURL;
     private DetailsURL _deleteURL;
     private DetailsURL _updateURL;
     private DetailsURL _detailsURL;
-    protected ButtonBarConfig _buttonBarConfig;
+    private ButtonBarConfig _buttonBarConfig;
     private boolean _hidden;
 
+    // Column-related
+    private TableType _xmlTable = null;
+    private SchemaColumnMetaData _columnMetaData = null;
+    private final Object _columnLock = new Object();
+    private String _versionColumnName = null;
+    private List<FieldKey> _defaultVisibleColumns = null;
 
-    public SchemaTableInfo(String tableName, DbSchema parentSchema)
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName)
     {
-        this(tableName, parentSchema.getSqlDialect().makeLegalIdentifier(parentSchema.getName()) + "." + parentSchema.getSqlDialect().makeLegalIdentifier(tableName), parentSchema);
-    }
-
-
-    public SchemaTableInfo(String tableName, String selectName, DbSchema parentSchema)
-    {
-        _name = tableName;
-        _selectName = new SQLFragment(selectName);
         _parentSchema = parentSchema;
+        _metaDataSchemaName = parentSchema.getName();
+        _name = tableName;
+        _metaDataName = metaDataName;
+        _selectName = new SQLFragment(selectName);
+        _tableType = tableType;
     }
 
+
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName)
+    {
+        this(parentSchema, tableType, tableName, tableName, parentSchema.getSqlDialect().makeLegalIdentifier(parentSchema.getName()) + "." + parentSchema.getSqlDialect().makeLegalIdentifier(tableName));
+    }
+
+
+    TableType getXmlTable()
+    {
+        return _xmlTable;
+    }
 
     public String getName()
     {
@@ -124,11 +127,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return _metaDataName;
     }
 
-
-    public void setMetaDataName(String metaDataName)
-    {
-        _metaDataName = metaDataName;
-    }
 
     public String getSelectName()
     {
@@ -166,40 +164,20 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
+    @Override
     public List<String> getPkColumnNames()
     {
-        return _pkColumnNames;
+        return getColumnMetaData().getPkColumnNames();
     }
 
-    public void setPkColumnNames(List<String> pkColumnNames)
-    {
-        _pkColumnNames = Collections.unmodifiableList(pkColumnNames);
-        _pkColumns = null;
-    }
-
+    @Override
     public List<ColumnInfo> getPkColumns()
     {
-        if (null == _pkColumnNames)
-            return null;
-
-        if (null == _pkColumns)
-        {
-            List<ColumnInfo> cols = new ArrayList<ColumnInfo>(_pkColumnNames.size());
-
-            for (String name : _pkColumnNames)
-            {
-                ColumnInfo col = getColumn(name);
-                assert null != col;
-                cols.add(col);
-            }
-
-            _pkColumns = Collections.unmodifiableList(cols);
-        }
-
-        return _pkColumns;
+        return getColumnMetaData().getPkColumns();
     }
 
 
+    @Override
     public ColumnInfo getVersionColumn()
     {
         String versionColumnName = getVersionColumnName();
@@ -208,6 +186,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
+    @Override
     public String getVersionColumnName()
     {
         if (null == _versionColumnName)
@@ -224,30 +203,17 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     @Override
     public boolean hasDefaultTitleColumn()
     {
-        return _hasDefaultTitleColumn;
+        return getColumnMetaData().hasDefaultTitleColumn();
     }
 
+    @Override
     public String getTitleColumn()
     {
-        if (null == _titleColumn && !_columns.isEmpty())
-        {
-            for (ColumnInfo column : _columns)
-            {
-                if (column.isStringType() && !column.getSqlTypeName().equalsIgnoreCase("entityid"))
-                {
-                    _titleColumn = column.getName();
-                    break;
-                }
-            }
-
-            if (null == _titleColumn)
-                _titleColumn = _columns.get(0).getName();
-        }
-
-        return _titleColumn;
+        return getColumnMetaData().getTitleColumn();
     }
 
-    public int getTableType()
+    @Override
+    public DatabaseTableType getTableType()
     {
         return _tableType;
     }
@@ -262,21 +228,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return _selectName.toString();
     }
 
-
-    void setTableType(String tableType)
-    {
-        if (tableType.equals("TABLE"))
-            _tableType = TABLE_TYPE_TABLE;
-        else if (tableType.equals("VIEW"))
-            _tableType = TABLE_TYPE_VIEW;
-        else
-            _tableType = TABLE_TYPE_NOT_IN_DB;
-    }
-
-    public void setTableType(int tableType)
-    {
-        _tableType = tableType;
-    }
 
     public NamedObjectList getSelectList(String columnName)
     {
@@ -298,7 +249,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     private NamedObjectList getSelectList(List<String> columnNames)
     {
-        StringBuffer pkColumnSelect = new StringBuffer();
+        StringBuilder pkColumnSelect = new StringBuilder();
         String sep = "";
 
         for (String columnName : columnNames)
@@ -346,68 +297,51 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public ColumnInfo getColumn(String colName)
     {
-        if (null == colName)
-            return null;
-
-        // HACK: need to invalidate in case of addition (doesn't handle mixed add/delete, but I don't think we delete
-        if (_colMap != null && _columns.size() != _colMap.size())
-            _colMap = null;
-
-        if (null == _colMap)
-        {
-            Map<String, ColumnInfo> m = new CaseInsensitiveHashMap<ColumnInfo>();
-            for (ColumnInfo colInfo : _columns)
-            {
-                m.put(colInfo.getName(), colInfo);
-            }
-            _colMap = m;
-        }
-
-        // TODO: Shouldn't do this -- ":" is a legal character in column names
-        int colonIndex;
-
-        if ((colonIndex = colName.indexOf(":")) != -1)
-        {
-            String first = colName.substring(0, colonIndex);
-            String rest = colName.substring(colonIndex + 1);
-            ColumnInfo fkColInfo = _colMap.get(first);
-
-            // Fall through if this doesn't look like an FK -- : is a legal character
-            if (fkColInfo != null && fkColInfo.getFk() != null)
-                return fkColInfo.getFkTableInfo().getColumn(rest);
-        }
-
-        return _colMap.get(colName);
+        return getColumnMetaData().getColumn(colName);
     }
 
-
-    public void addColumn(ColumnInfo column)
+    @Deprecated
+    public String getMetaDataSchemaName()
     {
-        _columns.add(column);
-//        assert !column.isAliasSet();       // TODO: Investigate -- had to comment this out since ExprColumn() sets alias
-        assert null == column.getFieldKey().getParent();
-        assert column.getName().equals(column.getFieldKey().getName());
-        assert column.lockName();
-        // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
-        column.setAlias(column.getName());
+        return _metaDataSchemaName;
+    }
+
+    @Deprecated
+    public void setMetaDataSchemaName(String metaDataSchemaName)
+    {
+        _metaDataSchemaName = metaDataSchemaName;
+    }
+
+    protected SchemaColumnMetaData getColumnMetaData()
+    {
+        synchronized (_columnLock)
+        {
+            if (null == _columnMetaData)
+            {
+                try
+                {
+                    _columnMetaData = new SchemaColumnMetaData(this);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            }
+
+            return _columnMetaData;
+        }
     }
 
 
     public List<ColumnInfo> getColumns()
     {
-        return Collections.unmodifiableList(_columns);
+        return Collections.unmodifiableList(getColumnMetaData().getColumns());
     }
 
 
     public List<ColumnInfo> getUserEditableColumns()
     {
-        ArrayList<ColumnInfo> userEditableColumns = new ArrayList<ColumnInfo>(_columns.size());
-
-        for (ColumnInfo col : _columns)
-            if (col.isUserEditable())
-                userEditableColumns.add(col);
-
-        return Collections.unmodifiableList(userEditableColumns);
+        return getColumnMetaData().getUserEditableColumns();
     }
 
 
@@ -432,78 +366,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public Set<String> getColumnNameSet()
     {
-        Set<String> nameSet = new HashSet<String>();
-        for (ColumnInfo aColumnList : _columns)
-        {
-            nameSet.add(aColumnList.getName());
-        }
-
-        return Collections.unmodifiableSet(nameSet);
-    }
-
-
-    public void loadFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName) throws SQLException
-    {
-        loadColumnsFromMetaData(dbmd, catalogName, schemaName);
-
-        ResultSet rs;
-
-        if (getSqlDialect().treatCatalogsAsSchemas())
-            rs = dbmd.getPrimaryKeys(schemaName, null, _metaDataName);
-        else
-            rs = dbmd.getPrimaryKeys(catalogName, schemaName, _metaDataName);
-
-        // Use TreeMap to order columns by keySeq
-        Map<Integer, String> pkMap = new TreeMap<Integer, String>();
-        int columnCount = 0;
-        PkMetaDataReader reader = getSqlDialect().getPkMetaDataReader(rs);
-
-        try
-        {
-            while (rs.next())
-            {
-                columnCount++;
-                String colName = reader.getName();
-                ColumnInfo colInfo = getColumn(colName);
-                assert null != colInfo;
-
-                colInfo.setKeyField(true);
-                int keySeq = reader.getKeySeq();
-
-                // If we don't have sequence information (e.g., SAS doesn't return it) then use 1-based counter as a backup
-                if (0 == keySeq)
-                    keySeq = columnCount;
-
-                pkMap.put(keySeq, colName);
-            }
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-
-        setPkColumnNames(new ArrayList<String>(pkMap.values()));
-    }
-
-
-    private void loadColumnsFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName) throws SQLException
-    {
-        Collection<ColumnInfo> meta = ColumnInfo.createFromDatabaseMetaData(dbmd, catalogName, schemaName, this);
-        for (ColumnInfo c : meta)
-            addColumn(c);
+        return getColumnMetaData().getColumnNameSet();
     }
 
 
     void copyToXml(TableType xmlTable, boolean bFull)
     {
         xmlTable.setTableName(_name);
-        if (_tableType == TABLE_TYPE_TABLE)
-            xmlTable.setTableDbType("TABLE");
-        else if (_tableType == TABLE_TYPE_VIEW)
-            xmlTable.setTableDbType("VIEW");
-        else
-            xmlTable.setTableDbType("NOT_IN_DB");
-
+        xmlTable.setTableDbType(_tableType.name());
 
         if (bFull)
         {
@@ -511,52 +381,23 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             // default calculation applied by the getter
             if (null != _title)
                 xmlTable.setTableTitle(_title);
-            if (null != _pkColumnNames && _pkColumnNames.size() > 0)
-                xmlTable.setPkColumnName(StringUtils.join(_pkColumnNames, ','));
-            if (null != _titleColumn)
-                xmlTable.setTitleColumn(_titleColumn);
-            if (null != _versionColumnName)
-                xmlTable.setVersionColumnName(_versionColumnName);
             if (_hidden)
                 xmlTable.setHidden(true);
+            if (null != _versionColumnName)
+                xmlTable.setVersionColumnName(_versionColumnName);
         }
 
-        TableType.Columns xmlColumns = xmlTable.addNewColumns();
-        ColumnType xmlCol;
-
-        for (ColumnInfo columnInfo : _columns)
-        {
-            xmlCol = xmlColumns.addNewColumn();
-            columnInfo.copyToXml(xmlCol, bFull);
-        }
+        getColumnMetaData().copyToXml(xmlTable, bFull);
     }
 
 
-    // TODO: Remove merge param?  Always true...
-    void loadFromXml(TableType xmlTable, boolean merge)
+    void loadTablePropertiesFromXml(TableType xmlTable)
     {
-        //If merging with DB MetaData, don't overwrite pk
-        if (!merge || null == _pkColumnNames || _pkColumnNames.isEmpty())
-        {
-            String pkColumnName = xmlTable.getPkColumnName();
-            if (null != pkColumnName && pkColumnName.length() > 0)
-            {
-                setPkColumnNames(Arrays.asList(pkColumnName.split(",")));
-            }
-        }
-        if (!merge)
-        {
-            setTableType(xmlTable.getTableDbType());
-        }
-
         //Override with the table name from the schema so casing is nice...
         _name = xmlTable.getTableName();
         _description = xmlTable.getDescription();
         _hidden = xmlTable.getHidden();
         _title = xmlTable.getTableTitle();
-        _titleColumn = xmlTable.getTitleColumn();
-        if (null != _titleColumn)
-            _hasDefaultTitleColumn = false;
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
 
@@ -588,71 +429,18 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             _detailsURL = DetailsURL.fromString(xmlTable.getTableUrl());
         }
 
-        ColumnType[] xmlColumnArray = xmlTable.getColumns().getColumnArray();
-
-        if (!merge)
-            _columns = new ArrayList<ColumnInfo>();
-
-        List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
-
-        for (ColumnType xmlColumn : xmlColumnArray)
-        {
-            if (xmlColumn.getWrappedColumnName() != null)
-            {
-                wrappedColumns.add(xmlColumn);
-            }
-            else
-            {
-                ColumnInfo colInfo = null;
-
-                if (merge && getTableType() != TABLE_TYPE_NOT_IN_DB)
-                {
-                    colInfo = getColumn(xmlColumn.getColumnName());
-                    if (null != colInfo)
-                        colInfo.loadFromXml(xmlColumn, true);
-                }
-
-                if (null == colInfo)
-                {
-                    colInfo = new ColumnInfo(xmlColumn.getColumnName(), this);
-                    colInfo.setNullable(true); // default is isNullable()==false
-                    addColumn(colInfo);
-                    colInfo.loadFromXml(xmlColumn, false);
-                }
-            }
-        }
-
-        for (ColumnType wrappedColumnXml : wrappedColumns)
-        {
-            ColumnInfo column = getColumn(wrappedColumnXml.getWrappedColumnName());
-
-            if (column != null && getColumn(wrappedColumnXml.getColumnName()) == null)
-            {
-                ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
-                wrappedColumn.loadFromXml(wrappedColumnXml, false);
-                addColumn(wrappedColumn);
-            }
-        }
-
         if (xmlTable.getButtonBarOptions() != null)
             _buttonBarConfig = new ButtonBarConfig(xmlTable.getButtonBarOptions());
+
+        // Stash so we can overlay ColumnInfo properties later
+        _xmlTable = xmlTable;
     }
 
 
     public String getSequence()
     {
+        getColumnMetaData();  // Need to initialize column meta data since it contains sequence information
         return _sequence;
-    }
-
-    public void setSequence(String sequence)
-    {
-        assert null == _sequence : "Sequence already set for " + getName() + "! " + _sequence + " vs. " + sequence;
-        _sequence = sequence;
-    }
-
-    public String decideAlias(String name)
-    {
-        return name;
     }
 
     public ActionURL getGridURL(Container container)
@@ -797,11 +585,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return _buttonBarConfig;
     }
 
-    public void setButtonBarConfig(ButtonBarConfig config)
-    {
-        _buttonBarConfig = config;
-    }
-    
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name)
     {
         ForeignKey fk = parent.getFk();
@@ -841,7 +624,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     @Override @NotNull
     public Collection<QueryService.ParameterDecl> getNamedParameters()
     {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override
@@ -941,14 +724,36 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return Table.deleteStatement(conn, this);
     }
 
+    // TODO: Eliminate these setters/modifiers, making SchemaTableInfo effectively immutable... which would improve
+    // concurrency, caching, performance, and maintainability
 
-    /** Move an existing column to a different spot in the ordered list */
+    protected void addColumn(ColumnInfo c)
+    {
+        getColumnMetaData().addColumn(c);
+    }
+
+    // Move an existing column to a different spot in the ordered list
     public void setColumnIndex(ColumnInfo c, int i)
     {
-        if (!_columns.remove(c))
-        {
-            throw new IllegalArgumentException("Column " + c + " is not part of table " + this);
-        }
-        _columns.add(i, c);
+        getColumnMetaData().setColumnIndex(c, i);
+    }
+
+    public void setPkColumnNames(@NotNull List<String> pkColumnNames)
+    {
+        getColumnMetaData().setPkColumnNames(pkColumnNames);
+    }
+
+    void setSequence(String sequence)
+    {
+        assert isValidSequence(sequence);
+        _sequence = sequence;
+    }
+
+    private boolean isValidSequence(String sequence)
+    {
+        if (null == _sequence)
+            return true;
+        else
+            throw new IllegalStateException("Sequence already set for " + getName() + "! " + _sequence + " vs. " + sequence);
     }
 }

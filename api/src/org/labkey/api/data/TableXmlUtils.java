@@ -37,7 +37,7 @@ public class TableXmlUtils
 
     // Careful: don't use DbSchema.get(), schema.getTable(), or schema.getTables() -- we don't want schema.xml applied
     // and we don't want to cache these TableInfo (because schema.xml hasn't been applied).
-    public static TablesDocument createXmlDocumentFromMetaData(String dbSchemaName, boolean bFull) throws Exception
+    public static TablesDocument createXmlDocumentFromDatabaseMetaData(String dbSchemaName, boolean bFull) throws Exception
     {
         DbSchema dbSchema = DbSchema.createFromMetaData(dbSchemaName);
         TablesDocument xmlTablesDoc = TablesDocument.Factory.newInstance();
@@ -60,19 +60,19 @@ public class TableXmlUtils
         InputStream xmlStream = null;
         try
         {
-            TablesDocument tablesDocMetaData;
+            TablesDocument tablesDocFromDatabaseMetaData;
             TablesDocument tablesDocFromXml = null;
 
-            tablesDocMetaData = createXmlDocumentFromMetaData(dbSchemaName, false);
+            tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(dbSchemaName, false);
             Resource r = DbSchema.getSchemaResource(dbSchemaName);
             if (null != r)
                 xmlStream = r.getInputStream();
             if (null != xmlStream)
                 tablesDocFromXml = TablesDocument.Factory.parse(xmlStream);
 
-            if ((null != tablesDocMetaData) && (null != tablesDocFromXml))
+            if ((null != tablesDocFromDatabaseMetaData) && (null != tablesDocFromXml))
             {
-                compareTableDocuments(tablesDocMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, sbOut);
+                compareTableDocuments(tablesDocFromDatabaseMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, sbOut);
             }
         }
         catch (Exception e)

@@ -48,25 +48,19 @@ public class TempTableInfo extends SchemaTableInfo
 
     public TempTableInfo(DbSchema parentSchema, String name, List<ColumnInfo> cols, List<String> pk)
     {
-        super(name, parentSchema.getSqlDialect().getGlobalTempTablePrefix() + name + "$" + shortGuid(), parentSchema);
+        super(parentSchema, DatabaseTableType.TABLE, name, name, parentSchema.getSqlDialect().getGlobalTempTablePrefix() + name + "$" + shortGuid());
 
         // TODO: Do away with _tempTableName?  getSelectName() is synonymous.
         _tempTableName = getSelectName();
 
         for (ColumnInfo col : cols)
+        {
             col.setParentTable(this);
-
-        _columns.addAll(cols);
+            addColumn(col);
+        }
 
         if (pk != null)
             setPkColumnNames(pk);
-
-        setTableType(TABLE_TYPE_TABLE);
-    }
-
-    public void setButtonBarConfig(ButtonBarConfig bbarConfig)
-    {
-        _buttonBarConfig = bbarConfig;
     }
 
     public String getTempTableName()

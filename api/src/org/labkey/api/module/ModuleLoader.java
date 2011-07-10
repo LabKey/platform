@@ -28,6 +28,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -296,7 +297,7 @@ public class ModuleLoader implements Filter
 
         initializeDataSources();
 
-        if (getTableInfoModules().getTableType() == TableInfo.TABLE_TYPE_NOT_IN_DB)
+        if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             _newInstall = true;
 
         upgradeCoreModule();
@@ -590,7 +591,7 @@ public class ModuleLoader implements Filter
         ModuleContext coreContext;
 
         // If modules table doesn't exist (bootstrap case), then new up a core context
-        if (getTableInfoModules().getTableType() == TableInfo.TABLE_TYPE_NOT_IN_DB)
+        if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             coreContext = new ModuleContext(coreModule);
         else
             coreContext = getModuleContext("Core");

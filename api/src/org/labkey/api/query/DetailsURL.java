@@ -38,7 +38,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     public static Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");
     public static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class?.*");
 
-    ContainerContext _container;
+    private ContainerContext _containerContext;
 
     // constructor parameters
     ActionURL _url;
@@ -105,7 +105,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     protected DetailsURL(Container c, String str)
     {
         _urlSource = str;
-        _container = c;
+        _containerContext = c;
     }
 
 
@@ -213,11 +213,11 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     }
 
 
-    public DetailsURL copy(ContainerContext c)
+    public DetailsURL copy(ContainerContext cc)
     {
         DetailsURL ret = (DetailsURL)copy();
-        if (null != c)
-            ret._container = c;
+        if (null != cc)
+            ret._containerContext = cc;
         return ret;
     }
 
@@ -249,8 +249,8 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
     Container getContainer(Map context)
     {
-        if (null != _container)
-            return _container.getContainer(context);
+        if (null != _containerContext)
+            return _containerContext.getContainer(context);
         if (null != _context)
             return _context.getContainer();
         if (context instanceof ViewContext)
@@ -259,9 +259,9 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     }
 
 
-    public void setContainer(ContainerContext c)
+    public void setContainerContext(ContainerContext cc)
     {
-        _container = c;
+        _containerContext = cc;
     }
 
 

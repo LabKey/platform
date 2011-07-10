@@ -16,30 +16,346 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.TableType;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /*
 * User: adam
 * Date: Jun 29, 2011
 * Time: 3:02:47 PM
 */
-class SchemaColumnMetaData
+public class SchemaColumnMetaData
 {
-    private List<ColumnInfo> _columns = new ArrayList<ColumnInfo>();
+    private static final Logger LOG = Logger.getLogger(SchemaColumnMetaData.class);
 
-    SchemaColumnMetaData(List<ColumnInfo> columns)
+    private final SchemaTableInfo _tinfo;
+
+    private final List<ColumnInfo> _columns = new ArrayList<ColumnInfo>();
+    private Map<String, ColumnInfo> _colMap = null;
+    private @NotNull List<String> _pkColumnNames = new ArrayList<String>();
+    private List<ColumnInfo> _pkColumns;
+    private String _titleColumn = null;
+    private boolean _hasDefaultTitleColumn = true;
+
+    SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
     {
-        _columns = columns;
+        _tinfo = tinfo;
+        DbScope scope = _tinfo.getSchema().getScope();
+        boolean inTransaction = scope.isTransactionActive();
+        Connection conn = null;
+
+        try
+        {
+            conn = scope.getConnection();
+            loadFromMetaData(conn.getMetaData(), _tinfo.getSchema().getScope().getDatabaseName(), _tinfo.getMetaDataSchemaName(), _tinfo);
+        }
+        finally
+        {
+            if (!inTransaction && null != conn)
+                scope.releaseConnection(conn);
+        }
+
+        loadColumnsFromXml(_tinfo);
     }
 
-    List<ColumnInfo> getColumns()
+    private void loadColumnsFromXml(SchemaTableInfo tinfo)
     {
-        return _columns;
+        TableType xmlTable = tinfo.getXmlTable();
+
+        if (null == xmlTable)
+            return;
+
+        // Don't overwrite pk
+        if (_pkColumnNames.isEmpty())
+        {
+            String pkColumnName = xmlTable.getPkColumnName();
+
+            if (null != pkColumnName && pkColumnName.length() > 0)
+            {
+                setPkColumnNames(Arrays.asList(pkColumnName.split(",")));
+            }
+        }
+
+        ColumnType[] xmlColumnArray = xmlTable.getColumns().getColumnArray();
+        List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
+
+        for (ColumnType xmlColumn : xmlColumnArray)
+        {
+            if (xmlColumn.getWrappedColumnName() != null)
+            {
+                wrappedColumns.add(xmlColumn);
+            }
+            else
+            {
+                ColumnInfo colInfo = null;
+
+                if (tinfo.getTableType() != DatabaseTableType.NOT_IN_DB)
+                {
+                    colInfo = getColumn(xmlColumn.getColumnName());
+                    if (null != colInfo)
+                        colInfo.loadFromXml(xmlColumn, true);
+                }
+
+                if (null == colInfo)
+                {
+                    colInfo = new ColumnInfo(xmlColumn.getColumnName(), tinfo);
+                    colInfo.setNullable(true); // default is isNullable()==false
+                    addColumn(colInfo);
+                    colInfo.loadFromXml(xmlColumn, false);
+                }
+            }
+        }
+
+        for (ColumnType wrappedColumnXml : wrappedColumns)
+        {
+            ColumnInfo column = getColumn(wrappedColumnXml.getWrappedColumnName());
+
+            if (column != null && getColumn(wrappedColumnXml.getColumnName()) == null)
+            {
+                ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
+                wrappedColumn.loadFromXml(wrappedColumnXml, false);
+                addColumn(wrappedColumn);
+            }
+        }
+
+        _titleColumn = xmlTable.getTitleColumn();
+
+        if (null != _titleColumn)
+            _hasDefaultTitleColumn = false;
+    }
+
+    private void loadFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo ti) throws SQLException
+    {
+        loadColumnsFromMetaData(dbmd, catalogName, schemaName, ti);
+
+        ResultSet rs;
+
+        if (ti.getSqlDialect().treatCatalogsAsSchemas())
+            rs = dbmd.getPrimaryKeys(schemaName, null, ti.getMetaDataName());
+        else
+            rs = dbmd.getPrimaryKeys(catalogName, schemaName, ti.getMetaDataName());
+
+        // Use TreeMap to order columns by keySeq
+        Map<Integer, String> pkMap = new TreeMap<Integer, String>();
+        int columnCount = 0;
+        PkMetaDataReader reader = ti.getSqlDialect().getPkMetaDataReader(rs);
+
+        try
+        {
+            while (rs.next())
+            {
+                columnCount++;
+                String colName = reader.getName();
+                ColumnInfo colInfo = getColumn(colName);
+                assert null != colInfo;
+
+                colInfo.setKeyField(true);
+                int keySeq = reader.getKeySeq();
+
+                // If we don't have sequence information (e.g., SAS doesn't return it) then use 1-based counter as a backup
+                if (0 == keySeq)
+                    keySeq = columnCount;
+
+                pkMap.put(keySeq, colName);
+            }
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+
+        setPkColumnNames(new ArrayList<String>(pkMap.values()));
+    }
+
+    private void loadColumnsFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo ti) throws SQLException
+    {
+        Collection<ColumnInfo> meta = ColumnInfo.createFromDatabaseMetaData(dbmd, catalogName, schemaName, ti);
+        for (ColumnInfo c : meta)
+            addColumn(c);
+    }
+
+    public List<ColumnInfo> getColumns()
+    {
+        return Collections.unmodifiableList(_columns);
     }
 
     void addColumn(ColumnInfo column)
     {
         _columns.add(column);
+//        assert !column.isAliasSet();       // TODO: Investigate -- had to comment this out since ExprColumn() sets alias
+        assert null == column.getFieldKey().getParent();
+        assert column.getName().equals(column.getFieldKey().getName());
+        assert column.lockName();
+        // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
+        column.setAlias(column.getName());
+        _colMap = null;
+    }
+
+    ColumnInfo getColumn(String colName)
+    {
+        if (null == colName)
+            return null;
+
+        // TODO: Shouldn't need this check any more... addColumn always clears the map
+        // HACK: need to invalidate in case of addition (doesn't handle mixed add/delete, but I don't think we delete
+        if (_colMap != null && _columns.size() != _colMap.size())
+            _colMap = null;
+
+        if (null == _colMap)
+        {
+            Map<String, ColumnInfo> m = new CaseInsensitiveHashMap<ColumnInfo>();
+            for (ColumnInfo colInfo : _columns)
+            {
+                m.put(colInfo.getName(), colInfo);
+            }
+            _colMap = m;
+        }
+
+        // TODO: Shouldn't do this -- ":" is a legal character in column names
+        int colonIndex;
+
+        if ((colonIndex = colName.indexOf(":")) != -1)
+        {
+            String first = colName.substring(0, colonIndex);
+            String rest = colName.substring(colonIndex + 1);
+            ColumnInfo fkColInfo = _colMap.get(first);
+
+            // Fall through if this doesn't look like an FK -- : is a legal character
+            if (fkColInfo != null && fkColInfo.getFk() != null)
+                return fkColInfo.getFkTableInfo().getColumn(rest);
+        }
+
+        return _colMap.get(colName);
+    }
+
+    public void setPkColumnNames(@NotNull List<String> pkColumnNames)
+    {
+        _pkColumnNames = Collections.unmodifiableList(pkColumnNames);
+        _pkColumns = null;
+    }
+
+    public List<ColumnInfo> getUserEditableColumns()
+    {
+        ArrayList<ColumnInfo> userEditableColumns = new ArrayList<ColumnInfo>(_columns.size());
+
+        for (ColumnInfo col : _columns)
+            if (col.isUserEditable())
+                userEditableColumns.add(col);
+
+        return Collections.unmodifiableList(userEditableColumns);
+    }
+
+
+    public Set<String> getColumnNameSet()
+    {
+        Set<String> nameSet = new HashSet<String>();
+
+        for (ColumnInfo aColumnList : _columns)
+        {
+            nameSet.add(aColumnList.getName());
+        }
+
+        return Collections.unmodifiableSet(nameSet);
+    }
+
+
+    public String getTitleColumn()
+    {
+        if (null == _titleColumn && !_columns.isEmpty())
+        {
+            for (ColumnInfo column : _columns)
+            {
+                if (column.isStringType() && !column.getSqlTypeName().equalsIgnoreCase("entityid"))
+                {
+                    _titleColumn = column.getName();
+                    break;
+                }
+            }
+
+            if (null == _titleColumn)
+                _titleColumn = _columns.get(0).getName();
+        }
+
+        return _titleColumn;
+    }
+
+
+    // Move an existing column to a different spot in the ordered list
+    public void setColumnIndex(ColumnInfo c, int i)
+    {
+        if (!_columns.remove(c))
+        {
+            throw new IllegalArgumentException("Column " + c + " is not part of table " + _tinfo);
+        }
+        _columns.add(i, c);
+    }
+
+    public boolean hasDefaultTitleColumn()
+    {
+        return _hasDefaultTitleColumn;
+    }
+
+    public List<ColumnInfo> getPkColumns()
+    {
+        if (null == _pkColumns)
+        {
+            List<ColumnInfo> cols = new ArrayList<ColumnInfo>(_pkColumnNames.size());
+
+            for (String name : _pkColumnNames)
+            {
+                ColumnInfo col = getColumn(name);
+                assert null != col;
+                cols.add(col);
+            }
+
+            _pkColumns = Collections.unmodifiableList(cols);
+        }
+
+        return _pkColumns;
+    }
+
+    public @NotNull List<String> getPkColumnNames()
+    {
+        return _pkColumnNames;
+    }
+
+    void copyToXml(TableType xmlTable, boolean bFull)
+    {
+        if (bFull)
+        {
+            if (!_pkColumnNames.isEmpty())
+                xmlTable.setPkColumnName(StringUtils.join(_pkColumnNames, ','));
+            if (null != _titleColumn)
+                xmlTable.setTitleColumn(_titleColumn);
+        }
+
+        TableType.Columns xmlColumns = xmlTable.addNewColumns();
+        ColumnType xmlCol;
+
+        for (ColumnInfo columnInfo : _columns)
+        {
+            xmlCol = xmlColumns.addNewColumn();
+            columnInfo.copyToXml(xmlCol, bFull);
+        }
     }
 }

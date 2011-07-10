@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 //import org.apache.log4j.Logger;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -36,7 +37,7 @@ public class ContainerUtil
 
     public static int purgeTable(TableInfo tinfo, String key) throws SQLException
     {
-        assert tinfo.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB;
+        assert tinfo.getTableType() != DatabaseTableType.NOT_IN_DB;
 
         TableInfo tinfoContainers = CoreSchema.getInstance().getTableInfoContainers();
 
@@ -50,7 +51,7 @@ public class ContainerUtil
 
     public static int purgeTable(TableInfo tinfo, Container c, String key) throws SQLException
     {
-        assert tinfo.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB;
+        assert tinfo.getTableType() != DatabaseTableType.NOT_IN_DB;
 
         if (null == key)
             key = "Container";

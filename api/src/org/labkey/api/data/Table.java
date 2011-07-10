@@ -57,6 +57,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.rowset.CachedRowSet;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.sql.BatchUpdateException;
@@ -898,7 +899,7 @@ public class Table
     // Returns a new Map<String, Object> if fieldsIn is a Map, otherwise returns modified version of fieldsIn.
     public static <K> K insert(@Nullable User user, TableInfo table, K fieldsIn) throws SQLException
     {
-        assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
+        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
 
         // _executeTriggers(table, fields);
 
@@ -1015,7 +1016,7 @@ public class Table
 
     public static <K> K update(User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter) throws SQLException
     {
-        assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
         assert null != pkVals;
 
         // _executeTriggers(table, previous, fields);
@@ -1158,7 +1159,7 @@ public class Table
     public static int delete(TableInfo table, Filter filter)
             throws SQLException
     {
-        assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
 
         SQLFragment where = filter.getSQLFragment(table, null);
 
@@ -1703,8 +1704,8 @@ public class Table
 
         public int size() throws SQLException
         {
-            if (resultset instanceof javax.sql.rowset.CachedRowSet)
-                return ((javax.sql.rowset.CachedRowSet) resultset).size();
+            if (resultset instanceof CachedRowSet)
+                return ((CachedRowSet) resultset).size();
             return -1;
         }
 

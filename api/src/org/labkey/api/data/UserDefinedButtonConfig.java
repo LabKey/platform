@@ -27,7 +27,6 @@ import org.labkey.api.view.NavTree;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dave
  * Date: Apr 8, 2010
  * Time: 11:06:49 AM
@@ -154,7 +153,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         if (urlExpr != null)
         {
             if (urlExpr instanceof DetailsURL)
-                ((DetailsURL) urlExpr).setContainer(ctx.getContainer());
+                ((DetailsURL) urlExpr).setContainerContext(ctx.getContainer());
             url = urlExpr.eval(ctx);
         }
         return url;

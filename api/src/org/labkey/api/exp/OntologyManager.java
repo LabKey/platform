@@ -94,7 +94,6 @@ import static org.labkey.api.search.SearchService.PROPERTY;
  * Date: Jun 14, 2005
  * Time: 3:23:15 PM
  */
-@SuppressWarnings({"StringConcatenationInsideStringBufferAppend"})
 public class OntologyManager
 {
     private static final Logger _log = Logger.getLogger(OntologyManager.class);
@@ -733,13 +732,13 @@ public class OntologyManager
             {
                 // NOTE: owned objects should never be in a different container than the owner, that would be a problem
                 StringBuilder sqlDeleteOwnedProperties = new StringBuilder();
-                sqlDeleteOwnedProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
+                sqlDeleteOwnedProperties.append("DELETE FROM ").append(getTinfoObjectProperty()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
                 sqlDeleteOwnedProperties.append(in);
                 sqlDeleteOwnedProperties.append("))");
                 Table.execute(getExpSchema(), sqlDeleteOwnedProperties.toString());
 
                 StringBuilder sqlDeleteOwnedObjects = new StringBuilder();
-                sqlDeleteOwnedObjects.append("DELETE FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
+                sqlDeleteOwnedObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
                 sqlDeleteOwnedObjects.append(in);
                 sqlDeleteOwnedObjects.append(")");
                 Table.execute(getExpSchema(), sqlDeleteOwnedObjects.toString());
@@ -750,7 +749,7 @@ public class OntologyManager
                 deleteProperties(objectIds, c);
 
                 StringBuilder sqlDeleteObjects = new StringBuilder();
-                sqlDeleteObjects.append("DELETE FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
+                sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
                 sqlDeleteObjects.append(in);
                 sqlDeleteObjects.append(")");
                 Table.execute(getExpSchema(), sqlDeleteObjects.toString());
@@ -822,7 +821,7 @@ public class OntologyManager
                 sqlIN = new StringBuilder();
                 for (Integer id : objIdsToDelete)
                 {
-                    sqlIN.append(sep + id);
+                    sqlIN.append(sep).append(id);
                     sep = ", ";
                 }
 
@@ -860,7 +859,7 @@ public class OntologyManager
                     sqlIN = new StringBuilder();
                     for (Integer id : ownerObjIds)
                     {
-                        sqlIN.append(sep + id);
+                        sqlIN.append(sep).append(id);
                         sep = ", ";
                     }
                     String deleteOwnerSql = "DELETE FROM " + getTinfoObject() +

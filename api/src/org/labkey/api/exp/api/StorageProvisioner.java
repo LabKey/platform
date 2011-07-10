@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MVDisplayColumnFactory;
@@ -72,13 +73,13 @@ import java.util.Set;
 public class StorageProvisioner
 {
     private static final Logger log = Logger.getLogger(StorageProvisioner.class);
-    static CPUTimer create = new CPUTimer("StorageProvisioner.create");
+    private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
 
 
     private static String _create(DbScope scope, DomainKind kind, Domain domain) throws SQLException
     {
         assert create.start();
-        Connection conn = null;
+        Connection conn;
 
         try
         {
@@ -466,25 +467,29 @@ public class StorageProvisioner
             if (null == tableName)
                 tableName = _create(scope, kind, domain);
 
-            SchemaTableInfo ti = new SchemaTableInfo(tableName, schemaName + ".\"" + tableName + "\"", parentSchema);
+            SchemaTableInfo ti = new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"");
+            ti.setMetaDataSchemaName(schemaName);
 
             conn = scope.getConnection();
-            ti.setMetaDataName(tableName);
-            ti.loadFromMetaData(conn.getMetaData(), scope.getDatabaseName(), schemaName);
+//            ti.loadFromMetaData(conn.getMetaData(), scope.getDatabaseName(), schemaName);
 
             int index = 0;
+
             for (DomainProperty p : domain.getProperties())
             {
                 ColumnInfo c = ti.getColumn(p.getName());
+
                 if (null == c)
                 {
                     Logger.getLogger(StorageProvisioner.class).info("Column not found in storage table: " + tableName + "." + p.getName());
                     continue;
                 }
+
                 // The columns coming back from JDBC metadata aren't necessarily in the same order that the domain
                 // wants them based on its current property order
                 ti.setColumnIndex(c, index++);
                 PropertyColumn.copyAttributes(null, c, p.getPropertyDescriptor());
+
                 if (p.isMvEnabled())
                 {
                     c.setDisplayColumnFactory(new MVDisplayColumnFactory());
@@ -500,7 +505,6 @@ public class StorageProvisioner
                 c.setScale(p.getScale());
             }
 
-            ti.setTableType(TableInfo.TABLE_TYPE_TABLE);
             return ti;
         }
         catch (SQLException x)

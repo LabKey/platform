@@ -57,7 +57,9 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _description = _rootTable.getDescription();
         // UNDONE: lazy load button bar config????
         _buttonBarConfig = _rootTable.getButtonBarConfig();
-        setTitleColumn(table.getTitleColumn(), table.hasDefaultTitleColumn());
+
+        // We used to copy the titleColumn from table, but this forced all ColumnInfos to load.  Now, delegate
+        // to _rootTable lazily, allowing overrides.
     }
 
     public FilteredTable(TableInfo table, Container container)
@@ -77,6 +79,31 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
             setContainerFilter(containerFilter);
         else
             applyContainerFilter(ContainerFilter.CURRENT);
+    }
+
+    @Override
+    public String getTitleColumn()
+    {
+        lazyLoadTitleColumnProperties();
+        return super.getTitleColumn();
+    }
+
+    @Override
+    public boolean hasDefaultTitleColumn()
+    {
+        lazyLoadTitleColumnProperties();
+        return super.hasDefaultTitleColumn();
+    }
+
+
+    private void lazyLoadTitleColumnProperties()
+    {
+        // If _titleColumn has not been set, take the settings from _rootTable
+        if (null == _titleColumn)
+        {
+            _titleColumn = _rootTable.getTitleColumn();
+            _hasDefaultTitleColumn = _rootTable.hasDefaultTitleColumn();
+        }
     }
 
 

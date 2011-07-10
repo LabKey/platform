@@ -49,10 +49,6 @@ import java.util.Set;
  */
 public interface TableInfo
 {
-    public static int TABLE_TYPE_NOT_IN_DB = 0;
-    public static int TABLE_TYPE_TABLE = 1;
-    public static int TABLE_TYPE_VIEW = 2;
-
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
     public static final ActionURL LINK_DISABLER_ACTION_URL = new ActionURL();
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
@@ -103,7 +99,7 @@ public interface TableInfo
 
     boolean hasDefaultTitleColumn();
 
-    int getTableType();
+    DatabaseTableType getTableType();
 
     /** Get select list for primary column to title column. */
     NamedObjectList getSelectList();

@@ -73,8 +73,8 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 {
     protected Iterable<FieldKey> _defaultVisibleColumns;
     protected DbSchema _schema;
-    private String _titleColumn;
-    private boolean _hasDefaultTitleColumn = true;
+    protected String _titleColumn;
+    protected boolean _hasDefaultTitleColumn = true;
     private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
 
     protected final Map<String, ColumnInfo> _columnMap;
@@ -119,11 +119,11 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
              for (ColumnInfo c : getColumns())
              {
                  if (c.getURL() instanceof DetailsURL)
-                     ((DetailsURL)c.getURL()).setContainer(this);
+                     ((DetailsURL)c.getURL()).setContainerContext(this);
              }
              for (DetailsURL detailsURL : _detailsURLs)
              {
-                 detailsURL.setContainer(this);
+                 detailsURL.setContainerContext(this);
              }
          }
      }
@@ -173,11 +173,11 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
-    public int getTableType()
+    @Override
+    public DatabaseTableType getTableType()
     {
-        return TABLE_TYPE_NOT_IN_DB;
+        return DatabaseTableType.NOT_IN_DB;
     }
-
 
     @NotNull
     public SQLFragment getFromSQL(String alias)
