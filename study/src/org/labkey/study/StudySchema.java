@@ -34,13 +34,10 @@ import java.util.Collection;
  */
 public class StudySchema
 {
-    private static StudySchema instance = null;
+    private static final StudySchema instance = new StudySchema();
 
     public static StudySchema getInstance()
     {
-        if (null == instance)
-            instance = new StudySchema();
-
         return instance;
     }
 

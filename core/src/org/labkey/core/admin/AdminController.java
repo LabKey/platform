@@ -3166,7 +3166,7 @@ public class AdminController extends SpringActionController
 
             boolean bFull = form.getFull();
 
-            TablesDocument tdoc = TableXmlUtils.createXmlDocumentFromMetaData(dbSchemaName, bFull);
+            TablesDocument tdoc = TableXmlUtils.createXmlDocumentFromDatabaseMetaData(dbSchemaName, bFull);
             StringWriter sw = new StringWriter();
 
             XmlOptions xOpt = new XmlOptions();

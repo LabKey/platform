@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
@@ -283,7 +284,7 @@ public class SimpleUserSchema extends UserSchema
         {
             // UNDONE: add an 'isUserEditable' bit to the schema and table?
             TableInfo table = getRealTable();
-            if (table != null && table.getTableType() == TableInfo.TABLE_TYPE_TABLE)
+            if (table != null && table.getTableType() == DatabaseTableType.TABLE)
                 return new SimpleQueryUpdateService(this, table);
             return null;
         }
