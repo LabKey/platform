@@ -776,8 +776,15 @@ public class DataRegion extends AbstractDataRegion
                     _totalRows = getOffset() + _rowCount.intValue();
             }
 
-            addViewMessage(headerMessage, ctx);
-            addFilterMessage(headerMessage, ctx, isShowFilterDescription());
+            StringBuilder viewMsg = new StringBuilder();
+            StringBuilder filterMsg = new StringBuilder();
+
+            addFilterMessage(filterMsg, ctx, isShowFilterDescription());
+            // don't generate a view message if this is the default view and the filter is empty
+            if (!isDefaultView(ctx) || filterMsg.length() > 0)
+                addViewMessage(viewMsg, ctx);
+
+            headerMessage.append(viewMsg).append(filterMsg);
             renderHeaderScript(ctx, out, headerMessage.toString(), showRecordSelectors);
 
             if (!_showPagination && rs instanceof Table.TableResultSet)

@@ -21,6 +21,7 @@ import org.apache.poi.ss.format.CellFormat;
 import org.apache.poi.ss.format.CellFormatter;
 import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -74,9 +75,10 @@ public class ExcelFactory
     {
         if (cell != null)
         {
+            CellGeneralFormatter formatter = new CellGeneralFormatter();
+
             if ("General".equals(cell.getCellStyle().getDataFormatString()))
             {
-                CellGeneralFormatter formatter = new CellGeneralFormatter();
                 switch (cell.getCellType())
                 {
                     case Cell.CELL_TYPE_BOOLEAN:
@@ -97,7 +99,10 @@ public class ExcelFactory
                 }
                 return cell.getStringCellValue();
             }
-            return CellFormat.getInstance(cell.getCellStyle().getDataFormatString()).apply(cell).text;
+            else if (DateUtil.isCellDateFormatted(cell))
+                return formatter.format(cell.getDateCellValue());
+            else
+                return CellFormat.getInstance(cell.getCellStyle().getDataFormatString()).apply(cell).text;
         }
         return "";
     }

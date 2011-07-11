@@ -201,12 +201,17 @@ public abstract class AbstractDataRegion extends DisplayElement
     {
         headerMessage.append("<span class='labkey-strong'>View:</span>&nbsp;");
         headerMessage.append("<span style='padding:5px 45px 5px 0;'>");
-        if (ctx.getView() != null && StringUtils.isNotEmpty(ctx.getView().getName()))
-            headerMessage.append(ctx.getView().getName());
-        else
+        if (isDefaultView(ctx))
             headerMessage.append("default");
+        else
+            headerMessage.append(ctx.getView().getName());
 
         headerMessage.append("</span>&nbsp;");
+    }
+
+    protected boolean isDefaultView(RenderContext ctx)
+    {
+        return (ctx.getView() == null || StringUtils.isEmpty(ctx.getView().getName()));
     }
 
     /**
@@ -225,7 +230,10 @@ public abstract class AbstractDataRegion extends DisplayElement
         {
             headerMessage.append("<span class='labkey-strong'>Filter:</span>&nbsp;");
             headerMessage.append(PageFlowUtil.filter(filterDescription)).append("&nbsp;&nbsp;");
-            headerMessage.append(PageFlowUtil.generateButton("Clear", "#", "LABKEY.DataRegions['" + PageFlowUtil.filter(getName()) + "'].clearAllFilters(); return false;"));
+            headerMessage.append(" <a href=\"#\" class=\"labkey-button\" onClick=\"javascript:LABKEY.DataRegions['");
+            headerMessage.append(PageFlowUtil.filter(getName()));
+            headerMessage.append("'].clearAllFilters(); return false;\">Clear</a>");
+
         }
     }
 
