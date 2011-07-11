@@ -468,7 +468,7 @@ public abstract class SqlDialect
 
 
     // Escape quotes and quote the identifier
-    protected String quoteIdentifier(String id)
+    public String quoteIdentifier(String id)
     {
         return "\"" + id.replaceAll("\"", "\"\"") + "\"";
     }

@@ -49,8 +49,8 @@ public class SchemaColumnMetaData
     private static final Logger LOG = Logger.getLogger(SchemaColumnMetaData.class);
 
     private final SchemaTableInfo _tinfo;
-
     private final List<ColumnInfo> _columns = new ArrayList<ColumnInfo>();
+
     private Map<String, ColumnInfo> _colMap = null;
     private @NotNull List<String> _pkColumnNames = new ArrayList<String>();
     private List<ColumnInfo> _pkColumns;
@@ -215,11 +215,6 @@ public class SchemaColumnMetaData
     {
         if (null == colName)
             return null;
-
-        // TODO: Shouldn't need this check any more... addColumn always clears the map
-        // HACK: need to invalidate in case of addition (doesn't handle mixed add/delete, but I don't think we delete
-        if (_colMap != null && _columns.size() != _colMap.size())
-            _colMap = null;
 
         if (null == _colMap)
         {

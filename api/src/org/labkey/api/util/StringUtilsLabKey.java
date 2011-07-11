@@ -84,4 +84,14 @@ public class StringUtilsLabKey
         s = s.toLowerCase();
         return s.startsWith("http://") || s.startsWith("https://") || s.startsWith("ftp://") || s.startsWith("mailto:");
     }
+
+    // Does the string have ANY upper-case letters?
+    public static boolean containsUpperCase(String s)
+    {
+        for (char ch : s.toCharArray())
+            if (Character.isUpperCase(ch))
+                return true;
+
+        return false;
+    }
 }

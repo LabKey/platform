@@ -17,7 +17,6 @@ package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableChange;
@@ -63,6 +62,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     {
     }
 
+    @Override
     public boolean isSortableDataType(String sqlDataTypeName)
     {
         return true;
@@ -225,11 +225,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
 
     @Override
     public JdbcHelper getJdbcHelper()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }

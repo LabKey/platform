@@ -24,7 +24,6 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.Pump;
@@ -48,7 +47,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -58,7 +56,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 
 public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
@@ -71,7 +68,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     private final String _metaDataName;
     private final DatabaseTableType _tableType;
 
-    // TODO: Remove -- temp hack for datasets, that set "study" as schema but saves tables to "studydatasets" schema
+    // TODO: Remove -- temp hack for StorageProvisioner, which sets "study" as schema but loads meta data from "studydatasets" schema
     private String _metaDataSchemaName;
 
     private String _name;

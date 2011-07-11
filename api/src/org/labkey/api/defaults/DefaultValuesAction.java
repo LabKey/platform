@@ -15,13 +15,12 @@
  */
 package org.labkey.api.defaults;
 
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.action.FormViewAction;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
-import org.springframework.web.servlet.ModelAndView;
 
 public abstract class DefaultValuesAction<FormType extends DomainIdForm> extends FormViewAction<FormType>
 {

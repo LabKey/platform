@@ -35,6 +35,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
@@ -362,13 +363,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public String getSelectName()
     {
-        if (selectName == null)
+        if (null == selectName)
         {
             if (null == getMetaDataName())
                 selectName = getSqlDialect().getColumnSelectName(getName());
             else
                 selectName = getSqlDialect().getColumnSelectName(getMetaDataName());
         }
+
         return selectName;
     }
 
@@ -1133,14 +1135,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
          //Use linked hash map to preserve ordering...
         LinkedHashMap<String, ColumnInfo> colMap = new LinkedHashMap<String, ColumnInfo>();
+        SqlDialect dialect = parentTable.getSqlDialect();
         ResultSet rsCols;
 
-        if (parentTable.getSqlDialect().treatCatalogsAsSchemas())
+        if (dialect.treatCatalogsAsSchemas())
             rsCols = dbmd.getColumns(schemaName, null, parentTable.getMetaDataName(), null);
         else
             rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);
 
-        ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols, parentTable.getSchema());
+        ColumnMetaDataReader reader = dialect.getColumnMetaDataReader(rsCols, parentTable.getSchema());
 
         while (rsCols.next())
         {
@@ -1148,6 +1151,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
 
             col.metaDataName = metaDataName;
+            // TODO: Move to PostgreSQL dialect. #11181
+            col.selectName = dialect.isPostgreSQL() && StringUtilsLabKey.containsUpperCase(metaDataName) ? dialect.quoteIdentifier(metaDataName) : dialect.getColumnSelectName(metaDataName);
             col.sqlTypeName = reader.getSqlTypeName();
             col.jdbcType = JdbcType.valueOf(reader.getSqlType());
             col.isAutoIncrement = reader.isAutoIncrement();

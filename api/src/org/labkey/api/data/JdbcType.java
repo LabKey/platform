@@ -33,113 +33,113 @@ import java.sql.Types;
 public enum JdbcType
 {
     BIGINT(Types.BIGINT, Long.class)
+        {
+            @Override
+            protected Object _fromNumber(Number n)
             {
-                @Override
-                protected Object _fromNumber(Number n)
-                {
-                    return n.longValue();
-                }
+                return n.longValue();
+            }
 
-                @Override
-                protected Object _fromString(String s)
-                {
-                    return new Long(s);
-                }
-            },
+            @Override
+            protected Object _fromString(String s)
+            {
+                return new Long(s);
+            }
+        },
 
     BINARY(Types.BINARY, ByteBuffer.class),
 
     // do we need separate BIT type?
     BOOLEAN(Types.BOOLEAN, Boolean.class)
+        {
+            @Override
+            protected Object _fromNumber(Number n)
             {
-                @Override
-                protected Object _fromNumber(Number n)
-                {
-                    return _toBoolean(n);
-                }
-            },
+                return _toBoolean(n);
+            }
+        },
 
     CHAR(Types.CHAR, String.class),
 
     DECIMAL(Types.DECIMAL, BigDecimal.class, "numberfield")
+        {
+            @Override
+            protected Object _fromNumber(Number n)
             {
-                @Override
-                protected Object _fromNumber(Number n)
-                {
-                    return _toBigDecimal(n);
-                }
+                return _toBigDecimal(n);
+            }
 
-                @Override
-                protected Object _fromString(String s)
-                {
-                    return new BigDecimal(s);
-                }
-            },
+            @Override
+            protected Object _fromString(String s)
+            {
+                return new BigDecimal(s);
+            }
+        },
 
     DOUBLE(Types.DOUBLE, Double.class, "numberfield")
+        {
+            @Override
+            protected Object _fromNumber(Number n)
             {
-                @Override
-                protected Object _fromNumber(Number n)
-                {
-                    return n.doubleValue();
-                }
+                return n.doubleValue();
+            }
 
-                @Override
-                protected Object _fromString(String s)
-                {
-                    return new Double(s);
-                }
-            },
+            @Override
+            protected Object _fromString(String s)
+            {
+                return new Double(s);
+            }
+        },
 
     INTEGER(Types.INTEGER, Integer.class, "numberfield")
+        {
+            @Override
+            protected Object _fromNumber(Number n)
             {
-                @Override
-                protected Object _fromNumber(Number n)
-                {
-                    return _toInt(n);
-                }
+                return _toInt(n);
+            }
 
-                @Override
-                protected Object _fromString(String s)
-                {
-                    return new Integer(s);
-                }
-            },
+            @Override
+            protected Object _fromString(String s)
+            {
+                return new Integer(s);
+            }
+        },
 
     LONGVARBINARY(Types.LONGVARBINARY, String.class),
 
     LONGVARCHAR(Types.LONGVARCHAR, String.class),
 
     REAL(Types.REAL, Float.class, "numberfield")
+        {
+            @Override
+            protected Object _fromNumber(Number n)
             {
-                @Override
-                protected Object _fromNumber(Number n)
-                {
-                    return n.floatValue();
-                }
+                return n.floatValue();
+            }
 
-                @Override
-                protected Object _fromString(String s)
-                {
-                    return new Float(s);
-                }
-            },
+            @Override
+            protected Object _fromString(String s)
+            {
+                return new Float(s);
+            }
+        },
 
     SMALLINT(Types.SMALLINT, Short.class, "numberfield")
+        {
+            @Override
+            protected Object _fromNumber(Number n)
             {
-                @Override
-                protected Object _fromNumber(Number n)
-                {
-                    return _toShort(n);
-                }
+                return _toShort(n);
+            }
 
 
-                @Override
-                protected Object _fromString(String s)
-                {
-                    return new Short(s);
-                }
-            },
+            @Override
+            protected Object _fromString(String s)
+            {
+                return new Short(s);
+            }
+        },
 
     DATE(Types.DATE, java.sql.Date.class, "datefield"),
 
@@ -148,19 +148,19 @@ public enum JdbcType
     TIMESTAMP(Types.TIMESTAMP, java.sql.Timestamp.class, "datefield"),
 
     TINYINT(Types.TINYINT, Short.class, "numberfield")
+        {
+            @Override
+            protected Object _fromNumber(Number n)
             {
-                @Override
-                protected Object _fromNumber(Number n)
-                {
-                    return _toShort(n);
-                }
+                return _toShort(n);
+            }
 
-                @Override
-                protected Object _fromString(String s)
-                {
-                    return new Short(s);
-                }
-            },
+            @Override
+            protected Object _fromString(String s)
+            {
+                return new Short(s);
+            }
+        },
 
     VARBINARY(Types.VARBINARY, ByteBuffer.class),
 
