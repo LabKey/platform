@@ -1594,6 +1594,23 @@ public class LoginController extends SpringActionController
     }
 
 
+    @RequiresNoPermission
+    public static class WhoAmIAction extends MutatingApiAction // require POST
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            User user = getViewContext().getUser();
+            ApiSimpleResponse res = new ApiSimpleResponse();
+            res.put("id", user.getUserId());
+            res.put("displayName", user.getDisplayName(user));
+            res.put("email", user.getEmail());
+            res.put("success", true);
+            return res;
+        }
+    }
+
+
     public static class Config extends ReturnUrlForm
     {
         public String helpLink = "<a href=\"" + (new HelpTopic("configDbLogin")).getHelpTopicLink() + "\" target=\"_new\">More information about database authentication</a>";
