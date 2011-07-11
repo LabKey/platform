@@ -27,6 +27,7 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 
@@ -63,7 +64,7 @@ public class RReportJob extends PipelineJob implements Serializable
         init();
     }
 
-    private void init()
+    protected void init()
     {
         Report report = getReport();
 
@@ -95,7 +96,7 @@ public class RReportJob extends PipelineJob implements Serializable
         return description;
     }
 
-    private RReport getReport()
+    protected RReport getReport()
     {
         try
         {
@@ -122,9 +123,10 @@ public class RReportJob extends PipelineJob implements Serializable
 
         try
         {
+            ViewContext context = getViewContext();
+
             // get the input file which should have been previously created
-            File inputFile = new File(report.getReportDir(), RReport.DATA_INPUT);
-            ViewContext context = new ViewContext(getInfo());
+            File inputFile = inputFile(report, context);
 
             if (inputFile.exists())
             {
@@ -134,12 +136,7 @@ public class RReportJob extends PipelineJob implements Serializable
                 if (!StringUtils.isEmpty(output))
                     info(output);
 
-                if (outputSubst.size() > 0)
-                {
-                    // write the output substitution map to disk so we can render the view later
-                    File file = new File(report.getReportDir(), RReport.SUBSTITUTION_MAP);
-                    ParamReplacementSvc.get().toFile(outputSubst, file);
-                }
+                processOutputs(report, outputSubst);
                 setStatus(PipelineJob.COMPLETE_STATUS, "Job finished at: " + DateUtil.nowISO());
             }
             else
@@ -152,6 +149,30 @@ public class RReportJob extends PipelineJob implements Serializable
             _log.error("Error occurred running the report background job", e);
             error("Error occurred running the report background job", e);
             setStatus(PipelineJob.ERROR_STATUS, "Job finished at: " + DateUtil.nowISO());
+        }
+    }
+
+    // Horrible nasty.  Push a ViewContext on the stack if necessary so HttpView.currentContext() succeeds.
+    private ViewContext getViewContext()
+    {
+        if (HttpView.hasCurrentView())
+            return HttpView.currentContext();
+        else
+            return ViewContext.getMockViewContext(getUser(), getContainer(), getActionURL(), true);
+    }
+
+    protected File inputFile(RReport report, ViewContext context) throws Exception
+    {
+        return new File(report.getReportDir(), RReport.DATA_INPUT);
+    }
+
+    protected void processOutputs(RReport report, List<ParamReplacement> outputSubst) throws Exception
+    {
+        if (outputSubst.size() > 0)
+        {
+            // write the output substitution map to disk so we can render the view later
+            File file = new File(report.getReportDir(), RReport.SUBSTITUTION_MAP);
+            ParamReplacementSvc.get().toFile(outputSubst, file);
         }
     }
 }

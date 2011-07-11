@@ -27,6 +27,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,6 +63,30 @@ public class TsvOutput extends AbstractParamReplacement
         return new TabReportView(this);
     }
 
+    public TabLoader createTabLoader() throws IOException
+    {
+        return createTabLoader(getFile());
+    }
+
+    private static TabLoader createTabLoader(File file) throws IOException
+    {
+        if (file != null && file.exists() && (file.length() > 0))
+        {
+            TabLoader tabLoader = new TabLoader(file, true) {
+                protected String getDefaultColumnName(int col)
+                {
+                    // a blank column name is okay...
+                    return "";
+                }
+            };
+            tabLoader.setParseQuotes(true);
+
+            return tabLoader;
+        }
+
+        return null;
+    }
+
     public static class TabReportView extends ROutputView
     {
         TabReportView(ParamReplacement param)
@@ -73,16 +98,9 @@ public class TsvOutput extends AbstractParamReplacement
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            if (getFile() != null && getFile().exists() && (getFile().length() > 0))
+            TabLoader tabLoader = createTabLoader(getFile());
+            if (tabLoader != null)
             {
-                TabLoader tabLoader = new TabLoader(getFile(), true) {
-                    protected String getDefaultColumnName(int col)
-                    {
-                        // a blank column name is okay...
-                        return "";
-                    }
-                };
-                tabLoader.setParseQuotes(true);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
                 List<Map<String, Object>> data = tabLoader.load();
 
