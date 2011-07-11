@@ -461,13 +461,16 @@ public class ParticipantGroupManager
     {
         assert !def.isNew() : "The participant category has not been created yet";
 
-        if (!def.isNew() && def.getParticipantIds().length != 0)
+        if (!def.isNew())
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
             try {
                 scope.ensureTransaction();
-                ParticipantGroup group;
+                ParticipantGroup group = new ParticipantGroup();
+
+                group.setCategoryId(def.getRowId());
+                group.setContainer(def.getContainerId());
 
                 // updating an existing category
                 if (update)
@@ -478,14 +481,6 @@ public class ParticipantGroupManager
                         group = groups[0];
                         deleteGroupParticipants(c, user, group);
                     }
-                    else
-                        throw new RuntimeException("The existing participant category had no group associated with it.");
-                }
-                else
-                {
-                    group = new ParticipantGroup();
-                    group.setCategoryId(def.getRowId());
-                    group.setContainer(def.getContainerId());
                 }
                 group.setLabel(def.getLabel());
                 group.setParticipantIds(Arrays.asList(def.getParticipantIds()));
