@@ -95,6 +95,7 @@ public class VisitMapImporter
             logger.warn("Can't import visits for an continuous date based study.");
             return true;
         }
+
         if (content == null)
         {
             errors.add("Visit map is empty");

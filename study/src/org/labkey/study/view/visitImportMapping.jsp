@@ -37,7 +37,7 @@
             }
             else
             {
-                out.print("<tr><th align=\"left\">Name</th><th align=\"left\">Sequence Number</th></tr>");
+                out.print("<tr><th align=\"left\">Name</th><th align=\"left\">Sequence Number Mapping</th></tr>");
 
                 for (VisitAlias alias : bean.getCustomMapping())
                 {
@@ -59,13 +59,14 @@
             }
             else
             {
-                out.print("<tr><th align=\"left\">Label</th><th align=\"left\">Sequence Number Range</th></tr>");
+                out.print("<tr><th align=\"left\">Label</th><th align=\"left\">Sequence Number Mapping</th><th align=\"left\">Sequence Number Range</th></tr>");
 
                 for (VisitAlias alias : bean.getStandardMapping())
                 {
         %>
             <tr>
                 <td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=h(alias.getName())%></td>
+                <td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=h(alias.getSequenceNumString())%></td>
                 <td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=h(alias.getSequenceString())%></td>
             </tr><%
                 }

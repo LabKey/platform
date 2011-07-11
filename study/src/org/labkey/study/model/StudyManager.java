@@ -665,36 +665,36 @@ public class StudyManager
 
     public Map<String, Double> getVisitImportMap(Study study, boolean includeStandardMapping) throws SQLException
     {
-        VisitAlias[] aliases = getVisitAliasesArray(study, null);
+        Collection<VisitAlias> customMapping = getCustomVisitImportMapping(study);
+        Visit[] visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : new Visit[0];
 
-        Map<String, Double> map = new CaseInsensitiveHashMap<Double>(aliases.length * 3 / 4);
+        Map<String, Double> map = new CaseInsensitiveHashMap<Double>((customMapping.size() + visits.length) * 3 / 4);
 
-        for (VisitAlias alias : aliases)
-            map.put(alias.getName(), alias.getSequenceNum());
-
-        if (includeStandardMapping)
+        // Load up standard label -> min sequence number mapping first
+        for (Visit visit : visits)
         {
-            // TODO
+            String label = visit.getLabel();
+
+            // Use the **first** instance of each label
+            if (null != label && !map.containsKey(label))
+                map.put(label, visit.getSequenceNumMin());
         }
+
+        // Now load custom mapping, overwriting any existing standard labels
+        for (VisitAlias alias : customMapping)
+            map.put(alias.getName(), alias.getSequenceNum());
 
         return map;
     }
 
 
-    // Return the custom import mapping (optinally provided by the admin), ordered by sequence num.  Ordering is nice
-    // for UI and export, but unnecessary for importing data.
+    // Return the custom import mapping (optinally provided by the admin), ordered by sequence num.
     public Collection<VisitAlias> getCustomVisitImportMapping(Study study) throws SQLException
-    {
-        return Arrays.asList(getVisitAliasesArray(study, new Sort("SequenceNum")));
-    }
-
-
-    private VisitAlias[] getVisitAliasesArray(Study study, @Nullable Sort sort) throws SQLException
     {
         SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
 
-        return Table.select(tinfo, tinfo.getColumns("Name, SequenceNum"), containerFilter, sort, VisitAlias.class);
+        return Arrays.asList(Table.select(tinfo, tinfo.getColumns("Name, SequenceNum"), containerFilter, new Sort("SequenceNum"), VisitAlias.class));
     }
 
 
@@ -712,7 +712,7 @@ public class StudyManager
         {
             String label = visit.getLabel();
 
-            if (null != visit.getLabel())
+            if (null != label)
             {
                 boolean overridden = labels.contains(label) || customMap.containsKey(label);
                 list.add(new VisitAlias(label, visit.getSequenceNumMin(), visit.getSequenceString(), overridden));
@@ -777,10 +777,15 @@ public class StudyManager
             return _overridden;
         }
 
+        public String getSequenceNumString()
+        {
+            return VisitImpl.formatSequenceNum(_sequenceNum);
+        }
+
         public String getSequenceString()
         {
             if (null == _sequenceString)
-                return VisitImpl.formatSequenceNum(_sequenceNum);
+                return getSequenceNumString();
             else
                 return _sequenceString;
         }
@@ -2096,6 +2101,7 @@ public class StudyManager
         Object[] params = new Object[lsids.size()];
         String comma = "";
         int i = 0;
+
         for (String lsid : lsids)
         {
             whereClause.append(comma);
@@ -2103,18 +2109,21 @@ public class StudyManager
             params[i++] = lsid;
             comma = ",";
         }
+
         whereClause.append(")");
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause(whereClause.toString(), params);
         // We can't use the table layer to map results to our bean class because of the unfortunately named
         // "_VisitDate" column in study.StudyData.
         ResultSet rs = null;
+
         try
         {
             List<ParticipantDataset> pds = new ArrayList<ParticipantDataset>();
             TableInfo sdti = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
             rs = Table.select(sdti, Table.ALL_COLUMNS, filter, new Sort("DatasetId"));
             DataSetDefinition dataset = null;
+
             while (rs.next())
             {
                 ParticipantDataset pd = new ParticipantDataset();
@@ -2132,6 +2141,7 @@ public class StudyManager
                 pd.setParticipantId(rs.getString("ParticipantId"));
                 pds.add(pd);
             }
+
             return pds.toArray(new ParticipantDataset[pds.size()]);
         }
         finally
